@@ -25,4 +25,5 @@ __exportStar(require("./azure/recommendations"), exports);
 __exportStar(require("./azure/resources"), exports);
 __exportStar(require("./azure/subscriptions"), exports);
 __exportStar(require("./azure/views"), exports);
+__exportStar(require("./accounts/accounts"), exports);
 //# sourceMappingURL=index.js.map
