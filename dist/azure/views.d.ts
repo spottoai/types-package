@@ -1,5 +1,5 @@
 import { ActivityLog, MonthSummary } from "./common.js";
-import { DisplayMetric } from "./metrics.js";
+import { DisplayMetric, MetricsDefinition } from "./metrics.js";
 import { CostSummaryDetails } from "./prices.js";
 import { AzureRecommendationLite, Recommendation } from "./recommendations.js";
 import { SubscriptionSummary, SubscriptionSummaryLite } from "./subscriptions.js";
@@ -65,7 +65,8 @@ export interface AzureResourcePluginItemDetailed {
     cost?: CostSummaryDetails;
     metrics?: DisplayMetric[];
     activityLogs?: ActivityLog[];
-    properties?: any;
+    properties?: Record<string, string>;
+    metricsDefinitions?: MetricsDefinition[];
 }
 export interface AzurePluginResourcesLite {
     currency: string;

@@ -184,6 +184,7 @@ export interface AlertCondition {
 }
 export interface MetricsDefinition {
     name: string;
+    metricName: string;
     description: string;
     details: string;
     stats: MetricStats;
