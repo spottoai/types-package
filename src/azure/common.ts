@@ -45,3 +45,9 @@ export interface LogAnalyticsTable {
     }>;
     rows: any[][];
 }
+
+export interface ActivityLog {
+    caller: string // e.g. "user@contoso.com"
+    change: string // e.g. Update hosting plan
+    timestamp: string // e.g. Use the submissionTimestamp
+}
