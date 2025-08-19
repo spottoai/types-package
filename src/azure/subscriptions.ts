@@ -1,4 +1,4 @@
-import { BillingPeriodStats, Budget } from "./budgets.js"
+import { Budget } from "./budgets.js"
 import { CostDetails, MiscCost } from "./prices.js"
 import { Recommendation, RecommendationStats, RecommendationSummary } from "./recommendations.js"
 import { ResourceByLocation, ResourcesByType } from "./resources.js"
@@ -47,7 +47,6 @@ export interface SubscriptionStats {
     recommendationsCustom: RecommendationStats
     resourcesByLocation: ResourceByLocation[]
     resourcesByType: ResourcesByType[]
-    billingPeriodSummary?: BillingPeriodStats[]
     spend30Days?: number
     spend30DaysAmortized?: number
     spendPrevious30Days?: number

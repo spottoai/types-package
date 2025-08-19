@@ -6,10 +6,4 @@ export interface Budget {
     currentSpend: number;
     forecastedSpend: number;
 }
-export interface BillingPeriodStats {
-    startDate: string;
-    endDate: string;
-    total: number;
-    totalAmortized: number;
-}
 //# sourceMappingURL=budgets.d.ts.map
