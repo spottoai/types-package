@@ -16,7 +16,7 @@ Since this is a private repository, you'll need to use Git dependencies instead 
 ```json
 {
   "dependencies": {
-    "@spottoai/types-package": "git+https://github.com/spottoai/types-package.git#main"
+    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#main"
   }
 }
 ```
@@ -26,7 +26,7 @@ Or for a specific branch/tag:
 ```json
 {
   "dependencies": {
-    "@spottoai/types-package": "git+https://github.com/spottoai/types-package.git#v1.0.0"
+    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#v1.0.0"
   }
 }
 ```
@@ -37,10 +37,10 @@ Or for a specific branch/tag:
 
 ```typescript
 // Import all interfaces
-import * as Types from '@spottoai/types-package';
+import * as Types from '@spotto/types-package';
 
 // Import specific interfaces
-import { User } from '@spottoai/types-package';
+import { User } from '@spotto/types-package';
 ```
 ## Development
 
