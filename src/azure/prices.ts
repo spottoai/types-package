@@ -1,5 +1,5 @@
-import { DailyMetrics, DisplayMetric } from "./metrics"
-import { ActiveDates, SpecItem } from "./common"
+import { ActiveDates, SpecItem } from "./common.js"
+import { DailyMetrics, DisplayMetric } from "./metrics.js"
 
 export interface CostDetails {
     dailySpend?: ResourceSpend[] // the amount spend on the resource over the last 30 days

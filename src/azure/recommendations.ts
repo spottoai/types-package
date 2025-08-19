@@ -1,4 +1,4 @@
-import { Link } from "./common";
+import { Link } from "./common.js";
 
 export type RecommendationCategory = 'Cost' | 'Performance' | 'Reliability' | 'Security' | 'OperationalExcellence' | 'Operational Excellence';
 

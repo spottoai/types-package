@@ -1,5 +1,6 @@
-import { MonthSummary, SubscriptionSummary, SubscriptionSummaryLite } from "./common"
-import { AzureRecommendationLite } from "./recommendations"
+import { MonthSummary } from "./common.js"
+import { AzureRecommendationLite } from "./recommendations.js"
+import { SubscriptionSummary, SubscriptionSummaryLite } from "./subscriptions.js"
 
 export interface AzureDashboardView {
     subscription: SubscriptionSummary,
