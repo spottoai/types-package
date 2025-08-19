@@ -5,7 +5,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Build outputs
-dist/
+# dist/ - Do not add /dist since we want to publish the code as a package
 build/
 *.tsbuildinfo
 
