@@ -37,4 +37,9 @@ export interface LogAnalyticsTable {
     }>;
     rows: any[][];
 }
+export interface ActivityLog {
+    caller: string;
+    change: string;
+    timestamp: string;
+}
 //# sourceMappingURL=common.d.ts.map
