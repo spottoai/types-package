@@ -1,6 +1,10 @@
 # Types Package
 
-A shared TypeScript interfaces package for private repositories. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
+**⚠️ RESTRICTED USE - INTERNAL SPOTTO AI ONLY ⚠️**
+
+This is a proprietary TypeScript interfaces package for internal use by Spotto AI (www.spotto.ai) only. This package contains common interfaces that can be reused across Spotto AI's API, frontend, and backend projects.
+
+**IMPORTANT**: This repository is made public solely for internal sharing between Spotto AI projects. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms.
 
 ## Features
 
@@ -11,7 +15,7 @@ A shared TypeScript interfaces package for private repositories. This package co
 
 ## Installation
 
-Since this is a private repository, you'll need to use Git dependencies instead of npm. Add this to your consuming project's `package.json`:
+Since this is an internal Spotto AI package, you'll need to use Git dependencies. Add this to your consuming project's `package.json`:
 
 ```json
 {
@@ -99,4 +103,6 @@ This package follows semantic versioning. When making changes:
 
 ## License
 
-MIT License - see LICENSE file for details
+**PROPRIETARY LICENSE** - This software is proprietary to Spotto AI and is made available publicly solely for internal use. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms and restrictions.
+
+For licensing inquiries, contact: legal@spotto.ai

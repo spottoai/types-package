@@ -20,7 +20,7 @@
     "shared"
   ],
   "author": "Spotto",
-  "license": "MIT",
+  "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
     "typescript": "^5.0.0",
     "rimraf": "^5.0.0"
