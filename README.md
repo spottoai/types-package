@@ -1,73 +1,111 @@
-# @spottoai/types-package
+# Types Package
 
-Shared TypeScript interfaces for SpottoAI
+A shared TypeScript interfaces package for private repositories. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
+**⚠️ RESTRICTED USE - INTERNAL SPOTTO AI ONLY ⚠️**
 
-## 开发工具
+This is a proprietary TypeScript interfaces package for internal use by Spotto AI (www.spotto.ai) only. This package contains common interfaces that can be reused across Spotto AI's API, frontend, and backend projects.
 
-本项目配置了以下开发工具：
+**IMPORTANT**: This repository is made public solely for internal sharing between Spotto AI projects. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms.
 
-### ESLint
-代码质量检查工具，确保代码符合规范。
+## Features
 
-```bash
-# 检查代码
-npm run lint
+- **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
+- **Git Dependencies**: Designed to work with Git dependencies for private repositories
+- **TypeScript Declaration Files**: Built with declaration files for better IDE support
+- **Modular Structure**: Organized by domain (API, Database, Frontend, Backend)
 
-# 自动修复可修复的问题
-npm run lint:fix
+## Installation
+
+Since this is a private repository, you'll need to use Git dependencies instead of npm. Add this to your consuming project's `package.json`:
+Since this is an internal Spotto AI package, you'll need to use Git dependencies. Add this to your consuming project's `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#main"
+  }
+}
 ```
 
-### Prettier
-代码格式化工具，确保代码风格一致。
+Or for a specific branch/tag:
 
-```bash
-# 格式化代码
-npm run format
-
-# 检查代码格式
-npm run format:check
+```json
+{
+  "dependencies": {
+    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#v1.0.0"
+  }
+}
 ```
 
-### Husky
-Git hooks 工具，在提交前自动运行检查。
+## Usage
 
-- **pre-commit**: 在提交前自动运行 `npm run lint` 和 `npm run build`
+### Importing Interfaces
 
-### 可用的脚本
+```typescript
+// Import all interfaces
+import * as Types from '@spotto/types-package';
+
+// Import specific interfaces
+import { User } from '@spotto/types-package';
+```
+## Development
+
+### Setup
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Building
 
 ```bash
-# 构建项目
+# Build the package
 npm run build
 
-# 开发模式（监听文件变化）
+# Watch mode for development
 npm run dev
 
-# 清理构建文件
+# Clean build artifacts
 npm run clean
-
-# 代码检查
-npm run lint
-
-# 代码检查并自动修复
-npm run lint:fix
-
-# 代码格式化
-npm run format
-
-# 检查代码格式
-npm run format:check
 ```
 
-## 安装
+### Adding New Interfaces
 
-```bash
-npm install
+1. Create new interface files in the appropriate `src/` subdirectory
+2. Export them from the corresponding index file
+3. Update the main `src/index.ts` if needed
+4. Build the package: `npm run build`
+
+### Directory Structure
+
+```
+src/
+├── example/
+│   └── common.ts        # Common types
+└── index.ts             # Main export file
 ```
 
-## 构建
+## Versioning
 
-```bash
-npm run build
-```
+This package follows semantic versioning. When making changes:
 
-构建后的文件将输出到 `dist/` 目录。
+1. Update the version in `package.json`
+2. Create a Git tag for the new version
+3. Push the tag to the repository
+
+## Contributing
+
+1. Create a feature branch
+2. Add your new interfaces or modifications
+3. Update the main index file if needed
+4. Build and test the package
+5. Submit a pull request
+
+## License
+
+MIT License - see LICENSE file for details
+**PROPRIETARY LICENSE** - This software is proprietary to Spotto AI and is made available publicly solely for internal use. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms and restrictions.
+
+For licensing inquiries, contact: legal@spotto.ai
