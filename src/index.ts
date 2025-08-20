@@ -10,3 +10,4 @@ export * from './azure/resources';
 export * from './azure/subscriptions';
 export * from './azure/views';
 export * from './accounts';
+export * from './users';
