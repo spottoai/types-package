@@ -5,6 +5,7 @@ export * from './azure/metrics';
 export * from './azure/payloads';
 export * from './azure/prices';
 export * from './azure/recommendations';
+export * from './azure/recommendationState';
 export * from './azure/resources';
 export * from './azure/subscriptions';
 export * from './azure/views';
