@@ -1,4 +1,4 @@
-import { Link } from "./common.js";
+import { Link } from './common.js';
 export type RecommendationCategory = 'Cost' | 'Performance' | 'Reliability' | 'Security' | 'OperationalExcellence' | 'Operational Excellence';
 export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;

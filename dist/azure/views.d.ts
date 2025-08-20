@@ -1,8 +1,8 @@
-import { ActivityLog, MonthSummary } from "./common.js";
-import { DisplayMetric, MetricsDefinition } from "./metrics.js";
-import { CostSummaryDetails } from "./prices.js";
-import { AzureRecommendationLite, Recommendation } from "./recommendations.js";
-import { SubscriptionSummary, SubscriptionSummaryLite } from "./subscriptions.js";
+import { ActivityLog, MonthSummary } from './common.js';
+import { DisplayMetric, MetricsDefinition } from './metrics.js';
+import { CostSummaryDetails } from './prices.js';
+import { AzureRecommendationLite, Recommendation } from './recommendations.js';
+import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 export interface AzureDashboardView {
     subscription: SubscriptionSummary;
     timestamp: string;

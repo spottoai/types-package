@@ -1,9 +1,3 @@
-export interface MetricSummary {
-    name: string;
-    average: number;
-    peak: number;
-    percentile95: number;
-}
 export interface DisplayMetric {
     name: string;
     value: string;

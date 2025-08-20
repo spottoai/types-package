@@ -1,4 +1,4 @@
-import { Subscription, SubscriptionPolicies } from "./subscriptions.js";
+import { Subscription, SubscriptionPolicies } from './subscriptions.js';
 export interface ProcessPayload {
     subscriptionId?: string;
     tenantId?: string;

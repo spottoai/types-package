@@ -1,291 +1,296 @@
-
-export interface MetricSummary {
-    name: string
-    average: number
-    peak: number
-    percentile95: number
-}
-
 export interface DisplayMetric {
-    name: string
-    value: string
-    status?: 'good' | 'warning' | 'error'
-    children?: DisplayMetric[]
+  name: string;
+  value: string;
+  status?: 'good' | 'warning' | 'error';
+  children?: DisplayMetric[];
 }
 
 export interface DailyMetrics {
-    date: number // YYYYMMDD
-    spend: number // number spend on the resource that day
-    costAmortized: number // number amortized spend on the resource that day
-    summary: MetricSummary[]
-    hourlyData?: HourlyMetrics[] // optional for drill-down scenarios
+  date: number; // YYYYMMDD
+  spend: number; // number spend on the resource that day
+  costAmortized: number; // number amortized spend on the resource that day
+  summary: MetricSummary[];
+  hourlyData?: HourlyMetrics[]; // optional for drill-down scenarios
 }
 
 export interface MetricSummary {
-    name: string
-    average: number
-    peak: number
-    percentile95: number
-    unit?: string // e.g. percent, GB, request/sec etc
-    context?: MetricContext // Additional context for the metric
+  name: string;
+  average: number;
+  peak: number;
+  percentile95: number;
+  unit?: string; // e.g. percent, GB, request/sec etc
+  context?: MetricContext; // Additional context for the metric
 }
 
 export interface MetricContext {
-    capacity?: number // e.g., total RAM available for memory metrics
-    unit?: string // e.g., "GB" for capacity
-    threshold?: number // e.g., warning threshold
+  capacity?: number; // e.g., total RAM available for memory metrics
+  unit?: string; // e.g., "GB" for capacity
+  threshold?: number; // e.g., warning threshold
 }
 
 export interface HourlyMetrics {
-    hours: number[] // [0, 1, 2, 3, ..., 23] - define once
-    metrics: HourlyMetricData[]
+  hours: number[]; // [0, 1, 2, 3, ..., 23] - define once
+  metrics: HourlyMetricData[];
 }
 
 export interface HourlyMetricData {
-    name: string // e.g. "CPU"
-    values: number[] // 24 values corresponding to hours array
-    unit?: string // e.g. percent, GB, request/sec etc
+  name: string; // e.g. "CPU"
+  values: number[]; // 24 values corresponding to hours array
+  unit?: string; // e.g. percent, GB, request/sec etc
 }
 
 export interface MetricUsageSummary {
-    runningHours: number
-    longestInactiveStretch: number
-    totalFullDayInactivities: number
-    totalInactiveIntervals: number
-    totalActiveIntervals: number
-    totalActiveHours: number
+  runningHours: number;
+  longestInactiveStretch: number;
+  totalFullDayInactivities: number;
+  totalInactiveIntervals: number;
+  totalActiveIntervals: number;
+  totalActiveHours: number;
 }
 
 export interface TimeSeriesData {
-    timeStamp: string;
-    value?: number;
+  timeStamp: string;
+  value?: number;
 }
 
 export interface TimeSeries {
-    metadatavalues: MetadataValue[];
-    data: TimeSeriesData[];
+  metadatavalues: MetadataValue[];
+  data: TimeSeriesData[];
 }
 
 export interface MetricItem {
-    name: string
-    value: MetricResponse
+  name: string;
+  value: MetricResponse;
 }
 
 export interface MetricResponse {
-    timespan: string;
-    interval: string;
-    value: MetricValue[];
-    namespace: string;
-    resourceregion: string; 
+  timespan: string;
+  interval: string;
+  value: MetricValue[];
+  namespace: string;
+  resourceregion: string;
 }
 
 export interface MetricValue {
-    id: string;
-    type: string;
-    name: MetricName;
-    displayDescription: string;
-    unit: string;
-    timeseries: TimeSeries[];
-    errorCode: string;
+  id: string;
+  type: string;
+  name: MetricName;
+  displayDescription: string;
+  unit: string;
+  timeseries: TimeSeries[];
+  errorCode: string;
 }
 
 export interface MetricName {
-    value: string;
-    localizedValue: string;
+  value: string;
+  localizedValue: string;
 }
 
 // Use a lighter weight object for the metrics collection
 export interface MetricsCollection {
-    id: string; // Resource id
-    metrics: MetricsCollectionItem[]
-    childMetrics?: MetricsCollection[]
+  id: string; // Resource id
+  metrics: MetricsCollectionItem[];
+  childMetrics?: MetricsCollection[];
 }
 
 export interface MetricsCollectionItem {
-    timespan: string; // e.g. 2025-05-25T00:00:00Z/2025-05-25T23:59:59Z
-    interval: string // e.g. PT5M
-    name: string  // e.g. Percentage CPU
-    description: string // e.g. The percentage of allocated compute units that are currently in use by the Virtual Machine(s)
-    unit: string // e.g. Percent / Bytes / Count
-    timeseries: MetricsCollectionTimeSeries[]
+  timespan: string; // e.g. 2025-05-25T00:00:00Z/2025-05-25T23:59:59Z
+  interval: string; // e.g. PT5M
+  name: string; // e.g. Percentage CPU
+  description: string; // e.g. The percentage of allocated compute units that are currently in use by the Virtual Machine(s)
+  unit: string; // e.g. Percent / Bytes / Count
+  timeseries: MetricsCollectionTimeSeries[];
 }
 
 export interface MetricsCollectionTimeSeries {
-    timeStamp: string; // e.g. 2025-06-21T00:00:00Z
-    value?: number; // e.g. 7.0269999999999992
+  timeStamp: string; // e.g. 2025-06-21T00:00:00Z
+  value?: number; // e.g. 7.0269999999999992
 }
 
 export interface ResourceMetrics {
-    id: string;
-    metrics: MetricItem[]
-    childMetrics?: ResourceMetrics[]
+  id: string;
+  metrics: MetricItem[];
+  childMetrics?: ResourceMetrics[];
 }
 
 export interface MetadataValue {
-    name: MetadataName;
-    value: string;
+  name: MetadataName;
+  value: string;
 }
 
 export interface MetadataName {
-    value: string;
-    localizedValue: string;
+  value: string;
+  localizedValue: string;
 }
 
 export interface ScaleProfile {
-    name: string
-    capacity: {
-        minimum: string;
-        maximum: string;
-        default: string;
-    };
-    rules: ScaleRule[]
+  name: string;
+  capacity: {
+    minimum: string;
+    maximum: string;
+    default: string;
+  };
+  rules: ScaleRule[];
 }
 
 export interface ScaleRule {
-    metricTrigger: MetricTrigger
-    scaleAction: ScaleAction
+  metricTrigger: MetricTrigger;
+  scaleAction: ScaleAction;
 }
 
 export interface MetricTrigger {
-    metricName: string;
-    metricNamespace: string;
-    metricResourceUri: string;
-    metricResourceLocation: string;
-    timeGrain: string;
-    statistic: string;
-    timeWindow: string;
-    timeAggregation: string;
-    operator: string;
-    threshold: number;
-    dimensions: any[];
-    dividePerInstance: boolean;
+  metricName: string;
+  metricNamespace: string;
+  metricResourceUri: string;
+  metricResourceLocation: string;
+  timeGrain: string;
+  statistic: string;
+  timeWindow: string;
+  timeAggregation: string;
+  operator: string;
+  threshold: number;
+  dimensions: any[];
+  dividePerInstance: boolean;
 }
 
 export interface ScaleAction {
-    direction: string;
-    type: string;
-    value: string;
-    cooldown: string;
+  direction: string;
+  type: string;
+  value: string;
+  cooldown: string;
 }
 
-export type WorkloadType = 'WebApp' | 'API' | 'BatchProcessing' | 'DatabaseWorkload' | 'General';
+export type WorkloadType =
+  | 'WebApp'
+  | 'API'
+  | 'BatchProcessing'
+  | 'DatabaseWorkload'
+  | 'General';
 
 export interface DataPoint {
-    timeStamp: string; // ISO 8601
-    average?: number;
-    total?: number;
-    maximum?: number;
-    minimum?: number;
-    count?: number;
+  timeStamp: string; // ISO 8601
+  average?: number;
+  total?: number;
+  maximum?: number;
+  minimum?: number;
+  count?: number;
 }
 
 export interface MetricStats {
-    average: number;
-    median: number;
-    p50: number;
-    p75: number;
-    p90: number;
-    p95: number;
-    p99: number;
-    min: number;
-    max: number;
-    frequency: number;
-    trend: number;
-    variance: number;
-    count: number;
-    uptime?: number; // for availability metrics
-    peakHours?: number;
-    offPeakHours?: number;
-    totalDataPoints: number;
-    runningDataPoints: number;
-    nonRunningDataPoints: number;
-    runningTimePercentage: number;
-    longestRunningStreak: number;
-    longestDowntimeStreak: number;
-    averageUptimeStreak: number;
-    averageDowntimeStreak: number;
+  average: number;
+  median: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  p95: number;
+  p99: number;
+  min: number;
+  max: number;
+  frequency: number;
+  trend: number;
+  variance: number;
+  count: number;
+  uptime?: number; // for availability metrics
+  peakHours?: number;
+  offPeakHours?: number;
+  totalDataPoints: number;
+  runningDataPoints: number;
+  nonRunningDataPoints: number;
+  runningTimePercentage: number;
+  longestRunningStreak: number;
+  longestDowntimeStreak: number;
+  averageUptimeStreak: number;
+  averageDowntimeStreak: number;
 }
 
 export interface AlertCondition {
-    severity: 'info' | 'warning' | 'critical' | 'underutilized';
-    expression: string; // JSONata expression
-    description: string;
+  severity: 'info' | 'warning' | 'critical' | 'underutilized';
+  expression: string; // JSONata expression
+  description: string;
 }
 
 export interface MetricsDefinition {
-    name: string;
-    metricName: string;
-    description: string;
-    details: string;
-    stats: MetricStats;
-    display?: MetricsDisplay;
-    alerts?: MetricAlert[];
+  name: string;
+  metricName: string;
+  description: string;
+  details: string;
+  stats: MetricStats;
+  display?: MetricsDisplay;
+  alerts?: MetricAlert[];
 }
 
 export interface MetricAlert {
-    severity: 'info' | 'warning' | 'critical' | 'underutilized';
-    description: string;
+  severity: 'info' | 'warning' | 'critical' | 'underutilized';
+  description: string;
 }
 
 export interface MetricDescription {
-    metricName: string;
-    name: string;
-    description: string;
-    details: string;
-    thresholdValue: number;
-    thresholdUnit: string;
-    thresholdReasoning: string;
-    confidence?: number;
-    confidenceFactors?: {
-        metricExistence: number;
-        intervalCompatibility: number;
-        optimizationValue: number;
-    };
-    alertConditions: AlertCondition[];
+  metricName: string;
+  name: string;
+  description: string;
+  details: string;
+  thresholdValue: number;
+  thresholdUnit: string;
+  thresholdReasoning: string;
+  confidence?: number;
+  confidenceFactors?: {
+    metricExistence: number;
+    intervalCompatibility: number;
+    optimizationValue: number;
+  };
+  alertConditions: AlertCondition[];
 }
 
 export interface MetricsDisplay {
-    metrics: string[];
-    title: string;
-    yAxisTitle: string;
-    yAxisSuffix: string;
-    priority: number;
-    maxAxis?: number;
-    chartType: 'line' | 'area' | 'bar' | 'scatter';
-    optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
-    reasoning: string;
+  metrics: string[];
+  title: string;
+  yAxisTitle: string;
+  yAxisSuffix: string;
+  priority: number;
+  maxAxis?: number;
+  chartType: 'line' | 'area' | 'bar' | 'scatter';
+  optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
+  reasoning: string;
 }
 
 export interface AzureResourceMetric {
-    metricName: string;
-    displayName: string;
-    timeSpan: string;
-    suffix: string;
-    isTimeSeries: boolean;
-    isSummaryOnly: boolean;
-    isSummarized: boolean;   
-    interval?: string;
-    aggregationType: string;
-    expression?: string;
-    filter?: string;
-    metricNamespace?: string;
+  metricName: string;
+  displayName: string;
+  timeSpan: string;
+  suffix: string;
+  isTimeSeries: boolean;
+  isSummaryOnly: boolean;
+  isSummarized: boolean;
+  interval?: string;
+  aggregationType: string;
+  expression?: string;
+  filter?: string;
+  metricNamespace?: string;
 }
 
 export interface UtilizationSummary {
-    bucket: UtilizationBucket
-    scores: Record<string, number>
-    trends: TrendAnalysis;
+  bucket: UtilizationBucket;
+  scores: Record<string, number>;
+  trends: TrendAnalysis;
 }
 
 export interface TrendAnalysis {
-    direction: TrendDirection;
-    averageChange: number;
-    volatility: number;
-    seasonality?: {
-        daily?: boolean;
-        weekly?: boolean;
-    };
+  direction: TrendDirection;
+  averageChange: number;
+  volatility: number;
+  seasonality?: {
+    daily?: boolean;
+    weekly?: boolean;
+  };
 }
 
-export type UtilizationBucket = 'Highly Overutilized' | 'Overutilized' | 'Underutilized' | 'Optimally Utilized';
-export type TrendDirection = 'Increasing' | 'Decreasing' | 'Stable' | 'Fluctuating';
+export type UtilizationBucket =
+  | 'Highly Overutilized'
+  | 'Overutilized'
+  | 'Underutilized'
+  | 'Optimally Utilized';
+export type TrendDirection =
+  | 'Increasing'
+  | 'Decreasing'
+  | 'Stable'
+  | 'Fluctuating';

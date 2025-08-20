@@ -1,6 +1,6 @@
-import { MetricDescription, MetricsDisplay } from "./metrics.js";
-import { ResourceLink, ResourceTypeReference } from "./resources.js";
-import { AzureResourceMetric } from "./metrics.js";
+import { MetricDescription, MetricsDisplay } from './metrics.js';
+import { ResourceLink, ResourceTypeReference } from './resources.js';
+import { AzureResourceMetric } from './metrics.js';
 export interface ResourceConfig {
     resourceGroups: ResourceConfigItem;
     resourcesAll: ResourceConfigItem;
