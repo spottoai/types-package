@@ -1,13 +1,13 @@
 import { Link } from './common.js';
 
-export type RecommendationCategory =
-  | 'Cost'
-  | 'Performance'
-  | 'Reliability'
-  | 'Security'
-  | 'OperationalExcellence'
-  | 'Operational Excellence';
-
+export enum RecommendationCategory {
+  Cost = 'Cost',
+  Performance = 'Performance',
+  Reliability = 'Reliability',
+  Security = 'Security',
+  HighAvailability = 'HighAvailability',
+  OperationalExcellence = 'OperationalExcellence',
+}
 export interface RecommendationResources {
   recommendation: CustomAzureRecommendation;
   resourceIds: string[];
