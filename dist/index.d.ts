@@ -8,5 +8,5 @@ export * from './azure/recommendations';
 export * from './azure/resources';
 export * from './azure/subscriptions';
 export * from './azure/views';
-export * from './accounts/accounts';
+export * from './accounts';
 //# sourceMappingURL=index.d.ts.map
