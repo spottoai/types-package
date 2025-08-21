@@ -87,7 +87,7 @@ export interface RecommendationStats {
   low: number; // total number of low recommendations in the subscription
 }
 
-// Recommendation with state information
+// Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment
 export interface RecommendationWithState extends Recommendation {
   status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
   read?: boolean;

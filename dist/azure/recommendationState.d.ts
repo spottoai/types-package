@@ -22,8 +22,11 @@ export interface RecommendationHistory {
     reason?: string;
 }
 export interface Comment {
-    comment: string;
+    id: string;
     userId: string;
-    createdAt: Date;
+    userName: string;
+    userAvatar?: string;
+    content: string;
+    createdAt: string;
 }
 //# sourceMappingURL=recommendationState.d.ts.map
