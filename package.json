@@ -17,7 +17,7 @@
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
     "prepare": "husky install",
-    "build:check": "./scripts/release.sh"
+    "build:check": "./scripts/build-check.sh"
   },
   "keywords": [
     "typescript",
