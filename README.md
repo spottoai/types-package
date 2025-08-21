@@ -69,7 +69,21 @@ npm run dev
 
 # Clean build artifacts
 npm run clean
+
+# Code linting
+npm run lint
+
+# Code formatting
+npm run format
 ```
+
+### CI/CD
+
+本项目配置了自动化CI/CD流程：
+
+- **GitHub Actions CI**: 在 push 到 main 分支和 PR 时自动运行 lint 和 build
+- **GitHub Actions Release**: 在创建版本标签时自动发布到 npm
+- **Husky Hooks**: 在本地提交前自动运行 lint 检查
 
 ### Adding New Interfaces
 

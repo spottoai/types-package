@@ -4,12 +4,7 @@ export interface RecommendationState {
   recommendationId: string; // Row Key
   subscriptionId: string;
   companyId: string; // Company ID to which the resource belongs
-  category:
-    | 'Cost'
-    | 'Performance'
-    | 'Security'
-    | 'Reliability'
-    | 'Operational Excellence';
+  category: 'Cost' | 'Performance' | 'Security' | 'Reliability' | 'Operational Excellence';
   impact: 'High' | 'Medium' | 'Low';
   effort: 'High' | 'Medium' | 'Low';
   read: boolean; // true if the user has read the recommendation

@@ -160,12 +160,7 @@ export interface ScaleAction {
   cooldown: string;
 }
 
-export type WorkloadType =
-  | 'WebApp'
-  | 'API'
-  | 'BatchProcessing'
-  | 'DatabaseWorkload'
-  | 'General';
+export type WorkloadType = 'WebApp' | 'API' | 'BatchProcessing' | 'DatabaseWorkload' | 'General';
 
 export interface DataPoint {
   timeStamp: string; // ISO 8601
@@ -284,13 +279,5 @@ export interface TrendAnalysis {
   };
 }
 
-export type UtilizationBucket =
-  | 'Highly Overutilized'
-  | 'Overutilized'
-  | 'Underutilized'
-  | 'Optimally Utilized';
-export type TrendDirection =
-  | 'Increasing'
-  | 'Decreasing'
-  | 'Stable'
-  | 'Fluctuating';
+export type UtilizationBucket = 'Highly Overutilized' | 'Overutilized' | 'Underutilized' | 'Optimally Utilized';
+export type TrendDirection = 'Increasing' | 'Decreasing' | 'Stable' | 'Fluctuating';

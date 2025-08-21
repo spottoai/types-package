@@ -1,10 +1,6 @@
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
-import {
-  Recommendation,
-  RecommendationStats,
-  RecommendationSummary,
-} from './recommendations.js';
+import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 
 export interface SubscriptionSummaryLite {
