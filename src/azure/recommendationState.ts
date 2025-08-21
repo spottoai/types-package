@@ -26,7 +26,10 @@ export interface RecommendationHistory {
 }
 
 export interface Comment {
-  comment: string;
+  id: string;
   userId: string;
-  createdAt: Date;
+  userName: string;
+  userAvatar?: string;
+  content: string;
+  createdAt: string;
 }

@@ -1,4 +1,4 @@
-import { Comment, RecommendationHistory } from './recommendationState.js';
+import { Comment, RecommendationHistory } from './recommendationState';
 
 export enum RecommendationCategory {
   Cost = 'Cost',
