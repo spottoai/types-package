@@ -19,6 +19,7 @@ export interface Recommendation {
   category: RecommendationCategory;
   type?: string; // custom
   description?: string;
+  remediation?: string;
   impact: string;
   links?: { name: string; url: string }[];
   considerations?: string;

@@ -17,6 +17,7 @@ export interface Recommendation {
     category: RecommendationCategory;
     type?: string;
     description?: string;
+    remediation?: string;
     impact: string;
     links?: {
         name: string;
