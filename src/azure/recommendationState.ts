@@ -1,3 +1,4 @@
+// Base state interface for recommendations
 export interface RecommendationState {
   // Partition Key: resourceId (Hash)
   resourceId: string;

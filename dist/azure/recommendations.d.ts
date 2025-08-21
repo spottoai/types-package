@@ -1,3 +1,4 @@
+import { Comment, RecommendationHistory } from './recommendationState.js';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -75,5 +76,15 @@ export interface RecommendationStats {
     high: number;
     medium: number;
     low: number;
+}
+export interface RecommendationWithState extends Recommendation {
+    status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
+    read?: boolean;
+    scheduledAt?: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
+    flagged?: boolean;
+    comments?: Comment[];
+    history?: RecommendationHistory[];
 }
 //# sourceMappingURL=recommendations.d.ts.map

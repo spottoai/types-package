@@ -1,3 +1,5 @@
+import { Comment, RecommendationHistory } from './recommendationState.js';
+
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -83,4 +85,16 @@ export interface RecommendationStats {
   high: number; // total number of high recommendations in the subscription
   medium: number; // total number of medium recommendations in the subscription
   low: number; // total number of low recommendations in the subscription
+}
+
+// Recommendation with state information
+export interface RecommendationWithState extends Recommendation {
+  status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
+  read?: boolean;
+  scheduledAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+  flagged?: boolean;
+  comments?: Comment[];
+  history?: RecommendationHistory[];
 }
