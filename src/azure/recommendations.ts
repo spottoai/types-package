@@ -1,5 +1,3 @@
-import { Link } from './common.js';
-
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -15,17 +13,25 @@ export interface RecommendationResources {
 
 export interface Recommendation {
   id: string;
-  type?: string; /// The type could be "Custom"
-  name: string; // e.g. "Virtual Machine Low Memory Usage"
+  name: string;
   category: RecommendationCategory;
-  impact: 'High' | 'Medium' | 'Low';
-  links?: Link[];
-  risk?: string; // what is the risk of implementing the solution
-  effort?: string; // the effort to implement the recommendation
-  description?: string; // full description of the recommendation
-  potentialBenefits?: string; // the potential benefits of implementing the recommendation
-  remediation?: string; // the remediation for the recommendation
+  type?: string; // custom
+  description?: string;
+  impact: string;
+  links?: { name: string; url: string }[];
+  considerations?: string;
+  potentialBenefits?: string;
+  effort?: string;
+  costImpact?: number;
+  performanceImpact?: number;
+  confidencePercentage?: number;
   resources?: ResourceReference[]; // array of resources that have this recommendation
+
+  // Deprecated fields, kept for compatibility
+  subcategory?: string;
+  solution?: string;
+  source?: string;
+  service?: string;
 }
 
 export interface RecommendationSummary {
