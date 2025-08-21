@@ -75,6 +75,9 @@ npm run lint
 
 # Code formatting
 npm run format
+
+# Build with checks
+npm run build:check
 ```
 
 ### CI/CD
