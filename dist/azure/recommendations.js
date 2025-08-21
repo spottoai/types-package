@@ -7,7 +7,7 @@ var RecommendationCategory;
     RecommendationCategory["Performance"] = "Performance";
     RecommendationCategory["Reliability"] = "Reliability";
     RecommendationCategory["Security"] = "Security";
-    RecommendationCategory["HighAvailability"] = "HighAvailability";
     RecommendationCategory["OperationalExcellence"] = "OperationalExcellence";
+    RecommendationCategory["OperationalExcellenceAlternative"] = "Operational Excellence";
 })(RecommendationCategory || (exports.RecommendationCategory = RecommendationCategory = {}));
 //# sourceMappingURL=recommendations.js.map

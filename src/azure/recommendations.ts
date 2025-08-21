@@ -5,8 +5,8 @@ export enum RecommendationCategory {
   Performance = 'Performance',
   Reliability = 'Reliability',
   Security = 'Security',
-  HighAvailability = 'HighAvailability',
   OperationalExcellence = 'OperationalExcellence',
+  OperationalExcellenceAlternative = 'Operational Excellence'
 }
 export interface RecommendationResources {
   recommendation: CustomAzureRecommendation;
