@@ -216,6 +216,16 @@ export interface MetricsDisplay {
     optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
     reasoning: string;
 }
+export interface MonthlyMetricsFile {
+    metadata: {
+        resourceType: string;
+        month: string;
+        lastUpdated: string;
+        totalResources: number;
+        metricsCollected: string[];
+    };
+    metrics: ResourceMetrics[];
+}
 export interface AzureResourceMetric {
     metricName: string;
     displayName: string;
