@@ -1,4 +1,3 @@
-import { Link } from './common.js';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -13,17 +12,26 @@ export interface RecommendationResources {
 }
 export interface Recommendation {
     id: string;
-    type?: string;
     name: string;
     category: RecommendationCategory;
-    impact: 'High' | 'Medium' | 'Low';
-    links?: Link[];
-    risk?: string;
-    effort?: string;
+    type?: string;
     description?: string;
+    impact: string;
+    links?: {
+        name: string;
+        url: string;
+    }[];
+    considerations?: string;
     potentialBenefits?: string;
-    remediation?: string;
+    effort?: string;
+    costImpact?: number;
+    performanceImpact?: number;
+    confidencePercentage?: number;
     resources?: ResourceReference[];
+    subcategory?: string;
+    solution?: string;
+    source?: string;
+    service?: string;
 }
 export interface RecommendationSummary {
     category: RecommendationCategory;
