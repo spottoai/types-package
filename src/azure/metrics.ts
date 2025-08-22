@@ -249,14 +249,14 @@ export interface MetricsDisplay {
 }
 
 export interface MonthlyMetricsFile {
-    metadata: {
-        resourceType: string;
-        month: string; // YYYY-MM format
-        lastUpdated: string; // ISO timestamp
-        totalResources: number;
-        metricsCollected: string[]; // metric names
-    };
-    metrics: ResourceMetrics[];
+  metadata: {
+    resourceType: string;
+    month: string; // YYYY-MM format
+    lastUpdated: string; // ISO timestamp
+    totalResources: number;
+    metricsCollected: string[]; // metric names
+  };
+  metrics: ResourceMetrics[];
 }
 
 export interface AzureResourceMetric {
