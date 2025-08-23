@@ -49,8 +49,9 @@ export interface MetricUsageSummary {
 }
 
 export interface TimeSeriesData {
-  timeStamp: string;
-  value?: number;
+  timeStamp?: string;
+  value?: number; // undefined means no data for that time period (e.g. VM CPU was stopped)
+  ts: number; // timestamp in milliseconds
 }
 
 export interface TimeSeries {
@@ -87,12 +88,14 @@ export interface MetricName {
 }
 
 // Use a lighter weight object for the metrics collection
+// TODO: Delete
 export interface MetricsCollection {
   id: string; // Resource id
   metrics: MetricsCollectionItem[];
   childMetrics?: MetricsCollection[];
 }
 
+// TODO: Delete
 export interface MetricsCollectionItem {
   timespan: string; // e.g. 2025-05-25T00:00:00Z/2025-05-25T23:59:59Z
   interval: string; // e.g. PT5M

@@ -42,8 +42,9 @@ export interface MetricUsageSummary {
     totalActiveHours: number;
 }
 export interface TimeSeriesData {
-    timeStamp: string;
+    timeStamp?: string;
     value?: number;
+    ts: number;
 }
 export interface TimeSeries {
     metadatavalues: MetadataValue[];
