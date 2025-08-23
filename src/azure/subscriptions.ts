@@ -10,6 +10,21 @@ export interface SubscriptionSummaryLite {
   properties?: SubscriptionProperties;
 }
 
+export interface CompanySubscription {
+  companyId: string;
+  id: string;
+  name: string;
+  cloudAccountId: string;
+  cloudAccountName: string;
+  status?: string;
+  error?: string;
+  lastUpdated?: string;
+  duration?: string;
+  currency?: string;
+  currencySymbol?: string;
+  foundCurrency?: boolean;
+}
+
 export interface SubscriptionSummary {
   tenantId: string;
   subscriptionId: string;
