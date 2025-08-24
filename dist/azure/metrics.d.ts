@@ -75,14 +75,6 @@ export interface ScaleAction {
     cooldown: string;
 }
 export type WorkloadType = 'WebApp' | 'API' | 'BatchProcessing' | 'DatabaseWorkload' | 'General';
-export interface DataPoint {
-    timeStamp: string;
-    average?: number;
-    total?: number;
-    maximum?: number;
-    minimum?: number;
-    count?: number;
-}
 export interface MetricStats {
     average: number;
     median: number;
