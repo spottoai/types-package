@@ -48,29 +48,6 @@ export interface MetricUsageSummary {
   totalActiveHours: number;
 }
 
-// Use a lighter weight object for the metrics collection
-// TODO: Delete
-export interface MetricsCollection {
-  id: string; // Resource id
-  metrics: MetricsCollectionItem[];
-  childMetrics?: MetricsCollection[];
-}
-
-// TODO: Delete
-export interface MetricsCollectionItem {
-  timespan: string; // e.g. 2025-05-25T00:00:00Z/2025-05-25T23:59:59Z
-  interval: string; // e.g. PT5M
-  name: string; // e.g. Percentage CPU
-  description: string; // e.g. The percentage of allocated compute units that are currently in use by the Virtual Machine(s)
-  unit: string; // e.g. Percent / Bytes / Count
-  timeseries: MetricsCollectionTimeSeries[];
-}
-
-export interface MetricsCollectionTimeSeries {
-  timeStamp: string; // e.g. 2025-06-21T00:00:00Z
-  value?: number; // e.g. 7.0269999999999992
-}
-
 export interface ScaleProfile {
   name: string;
   capacity: {

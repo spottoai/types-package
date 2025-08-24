@@ -41,23 +41,6 @@ export interface MetricUsageSummary {
     totalActiveIntervals: number;
     totalActiveHours: number;
 }
-export interface MetricsCollection {
-    id: string;
-    metrics: MetricsCollectionItem[];
-    childMetrics?: MetricsCollection[];
-}
-export interface MetricsCollectionItem {
-    timespan: string;
-    interval: string;
-    name: string;
-    description: string;
-    unit: string;
-    timeseries: MetricsCollectionTimeSeries[];
-}
-export interface MetricsCollectionTimeSeries {
-    timeStamp: string;
-    value?: number;
-}
 export interface ScaleProfile {
     name: string;
     capacity: {
