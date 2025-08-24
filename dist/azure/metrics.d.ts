@@ -169,9 +169,12 @@ export interface AzureMetricValue {
     timeseries: AzureTimeSeries[];
 }
 export interface AzureTimeSeries {
-    name?: string;
-    value?: string;
+    metadata: AzureTimeSeriesMetadata[];
     data: AzureTimeSeriesData[];
+}
+export interface AzureTimeSeriesMetadata {
+    name: string;
+    value: string;
 }
 export interface AzureTimeSeriesData {
     v?: number;

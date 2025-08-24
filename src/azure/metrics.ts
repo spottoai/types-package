@@ -190,9 +190,13 @@ export interface AzureMetricValue {
 }
 
 export interface AzureTimeSeries {
-  name?: string; // optional name suhca s "Instance" or "Model"
-  value?: string; // optional value such as "WN0SDWK00030D" or "gpt-5"
+  metadata: AzureTimeSeriesMetadata[];
   data: AzureTimeSeriesData[];
+}
+
+export interface AzureTimeSeriesMetadata {
+  name: string; // name such "Instance" or "Model" or "API Name" or "Tier"
+  value: string; // value such as "WN0SDWK00030D" or "gpt-5" or "GetBlobServiceProperties" or "Hot"
 }
 
 export interface AzureTimeSeriesData {
