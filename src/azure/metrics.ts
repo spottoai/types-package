@@ -252,14 +252,39 @@ export interface MetricsDisplay {
 }
 
 export interface MonthlyMetricsFile {
-  metadata: {
-    resourceType: string;
-    month: string; // YYYY-MM format
-    lastUpdated: string; // ISO timestamp
-    totalResources: number;
-    metricsCollected: string[]; // metric names
-  };
-  metrics: ResourceMetrics[];
+    metadata: {
+        resourceType: string;
+        month: string;
+        lastUpdated: string;
+        totalResources: number;
+        metricsCollected: string[];
+    };
+    metrics: AzureResourceMetrics[];
+}
+
+export interface AzureResourceMetrics {
+  id: string;
+  metrics: AzureMetricValue[];
+  childMetrics?: AzureResourceMetrics[];
+}
+
+export interface AzureMetricValue {
+  name: string
+  label: string
+  collection: string
+  unit: string;
+  timeseries: AzureTimeSeries[];
+}
+
+export interface AzureTimeSeries {
+  name?: string; // optional name suhca s "Instance" or "Model"
+  value?: string; // optional value such as "WN0SDWK00030D" or "gpt-5"
+  data: AzureTimeSeriesData[];
+}
+
+export interface AzureTimeSeriesData {
+  v?: number; // Value
+  t: number; // Timestamp
 }
 
 export interface AzureResourceMetric {

@@ -225,7 +225,28 @@ export interface MonthlyMetricsFile {
         totalResources: number;
         metricsCollected: string[];
     };
-    metrics: ResourceMetrics[];
+    metrics: AzureResourceMetrics[];
+}
+export interface AzureResourceMetrics {
+    id: string;
+    metrics: AzureMetricValue[];
+    childMetrics?: AzureResourceMetrics[];
+}
+export interface AzureMetricValue {
+    name: string;
+    label: string;
+    collection: string;
+    unit: string;
+    timeseries: AzureTimeSeries[];
+}
+export interface AzureTimeSeries {
+    name?: string;
+    value?: string;
+    data: AzureTimeSeriesData[];
+}
+export interface AzureTimeSeriesData {
+    v?: number;
+    t: number;
 }
 export interface AzureResourceMetric {
     metricName: string;
