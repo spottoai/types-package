@@ -48,45 +48,6 @@ export interface MetricUsageSummary {
   totalActiveHours: number;
 }
 
-export interface TimeSeriesData {
-  timeStamp?: string;
-  value?: number; // undefined means no data for that time period (e.g. VM CPU was stopped)
-  ts: number; // timestamp in milliseconds
-}
-
-export interface TimeSeries {
-  metadatavalues: MetadataValue[];
-  data: TimeSeriesData[];
-}
-
-export interface MetricItem {
-  name: string;
-  value: MetricResponse;
-}
-
-export interface MetricResponse {
-  timespan: string;
-  interval: string;
-  value: MetricValue[];
-  namespace: string;
-  resourceregion: string;
-}
-
-export interface MetricValue {
-  id: string;
-  type: string;
-  name: MetricName;
-  displayDescription: string;
-  unit: string;
-  timeseries: TimeSeries[];
-  errorCode: string;
-}
-
-export interface MetricName {
-  value: string;
-  localizedValue: string;
-}
-
 // Use a lighter weight object for the metrics collection
 // TODO: Delete
 export interface MetricsCollection {
@@ -108,22 +69,6 @@ export interface MetricsCollectionItem {
 export interface MetricsCollectionTimeSeries {
   timeStamp: string; // e.g. 2025-06-21T00:00:00Z
   value?: number; // e.g. 7.0269999999999992
-}
-
-export interface ResourceMetrics {
-  id: string;
-  metrics: MetricItem[];
-  childMetrics?: ResourceMetrics[];
-}
-
-export interface MetadataValue {
-  name: MetadataName;
-  value: string;
-}
-
-export interface MetadataName {
-  value: string;
-  localizedValue: string;
 }
 
 export interface ScaleProfile {

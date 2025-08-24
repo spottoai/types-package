@@ -41,39 +41,6 @@ export interface MetricUsageSummary {
     totalActiveIntervals: number;
     totalActiveHours: number;
 }
-export interface TimeSeriesData {
-    timeStamp?: string;
-    value?: number;
-    ts: number;
-}
-export interface TimeSeries {
-    metadatavalues: MetadataValue[];
-    data: TimeSeriesData[];
-}
-export interface MetricItem {
-    name: string;
-    value: MetricResponse;
-}
-export interface MetricResponse {
-    timespan: string;
-    interval: string;
-    value: MetricValue[];
-    namespace: string;
-    resourceregion: string;
-}
-export interface MetricValue {
-    id: string;
-    type: string;
-    name: MetricName;
-    displayDescription: string;
-    unit: string;
-    timeseries: TimeSeries[];
-    errorCode: string;
-}
-export interface MetricName {
-    value: string;
-    localizedValue: string;
-}
 export interface MetricsCollection {
     id: string;
     metrics: MetricsCollectionItem[];
@@ -90,19 +57,6 @@ export interface MetricsCollectionItem {
 export interface MetricsCollectionTimeSeries {
     timeStamp: string;
     value?: number;
-}
-export interface ResourceMetrics {
-    id: string;
-    metrics: MetricItem[];
-    childMetrics?: ResourceMetrics[];
-}
-export interface MetadataValue {
-    name: MetadataName;
-    value: string;
-}
-export interface MetadataName {
-    value: string;
-    localizedValue: string;
 }
 export interface ScaleProfile {
     name: string;
