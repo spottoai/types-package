@@ -19,6 +19,8 @@ export interface AzureResourcesView {
 export interface AzureResourcePortalItem {
     id: string;
     name: string;
+    subscription: string;
+    resourceGroup: string;
     label1?: string;
     label2?: string;
     label3?: string;

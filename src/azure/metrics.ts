@@ -165,14 +165,14 @@ export interface MetricsDisplay {
 }
 
 export interface MonthlyMetricsFile {
-    metadata: {
-        resourceType: string;
-        month: string;
-        lastUpdated: string;
-        totalResources: number;
-        metricsCollected: string[];
-    };
-    metrics: AzureResourceMetrics[];
+  metadata: {
+    resourceType: string;
+    month: string;
+    lastUpdated: string;
+    totalResources: number;
+    metricsCollected: string[];
+  };
+  metrics: AzureResourceMetrics[];
 }
 
 export interface AzureResourceMetrics {
@@ -182,9 +182,9 @@ export interface AzureResourceMetrics {
 }
 
 export interface AzureMetricValue {
-  name: string
-  label: string
-  collection: string
+  name: string;
+  label: string;
+  collection: string;
   unit: string;
   timeseries: AzureTimeSeries[];
 }
