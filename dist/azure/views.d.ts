@@ -1,0 +1,84 @@
+import { ActivityLog, MonthSummary } from './common.js';
+import { DisplayMetric, MetricsDefinition } from './metrics.js';
+import { CostSummaryDetails } from './prices.js';
+import { AzureRecommendationLite, Recommendation } from './recommendations.js';
+import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
+export interface AzureDashboardView {
+    subscription: SubscriptionSummary;
+    timestamp: string;
+    costStartDate?: number;
+    costEndDate?: number;
+    calendarSummary?: MonthSummary;
+    billingPeriodSummary?: MonthSummary;
+}
+export interface AzureResourcesView {
+    subscription: SubscriptionSummaryLite;
+    timestamp: string;
+    resources: AzureResourcePortalItem[];
+}
+export interface AzureResourcePortalItem {
+    id: string;
+    name: string;
+    subscription: string;
+    resourceGroup: string;
+    label1?: string;
+    label2?: string;
+    label3?: string;
+    sku?: string;
+    serviceName?: string;
+    icon?: string;
+    description?: string;
+    product?: string;
+    type: string;
+    location: string;
+    spend: number;
+    spendAmortized: number;
+    recommendations: AzureRecommendationLite[];
+}
+export interface AzureResourcePluginView {
+    currency: string;
+    currencySymbol: string;
+    timestamp: string;
+    resources: AzureResourcePluginItem[];
+    costStartDate?: number;
+    costEndDate?: number;
+}
+export interface AzureResourcePluginItem {
+    id: string;
+    name: string;
+    type: string;
+    location: string;
+    recommendations?: Recommendation[];
+    cost?: CostSummaryDetails;
+    metrics?: DisplayMetric[];
+    activityLogs?: ActivityLog[];
+}
+export interface AzureResourcePluginItemDetailed {
+    currency: string;
+    currencySymbol: string;
+    location: string;
+    costStartDate?: number;
+    costEndDate?: number;
+    timestamp: string;
+    id: string;
+    companyId?: string;
+    type: string;
+    name: string;
+    recommendations?: Recommendation[];
+    cost?: CostSummaryDetails;
+    metrics?: DisplayMetric[];
+    activityLogs?: ActivityLog[];
+    properties?: Record<string, string>;
+    metricsDefinitions?: MetricsDefinition[];
+}
+export interface AzurePluginResourcesLite {
+    currency: string;
+    resources: AzurePluginResourceLite[];
+}
+export interface AzurePluginResourceLite {
+    resourceId: string;
+    spend: number;
+    amortizedSpend: number;
+    recommendations: AzureRecommendationLite[];
+}
+//# sourceMappingURL=views.d.ts.map
