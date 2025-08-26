@@ -69,6 +69,7 @@ export interface AzureResourcePluginItemDetailed {
   costEndDate?: number;
   timestamp: string;
   id: string;
+  companyId?: string; // Added to help identify the company
   type: string;
   name: string;
   recommendations?: Recommendation[];
