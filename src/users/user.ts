@@ -27,3 +27,7 @@ export interface UserProfile extends BaseUser {
 export interface test {
   test: string;
 }
+
+export interface test2 {
+     test2: string;
+}
