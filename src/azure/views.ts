@@ -76,6 +76,8 @@ export interface AzureResourcePluginItemDetailed {
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;
   metricsDefinitions?: MetricsDefinition[];
+  subscription: string;
+  resourceGroup: string;
 }
 
 export interface AzurePluginResourcesLite {
