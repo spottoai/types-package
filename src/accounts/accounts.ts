@@ -30,4 +30,5 @@ export interface SubscriptionAccount {
   currency?: string;
   currencySymbol?: string;
   foundCurrency?: boolean;
+  ready?: boolean;
 }
