@@ -1,6 +1,9 @@
 echo "🎨 Formatting code with Prettier..."
 npm run format
 
+echo "📝 Re-adding formatted files..."
+git add .
+
 echo "🔍 Running lint checks..."
 npm run lint
 

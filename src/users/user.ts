@@ -25,5 +25,5 @@ export interface UserProfile extends BaseUser {
 }
 
 export interface abc {
-  a:string
+  a: string;
 }
