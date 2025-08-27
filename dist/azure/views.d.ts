@@ -70,6 +70,8 @@ export interface AzureResourcePluginItemDetailed {
     activityLogs?: ActivityLog[];
     properties?: Record<string, string>;
     metricsDefinitions?: MetricsDefinition[];
+    subscription: string; // e.g. "Demo Subscription"
+    resourceGroup: string; // e.g. "my-resource-group"
 }
 export interface AzurePluginResourcesLite {
     currency: string;

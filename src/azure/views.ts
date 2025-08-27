@@ -24,8 +24,6 @@ export interface AzureResourcesView {
 export interface AzureResourcePortalItem {
   id: string; // e.g. "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-app-service"
   name: string; // e.g. "my-app-service"
-  subscription: string; // e.g. "Demo Subscription"
-  resourceGroup: string; // e.g. "my-resource-group"
   label1?: string; // e.g. Linux or Windows
   label2?: string; // e.g. 2 Cores, 4 GB RAM
   label3?: string;
