@@ -23,6 +23,7 @@ export interface CompanySubscription {
   currency?: string;
   currencySymbol?: string;
   foundCurrency?: boolean;
+  ready?: boolean;
 }
 
 export interface SubscriptionSummary {
