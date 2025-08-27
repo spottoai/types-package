@@ -1,3 +1,6 @@
+echo "🎨 Formatting code with Prettier..."
+npm run format
+
 echo "🔍 Running lint checks..."
 npm run lint
 
