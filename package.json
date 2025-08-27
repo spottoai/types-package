@@ -44,11 +44,11 @@
     "typescript": ">=4.0.0"
   },
   "lint-staged": {
-    "*.{ts,js}": [
-      "eslint --fix",
+    "*.ts": [
+      "eslint --cache --fix",
       "prettier --write"
     ],
-    "*.{json,md}": [
+    "*.{js,json,md}": [
       "prettier --write"
     ]
   }
