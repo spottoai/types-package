@@ -1,4 +1,7 @@
-echo "🔍 Running lint checks..."
+echo "🔧 Auto-fixing lint issues..."
+npm run lint:fix
+
+echo "🔍 Running final lint check..."
 npm run lint
 
 echo "✅ Pre-commit checks passed!"
