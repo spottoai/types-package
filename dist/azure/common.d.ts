@@ -8,6 +8,11 @@ export interface MonthSummaryEntry {
     costAmortized?: number;
     startDate?: string;
     endDate?: string;
+    resourceTypes: {
+        name: string;
+        cost: number;
+        costAmortized?: number;
+    }[];
 }
 export interface MonthSummary {
     entries: MonthSummaryEntry[];

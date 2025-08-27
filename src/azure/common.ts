@@ -9,6 +9,11 @@ export interface MonthSummaryEntry {
   costAmortized?: number; // sum of costAmortized for the month
   startDate?: string; // YYYY-MM format - start date of billing period
   endDate?: string; // YYYY-MM format - end date of billing period
+  resourceTypes: { // Top resources by cost
+    name: string; // e.g. "Virtual Machines"
+    cost: number; // e.g. 100
+    costAmortized?: number; // e.g. 100
+  }[];
 }
 
 export interface MonthSummary {
