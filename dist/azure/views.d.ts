@@ -19,8 +19,6 @@ export interface AzureResourcesView {
 export interface AzureResourcePortalItem {
     id: string;
     name: string;
-    subscription: string;
-    resourceGroup: string;
     label1?: string;
     label2?: string;
     label3?: string;
@@ -70,8 +68,6 @@ export interface AzureResourcePluginItemDetailed {
     activityLogs?: ActivityLog[];
     properties?: Record<string, string>;
     metricsDefinitions?: MetricsDefinition[];
-    subscription: string; // e.g. "Demo Subscription"
-    resourceGroup: string; // e.g. "my-resource-group"
 }
 export interface AzurePluginResourcesLite {
     currency: string;
