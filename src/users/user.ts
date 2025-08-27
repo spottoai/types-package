@@ -29,5 +29,5 @@ export interface test {
 }
 
 export interface test2 {
-     test2: string;
+  test2: string;
 }
