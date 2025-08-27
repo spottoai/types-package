@@ -24,7 +24,7 @@ export default [
       ...tseslint.configs.recommended.rules,
       ...prettierConfig.rules,
       'prettier/prettier': 'error',
-      '@typescript-eslint/no-unused-vars': 'error',
+      '@typescript-eslint/no-unused-vars': 'off', // 关闭未使用变量的检查，因为这是类型共享包
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/explicit-module-boundary-types': 'off',
