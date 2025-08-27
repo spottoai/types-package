@@ -24,14 +24,10 @@ export interface UserProfile extends BaseUser {
   newRecommendationsNotify: boolean;
 }
 
-interface type4 {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
 interface type5 {
   id: string;
+            name: string;
+  description: string;
+            createdAt: string;
+  updatedAt: string;
 }
