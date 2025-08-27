@@ -23,11 +23,3 @@ export interface UserProfile extends BaseUser {
   monthlyReportsEnabled: boolean;
   newRecommendationsNotify: boolean;
 }
-
-export interface test {
-  test: string;
-}
-
-export interface test2 {
-  test2: string;
-}
