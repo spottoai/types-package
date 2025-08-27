@@ -23,11 +23,3 @@ export interface UserProfile extends BaseUser {
   monthlyReportsEnabled: boolean;
   newRecommendationsNotify: boolean;
 }
-
-interface type5 {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-}
