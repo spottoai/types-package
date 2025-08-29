@@ -4,8 +4,11 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 export interface CostDetails {
   dailySpend?: ResourceSpend[]; // the amount spend on the resource over the last 30 days
   spendSummary?: ResourceSpend[]; // the spend items aggregated for the last 30 days
+  spendSummaryPrevious?: ResourceSpend[]; // the spend items aggregated for the previous 30 days
   totalSpend30Days?: number; // the total amount spend on the resource over the last 30 days
+  totalSpend30DaysPrevious?: number; // the total amount spend on the resource over the previous 30 days
   totalSpend30DaysAmortized?: number; // the total amount spend on the resource over the last 30 days, taking into account reserved instances and savings plans
+  totalSpend30DaysAmortizedPrevious?: number; // the total amount spend on the resource over the previous 30 days, taking into account reserved instances and savings plans
   retailPrices?: AzurePrice[];
 }
 

@@ -3,8 +3,11 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 export interface CostDetails {
     dailySpend?: ResourceSpend[];
     spendSummary?: ResourceSpend[];
+    spendSummaryPrevious?: ResourceSpend[];
     totalSpend30Days?: number;
+    totalSpend30DaysPrevious?: number;
     totalSpend30DaysAmortized?: number;
+    totalSpend30DaysAmortizedPrevious?: number;
     retailPrices?: AzurePrice[];
 }
 export interface AzurePrice {
