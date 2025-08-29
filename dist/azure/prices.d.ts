@@ -54,7 +54,9 @@ export interface SavingsPlan {
 }
 export interface CostSummaryDetails {
     total?: number;
+    totalPrevious?: number;
     amortizedTotal?: number;
+    amortizedTotalPrevious?: number;
     items?: ResourceCostSummary[];
 }
 export interface ResourceCostSummary {

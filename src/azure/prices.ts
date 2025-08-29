@@ -57,8 +57,10 @@ export interface SavingsPlan {
 }
 
 export interface CostSummaryDetails {
-  total?: number;
-  amortizedTotal?: number;
+  total?: number; // Last 30 days
+  totalPrevious?: number; // Total cost in the previous 30 days
+  amortizedTotal?: number; // Last 30 days, taking into account reserved instances and savings plans
+  amortizedTotalPrevious?: number; // Total cost in the previous 30 days, taking into account reserved instances and savings plans
   items?: ResourceCostSummary[];
 }
 
