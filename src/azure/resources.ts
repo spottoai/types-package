@@ -6,7 +6,7 @@ export interface ResourcesByType {
   spendPreviousBilling?: number; // total spend in the previous billing period
   spendPreviousBillingAmortized?: number;
   spend30Days?: number; // total spend over the last 30 days
-  spend30DaysAmortized?:number;
+  spend30DaysAmortized?: number;
   spendPrevious30Days?: number; // total spend over the previous 30 days
   spendPrevious30DaysAmortized?: number;
   spend7Days?: number; // total spend over the last 7 days
@@ -23,7 +23,7 @@ export interface ResourceByLocation {
   spendPreviousBilling?: number; // total spend in the previous billing period
   spendPreviousBillingAmortized?: number;
   spend30Days?: number; // total spend over the last 30 days
-  spend30DaysAmortized?:number;
+  spend30DaysAmortized?: number;
   spendPrevious30Days?: number; // total spend over the previous 30 days
   spendPrevious30DaysAmortized?: number;
   spend7Days?: number; // total spend over the last 7 days
