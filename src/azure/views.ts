@@ -80,8 +80,10 @@ export interface AzureResourcePluginItemDetailed {
   resourceGroup: string;
 }
 
+// This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page)
 export interface AzurePluginResourcesLite {
   currency: string;
+  currencySymbol: string;
   resources: AzurePluginResourceLite[];
 }
 

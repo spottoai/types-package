@@ -73,6 +73,7 @@ export interface AzureResourcePluginItemDetailed {
 }
 export interface AzurePluginResourcesLite {
     currency: string;
+    currencySymbol: string;
     resources: AzurePluginResourceLite[];
 }
 export interface AzurePluginResourceLite {
