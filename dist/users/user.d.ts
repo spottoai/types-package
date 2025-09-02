@@ -21,4 +21,7 @@ export interface UserProfile extends BaseUser {
     monthlyReportsEnabled: boolean;
     newRecommendationsNotify: boolean;
 }
+export interface UserInviteLink {
+    link: string;
+}
 //# sourceMappingURL=user.d.ts.map
