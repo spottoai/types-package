@@ -41,7 +41,7 @@ export interface LogAnalyticsTable {
         name: string;
         type: string;
     }>;
-    rows: any[][];
+    rows: unknown[][];
 }
 export interface ActivityLog {
     caller: string;

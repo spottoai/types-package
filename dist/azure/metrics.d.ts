@@ -65,7 +65,10 @@ export interface MetricTrigger {
     timeAggregation: string;
     operator: string;
     threshold: number;
-    dimensions: any[];
+    dimensions: Array<{
+        name: string;
+        value: string;
+    }>;
     dividePerInstance: boolean;
 }
 export interface ScaleAction {
