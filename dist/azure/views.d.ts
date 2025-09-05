@@ -82,5 +82,6 @@ export interface AzurePluginResourceLite {
     spend: number;
     amortizedSpend: number;
     recommendations: AzureRecommendationLite[];
+    customRecommendations: AzureRecommendationLite[];
 }
 //# sourceMappingURL=views.d.ts.map

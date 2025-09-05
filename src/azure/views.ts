@@ -93,4 +93,5 @@ export interface AzurePluginResourceLite {
   spend: number; // Total spend over the last 30 days
   amortizedSpend: number; // Total amortized spend over the last 30 days
   recommendations: AzureRecommendationLite[];
+  customRecommendations: AzureRecommendationLite[]; // Spotto recommendations
 }
