@@ -32,6 +32,7 @@ export interface AzureResourcePortalItem {
     spend: number;
     spendAmortized: number;
     recommendations: AzureRecommendationLite[];
+    customRecommendations: AzureRecommendationLite[];
 }
 export interface AzureResourcePluginView {
     currency: string;
