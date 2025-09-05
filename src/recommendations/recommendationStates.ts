@@ -29,4 +29,4 @@ export interface Comment {
   comment: string;
   userId: string;
   createdAt: Date;
-}  
+}
