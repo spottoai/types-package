@@ -14,6 +14,7 @@ export interface RecommendationState {
     flagged: boolean;
     comments: Comment[];
     history: RecommendationHistory[];
+    custom: boolean;
 }
 export interface RecommendationHistory {
     userId: string;

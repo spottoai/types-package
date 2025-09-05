@@ -16,6 +16,7 @@ export interface RecommendationState {
   flagged: boolean; // true if the recommendation is flagged
   comments: Comment[];
   history: RecommendationHistory[];
+  custom: boolean;
 }
 
 export interface RecommendationHistory {
