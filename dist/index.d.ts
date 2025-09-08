@@ -7,6 +7,7 @@ export * from './azure/prices';
 export * from './azure/recommendations';
 export * from './azure/recommendationState';
 export * from './azure/resources';
+export * from './azure/reports';
 export * from './azure/subscriptions';
 export * from './azure/views';
 export * from './accounts';
