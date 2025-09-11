@@ -79,6 +79,7 @@ export interface ResourceCostSummary {
   quantity: number; // e.g. 217.21 (rounded to 2 decimal places)
   dates?: ActiveDates[]; // e.g. [ { startDate: 20250601, endDate: 20250610 } ]
   unitPrice: string; // e.g. 0.304140 1/Hour
+  unitPriceAmortized: string; // e.g. 0.304140 1/Hour
   monthlyPrice?: number; // e.g. 730.00 (rounded to 2 decimal places)
   retailDiscount: string; // e.g. -4%
   retailCost?: RetailCostSummary;

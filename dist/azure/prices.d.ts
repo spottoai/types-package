@@ -74,6 +74,7 @@ export interface ResourceCostSummary {
     quantity: number;
     dates?: ActiveDates[];
     unitPrice: string;
+    unitPriceAmortized: string;
     monthlyPrice?: number;
     retailDiscount: string;
     retailCost?: RetailCostSummary;
