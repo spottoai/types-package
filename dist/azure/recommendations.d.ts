@@ -4,6 +4,7 @@ export declare enum RecommendationCategory {
     Performance = "Performance",
     Reliability = "Reliability",
     Security = "Security",
+    Compliance = "Compliance",
     OperationalExcellence = "OperationalExcellence",
     OperationalExcellenceAlternative = "Operational Excellence"
 }

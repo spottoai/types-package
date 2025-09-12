@@ -3,7 +3,7 @@ export interface RecommendationState {
     recommendationId: string;
     subscriptionId: string;
     companyId: string;
-    category: 'Cost' | 'Performance' | 'Security' | 'Reliability' | 'Operational Excellence';
+    category: 'Cost' | 'Performance' | 'Security' | 'Compliance' | 'Reliability' | 'Operational Excellence';
     impact: 'High' | 'Medium' | 'Low';
     effort: 'High' | 'Medium' | 'Low';
     read: boolean;

@@ -5,6 +5,7 @@ export enum RecommendationCategory {
   Performance = 'Performance',
   Reliability = 'Reliability',
   Security = 'Security',
+  Compliance = 'Compliance',
   OperationalExcellence = 'OperationalExcellence',
   OperationalExcellenceAlternative = 'Operational Excellence',
 }
@@ -74,7 +75,7 @@ export interface RecommendationCollection {
 }
 
 export interface AzureRecommendationLite {
-  category: string; // e.g. Cost, Performance, Reliability, Security, OperationalExcellence, Operational Excellence, HighAvailability
+  category: string; // e.g. Cost, Performance, Reliability, Security, Compliance, OperationalExcellence, Operational Excellence, HighAvailability
   total: number;
   high: number;
   medium: number;
