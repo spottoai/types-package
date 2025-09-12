@@ -22,6 +22,8 @@ export interface DecompositionTree {
     totalSpendAmortized?: number;
     totalSpendPrevious?: number;
     totalSpendAmortizedPrevious?: number;
+    currency: string;
+    currencySymbol: string;
 }
 export interface DecompositionTreeEntry {
     period: string;
