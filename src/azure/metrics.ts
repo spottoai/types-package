@@ -132,7 +132,7 @@ export interface MetricPlotMetric {
   name: string; // e.g. CPU Utilization
   description: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
   details: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
-  alerts: AlertCondition[];
+  alerts: MetricAlert[];
   stats: MetricStats;
 }
 

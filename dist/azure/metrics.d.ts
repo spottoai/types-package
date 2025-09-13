@@ -120,7 +120,7 @@ export interface MetricPlotMetric {
     name: string;
     description: string;
     details: string;
-    alerts: AlertCondition[];
+    alerts: MetricAlert[];
     stats: MetricStats;
 }
 export interface MetricsDefinition {
