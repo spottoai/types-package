@@ -109,6 +109,20 @@ export interface AlertCondition {
     expression: string;
     description: string;
 }
+export interface MetricPlot {
+    title: string;
+    name: string;
+    priority: number;
+    reasoning: string;
+    metrics: MetricPlotMetric[];
+}
+export interface MetricPlotMetric {
+    name: string;
+    description: string;
+    details: string;
+    alerts: AlertCondition[];
+    stats: MetricStats;
+}
 export interface MetricsDefinition {
     name: string;
     metricName: string;

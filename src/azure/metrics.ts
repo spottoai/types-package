@@ -120,6 +120,22 @@ export interface AlertCondition {
   description: string;
 }
 
+export interface MetricPlot {
+  title: string; // e.g. "CPU and Memory Utilization"
+  name: string; // name of the metric plot filename such as cpupercentage_memorypercentage
+  priority: number; // order of the metric plot
+  reasoning: string; // reasoning of the metric plot
+  metrics: MetricPlotMetric[];
+}
+
+export interface MetricPlotMetric {
+  name: string; // e.g. CPU Utilization
+  description: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
+  details: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
+  alerts: AlertCondition[];
+  stats: MetricStats;
+}
+
 export interface MetricsDefinition {
   name: string;
   metricName: string;
