@@ -153,6 +153,7 @@ export interface MetricDescription {
     alertConditions: AlertCondition[];
 }
 export interface MetricsDisplay {
+    name: string;
     metrics: string[];
     title: string;
     yAxisTitle: string;

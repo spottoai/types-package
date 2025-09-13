@@ -169,6 +169,7 @@ export interface MetricDescription {
 }
 
 export interface MetricsDisplay {
+  name: string;
   metrics: string[];
   title: string;
   yAxisTitle: string;
