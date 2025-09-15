@@ -17,6 +17,7 @@ export interface AzureResourcesView {
   subscription: SubscriptionSummaryLite;
   timestamp: string;
   resources: AzureResourcePortalItem[];
+  tags?: Record<string, string>; // e.g. { "environment": "production", "team": "devops" }
 }
 
 // Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
