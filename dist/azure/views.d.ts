@@ -15,7 +15,7 @@ export interface AzureResourcesView {
     subscription: SubscriptionSummaryLite;
     timestamp: string;
     resources: AzureResourcePortalItem[];
-    tags?: Record<string, string>;
+    tags?: Record<string, string[]>;
 }
 export interface AzureResourcePortalItem {
     id: string;
