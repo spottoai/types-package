@@ -46,6 +46,23 @@ export interface RecommendationSummary {
   low: number;
 }
 
+export interface RecommendationWithResources {
+  recommendation: Recommendation;
+  resources: RecommendationResource[];
+}
+
+export interface RecommendationResource {
+  id: string;
+  name: string;
+  type: string;
+  spend: number;
+  spendAmortized: number;
+}
+
+export interface RecommendationsView {
+  recommendations: RecommendationWithResources[];
+}
+
 export interface ResourceId {
   id: string;
 }
