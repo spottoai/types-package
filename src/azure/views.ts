@@ -39,7 +39,7 @@ export interface AzureResourcePortalItem {
   recommendations: AzureRecommendationLite[];
   customRecommendations: AzureRecommendationLite[]; // Spotto recommendations
   tags?: Record<string, string>; // e.g. { "environment": "production", "team": "devops" }
-  createdTime: number; // e.g. 1715769600000 (Unix timestamp in milliseconds)
+  createdTime?: number; // e.g. 1715769600000 (Unix timestamp in milliseconds)
 }
 
 export interface AzureResourcePluginView {

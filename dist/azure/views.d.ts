@@ -34,7 +34,7 @@ export interface AzureResourcePortalItem {
     recommendations: AzureRecommendationLite[];
     customRecommendations: AzureRecommendationLite[];
     tags?: Record<string, string>;
-    createdTime: number;
+    createdTime?: number;
 }
 export interface AzureResourcePluginView {
     currency: string;
