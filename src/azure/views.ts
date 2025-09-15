@@ -38,6 +38,7 @@ export interface AzureResourcePortalItem {
   spendAmortized: number; // Total spend over the last 30 days, taking into account reserved instances and savings plans
   recommendations: AzureRecommendationLite[];
   customRecommendations: AzureRecommendationLite[]; // Spotto recommendations
+  tags?: Record<string, string>; // e.g. { "environment": "production", "team": "devops" }
 }
 
 export interface AzureResourcePluginView {

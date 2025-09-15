@@ -33,6 +33,7 @@ export interface AzureResourcePortalItem {
     spendAmortized: number;
     recommendations: AzureRecommendationLite[];
     customRecommendations: AzureRecommendationLite[];
+    tags?: Record<string, string>;
 }
 export interface AzureResourcePluginView {
     currency: string;
