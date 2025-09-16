@@ -36,6 +36,8 @@ export interface Recommendation {
   solution?: string;
   source?: string;
   service?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface RecommendationSummary {
