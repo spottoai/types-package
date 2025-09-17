@@ -36,8 +36,9 @@ export interface Recommendation {
   solution?: string;
   source?: string;
   service?: string;
-  createdAt?: Date;
-  updatedAt?: Date;
+  // need to be string to be store in json
+  createdTime?: string; // need to have different name to avoid conflict with createdAt with RecommendationWithState
+  lastUpdatedTime?: string; // need to have different name to avoid conflict with updatedAt with RecommendationWithState
 }
 
 export interface RecommendationSummary {
