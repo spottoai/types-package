@@ -28,6 +28,11 @@ export interface Recommendation {
     potentialBenefits?: string;
     effort?: string;
     costImpact?: number;
+    costImpactDetails?: {
+        name: string;
+        monthlySavings: number;
+        savingPercentage: number;
+    };
     performanceImpact?: number;
     confidencePercentage?: number;
     resources?: ResourceReference[];

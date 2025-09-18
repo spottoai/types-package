@@ -1,4 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
+import {TargetCostSummary} from "./prices";
 
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -26,7 +27,12 @@ export interface Recommendation {
   considerations?: string;
   potentialBenefits?: string;
   effort?: string;
-  costImpact?: number;
+  costImpact?: number; // Could deprecate later
+  costImpactDetails?: {
+    name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
+    monthlySavings: number;
+    savingPercentage: number; // e.g. 20 for 20%
+  };
   performanceImpact?: number;
   confidencePercentage?: number;
   resources?: ResourceReference[]; // array of resources that have this recommendation
