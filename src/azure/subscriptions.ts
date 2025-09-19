@@ -44,6 +44,7 @@ export interface SubscriptionSummary {
 }
 
 export interface Subscription {
+  companyId: string;
   tenantId: string;
   tenantSubscriptionIds: string[];
   subscriptionId: string;

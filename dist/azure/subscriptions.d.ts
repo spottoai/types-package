@@ -40,6 +40,7 @@ export interface SubscriptionSummary {
     miscCost?: MiscCost;
 }
 export interface Subscription {
+    companyId: string;
     tenantId: string;
     tenantSubscriptionIds: string[];
     subscriptionId: string;
