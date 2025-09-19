@@ -3,6 +3,7 @@ import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 export interface SubscriptionSummaryLite {
+    companyId: string;
     tenantId: string;
     subscriptionId: string;
     displayName: string;
@@ -24,6 +25,7 @@ export interface CompanySubscription {
     ready?: boolean;
 }
 export interface SubscriptionSummary {
+    companyId: string;
     tenantId: string;
     subscriptionId: string;
     displayName: string;

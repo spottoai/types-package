@@ -4,6 +4,7 @@ import { Recommendation, RecommendationStats, RecommendationSummary } from './re
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 
 export interface SubscriptionSummaryLite {
+  companyId: string;
   tenantId: string;
   subscriptionId: string;
   displayName: string;
@@ -27,6 +28,7 @@ export interface CompanySubscription {
 }
 
 export interface SubscriptionSummary {
+  companyId: string;
   tenantId: string;
   subscriptionId: string;
   displayName: string;
