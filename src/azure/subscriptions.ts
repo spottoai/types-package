@@ -89,6 +89,7 @@ export interface SubscriptionHistoryItem {
   recommendations: RecommendationStats;
   recommendationsUnique: RecommendationStats;
   recommendationsCustom: RecommendationStats;
+  recommendationSummary: RecommendationSummary[];
 }
 
 export interface SubscriptionPolicies {

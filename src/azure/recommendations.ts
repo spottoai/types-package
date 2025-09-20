@@ -1,5 +1,4 @@
 import { Comment, RecommendationHistory } from './recommendationState';
-import {TargetCostSummary} from "./prices";
 
 export enum RecommendationCategory {
   Cost = 'Cost',
