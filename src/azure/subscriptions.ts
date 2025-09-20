@@ -83,6 +83,7 @@ export interface SubscriptionHistory {
 }
 
 export interface SubscriptionHistoryItem {
+  date: number; // 20250520
   secureScore: number;
   resourcesTotal: number;
   recommendations: RecommendationStats;

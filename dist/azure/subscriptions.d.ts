@@ -76,6 +76,7 @@ export interface SubscriptionHistory {
     history: SubscriptionHistoryItem[];
 }
 export interface SubscriptionHistoryItem {
+    date: number;
     secureScore: number;
     resourcesTotal: number;
     recommendations: RecommendationStats;
