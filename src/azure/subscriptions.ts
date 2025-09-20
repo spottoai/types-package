@@ -76,6 +76,20 @@ export interface SubscriptionStats {
   spendPrevious7DaysAmortized?: number;
 }
 
+export interface SubscriptionHistory {
+  subscriptionId: string;
+  displayName: string;
+  history: SubscriptionHistoryItem[];
+}
+
+export interface SubscriptionHistoryItem {
+  secureScore: number;
+  resourcesTotal: number;
+  recommendations: RecommendationStats;
+  recommendationsUnique: RecommendationStats;
+  recommendationsCustom: RecommendationStats;
+}
+
 export interface SubscriptionPolicies {
   locationPlacementId: string;
   quotaId: string;
