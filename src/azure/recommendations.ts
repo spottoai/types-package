@@ -26,14 +26,18 @@ export interface Recommendation {
   considerations?: string;
   potentialBenefits?: string;
   effort?: string;
+  effortReason?: string;
   costImpact?: number; // Could deprecate later
+  costImpactReason?: string;
   costImpactDetails?: {
     name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
     monthlySavings: number;
     savingPercentage: number; // e.g. 20 for 20%
   };
   performanceImpact?: number;
+  performanceImpactReason?: string;
   confidencePercentage?: number;
+  confidenceReason?: string;
   resources?: ResourceReference[]; // array of resources that have this recommendation
 
   // Deprecated fields, kept for compatibility

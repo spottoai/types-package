@@ -27,14 +27,18 @@ export interface Recommendation {
     considerations?: string;
     potentialBenefits?: string;
     effort?: string;
+    effortReason?: string;
     costImpact?: number;
+    costImpactReason?: string;
     costImpactDetails?: {
         name: string;
         monthlySavings: number;
         savingPercentage: number;
     };
     performanceImpact?: number;
+    performanceImpactReason?: string;
     confidencePercentage?: number;
+    confidenceReason?: string;
     resources?: ResourceReference[];
     subcategory?: string;
     solution?: string;
