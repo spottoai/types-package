@@ -20,6 +20,7 @@ export interface Recommendation {
     description?: string;
     remediation?: string;
     impact: string;
+    impactReason?: string;
     links?: {
         name: string;
         url: string;
