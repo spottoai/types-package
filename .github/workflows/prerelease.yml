@@ -1,0 +1,86 @@
+name: Prerelease and Publish
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    types: [ closed ]
+    branches: [ main ]
+  workflow_dispatch: # 允许手动触发
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+    
+    # Only execute when PR is merged to main branch
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Fetch full history for version comparison
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Build project
+      run: npm run build
+    
+    - name: Configure Git
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+    
+    - name: Bump prerelease version
+      id: version-bump
+      run: |
+        # Get current version
+        CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+        echo "Current version: $CURRENT_VERSION"
+        
+        # Check if it's already a prerelease version
+        if [[ $CURRENT_VERSION == *"-"* ]]; then
+          # If it's already a prerelease version, increment the prerelease number
+          NEW_VERSION=$(npm version prerelease --preid=beta --no-git-tag-version)
+        else
+          # If it's not a prerelease version, create the first prerelease version
+          NEW_VERSION=$(npm version prerelease --preid=beta --no-git-tag-version)
+        fi
+        
+        echo "New version: $NEW_VERSION"
+        echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+        
+        # Commit version changes
+        git add package.json package-lock.json
+        git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+        git push origin main
+    
+    - name: Publish to npm
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    
+    - name: Create Git tag
+      run: |
+        git tag ${{ steps.version-bump.outputs.new_version }}
+        git push origin ${{ steps.version-bump.outputs.new_version }}
+    
+    - name: Summary
+      run: |
+        echo "✅ Successfully published version ${{ steps.version-bump.outputs.new_version }} to npm"
+        echo "📦 Package: @spottoai/types-package"
+        echo "🏷️  Tag: ${{ steps.version-bump.outputs.new_version }}"
