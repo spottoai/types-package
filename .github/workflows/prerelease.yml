@@ -58,10 +58,10 @@ jobs:
         # Check if it's already a prerelease version
         if [[ $CURRENT_VERSION == *"-"* ]]; then
           # If it's already a prerelease version, increment the prerelease number
-          NEW_VERSION=$(npm version prerelease --preid=beta --no-git-tag-version)
+          NEW_VERSION=$(npm version prerelease --no-git-tag-version)
         else
           # If it's not a prerelease version, create the first prerelease version
-          NEW_VERSION=$(npm version prerelease --preid=beta --no-git-tag-version)
+          NEW_VERSION=$(npm version prerelease --no-git-tag-version)
         fi
         
         echo "New version: $NEW_VERSION"
