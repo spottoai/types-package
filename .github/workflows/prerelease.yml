@@ -11,6 +11,9 @@ on:
 jobs:
   prerelease:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     
     # Only execute when PR is merged to main branch
     if: |
@@ -67,7 +70,7 @@ jobs:
         # Commit version changes
         git add package.json package-lock.json
         git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-        git push origin main
+        git push origin HEAD:main
     
     - name: Publish to npm
       run: npm publish --access public
