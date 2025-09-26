@@ -29,6 +29,8 @@ export interface Recommendation {
     potentialBenefits?: string;
     effort?: string;
     effortReason?: string;
+    risk?: string;
+    riskReason?: string;
     costImpact?: number;
     costImpactReason?: string;
     costImpactDetails?: {

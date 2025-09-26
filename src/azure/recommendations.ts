@@ -28,6 +28,8 @@ export interface Recommendation {
   potentialBenefits?: string;
   effort?: string;
   effortReason?: string;
+  risk?: string;
+  riskReason?: string;
   costImpact?: number; // Could deprecate later
   costImpactReason?: string;
   costImpactDetails?: {
