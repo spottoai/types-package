@@ -74,6 +74,7 @@ export interface AzureResourcePluginItemDetailed {
     plots?: MetricPlot[];
     subscription: string;
     resourceGroup: string;
+    tags?: Record<string, string>;
 }
 export interface AzurePluginResourcesLite {
     currency: string;

@@ -82,6 +82,7 @@ export interface AzureResourcePluginItemDetailed {
   plots?: MetricPlot[];
   subscription: string;
   resourceGroup: string;
+  tags?: Record<string, string>;
 }
 
 // This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page)
