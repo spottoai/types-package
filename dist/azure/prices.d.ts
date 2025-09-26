@@ -65,6 +65,7 @@ export interface CostSummaryDetails {
 export interface ResourceCostSummary {
     label1: string;
     label2: string;
+    label3?: string;
     category?: string;
     specs: SpecItem[];
     reservation?: string;
