@@ -67,6 +67,14 @@ export interface CostSummaryDetails {
   items?: ResourceCostSummary[];
 }
 
+export interface CostCategory {
+  name: string; // e.g., "Bandwidth Cost", "Disk Storage Cost", "Virtual Network Cost", "Security Cost"
+  totalSpend: number;
+  totalSpendAmortized: number;
+  items: ResourceCostSummary[]; // Individual items in this category
+  subCategories?: CostCategory[]; // Optional nested subcategories
+}
+
 export interface ResourceCostSummary {
   label1: string; // e.g. "Basic Plan (B2 App)"
   label2: string; // e.g. "Azure App Service"
@@ -85,6 +93,9 @@ export interface ResourceCostSummary {
   retailCost?: RetailCostSummary;
   dailyMetrics?: DailyMetrics[];
   summaryMetrics?: DisplayMetric[];
+  resourceId?: string; // Reference to the actual Azure resource
+  resourceName?: string; // Human-readable resource name
+  resourceType?: string; // Azure resource type
 }
 
 export interface RetailCostSummary {
