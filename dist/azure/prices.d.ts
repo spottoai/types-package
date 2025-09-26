@@ -62,16 +62,10 @@ export interface CostSummaryDetails {
     amortizedTotalPrevious?: number;
     items?: ResourceCostSummary[];
 }
-export interface CostCategory {
-    name: string;
-    totalSpend: number;
-    totalSpendAmortized: number;
-    items: ResourceCostSummary[];
-    subCategories?: CostCategory[];
-}
 export interface ResourceCostSummary {
     label1: string;
     label2: string;
+    category?: string;
     specs: SpecItem[];
     reservation?: string;
     active: boolean;

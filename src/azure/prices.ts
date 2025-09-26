@@ -67,17 +67,10 @@ export interface CostSummaryDetails {
   items?: ResourceCostSummary[];
 }
 
-export interface CostCategory {
-  name: string; // e.g., "Bandwidth Cost", "Disk Storage Cost", "Virtual Network Cost", "Security Cost"
-  totalSpend: number;
-  totalSpendAmortized: number;
-  items: ResourceCostSummary[]; // Individual items in this category
-  subCategories?: CostCategory[]; // Optional nested subcategories
-}
-
 export interface ResourceCostSummary {
   label1: string; // e.g. "Basic Plan (B2 App)"
   label2: string; // e.g. "Azure App Service"
+  category?: string; // e.g. "Bandwidth", "Defender for Cloud"
   specs: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB
   reservation?: string; // name of the reservation if it's a reserved instance
   active: boolean; // e.g. true means the resource is active, false means the resource was active (old SKU)
