@@ -51,6 +51,7 @@ export interface AzurePrice {
   displayUnitPrice?: string;
   displayTotalPrice?: number;
   displayQuantity?: number;
+  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
 }
 
 export interface SavingsPlan {

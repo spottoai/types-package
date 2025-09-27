@@ -49,6 +49,7 @@ export interface AzurePrice {
     displayUnitPrice?: string;
     displayTotalPrice?: number;
     displayQuantity?: number;
+    recommendationId?: string;
 }
 export interface SavingsPlan {
     unitPrice: number;
