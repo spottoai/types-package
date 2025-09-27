@@ -108,6 +108,7 @@ export interface TargetCostSummary {
     label1: string;
     label2: string;
     label3?: string;
+    label4?: string;
     specs: SpecItem[];
     cost: number;
     savings: number;

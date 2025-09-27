@@ -116,6 +116,7 @@ export interface TargetCostSummary {
   label1: string; // e.g. "Basic Plan (B2 App)"
   label2: string; // e.g. "Azure App Service"
   label3?: string;
+  label4?: string;
   specs: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB
   cost: number; // e.g. 66.09 (rounded to 2 decimal places)
   savings: number; // e.g. 100.00 (rounded to 2 decimal places)
