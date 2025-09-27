@@ -123,6 +123,7 @@ export interface TargetCostSummary {
   monthlySavingsPercent: string; // e.g. 10%
   targetCost?: TargetCostSummary[]; // This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU)
   reservedInstances?: SavingsCostSummary[]; // This is for reserved intances if it's available
+  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
 }
 
 export interface ResourceSpend {
