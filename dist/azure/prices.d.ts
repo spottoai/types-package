@@ -67,6 +67,7 @@ export interface ResourceCostSummary {
     label1: string;
     label2: string;
     label3?: string;
+    label4?: string;
     category?: string;
     specs: SpecItem[];
     reservation?: string;
@@ -137,6 +138,7 @@ export interface ResourceSpend {
     resourceGuid: string;
     reservationName?: string;
     label?: string;
+    label2?: string;
     specs?: SpecItem[];
     displayCost?: number;
     displayQuantity?: number;

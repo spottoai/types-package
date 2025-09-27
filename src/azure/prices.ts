@@ -72,6 +72,7 @@ export interface ResourceCostSummary {
   label1: string; // e.g. "Basic Plan (B2 App)"
   label2: string; // e.g. "Azure App Service"
   label3?: string;
+  label4?: string;
   category?: string; // e.g. "Bandwidth", "Defender for Cloud"
   specs: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB
   reservation?: string; // name of the reservation if it's a reserved instance
@@ -146,6 +147,7 @@ export interface ResourceSpend {
   resourceGuid: string;
   reservationName?: string;
   label?: string;
+  label2?: string;
   specs?: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB | IOPS: 1000 | Throughput: 100MB/s
   displayCost?: number;
   displayQuantity?: number;
