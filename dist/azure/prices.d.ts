@@ -43,6 +43,7 @@ export interface AzurePrice {
     targetSavings?: number;
     targetSavingsDisplay?: string;
     targetLabel?: string;
+    targetLabel2?: string;
     subLabel?: string;
     quantity?: number;
     displayLabel?: string;
