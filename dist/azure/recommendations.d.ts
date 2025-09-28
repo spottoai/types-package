@@ -35,8 +35,12 @@ export interface Recommendation {
     costImpactReason?: string;
     costImpactDetails?: {
         name: string;
-        monthlySavings: number;
-        savingPercentage: number;
+        monthlySavings?: number;
+        savingPercentage?: number;
+        minMonthlySavings?: number;
+        maxMonthlySavings?: number;
+        minSavingPercentage?: number;
+        maxSavingPercentage?: number;
     };
     performanceImpact?: number;
     performanceImpactReason?: string;

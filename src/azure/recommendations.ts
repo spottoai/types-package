@@ -34,8 +34,12 @@ export interface Recommendation {
   costImpactReason?: string;
   costImpactDetails?: {
     name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
-    monthlySavings: number;
-    savingPercentage: number; // e.g. 20 for 20%
+    monthlySavings?: number;
+    savingPercentage?: number; // e.g. 20 for 20%
+    minMonthlySavings?: number;
+    maxMonthlySavings?: number;
+    minSavingPercentage?: number;
+    maxSavingPercentage?: number;
   };
   performanceImpact?: number;
   performanceImpactReason?: string;
