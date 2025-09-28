@@ -32,15 +32,7 @@ export interface Recommendation {
   riskReason?: string;
   costImpact?: number; // Could deprecate later
   costImpactReason?: string;
-  costImpactDetails?: {
-    name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
-    monthlySavings?: number;
-    savingPercentage?: number; // e.g. 20 for 20%
-    minMonthlySavings?: number;
-    maxMonthlySavings?: number;
-    minSavingPercentage?: number;
-    maxSavingPercentage?: number;
-  };
+  costImpactDetails?: CostImpactDetails;
   performanceImpact?: number;
   performanceImpactReason?: string;
   confidencePercentage?: number;
@@ -55,6 +47,14 @@ export interface Recommendation {
   // need to be string to be store in json
   createdTime?: string; // need to have different name to avoid conflict with createdAt with RecommendationWithState
   lastUpdatedTime?: string; // need to have different name to avoid conflict with updatedAt with RecommendationWithState
+}
+
+export interface CostImpactDetails {
+  name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
+  monthlySavings?: number;
+  savingPercentage?: number; // e.g. 20 for 20%
+  minMonthlySavings?: number;
+  maxMonthlySavings?: number;
 }
 
 export interface RecommendationSummary {

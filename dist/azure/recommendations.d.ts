@@ -33,15 +33,7 @@ export interface Recommendation {
     riskReason?: string;
     costImpact?: number;
     costImpactReason?: string;
-    costImpactDetails?: {
-        name: string;
-        monthlySavings?: number;
-        savingPercentage?: number;
-        minMonthlySavings?: number;
-        maxMonthlySavings?: number;
-        minSavingPercentage?: number;
-        maxSavingPercentage?: number;
-    };
+    costImpactDetails?: CostImpactDetails;
     performanceImpact?: number;
     performanceImpactReason?: string;
     confidencePercentage?: number;
@@ -53,6 +45,13 @@ export interface Recommendation {
     service?: string;
     createdTime?: string;
     lastUpdatedTime?: string;
+}
+export interface CostImpactDetails {
+    name: string;
+    monthlySavings?: number;
+    savingPercentage?: number;
+    minMonthlySavings?: number;
+    maxMonthlySavings?: number;
 }
 export interface RecommendationSummary {
     category: RecommendationCategory;
