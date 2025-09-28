@@ -105,6 +105,7 @@ export interface SavingsCostSummary {
 }
 export interface TargetCostSummary {
     targetLabel?: string;
+    targetLabel2?: string;
     label1: string;
     label2: string;
     label3?: string;

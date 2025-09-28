@@ -113,6 +113,7 @@ export interface SavingsCostSummary {
 
 export interface TargetCostSummary {
   targetLabel?: string; // e.g. Windows to Linux migration
+  targetLabel2?: string; // e.g. Windows to Linux migration
   label1: string; // e.g. "Basic Plan (B2 App)"
   label2: string; // e.g. "Azure App Service"
   label3?: string;
