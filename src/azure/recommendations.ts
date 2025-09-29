@@ -1,5 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
-import {SecurityImpact } from "./security";
+import { SecurityImpact } from './security';
 
 export enum RecommendationCategory {
   Cost = 'Cost',
