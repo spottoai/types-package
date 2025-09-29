@@ -1,4 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
+import {SecurityImpact } from "./security";
 
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -38,7 +39,7 @@ export interface Recommendation {
   confidencePercentage?: number;
   confidenceReason?: string;
   resources?: ResourceReference[]; // array of resources that have this recommendation
-
+  securityImpactDetails?: SecurityImpact; // only for security recommendations
   // Deprecated fields, kept for compatibility
   subcategory?: string;
   solution?: string;
