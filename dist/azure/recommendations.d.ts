@@ -1,4 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
+import { SecurityImpact } from "./security";
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -39,6 +40,7 @@ export interface Recommendation {
     confidencePercentage?: number;
     confidenceReason?: string;
     resources?: ResourceReference[];
+    securityImpactDetails?: SecurityImpact;
     subcategory?: string;
     solution?: string;
     source?: string;
