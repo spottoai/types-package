@@ -120,6 +120,7 @@ export interface TargetCostSummary {
     monthlySavingsPercent: string;
     targetCost?: TargetCostSummary[];
     reservedInstances?: SavingsCostSummary[];
+    savingsPlan?: SavingsCostSummary[];
     recommendationId?: string;
 }
 export interface ResourceSpend {
