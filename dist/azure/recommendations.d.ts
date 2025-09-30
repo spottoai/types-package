@@ -1,5 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
-import { SecurityImpact } from "./security";
+import { SecurityImpact } from './security';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -51,6 +51,7 @@ export interface Recommendation {
 export interface CostImpactDetails {
     name: string;
     monthlySavings?: number;
+    currentSpend?: number;
     savingPercentage?: number;
     minMonthlySavings?: number;
     maxMonthlySavings?: number;

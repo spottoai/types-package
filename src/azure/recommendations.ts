@@ -54,6 +54,7 @@ export interface Recommendation {
 export interface CostImpactDetails {
   name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
   monthlySavings?: number;
+  currentSpend?: number;
   savingPercentage?: number; // e.g. 20 for 20%
   minMonthlySavings?: number;
   maxMonthlySavings?: number;

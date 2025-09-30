@@ -37,6 +37,7 @@ export interface AzurePrice {
     monthlyPrice?: number;
     targetAzurePrices?: AzurePrice[];
     reservedInstances?: SavingsCostSummary[];
+    savingsPlanSummary?: SavingsCostSummary[];
     targetMonthlySavings?: number;
     targetSavingsPercent?: number;
     targetSavingsPercentDisplay?: string;
@@ -120,6 +121,7 @@ export interface TargetCostSummary {
     monthlySavingsPercent: string;
     targetCost?: TargetCostSummary[];
     reservedInstances?: SavingsCostSummary[];
+    savingsPlans?: SavingsCostSummary[];
     recommendationId?: string;
 }
 export interface ResourceSpend {

@@ -2,7 +2,7 @@ export interface SecurityImpact {
     subscriptionId: string;
     controlDisplayName: string;
     controlName: string;
-    assessmentKeys: string[];
+    recommendationIds: string[];
     notApplicableResourceCount: number;
     unhealthyResourceCount: number;
     healthyResourceCount: number;
