@@ -39,6 +39,7 @@ export interface AzurePrice {
   monthlyPrice?: number;
   targetAzurePrices?: AzurePrice[]; // Use this property to set alternative Azure pricing SKU
   reservedInstances?: SavingsCostSummary[]; // Reserved instances for this price level
+  savingsPlanSummary?: SavingsCostSummary[];
   targetMonthlySavings?: number; // Amount of money saved compared to the parent
   targetSavingsPercent?: number; // Percentage of money saved compared to the parent
   targetSavingsPercentDisplay?: string; // Show the display percent such as -10%
