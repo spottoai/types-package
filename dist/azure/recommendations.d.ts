@@ -41,6 +41,7 @@ export interface Recommendation {
     confidenceReason?: string;
     resources?: ResourceReference[];
     securityImpactDetails?: SecurityImpact;
+    resolved?: boolean;
     subcategory?: string;
     solution?: string;
     source?: string;
