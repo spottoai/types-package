@@ -41,7 +41,7 @@ export interface Recommendation {
   resources?: ResourceReference[]; // array of resources that have this recommendation
   securityImpactDetails?: SecurityImpact; // only for security recommendations
   resolved?: boolean; // whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true
-  securityAssessmentStatuses?: SecurityAssessmentStatus;
+  securityAssessmentStatuses?: SecurityAssessmentStatus[];
   // Deprecated fields, kept for compatibility
   subcategory?: string;
   solution?: string;
