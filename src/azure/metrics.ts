@@ -18,6 +18,7 @@ export interface MetricSummary {
   average: number;
   peak: number;
   percentile95: number;
+  percentile99: number;
   unit?: string; // e.g. percent, GB, request/sec etc
   context?: MetricContext; // Additional context for the metric
 }

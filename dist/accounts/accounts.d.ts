@@ -29,5 +29,7 @@ export interface SubscriptionAccount {
     currencySymbol?: string;
     foundCurrency?: boolean;
     ready?: boolean;
+    secureScore?: number;
+    showAmortizedCosts?: boolean;
 }
 //# sourceMappingURL=accounts.d.ts.map

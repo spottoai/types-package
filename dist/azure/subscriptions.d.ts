@@ -23,6 +23,8 @@ export interface CompanySubscription {
     currencySymbol?: string;
     foundCurrency?: boolean;
     ready?: boolean;
+    secureScore?: number;
+    showAmortizedCosts?: boolean;
 }
 export interface SubscriptionSummary {
     companyId: string;
