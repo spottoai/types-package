@@ -11,3 +11,8 @@ export interface SecurityImpact {
   currentScore: number;
   potentialScoreIncrease: number;
 }
+
+export interface SecurityAssessmentStatus {
+  resourceId: string;
+  status: 'Healthy' | 'Unhealthy' | 'NotApplicable';
+}
