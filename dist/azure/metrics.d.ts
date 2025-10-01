@@ -16,6 +16,7 @@ export interface MetricSummary {
     average: number;
     peak: number;
     percentile95: number;
+    percentile99: number;
     unit?: string;
     context?: MetricContext;
 }
