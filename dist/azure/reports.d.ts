@@ -9,6 +9,7 @@ export interface DecompositionTreeNode {
     costChangePercent?: number;
     children?: DecompositionTreeNode[];
     totalSpend: number;
+    changeAnalysis?: CostChangeAnalysis;
 }
 export interface DecompositionTree {
     root: DecompositionTreeNode;
@@ -24,6 +25,7 @@ export interface DecompositionTree {
     totalSpendAmortizedPrevious?: number;
     currency: string;
     currencySymbol: string;
+    version?: string;
 }
 export interface DecompositionTreeEntry {
     period: string;
@@ -34,5 +36,35 @@ export interface DecompositionTreeEntry {
 export interface DecompositionTreeSummary {
     entries: DecompositionTreeEntry[];
     lastUpdated: string;
+}
+export type ChangeType = 'increase' | 'decrease' | 'no_change' | 'new_resource' | 'removed_resource';
+export declare enum ChangeReasonType {
+    NEW_RESOURCE = "new_resource",
+    REMOVED_RESOURCE = "removed_resource",
+    QUANTITY_INCREASE = "quantity_increase",
+    QUANTITY_DECREASE = "quantity_decrease",
+    RATE_CHANGE = "rate_change",
+    SKU_CHANGE = "sku_change",
+    NEW_METER = "new_meter",
+    REMOVED_METER = "removed_meter"
+}
+export interface ChangeReasonDetails {
+    meter?: string;
+    meterCategory?: string;
+    meterSubCategory?: string;
+    oldValue?: string | number;
+    newValue?: string | number;
+    description: string;
+}
+export interface ChangeReason {
+    type: ChangeReasonType;
+    impact: number;
+    impactPercent: number;
+    details: ChangeReasonDetails;
+}
+export interface CostChangeAnalysis {
+    changeType: ChangeType;
+    changeReasons: ChangeReason[];
+    summary: string;
 }
 //# sourceMappingURL=reports.d.ts.map

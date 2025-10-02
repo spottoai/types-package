@@ -9,7 +9,9 @@ export interface DecompositionTreeNode {
   costChangePercent?: number; // Percentage change from previous period
   children?: DecompositionTreeNode[];
   totalSpend: number; // Total spend at this level (for percentage calculation)
-}
+  // Analysis of why costs changed (only present on leaf nodes)
+  changeAnalysis?: CostChangeAnalysis;
+} 
 
 export interface DecompositionTree {
   root: DecompositionTreeNode;
@@ -25,6 +27,7 @@ export interface DecompositionTree {
   totalSpendAmortizedPrevious?: number;
   currency: string;
   currencySymbol: string;
+  version?: string;
 }
 
 export interface DecompositionTreeEntry {
@@ -37,4 +40,67 @@ export interface DecompositionTreeEntry {
 export interface DecompositionTreeSummary {
   entries: DecompositionTreeEntry[];
   lastUpdated: string;
+}
+
+// Type of change detected in cost analysis
+export type ChangeType = 'increase' | 'decrease' | 'no_change' | 'new_resource' | 'removed_resource';
+
+// Specific reason types for cost changes
+export enum ChangeReasonType {
+  NEW_RESOURCE = 'new_resource',
+  REMOVED_RESOURCE = 'removed_resource',
+  QUANTITY_INCREASE = 'quantity_increase',
+  QUANTITY_DECREASE = 'quantity_decrease',
+  RATE_CHANGE = 'rate_change',
+  SKU_CHANGE = 'sku_change',
+  NEW_METER = 'new_meter',
+  REMOVED_METER = 'removed_meter',
+}
+
+// Details about a specific change reason
+export interface ChangeReasonDetails {
+  // The meter name (e.g., "P1 v3 App")
+  meter?: string;
+
+  // The meter category (e.g., "Azure App Service")
+  meterCategory?: string;
+
+  // The meter sub-category
+  meterSubCategory?: string;
+
+  // Previous value (could be cost, quantity, rate, or SKU name)
+  oldValue?: string | number;
+
+  // New value (could be cost, quantity, rate, or SKU name)
+  newValue?: string | number;
+
+  // Human-readable description of the change
+  description: string;
+}
+
+// A single reason explaining a cost change
+export interface ChangeReason {
+  // Type of change
+  type: ChangeReasonType;
+
+  // Dollar impact of this change (can be positive or negative)
+  impact: number;
+
+  // Percentage of total change this reason represents
+  impactPercent: number;
+
+  // Detailed information about the change
+  details: ChangeReasonDetails;
+}
+
+// Complete analysis of cost changes for a resource
+export interface CostChangeAnalysis {
+  // Overall type of change
+  changeType: ChangeType;
+
+  // List of specific reasons for the change, ordered by impact
+  changeReasons: ChangeReason[];
+
+  // Human-readable summary of the changes
+  summary: string;
 }
