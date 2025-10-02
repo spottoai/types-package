@@ -11,7 +11,7 @@ export interface DecompositionTreeNode {
   totalSpend: number; // Total spend at this level (for percentage calculation)
   // Analysis of why costs changed (only present on leaf nodes)
   changeAnalysis?: CostChangeAnalysis;
-} 
+}
 
 export interface DecompositionTree {
   root: DecompositionTreeNode;
