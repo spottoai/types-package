@@ -131,6 +131,7 @@ export interface TargetCostSummary {
   reservedInstances?: SavingsCostSummary[]; // This is for reserved intances if it's available
   savingsPlans?: SavingsCostSummary[]; // This is for savings plans if it's available
   recommendationId?: string; // Reference to the recommendation that this target cost is associated with
+  resourceType?: string; // Resource Type
 }
 
 export interface ResourceSpend {

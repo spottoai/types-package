@@ -123,6 +123,7 @@ export interface TargetCostSummary {
     reservedInstances?: SavingsCostSummary[];
     savingsPlans?: SavingsCostSummary[];
     recommendationId?: string;
+    resourceType?: string;
 }
 export interface ResourceSpend {
     cost: number;
