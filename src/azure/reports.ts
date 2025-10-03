@@ -11,17 +11,17 @@ export interface DecompositionTreeNode {
   totalSpend: number; // Total spend at this level (for percentage calculation)
   // Analysis of why costs changed (only present on leaf nodes)
   changeAnalysis?: CostChangeAnalysis;
-  meterDetails?: MeterDetail[];  // Only present on leaf nodes (individual resources)
+  meterDetails?: MeterDetail[]; // Only present on leaf nodes (individual resources)
 }
 
 export interface MeterDetail {
-  meter: string;                    // "P1 v3 App"
-  meterCategory: string;            // "Azure App Service"
-  meterSubCategory: string;         // "Premium Plan"
-  quantity: number;                 // 24 (hours, GB, etc.)
-  cost: number;                     // 12.721536
-  costAmortized: number;            // 12.721536
-  unitCost?: number;                // cost / quantity = rate per unit
+  meter: string; // "P1 v3 App"
+  meterCategory: string; // "Azure App Service"
+  meterSubCategory: string; // "Premium Plan"
+  quantity: number; // 24 (hours, GB, etc.)
+  cost: number; // 12.721536
+  costAmortized: number; // 12.721536
+  unitCost?: number; // cost / quantity = rate per unit
 }
 
 export interface DecompositionTree {
