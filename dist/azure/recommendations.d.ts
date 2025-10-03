@@ -78,6 +78,7 @@ export interface RecommendationResource {
 }
 export interface RecommendationsView {
     recommendations: RecommendationWithResources[];
+    securityImpactDetails?: SecurityImpact[];
 }
 export interface ResourceId {
     id: string;
