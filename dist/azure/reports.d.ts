@@ -10,6 +10,16 @@ export interface DecompositionTreeNode {
     children?: DecompositionTreeNode[];
     totalSpend: number;
     changeAnalysis?: CostChangeAnalysis;
+    meterDetails?: MeterDetail[];
+}
+export interface MeterDetail {
+    meter: string;
+    meterCategory: string;
+    meterSubCategory: string;
+    quantity: number;
+    cost: number;
+    costAmortized: number;
+    unitCost?: number;
 }
 export interface DecompositionTree {
     root: DecompositionTreeNode;
