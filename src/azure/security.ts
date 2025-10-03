@@ -1,5 +1,5 @@
 export interface SecurityImpact {
-  subscriptionId: string;
+  id?: string;
   controlDisplayName: string;
   controlName: string;
   recommendationIds: string[]; // Recommendation ids
