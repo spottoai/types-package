@@ -91,6 +91,7 @@ export interface ResourceCostSummary {
     resourceName?: string;
     resourceType?: string;
     savingsRange?: SavingsRange;
+    recommendationId?: string;
 }
 export interface SavingsRange {
     min: SavingsDetail;

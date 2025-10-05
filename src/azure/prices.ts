@@ -96,6 +96,7 @@ export interface ResourceCostSummary {
   resourceName?: string; // Human-readable resource name
   resourceType?: string; // Azure resource type
   savingsRange?: SavingsRange;
+  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
 }
 
 export interface SavingsRange {
