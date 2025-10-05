@@ -68,6 +68,7 @@ export interface CostSummaryDetails {
   amortizedTotal?: number; // Last 30 days, taking into account reserved instances and savings plans
   amortizedTotalPrevious?: number; // Total cost in the previous 30 days, taking into account reserved instances and savings plans
   items?: ResourceCostSummary[];
+  savingsRange?: SavingsRange;
 }
 
 export interface ResourceCostSummary {
@@ -94,6 +95,19 @@ export interface ResourceCostSummary {
   resourceId?: string; // Reference to the actual Azure resource
   resourceName?: string; // Human-readable resource name
   resourceType?: string; // Azure resource type
+  savingsRange?: SavingsRange;
+}
+
+export interface SavingsRange {
+  min: SavingsDetail;
+  max: SavingsDetail;
+  currentMonthly: number;
+  lowestPossibleMonthly: number;
+}
+
+export interface SavingsDetail {
+  monthly: number;
+  percent: number;
 }
 
 export interface RetailCostSummary {

@@ -64,6 +64,7 @@ export interface CostSummaryDetails {
     amortizedTotal?: number;
     amortizedTotalPrevious?: number;
     items?: ResourceCostSummary[];
+    savingsRange?: SavingsRange;
 }
 export interface ResourceCostSummary {
     label1: string;
@@ -89,6 +90,17 @@ export interface ResourceCostSummary {
     resourceId?: string;
     resourceName?: string;
     resourceType?: string;
+    savingsRange?: SavingsRange;
+}
+export interface SavingsRange {
+    min: SavingsDetail;
+    max: SavingsDetail;
+    currentMonthly: number;
+    lowestPossibleMonthly: number;
+}
+export interface SavingsDetail {
+    monthly: number;
+    percent: number;
 }
 export interface RetailCostSummary {
     unitPrice: string;
