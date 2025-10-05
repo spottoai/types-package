@@ -12,7 +12,17 @@ export interface SecurityImpact {
   potentialScoreIncrease: number;
 }
 
+// For individual resource status
 export interface SecurityAssessmentStatus {
   resourceId: string;
   status: 'Healthy' | 'Unhealthy' | 'NotApplicable';
+}
+
+// For subscription level
+export interface SubscriptionSecurityStatus {
+  activeRecommendations: number;
+  totalRecommendations: number;
+  healthyResources: number;
+  unhealthyResources: number;
+  notApplicableResources: number;
 }
