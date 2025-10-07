@@ -153,6 +153,7 @@ export interface RecommendationActionRequest {
   resourceIds: string[];
   resourceGroupName?: string;
   companyId: string;
+  byUserId?: string;
 }
 
 export interface RecommendationActionResponse {
