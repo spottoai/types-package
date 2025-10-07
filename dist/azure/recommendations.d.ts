@@ -1,5 +1,5 @@
 import { Comment, RecommendationHistory } from './recommendationState';
-import { SecurityAssessmentStatus, SecurityImpact } from './security';
+import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -79,6 +79,7 @@ export interface RecommendationResource {
 export interface RecommendationsView {
     recommendations: RecommendationWithResources[];
     securityImpactDetails?: SecurityImpact[];
+    subscriptionSecurityStatus?: SubscriptionSecurityStatus;
 }
 export interface ResourceId {
     id: string;

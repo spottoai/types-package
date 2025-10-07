@@ -15,4 +15,11 @@ export interface SecurityAssessmentStatus {
     resourceId: string;
     status: 'Healthy' | 'Unhealthy' | 'NotApplicable';
 }
+export interface SubscriptionSecurityStatus {
+    activeRecommendations: number;
+    totalRecommendations: number;
+    healthyResources: number;
+    unhealthyResources: number;
+    notApplicableResources: number;
+}
 //# sourceMappingURL=security.d.ts.map
