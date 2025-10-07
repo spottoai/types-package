@@ -4,6 +4,7 @@ export interface RecommendationActionRequest {
   recommendationId: string;
   subscriptionId: string;
   resourceIds: string[];
+  resourceGroupName?: string;
   companyId: string;
 }
 
