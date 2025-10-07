@@ -127,16 +127,19 @@ export interface RecommendationWithState extends Recommendation {
     comments?: Comment[];
     history?: RecommendationHistory[];
 }
+export interface DismissRecommendationRequest extends RecommendationActionRequest {
+    dismissReason: string;
+}
 export interface RecommendationActionRequest {
     recommendationId: string;
     subscriptionId: string;
     resourceIds: string[];
+    resourceGroupName?: string;
     companyId: string;
-}
-export interface DismissRecommendationRequest extends RecommendationActionRequest {
-    dismissReason: string;
 }
 export interface RecommendationActionResponse {
     success: boolean;
+    message?: string;
+    affectedResources?: string[];
 }
 //# sourceMappingURL=recommendations.d.ts.map

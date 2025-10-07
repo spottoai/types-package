@@ -143,17 +143,20 @@ export interface RecommendationWithState extends Recommendation {
   history?: RecommendationHistory[];
 }
 
-export interface RecommendationActionRequest {
-  recommendationId: string;
-  subscriptionId: string;
-  resourceIds: string[];
-  companyId: string;
-}
-
 export interface DismissRecommendationRequest extends RecommendationActionRequest {
   dismissReason: string;
 }
 
+export interface RecommendationActionRequest {
+  recommendationId: string;
+  subscriptionId: string;
+  resourceIds: string[];
+  resourceGroupName?: string;
+  companyId: string;
+}
+
 export interface RecommendationActionResponse {
   success: boolean;
+  message?: string;
+  affectedResources?: string[];
 }
