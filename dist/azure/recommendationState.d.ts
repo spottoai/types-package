@@ -15,6 +15,8 @@ export interface RecommendationState {
     comments: Comment[];
     history: RecommendationHistory[];
     custom: boolean;
+    statusStartAt?: string;
+    statusEndAt?: string;
 }
 export interface RecommendationHistory {
     userId: string;

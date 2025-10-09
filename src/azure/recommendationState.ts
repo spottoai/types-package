@@ -17,6 +17,8 @@ export interface RecommendationState {
   comments: Comment[];
   history: RecommendationHistory[];
   custom: boolean;
+  statusStartAt?: string; // Date when the status started
+  statusEndAt?: string; // Date when the status is expected to change
 }
 
 export interface RecommendationHistory {
