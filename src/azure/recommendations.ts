@@ -162,3 +162,7 @@ export interface RecommendationActionResponse {
   message?: string;
   affectedResources?: string[];
 }
+
+interface test {
+  a: string;
+}
