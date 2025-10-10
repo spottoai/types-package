@@ -132,6 +132,7 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 }
 export interface RecommendationActionRequest {
     recommendationId: string;
+    recommendationTitle?: string;
     subscriptionId: string;
     resourceIds: string[];
     resourceGroupName?: string;
