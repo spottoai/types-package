@@ -2,6 +2,7 @@ import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
+import { SavingsPotential } from './views.js';
 export interface SubscriptionSummaryLite {
     companyId: string;
     tenantId: string;
@@ -33,7 +34,7 @@ export interface SubscriptionSummary {
     displayName: string;
     properties?: SubscriptionProperties;
     recommendationSummary: RecommendationSummary[];
-    totalCostSavings: number;
+    savings: SavingsPotential;
     totalRetailCost: number;
     spendingLimit: boolean;
     budgets: Budget[];

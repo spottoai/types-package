@@ -32,10 +32,17 @@ export interface AzureResourcePortalItem {
     location: string;
     spend: number;
     spendAmortized: number;
+    savings?: SavingsPotential;
     recommendations: AzureRecommendationLite[];
     customRecommendations: AzureRecommendationLite[];
     tags?: Record<string, string>;
     createdTime?: number;
+}
+export interface SavingsPotential {
+    minAmount: number;
+    minPercentage: number;
+    maxAmount: number;
+    maxPercentage: number;
 }
 export interface AzureResourcePluginView {
     currency: string;

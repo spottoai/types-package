@@ -37,10 +37,18 @@ export interface AzureResourcePortalItem {
   location: string; // e.g. "West US"
   spend: number; // Total spend over the last 30 days
   spendAmortized: number; // Total spend over the last 30 days, taking into account reserved instances and savings plans
+  savings?: SavingsPotential;
   recommendations: AzureRecommendationLite[];
   customRecommendations: AzureRecommendationLite[]; // Spotto recommendations
   tags?: Record<string, string>; // e.g. { "environment": "production", "team": "devops" }
   createdTime?: number; // e.g. 1715769600000 (Unix timestamp in milliseconds)
+}
+
+export interface SavingsPotential {
+  minAmount: number;
+  minPercentage: number;
+  maxAmount: number;
+  maxPercentage: number;
 }
 
 export interface AzureResourcePluginView {
