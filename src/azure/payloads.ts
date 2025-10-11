@@ -27,6 +27,7 @@ export interface SubscriptionMessage {
   authTenantId?: string;
   subscription: Subscription;
   companyId?: string;
+  refreshComponents?: string[]; // Provide a list of components to refresh. Leave empty to refresh all components.
 }
 
 export interface SubscriptionResponse {

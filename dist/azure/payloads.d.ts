@@ -24,6 +24,7 @@ export interface SubscriptionMessage {
     authTenantId?: string;
     subscription: Subscription;
     companyId?: string;
+    refreshComponents?: string[];
 }
 export interface SubscriptionResponse {
     displayName: string;
