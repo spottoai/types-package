@@ -10,6 +10,7 @@ export interface NotificationSubscription {
     recommendations: number[]; // Array of selected recommendation flags
     users: number[]; // Array of selected user flags
     cloudAccounts: number[]; // Array of selected cloud account flags
+    sharing: number[]; // Array of selected sharing flags
   };
 }
 
@@ -28,6 +29,10 @@ export const USER_FLAGS = {
 // Bitmask constants for cloud accounts
 export const CLOUD_ACCOUNT_FLAGS = {
   SYNC_COMPLETED: 1, // 001
+} as const;
+
+export const SHARING_FLAGS = {
+  SHARE_CREATED: 1,
 } as const;
 
 // Helper functions for bitmask operations

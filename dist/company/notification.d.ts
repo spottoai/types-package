@@ -9,6 +9,7 @@ export interface NotificationSubscription {
         recommendations: number[];
         users: number[];
         cloudAccounts: number[];
+        sharing: number[];
     };
 }
 export declare const RECOMMENDATION_FLAGS: {
@@ -21,6 +22,9 @@ export declare const USER_FLAGS: {
 };
 export declare const CLOUD_ACCOUNT_FLAGS: {
     readonly SYNC_COMPLETED: 1;
+};
+export declare const SHARING_FLAGS: {
+    readonly SHARE_CREATED: 1;
 };
 export declare const hasFlag: (value: number, flag: number) => boolean;
 export declare const addFlag: (value: number, flag: number) => number;

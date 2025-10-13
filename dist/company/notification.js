@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecommendationsFlags = exports.removeArrayFlag = exports.addArrayFlag = exports.hasArrayFlag = exports.removeFlag = exports.addFlag = exports.hasFlag = exports.CLOUD_ACCOUNT_FLAGS = exports.USER_FLAGS = exports.RECOMMENDATION_FLAGS = void 0;
+exports.getRecommendationsFlags = exports.removeArrayFlag = exports.addArrayFlag = exports.hasArrayFlag = exports.removeFlag = exports.addFlag = exports.hasFlag = exports.SHARING_FLAGS = exports.CLOUD_ACCOUNT_FLAGS = exports.USER_FLAGS = exports.RECOMMENDATION_FLAGS = void 0;
 // Bitmask constants for resources
 exports.RECOMMENDATION_FLAGS = {
     PRIORITIZED: 1, // 001
@@ -14,6 +14,9 @@ exports.USER_FLAGS = {
 // Bitmask constants for cloud accounts
 exports.CLOUD_ACCOUNT_FLAGS = {
     SYNC_COMPLETED: 1, // 001
+};
+exports.SHARING_FLAGS = {
+    SHARE_CREATED: 1,
 };
 // Helper functions for bitmask operations
 const hasFlag = (value, flag) => (value & flag) !== 0;
