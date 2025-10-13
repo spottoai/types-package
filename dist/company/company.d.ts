@@ -14,6 +14,7 @@ export interface Company {
     defaultRole?: number;
     objectives?: SurveyResponse[];
     notifications?: NotificationSubscription[];
+    integrations?: CompanyIntegrations;
 }
 export interface CompanyCreate {
     name: string;
@@ -23,11 +24,18 @@ export interface CompanyCreate {
     defaultRole?: number;
     objectives?: SurveyResponse[];
     notifications?: NotificationSubscription[];
+    integrations?: CompanyIntegrations;
 }
 export interface UserCompany {
     email: string;
     companyId: string;
     companyName: string;
     role: number;
+}
+export interface CompanyIntegrations {
+    enabled: boolean;
+    provider: 'jira' | 'halo';
+    properties: Map<string, string>;
+    secret: string;
 }
 //# sourceMappingURL=company.d.ts.map
