@@ -31,6 +31,7 @@ export interface Recommendation {
   potentialBenefits?: string;
   effort?: string;
   effortReason?: string;
+  effortHours?: number; // e.g. 10 hours
   risk?: string;
   riskReason?: string;
   costImpact?: number; // Could deprecate later
