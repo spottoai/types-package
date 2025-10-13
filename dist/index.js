@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 // Main entry point - export all interfaces from this package
 __exportStar(require("./azure/common"), exports);
 __exportStar(require("./azure/budgets"), exports);
+__exportStar(require("./azure/billingPlots"), exports);
 __exportStar(require("./azure/configs"), exports);
 __exportStar(require("./azure/metrics"), exports);
 __exportStar(require("./azure/payloads"), exports);

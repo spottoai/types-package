@@ -1,5 +1,6 @@
 export * from './azure/common';
 export * from './azure/budgets';
+export * from './azure/billingPlots';
 export * from './azure/configs';
 export * from './azure/metrics';
 export * from './azure/payloads';
