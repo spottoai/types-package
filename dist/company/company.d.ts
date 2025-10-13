@@ -34,7 +34,7 @@ export interface UserCompany {
 }
 export interface CompanyIntegrations {
     enabled: boolean;
-    provider: 'jira' | 'halo';
+    provider: 'jira' | 'halo' | 'connectwise';
     properties: Map<string, string>;
     secret: string;
 }

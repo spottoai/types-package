@@ -154,7 +154,7 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 }
 
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
-  shareType: 'email' | 'slack' | 'teams';
+  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
   email?: string;
 }
 
