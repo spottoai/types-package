@@ -152,6 +152,11 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
   dismissReason: string;
 }
 
+export interface ShareRecommendationRequest extends RecommendationActionRequest {
+  shareType: 'email' | 'slack' | 'teams';
+  email?: string;
+}
+
 export interface RecommendationActionRequest {
   recommendationId: string;
   recommendationTitle?: string;

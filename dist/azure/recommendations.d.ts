@@ -135,6 +135,10 @@ export interface RecommendationWithState extends Recommendation {
 export interface DismissRecommendationRequest extends RecommendationActionRequest {
     dismissReason: string;
 }
+export interface ShareRecommendationRequest extends RecommendationActionRequest {
+    shareType: 'email' | 'slack' | 'teams';
+    email?: string;
+}
 export interface RecommendationActionRequest {
     recommendationId: string;
     recommendationTitle?: string;
