@@ -10,6 +10,11 @@ export interface AzureDashboardView {
     costEndDate?: number;
     calendarSummary?: MonthSummary;
     billingPeriodSummary?: MonthSummary;
+    summary?: ExecutiveSummary;
+}
+export interface ExecutiveSummary {
+    summary: string;
+    details: string;
 }
 export interface AzureResourcesView {
     subscription: SubscriptionSummaryLite;
