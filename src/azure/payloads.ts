@@ -27,6 +27,9 @@ export interface SubscriptionMessage {
   authTenantId?: string;
   subscription: Subscription;
   companyId?: string;
+  cloudAccountId?: string;
+  tenantId?: string;
+  clientId?: string;
   refreshComponents?: string[]; // Provide a list of components to refresh. Leave empty to refresh all components.
 }
 
