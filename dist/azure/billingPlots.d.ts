@@ -102,5 +102,7 @@ export interface BillingPlotsMetadata {
     plots: BillingPlot[];
     /** Detected anomalies for the subscription */
     anomalies: BillingAnomaly[];
+    currencyCode: string;
+    currencySymbol: string;
 }
 //# sourceMappingURL=billingPlots.d.ts.map
