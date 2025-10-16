@@ -1,4 +1,4 @@
-import {ServiceRetirementRecommendation} from "./recommendations";
+import { ServiceRetirementRecommendation } from './recommendations';
 
 export interface ServiceRetirement {
   id: string;
