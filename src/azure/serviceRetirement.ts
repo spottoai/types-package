@@ -1,3 +1,5 @@
+import {ServiceRetirementRecommendation} from "./recommendations";
+
 export interface ServiceRetirement {
   id: string;
   subscriptionId: string;
@@ -11,4 +13,14 @@ export interface ServiceRetirement {
   effort?: 'high' | 'medium' | 'low';
   effortHours?: number;
   tags?: Record<string, string>;
+}
+
+export interface ServiceRetirementPortalResource {
+  id: string;
+  name?: string;
+  resourceType?: string;
+}
+
+export interface ServiceRetirementPortalEntry extends ServiceRetirementRecommendation {
+  resources: ServiceRetirementPortalResource[];
 }
