@@ -154,4 +154,20 @@ export interface RecommendationActionResponse {
     message?: string;
     affectedResources?: string[];
 }
+export interface ServiceRetirementRecommendation {
+    Id: number;
+    ServiceName: string;
+    RetiringFeature: string;
+    RetirementDate: string;
+    Link: string;
+    effort: string;
+    effortHours: number;
+    effortReason: string;
+    risk: string;
+    riskReason: string;
+    considerations: string;
+    confidencePercentage: number;
+    confidenceReason: string;
+    lastProcessedAt: string;
+}
 //# sourceMappingURL=recommendations.d.ts.map
