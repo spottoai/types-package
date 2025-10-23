@@ -23,6 +23,7 @@ export interface SubscriptionAccount {
   cloudAccountId: string;
   cloudAccountName: string;
   status?: string;
+  statusLabel?: string;
   error?: string;
   lastUpdated?: string;
   quotaId?: string;

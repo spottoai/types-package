@@ -19,6 +19,7 @@ export interface CompanySubscription {
   cloudAccountId: string;
   cloudAccountName: string;
   status?: string;
+  statusLabel: string;
   error?: string;
   lastUpdated?: string;
   duration?: string;
