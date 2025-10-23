@@ -29,6 +29,7 @@ export interface SubscriptionMessage {
     clientId?: string;
     refreshComponents?: string[];
     sagaRunId?: string;
+    eventId?: string;
 }
 export interface SubscriptionResponse {
     displayName: string;
