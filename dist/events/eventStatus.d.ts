@@ -1,4 +1,4 @@
-export interface EventStatusRecord {
+export interface EventStatus {
     eventId: string;
     objectKey: string;
     label: string;
@@ -24,7 +24,7 @@ export interface EventStatusRecord {
     userId?: string;
     context?: Record<string, unknown>;
 }
-export interface UserEventRecord {
+export interface UserEvent {
     userId: string;
     eventId: string;
     objectKey?: string;

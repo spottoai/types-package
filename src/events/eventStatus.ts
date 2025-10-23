@@ -1,4 +1,4 @@
-export interface EventStatusRecord {
+export interface EventStatus {
   eventId: string; //  PartitionKey
   objectKey: string; //  RowKey（ objectType + objectId）
   label: string;
@@ -22,7 +22,7 @@ export interface EventStatusRecord {
   context?: Record<string, unknown>;
 }
 
-export interface UserEventRecord {
+export interface UserEvent {
   userId: string; // PartitionKey
   eventId: string; // RowKey
   objectKey?: string;

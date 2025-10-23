@@ -18,4 +18,5 @@ export * from './users';
 export * from './common';
 export * from './company';
 export * from './ai';
+export * from './events';
 //# sourceMappingURL=index.d.ts.map
