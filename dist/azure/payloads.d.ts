@@ -28,6 +28,7 @@ export interface SubscriptionMessage {
     tenantId?: string;
     clientId?: string;
     refreshComponents?: string[];
+    sagaRunId?: string;
 }
 export interface SubscriptionResponse {
     displayName: string;

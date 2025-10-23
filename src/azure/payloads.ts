@@ -31,6 +31,7 @@ export interface SubscriptionMessage {
   tenantId?: string;
   clientId?: string;
   refreshComponents?: string[]; // Provide a list of components to refresh. Leave empty to refresh all components.
+  sagaRunId?: string;
 }
 
 export interface SubscriptionResponse {
