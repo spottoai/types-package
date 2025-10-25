@@ -32,5 +32,8 @@ export interface SubscriptionAccount {
     ready?: boolean;
     secureScore?: number;
     showAmortizedCosts?: boolean;
+    totalCost?: number;
+    billingItems?: number;
+    eventId?: string;
 }
 //# sourceMappingURL=accounts.d.ts.map

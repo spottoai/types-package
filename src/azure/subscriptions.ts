@@ -29,6 +29,9 @@ export interface CompanySubscription {
   ready?: boolean;
   secureScore?: number;
   showAmortizedCosts?: boolean;
+  totalCost?: number;
+  billingItems?: number;
+  eventId?: string;
 }
 
 export interface SubscriptionSummary {

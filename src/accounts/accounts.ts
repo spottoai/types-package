@@ -34,4 +34,7 @@ export interface SubscriptionAccount {
   ready?: boolean;
   secureScore?: number;
   showAmortizedCosts?: boolean;
+  totalCost?: number;
+  billingItems?: number;
+  eventId?: string;
 }
