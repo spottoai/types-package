@@ -36,5 +36,6 @@ export interface SubscriptionAccount {
   showAmortizedCosts?: boolean;
   totalCost?: number;
   billingItems?: number;
+  activityItems?: number;
   eventId?: string;
 }

@@ -31,6 +31,7 @@ export interface CompanySubscription {
   showAmortizedCosts?: boolean;
   totalCost?: number;
   billingItems?: number;
+  activityItems?: number;
   eventId?: string;
 }
 
