@@ -16,9 +16,7 @@ export interface CloudAccount {
   objectives?: SurveyResponse[];
 }
 
-export interface SubscriptionAccount {
-  id: string; // Partition Key (Azure Subscription ID)
-  companyId: string; // Row Key
+export interface SubscriptionInfoBase {
   name: string;
   cloudAccountId: string;
   cloudAccountName: string;
@@ -38,4 +36,9 @@ export interface SubscriptionAccount {
   billingItems?: number;
   activityItems?: number;
   eventId?: string;
+}
+
+export interface SubscriptionAccount extends SubscriptionInfoBase {
+  id: string; // Partition Key (Azure Subscription ID)
+  companyId: string; // Row Key
 }

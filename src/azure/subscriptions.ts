@@ -1,3 +1,4 @@
+import { SubscriptionInfoBase } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
@@ -12,27 +13,9 @@ export interface SubscriptionSummaryLite {
   properties?: SubscriptionProperties;
 }
 
-export interface CompanySubscription {
-  companyId: string;
-  id: string;
-  name: string;
-  cloudAccountId: string;
-  cloudAccountName: string;
-  status?: string;
-  statusLabel?: string;
-  error?: string;
-  lastUpdated?: string;
-  duration?: string;
-  currency?: string;
-  currencySymbol?: string;
-  foundCurrency?: boolean;
-  ready?: boolean;
-  secureScore?: number;
-  showAmortizedCosts?: boolean;
-  totalCost?: number;
-  billingItems?: number;
-  activityItems?: number;
-  eventId?: string;
+export interface CompanySubscription extends SubscriptionInfoBase {
+  companyId: string; // Partition Key
+  id: string; // Azure Subscription ID
 }
 
 export interface SubscriptionSummary {

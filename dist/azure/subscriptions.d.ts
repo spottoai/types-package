@@ -1,3 +1,4 @@
+import { SubscriptionInfoBase } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
@@ -10,27 +11,9 @@ export interface SubscriptionSummaryLite {
     displayName: string;
     properties?: SubscriptionProperties;
 }
-export interface CompanySubscription {
+export interface CompanySubscription extends SubscriptionInfoBase {
     companyId: string;
     id: string;
-    name: string;
-    cloudAccountId: string;
-    cloudAccountName: string;
-    status?: string;
-    statusLabel?: string;
-    error?: string;
-    lastUpdated?: string;
-    duration?: string;
-    currency?: string;
-    currencySymbol?: string;
-    foundCurrency?: boolean;
-    ready?: boolean;
-    secureScore?: number;
-    showAmortizedCosts?: boolean;
-    totalCost?: number;
-    billingItems?: number;
-    activityItems?: number;
-    eventId?: string;
 }
 export interface SubscriptionSummary {
     companyId: string;

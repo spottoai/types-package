@@ -14,9 +14,7 @@ export interface CloudAccount {
     status: string;
     objectives?: SurveyResponse[];
 }
-export interface SubscriptionAccount {
-    id: string;
-    companyId: string;
+export interface SubscriptionInfoBase {
     name: string;
     cloudAccountId: string;
     cloudAccountName: string;
@@ -36,5 +34,9 @@ export interface SubscriptionAccount {
     billingItems?: number;
     activityItems?: number;
     eventId?: string;
+}
+export interface SubscriptionAccount extends SubscriptionInfoBase {
+    id: string;
+    companyId: string;
 }
 //# sourceMappingURL=accounts.d.ts.map
