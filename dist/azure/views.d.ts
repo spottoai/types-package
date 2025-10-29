@@ -3,6 +3,7 @@ import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
 import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
+import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 export interface AzureDashboardView {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -42,6 +43,7 @@ export interface AzureResourcePortalItem {
     customRecommendations: AzureRecommendationLite[];
     tags?: Record<string, string>;
     createdTime?: number;
+    costEstimation?: ResourceSimpleCostEstimationSummary;
 }
 export interface SavingsPotential {
     minAmount: number;
@@ -66,6 +68,7 @@ export interface AzureResourcePluginItem {
     cost?: CostSummaryDetails;
     metrics?: DisplayMetric[];
     activityLogs?: ActivityLog[];
+    costEstimation?: ResourceCostEstimationSummary;
 }
 export interface AzureResourcePluginItemDetailed {
     currency: string;
@@ -87,6 +90,7 @@ export interface AzureResourcePluginItemDetailed {
     subscription: string;
     resourceGroup: string;
     tags?: Record<string, string>;
+    costEstimation?: ResourceCostEstimationSummary;
 }
 export interface AzurePluginResourcesLite {
     currency: string;

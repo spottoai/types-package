@@ -3,7 +3,7 @@ import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
 import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
-import {ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary} from "./costEstimation";
+import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 
 export interface AzureDashboardView {
   subscription: SubscriptionSummary;
