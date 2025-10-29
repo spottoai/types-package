@@ -13,6 +13,7 @@ export * from './azure/subscriptions';
 export * from './azure/views';
 export * from './azure/security';
 export * from './azure/serviceRetirement';
+export * from './azure/costEstimation';
 export * from './accounts';
 export * from './users';
 export * from './common';
