@@ -3,6 +3,7 @@ import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
 import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
+import {ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary} from "./costEstimation";
 
 export interface AzureDashboardView {
   subscription: SubscriptionSummary;
@@ -48,6 +49,7 @@ export interface AzureResourcePortalItem {
   customRecommendations: AzureRecommendationLite[]; // Spotto recommendations
   tags?: Record<string, string>; // e.g. { "environment": "production", "team": "devops" }
   createdTime?: number; // e.g. 1715769600000 (Unix timestamp in milliseconds)
+  costEstimation?: ResourceSimpleCostEstimationSummary; // This is simplfied
 }
 
 export interface SavingsPotential {
@@ -75,6 +77,7 @@ export interface AzureResourcePluginItem {
   cost?: CostSummaryDetails;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
+  costEstimation?: ResourceCostEstimationSummary;
 }
 
 export interface AzureResourcePluginItemDetailed {
@@ -97,6 +100,7 @@ export interface AzureResourcePluginItemDetailed {
   subscription: string;
   resourceGroup: string;
   tags?: Record<string, string>;
+  costEstimation?: ResourceCostEstimationSummary;
 }
 
 // This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page)
