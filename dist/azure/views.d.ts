@@ -1,4 +1,4 @@
-import { ActivityLog, MonthSummary } from './common.js';
+import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
@@ -12,6 +12,7 @@ export interface AzureDashboardView {
     calendarSummary?: MonthSummary;
     billingPeriodSummary?: MonthSummary;
     summary?: ExecutiveSummary;
+    dailySummary?: DailySummary;
 }
 export interface ExecutiveSummary {
     summary: string;

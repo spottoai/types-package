@@ -23,6 +23,18 @@ export interface MonthSummary {
   lastUpdated: string; // ISO date string
 }
 
+export interface DailySummaryEntry {
+  date: string; // YYYY-MM-DD format
+  cost?: number; // sum of actual cost for the day
+  costAmortized?: number; // sum of costAmortized for the day
+  resourceTypes: ResourceCostType[]; // Top resources by cost
+}
+
+export interface DailySummary {
+  entries: DailySummaryEntry[]; // rolling last 30 days
+  lastUpdated: string; // ISO date string
+}
+
 export interface ActiveDates {
   startDate: number;
   endDate: number;

@@ -19,6 +19,16 @@ export interface MonthSummary {
     entries: MonthSummaryEntry[];
     lastUpdated: string;
 }
+export interface DailySummaryEntry {
+    date: string;
+    cost?: number;
+    costAmortized?: number;
+    resourceTypes: ResourceCostType[];
+}
+export interface DailySummary {
+    entries: DailySummaryEntry[];
+    lastUpdated: string;
+}
 export interface ActiveDates {
     startDate: number;
     endDate: number;
