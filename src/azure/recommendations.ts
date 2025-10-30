@@ -190,3 +190,45 @@ export interface ServiceRetirementRecommendation {
   confidenceReason: string;
   lastProcessedAt: string;
 }
+
+export interface JiraShareDetails {
+  projectKey?: string;
+  epicKey?: string;
+  label?: string;
+}
+
+export interface JiraIntegrationRequestBase {
+  siteUrl: string;
+  email: string;
+  secret?: string;
+  useStoredSecret?: boolean;
+}
+
+export interface JiraIntegrationTestPayload extends JiraIntegrationRequestBase {
+  projectKey?: string;
+}
+
+export interface JiraIntegrationEpicsPayload extends JiraIntegrationRequestBase {
+  projectKey: string;
+  maxResults?: number;
+}
+
+export interface JiraIntegrationProjectsPayload extends JiraIntegrationRequestBase {
+  maxResults?: number;
+}
+
+export interface JiraIntegrationLabelsPayload extends JiraIntegrationRequestBase {
+  projectKey: string;
+  maxResults?: number;
+  searchQuery?: string;
+}
+
+export interface JiraEntity {
+  id: string;
+  key: string;
+  name: string;
+}
+
+export interface JiraLabel {
+  name: string;
+}
