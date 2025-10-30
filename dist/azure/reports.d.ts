@@ -11,6 +11,8 @@ export interface DecompositionTreeNode {
     totalSpend: number;
     changeAnalysis?: CostChangeAnalysis;
     meterDetails?: MeterDetail[];
+    tags?: Record<string, string>;
+    resourceId?: string;
 }
 export interface MeterDetail {
     meter: string;

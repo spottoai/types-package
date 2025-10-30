@@ -12,6 +12,8 @@ export interface DecompositionTreeNode {
   // Analysis of why costs changed (only present on leaf nodes)
   changeAnalysis?: CostChangeAnalysis;
   meterDetails?: MeterDetail[]; // Only present on leaf nodes (individual resources)
+  tags?: Record<string, string>;
+  resourceId?: string;
 }
 
 export interface MeterDetail {
