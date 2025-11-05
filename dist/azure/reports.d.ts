@@ -60,6 +60,30 @@ export declare enum ChangeReasonType {
     NEW_METER = "new_meter",
     REMOVED_METER = "removed_meter"
 }
+export type BillingModifierType = 'reservation' | 'savings_plan' | 'spot' | 'promotion' | 'other';
+export interface BillingModifierDetail {
+    type: BillingModifierType;
+    name?: string;
+    coverageHours?: number;
+    coveragePercent?: number;
+    previousCoveragePercent?: number;
+    coveragePercentDelta?: number;
+    notes?: string;
+}
+export interface RateChangeContext {
+    previousEffectiveRate?: number;
+    currentEffectiveRate?: number;
+    previousPaidRate?: number;
+    currentPaidRate?: number;
+    totalHours?: number;
+    paidHours?: number;
+    coveredHours?: number;
+    previousCoveredHours?: number;
+    previousCoveredPercent?: number;
+    currentCoveredPercent?: number;
+    coverageDeltaPercent?: number;
+    modifier?: BillingModifierDetail;
+}
 export interface ChangeReasonDetails {
     meter?: string;
     meterCategory?: string;
@@ -67,16 +91,20 @@ export interface ChangeReasonDetails {
     oldValue?: string | number;
     newValue?: string | number;
     description: string;
+    rateContext?: RateChangeContext;
+    storyFragments?: string[];
 }
 export interface ChangeReason {
     type: ChangeReasonType;
     impact: number;
     impactPercent: number;
     details: ChangeReasonDetails;
+    storyFragments?: string[];
 }
 export interface CostChangeAnalysis {
     changeType: ChangeType;
     changeReasons: ChangeReason[];
     summary: string;
+    storyFragments?: string[];
 }
 //# sourceMappingURL=reports.d.ts.map

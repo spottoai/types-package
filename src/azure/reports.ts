@@ -70,6 +70,33 @@ export enum ChangeReasonType {
   REMOVED_METER = 'removed_meter',
 }
 
+export type BillingModifierType = 'reservation' | 'savings_plan' | 'spot' | 'promotion' | 'other';
+
+export interface BillingModifierDetail {
+  type: BillingModifierType;
+  name?: string;
+  coverageHours?: number;
+  coveragePercent?: number;
+  previousCoveragePercent?: number;
+  coveragePercentDelta?: number;
+  notes?: string;
+}
+
+export interface RateChangeContext {
+  previousEffectiveRate?: number;
+  currentEffectiveRate?: number;
+  previousPaidRate?: number;
+  currentPaidRate?: number;
+  totalHours?: number;
+  paidHours?: number;
+  coveredHours?: number;
+  previousCoveredHours?: number;
+  previousCoveredPercent?: number;
+  currentCoveredPercent?: number;
+  coverageDeltaPercent?: number;
+  modifier?: BillingModifierDetail;
+}
+
 // Details about a specific change reason
 export interface ChangeReasonDetails {
   // The meter name (e.g., "P1 v3 App")
@@ -89,6 +116,12 @@ export interface ChangeReasonDetails {
 
   // Human-readable description of the change
   description: string;
+
+  // Additional rate-change context (coverage shifts, modifier attribution, etc.)
+  rateContext?: RateChangeContext;
+
+  // Optional narrative fragments to help surface a story in the UI
+  storyFragments?: string[];
 }
 
 // A single reason explaining a cost change
@@ -104,6 +137,9 @@ export interface ChangeReason {
 
   // Detailed information about the change
   details: ChangeReasonDetails;
+
+  // Optional narrative fragments tied to this reason
+  storyFragments?: string[];
 }
 
 // Complete analysis of cost changes for a resource
@@ -116,4 +152,7 @@ export interface CostChangeAnalysis {
 
   // Human-readable summary of the changes
   summary: string;
+
+  // Optional narrative fragments surfaced for display
+  storyFragments?: string[];
 }
