@@ -40,6 +40,16 @@ export interface ResourceCostEstimationSummary {
     currentMonthlyCost: number;
     currentObservedDiscounts?: Record<string, DiscountObservation>;
     plans: ResourceCostEstimationPlan[];
+    currentCost?: number;
+    sourceMeta?: CostEstimationSourceMeta;
+}
+export type CostEstimationSourceType = 'rolling-30-days' | 'calendar-month';
+export interface CostEstimationSourceMeta {
+    type: CostEstimationSourceType;
+    startDate: string;
+    endDate: string;
+    excludedRecentDays?: number;
+    sourcePath?: string;
 }
 export interface ResourceSimpleCostEstimationPlan {
     label: string;
