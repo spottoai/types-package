@@ -132,6 +132,9 @@ export interface TargetCostSummary {
     monthlyPrice: number;
     monthlySavings: number;
     monthlySavingsPercent: string;
+    unitPriceRetail?: string;
+    monthlyPriceRetail?: number;
+    costRetail?: number;
     targetCost?: TargetCostSummary[];
     reservedInstances?: SavingsCostSummary[];
     savingsPlans?: SavingsCostSummary[];

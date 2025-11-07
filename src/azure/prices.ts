@@ -142,6 +142,9 @@ export interface TargetCostSummary {
   monthlyPrice: number; // e.g. 730.00 (rounded to 2 decimal places)
   monthlySavings: number; // e.g. 100.00 (rounded to 2 decimal places)
   monthlySavingsPercent: string; // e.g. 10%
+  unitPriceRetail?: string; // Retail unit price before tenant discounts are applied
+  monthlyPriceRetail?: number; // Retail monthly price before tenant discounts are applied
+  costRetail?: number; // Retail cost before tenant discounts are applied
   targetCost?: TargetCostSummary[]; // This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU)
   reservedInstances?: SavingsCostSummary[]; // This is for reserved intances if it's available
   savingsPlans?: SavingsCostSummary[]; // This is for savings plans if it's available
