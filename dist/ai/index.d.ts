@@ -1,3 +1,4 @@
+/** Common AI interfaces shared between frontend and backend */
 export type AIResponseStatus = 'complete' | 'needs_clarification' | 'needs_more_metrics';
 export type RecommendationPillar = 'Cost Optimization' | 'Performance Efficiency' | 'Security' | 'Reliability' | 'Operational Excellence';
 export type RecommendationType = 'advisor' | 'custom' | 'ai_generated';
@@ -20,6 +21,7 @@ export interface StructuredAIResponse {
     friendly_message: string;
     recommendations: AIRecommendation[];
 }
+/** Common PageContext interface - unified version */
 export interface PageContext {
     pageType: 'resource-detail' | 'recommendation-detail' | 'dashboard' | string;
     resourceId?: string;
@@ -27,11 +29,14 @@ export interface PageContext {
     subscriptionId?: string;
     pageUrl?: string;
 }
+/** Common message interface for AI conversations */
 export interface AIMessage {
     role: 'user' | 'assistant';
     content: string;
+    /** Date for backend, string for frontend */
     timestamp: Date | string;
     structuredResponse?: StructuredAIResponse;
+    /** Response ID for continuity */
     responseId?: string;
 }
 //# sourceMappingURL=index.d.ts.map

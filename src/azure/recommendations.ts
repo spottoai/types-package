@@ -21,7 +21,8 @@ export interface Recommendation {
   id: string;
   name: string;
   category: RecommendationCategory;
-  type?: string; // custom
+  /** custom */
+  type?: string;
   description?: string;
   remediation?: string;
   impact: string;
@@ -31,35 +32,46 @@ export interface Recommendation {
   potentialBenefits?: string;
   effort?: string;
   effortReason?: string;
-  effortHours?: number; // e.g. 10 hours
+  /** e.g. 10 hours */
+  effortHours?: number;
   risk?: string;
   riskReason?: string;
-  costImpact?: number; // Could deprecate later
+  /** Could deprecate later */
+  costImpact?: number;
   costImpactReason?: string;
   costImpactDetails?: CostImpactDetails;
   performanceImpact?: number;
   performanceImpactReason?: string;
   confidencePercentage?: number;
   confidenceReason?: string;
-  resources?: ResourceReference[]; // array of resources that have this recommendation
-  securityImpactDetails?: SecurityImpact; // only for security recommendations
-  resolved?: boolean; // whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true
+  /** array of resources that have this recommendation */
+  resources?: ResourceReference[];
+  /** only for security recommendations */
+  securityImpactDetails?: SecurityImpact;
+  /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
+  resolved?: boolean;
   securityAssessmentStatuses?: SecurityAssessmentStatus[];
-  // Deprecated fields, kept for compatibility
+  /** Deprecated fields, kept for compatibility */
   subcategory?: string;
   solution?: string;
   source?: string;
   service?: string;
-  // need to be string to be store in json
-  createdTime?: string; // need to have different name to avoid conflict with createdAt with RecommendationWithState
-  lastUpdatedTime?: string; // need to have different name to avoid conflict with updatedAt with RecommendationWithState
+  /**
+   * Stored as string to allow JSON persistence.
+   * Uses a different name to avoid conflict with RecommendationWithState.createdAt.
+   */
+  createdTime?: string;
+  /** Avoids conflict with RecommendationWithState.updatedAt */
+  lastUpdatedTime?: string;
 }
 
 export interface CostImpactDetails {
-  name: string; // e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux"
+  /** e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux" */
+  name: string;
   monthlySavings?: number;
   currentSpend?: number;
-  savingPercentage?: number; // e.g. 20 for 20%
+  /** e.g. 20 for 20% */
+  savingPercentage?: number;
   minMonthlySavings?: number;
   maxMonthlySavings?: number;
 }
@@ -123,7 +135,8 @@ export interface RecommendationCollection {
 }
 
 export interface AzureRecommendationLite {
-  category: string; // e.g. Cost, Performance, Reliability, Security, Compliance, OperationalExcellence, Operational Excellence, HighAvailability
+  /** e.g. Cost, Performance, Reliability, Security, Compliance, OperationalExcellence, Operational Excellence, HighAvailability */
+  category: string;
   total: number;
   high: number;
   medium: number;
@@ -131,13 +144,17 @@ export interface AzureRecommendationLite {
 }
 
 export interface RecommendationStats {
-  total: number; // total number of recommendations in the subscription
-  high: number; // total number of high recommendations in the subscription
-  medium: number; // total number of medium recommendations in the subscription
-  low: number; // total number of low recommendations in the subscription
+  /** total number of recommendations in the subscription */
+  total: number;
+  /** total number of high recommendations in the subscription */
+  high: number;
+  /** total number of medium recommendations in the subscription */
+  medium: number;
+  /** total number of low recommendations in the subscription */
+  low: number;
 }
 
-// Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment
+/** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
   status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
   read?: boolean;

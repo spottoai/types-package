@@ -10,6 +10,7 @@ export interface ProcessPayload {
 }
 export interface RequestMessage {
     entity: string;
+    /** create, delete */
     action: string;
     companyId: string;
     cloudAccountId: string;
@@ -27,6 +28,7 @@ export interface SubscriptionMessage {
     cloudAccountId?: string;
     tenantId?: string;
     clientId?: string;
+    /** Provide a list of components to refresh. Leave empty to refresh all components. */
     refreshComponents?: string[];
     sagaRunId?: string;
     eventId?: string;

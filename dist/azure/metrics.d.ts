@@ -5,10 +5,14 @@ export interface DisplayMetric {
     children?: DisplayMetric[];
 }
 export interface DailyMetrics {
+    /** YYYYMMDD */
     date: number;
+    /** number spend on the resource that day */
     spend: number;
+    /** number amortized spend on the resource that day */
     costAmortized: number;
     summary: MetricSummary[];
+    /** optional for drill-down scenarios */
     hourlyData?: HourlyMetrics[];
 }
 export interface MetricSummary {
@@ -17,21 +21,30 @@ export interface MetricSummary {
     peak: number;
     percentile95: number;
     percentile99: number;
+    /** e.g. percent, GB, request/sec etc */
     unit?: string;
+    /** Additional context for the metric */
     context?: MetricContext;
 }
 export interface MetricContext {
+    /** e.g., total RAM available for memory metrics */
     capacity?: number;
+    /** e.g., "GB" for capacity */
     unit?: string;
+    /** e.g., warning threshold */
     threshold?: number;
 }
 export interface HourlyMetrics {
+    /** [0, 1, 2, 3, ..., 23] - define once */
     hours: number[];
     metrics: HourlyMetricData[];
 }
 export interface HourlyMetricData {
+    /** e.g. "CPU" */
     name: string;
+    /** 24 values corresponding to hours array */
     values: number[];
+    /** e.g. percent, GB, request/sec etc */
     unit?: string;
 }
 export interface MetricUsageSummary {
@@ -93,6 +106,7 @@ export interface MetricStats {
     trend: number;
     variance: number;
     count: number;
+    /** for availability metrics */
     uptime?: number;
     peakHours?: number;
     offPeakHours?: number;
@@ -107,19 +121,27 @@ export interface MetricStats {
 }
 export interface AlertCondition {
     severity: 'info' | 'warning' | 'critical' | 'underutilized';
+    /** JSONata expression */
     expression: string;
     description: string;
 }
 export interface MetricPlot {
+    /** e.g. "CPU and Memory Utilization" */
     title: string;
+    /** name of the metric plot filename such as cpupercentage_memorypercentage */
     name: string;
+    /** order of the metric plot */
     priority: number;
+    /** reasoning of the metric plot */
     reasoning: string;
     metrics: MetricPlotMetric[];
 }
 export interface MetricPlotMetric {
+    /** e.g. CPU Utilization */
     name: string;
+    /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
     description: string;
+    /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
     details: string;
     alerts: MetricAlert[];
     stats: MetricStats;
@@ -192,11 +214,15 @@ export interface AzureTimeSeries {
     data: AzureTimeSeriesData[];
 }
 export interface AzureTimeSeriesMetadata {
+    /** name such "Instance" or "Model" or "API Name" or "Tier" */
     name: string;
+    /** value such as "WN0SDWK00030D" or "gpt-5" or "GetBlobServiceProperties" or "Hot" */
     value: string;
 }
 export interface AzureTimeSeriesData {
+    /** Value */
     v?: number;
+    /** Timestamp */
     t: number;
 }
 export interface AzureResourceMetric {

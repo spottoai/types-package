@@ -1,13 +1,23 @@
+/**
+ * Partition Key: url hash
+ * Row Key = userId_postedDate
+ */
 export interface FeedbackData {
-  // Partition Key: url hash
-  // Row Key = userId_postedDate
-  url: string; // url of the page the feedback was posted on
-  // userId: string; // user id of the user who posted the feedback
-  companyId: string; // company id of the company the feedback was posted on
-  // postedDate: Date; // date the feedback was posted
-  comment: string; // comment text
-  contact: boolean; // true if the user wants to be contacted about the feedback
-  isNegative: boolean; // true if the feedback is negative
+  /** url of the page the feedback was posted on */
+  url: string;
+  /*
+   * Potential future fields:
+   * - userId: string; user id of the user who posted the feedback
+   * - postedDate: Date; date the feedback was posted
+   */
+  /** company id of the company the feedback was posted on */
+  companyId: string;
+  /** comment text */
+  comment: string;
+  /** true if the user wants to be contacted about the feedback */
+  contact: boolean;
+  /** true if the feedback is negative */
+  isNegative: boolean;
 }
 
 export interface FeedbackResponse {

@@ -12,7 +12,9 @@ export interface SubscriptionSummaryLite {
     properties?: SubscriptionProperties;
 }
 export interface CompanySubscription extends SubscriptionInfoBase {
+    /** Partition Key */
     companyId: string;
+    /** Azure Subscription ID */
     id: string;
 }
 export interface SubscriptionSummary {
@@ -43,9 +45,11 @@ export interface Subscription {
     budgets?: Budget[];
     stats?: SubscriptionStats;
     recommendationSummary?: RecommendationSummary[];
+    /** This is for any cost that doesn't belong to a resource, such as Defender for Cloud */
     miscCost?: CostDetails;
 }
 export interface SubscriptionStats {
+    /** total number of resources in the subscription */
     resourcesTotal: number;
     recommendations: RecommendationStats;
     recommendationsUnique: RecommendationStats;
@@ -67,6 +71,7 @@ export interface SubscriptionHistory {
     history: SubscriptionHistoryItem[];
 }
 export interface SubscriptionHistoryItem {
+    /** 20250520 */
     date: number;
     secureScore: number;
     resourcesTotal: number;

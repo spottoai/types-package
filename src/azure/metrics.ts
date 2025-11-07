@@ -6,11 +6,15 @@ export interface DisplayMetric {
 }
 
 export interface DailyMetrics {
-  date: number; // YYYYMMDD
-  spend: number; // number spend on the resource that day
-  costAmortized: number; // number amortized spend on the resource that day
+  /** YYYYMMDD */
+  date: number;
+  /** number spend on the resource that day */
+  spend: number;
+  /** number amortized spend on the resource that day */
+  costAmortized: number;
   summary: MetricSummary[];
-  hourlyData?: HourlyMetrics[]; // optional for drill-down scenarios
+  /** optional for drill-down scenarios */
+  hourlyData?: HourlyMetrics[];
 }
 
 export interface MetricSummary {
@@ -19,25 +23,34 @@ export interface MetricSummary {
   peak: number;
   percentile95: number;
   percentile99: number;
-  unit?: string; // e.g. percent, GB, request/sec etc
-  context?: MetricContext; // Additional context for the metric
+  /** e.g. percent, GB, request/sec etc */
+  unit?: string;
+  /** Additional context for the metric */
+  context?: MetricContext;
 }
 
 export interface MetricContext {
-  capacity?: number; // e.g., total RAM available for memory metrics
-  unit?: string; // e.g., "GB" for capacity
-  threshold?: number; // e.g., warning threshold
+  /** e.g., total RAM available for memory metrics */
+  capacity?: number;
+  /** e.g., "GB" for capacity */
+  unit?: string;
+  /** e.g., warning threshold */
+  threshold?: number;
 }
 
 export interface HourlyMetrics {
-  hours: number[]; // [0, 1, 2, 3, ..., 23] - define once
+  /** [0, 1, 2, 3, ..., 23] - define once */
+  hours: number[];
   metrics: HourlyMetricData[];
 }
 
 export interface HourlyMetricData {
-  name: string; // e.g. "CPU"
-  values: number[]; // 24 values corresponding to hours array
-  unit?: string; // e.g. percent, GB, request/sec etc
+  /** e.g. "CPU" */
+  name: string;
+  /** 24 values corresponding to hours array */
+  values: number[];
+  /** e.g. percent, GB, request/sec etc */
+  unit?: string;
 }
 
 export interface MetricUsageSummary {
@@ -102,7 +115,8 @@ export interface MetricStats {
   trend: number;
   variance: number;
   count: number;
-  uptime?: number; // for availability metrics
+  /** for availability metrics */
+  uptime?: number;
   peakHours?: number;
   offPeakHours?: number;
   totalDataPoints: number;
@@ -117,22 +131,30 @@ export interface MetricStats {
 
 export interface AlertCondition {
   severity: 'info' | 'warning' | 'critical' | 'underutilized';
-  expression: string; // JSONata expression
+  /** JSONata expression */
+  expression: string;
   description: string;
 }
 
 export interface MetricPlot {
-  title: string; // e.g. "CPU and Memory Utilization"
-  name: string; // name of the metric plot filename such as cpupercentage_memorypercentage
-  priority: number; // order of the metric plot
-  reasoning: string; // reasoning of the metric plot
+  /** e.g. "CPU and Memory Utilization" */
+  title: string;
+  /** name of the metric plot filename such as cpupercentage_memorypercentage */
+  name: string;
+  /** order of the metric plot */
+  priority: number;
+  /** reasoning of the metric plot */
+  reasoning: string;
   metrics: MetricPlotMetric[];
 }
 
 export interface MetricPlotMetric {
-  name: string; // e.g. CPU Utilization
-  description: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
-  details: string; // e.g. "CPU Utilization is the percentage of CPU time used by the resource."
+  /** e.g. CPU Utilization */
+  name: string;
+  /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
+  description: string;
+  /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
+  details: string;
   alerts: MetricAlert[];
   stats: MetricStats;
 }
@@ -213,13 +235,17 @@ export interface AzureTimeSeries {
 }
 
 export interface AzureTimeSeriesMetadata {
-  name: string; // name such "Instance" or "Model" or "API Name" or "Tier"
-  value: string; // value such as "WN0SDWK00030D" or "gpt-5" or "GetBlobServiceProperties" or "Hot"
+  /** name such "Instance" or "Model" or "API Name" or "Tier" */
+  name: string;
+  /** value such as "WN0SDWK00030D" or "gpt-5" or "GetBlobServiceProperties" or "Hot" */
+  value: string;
 }
 
 export interface AzureTimeSeriesData {
-  v?: number; // Value
-  t: number; // Timestamp
+  /** Value */
+  v?: number;
+  /** Timestamp */
+  t: number;
 }
 
 export interface AzureResourceMetric {

@@ -16,28 +16,36 @@ export interface ResourceConfigItem {
   overrideSourceProperty?: string;
   isArray?: boolean;
   mandatory?: boolean;
-  supporting?: boolean; // if true, then the resource is supported by the platform (e.g. activity logs, scaling plans, billing)
+  /** if true, then the resource is supported by the platform (e.g. activity logs, scaling plans, billing) */
+  supporting?: boolean;
   displayServiceName?: string;
-  displayServiceNameExpression?: string; // an expression to determine the display service name
+  /** an expression to determine the display service name */
+  displayServiceNameExpression?: string;
   icon?: string;
-  iconExpression?: string; // an expression to determine the icon
-  description?: string; // a description of the service
-  descriptionExpression?: string; // an expression to determine the description
-  product?: string; // a link to the product page
-  productExpression?: string; // an expression to determine the product
+  /** an expression to determine the icon */
+  iconExpression?: string;
+  /** a description of the service */
+  description?: string;
+  /** an expression to determine the description */
+  descriptionExpression?: string;
+  /** a link to the product page */
+  product?: string;
+  /** an expression to determine the product */
+  productExpression?: string;
 
   references: { [key: string]: ResourceTypeReference };
   metrics?: AzureResourceMetric[];
   metricsDescription?: MetricDescription[];
   metricsDisplay?: MetricsDisplay[];
 
-  // Loaded during processing
+  /** Loaded during processing */
   name: string;
   type: string;
   parameters: object;
   alias: AliasConfig;
   resources: ResourceConfigItem[];
-  serviceName?: string; // e.g. "Virtual Network" used for bill / price matching
+  /** e.g. "Virtual Network" used for bill / price matching */
+  serviceName?: string;
   label1?: string;
   label2?: string;
   label3?: string;

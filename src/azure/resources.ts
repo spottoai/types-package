@@ -1,34 +1,48 @@
 export interface ResourcesByType {
   type: string;
   resources: number;
-  spendBilling?: number; // total spend in the current billing period
-  spendBillingAmortized?: number; // total amortized spend in the current billing period
-  spendPreviousBilling?: number; // total spend in the previous billing period
+  /** total spend in the current billing period */
+  spendBilling?: number;
+  /** total amortized spend in the current billing period */
+  spendBillingAmortized?: number;
+  /** total spend in the previous billing period */
+  spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
-  spend30Days?: number; // total spend over the last 30 days
+  /** total spend over the last 30 days */
+  spend30Days?: number;
   spend30DaysAmortized?: number;
-  spendPrevious30Days?: number; // total spend over the previous 30 days
+  /** total spend over the previous 30 days */
+  spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
-  spend7Days?: number; // total spend over the last 7 days
+  /** total spend over the last 7 days */
+  spend7Days?: number;
   spend7DaysAmortized?: number;
-  spendPrevious7Days?: number; // total spend over the previous 7 days
+  /** total spend over the previous 7 days */
+  spendPrevious7Days?: number;
   spendPrevious7DaysAmortized?: number;
 }
 
 export interface ResourceByLocation {
   location: string;
   resources: number;
-  spendBilling?: number; // total spend in the current billing period
-  spendBillingAmortized?: number; // total amortized spend in the current billing period
-  spendPreviousBilling?: number; // total spend in the previous billing period
+  /** total spend in the current billing period */
+  spendBilling?: number;
+  /** total amortized spend in the current billing period */
+  spendBillingAmortized?: number;
+  /** total spend in the previous billing period */
+  spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
-  spend30Days?: number; // total spend over the last 30 days
+  /** total spend over the last 30 days */
+  spend30Days?: number;
   spend30DaysAmortized?: number;
-  spendPrevious30Days?: number; // total spend over the previous 30 days
+  /** total spend over the previous 30 days */
+  spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
-  spend7Days?: number; // total spend over the last 7 days
+  /** total spend over the last 7 days */
+  spend7Days?: number;
   spend7DaysAmortized?: number;
-  spendPrevious7Days?: number; // total spend over the previous 7 days
+  /** total spend over the previous 7 days */
+  spendPrevious7Days?: number;
   spendPrevious7DaysAmortized?: number;
 }
 

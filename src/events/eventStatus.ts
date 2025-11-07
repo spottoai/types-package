@@ -1,30 +1,42 @@
 export interface EventStatus {
-  eventId: string; //  PartitionKey
-  objectKey: string; //  RowKey（ objectType + objectId）
+  /** PartitionKey */
+  eventId: string;
+  /** RowKey（ objectType + objectId） */
+  objectKey: string;
   label: string;
-  event: string; // dismiss / implement / restore / share / process …
-  eventDomain: string; // recommendation / notification / subscription …
-  objectType: string; // recommendation / resource / subscription / notification
+  /** dismiss / implement / restore / share / process … */
+  event: string;
+  /** recommendation / notification / subscription … */
+  eventDomain: string;
+  /** recommendation / resource / subscription / notification */
+  objectType: string;
   objectId?: string;
   subjectId?: string;
-  scope?: string; // resource / subscription
-  status: string; // Success / Failed / Processing / Requested
-  statusAt: string; // ISO timestamp
+  /** resource / subscription */
+  scope?: string;
+  /** Success / Failed / Processing / Requested */
+  status: string;
+  /** ISO timestamp */
+  statusAt: string;
   statusHistory: Array<{ status: string; occurredAt: string }>;
   subscriptionId?: string;
   tenantId?: string;
   companyId?: string;
   errorMessage?: string;
   errorStack?: string[];
-  sharedWith?: string[]; // ticket/url
-  channel?: string; // email / slack / jira …
+  /** ticket/url */
+  sharedWith?: string[];
+  /** email / slack / jira … */
+  channel?: string;
   userId?: string;
   context?: Record<string, unknown>;
 }
 
 export interface UserEvent {
-  userId: string; // PartitionKey
-  eventId: string; // RowKey
+  /** PartitionKey */
+  userId: string;
+  /** RowKey */
+  eventId: string;
   objectKey?: string;
   label: string;
   event: string;

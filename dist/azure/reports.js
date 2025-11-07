@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChangeReasonType = void 0;
-// Specific reason types for cost changes
+/** Specific reason types for cost changes */
 var ChangeReasonType;
 (function (ChangeReasonType) {
     ChangeReasonType["NEW_RESOURCE"] = "new_resource";

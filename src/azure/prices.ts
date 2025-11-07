@@ -2,13 +2,20 @@ import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 
 export interface CostDetails {
-  dailySpend?: ResourceSpend[]; // the amount spend on the resource over the last 30 days
-  spendSummary?: ResourceSpend[]; // the spend items aggregated for the last 30 days
-  spendSummaryPrevious?: ResourceSpend[]; // the spend items aggregated for the previous 30 days
-  totalSpend30Days?: number; // the total amount spend on the resource over the last 30 days
-  totalSpend30DaysPrevious?: number; // the total amount spend on the resource over the previous 30 days
-  totalSpend30DaysAmortized?: number; // the total amount spend on the resource over the last 30 days, taking into account reserved instances and savings plans
-  totalSpend30DaysAmortizedPrevious?: number; // the total amount spend on the resource over the previous 30 days, taking into account reserved instances and savings plans
+  /** the amount spend on the resource over the last 30 days */
+  dailySpend?: ResourceSpend[];
+  /** the spend items aggregated for the last 30 days */
+  spendSummary?: ResourceSpend[];
+  /** the spend items aggregated for the previous 30 days */
+  spendSummaryPrevious?: ResourceSpend[];
+  /** the total amount spend on the resource over the last 30 days */
+  totalSpend30Days?: number;
+  /** the total amount spend on the resource over the previous 30 days */
+  totalSpend30DaysPrevious?: number;
+  /** the total amount spend on the resource over the last 30 days, taking into account reserved instances and savings plans */
+  totalSpend30DaysAmortized?: number;
+  /** the total amount spend on the resource over the previous 30 days, taking into account reserved instances and savings plans */
+  totalSpend30DaysAmortizedPrevious?: number;
   retailPrices?: AzurePrice[];
 }
 
@@ -20,7 +27,8 @@ export interface AzurePrice {
   unitPrice: number;
   armRegionName: string;
   location: string;
-  effectiveStartDate: string; // ISO 8601 date string
+  /** ISO 8601 date string */
+  effectiveStartDate: string;
   meterId: string;
   meterName: string;
   productId: string;
@@ -32,17 +40,23 @@ export interface AzurePrice {
   serviceId: string;
   serviceFamily: string;
   unitOfMeasure: string;
-  type: string; // Consumption, Reservation
+  /** Consumption, Reservation */
+  type: string;
   isPrimaryMeterRegion: boolean;
   armSkuName: string;
   savingsPlan: SavingsPlan[];
   monthlyPrice?: number;
-  targetAzurePrices?: AzurePrice[]; // Use this property to set alternative Azure pricing SKU
-  reservedInstances?: SavingsCostSummary[]; // Reserved instances for this price level
+  /** Use this property to set alternative Azure pricing SKU */
+  targetAzurePrices?: AzurePrice[];
+  /** Reserved instances for this price level */
+  reservedInstances?: SavingsCostSummary[];
   savingsPlanSummary?: SavingsCostSummary[];
-  targetMonthlySavings?: number; // Amount of money saved compared to the parent
-  targetSavingsPercent?: number; // Percentage of money saved compared to the parent
-  targetSavingsPercentDisplay?: string; // Show the display percent such as -10%
+  /** Amount of money saved compared to the parent */
+  targetMonthlySavings?: number;
+  /** Percentage of money saved compared to the parent */
+  targetSavingsPercent?: number;
+  /** Show the display percent such as -10% */
+  targetSavingsPercentDisplay?: string;
   targetSavings?: number;
   targetSavingsDisplay?: string;
   targetLabel?: string;
@@ -53,50 +67,75 @@ export interface AzurePrice {
   displayUnitPrice?: string;
   displayTotalPrice?: number;
   displayQuantity?: number;
-  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
+  /** Reference to the recommendation that this target cost is associated with */
+  recommendationId?: string;
 }
 
 export interface SavingsPlan {
   unitPrice: number;
   retailPrice: number;
-  term: string; // e.g., "1 Year", "3 Years"
+  /** e.g., "1 Year", "3 Years" */
+  term: string;
 }
 
 export interface CostSummaryDetails {
-  total?: number; // Last 30 days
-  totalPrevious?: number; // Total cost in the previous 30 days
-  amortizedTotal?: number; // Last 30 days, taking into account reserved instances and savings plans
-  amortizedTotalPrevious?: number; // Total cost in the previous 30 days, taking into account reserved instances and savings plans
+  /** Last 30 days */
+  total?: number;
+  /** Total cost in the previous 30 days */
+  totalPrevious?: number;
+  /** Last 30 days, taking into account reserved instances and savings plans */
+  amortizedTotal?: number;
+  /** Total cost in the previous 30 days, taking into account reserved instances and savings plans */
+  amortizedTotalPrevious?: number;
   items?: ResourceCostSummary[];
   savingsRange?: SavingsRange;
 }
 
 export interface ResourceCostSummary {
-  label1: string; // e.g. "Basic Plan (B2 App)"
-  label2: string; // e.g. "Azure App Service"
+  /** e.g. "Basic Plan (B2 App)" */
+  label1: string;
+  /** e.g. "Azure App Service" */
+  label2: string;
   label3?: string;
   label4?: string;
-  category?: string; // e.g. "Bandwidth", "Defender for Cloud"
-  specs: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB
-  reservation?: string; // name of the reservation if it's a reserved instance
-  active: boolean; // e.g. true means the resource is active, false means the resource was active (old SKU)
-  addon: boolean; // e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR
-  spend: number; // e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range
-  spendAmortized: number; // e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range, taking into account reserved instances and savings plans
-  quantity: number; // e.g. 217.21 (rounded to 2 decimal places)
-  dates?: ActiveDates[]; // e.g. [ { startDate: 20250601, endDate: 20250610 } ]
-  unitPrice: string; // e.g. 0.304140 1/Hour
-  unitPriceAmortized: string; // e.g. 0.304140 1/Hour
-  monthlyPrice?: number; // e.g. 730.00 (rounded to 2 decimal places)
-  retailDiscount: string; // e.g. -4%
+  /** e.g. "Bandwidth", "Defender for Cloud" */
+  category?: string;
+  /** e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB */
+  specs: SpecItem[];
+  /** name of the reservation if it's a reserved instance */
+  reservation?: string;
+  /** e.g. true means the resource is active, false means the resource was active (old SKU) */
+  active: boolean;
+  /** e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR */
+  addon: boolean;
+  /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range */
+  spend: number;
+  /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range, taking into account reserved instances and savings plans */
+  spendAmortized: number;
+  /** e.g. 217.21 (rounded to 2 decimal places) */
+  quantity: number;
+  /** e.g. [ { startDate: 20250601, endDate: 20250610 } ] */
+  dates?: ActiveDates[];
+  /** e.g. 0.304140 1/Hour */
+  unitPrice: string;
+  /** e.g. 0.304140 1/Hour */
+  unitPriceAmortized: string;
+  /** e.g. 730.00 (rounded to 2 decimal places) */
+  monthlyPrice?: number;
+  /** e.g. -4% */
+  retailDiscount: string;
   retailCost?: RetailCostSummary;
   dailyMetrics?: DailyMetrics[];
   summaryMetrics?: DisplayMetric[];
-  resourceId?: string; // Reference to the actual Azure resource
-  resourceName?: string; // Human-readable resource name
-  resourceType?: string; // Azure resource type
+  /** Reference to the actual Azure resource */
+  resourceId?: string;
+  /** Human-readable resource name */
+  resourceName?: string;
+  /** Azure resource type */
+  resourceType?: string;
   savingsRange?: SavingsRange;
-  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
+  /** Reference to the recommendation that this target cost is associated with */
+  recommendationId?: string;
 }
 
 export interface SavingsRange {
@@ -112,55 +151,88 @@ export interface SavingsDetail {
 }
 
 export interface RetailCostSummary {
-  unitPrice: string; // e.g. 0.304140 1/Hour
-  monthlyPrice: number; // e.g. 730.00 (rounded to 2 decimal places)
-  cost: number; // e.g. 66.09 (rounded to 2 decimal places)
+  /** e.g. 0.304140 1/Hour */
+  unitPrice: string;
+  /** e.g. 730.00 (rounded to 2 decimal places) */
+  monthlyPrice: number;
+  /** e.g. 66.09 (rounded to 2 decimal places) */
+  cost: number;
   savingsPlans?: SavingsCostSummary[];
   reservedInstances?: SavingsCostSummary[];
-  targetCost?: TargetCostSummary[]; // This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU)
+  /** This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU) */
+  targetCost?: TargetCostSummary[];
 }
 
 export interface SavingsCostSummary {
-  unitPrice: string; // e.g. 0.304140 1/Hour
-  term: string; // e.g. "1 Year", "3 Years"
-  monthlyPrice: number; // e.g. 730.00 (rounded to 2 decimal places)
-  savingsPercent: string; // e.g. 10%
-  monthlySavings: number; // e.g. 100.00 (rounded to 2 decimal places)
+  /** e.g. 0.304140 1/Hour */
+  unitPrice: string;
+  /** e.g. "1 Year", "3 Years" */
+  term: string;
+  /** e.g. 730.00 (rounded to 2 decimal places) */
+  monthlyPrice: number;
+  /** e.g. 10% */
+  savingsPercent: string;
+  /** e.g. 100.00 (rounded to 2 decimal places) */
+  monthlySavings: number;
 }
 
 export interface TargetCostSummary {
-  targetLabel?: string; // e.g. Windows to Linux migration
-  targetLabel2?: string; // e.g. Windows to Linux migration
-  label1: string; // e.g. "Basic Plan (B2 App)"
-  label2: string; // e.g. "Azure App Service"
+  /** e.g. Windows to Linux migration */
+  targetLabel?: string;
+  /** e.g. Windows to Linux migration */
+  targetLabel2?: string;
+  /** e.g. "Basic Plan (B2 App)" */
+  label1: string;
+  /** e.g. "Azure App Service" */
+  label2: string;
   label3?: string;
   label4?: string;
-  specs: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB
-  cost: number; // e.g. 66.09 (rounded to 2 decimal places)
-  savings: number; // e.g. 100.00 (rounded to 2 decimal places)
-  unitPrice: string; // e.g. 0.304140 1/Hour
-  monthlyPrice: number; // e.g. 730.00 (rounded to 2 decimal places)
-  monthlySavings: number; // e.g. 100.00 (rounded to 2 decimal places)
-  monthlySavingsPercent: string; // e.g. 10%
-  unitPriceRetail?: string; // Retail unit price before tenant discounts are applied
-  monthlyPriceRetail?: number; // Retail monthly price before tenant discounts are applied
-  costRetail?: number; // Retail cost before tenant discounts are applied
-  targetCost?: TargetCostSummary[]; // This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU)
-  reservedInstances?: SavingsCostSummary[]; // This is for reserved intances if it's available
-  savingsPlans?: SavingsCostSummary[]; // This is for savings plans if it's available
-  recommendationId?: string; // Reference to the recommendation that this target cost is associated with
-  resourceType?: string; // Resource Type
+  /** e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB */
+  specs: SpecItem[];
+  /** e.g. 66.09 (rounded to 2 decimal places) */
+  cost: number;
+  /** e.g. 100.00 (rounded to 2 decimal places) */
+  savings: number;
+  /** e.g. 0.304140 1/Hour */
+  unitPrice: string;
+  /** e.g. 730.00 (rounded to 2 decimal places) */
+  monthlyPrice: number;
+  /** e.g. 100.00 (rounded to 2 decimal places) */
+  monthlySavings: number;
+  /** e.g. 10% */
+  monthlySavingsPercent: string;
+  /** Retail unit price before tenant discounts are applied */
+  unitPriceRetail?: string;
+  /** Retail monthly price before tenant discounts are applied */
+  monthlyPriceRetail?: number;
+  /** Retail cost before tenant discounts are applied */
+  costRetail?: number;
+  /** This is for a multi-level target (e.g. From Windows To Linux from P2 SKU to P1 SKU) */
+  targetCost?: TargetCostSummary[];
+  /** This is for reserved intances if it's available */
+  reservedInstances?: SavingsCostSummary[];
+  /** This is for savings plans if it's available */
+  savingsPlans?: SavingsCostSummary[];
+  /** Reference to the recommendation that this target cost is associated with */
+  recommendationId?: string;
+  /** Resource Type */
+  resourceType?: string;
 }
 
 export interface ResourceSpend {
-  cost: number; // the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API
-  costAmortized?: number; // the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account)
+  /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
+  cost: number;
+  /** the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account) */
+  costAmortized?: number;
   quantity: number;
   date?: number;
   activeDates?: ActiveDates[];
-  active?: boolean; // e.g. true means the resource is active, false means the resource was active (old SKU)
-  addon?: boolean; // e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR
-  referenceName?: string; // e.g. Backup, Data Storage, Log Storage, Advanced Threat Protection, Vulnerability Assessment, Long-term Retention Backups
+  /** e.g. true means the resource is active, false means the resource was active (old SKU) */
+  active?: boolean;
+  /** e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR */
+  addon?: boolean;
+  /** e.g. Backup, Data Storage, Log Storage, Advanced Threat Protection, Vulnerability Assessment, Long-term Retention Backups */
+  referenceName?: string;
   resourceId?: string;
   meterCategory: string;
   meterSubCategory: string;
@@ -172,7 +244,8 @@ export interface ResourceSpend {
   reservationName?: string;
   label?: string;
   label2?: string;
-  specs?: SpecItem[]; // e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB | IOPS: 1000 | Throughput: 100MB/s
+  /** e.g. Cores: 2 | RAM: 3.5GB | Storage: 10GB | IOPS: 1000 | Throughput: 100MB/s */
+  specs?: SpecItem[];
   displayCost?: number;
   displayQuantity?: number;
   displayUnitPrice?: string;

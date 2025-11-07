@@ -1,12 +1,16 @@
 import { SurveyResponse } from '../company';
 
 export interface CloudAccount {
-  companyId: string; // Partition Key
-  id: string; // Row Key (Azure Client ID, AWS Access Key ID)
+  /** Partition Key */
+  companyId: string;
+  /** Row Key (Azure Client ID, AWS Access Key ID) */
+  id: string;
   name: string;
   companyName: string;
-  provider: string; // AWS, Azure, GCP, etc.
-  tenantId?: string; // Azure Tenant ID
+  /** AWS, Azure, GCP, etc. */
+  provider: string;
+  /** Azure Tenant ID */
+  tenantId?: string;
   secret?: string;
   secretExpiresAt?: Date;
   createdAt: Date;
@@ -39,6 +43,8 @@ export interface SubscriptionInfoBase {
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {
-  id: string; // Partition Key (Azure Subscription ID)
-  companyId: string; // Row Key
+  /** Partition Key (Azure Subscription ID) */
+  id: string;
+  /** Row Key */
+  companyId: string;
 }

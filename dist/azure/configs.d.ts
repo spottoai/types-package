@@ -14,14 +14,21 @@ export interface ResourceConfigItem {
     overrideSourceProperty?: string;
     isArray?: boolean;
     mandatory?: boolean;
+    /** if true, then the resource is supported by the platform (e.g. activity logs, scaling plans, billing) */
     supporting?: boolean;
     displayServiceName?: string;
+    /** an expression to determine the display service name */
     displayServiceNameExpression?: string;
     icon?: string;
+    /** an expression to determine the icon */
     iconExpression?: string;
+    /** a description of the service */
     description?: string;
+    /** an expression to determine the description */
     descriptionExpression?: string;
+    /** a link to the product page */
     product?: string;
+    /** an expression to determine the product */
     productExpression?: string;
     references: {
         [key: string]: ResourceTypeReference;
@@ -29,11 +36,13 @@ export interface ResourceConfigItem {
     metrics?: AzureResourceMetric[];
     metricsDescription?: MetricDescription[];
     metricsDisplay?: MetricsDisplay[];
+    /** Loaded during processing */
     name: string;
     type: string;
     parameters: object;
     alias: AliasConfig;
     resources: ResourceConfigItem[];
+    /** e.g. "Virtual Network" used for bill / price matching */
     serviceName?: string;
     label1?: string;
     label2?: string;

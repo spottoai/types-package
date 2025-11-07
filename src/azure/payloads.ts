@@ -12,7 +12,8 @@ export interface ProcessPayload {
 
 export interface RequestMessage {
   entity: string;
-  action: string; // create, delete
+  /** create, delete */
+  action: string;
   companyId: string;
   cloudAccountId: string;
   tenantId: string;
@@ -30,7 +31,8 @@ export interface SubscriptionMessage {
   cloudAccountId?: string;
   tenantId?: string;
   clientId?: string;
-  refreshComponents?: string[]; // Provide a list of components to refresh. Leave empty to refresh all components.
+  /** Provide a list of components to refresh. Leave empty to refresh all components. */
+  refreshComponents?: string[];
   sagaRunId?: string;
   eventId?: string;
 }

@@ -2,6 +2,7 @@ export interface SecurityImpact {
     id?: string;
     controlDisplayName: string;
     controlName: string;
+    /** Recommendation ids */
     recommendationIds: string[];
     notApplicableResourceCount: number;
     unhealthyResourceCount: number;
@@ -11,10 +12,12 @@ export interface SecurityImpact {
     currentScore: number;
     potentialScoreIncrease: number;
 }
+/** For individual resource status */
 export interface SecurityAssessmentStatus {
     resourceId: string;
     status: 'Healthy' | 'Unhealthy' | 'NotApplicable';
 }
+/** For subscription level */
 export interface SubscriptionSecurityStatus {
     activeRecommendations: number;
     totalRecommendations: number;

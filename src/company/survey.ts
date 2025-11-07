@@ -10,9 +10,12 @@ export interface SurveyQuestion {
   required?: boolean;
   placeholder?: string;
   helpText?: string;
-  help?: string; // Add help property for tooltip
-  description?: string; // Add description property for card description
-  rows?: number; // Add rows property for textarea
+  /** Add help property for tooltip */
+  help?: string;
+  /** Add description property for card description */
+  description?: string;
+  /** Add rows property for textarea */
+  rows?: number;
   options?: SurveyOption[];
   maxSelections?: number;
   conditionalPrompts?: Record<string, string>;

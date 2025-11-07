@@ -19,6 +19,7 @@ export interface Recommendation {
     id: string;
     name: string;
     category: RecommendationCategory;
+    /** custom */
     type?: string;
     description?: string;
     remediation?: string;
@@ -32,9 +33,11 @@ export interface Recommendation {
     potentialBenefits?: string;
     effort?: string;
     effortReason?: string;
+    /** e.g. 10 hours */
     effortHours?: number;
     risk?: string;
     riskReason?: string;
+    /** Could deprecate later */
     costImpact?: number;
     costImpactReason?: string;
     costImpactDetails?: CostImpactDetails;
@@ -42,21 +45,32 @@ export interface Recommendation {
     performanceImpactReason?: string;
     confidencePercentage?: number;
     confidenceReason?: string;
+    /** array of resources that have this recommendation */
     resources?: ResourceReference[];
+    /** only for security recommendations */
     securityImpactDetails?: SecurityImpact;
+    /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
     resolved?: boolean;
     securityAssessmentStatuses?: SecurityAssessmentStatus[];
+    /** Deprecated fields, kept for compatibility */
     subcategory?: string;
     solution?: string;
     source?: string;
     service?: string;
+    /**
+     * Stored as string to allow JSON persistence.
+     * Uses a different name to avoid conflict with RecommendationWithState.createdAt.
+     */
     createdTime?: string;
+    /** Avoids conflict with RecommendationWithState.updatedAt */
     lastUpdatedTime?: string;
 }
 export interface CostImpactDetails {
+    /** e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux" */
     name: string;
     monthlySavings?: number;
     currentSpend?: number;
+    /** e.g. 20 for 20% */
     savingPercentage?: number;
     minMonthlySavings?: number;
     maxMonthlySavings?: number;
@@ -111,6 +125,7 @@ export interface RecommendationCollection {
     results: ResourceId[];
 }
 export interface AzureRecommendationLite {
+    /** e.g. Cost, Performance, Reliability, Security, Compliance, OperationalExcellence, Operational Excellence, HighAvailability */
     category: string;
     total: number;
     high: number;
@@ -118,11 +133,16 @@ export interface AzureRecommendationLite {
     low: number;
 }
 export interface RecommendationStats {
+    /** total number of recommendations in the subscription */
     total: number;
+    /** total number of high recommendations in the subscription */
     high: number;
+    /** total number of medium recommendations in the subscription */
     medium: number;
+    /** total number of low recommendations in the subscription */
     low: number;
 }
+/** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
     status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
     read?: boolean;
