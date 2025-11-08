@@ -189,6 +189,10 @@ export interface SavingsCostSummary {
   normalizedMonthlySavings?: number;
   /** Savings percent normalized for the recommended commitment count. */
   normalizedSavingsPercent?: number;
+  /** Baseline commitments derived from observed usage (before new recommendations). */
+  baselineCommitmentCount?: number;
+  /** Number of hours left on PAYG after commitments are applied. */
+  paygRemainderHours?: number;
 }
 
 export interface TargetCostSummary {
