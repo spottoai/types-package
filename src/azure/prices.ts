@@ -174,6 +174,21 @@ export interface SavingsCostSummary {
   savingsPercent: string;
   /** e.g. 100.00 (rounded to 2 decimal places) */
   monthlySavings: number;
+  /**
+   * Hours covered per commitment (for example 730 hours per month for hourly commitments).
+   * Provided so callers can scale savings for multiple concurrently running instances.
+   */
+  commitmentHoursPerInstance?: number;
+  /**
+   * Recommended number of commitments to cover the observed usage (ceil(billedHours / commitmentHoursPerInstance)).
+   */
+  recommendedCommitmentCount?: number;
+  /** Monthly price normalized for the recommended commitment count. */
+  normalizedMonthlyPrice?: number;
+  /** Monthly savings normalized for the recommended commitment count. */
+  normalizedMonthlySavings?: number;
+  /** Savings percent normalized for the recommended commitment count. */
+  normalizedSavingsPercent?: number;
 }
 
 export interface TargetCostSummary {
