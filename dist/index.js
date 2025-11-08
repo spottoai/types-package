@@ -37,4 +37,5 @@ __exportStar(require("./common"), exports);
 __exportStar(require("./company"), exports);
 __exportStar(require("./ai"), exports);
 __exportStar(require("./events"), exports);
+__exportStar(require("./identity"), exports);
 //# sourceMappingURL=index.js.map
