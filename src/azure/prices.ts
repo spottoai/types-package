@@ -143,11 +143,38 @@ export interface SavingsRange {
   max: SavingsDetail;
   currentMonthly: number;
   lowestPossibleMonthly: number;
+  /** Optional breakdown of savings scenarios (e.g. SKU changes, reservations, savings plans). */
+  metadata?: SavingsRangeOption[];
 }
 
 export interface SavingsDetail {
   monthly: number;
   percent: number;
+}
+
+export interface SavingsRangeOption {
+  /** Unique key for the scenario, stable within the savings response. */
+  key: string;
+  /** Human-readable description of the savings option. */
+  label: string;
+  /** Category of the savings source (target-cost, reserved-instance, savings-plan). */
+  sourceType?: 'target-cost' | 'reserved-instance' | 'savings-plan';
+  /** Commitment term if applicable (e.g. "1 Year"). */
+  term?: string;
+  /** Indicates whether pricing/savings were normalized across recommended commitments. */
+  normalized?: boolean;
+  /** Total monthly price for this option after normalization. */
+  targetMonthlyPrice: number;
+  /** Monthly savings relative to the observed spend. */
+  monthlySavings: number;
+  /** Savings percent relative to the observed spend. */
+  savingsPercent: number;
+  /** Baseline commitments inferred from current usage (reserved instances or savings plans). */
+  baselineCommitmentCount?: number;
+  /** Total commitments recommended to cover the workload. */
+  recommendedCommitmentCount?: number;
+  /** Hours that remain on PAYG after applying commitments. */
+  paygRemainderHours?: number;
 }
 
 export interface RetailCostSummary {
