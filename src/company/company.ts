@@ -33,6 +33,7 @@ export interface UserCompany {
   email: string;
   companyId: string;
   companyName: string;
+  userId: string;
   role: number;
 }
 
