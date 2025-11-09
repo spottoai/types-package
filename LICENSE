@@ -1,43 +1,21 @@
-PROPRIETARY LICENSE AGREEMENT
+MIT License
 
 Copyright (c) 2024 Spotto AI (www.spotto.ai)
 
-This software and associated documentation files (the "Software") are the proprietary 
-and confidential information of Spotto AI. The Software is made available publicly 
-solely for internal use by Spotto AI and its authorized projects.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-RESTRICTIONS:
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-1. NO PERMISSION TO USE: Except as expressly stated below, no person or entity is 
-   granted any right, title, or interest in or to the Software.
-
-2. INTERNAL USE ONLY: The Software may only be used internally by Spotto AI and its 
-   authorized projects for development, testing, and deployment purposes.
-
-3. NO REDISTRIBUTION: The Software may not be redistributed, sold, leased, or 
-   otherwise made available to third parties.
-
-4. NO DERIVATIVE WORKS: No derivative works based on the Software may be created 
-   without explicit written permission from Spotto AI.
-
-5. NO REVERSE ENGINEERING: Reverse engineering, disassembly, or decompilation of 
-   the Software is strictly prohibited.
-
-6. NO COMMERCIAL USE: Commercial use of the Software by any entity other than 
-   Spotto AI is strictly prohibited.
-
-DISCLAIMER:
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
-PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT 
-HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION 
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-VIOLATION:
-
-Any unauthorized use, distribution, or modification of this Software constitutes 
-a violation of this license agreement and may result in legal action.
-
-For licensing inquiries, contact: contact@spotto.ai
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,23 +1,17 @@
 # Types Package
 
-A shared TypeScript interfaces package for private repositories. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
-**⚠️ RESTRICTED USE - INTERNAL SPOTTO AI ONLY ⚠️**
-
-This is a proprietary TypeScript interfaces package for internal use by Spotto AI (www.spotto.ai) only. This package contains common interfaces that can be reused across Spotto AI's API, frontend, and backend projects.
-
-**IMPORTANT**: This repository is made public solely for internal sharing between Spotto AI projects. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms.
+A shared TypeScript interfaces package. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
 
 ## Features
 
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
-- **Git Dependencies**: Designed to work with Git dependencies for private repositories
+- **Git Dependencies**: Designed to work with Git dependencies
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support
 - **Modular Structure**: Organized by domain (API, Database, Frontend, Backend)
 
 ## Installation
 
-Since this is a private repository, you'll need to use Git dependencies instead of npm. Add this to your consuming project's `package.json`:
-Since this is an internal Spotto AI package, you'll need to use Git dependencies. Add this to your consuming project's `package.json`:
+Add this to your consuming project's `package.json`:
 
 ```json
 {
@@ -115,6 +109,3 @@ This package follows semantic versioning. When making changes:
 ## License
 
 MIT License - see LICENSE file for details
-**PROPRIETARY LICENSE** - This software is proprietary to Spotto AI and is made available publicly solely for internal use. External use, distribution, or modification is strictly prohibited. See LICENSE file for full terms and restrictions.
-
-For licensing inquiries, contact: legal@spotto.ai
