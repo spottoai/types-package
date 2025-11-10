@@ -5,7 +5,6 @@ export interface Company {
   id: string;
   name: string;
   website?: string;
-  stripeCustomerId?: string;
   createdAt: Date;
   updatedAt: Date;
   loginDomainNames?: string[];
@@ -16,6 +15,7 @@ export interface Company {
   objectives?: SurveyResponse[];
   notifications?: NotificationSubscription[];
   integrations?: CompanyIntegrations;
+  parentId?: string;
 }
 
 export interface CompanyCreate {
@@ -27,6 +27,7 @@ export interface CompanyCreate {
   objectives?: SurveyResponse[];
   notifications?: NotificationSubscription[];
   integrations?: CompanyIntegrations;
+  parentId?: string;
 }
 
 export interface UserCompany {
@@ -35,6 +36,7 @@ export interface UserCompany {
   companyName: string;
   userId: string;
   role: number;
+  parentId?: string;
 }
 
 export interface CompanyIntegrations {
