@@ -16,6 +16,7 @@ export interface Company {
   notifications?: NotificationSubscription[];
   integrations?: CompanyIntegrations;
   parentId?: string;
+  hasChildren?: boolean;
 }
 
 export interface CompanyCreate {
