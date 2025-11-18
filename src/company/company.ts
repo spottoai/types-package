@@ -39,6 +39,7 @@ export interface UserCompany {
   userId: string;
   role: number;
   parentId?: string;
+  hasChildren?: boolean;
 }
 
 export interface CompanyIntegrations {
