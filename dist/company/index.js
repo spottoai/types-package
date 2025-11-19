@@ -17,4 +17,5 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./company"), exports);
 __exportStar(require("./notification"), exports);
 __exportStar(require("./survey"), exports);
+__exportStar(require("./billingAccount"), exports);
 //# sourceMappingURL=index.js.map

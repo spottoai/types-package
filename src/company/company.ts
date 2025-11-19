@@ -15,6 +15,7 @@ export interface Company {
   objectives?: SurveyResponse[];
   notifications?: NotificationSubscription[];
   integrations?: CompanyIntegrations;
+  billingAccountId?: string;
   parentId?: string;
   parentCompanyName?: string;
   hasChildren?: boolean;
@@ -30,6 +31,7 @@ export interface CompanyCreate {
   notifications?: NotificationSubscription[];
   integrations?: CompanyIntegrations;
   parentId?: string;
+  billingAccountId?: string;
 }
 
 export interface UserCompany {

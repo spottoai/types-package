@@ -1,0 +1,1 @@
+{"version":3,"file":"billingAccount.d.ts","sourceRoot":"","sources":["../../src/company/billingAccount.ts"],"names":[],"mappings":"AACA,MAAM,WAAW,cAAc;IAC7B,SAAS,EAAE,MAAM,CAAC;IAClB,gBAAgB,EAAE,MAAM,CAAC;IACzB,eAAe,EAAE,MAAM,CAAC;IACxB,IAAI,EAAE,MAAM,CAAC;IACb,MAAM,EAAE,MAAM,CAAC;IACf,oBAAoB,EAAE,MAAM,CAAC;IAC7B,kBAAkB,EAAE,MAAM,CAAC;IAC3B,oBAAoB,EAAE,MAAM,CAAC;CAC9B"}
