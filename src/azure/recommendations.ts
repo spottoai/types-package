@@ -96,6 +96,9 @@ export interface RecommendationResource {
   type: string;
   spend: number;
   spendAmortized: number;
+  savings?: SavingsPotential;
+  currency?: string;
+  currencySymbol?: string;
 }
 
 export interface RecommendationsView {
@@ -113,6 +116,9 @@ export interface ResourceId {
 export interface ResourceReference {
   id: string;
   name: string;
+  savings?: SavingsPotential;
+  currency?: string;
+  currencySymbol?: string;
 }
 
 export interface ReliabilityRecommendation extends Recommendation {
