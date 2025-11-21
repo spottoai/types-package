@@ -7,6 +7,7 @@ export interface BillingAccount {
   stripeSubscriptionId: string; // the subscription in Stripe that the billing account is linked to
   stripeItemExcessId: string;
   stripeItemLicensedId: string;
+  trialPeriodDays?: number;
 }
 
 export interface BillingAccountSummary {

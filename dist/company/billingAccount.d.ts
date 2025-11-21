@@ -7,6 +7,7 @@ export interface BillingAccount {
     stripeSubscriptionId: string;
     stripeItemExcessId: string;
     stripeItemLicensedId: string;
+    trialPeriodDays?: number;
 }
 export interface BillingAccountSummary {
     managedByParent: boolean;
