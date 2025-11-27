@@ -39,7 +39,8 @@ export interface Recommendation {
   /** Could deprecate later */
   costImpact?: number;
   costImpactReason?: string;
-  costImpactDetails?: CostImpactDetails;
+  /*** costImpactDetails is deprecated **/
+  // costImpactDetails?: CostImpactDetails;
   performanceImpact?: number;
   performanceImpactReason?: string;
   confidencePercentage?: number;
@@ -65,6 +66,7 @@ export interface Recommendation {
   lastUpdatedTime?: string;
 }
 
+/** Deprecated **/
 export interface CostImpactDetails {
   /** e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux" */
   name: string;
