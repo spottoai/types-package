@@ -64,6 +64,16 @@ export interface Recommendation {
   createdTime?: string;
   /** Avoids conflict with RecommendationWithState.updatedAt */
   lastUpdatedTime?: string;
+  /** Business story properties */
+  headline: string;
+  bottomLine: string;
+  plainSummary: string;
+  quickSteps: string[];
+  businessOwner: string;
+  keyConstraint: string;
+  validationEvidence: string;
+  /** Technical playbook (only for multi-step implementations) */
+  technicalPlaybook?: string;
 }
 
 /** Deprecated **/
