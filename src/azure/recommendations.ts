@@ -21,6 +21,7 @@ export interface Recommendation {
   id: string;
   name: string;
   category: RecommendationCategory;
+  subCategory?: string;
   /** custom */
   type?: string;
   description?: string;

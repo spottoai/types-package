@@ -19,6 +19,7 @@ export interface Recommendation {
     id: string;
     name: string;
     category: RecommendationCategory;
+    subCategory?: string;
     /** custom */
     type?: string;
     description?: string;
@@ -40,7 +41,7 @@ export interface Recommendation {
     /** Could deprecate later */
     costImpact?: number;
     costImpactReason?: string;
-    costImpactDetails?: CostImpactDetails;
+    /*** costImpactDetails is deprecated **/
     performanceImpact?: number;
     performanceImpactReason?: string;
     confidencePercentage?: number;
@@ -75,6 +76,7 @@ export interface Recommendation {
     /** Technical playbook (only for multi-step implementations) */
     technicalPlaybook?: string;
 }
+/** Deprecated **/
 export interface CostImpactDetails {
     /** e.g. "Saving Plan", "Reserved Instance", "Windows migration to Linux" */
     name: string;
