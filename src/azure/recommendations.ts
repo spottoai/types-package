@@ -54,7 +54,6 @@ export interface Recommendation {
   resolved?: boolean;
   securityAssessmentStatuses?: SecurityAssessmentStatus[];
   /** Deprecated fields, kept for compatibility */
-  subcategory?: string;
   solution?: string;
   source?: string;
   service?: string;
