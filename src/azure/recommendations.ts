@@ -141,7 +141,6 @@ export interface ReliabilityRecommendation extends Recommendation {
 }
 
 export interface CustomAzureRecommendation extends Recommendation {
-  subcategory: string;
   service: string;
   source: string;
   fileName: string;
