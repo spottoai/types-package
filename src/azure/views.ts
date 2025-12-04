@@ -27,6 +27,7 @@ export interface AzureResourcesView {
   resources: AzureResourcePortalItem[];
   /** e.g. { "environment": ["production", "staging"], "team": ["devops", "frontend"] } */
   tags?: Record<string, string[]>;
+  costSavingsSummary?: CostSavingsSummary;
 }
 
 /**
@@ -141,4 +142,33 @@ export interface AzurePluginResourceLite {
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
   customRecommendations: AzureRecommendationLite[];
+}
+
+export interface CostSavingsSummary {
+  currency: string;
+  currencySymbol?: string;
+  costStartDate?: number;
+  costEndDate?: number;
+  totals: {
+    currentMonthly: number;          // Sum of deduped currentMonthly across all cost savings ranges
+    potentialMonthly: number;        // currentMonthly - maxSavings
+    minSavings: number;
+    maxSavings: number;
+    minSavingsPercent?: number;
+    maxSavingsPercent?: number;
+  };
+  categories: CostSavingsCategoryBreakdown[];
+}
+
+export interface CostSavingsCategoryBreakdown {
+  key: string;                         // Normalised identifier (e.g. "rightsizing")
+  label: string;                       // Human-readable label
+  recommendationCount: number;
+  resourceCount: number;               // Unique resource IDs within the category
+  currentMonthly: number;
+  potentialMonthly: number;
+  minSavings: number;
+  maxSavings: number;
+  sampleRecommendations: string[];     // Up to N IDs for drilldowns
+  sampleResources: string[];           // Up to N IDs
 }

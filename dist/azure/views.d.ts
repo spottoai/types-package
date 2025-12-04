@@ -24,6 +24,7 @@ export interface AzureResourcesView {
     resources: AzureResourcePortalItem[];
     /** e.g. { "environment": ["production", "staging"], "team": ["devops", "frontend"] } */
     tags?: Record<string, string[]>;
+    costSavingsSummary?: CostSavingsSummary;
 }
 /**
  * Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
@@ -131,5 +132,32 @@ export interface AzurePluginResourceLite {
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
     customRecommendations: AzureRecommendationLite[];
+}
+export interface CostSavingsSummary {
+    currency: string;
+    currencySymbol?: string;
+    costStartDate?: number;
+    costEndDate?: number;
+    totals: {
+        currentMonthly: number;
+        potentialMonthly: number;
+        minSavings: number;
+        maxSavings: number;
+        minSavingsPercent?: number;
+        maxSavingsPercent?: number;
+    };
+    categories: CostSavingsCategoryBreakdown[];
+}
+export interface CostSavingsCategoryBreakdown {
+    key: string;
+    label: string;
+    recommendationCount: number;
+    resourceCount: number;
+    currentMonthly: number;
+    potentialMonthly: number;
+    minSavings: number;
+    maxSavings: number;
+    sampleRecommendations: string[];
+    sampleResources: string[];
 }
 //# sourceMappingURL=views.d.ts.map
