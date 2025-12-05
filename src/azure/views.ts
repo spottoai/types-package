@@ -151,8 +151,8 @@ export interface CostSavingsSummary {
   costStartDate?: number;
   costEndDate?: number;
   totals: {
-    currentMonthly: number;          // Sum of deduped currentMonthly across all cost savings ranges
-    potentialMonthly: number;        // currentMonthly - maxSavings
+    currentMonthly: number; // Sum of deduped currentMonthly across all cost savings ranges
+    potentialMonthly: number; // currentMonthly - maxSavings
     minSavings: number;
     maxSavings: number;
     minSavingsPercent?: number;
@@ -162,14 +162,14 @@ export interface CostSavingsSummary {
 }
 
 export interface CostSavingsCategoryBreakdown {
-  key: string;                         // Normalised identifier (e.g. "rightsizing")
-  label: string;                       // Human-readable label
+  key: string; // Normalised identifier (e.g. "rightsizing")
+  label: string; // Human-readable label
   recommendationCount: number;
-  resourceCount: number;               // Unique resource IDs within the category
+  resourceCount: number; // Unique resource IDs within the category
   currentMonthly: number;
   potentialMonthly: number;
   minSavings: number;
   maxSavings: number;
-  sampleRecommendations: string[];     // Up to N IDs for drilldowns
-  sampleResources: string[];           // Up to N IDs
+  sampleRecommendations: string[]; // Up to N IDs for drilldowns
+  sampleResources: string[]; // Up to N IDs
 }
