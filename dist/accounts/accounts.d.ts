@@ -17,6 +17,10 @@ export interface CloudAccount {
     createdBy: string;
     status: string;
     objectives?: SurveyResponse[];
+    writeSecret?: string;
+    writeSecretExpiresAt?: Date;
+    writeClientId?: string;
+    writeBitmask?: number;
 }
 export interface SubscriptionInfoBase {
     name: string;
