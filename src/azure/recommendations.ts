@@ -267,4 +267,3 @@ export interface JiraEntity {
 export interface JiraLabel {
   name: string;
 }
-
