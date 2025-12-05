@@ -13,6 +13,7 @@ export interface AzureDashboardView {
     billingPeriodSummary?: MonthSummary;
     summary?: ExecutiveSummary;
     dailySummary?: DailySummary;
+    costSavingsSummary?: CostSavingsSummary;
 }
 export interface ExecutiveSummary {
     summary: string;
