@@ -31,6 +31,7 @@ __exportStar(require("./azure/views"), exports);
 __exportStar(require("./azure/security"), exports);
 __exportStar(require("./azure/serviceRetirement"), exports);
 __exportStar(require("./azure/costEstimation"), exports);
+__exportStar(require("./azure/storage-inventory"), exports);
 __exportStar(require("./accounts"), exports);
 __exportStar(require("./users"), exports);
 __exportStar(require("./common"), exports);
