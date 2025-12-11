@@ -111,6 +111,8 @@ export interface InventoryAnalysisStatus {
   resourceId?: string;
   storageAccount?: string;
   resourceGroup?: string;
+  /** Reference (path or URL) to the uploaded manifest/CSV set */
+  inputReference?: string;
 }
 
 export interface InventoryManifestFile {
