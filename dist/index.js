@@ -39,4 +39,5 @@ __exportStar(require("./company"), exports);
 __exportStar(require("./ai"), exports);
 __exportStar(require("./events"), exports);
 __exportStar(require("./identity"), exports);
+__exportStar(require("./tags"), exports);
 //# sourceMappingURL=index.js.map

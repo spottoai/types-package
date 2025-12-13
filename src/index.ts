@@ -23,3 +23,4 @@ export * from './company';
 export * from './ai';
 export * from './events';
 export * from './identity';
+export * from './tags';
