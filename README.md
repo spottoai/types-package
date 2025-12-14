@@ -4,7 +4,6 @@ A shared TypeScript interfaces package. This package contains common interfaces 
 
 ## Features
 
-
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
 - **Git Dependencies**: Designed to work with Git dependencies
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support
