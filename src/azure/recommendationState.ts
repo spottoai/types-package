@@ -22,6 +22,8 @@ export interface RecommendationState {
   /** true if the recommendation is flagged */
   flagged: boolean;
   comments: Comment[];
+  /** ID of the pinned comment */
+  pinnedCommentId?: string;
   history: RecommendationHistory[];
   custom: boolean;
   /** Date when the status started */
