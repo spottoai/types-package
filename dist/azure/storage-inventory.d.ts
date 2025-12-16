@@ -5,7 +5,29 @@ export type AgeBucket = '0-30d' | '30-90d' | '90-180d' | '180-365d' | '365d+';
 export interface InventoryUserContext {
     retentionDays?: number;
     canDeleteOld?: boolean;
+    allowAutoDelete?: boolean;
+    keepVersionsDays?: number;
     fileTypes?: string[];
+    highAvailabilityPrefixes?: string[];
+    coldArchivePrefixes?: string[];
+    accessPattern?: 'constant' | 'burst' | 'rare';
+    maxReadLatency?: 'seconds' | 'minutes' | 'hours';
+    rehydrationPriority?: 'low' | 'standard' | 'high';
+    budgetSensitivity?: 'low' | 'medium' | 'high';
+    allowAutoTiering?: boolean;
+    compliance?: {
+        immutabilityRequired?: boolean;
+        legalHoldRequired?: boolean;
+        minRetentionDays?: number;
+    };
+    maintenanceWindow?: string;
+    notes?: string;
+    tierConstraints?: {
+        minHotPercent?: number;
+        maxArchivePercent?: number;
+        requiredHotPrefixes?: string[];
+        allowedArchivePrefixes?: string[];
+    };
 }
 export interface InventoryAnalysisResult {
     subscriptionId?: string;
