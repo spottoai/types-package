@@ -7,48 +7,6 @@ export interface InventoryUserContext {
     canDeleteOld?: boolean;
     fileTypes?: string[];
 }
-export interface InventoryIssue {
-    type: 'page_blob_backups' | 'stale_append_blobs' | 'data_beyond_retention';
-    severity: 'high' | 'medium' | 'low';
-    affectedCount: number;
-    affectedSizeGB: number;
-    currentMonthlyCost: number;
-    potentialSavings: number;
-    recommendation: string;
-    migrationSteps: string[];
-    sampleBlobs?: string[];
-}
-export interface PrefixAnalysis {
-    prefix: string;
-    blobCount: number;
-    sizeGB: number;
-    dominantBlobType: BlobKind;
-    dominantAccessPattern: Exclude<AccessPattern, 'unknown'>;
-}
-export interface ContainerAnalysis {
-    containerName: string;
-    totalBlobs: number;
-    totalSizeGB: number;
-    blobTypeDistribution: {
-        block: {
-            count: number;
-            sizeGB: number;
-        };
-        page: {
-            count: number;
-            sizeGB: number;
-        };
-        append: {
-            count: number;
-            sizeGB: number;
-        };
-    };
-    accessPatternDistribution: Record<Exclude<AccessPattern, 'unknown'>, {
-        count: number;
-        sizeGB: number;
-    }>;
-    topPrefixes: PrefixAnalysis[];
-}
 export interface InventoryAnalysisResult {
     subscriptionId?: string;
     resourceId?: string;
@@ -56,44 +14,49 @@ export interface InventoryAnalysisResult {
     inventorySource: InventorySource;
     summary: {
         totalBlobs: number;
-        totalSizeGB: number;
-        analyzedBlobs: number;
-        containerCount: number;
-    };
-    blobTypeDistribution: {
-        block: {
+        totalBytes: number;
+        analyzedBlobs?: number;
+        lastScanTime?: string;
+        tierBreakdown: Record<string, {
             count: number;
-            sizeGB: number;
-            canLifecycle: true;
-        };
-        page: {
-            count: number;
-            sizeGB: number;
-            canLifecycle: false;
-        };
-        append: {
-            count: number;
-            sizeGB: number;
-            staleCount: number;
-            staleSizeGB: number;
-        };
-    };
-    accessPatternDistribution: Record<AccessPattern, {
-        count: number;
-        sizeGB: number;
-        percentage?: number;
-    }>;
-    ageDistribution: Record<AgeBucket, {
-        count: number;
-        sizeGB: number;
-        /** Per-blob-type breakdown, always emitted by the analyzer */
-        distributions: Record<BlobKind, {
-            count: number;
-            sizeGB: number;
+            bytes: number;
+            percentage?: number;
         }>;
-    }>;
-    containers: ContainerAnalysis[];
+        ageBuckets: Record<AgeBucket | string, {
+            count: number;
+            bytes: number;
+            percentage?: number;
+        }>;
+    };
     issues: InventoryIssue[];
+    recommendations: InventoryRecommendation[];
+    compliance?: {
+        immutabilityLocked?: ScopeStat;
+        legalHold?: ScopeStat;
+        remainingRetentionDays?: Record<string, ScopeStat>;
+        deleted?: ScopeStat;
+    };
+    metadataQuality?: {
+        tagCoverage?: CoverageStat;
+        metadataCoverage?: CoverageStat;
+        missingTagExamples?: string[];
+    };
+    copyStatus?: {
+        rehydrating?: ScopeStat & {
+            examples?: string[];
+        };
+        inProgress?: ScopeStat & {
+            examples?: string[];
+        };
+    };
+    outliers?: {
+        topBySize?: InventoryOutlier[];
+    };
+    inputs?: {
+        sourceCsv?: string;
+        schemaVersion?: string;
+        sampleSize?: number;
+    };
     userContext?: InventoryUserContext;
 }
 export interface InventoryAnalysisProgress {
@@ -152,4 +115,45 @@ export type InventoryStatusOrResult = InventoryAnalysisStatus | (InventoryAnalys
     status?: InventoryAnalysisStatus['status'];
     resultPath?: string;
 });
+export interface ScopeStat {
+    count: number;
+    bytes: number;
+    percentage?: number;
+}
+export interface CoverageStat {
+    coverage: number;
+    countWith?: number;
+    countWithout?: number;
+    examplesWithout?: string[];
+}
+export interface InventoryIssue {
+    type: string;
+    severity: 'high' | 'medium' | 'low';
+    count: number;
+    bytes: number;
+    description?: string;
+    examples?: string[];
+    constraints?: string[];
+}
+export interface InventoryRecommendation {
+    action: string;
+    targetTier?: string;
+    scope: ScopeStat & {
+        percentOfTotal?: number;
+    };
+    estimatedSavings?: {
+        monthly?: number;
+        currency?: string;
+    };
+    rationale?: string;
+    constraints?: string[];
+    examples?: string[];
+}
+export interface InventoryOutlier {
+    name: string;
+    bytes: number;
+    accessTier?: string;
+    lastAccessTime?: string;
+    archiveStatus?: string;
+}
 //# sourceMappingURL=storage-inventory.d.ts.map

@@ -1,3 +1,4 @@
+import { Tags } from '../tags';
 import { ServiceRetirementRecommendation } from './recommendations';
 export interface ServiceRetirement {
     id: string;
@@ -12,6 +13,7 @@ export interface ServiceRetirement {
     effort?: 'high' | 'medium' | 'low';
     effortHours?: number;
     tags?: Record<string, string>;
+    spottoTags?: Tags;
 }
 export interface ServiceRetirementPortalResource {
     id: string;

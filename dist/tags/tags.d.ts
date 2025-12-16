@@ -12,4 +12,15 @@ export interface TagRule {
     tags: Record<string, string | null>;
 }
 export type RuleScope = 'self' | 'children' | 'descendants' | 'self-and-descendants';
+export declare enum TagFlags {
+    Required = 1,// 1
+    Inherited = 2
+}
+export interface Tag {
+    v: string;
+    a: number;
+}
+export interface Tags {
+    [key: string]: Tag;
+}
 //# sourceMappingURL=tags.d.ts.map

@@ -4,6 +4,7 @@ import { CostSummaryDetails } from './prices.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
 import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
+import { Tags } from '../tags/tags.js';
 
 export interface AzureDashboardView {
   subscription: SubscriptionSummary;
@@ -28,6 +29,7 @@ export interface AzureResourcesView {
   resources: AzureResourcePortalItem[];
   /** e.g. { "environment": ["production", "staging"], "team": ["devops", "frontend"] } */
   tags?: Record<string, string[]>;
+  spottoTags?: Tags;
   costSavingsSummary?: CostSavingsSummary;
 }
 
@@ -69,6 +71,7 @@ export interface AzureResourcePortalItem {
   customRecommendations: AzureRecommendationLite[];
   /** e.g. { "environment": "production", "team": "devops" } */
   tags?: Record<string, string>;
+  spottoTags?: Tags;
   /** e.g. 1715769600000 (Unix timestamp in milliseconds) */
   createdTime?: number;
   /** This is simplfied */
@@ -124,6 +127,7 @@ export interface AzureResourcePluginItemDetailed {
   subscription: string;
   resourceGroup: string;
   tags?: Record<string, string>;
+  spottoTags?: Tags;
   costEstimation?: ResourceCostEstimationSummary;
 }
 

@@ -1,3 +1,5 @@
+import { Tags } from '../tags';
+
 export interface DecompositionTreeNode {
   /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
   name: string;
@@ -19,6 +21,7 @@ export interface DecompositionTreeNode {
   /** Only present on leaf nodes (individual resources) */
   meterDetails?: MeterDetail[];
   tags?: Record<string, string>;
+  spottoTags?: Tags;
   resourceId?: string;
 }
 

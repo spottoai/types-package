@@ -14,3 +14,20 @@ export interface TagRule {
 }
 
 export type RuleScope = 'self' | 'children' | 'descendants' | 'self-and-descendants';
+
+// Bitmask flag constants
+export enum TagFlags {
+  Required = 1 << 0, // 1
+  Inherited = 1 << 1, // 2
+}
+
+// Individual tag interface
+export interface Tag {
+  v: string; // value (e.g., "prod", "staging")
+  a: number; // attributes (TagFlags)
+}
+
+// Main tags object interface
+export interface Tags {
+  [key: string]: Tag;
+}
