@@ -2,6 +2,7 @@ export type InventorySource = 'manual_upload' | 'sas_url' | 'automatic';
 export type BlobKind = 'block' | 'page' | 'append';
 export type AccessPattern = 'hot' | 'cool' | 'cold' | 'archive' | 'unknown';
 export type AgeBucket = '0-30d' | '30-90d' | '90-180d' | '180-365d' | '365d+';
+export type TierName = 'hot' | 'cool' | 'cold' | 'archive';
 export interface InventoryUserContext {
     retentionDays?: number;
     canDeleteOld?: boolean;
@@ -58,6 +59,7 @@ export interface InventoryAnalysisResult {
         remainingRetentionDays?: Record<string, ScopeStat>;
         deleted?: ScopeStat;
     };
+    costs?: InventoryCostSummary;
     metadataQuality?: {
         tagCoverage?: CoverageStat;
         metadataCoverage?: CoverageStat;
@@ -131,6 +133,17 @@ export interface BlobInventoryUploadResponse {
     jobId: string;
     status?: InventoryAnalysisStatus;
     resultPath?: string;
+}
+export interface InventoryCostSummary {
+    currency?: string;
+    rates?: Partial<Record<TierName, number>>;
+    currentMonthly?: number;
+    targetMonthly?: number;
+    potentialMonthlySavings?: number;
+    tierCosts?: {
+        current?: Partial<Record<TierName, number>>;
+        target?: Partial<Record<TierName, number>>;
+    };
 }
 export type InventoryStatusOrResult = InventoryAnalysisStatus | (InventoryAnalysisResult & {
     jobId?: string;
