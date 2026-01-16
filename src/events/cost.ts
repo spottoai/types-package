@@ -99,6 +99,13 @@ export interface CostAlertCriteria {
   minPercentChange?: number;
   minCost?: number;
   tagRelevance?: { minScopeSharePercent?: number };
+  /**
+   * Data source selection:
+   * - auto: use actual billing if available, else estimated
+   * - actual: billing artifacts only
+   * - estimated: metrics/pricing estimation only
+   */
+  dataSource?: 'auto' | 'actual' | 'estimated';
   // Budget criteria (v1: monthly only)
   period?: 'monthly';
   budgetAmount?: number;
@@ -139,6 +146,23 @@ export interface CostAlertSummary {
   amount?: number;
   budgetAmount?: number;
   forecastAmount?: number;
+  /**
+   * Time window for the computed amount (ISO date).
+   */
+  periodStart?: string;
+  periodEnd?: string;
+  /**
+   * Optional window size for estimated spend (days).
+   */
+  windowDays?: number;
+  /**
+   * actual | estimated (resolved at evaluation time)
+   */
+  dataSource?: 'actual' | 'estimated';
+  /**
+   * Estimated coverage (0-100) when using estimated spend.
+   */
+  coveragePercent?: number;
 }
 
 export interface CostAlertBreakdownResource {
