@@ -11,6 +11,8 @@ import {
   BaseAlertComment,
   BaseAlertDefinition,
   BaseAlertInstance,
+  ListAlertsParams,
+  ListAlertDefinitionsParams,
 } from './baseAlert.js';
 
 export type CostAlertSeverity = AlertSeverity;
@@ -92,6 +94,9 @@ export interface CostAlertDefinition extends BaseAlertDefinition<CostAlertCriter
   criteria?: CostAlertCriteria;
   destinations?: CostAlertDestinations;
 }
+
+export type ListCostAlertDefinitionsParams = ListAlertDefinitionsParams;
+export type ListCostAlertsParams = ListAlertsParams<CostAlertType>;
 
 export interface CostAlertCriteria {
   confidence?: Array<'High' | 'Medium' | 'Low'>;

@@ -1,3 +1,4 @@
+import type { PaginationParams } from '../common/pagination.js';
 // Base (shared) alert enums/types for all alert categories
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 export type AlertStatus = 'open' | 'acknowledged' | 'resolved';
@@ -109,3 +110,13 @@ export interface BaseAlertInstance<TSummary = BaseAlertSummary, TScope = BaseAle
   breakdown?: TBreakdown;
   detailPath?: string;
 }
+
+export interface ListAlertsParams<TType extends string = string> extends PaginationParams {
+  status?: AlertStatus;
+  type?: TType;
+  definitionId?: string;
+  since?: string;
+  until?: string;
+}
+
+export interface ListAlertDefinitionsParams extends PaginationParams {}
