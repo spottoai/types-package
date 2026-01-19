@@ -119,4 +119,4 @@ export interface ListAlertsParams<TType extends string = string> extends Paginat
   until?: string;
 }
 
-export interface ListAlertDefinitionsParams extends PaginationParams {}
+export type ListAlertDefinitionsParams = PaginationParams;
