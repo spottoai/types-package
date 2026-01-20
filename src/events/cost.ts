@@ -111,8 +111,8 @@ export interface CostAlertCriteria {
    * - estimated: metrics/pricing estimation only
    */
   dataSource?: 'auto' | 'actual' | 'estimated';
-  // Budget criteria (v1: monthly only)
-  period?: 'monthly';
+  // Budget period
+  period?: 'monthly' | 'last_30_days';
   budgetAmount?: number;
   budgetCurrency?: string;
   budgetThresholdPercents?: number[];
