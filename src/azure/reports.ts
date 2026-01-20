@@ -59,6 +59,26 @@ export interface DecompositionTree {
   version?: string;
 }
 
+// EstimationTree with DecompositionTree, adding estimation/blending related fields
+export interface EstimationTree extends DecompositionTree {
+  dataSource: 'estimated' | 'blended' | 'actual';
+  coveragePercent?: number;
+  confidence?: number;
+  billingReconciliationStatus?: 'pending' | 'matched' | 'mismatch';
+  actualArrivedAt?: string;
+  root: EstimationTreeNode;
+}
+
+export interface EstimationTreeNode extends DecompositionTreeNode {
+  dataSource?: 'estimated' | 'actual';
+  confidence?: number;
+  serviceCategory?: 'A' | 'B' | 'C' | 'D';
+  metricsInput?: Record<string, unknown>;
+  unitRates?: Record<string, number>;
+  pricingSource?: 'billing' | 'retail' | 'manual';
+  children?: EstimationTreeNode[];
+}
+
 export interface DecompositionTreeEntry {
   /** e.g., "2025-01" for calendar month, "2025-01-01_2025-01-31" for billing period */
   period: string;

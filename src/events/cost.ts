@@ -163,11 +163,13 @@ export interface CostAlertSummary {
   /**
    * actual | estimated (resolved at evaluation time)
    */
-  dataSource?: 'actual' | 'estimated';
+  dataSource?: 'actual' | 'estimated' | 'blended' | 'unknown';
   /**
    * Estimated coverage (0-100) when using estimated spend.
    */
   coveragePercent?: number;
+
+  tagFilterApplied?: boolean;
 }
 
 export interface CostAlertBreakdownResource {
@@ -178,6 +180,10 @@ export interface CostAlertBreakdownResource {
    * Combined tags (Azure + spottoTags) for client-side filtering (ANY/ALL).
    */
   tags?: Record<string, string>;
+  /** Optional: metrics inputs for this resource (e.g., tokensIn/out). */
+  metricsInput?: Record<string, unknown>;
+  /** Optional: unit rates applied to compute cost. */
+  unitRates?: Record<string, number>;
 }
 
 export interface CostAlertBreakdownService {
