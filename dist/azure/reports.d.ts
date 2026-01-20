@@ -1,4 +1,4 @@
-import { Tags } from "../tags";
+import { Tags } from '../tags';
 export interface DecompositionTreeNode {
     /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
     name: string;
@@ -54,6 +54,37 @@ export interface DecompositionTree {
     currency: string;
     currencySymbol: string;
     version?: string;
+}
+export interface EstimationTree extends DecompositionTree {
+    dataSource: 'estimated' | 'blended' | 'actual';
+    coveragePercent?: number;
+    confidence?: number;
+    actualShare?: number;
+    estimatedShare?: number;
+    billingReconciliationStatus?: 'pending' | 'matched' | 'mismatch';
+    actualArrivedAt?: string;
+    root: EstimationTreeNode;
+}
+export interface EstimationTreeNode extends DecompositionTreeNode {
+    dataSource?: 'estimated' | 'actual' | 'blended';
+    coveragePercent?: number;
+    actualShare?: number;
+    estimatedShare?: number;
+    confidence?: number;
+    serviceCategory?: 'A' | 'B' | 'C' | 'D';
+    metricsInput?: Record<string, unknown>;
+    unitRates?: Record<string, number>;
+    pricingSource?: 'billing' | 'retail' | 'manual';
+    estimationMethod?: string;
+    estimatedDays?: string[];
+    blendedComponents?: {
+        actualCost: number;
+        estimatedCost: number;
+        coverageDays: number;
+        missingDays: number;
+        method: string;
+    };
+    children?: EstimationTreeNode[];
 }
 export interface DecompositionTreeEntry {
     /** e.g., "2025-01" for calendar month, "2025-01-01_2025-01-31" for billing period */

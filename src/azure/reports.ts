@@ -64,18 +64,32 @@ export interface EstimationTree extends DecompositionTree {
   dataSource: 'estimated' | 'blended' | 'actual';
   coveragePercent?: number;
   confidence?: number;
+  actualShare?: number;
+  estimatedShare?: number;
   billingReconciliationStatus?: 'pending' | 'matched' | 'mismatch';
   actualArrivedAt?: string;
   root: EstimationTreeNode;
 }
 
 export interface EstimationTreeNode extends DecompositionTreeNode {
-  dataSource?: 'estimated' | 'actual';
+  dataSource?: 'estimated' | 'actual' | 'blended';
+  coveragePercent?: number;
+  actualShare?: number;
+  estimatedShare?: number;
   confidence?: number;
   serviceCategory?: 'A' | 'B' | 'C' | 'D';
   metricsInput?: Record<string, unknown>;
   unitRates?: Record<string, number>;
   pricingSource?: 'billing' | 'retail' | 'manual';
+  estimationMethod?: string;
+  estimatedDays?: string[];
+  blendedComponents?: {
+    actualCost: number;
+    estimatedCost: number;
+    coverageDays: number;
+    missingDays: number;
+    method: string;
+  };
   children?: EstimationTreeNode[];
 }
 
