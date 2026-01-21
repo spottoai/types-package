@@ -63,11 +63,14 @@ export interface EstimationTree extends DecompositionTree {
     estimatedShare?: number;
     billingReconciliationStatus?: 'pending' | 'matched' | 'mismatch';
     actualArrivedAt?: string;
+    lastActualCoverageAt?: string;
+    reconciledAt?: string;
     root: EstimationTreeNode;
 }
 export interface EstimationTreeNode extends DecompositionTreeNode {
     dataSource?: 'estimated' | 'actual' | 'blended';
     coveragePercent?: number;
+    coverageDays?: number;
     actualShare?: number;
     estimatedShare?: number;
     confidence?: number;
@@ -78,16 +81,34 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     pricingSource?: 'billing' | 'retail' | 'manual';
     estimationMethod?: string;
     estimatedDays?: string[];
+    estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
+    estimatedDaysBySource?: {
+        metrics?: string[];
+        ma7?: string[];
+        ma14?: string[];
+        ma?: string[];
+    };
     blendedComponents?: Array<{
         componentCategory?: 'A' | 'B' | 'C' | 'D';
         dataSource?: 'estimated' | 'actual' | 'blended';
         actualCost: number;
         estimatedCost: number;
+        estimatedCostByMetrics?: number;
+        estimatedCostByMA?: number;
         coverageDays: number;
+        coveragePercent?: number;
         missingDays: number;
         method: string;
         estimationMethod?: string;
         estimatedDays?: string[];
+        estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
+        estimatedDaysBySource?: {
+            metrics?: string[];
+            ma7?: string[];
+            ma14?: string[];
+            ma?: string[];
+        };
+        pricingSource?: 'billing' | 'retail' | 'manual';
         actualShare?: number;
         estimatedShare?: number;
     }> | {
@@ -95,11 +116,20 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
         dataSource?: 'estimated' | 'actual' | 'blended';
         actualCost: number;
         estimatedCost: number;
+        estimatedCostByMetrics?: number;
+        estimatedCostByMA?: number;
         coverageDays: number;
         missingDays: number;
         method: string;
         estimationMethod?: string;
         estimatedDays?: string[];
+        estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
+        estimatedDaysBySource?: {
+            metrics?: string[];
+            ma7?: string[];
+            ma14?: string[];
+            ma?: string[];
+        };
         actualShare?: number;
         estimatedShare?: number;
     };

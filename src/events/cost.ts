@@ -168,6 +168,13 @@ export interface CostAlertSummary {
    * Estimated coverage (0-100) when using estimated spend.
    */
   coveragePercent?: number;
+  reconciliationStatus?: 'pending' | 'matched' | 'mismatch';
+  actualShare?: number;
+  estimatedShare?: number;
+  estimationMethod?: string;
+  estimatedDays?: string[];
+  estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
+  periodType?: 'calendar_month' | 'billing_period' | 'rolling_30_days';
 
   tagFilterApplied?: boolean;
 }
@@ -184,6 +191,11 @@ export interface CostAlertBreakdownResource {
   metricsInput?: Record<string, unknown>;
   /** Optional: unit rates applied to compute cost. */
   unitRates?: Record<string, number>;
+  /** Optional: estimated vs actual composition for UI. */
+  dataSource?: 'estimated' | 'actual' | 'blended';
+  actualShare?: number;
+  estimatedShare?: number;
+  estimationMethod?: string;
 }
 
 export interface CostAlertBreakdownService {
