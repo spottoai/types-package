@@ -78,18 +78,40 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
   estimatedShare?: number;
   confidence?: number;
   serviceCategory?: 'A' | 'B' | 'C' | 'D';
+  componentCategory?: 'A' | 'B' | 'C' | 'D';
   metricsInput?: Record<string, unknown>;
   unitRates?: Record<string, number>;
   pricingSource?: 'billing' | 'retail' | 'manual';
   estimationMethod?: string;
   estimatedDays?: string[];
-  blendedComponents?: {
-    actualCost: number;
-    estimatedCost: number;
-    coverageDays: number;
-    missingDays: number;
-    method: string;
-  };
+  blendedComponents?:
+    | Array<{
+        componentCategory?: 'A' | 'B' | 'C' | 'D';
+        dataSource?: 'estimated' | 'actual' | 'blended';
+        actualCost: number;
+        estimatedCost: number;
+        coverageDays: number;
+        missingDays: number;
+        method: string;
+        estimationMethod?: string;
+        estimatedDays?: string[];
+        actualShare?: number;
+        estimatedShare?: number;
+      }>
+    // Backwards compatibility with earlier single-object shape
+    | {
+        componentCategory?: 'A' | 'B' | 'C' | 'D';
+        dataSource?: 'estimated' | 'actual' | 'blended';
+        actualCost: number;
+        estimatedCost: number;
+        coverageDays: number;
+        missingDays: number;
+        method: string;
+        estimationMethod?: string;
+        estimatedDays?: string[];
+        actualShare?: number;
+        estimatedShare?: number;
+      };
   children?: EstimationTreeNode[];
 }
 
