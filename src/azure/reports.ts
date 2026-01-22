@@ -94,6 +94,33 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     ma14?: string[];
     ma?: string[];
   };
+  /**
+   * Type of this node: 'subscription' | 'service' | 'resource' | 'deployment' | 'component'
+   * Helps frontend understand the hierarchy and render appropriately
+   */
+  nodeType?: 'subscription' | 'service' | 'resource' | 'deployment' | 'component';
+  /**
+   * Azure resource type (e.g., "microsoft.cognitiveservices/accounts")
+   * Only present on resource nodes and their children
+   * Helps frontend determine how to display child nodes
+   */
+  resourceType?: string;
+  /**
+   * For deployment/component nodes: identifies the parent resource
+   * For resource nodes: same as resourceId
+   */
+  parentResourceId?: string;
+  /**
+   * Deployment-specific metadata (only for cognitive services)
+   * Frontend can use this to display deployment-level details
+   */
+  deployment?: string;
+  model?: string;
+  /**
+   * Generic metadata for other resource types
+   * Allows extensibility for future resource types with sub-components
+   */
+  metadata?: Record<string, unknown>;
   blendedComponents?:
     | Array<{
         componentCategory?: 'A' | 'B' | 'C' | 'D';

@@ -189,6 +189,11 @@ export interface CostAlertSummary {
   periodType?: 'calendar_month' | 'billing_period' | 'rolling_30_days';
 
   tagFilterApplied?: boolean;
+  /**
+   * Human-readable summary text for display in alerts list and notifications.
+   * Generated from structured summary data for easy consumption.
+   */
+  summaryText?: string;
 }
 
 export interface CostAlertBreakdownResource {
@@ -204,10 +209,28 @@ export interface CostAlertBreakdownResource {
   /** Optional: unit rates applied to compute cost. */
   unitRates?: Record<string, number>;
   /** Optional: estimated vs actual composition for UI. */
-  dataSource?: 'estimated' | 'actual' | 'blended';
+  dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
   actualShare?: number;
   estimatedShare?: number;
   estimationMethod?: string;
+  /**
+   * Resource type (e.g., "microsoft.cognitiveservices/accounts")
+   * Helps frontend determine how to display this resource and its children
+   */
+  resourceType?: string;
+  /**
+   * Deployment-level breakdown (only for resources that have sub-components)
+   * For cognitive services: contains deployment/model information
+   * Limited to top N deployments to keep breakdown size manageable
+   */
+  deployments?: Array<{
+    deployment?: string;
+    model?: string;
+    cost: number;
+    percentage?: number;
+    metricsInput?: Record<string, unknown>;
+    unitRates?: Record<string, number>;
+  }>;
 }
 
 export interface CostAlertBreakdownService {
