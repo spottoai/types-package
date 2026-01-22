@@ -7,6 +7,7 @@ import {
   BaseAlertDestinationSlackOrTeams,
   BaseAlertDestinationWebhook,
   BaseAlertDestinationJira,
+  BaseAlertDestinationEmail,
   BaseAlertDestinations,
   BaseAlertComment,
   BaseAlertDefinition,
@@ -119,6 +120,14 @@ export interface CostAlertCriteria {
   budgetThresholdAmounts?: number[];
   forecastThresholdPercents?: number[];
   forecastThresholdAmounts?: number[];
+  /**
+   * Optional day-over-day / month-over-month thresholds (cost anomaly extensions).
+   * These are additive to minDelta/minPercentChange when compare window is DoD/MoM.
+   */
+  dodThresholdPercents?: number[];
+  dodThresholdAmounts?: number[];
+  momThresholdPercents?: number[];
+  momThresholdAmounts?: number[];
 }
 
 export type CostAlertDestinationSlackOrTeams = BaseAlertDestinationSlackOrTeams;
@@ -127,6 +136,8 @@ export interface CostAlertDestinationWebhook extends BaseAlertDestinationWebhook
   events?: AlertLifecycleEvent[]; // default to ['open'] in v1
 }
 
+export type CostAlertDestinationEmail = BaseAlertDestinationEmail;
+
 export type CostAlertDestinationJira = BaseAlertDestinationJira;
 
 export interface CostAlertDestinations extends BaseAlertDestinations {
@@ -134,6 +145,7 @@ export interface CostAlertDestinations extends BaseAlertDestinations {
   teams?: CostAlertDestinationSlackOrTeams[];
   webhooks?: CostAlertDestinationWebhook[];
   jira?: CostAlertDestinationJira;
+  emails?: CostAlertDestinationEmail[];
 }
 
 export interface CostAlertDiscriminator {

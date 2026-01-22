@@ -56,7 +56,7 @@ export interface DecompositionTree {
     version?: string;
 }
 export interface EstimationTree extends DecompositionTree {
-    dataSource: 'estimated' | 'blended' | 'actual';
+    dataSource: 'estimated' | 'blended' | 'actual' | 'metrics_pricing';
     coveragePercent?: number;
     confidence?: number;
     actualShare?: number;
@@ -68,7 +68,7 @@ export interface EstimationTree extends DecompositionTree {
     root: EstimationTreeNode;
 }
 export interface EstimationTreeNode extends DecompositionTreeNode {
-    dataSource?: 'estimated' | 'actual' | 'blended';
+    dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
     coveragePercent?: number;
     coverageDays?: number;
     actualShare?: number;
@@ -90,7 +90,7 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     };
     blendedComponents?: Array<{
         componentCategory?: 'A' | 'B' | 'C' | 'D';
-        dataSource?: 'estimated' | 'actual' | 'blended';
+        dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
         actualCost: number;
         estimatedCost: number;
         estimatedCostByMetrics?: number;
@@ -113,7 +113,7 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
         estimatedShare?: number;
     }> | {
         componentCategory?: 'A' | 'B' | 'C' | 'D';
-        dataSource?: 'estimated' | 'actual' | 'blended';
+        dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
         actualCost: number;
         estimatedCost: number;
         estimatedCostByMetrics?: number;

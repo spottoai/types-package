@@ -45,6 +45,13 @@ export interface BaseAlertDestinations {
   teams?: BaseAlertDestinationSlackOrTeams[];
   webhooks?: BaseAlertDestinationWebhook[];
   jira?: BaseAlertDestinationJira;
+  emails?: BaseAlertDestinationEmail[];
+}
+
+export interface BaseAlertDestinationEmail {
+  name?: string;
+  email: string;
+  events?: AlertLifecycleEvent[]; // default to ['open']
 }
 
 export interface BaseAlertDefinition<

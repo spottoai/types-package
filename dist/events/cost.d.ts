@@ -93,6 +93,14 @@ export interface CostAlertCriteria {
     budgetThresholdAmounts?: number[];
     forecastThresholdPercents?: number[];
     forecastThresholdAmounts?: number[];
+    /**
+     * Optional day-over-day / month-over-month thresholds (cost anomaly extensions).
+     * These are additive to minDelta/minPercentChange when compare window is DoD/MoM.
+     */
+    dodThresholdPercents?: number[];
+    dodThresholdAmounts?: number[];
+    momThresholdPercents?: number[];
+    momThresholdAmounts?: number[];
 }
 export type CostAlertDestinationSlackOrTeams = BaseAlertDestinationSlackOrTeams;
 export interface CostAlertDestinationWebhook extends BaseAlertDestinationWebhook {
