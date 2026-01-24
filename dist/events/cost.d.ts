@@ -1,4 +1,4 @@
-import { AlertSeverity, AlertStatus, AlertLifecycleEvent, TagMatchMode, BaseAlertScope, BaseAlertDestinationSlackOrTeams, BaseAlertDestinationWebhook, BaseAlertDestinationJira, BaseAlertDestinations, BaseAlertComment, BaseAlertDefinition, BaseAlertInstance, ListAlertsParams, ListAlertDefinitionsParams } from './baseAlert.js';
+import { AlertSeverity, AlertStatus, AlertLifecycleEvent, TagMatchMode, BaseAlertScope, BaseAlertDestinationSlackOrTeams, BaseAlertDestinationWebhook, BaseAlertDestinationJira, BaseAlertDestinationEmail, BaseAlertDestinations, BaseAlertComment, BaseAlertDefinition, BaseAlertInstance, ListAlertsParams, ListAlertDefinitionsParams } from './baseAlert.js';
 export type CostAlertSeverity = AlertSeverity;
 export type CostAlertCategory = 'cost';
 export type CostAlertType = 'costAnomaly' | 'budget';
@@ -106,12 +106,14 @@ export type CostAlertDestinationSlackOrTeams = BaseAlertDestinationSlackOrTeams;
 export interface CostAlertDestinationWebhook extends BaseAlertDestinationWebhook {
     events?: AlertLifecycleEvent[];
 }
+export type CostAlertDestinationEmail = BaseAlertDestinationEmail;
 export type CostAlertDestinationJira = BaseAlertDestinationJira;
 export interface CostAlertDestinations extends BaseAlertDestinations {
     slack?: CostAlertDestinationSlackOrTeams[];
     teams?: CostAlertDestinationSlackOrTeams[];
     webhooks?: CostAlertDestinationWebhook[];
     jira?: CostAlertDestinationJira;
+    emails?: CostAlertDestinationEmail[];
 }
 export interface CostAlertDiscriminator {
     kind: 'anomalyDate' | 'periodStart' | string;
