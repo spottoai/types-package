@@ -19,6 +19,7 @@ export interface RequestMessage {
   tenantId: string;
   clientId: string;
   subscriptionId?: string;
+  refreshComponents?: string[];
 }
 
 export interface SubscriptionMessage {

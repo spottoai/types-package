@@ -24,6 +24,7 @@ export interface CloudAccount {
 }
 export interface SubscriptionInfoBase {
     name: string;
+    friendlyName?: string;
     cloudAccountId: string;
     cloudAccountName: string;
     status?: string;
