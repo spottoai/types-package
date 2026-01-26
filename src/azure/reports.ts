@@ -95,10 +95,10 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     ma?: string[];
   };
   /**
-   * Type of this node: 'subscription' | 'service' | 'resource' | 'deployment' | 'component'
+   * Type of this node: 'subscription' | 'resourceGroup' | 'provider' | 'service' | 'resource' | 'deployment' | 'component'
    * Helps frontend understand the hierarchy and render appropriately
    */
-  nodeType?: 'subscription' | 'service' | 'resource' | 'deployment' | 'component';
+  nodeType?: 'subscription' | 'resourceGroup' | 'provider' | 'service' | 'resource' | 'deployment' | 'component';
   /**
    * Azure resource type (e.g., "microsoft.cognitiveservices/accounts")
    * Only present on resource nodes and their children

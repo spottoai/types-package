@@ -165,13 +165,35 @@ export interface CostAlertSummary {
   forecastAmount?: number;
   /**
    * Time window for the computed amount (ISO date).
+   * This represents the period for current cost (from periodStart to today).
    */
   periodStart?: string;
   periodEnd?: string;
   /**
    * Optional window size for estimated spend (days).
+   * This represents the number of days in the forecast window.
    */
   windowDays?: number;
+  /**
+   * Forecast period start date (ISO date).
+   * Forecast is projected from this date to forecastPeriodEnd.
+   */
+  forecastPeriodStart?: string;
+  /**
+   * Forecast period end date (ISO date).
+   * Forecast is projected until this date.
+   */
+  forecastPeriodEnd?: string;
+  /**
+   * Full period start date (ISO date).
+   * This represents the start of the entire period (e.g., month start for monthly budgets).
+   */
+  fullPeriodStart?: string;
+  /**
+   * Full period end date (ISO date).
+   * This represents the end of the entire period (e.g., month end for monthly budgets).
+   */
+  fullPeriodEnd?: string;
   /**
    * actual | estimated (resolved at evaluation time)
    */
@@ -194,12 +216,35 @@ export interface CostAlertSummary {
    * Generated from structured summary data for easy consumption.
    */
   summaryText?: string;
+  /**
+   * Forecast confidence level (High, Medium, Low) based on data availability and elapsed days.
+   * Used to indicate the reliability of forecast calculations.
+   */
+  forecastConfidence?: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Daily cost data point for breakdown visualization
+ */
+export interface DailyCostDataPoint {
+  /** Date in YYYYMMDD format (number) */
+  date: number;
+  /** Cost for this day */
+  cost: number;
+  /** Data source: actual (from billing/metrics), estimated (MA-based), or forecast (projected) */
+  dataSource: 'actual' | 'estimated' | 'forecast';
+  /** For estimated/forecast: method used (e.g., 'ma7', 'ma14', 'metrics_pricing', 'linear', 'trend') */
+  method?: string;
+  /** For actual: whether this came from metrics (true) or billing (false) */
+  fromMetrics?: boolean;
 }
 
 export interface CostAlertBreakdownResource {
   resourceId: string;
   name?: string;
   delta?: number;
+  cost?: number;
+  percentage?: number;
   /**
    * Combined tags (Azure + spottoTags) for client-side filtering (ANY/ALL).
    */
@@ -219,6 +264,11 @@ export interface CostAlertBreakdownResource {
    */
   resourceType?: string;
   /**
+   * Daily cost breakdown for this resource
+   * Includes actual, estimated, and forecast days
+   */
+  dailyCosts?: DailyCostDataPoint[];
+  /**
    * Deployment-level breakdown (only for resources that have sub-components)
    * For cognitive services: contains deployment/model information
    * Limited to top N deployments to keep breakdown size manageable
@@ -230,12 +280,19 @@ export interface CostAlertBreakdownResource {
     percentage?: number;
     metricsInput?: Record<string, unknown>;
     unitRates?: Record<string, number>;
+    /** Daily cost breakdown for this deployment */
+    dailyCosts?: DailyCostDataPoint[];
   }>;
 }
 
 export interface CostAlertBreakdownService {
   serviceName: string;
   delta?: number;
+  cost?: number;
+  percentage?: number;
+  dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
+  /** Daily cost breakdown aggregated at service level */
+  dailyCosts?: DailyCostDataPoint[];
   resources?: CostAlertBreakdownResource[];
   unmappedResourceNames?: string[];
 }
@@ -243,6 +300,10 @@ export interface CostAlertBreakdownService {
 export interface CostAlertBreakdownTop {
   subscriptionId: string;
   subscriptionName?: string;
+  cost?: number;
+  percentage?: number;
+  /** Daily cost breakdown aggregated at subscription level */
+  dailyCosts?: DailyCostDataPoint[];
   services?: CostAlertBreakdownService[];
 }
 
@@ -265,4 +326,5 @@ export interface CostAlertInstance extends BaseAlertInstance<CostAlertSummary, C
   comments?: CostAlertComment[];
   summary?: CostAlertSummary;
   breakdown?: CostAlertBreakdownSummary;
+  definitionSnapshot?: string;
 }
