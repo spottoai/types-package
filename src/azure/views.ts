@@ -74,6 +74,7 @@ export interface AzureResourcePortalItem {
   spottoTags?: Tags;
   /** e.g. 1715769600000 (Unix timestamp in milliseconds) */
   createdTime?: number;
+  benefitsCoverage?: BenefitCoverageSummary;
   /** This is simplfied */
   costEstimation?: ResourceSimpleCostEstimationSummary;
 }
@@ -83,6 +84,15 @@ export interface SavingsPotential {
   minPercentage: number;
   maxAmount: number;
   maxPercentage: number;
+}
+
+export interface BenefitCoverageSummary {
+  windowStart: string;
+  windowEnd: string;
+  coveredQuantity: number;
+  benefitIds: string[];
+  benefitNames: string[];
+  warning?: string;
 }
 
 export interface AzureResourcePluginView {
@@ -103,6 +113,7 @@ export interface AzureResourcePluginItem {
   cost?: CostSummaryDetails;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
+  benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
 }
 
@@ -128,6 +139,7 @@ export interface AzureResourcePluginItemDetailed {
   resourceGroup: string;
   tags?: Record<string, string>;
   spottoTags?: Tags;
+  benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
 }
 

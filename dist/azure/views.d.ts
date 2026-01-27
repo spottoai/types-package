@@ -70,6 +70,7 @@ export interface AzureResourcePortalItem {
     spottoTags?: Tags;
     /** e.g. 1715769600000 (Unix timestamp in milliseconds) */
     createdTime?: number;
+    benefitsCoverage?: BenefitCoverageSummary;
     /** This is simplfied */
     costEstimation?: ResourceSimpleCostEstimationSummary;
 }
@@ -78,6 +79,14 @@ export interface SavingsPotential {
     minPercentage: number;
     maxAmount: number;
     maxPercentage: number;
+}
+export interface BenefitCoverageSummary {
+    windowStart: string;
+    windowEnd: string;
+    coveredQuantity: number;
+    benefitIds: string[];
+    benefitNames: string[];
+    warning?: string;
 }
 export interface AzureResourcePluginView {
     currency: string;
@@ -96,6 +105,7 @@ export interface AzureResourcePluginItem {
     cost?: CostSummaryDetails;
     metrics?: DisplayMetric[];
     activityLogs?: ActivityLog[];
+    benefitsCoverage?: BenefitCoverageSummary;
     costEstimation?: ResourceCostEstimationSummary;
 }
 export interface AzureResourcePluginItemDetailed {
@@ -120,6 +130,7 @@ export interface AzureResourcePluginItemDetailed {
     resourceGroup: string;
     tags?: Record<string, string>;
     spottoTags?: Tags;
+    benefitsCoverage?: BenefitCoverageSummary;
     costEstimation?: ResourceCostEstimationSummary;
 }
 /** This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page) */
