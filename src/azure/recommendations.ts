@@ -267,3 +267,53 @@ export interface JiraEntity {
 export interface JiraLabel {
   name: string;
 }
+
+export interface ConnectWiseIntegrationRequestBase {
+  siteUrl: string;
+  companyId: string;
+  publicKey: string;
+  secret?: string;
+  clientId?: string;
+  useStoredSecret?: boolean;
+}
+
+export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+  statusId?: string;
+  statusName?: string;
+}
+
+export interface ConnectWiseBoardsPayload extends ConnectWiseIntegrationRequestBase {}
+
+export interface ConnectWiseStatusesPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+}
+
+export interface ConnectWiseTypesPayload extends ConnectWiseIntegrationRequestBase {}
+
+export interface ConnectWiseSubTypesPayload extends ConnectWiseIntegrationRequestBase {
+  typeId?: string;
+  typeName?: string;
+}
+
+export interface ConnectWiseItemsPayload extends ConnectWiseIntegrationRequestBase {
+  subTypeId?: string;
+  subTypeName?: string;
+}
+
+export interface ConnectWisePrioritiesPayload extends ConnectWiseIntegrationRequestBase {}
+
+export interface ConnectWiseContactsPayload extends ConnectWiseIntegrationRequestBase {
+  searchQuery?: string;
+}
+
+export interface ConnectWiseEntity {
+  id: string | number;
+  name: string;
+}
+
+export interface ConnectWiseContact extends ConnectWiseEntity {
+  email?: string;
+}
