@@ -284,14 +284,14 @@ export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegratio
   statusName?: string;
 }
 
-export interface ConnectWiseBoardsPayload extends ConnectWiseIntegrationRequestBase {}
+export type ConnectWiseBoardsPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseStatusesPayload extends ConnectWiseIntegrationRequestBase {
   boardId?: string;
   boardName?: string;
 }
 
-export interface ConnectWiseTypesPayload extends ConnectWiseIntegrationRequestBase {}
+export type ConnectWiseTypesPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseSubTypesPayload extends ConnectWiseIntegrationRequestBase {
   typeId?: string;
@@ -303,7 +303,7 @@ export interface ConnectWiseItemsPayload extends ConnectWiseIntegrationRequestBa
   subTypeName?: string;
 }
 
-export interface ConnectWisePrioritiesPayload extends ConnectWiseIntegrationRequestBase {}
+export type ConnectWisePrioritiesPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseContactsPayload extends ConnectWiseIntegrationRequestBase {
   searchQuery?: string;
