@@ -98,8 +98,10 @@ export interface BaseAlertInstance<TSummary = BaseAlertSummary, TScope = BaseAle
     lastSeenAt?: string;
     acknowledgedAt?: string | null;
     acknowledgedByUserId?: string | null;
+    acknowledgedByUserName?: string | null;
     resolvedAt?: string | null;
     resolvedByUserId?: string | null;
+    resolvedByUserName?: string | null;
     jiraIssueKey?: string;
     comments?: BaseAlertComment[];
     summary?: TSummary;

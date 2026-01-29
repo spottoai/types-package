@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getRecommendationsFlags = exports.removeArrayFlag = exports.addArrayFlag = exports.hasArrayFlag = exports.removeFlag = exports.addFlag = exports.hasFlag = exports.SHARING_FLAGS = exports.CLOUD_ACCOUNT_FLAGS = exports.USER_FLAGS = exports.RECOMMENDATION_FLAGS = void 0;
+exports.getRecommendationsFlags = exports.removeArrayFlag = exports.addArrayFlag = exports.hasArrayFlag = exports.removeFlag = exports.addFlag = exports.hasFlag = exports.SHARING_FLAGS = exports.COST_ANOMALY_FLAGS = exports.CLOUD_ACCOUNT_FLAGS = exports.USER_FLAGS = exports.RECOMMENDATION_FLAGS = void 0;
 /** Bitmask constants for resources */
 exports.RECOMMENDATION_FLAGS = {
     /** 001 */
@@ -19,6 +19,10 @@ exports.USER_FLAGS = {
 exports.CLOUD_ACCOUNT_FLAGS = {
     /** 001 */
     SYNC_COMPLETED: 1,
+};
+exports.COST_ANOMALY_FLAGS = {
+    /** 001 */
+    DETECTED: 1,
 };
 exports.SHARING_FLAGS = {
     SHARE_CREATED: 1,

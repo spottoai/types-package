@@ -94,6 +94,10 @@ export interface CostAlertDefinition extends BaseAlertDefinition<CostAlertCriter
   scope: CostAlertScope; // requires subscriptionIds or tags (or both)
   criteria?: CostAlertCriteria;
   destinations?: CostAlertDestinations;
+  /** Whether the current user has permission to edit this alert definition. Added by API. */
+  canEdit?: boolean;
+  /** Whether the current user has permission to delete this alert definition. Added by API. */
+  canDelete?: boolean;
 }
 
 export type ListCostAlertDefinitionsParams = ListAlertDefinitionsParams;
@@ -197,7 +201,7 @@ export interface CostAlertSummary {
   /**
    * actual | estimated (resolved at evaluation time)
    */
-  dataSource?: 'actual' | 'estimated' | 'blended' | 'unknown';
+  dataSource?: 'actual' | 'estimated' | 'blended' | 'unknown' | 'metrics_pricing';
   /**
    * Estimated coverage (0-100) when using estimated spend.
    */
@@ -221,6 +225,42 @@ export interface CostAlertSummary {
    * Used to indicate the reliability of forecast calculations.
    */
   forecastConfidence?: 'high' | 'medium' | 'low';
+  /**
+   * Forecast method used to calculate the forecast amount.
+   * Values: 'conservative-blended', 'conservative-linear', 'trend-based', 'linear', 'rolling-current', 'fallback'
+   */
+  forecastMethod?: string;
+  /**
+   * Detailed information about the forecast calculation, including:
+   * - elapsedDays: Number of days elapsed in the period
+   * - totalDays: Total days in the period
+   * - remainingDays: Number of days remaining in the forecast period
+   * - dailyRate: Daily spending rate
+   * - For conservative-blended: historicalAverage, historicalDailyRate, blendedDailyRate, blendRatio
+   * - For conservative-linear: multiplier
+   * - For trend-based: trendAdjustment, growthRate, growthRateApplied
+   * - For recent-average-decreasing: recentAverageDailyRate, isDecreasingTrend
+   * - For weighted-average: recentAverageDailyRate
+   * - For rolling-current: method, note
+   */
+  forecastDetails?: Record<string, unknown>;
+  /**
+   * Daily forecast costs for the remaining days in the period.
+   * Each entry contains the date (YYYYMMDD format), predicted cost, and method used.
+   * This allows frontend to visualize how the forecast is distributed across days.
+   */
+  forecastDailyCosts?: Array<{
+    date: number;
+    cost: number;
+    dataSource: 'forecast';
+    method: string;
+  }>;
+  /**
+   * Trigger reason indicating why the alert was triggered.
+   * For budget alerts: 'budget-threshold-percent' | 'budget-threshold-amount' | 'forecast-threshold-percent' | 'forecast-threshold-amount' | 'budget-threshold' | 'forecast-threshold' | 'both'
+   * For cost anomaly alerts: 'confidence' | 'minDelta' | 'minPercentChange' | 'minCost' | 'dodThreshold' | 'momThreshold' | string
+   */
+  triggerReason?: string | string[];
 }
 
 /**

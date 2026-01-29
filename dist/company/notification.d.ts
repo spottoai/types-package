@@ -13,6 +13,10 @@ export interface NotificationSubscription {
         users: number[];
         /** Array of selected cloud account flags */
         cloudAccounts: number[];
+        /** Array of selected cost alert flags (legacy/general). */
+        cost?: number[];
+        /** Array of selected cost anomaly flags. */
+        costAnomalies?: number[];
         /** Array of selected sharing flags */
         sharing: number[];
     };
@@ -35,6 +39,10 @@ export declare const USER_FLAGS: {
 export declare const CLOUD_ACCOUNT_FLAGS: {
     /** 001 */
     readonly SYNC_COMPLETED: 1;
+};
+export declare const COST_ANOMALY_FLAGS: {
+    /** 001 */
+    readonly DETECTED: 1;
 };
 export declare const SHARING_FLAGS: {
     readonly SHARE_CREATED: 1;
