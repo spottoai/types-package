@@ -99,9 +99,17 @@ export interface BaseAlertInstance<TSummary = BaseAlertSummary, TScope = BaseAle
     acknowledgedAt?: string | null;
     acknowledgedByUserId?: string | null;
     acknowledgedByUserName?: string | null;
+    /**
+     * Optional freeform note captured when acknowledging an alert.
+     */
+    acknowledgedNote?: string | null;
     resolvedAt?: string | null;
     resolvedByUserId?: string | null;
     resolvedByUserName?: string | null;
+    /**
+     * Optional freeform note captured when resolving an alert.
+     */
+    resolvedNote?: string | null;
     jiraIssueKey?: string;
     comments?: BaseAlertComment[];
     summary?: TSummary;
