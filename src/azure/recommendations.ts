@@ -273,7 +273,6 @@ export interface ConnectWiseIntegrationRequestBase {
   companyId: string;
   publicKey: string;
   secret?: string;
-  clientId?: string;
   useStoredSecret?: boolean;
 }
 
