@@ -26,6 +26,7 @@ __exportStar(require("./azure/recommendations"), exports);
 __exportStar(require("./azure/recommendationState"), exports);
 __exportStar(require("./azure/resources"), exports);
 __exportStar(require("./azure/reports"), exports);
+__exportStar(require("./azure/reviewChecklist"), exports);
 __exportStar(require("./azure/subscriptions"), exports);
 __exportStar(require("./azure/views"), exports);
 __exportStar(require("./azure/security"), exports);
