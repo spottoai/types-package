@@ -11,6 +11,11 @@ export interface ReviewChecklistPayload extends ReviewChecklistRequest {
   cloudAccountId: string;
 }
 
+export interface ReviewChecklistScanRequest {
+  cloudAccountId: string;
+  subscriptionIds: string[];
+}
+
 export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error';
 
 export interface ReviewChecklistItem {
@@ -35,7 +40,7 @@ export interface ReviewChecklistItem {
   graphSourceAI?: boolean;
 }
 
-export interface ReviewChecklistDocument {
+export interface ReviewChecklistDefinition {
   checklistId: string;
   source?: {
     commit?: string;
@@ -86,6 +91,20 @@ export interface ReviewChecklistSubscriptionResult {
 }
 
 export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress';
+
+export interface ReviewChecklistDocument {
+  checklistId: string;
+  tenantId: string;
+  subscriptionId: string;
+  sourceVersion?: string;
+  name: string | null;
+  state: string | null;
+  timestamp: string | null;
+  scanStatus: ChecklistScanStatus;
+  /** ISO 8601 timestamp */
+  generatedAt: string;
+  items: ReviewChecklistItemOutput[];
+}
 
 export interface ReviewChecklistRunResult {
   checklistId: string;
