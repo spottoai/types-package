@@ -13,7 +13,7 @@ export interface ReviewChecklistPayload extends ReviewChecklistRequest {
 
 export interface ReviewChecklistScanRequest {
   cloudAccountId: string;
-  subscriptionIds: string[];
+  subscriptionId: string;
 }
 
 export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error' | 'NotRequired' | 'NA';
