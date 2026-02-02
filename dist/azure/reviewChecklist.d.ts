@@ -11,7 +11,7 @@ export interface ReviewChecklistPayload extends ReviewChecklistRequest {
 }
 export interface ReviewChecklistScanRequest {
     cloudAccountId: string;
-    subscriptionIds: string[];
+    subscriptionId: string;
 }
 export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error' | 'NotRequired' | 'NA';
 export interface ReviewChecklistItem {
@@ -90,6 +90,10 @@ export interface ReviewChecklistItemOutput extends ReviewChecklistItemResult {
     effortReason: string | null;
     hasGraph: boolean | null;
     graphSourceAI: boolean | null;
+    comments?: string | null;
+    statusSource?: 'system' | 'user';
+    lastUpdated?: string | null;
+    updatedBy?: string | null;
 }
 export interface ReviewChecklistSubscriptionResult {
     subscriptionId: string;

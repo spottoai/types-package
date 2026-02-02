@@ -288,6 +288,9 @@ export interface ResourceSpend {
     retailDiscountPercentDisplay?: string;
     dailyMetrics?: DailyMetrics[];
     summaryMetrics?: DisplayMetric[];
+    benefitId?: string;
+    benefitName?: string;
+    reservationId?: string;
 }
 export interface PricingResponse {
     Items: AzurePrice[];

@@ -99,6 +99,10 @@ export interface ReviewChecklistItemOutput extends ReviewChecklistItemResult {
   effortReason: string | null;
   hasGraph: boolean | null;
   graphSourceAI: boolean | null;
+  comments?: string | null;
+  statusSource?: 'system' | 'user';
+  lastUpdated?: string | null;
+  updatedBy?: string | null;
 }
 
 export interface ReviewChecklistSubscriptionResult {
