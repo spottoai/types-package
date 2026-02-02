@@ -16,7 +16,7 @@ export interface ReviewChecklistScanRequest {
   subscriptionIds: string[];
 }
 
-export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error';
+export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error' | 'NotRequired' | 'NA';
 
 export interface ReviewChecklistItem {
   guid: string;
@@ -38,6 +38,22 @@ export interface ReviewChecklistItem {
   graph?: string;
   hasGraph?: boolean;
   graphSourceAI?: boolean;
+}
+
+export interface ReviewChecklistItemState {
+  guid: string;
+  checklistId: string;
+  subscriptionId: string;
+  status?: ReviewChecklistItemStatus;
+  statusSource?: 'system' | 'user';
+  comments?: string;
+  lastUpdated?: string;
+  updatedBy?: string;
+}
+
+export interface ReviewChecklistItemStateUpdateRequest {
+  status?: ReviewChecklistItemStatus;
+  comments?: string;
 }
 
 export interface ReviewChecklistDefinition {
