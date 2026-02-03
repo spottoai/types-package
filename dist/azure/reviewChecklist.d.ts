@@ -44,6 +44,7 @@ export interface ReviewChecklistItemState {
     comments?: string;
     lastUpdated?: string;
     updatedBy?: string;
+    updatedByUserId?: string;
 }
 export interface ReviewChecklistItemStateUpdateRequest {
     status?: ReviewChecklistItemStatus;
