@@ -144,9 +144,11 @@ export type ReviewChecklistCatalogueState = 'Preview' | 'preview' | 'GA' | 'Depr
 export interface ReviewChecklistCatalogueEntry {
   id: string;
   name: string;
+  serviceName: string;
   state: ReviewChecklistCatalogueState;
   /** ISO 8601 date (YYYY-MM-DD) */
   lastModified: string;
+  star: boolean;
 }
 
 export type ReviewChecklistCatalogue = ReviewChecklistCatalogueEntry[];
