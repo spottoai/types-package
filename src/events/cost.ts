@@ -134,13 +134,26 @@ export interface CostAlertCriteria {
   momThresholdAmounts?: number[];
 }
 
-export type CostAlertDestinationSlackOrTeams = BaseAlertDestinationSlackOrTeams;
+/**
+ * Destination types for cost alerts are used for both:
+ * - API request payloads (create/update), where secrets are required by validation
+ * - API responses, where secrets may be redacted/omitted for non-admin readers
+ *
+ * For that reason, secret-bearing fields are optional at the type level.
+ */
+export interface CostAlertDestinationSlackOrTeams extends Omit<BaseAlertDestinationSlackOrTeams, 'webhookUrl'> {
+  webhookUrl?: string | null;
+}
 
-export interface CostAlertDestinationWebhook extends BaseAlertDestinationWebhook {
+export interface CostAlertDestinationWebhook extends Omit<BaseAlertDestinationWebhook, 'url' | 'auth'> {
+  url?: string | null;
+  auth?: { type: 'bearer'; tokenRef?: string | null };
   events?: AlertLifecycleEvent[]; // default to ['open'] in v1
 }
 
-export type CostAlertDestinationEmail = BaseAlertDestinationEmail;
+export interface CostAlertDestinationEmail extends Omit<BaseAlertDestinationEmail, 'email'> {
+  email?: string | null;
+}
 
 export type CostAlertDestinationJira = BaseAlertDestinationJira;
 
@@ -273,7 +286,7 @@ export interface DailyCostDataPoint {
   cost: number;
   /** Data source: actual (from billing/metrics), estimated (MA-based), or forecast (projected) */
   dataSource: 'actual' | 'estimated' | 'forecast';
-  /** For estimated/forecast: method used (e.g., 'ma7', 'ma14', 'metrics_pricing', 'linear', 'trend') */
+  /** For estimated/forecast: method used (e.g., 'moving-average-7', 'moving-average-14', 'moving-average', 'metrics_pricing', 'linear', 'trend') */
   method?: string;
   /** For actual: whether this came from metrics (true) or billing (false) */
   fromMetrics?: boolean;

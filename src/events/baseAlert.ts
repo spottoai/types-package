@@ -19,17 +19,17 @@ export interface BaseAlertScope {
 
 export interface BaseAlertDestinationSlackOrTeams {
   name: string;
-  webhookUrl: string;
+  webhookUrl?: string | null;
 }
 
 export interface BaseAlertDestinationWebhook {
   name: string;
-  url: string;
+  url?: string | null;
   /**
-   * v1 默认仅发送 open；若未指定建议视为 ['open']。
+   * v1 defaults to sending only 'open'; when unspecified, treat as ['open'].
    */
   events?: AlertLifecycleEvent[];
-  auth?: { type: 'bearer'; tokenRef: string };
+  auth?: { type: 'bearer'; tokenRef?: string | null };
 }
 
 export interface BaseAlertDestinationJira {
@@ -50,7 +50,7 @@ export interface BaseAlertDestinations {
 
 export interface BaseAlertDestinationEmail {
   name?: string;
-  email: string;
+  email?: string | null;
   events?: AlertLifecycleEvent[]; // default to ['open']
 }
 
@@ -69,8 +69,11 @@ export interface BaseAlertDefinition<
   scope: TScope;
   criteria?: TCriteria;
   destinations?: TDestinations;
-  createdAt: string;
-  createdByUserId: string;
+  /**
+   * Server-authored audit fields. Optional on create/update requests; always present on persisted records.
+   */
+  createdAt?: string;
+  createdByUserId?: string;
   updatedAt?: string;
   updatedByUserId?: string;
 }
