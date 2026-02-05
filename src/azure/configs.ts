@@ -33,6 +33,9 @@ export interface ResourceConfigItem {
   /** an expression to determine the product */
   productExpression?: string;
 
+  /** jsonata expression evaluated against parent resource to decide if a child should run */
+  when?: string;
+
   references: { [key: string]: ResourceTypeReference };
   metrics?: AzureResourceMetric[];
   metricsDescription?: MetricDescription[];
