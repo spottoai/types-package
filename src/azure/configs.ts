@@ -36,6 +36,7 @@ export interface ResourceConfigItem {
   /** jsonata expression evaluated against parent resource to decide if a child should run */
   when?: string;
 
+  ttlHours?: number;
   references: { [key: string]: ResourceTypeReference };
   metrics?: AzureResourceMetric[];
   metricsDescription?: MetricDescription[];

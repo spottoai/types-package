@@ -21,7 +21,7 @@ export interface BaseAlertDestinationWebhook {
     name: string;
     url?: string | null;
     /**
-     * v1 默认仅发送 open；若未指定建议视为 ['open']。
+     * v1 defaults to sending only 'open'; when unspecified, treat as ['open'].
      */
     events?: AlertLifecycleEvent[];
     auth?: {
