@@ -226,6 +226,18 @@ export interface CostAlertSummary {
   estimatedDays?: string[];
   estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
   periodType?: 'calendar_month' | 'billing_period' | 'rolling_30_days';
+  dataShare?: {
+    actual?: number;
+    estimated?: number;
+    forecast?: number;
+    estimatedByMethod?: {
+      metrics_pricing?: number;
+      moving_average?: number;
+      other?: number;
+    };
+    qualityScore?: number;
+    qualityLevel?: 'high' | 'medium' | 'low';
+  };
 
   tagFilterApplied?: boolean;
   /**
@@ -257,6 +269,10 @@ export interface CostAlertSummary {
    * - For rolling-current: method, note
    */
   forecastDetails?: Record<string, unknown>;
+  /**
+   * Human-readable explanation combining data confidence, estimated mix, and forecast approach.
+   */
+  dataStatusExplaination?: string;
   /**
    * Daily forecast costs for the remaining days in the period.
    * Each entry contains the date (YYYYMMDD format), predicted cost, and method used.
