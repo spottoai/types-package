@@ -3,8 +3,10 @@ export interface NotificationSubscription {
     id?: string;
     name: string;
     channel: {
-        type: 'slack' | 'teams' | '';
+        type: 'slack' | 'teams' | 'email' | 'webhook' | '';
         url?: string;
+        email?: string;
+        authTokenRef?: string;
     };
     subscriptions: {
         /** Array of selected recommendation flags */
