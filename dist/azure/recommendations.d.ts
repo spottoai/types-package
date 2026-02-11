@@ -92,6 +92,8 @@ export interface Recommendation {
     adjustedScore?: number;
     objectiveMultiplier?: number;
     finalScore?: number;
+    /** UI display-only normalized score (0-100). */
+    normalizedScore?: number;
 }
 /** Deprecated **/
 export interface CostImpactDetails {
