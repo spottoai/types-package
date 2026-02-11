@@ -88,6 +88,10 @@ export interface Recommendation {
     overallBaseScore?: number;
     overallBaseReason?: string;
     priorityTier?: RecommendationPriorityTier;
+    /** Runtime scoring metadata (per company/tenant). */
+    adjustedScore?: number;
+    objectiveMultiplier?: number;
+    finalScore?: number;
 }
 /** Deprecated **/
 export interface CostImpactDetails {
