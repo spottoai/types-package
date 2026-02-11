@@ -11,6 +11,15 @@ export declare enum RecommendationCategory {
     OperationalExcellence = "OperationalExcellence",
     OperationalExcellenceAlternative = "Operational Excellence"
 }
+export type RecommendationPriorityTier = 'must_do' | 'normal';
+export interface RecommendationBaseScores {
+    cost_optimization: number;
+    security: number;
+    performance: number;
+    reliability: number;
+    compliance: number;
+    operational_excellence: number;
+}
 export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;
     resourceIds: string[];
@@ -74,6 +83,11 @@ export interface Recommendation {
     validationEvidence: string;
     /** Technical playbook (only for multi-step implementations) */
     technicalPlaybook?: string;
+    /** Static recommendation scoring metadata (library-level). */
+    baseScores?: RecommendationBaseScores;
+    overallBaseScore?: number;
+    overallBaseReason?: string;
+    priorityTier?: RecommendationPriorityTier;
 }
 /** Deprecated **/
 export interface CostImpactDetails {
