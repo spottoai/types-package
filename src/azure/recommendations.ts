@@ -133,6 +133,7 @@ export interface RecommendationResource {
   savings?: SavingsPotential;
   currency?: string;
   currencySymbol?: string;
+  relationship?: ResourceRelationship;
 }
 
 export interface RecommendationsView {
@@ -151,10 +152,19 @@ export interface ResourceId {
 export interface ResourceReference {
   id: string;
   name: string;
+  type?: string;
   savings?: SavingsPotential;
   currency?: string;
   currencySymbol?: string;
+  relationship?: ResourceRelationship;
 }
+
+export type ResourceRelationship = {
+  role?: 'primary' | 'related';
+  type?: string;
+  allocationId?: string;
+  metadata?: Record<string, string>;
+};
 
 export interface ReliabilityRecommendation extends Recommendation {
   referenceID: string;
