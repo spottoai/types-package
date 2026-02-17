@@ -2,6 +2,7 @@
 
 A shared TypeScript interfaces package. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
 
+
 ## Features
 
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
