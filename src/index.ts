@@ -15,6 +15,7 @@ export * from './azure/subscriptions';
 export * from './azure/views';
 export * from './azure/security';
 export * from './azure/serviceRetirement';
+export * from './azure/serviceRetirementState';
 export * from './azure/costEstimation';
 export * from './azure/storage-inventory';
 export * from './accounts';
