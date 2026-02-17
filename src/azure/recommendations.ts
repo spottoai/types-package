@@ -242,7 +242,7 @@ export interface RecommendationActionResponse {
 }
 
 export interface ServiceRetirementRecommendation {
-  Id: number;
+  Id: string;
   ServiceName: string;
   RetiringFeature: string;
   RetirementDate: string;

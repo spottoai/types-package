@@ -6,20 +6,13 @@ export interface ServiceRetirementHistory {
   userId: string;
   userName?: string;
   createdAt: Date;
-  action:
-    | 'Dismiss'
-    | 'Restore'
-    | 'Prioritize'
-    | 'Unprioritize'
-    | 'Comment'
-    | 'Pin'
-    | 'Unpin';
+  action: 'Dismiss' | 'Restore' | 'Prioritize' | 'Unprioritize' | 'Comment' | 'Pin' | 'Unpin';
   reason?: string;
 }
 
 export interface ServiceRetirementState {
   companyId: string;
-  retirementId: number;
+  retirementId: string;
   status: ServiceRetirementStatus;
   statusStartAt?: string;
   statusEndAt?: string;
