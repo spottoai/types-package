@@ -6,14 +6,7 @@ export interface ServiceRetirementHistory {
   userId: string;
   userName?: string;
   createdAt: Date;
-  action:
-    | 'Dismiss'
-    | 'Restore'
-    | 'Prioritize'
-    | 'Unprioritize'
-    | 'Comment'
-    | 'Pin'
-    | 'Unpin';
+  action: 'Dismiss' | 'Restore' | 'Prioritize' | 'Unprioritize' | 'Comment' | 'Pin' | 'Unpin';
   reason?: string;
 }
 
