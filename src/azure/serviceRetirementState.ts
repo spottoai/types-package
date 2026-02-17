@@ -12,7 +12,7 @@ export interface ServiceRetirementHistory {
 
 export interface ServiceRetirementState {
   companyId: string;
-  retirementId: number;
+  retirementId: string;
   status: ServiceRetirementStatus;
   statusStartAt?: string;
   statusEndAt?: string;
