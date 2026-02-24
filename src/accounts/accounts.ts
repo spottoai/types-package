@@ -1,5 +1,7 @@
 import { SurveyResponse } from '../company';
 
+export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
+
 export interface CloudAccount {
   /** Partition Key */
   companyId: string;
@@ -35,6 +37,8 @@ export interface SubscriptionInfoBase {
   groupName?: string;
   /** Optional emoji shortcode (Slack-style, e.g. "/face") */
   icon?: string;
+  /** Optional subscription type (Production, Non-Production, Mixed) */
+  subscriptionType?: SubscriptionType;
   status?: string;
   statusLabel?: string;
   error?: string;
