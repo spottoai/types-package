@@ -9,6 +9,8 @@ export interface CloudAccount {
   companyName: string;
   /** AWS, Azure, GCP, etc. */
   provider: string;
+  /** Optional list of subscription group names for this cloud account */
+  groupNames?: string[];
   /** Azure Tenant ID */
   tenantId?: string;
   secret?: string;
@@ -29,6 +31,10 @@ export interface SubscriptionInfoBase {
   friendlyName?: string;
   cloudAccountId: string;
   cloudAccountName: string;
+  /** Optional group name for subscription-level grouping */
+  groupName?: string;
+  /** Optional emoji shortcode (Slack-style, e.g. "/face") */
+  icon?: string;
   status?: string;
   statusLabel?: string;
   error?: string;
