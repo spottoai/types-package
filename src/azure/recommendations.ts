@@ -341,6 +341,8 @@ export interface ConnectWiseRoutingFields {
 export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase, ConnectWiseRoutingFields {}
 
 export type ConnectWiseBoardsPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseCompaniesPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseProjectsPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseStatusesPayload extends ConnectWiseIntegrationRequestBase {
   boardId?: string;
@@ -381,6 +383,8 @@ export interface ConnectWisePrioritiesPayload extends ConnectWiseIntegrationRequ
 export interface ConnectWiseContactsPayload extends ConnectWiseIntegrationRequestBase {
   searchQuery?: string;
 }
+
+export type ConnectWiseSourcesPayload = ConnectWiseIntegrationRequestBase;
 
 export type ConnectWiseAgreementsPayload = ConnectWiseIntegrationRequestBase;
 

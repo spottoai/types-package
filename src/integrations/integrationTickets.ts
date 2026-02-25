@@ -19,9 +19,6 @@ export interface IntegrationTicketRecord {
   referenceId: string;
   resourceIds?: string[];
   referenceUrl?: string;
-  recommendationTitle?: string;
-  resourceType?: string;
-  resourceName?: string;
   shareMessage?: string;
   reportedBy?: string;
   recommendationRisk?: string;
@@ -29,6 +26,9 @@ export interface IntegrationTicketRecord {
   recommendationScore?: string;
   recommendationEffort?: string;
   recommendationEffortHours?: string;
+  recommendationTitle?: string;
+  resourceType?: string;
+  resourceName?: string;
   integrationCompanyId?: string;
   eventId?: string;
   correlationId?: string;
