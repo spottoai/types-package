@@ -1,10 +1,5 @@
 export type RelationshipSnapshotNodeKind =
-  | 'subscription'
-  | 'resourceGroup'
-  | 'resource'
-  | 'location'
-  | 'availabilityZone'
-  | 'managementGroup';
+  'subscription' | 'resourceGroup' | 'resource' | 'location' | 'availabilityZone' | 'managementGroup';
 
 export type RelationshipSnapshotEdgeKind = 'contains' | 'depends_on';
 
