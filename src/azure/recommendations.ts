@@ -338,10 +338,7 @@ export interface ConnectWiseRoutingFields {
   source?: string;
 }
 
-export interface ConnectWiseIntegrationTestPayload
-  extends ConnectWiseIntegrationRequestBase,
-    ConnectWiseRoutingFields {
-}
+export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase, ConnectWiseRoutingFields {}
 
 export type ConnectWiseBoardsPayload = ConnectWiseIntegrationRequestBase;
 
