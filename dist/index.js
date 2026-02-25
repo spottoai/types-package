@@ -31,6 +31,7 @@ __exportStar(require("./azure/subscriptions"), exports);
 __exportStar(require("./azure/views"), exports);
 __exportStar(require("./azure/security"), exports);
 __exportStar(require("./azure/serviceRetirement"), exports);
+__exportStar(require("./azure/serviceRetirementState"), exports);
 __exportStar(require("./azure/costEstimation"), exports);
 __exportStar(require("./azure/storage-inventory"), exports);
 __exportStar(require("./accounts"), exports);
@@ -39,6 +40,7 @@ __exportStar(require("./common"), exports);
 __exportStar(require("./company"), exports);
 __exportStar(require("./ai"), exports);
 __exportStar(require("./events"), exports);
+__exportStar(require("./integrations"), exports);
 __exportStar(require("./identity"), exports);
 __exportStar(require("./tags"), exports);
 //# sourceMappingURL=index.js.map

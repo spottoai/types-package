@@ -18,6 +18,7 @@ export interface Company {
     parentId?: string;
     parentCompanyName?: string;
     hasChildren?: boolean;
+    parentIntegrationSettings?: ParentIntegrationSettings[];
 }
 export interface CompanyCreate {
     name: string;
@@ -41,10 +42,17 @@ export interface UserCompany {
     parentCompanyName?: string;
     hasChildren?: boolean;
 }
+export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise';
+export type IntegrationProvider = KnownIntegrationProvider | (string & {});
+export interface ParentIntegrationSettings {
+    provider: IntegrationProvider;
+    credentialOwnerCompanyId?: string;
+    properties: Record<string, string>;
+}
 export interface CompanyIntegrations {
     enabled: boolean;
-    provider: 'jira' | 'halo' | 'connectwise';
-    properties: Map<string, string>;
+    provider: IntegrationProvider;
+    properties: Map<string, string> | Record<string, string>;
     secret: string;
 }
 //# sourceMappingURL=company.d.ts.map

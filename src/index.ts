@@ -24,5 +24,6 @@ export * from './common';
 export * from './company';
 export * from './ai';
 export * from './events';
+export * from './integrations';
 export * from './identity';
 export * from './tags';
