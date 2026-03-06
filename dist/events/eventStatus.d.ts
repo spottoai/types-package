@@ -62,5 +62,6 @@ export interface ShareTicketMetadata {
     provider: 'jira' | 'halo' | 'connectwise';
     ticketId?: string | number;
     ticketUrl?: string;
+    integrationCompanyId?: string;
 }
 //# sourceMappingURL=eventStatus.d.ts.map

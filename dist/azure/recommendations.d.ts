@@ -2,6 +2,7 @@ import { Comment, RecommendationHistory } from './recommendationState';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential } from './views';
+import type { HaloRoutingOverrides } from '../integrations/halo';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -205,6 +206,7 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
     shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
     email?: string;
+    halo?: HaloRoutingOverrides;
     connectwise?: ConnectWiseRoutingFields;
 }
 export interface RecommendationActionRequest {
@@ -308,6 +310,8 @@ export interface ConnectWiseRoutingFields {
 export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase, ConnectWiseRoutingFields {
 }
 export type ConnectWiseBoardsPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseCompaniesPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseProjectsPayload = ConnectWiseIntegrationRequestBase;
 export interface ConnectWiseStatusesPayload extends ConnectWiseIntegrationRequestBase {
     boardId?: string;
     boardName?: string;
@@ -341,6 +345,7 @@ export interface ConnectWisePrioritiesPayload extends ConnectWiseIntegrationRequ
 export interface ConnectWiseContactsPayload extends ConnectWiseIntegrationRequestBase {
     searchQuery?: string;
 }
+export type ConnectWiseSourcesPayload = ConnectWiseIntegrationRequestBase;
 export type ConnectWiseAgreementsPayload = ConnectWiseIntegrationRequestBase;
 export type ConnectWiseSlasPayload = ConnectWiseIntegrationRequestBase;
 export interface ConnectWiseEntity {

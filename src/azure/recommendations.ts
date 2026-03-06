@@ -2,6 +2,7 @@ import { Comment, RecommendationHistory } from './recommendationState';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential } from './views';
+import type { HaloRoutingOverrides } from '../integrations/halo';
 
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -223,6 +224,7 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
   shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
   email?: string;
+  halo?: HaloRoutingOverrides;
   connectwise?: ConnectWiseRoutingFields;
 }
 
