@@ -174,9 +174,7 @@ interface AIChatSkillRoutingDecision {
   fallback?: AIChatSkillRoutingFallback;
 }
 
-type AIChatClassificationMetadata =
-  | AIChatClassificationResult
-  | AIChatSkillClassificationResult;
+type AIChatClassificationMetadata = AIChatClassificationResult | AIChatSkillClassificationResult;
 
 type AIChatRoutingMetadata = AIChatRoutingDecision | AIChatSkillRoutingDecision;
 
@@ -188,16 +186,9 @@ type AIChatRoutingReasonCode =
   | 'AI_SKILL_CLASSIFIER_LOW_CONFIDENCE'
   | 'AI_SKILL_FALLBACK_DEFAULT';
 
-type AIChatScopeReasonCode =
-  | 'AI_SCOPE_EMPTY_REQUEST'
-  | 'AI_SCOPE_EMPTY_EFFECTIVE'
-  | 'AI_SCOPE_REDUCED_UNAUTHORIZED_MEMBERS'
-  | 'AI_SCOPE_INVALID';
+type AIChatScopeReasonCode = 'AI_SCOPE_EMPTY_REQUEST' | 'AI_SCOPE_EMPTY_EFFECTIVE' | 'AI_SCOPE_REDUCED_UNAUTHORIZED_MEMBERS' | 'AI_SCOPE_INVALID';
 
-type AIChatConfirmationReasonCode =
-  | 'AI_MUTATION_CONFIRMATION_REQUIRED'
-  | 'AI_MUTATION_CONFIRMATION_EXPIRED'
-  | 'AI_MUTATION_CONFIRMATION_REJECTED';
+type AIChatConfirmationReasonCode = 'AI_MUTATION_CONFIRMATION_REQUIRED' | 'AI_MUTATION_CONFIRMATION_EXPIRED' | 'AI_MUTATION_CONFIRMATION_REJECTED';
 
 type AIChatDegradedReasonCode =
   | 'AI_LEARN_MCP_UNAVAILABLE'
