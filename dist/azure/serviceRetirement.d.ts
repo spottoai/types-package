@@ -1,5 +1,6 @@
 import { Tags } from '../tags';
 import { ServiceRetirementRecommendation } from './recommendations';
+import type { BenefitCoverageSummary } from './views.js';
 export interface ServiceRetirement {
     id: string;
     subscriptionId: string;
@@ -19,6 +20,7 @@ export interface ServiceRetirementPortalResource {
     id: string;
     name?: string;
     resourceType?: string;
+    benefitsCoverage?: BenefitCoverageSummary;
 }
 export interface ServiceRetirementPortalEntry extends ServiceRetirementRecommendation {
     resources: ServiceRetirementPortalResource[];

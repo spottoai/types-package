@@ -10,17 +10,22 @@ Shared TypeScript interfaces package used across Spotto services and apps.
 
 ## Key docs
 - `README.md`
+- `REPO_LAYOUT.md`
 - `.agents/skills/types-package-architecture/SKILL.md`
 - `DEPLOYMENT.md`
 
 ## Key folders
 - `src/` (type sources)
+- `specs/` (repo-local type specs)
 - `scripts/` (build checks)
-- `samples/` (usage samples)
 
 ## Architecture
 - `.agents/skills/types-package-architecture/SKILL.md`
 
 ## Skills
 - `.agents/skills/types-package-architecture/SKILL.md`
+
+## Related core docs
+- `../core/skills/coding-standards/SKILL.md`
+- `../core/skills/spec-workflow/SKILL.md`
 
