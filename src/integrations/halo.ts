@@ -1,5 +1,7 @@
 export type HaloId = string | number;
 
+export type HaloProduct = 'auto' | 'itsm' | 'psa';
+
 export interface HaloRoutingOverrides {
   queueId?: HaloId;
   queueName?: string;
@@ -38,9 +40,11 @@ export type HaloRoutingFields = HaloRoutingOverrides;
 export interface HaloIntegrationRequestBase {
   baseUrl: string;
   clientId: string;
+  tokenEndpoint?: string;
   secret?: string;
   useStoredSecret?: boolean;
   credentialOwnerCompanyId?: string;
+  haloProduct?: HaloProduct;
 }
 
 export interface HaloIntegrationMetadataPayload extends HaloIntegrationRequestBase {
