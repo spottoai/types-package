@@ -1,10 +1,4 @@
-import type {
-  BenefitCostBasis,
-  BenefitScope,
-  BenefitType,
-  IBenefitCoverageBreakdownEntry,
-  IBenefitUtilization,
-} from './benefits.js';
+import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
 
 export type CommitmentsPlanningVersion = '1.0';
@@ -77,18 +71,9 @@ export interface CommitmentsResourceCoverageItem {
   benefitBreakdown?: IBenefitCoverageBreakdownEntry[];
 }
 
-export type CommitmentsObsoleteCandidateType =
-  | 'underutilized'
-  | 'coverage-drift'
-  | 'sku-mismatch'
-  | 'near-expiry';
+export type CommitmentsObsoleteCandidateType = 'underutilized' | 'coverage-drift' | 'sku-mismatch' | 'near-expiry';
 
-export type CommitmentsSuggestedAction =
-  | 'renew'
-  | 'let-expire'
-  | 'exchange'
-  | 'resize'
-  | 'review';
+export type CommitmentsSuggestedAction = 'renew' | 'let-expire' | 'exchange' | 'resize' | 'review';
 
 export interface CommitmentsObsoleteCandidate {
   id: string;
