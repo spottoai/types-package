@@ -126,9 +126,6 @@ export interface AIChatClassificationResult {
 }
 
 type AIChatRoutingReasonCode =
-  | 'AI_SKILL_EXPLICIT_ACCEPTED'
-  | 'AI_SKILL_EXPLICIT_REJECTED_MODE'
-  | 'AI_SKILL_EXPLICIT_REJECTED_POLICY'
   | 'AI_SKILL_CLASSIFIER_SELECTED'
   | 'AI_SKILL_CLASSIFIER_LOW_CONFIDENCE'
   | 'AI_SKILL_FALLBACK_DEFAULT';
@@ -214,7 +211,6 @@ export interface AIChatSkillClassificationCandidate {
 
 export interface AIChatSkillClassificationResult {
   classifierVersion: string;
-  requestedSkillPackId?: AIChatSkillId;
   selectedSkillPackId?: AIChatSkillId;
   candidates: AIChatSkillClassificationCandidate[];
   reasonCodes?: AIChatReasonCode[];
@@ -237,7 +233,7 @@ export interface AIChatRoutingDecision {
   subtasks?: AIChatRoutingSubtaskPlan[];
 }
 
-export type AIChatSkillRouteSource = 'auto' | 'explicit' | 'default';
+export type AIChatSkillRouteSource = 'auto' | 'default';
 
 export type AIChatSkillRoutePolicyOutcome = 'accepted' | 'fallback' | 'rejected';
 
@@ -255,7 +251,6 @@ export interface AIChatSkillRoutingFallback {
 }
 
 export interface AIChatSkillRoutingDecision {
-  requestedSkillPackId?: AIChatSkillId;
   selectedSkillPackId?: AIChatSkillId;
   route: AIChatSkillRouteTarget;
   reasonCodes: AIChatReasonCode[];
@@ -376,6 +371,13 @@ export interface AIPlannerOutput {
 
 export type AICitationSourceType = 'toolResult' | 'pageData' | 'document' | 'metric' | 'log' | string;
 
+export interface AIEvidencePayloadMeta {
+  payloadShape?: 'summary' | 'compact' | 'full';
+  truncated?: boolean;
+  truncationReasonCode?: AIReasonCode;
+  estimatedItemCount?: number;
+}
+
 export interface AIChatCitation {
   citationId: string;
   sourceType: AICitationSourceType;
@@ -407,6 +409,7 @@ export interface AIToolError extends AIChatToolExecutionError {
 export interface AIToolResult extends AIChatToolExecutionResult {
   toolName: string;
   error?: AIToolError;
+  payloadMeta?: AIEvidencePayloadMeta;
 }
 
 export interface AIToolCall {
@@ -439,6 +442,7 @@ export interface AIEvidenceEntry {
   rawHandle?: string;
   citationIds: string[];
   domains?: string[];
+  payloadMeta?: AIEvidencePayloadMeta;
 }
 
 export interface AIEvidenceGap {
@@ -618,6 +622,8 @@ export interface AIChatApprovalRecord {
   createdAt: string;
   decidedAt?: string;
   expiresAt?: string;
+  updatedAt?: string;
+  detail?: string;
 }
 
 export interface AIChatSkillPackDescriptor {
@@ -719,19 +725,11 @@ export interface AIChatConfirmationResponse {
   idempotencyKey: string;
 }
 
-export interface AIChatRoutingHints {
-  preferredMode?: AIChatMode;
-  preferredSkillPackIds?: AIChatSkillId[];
-  forceSkillPackIds?: AIChatSkillId[];
-  allowFanout?: boolean;
-}
-
 interface AIChatRequestBase {
   conversationId?: string;
   previousResponseId?: string;
   contextHash?: string;
   confirmationResponse?: AIChatConfirmationResponse;
-  routingHints?: AIChatRoutingHints;
   stream?: true;
 }
 
@@ -826,7 +824,6 @@ export interface AIChatToolAffordanceBuiltEvent extends AIChatStreamEventBase {
 export interface AIChatRoutingStartedEvent extends AIChatStreamEventBase {
   event: 'routingStarted';
   requestedMode?: AIChatMode;
-  requestedSkillPackIds?: AIChatSkillId[];
 }
 
 export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
