@@ -28,9 +28,17 @@ export interface HaloRoutingOverrides {
     slaId?: HaloId;
     slaName?: string;
     category1?: string;
+    category1Id?: HaloId;
+    category1Name?: string;
     category2?: string;
+    category2Id?: HaloId;
+    category2Name?: string;
     category3?: string;
+    category3Id?: HaloId;
+    category3Name?: string;
     category4?: string;
+    category4Id?: HaloId;
+    category4Name?: string;
 }
 export type HaloRoutingFields = HaloRoutingOverrides;
 export interface HaloIntegrationRequestBase {

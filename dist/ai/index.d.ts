@@ -1,27 +1,26 @@
 /** Common AI interfaces shared between frontend and backend */
-export type AIResponseStatus = 'complete' | 'needs_clarification' | 'needs_more_metrics';
+export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 export type RecommendationPillar = 'Cost Optimization' | 'Performance Efficiency' | 'Security' | 'Reliability' | 'Operational Excellence';
-export type RecommendationType = 'advisor' | 'custom' | 'ai_generated';
+export type RecommendationType = 'advisor' | 'custom' | 'aiGenerated';
 export interface RecommendationAction {
     action: 'fix';
-    recommendation_id: string;
+    recommendationId: string;
 }
 export interface AIRecommendation {
-    priority_rank: number;
+    priorityRank: number;
     pillar: RecommendationPillar;
     description: string;
     type: RecommendationType;
-    reference_ids: string[];
+    referenceIds: string[];
     actions: RecommendationAction[];
 }
 export interface StructuredAIResponse {
     status: AIResponseStatus;
-    clarification_request: string | null;
-    metrics_request: string[];
-    friendly_message: string;
+    clarificationRequest: string | null;
+    metricsRequest: string[];
+    friendlyMessage: string;
     recommendations: AIRecommendation[];
 }
-/** Common PageContext interface - unified version */
 export interface PageContext {
     pageType: 'resource-detail' | 'recommendation-detail' | 'dashboard' | string;
     pageId?: string;
@@ -32,23 +31,20 @@ export interface PageContext {
     resourceId?: string;
     recommendationId?: string;
     pageUrl?: string;
-    ui_state?: Record<string, unknown>;
+    uiState?: Record<string, unknown>;
     contextHash?: string;
 }
-/** Common message interface for AI conversations */
 export interface AIMessage {
     role: 'user' | 'assistant';
     content: string;
-    /** Date for backend, string for frontend */
     timestamp: Date | string;
     structuredResponse?: StructuredAIResponse;
-    /** Response ID for continuity */
     responseId?: string;
 }
 export type AIChatMode = 'page' | 'workspace';
 type AIWorkspaceScopePolicyOutcome = 'accepted' | 'intersected' | 'rejected';
 interface AIWorkspaceScopeAllAuthorizedRequest {
-    mode: 'all_authorized';
+    mode: 'allAuthorized';
     companyIds?: never;
     subscriptionIds?: never;
     resourceIds?: never;
@@ -82,299 +78,610 @@ export interface AIResolvedWorkspaceScope {
     rejectedResourceIds?: string[];
 }
 export type AIChatSkillId = string;
-type AIChatDomain = 'cost' | 'performance' | 'security' | 'reliability' | 'governance' | 'operations' | 'general';
-type AIChatIntentLabel = 'ask_summary' | 'investigate_cost' | 'investigate_security' | 'investigate_reliability' | 'investigate_governance' | 'execute_action' | 'explain_recommendation' | 'unknown';
-type AIChatComplexity = 'simple' | 'standard' | 'complex';
-interface AIChatClassificationIntent {
+export type AIChatDomain = 'cost' | 'performance' | 'security' | 'reliability' | 'governance' | 'operations' | 'general';
+export type AIChatIntentLabel = 'askSummary' | 'investigateCost' | 'investigateSecurity' | 'investigateReliability' | 'investigateGovernance' | 'executeAction' | 'explainRecommendation' | 'unknown';
+export type AIChatComplexity = 'simple' | 'standard' | 'complex';
+export interface AIChatClassificationIntent {
     label: AIChatIntentLabel;
     confidence: number;
 }
-interface AIChatClassificationResult {
+export interface AIChatClassificationResult {
     version: string;
     intents: AIChatClassificationIntent[];
     complexity: AIChatComplexity;
     requiresTools: boolean;
-    suggestedSkillIds: AIChatSkillId[];
+    suggestedSkillPackIds: AIChatSkillId[];
 }
-interface AIChatSkillClassificationResult {
+type AIChatRoutingReasonCode = 'AI_SKILL_EXPLICIT_ACCEPTED' | 'AI_SKILL_EXPLICIT_REJECTED_MODE' | 'AI_SKILL_EXPLICIT_REJECTED_POLICY' | 'AI_SKILL_CLASSIFIER_SELECTED' | 'AI_SKILL_CLASSIFIER_LOW_CONFIDENCE' | 'AI_SKILL_FALLBACK_DEFAULT';
+type AIChatScopeReasonCode = 'AI_SCOPE_EMPTY_REQUEST' | 'AI_SCOPE_EMPTY_EFFECTIVE' | 'AI_SCOPE_REDUCED_UNAUTHORIZED_MEMBERS' | 'AI_SCOPE_INVALID';
+type AIChatApprovalReasonCode = 'AI_MUTATION_CONFIRMATION_REQUIRED' | 'AI_MUTATION_CONFIRMATION_EXPIRED' | 'AI_MUTATION_CONFIRMATION_REJECTED';
+type AIChatDegradedReasonCode = 'AI_LEARN_MCP_UNAVAILABLE' | 'AI_LEARN_MCP_TIMEOUT' | 'AI_TOOL_TIMEOUT' | 'AI_TOOL_PARTIAL_FAILURE' | 'AI_DEGRADED_NO_PATH';
+type AIChatOrchestrationReasonCode = 'AI_ROUTE_GENERIC' | 'AI_ROUTE_ANALYSIS' | 'AI_ROUTE_GENERIC_FALLBACK_MEDIUM_CONFIDENCE' | 'AI_ROUTE_CLARIFY_LOW_CONFIDENCE' | 'AI_PLAN_CREATED' | 'AI_PLAN_NO_ELIGIBLE_SPECIALISTS' | 'AI_SPECIALIST_STARTED' | 'AI_SPECIALIST_COMPLETED' | 'AI_SPECIALIST_FAILED' | 'AI_SYNTHESIS_COMPLETED' | 'AI_SYNTHESIS_CONFLICT_DETECTED' | 'AI_CRITIC_SKIPPED' | 'AI_CRITIC_PASS' | 'AI_CRITIC_REVISE' | 'AI_REVISION_LOOP_LIMIT_REACHED';
+export type AIChatReasonCode = AIChatRoutingReasonCode | AIChatScopeReasonCode | AIChatApprovalReasonCode | AIChatDegradedReasonCode | AIChatOrchestrationReasonCode;
+export type AIRouteReasonCode = 'route.low_confidence' | 'route.page_context_sufficient' | 'route.cross_domain_analysis_required' | 'route.retrieval_required' | 'route.missing_required_inputs' | `route.${string}`;
+export type AIToolReasonCode = 'tool.not_authorized' | 'tool.out_of_scope' | 'tool.missing_required_arguments' | 'tool.requires_confirmation' | 'tool.not_applicable_to_page' | `tool.${string}`;
+export type AIFreshnessReasonCode = 'freshness.current' | 'freshness.stale_source' | 'freshness.partial_data' | 'freshness.refresh_in_progress' | `freshness.${string}`;
+export type AISchemaReasonCode = 'schema.parse_failed' | 'schema.validation_failed' | 'schema.missing_required_field' | 'schema.invalid_enum_value' | `schema.${string}`;
+export type AIReasonCode = AIRouteReasonCode | AIToolReasonCode | AIFreshnessReasonCode | AISchemaReasonCode;
+export interface AISchemaIssue {
+    reasonCode: AISchemaReasonCode;
+    fieldPath?: string;
+    detail?: string;
+}
+export interface AIChatSkillClassificationCandidate {
+    skillId: AIChatSkillId;
+    score: number;
+    reasonCodes: AIChatReasonCode[];
+}
+export interface AIChatSkillClassificationResult {
     classifierVersion: string;
-    requestedSkillId?: AIChatSkillId;
-    selectedSkillId?: AIChatSkillId;
+    requestedSkillPackId?: AIChatSkillId;
+    selectedSkillPackId?: AIChatSkillId;
     candidates: AIChatSkillClassificationCandidate[];
     reasonCodes?: AIChatReasonCode[];
 }
-type AIChatRoutingStrategy = 'single_agent' | 'fanout';
-interface AIChatRoutingSubtaskPlan {
+export type AIChatRoutingStrategy = 'singleAgent' | 'fanout';
+export interface AIChatRoutingSubtaskPlan {
     subtaskId: string;
     domain: AIChatDomain;
     title: string;
-    skillId?: AIChatSkillId;
+    skillPackId?: AIChatSkillId;
 }
-interface AIChatRoutingDecision {
+export interface AIChatRoutingDecision {
     strategy: AIChatRoutingStrategy;
     selectedMode: AIChatMode;
-    selectedSkillIds: AIChatSkillId[];
+    selectedSkillPackIds: AIChatSkillId[];
     reasonCodes: AIChatReasonCode[];
     subtasks?: AIChatRoutingSubtaskPlan[];
 }
-interface AIChatSkillRouteTarget {
-    skillId: AIChatSkillId;
-    skillVersion: string;
+export type AIChatSkillRouteSource = 'auto' | 'explicit' | 'default';
+export type AIChatSkillRoutePolicyOutcome = 'accepted' | 'fallback' | 'rejected';
+export interface AIChatSkillRouteTarget {
+    skillPackId: AIChatSkillId;
+    skillPackVersion: string;
     routeSource: AIChatSkillRouteSource;
     policyOutcome: AIChatSkillRoutePolicyOutcome;
 }
-interface AIChatSkillRoutingFallback {
-    fromSkillId?: AIChatSkillId;
+export interface AIChatSkillRoutingFallback {
+    fromSkillPackId?: AIChatSkillId;
     toRoute: AIChatSkillRouteTarget;
     reasonCode: AIChatReasonCode;
 }
-interface AIChatSkillRoutingDecision {
-    requestedSkillId?: AIChatSkillId;
-    selectedSkillId?: AIChatSkillId;
+export interface AIChatSkillRoutingDecision {
+    requestedSkillPackId?: AIChatSkillId;
+    selectedSkillPackId?: AIChatSkillId;
     route: AIChatSkillRouteTarget;
     reasonCodes: AIChatReasonCode[];
     fallback?: AIChatSkillRoutingFallback;
 }
-type AIChatClassificationMetadata = AIChatClassificationResult | AIChatSkillClassificationResult;
-type AIChatRoutingMetadata = AIChatRoutingDecision | AIChatSkillRoutingDecision;
-type AIChatRoutingReasonCode = 'AI_SKILL_EXPLICIT_ACCEPTED' | 'AI_SKILL_EXPLICIT_REJECTED_MODE' | 'AI_SKILL_EXPLICIT_REJECTED_POLICY' | 'AI_SKILL_CLASSIFIER_SELECTED' | 'AI_SKILL_CLASSIFIER_LOW_CONFIDENCE' | 'AI_SKILL_FALLBACK_DEFAULT';
-type AIChatScopeReasonCode = 'AI_SCOPE_EMPTY_REQUEST' | 'AI_SCOPE_EMPTY_EFFECTIVE' | 'AI_SCOPE_REDUCED_UNAUTHORIZED_MEMBERS' | 'AI_SCOPE_INVALID';
-type AIChatConfirmationReasonCode = 'AI_MUTATION_CONFIRMATION_REQUIRED' | 'AI_MUTATION_CONFIRMATION_EXPIRED' | 'AI_MUTATION_CONFIRMATION_REJECTED';
-type AIChatDegradedReasonCode = 'AI_LEARN_MCP_UNAVAILABLE' | 'AI_LEARN_MCP_TIMEOUT' | 'AI_TOOL_TIMEOUT' | 'AI_TOOL_PARTIAL_FAILURE' | 'AI_DEGRADED_NO_PATH';
-type AIChatOrchestrationReasonCode = 'AI_ROUTE_GENERIC' | 'AI_ROUTE_ANALYSIS' | 'AI_ROUTE_GENERIC_FALLBACK_MEDIUM_CONFIDENCE' | 'AI_ROUTE_CLARIFY_LOW_CONFIDENCE' | 'AI_PLAN_CREATED' | 'AI_PLAN_NO_ELIGIBLE_SPECIALISTS' | 'AI_SPECIALIST_STARTED' | 'AI_SPECIALIST_COMPLETED' | 'AI_SPECIALIST_FAILED' | 'AI_SYNTHESIS_COMPLETED' | 'AI_SYNTHESIS_CONFLICT_DETECTED' | 'AI_CRITIC_SKIPPED' | 'AI_CRITIC_PASS' | 'AI_CRITIC_REVISE' | 'AI_REVISION_LOOP_LIMIT_REACHED';
-export type AIChatReasonCode = AIChatRoutingReasonCode | AIChatScopeReasonCode | AIChatConfirmationReasonCode | AIChatDegradedReasonCode | AIChatOrchestrationReasonCode;
-type AIChatConfirmationDecisionValue = 'approve' | 'reject';
-export interface AIChatConfirmationResponse {
-    challengeId: string;
-    decision: AIChatConfirmationDecisionValue;
-    idempotencyKey: string;
+export type AIChatClassificationMetadata = AIChatClassificationResult | AIChatSkillClassificationResult;
+export type AIChatRoutingMetadata = AIChatRoutingDecision | AIChatSkillRoutingDecision;
+export type AIEntityType = 'company' | 'subscription' | 'resource' | 'recommendation' | string;
+export interface AIEntityRef {
+    id: string;
+    label?: string;
+    type: AIEntityType;
 }
-/**
- * Normalized confidence score in the range [0..1].
- */
-type AIAnalysisConfidence = number;
-type AIChatOrchestrationRoute = 'generic' | 'analysis';
-type AIChatEffectivePath = AIChatOrchestrationRoute | 'clarify';
-type AIChatCriticOutcome = 'skipped' | 'pass' | 'revise';
-type AIChatSpecialistCompletionStatus = 'completed' | 'failed';
-type AIChatAnalysisConfidenceSource = 'routing' | 'planner' | 'specialist' | 'synthesis' | 'critic' | 'final';
-interface AIChatRoutingDomainScore {
-    name: string;
+export type AIPageIntentHint = 'thisPage' | 'theseRows' | 'thisResource' | 'crossPage';
+export interface AIPageFreshness {
+    capturedAt: string;
+    dataAsOf?: string;
+    isStale?: boolean;
+    stalenessReason?: string;
+    reasonCode?: AIFreshnessReasonCode;
+}
+export interface AIChatPageSnapshot {
+    pageType: string;
+    pageId?: string;
+    pageUrl?: string;
+    companyId?: string;
+    title?: string;
+    summary?: string;
+    routePath?: string;
+    tab?: string;
+    view?: string;
+    selectedEntities: AIEntityRef[];
+    scopeLabels: {
+        company?: string;
+        subscriptions?: string[];
+        resources?: string[];
+    };
+    uiState?: Record<string, unknown>;
+    loadedDataHints?: string[];
+    intentHints?: AIPageIntentHint[];
+    freshness?: AIPageFreshness;
+}
+export type AIChatMutationMode = 'read' | 'writeRequiresApproval' | 'writeBlocked';
+export interface AIChatToolAffordanceEntry {
+    toolName: string;
+    title?: string;
+    reasonCode?: AIReasonCode;
+    reason?: string;
+    missingArgs?: string[];
+    requiresApproval?: boolean;
+}
+export interface AIChatBlockedToolAffordanceEntry extends AIChatToolAffordanceEntry {
+    blockReasonCode?: AIReasonCode;
+    blockReason?: string;
+}
+export interface AIChatToolAffordanceSnapshot {
+    availableTools: AIChatToolAffordanceEntry[];
+    applicableTools: AIChatToolAffordanceEntry[];
+    deferredTools: AIChatToolAffordanceEntry[];
+    writeTools: AIChatToolAffordanceEntry[];
+    blockedTools: AIChatBlockedToolAffordanceEntry[];
+}
+export type AIOrchestrationPath = 'clarify' | 'pageAnswer' | 'genericToolLoop' | 'analysisWithRetrieval';
+export interface AIRouterDomainScore {
+    name: 'cost' | 'performance' | 'reliability' | 'security' | 'operations' | string;
     confidence: number;
 }
-interface AIChatRoutingStartedPayload {
-    requestedMode?: AIChatMode;
-    requestedSkillIds?: AIChatSkillId[];
-    /**
-     * Runtime alias used by current API emitter.
-     */
-    chatMode?: AIChatMode;
+export interface AIRouterOutput {
+    path: AIOrchestrationPath;
+    confidence: number;
+    entitiesInFocus: string[];
+    domains: AIRouterDomainScore[];
+    needsRetrieval: boolean;
+    missingInputs: string[];
+    reasonCode?: AIRouteReasonCode;
+    whyThisPath?: string;
+    complexity?: AIChatComplexity;
 }
-interface AIChatRoutingCompletedPayload {
-    route: AIChatOrchestrationRoute;
-    effectivePath?: AIChatEffectivePath;
-    confidence?: number;
-    domains?: AIChatRoutingDomainScore[];
-    reasonCodes: AIChatReasonCode[];
-    analysisConfidence?: AIAnalysisConfidence;
-    selectedSkillIds?: AIChatSkillId[];
-    decision?: AIChatRoutingDecision;
+export type AIPlannerPriority = 'P1' | 'P2' | 'P3';
+export interface AIPlannerWorkItem {
+    workItemId: string;
+    domain: string;
+    task: string;
+    priority: AIPlannerPriority;
 }
-interface AIChatGenericStartedPayload {
-    reasonCode?: AIChatReasonCode;
-    reasonCodes?: AIChatReasonCode[];
+export interface AIPlannerRetrievalStep {
+    retrievalId: string;
+    toolName: string;
+    purpose: string;
+    arguments: Record<string, unknown>;
+    required: boolean;
 }
-interface AIChatGenericCompletedPayload {
-    reasonCode?: AIChatReasonCode;
-    reasonCodes?: AIChatReasonCode[];
-    responseStatus?: AIResponseStatus;
-    responseId?: string;
+export interface AIPlannerOutput {
+    investigationGoal: string;
+    decisionToSupport: string;
+    workItems: AIPlannerWorkItem[];
+    retrievalPlan: AIPlannerRetrievalStep[];
+    successCriteria: string[];
 }
-interface AIChatPlannerStartedPayload {
-    route?: 'analysis';
-    domains?: AIChatRoutingDomainScore[];
+export type AICitationSourceType = 'toolResult' | 'pageData' | 'document' | 'metric' | 'log' | string;
+export interface AIChatCitation {
+    citationId: string;
+    sourceType: AICitationSourceType;
+    title: string;
+    locator: string;
+    snippet?: string;
+    toolName?: string;
+    retrievedAt: string;
 }
-interface AIChatPlannerCompletedPayload {
-    planCreated?: boolean;
-    reasonCodes?: AIChatReasonCode[];
-    subtasks?: AIChatRoutingSubtaskPlan[];
-    note?: string;
-    domains?: string[];
-    tasks?: string[];
-    selectedSpecialists?: string[];
-}
-interface AIChatSpecialistStartedPayload {
-    specialistId: string;
-    domain: AIChatDomain;
-    skillId?: AIChatSkillId;
-    title?: string;
-    reasonCode?: AIChatReasonCode;
-    revisionLoop?: number;
-}
-interface AIChatSpecialistProgressPayload {
-    specialistId: string;
-    domain: AIChatDomain;
+export interface AIChatToolExecutionError {
     message: string;
-    progressPercent?: number;
-    revisionLoop?: number;
+    reasonCode?: AIReasonCode;
+    retryable?: boolean;
+    details?: unknown;
 }
-interface AIChatSpecialistCompletedPayload {
-    specialistId: string;
-    domain: AIChatDomain;
-    status: AIChatSpecialistCompletionStatus;
-    confidence?: number;
-    summary?: string;
-    reasonCode?: AIChatReasonCode;
+export interface AIChatToolExecutionResult {
+    ok: boolean;
+    data?: unknown;
+    error?: AIChatToolExecutionError;
+    truncated?: boolean;
+}
+export interface AIToolError extends AIChatToolExecutionError {
+    code: string;
+}
+export interface AIToolResult extends AIChatToolExecutionResult {
+    toolName: string;
     error?: AIToolError;
-    revisionLoop?: number;
 }
-interface AIChatSynthesisStartedPayload {
-    specialistCount?: number;
-    specialists?: string[];
-    revisionLoop?: number;
+export interface AIToolCall {
+    callId: string;
+    toolName: string;
+    arguments: Record<string, unknown>;
 }
-interface AIChatSynthesisCompletedPayload {
-    confidence?: number;
-    /**
-     * Canonical field name for UI consumers.
-     */
+export interface AIRetrievalExecutionStep {
+    retrievalId: string;
+    toolName: string;
+    argsHash: string;
+    startedAt: string;
+    endedAt?: string;
+    status: 'ok' | 'error' | 'skipped';
     summary?: string;
-    /**
-     * Canonical field name for UI consumers.
-     */
-    conflictDetected?: boolean;
-    /**
-     * Runtime alias used by current API emitter.
-     */
-    disagreement?: boolean;
-    reasonCode?: AIChatReasonCode;
-    reasonCodes?: AIChatReasonCode[];
-    revisionLoop?: number;
+    callId?: string;
+    error?: AIToolError;
+    citationIds: string[];
+    rawHandle?: string;
 }
-interface AIChatCriticStartedPayload {
-    revisionAttempt?: number;
-    revisionLoop?: number;
-    trigger?: {
-        disagreement?: boolean;
-        synthesisConfidence?: number;
+export interface AIEvidenceEntry {
+    evidenceId: string;
+    sourceTool: string;
+    argsHash: string;
+    timestamp: string;
+    status: 'ok' | 'error' | 'partial';
+    summary: string;
+    rawHandle?: string;
+    citationIds: string[];
+    domains?: string[];
+}
+export interface AIEvidenceGap {
+    gapId: string;
+    description: string;
+    blocking: boolean;
+    suggestedFollowup?: string;
+}
+export interface AIEvidenceLabelMap {
+    companies?: Record<string, string>;
+    subscriptions?: Record<string, string>;
+    resources?: Record<string, string>;
+    recommendations?: Record<string, string>;
+}
+export interface AIEvidenceBundle {
+    bundleId: string;
+    entries: AIEvidenceEntry[];
+    citations: AIChatCitation[];
+    labelMap: AIEvidenceLabelMap;
+    gaps: AIEvidenceGap[];
+    createdAt: string;
+}
+export interface AIRetrievalExecution {
+    retrievalPlan: AIPlannerRetrievalStep[];
+    executionSteps: AIRetrievalExecutionStep[];
+    followupPassExecuted: boolean;
+    evidenceBundle: AIEvidenceBundle;
+}
+export interface AISpecialistAction {
+    title: string;
+    risk: 'low' | 'medium' | 'high';
+    effort: 'low' | 'medium' | 'high';
+}
+export interface AISpecialistTradeoff {
+    withDomain: string;
+    summary: string;
+}
+export interface AISpecialistOutput {
+    specialistId: string;
+    domain: string;
+    topFindings: string[];
+    evidence: string[];
+    actions: AISpecialistAction[];
+    tradeoffs: AISpecialistTradeoff[];
+    assumptions: string[];
+    dataGaps: string[];
+    followupRetrieval: AIPlannerRetrievalStep[];
+    confidence: number;
+}
+export interface AISynthesisOutput {
+    recommendedPlan: string;
+    alternatives: string[];
+    keyActions: string[];
+    risks: string[];
+    evidenceTrace: string[];
+    unresolvedGaps: string[];
+    confidence: number;
+    disagreement: boolean;
+}
+export interface AICriticOutput {
+    verdict: 'PASS' | 'REVISE';
+    confidence: number;
+    reason: string;
+    issues: string[];
+    rerunAgents: string[];
+}
+export type AIHtmlLitePolicy = 'htmlLite';
+export interface AIFormatterOutput {
+    policy: AIHtmlLitePolicy;
+    answerHtml: string;
+    answerText: string;
+    citations: AIChatCitation[];
+    labelFirstApplied: boolean;
+    normalizationHash: string;
+}
+export type AIChatTurnPhase = 'intake' | 'contextResolved' | 'skillResolved' | 'planning' | 'executing' | 'awaitingApproval' | 'formatting' | 'finalizing' | 'completed' | 'errored' | 'cancelled';
+export type AIChatTurnStatus = 'running' | 'waiting' | 'completed' | 'errored' | 'cancelled';
+export interface AIChatTurnState {
+    turnId: string;
+    phase: AIChatTurnPhase;
+    status: AIChatTurnStatus;
+    updatedAt: string;
+    path?: AIOrchestrationPath;
+    analysisConfidence?: number;
+    selectedSkillPackId?: AIChatSkillId;
+}
+export type AIChatCommentaryKind = 'preamble' | 'progress' | 'finding' | 'handoff';
+export interface AIChatCommentaryEntry {
+    commentaryId: string;
+    kind: AIChatCommentaryKind;
+    text: string;
+    timestamp: string;
+    phase?: AIChatTurnPhase;
+    progressId?: string;
+}
+export type AIChatPlanStepStatus = 'pending' | 'running' | 'completed' | 'blocked';
+export interface AIChatPlanStep {
+    stepId: string;
+    label: string;
+    status: AIChatPlanStepStatus;
+    summary?: string;
+    domain?: AIChatDomain;
+}
+export interface AIChatPlanSnapshot {
+    planId: string;
+    goal?: string;
+    updatedAt: string;
+    steps: AIChatPlanStep[];
+}
+export type AIChatProgressCategory = 'context' | 'routing' | 'planning' | 'retrieval' | 'toolExecution' | 'subtask' | 'approval' | 'formatting' | 'finalization';
+export type AIChatProgressStatus = 'pending' | 'running' | 'completed' | 'blocked' | 'failed' | 'skipped';
+export interface AIChatProgressEntry {
+    progressId: string;
+    category: AIChatProgressCategory;
+    status: AIChatProgressStatus;
+    title: string;
+    detail?: string;
+    timestamp: string;
+    phase?: AIChatTurnPhase;
+    stepId?: string;
+    callId?: string;
+    subtaskId?: string;
+    reasonCode?: AIReasonCode;
+}
+export type AIChatApprovalState = 'pending' | 'approved' | 'rejected' | 'consumed' | 'expired' | 'completed' | 'failed';
+export interface AIChatApprovalRecord {
+    challengeId: string;
+    state: AIChatApprovalState;
+    actionSummary: string;
+    actionType?: string;
+    requiredRole: string;
+    riskLevel: 'low' | 'medium' | 'high';
+    idempotencyKey: string;
+    createdAt: string;
+    decidedAt?: string;
+    expiresAt?: string;
+}
+export interface AIChatSkillPackDescriptor {
+    skillId: AIChatSkillId;
+    version: string;
+    title: string;
+    description?: string;
+    domains: AIChatDomain[];
+    supportedModes: AIChatMode[];
+    intentSignals: string[];
+    toolPolicy: {
+        allowedToolNames?: string[];
+        blockedToolNames?: string[];
+        allowLearnMcp?: boolean;
+        allowMutations: boolean;
     };
+    approvalPolicy: {
+        required: boolean;
+        requiredRole?: string;
+        defaultRiskLevel?: 'low' | 'medium' | 'high';
+    };
+    uxHints?: {
+        commentaryStyle?: 'compact' | 'standard';
+        showPlanByDefault?: boolean;
+        preferredProgressCategories?: AIChatProgressCategory[];
+    };
+    fallbackPath?: AIOrchestrationPath;
+    enabled: boolean;
 }
-interface AIChatCriticCompletedPayload {
-    outcome?: AIChatCriticOutcome;
-    /**
-     * Runtime alias used by current API emitter.
-     */
-    verdict?: 'PASS' | 'REVISE';
-    confidence?: number;
-    reason?: string;
-    rerunAgents?: string[];
-    summary?: string;
-    reasonCode?: AIChatReasonCode;
-    reasonCodes?: AIChatReasonCode[];
+export interface AIChatToolDescriptor {
+    toolName: string;
+    source: 'internal' | 'learnMcp' | string;
+    title: string;
+    description: string;
+    domains?: AIChatDomain[];
+    mutationMode: AIChatMutationMode;
+    approvalRequirement?: {
+        required: boolean;
+        requiredRole?: string;
+        riskLevel?: 'low' | 'medium' | 'high';
+    };
+    scopeHints?: {
+        chatModes?: AIChatMode[];
+        requiresWorkspaceScope?: boolean;
+        pageTypes?: string[];
+    };
+    evidenceKinds?: string[];
+    resultShape?: string;
+    usageHints?: string[];
+    avoidWhen?: string[];
 }
-interface AIChatRevisionStartedPayload {
-    attempt?: number;
-    /**
-     * Runtime alias used by current API emitter.
-     */
-    loop?: number;
-    targetedSpecialists?: string[];
-    reasonCode?: AIChatReasonCode;
+export interface AIChatTurnSnapshot {
+    turn: AIChatTurnState;
+    selectedSkillPack?: AIChatSkillPackDescriptor;
+    plan?: AIChatPlanSnapshot;
+    commentaryEntries?: AIChatCommentaryEntry[];
+    progressEntries?: AIChatProgressEntry[];
+    approvalRecords?: AIChatApprovalRecord[];
+    toolDescriptors?: AIChatToolDescriptor[];
 }
-interface AIChatRevisionCompletedPayload {
-    attempt?: number;
-    applied?: boolean;
-    /**
-     * Runtime alias used by current API emitter.
-     */
-    loop?: number;
-    targetedSpecialists?: string[];
-    reasonCode?: AIChatReasonCode;
+export interface AIChatFinalSnapshot {
+    turnSnapshot: AIChatTurnSnapshot;
+    pageSnapshot?: AIChatPageSnapshot;
+    toolAffordanceSnapshot?: AIChatToolAffordanceSnapshot;
+    router?: AIRouterOutput;
+    planner?: AIPlannerOutput;
+    retrieval?: AIRetrievalExecution;
+    specialistOutputs?: AISpecialistOutput[];
+    synthesis?: AISynthesisOutput;
+    critic?: AICriticOutput;
+    formatter?: AIFormatterOutput;
 }
-interface AIChatAnalysisConfidencePayload {
-    analysisConfidence: AIAnalysisConfidence;
-    source?: AIChatAnalysisConfidenceSource;
+export interface AIChatAuditArtifact {
+    conversationId: string;
+    turnId: string;
+    createdAt: string;
+    turnSnapshot: AIChatTurnSnapshot;
+    snapshots?: {
+        pageSnapshot?: AIChatPageSnapshot;
+        toolAffordanceSnapshot?: AIChatToolAffordanceSnapshot;
+    };
+    router?: AIRouterOutput;
+    planner?: AIPlannerOutput;
+    retrieval?: AIRetrievalExecution;
+    specialists?: AISpecialistOutput[];
+    synthesis?: AISynthesisOutput;
+    critic?: AICriticOutput;
+    formatter?: AIFormatterOutput;
+    analysisConfidence?: number;
 }
-interface AIChatOrchestrationSummary {
-    routing?: AIChatRoutingCompletedPayload;
-    generic?: AIChatGenericCompletedPayload;
-    planner?: AIChatPlannerCompletedPayload;
-    specialists?: AIChatSpecialistCompletedPayload[];
-    synthesis?: AIChatSynthesisCompletedPayload;
-    critic?: AIChatCriticCompletedPayload;
-    revision?: AIChatRevisionCompletedPayload;
-    revisions?: AIChatRevisionCompletedPayload[];
+export interface AIChatConfirmationResponse {
+    challengeId: string;
+    decision: 'approve' | 'reject';
+    idempotencyKey: string;
 }
-interface AIChatFinalSnapshot {
+export interface AIChatRoutingHints {
+    preferredMode?: AIChatMode;
+    preferredSkillPackIds?: AIChatSkillId[];
+    forceSkillPackIds?: AIChatSkillId[];
+    allowFanout?: boolean;
+}
+interface AIChatRequestBase {
+    conversationId?: string;
+    previousResponseId?: string;
+    contextHash?: string;
+    confirmationResponse?: AIChatConfirmationResponse;
+    routingHints?: AIChatRoutingHints;
+    stream?: true;
+}
+interface AIChatRequestPage extends AIChatRequestBase {
+    chatMode: 'page';
+    pageContext: PageContext;
+    workspaceScope?: never;
+}
+interface AIChatRequestWorkspace extends AIChatRequestBase {
+    chatMode: 'workspace';
+    pageContext?: PageContext;
+    workspaceScope: AIWorkspaceScopeRequest;
+}
+export type AIChatRequest = (AIChatRequestPage & {
+    input: string;
+}) | (AIChatRequestWorkspace & {
+    input: string;
+});
+export interface AIConversationScopeMetadata {
     chatMode?: AIChatMode;
-    resolvedScope?: AIResolvedWorkspaceScope;
+    resolvedWorkspaceScope?: AIResolvedWorkspaceScope;
+    selectedSkillPackIds?: AIChatSkillId[];
+}
+export interface AIConversationRoutingMetadata extends AIConversationScopeMetadata {
     classification?: AIChatClassificationMetadata;
     routing?: AIChatRoutingMetadata;
-    selectedSkillIds?: AIChatSkillId[];
-    analysisConfidence?: AIAnalysisConfidence;
-    orchestration?: AIChatOrchestrationSummary;
+}
+export interface AIConversationListItem extends AIConversationRoutingMetadata {
+    id: string;
+    summary?: string;
+    messageCount: number;
+    lastResponseTime?: Date | string;
+    pageUrl?: string;
+    pageType?: string;
 }
 export interface AIChatUsage {
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
 }
-interface AIToolError {
-    code: string;
-    message: string;
-    retryable?: boolean;
-    details?: unknown;
-}
-export interface AIToolResult {
-    tool: string;
-    ok: boolean;
-    data?: unknown;
-    error?: AIToolError;
-    truncated?: boolean;
-}
-export interface AIToolCall {
-    id: string;
-    name: string;
-    arguments: Record<string, unknown>;
-}
-type AIChatStreamEventType = 'message' | 'reasoning' | 'tool_call' | 'tool_result' | 'tool_error' | 'status' | 'citation' | 'subtask_start' | 'subtask_done' | 'scope_resolved' | 'skill_classified' | 'skill_routed' | 'skill_fallback' | 'routing_started' | 'routing_completed' | 'generic_started' | 'generic_completed' | 'planner_started' | 'planner_completed' | 'specialist_started' | 'specialist_progress' | 'specialist_completed' | 'synthesis_started' | 'synthesis_completed' | 'critic_started' | 'critic_completed' | 'revision_started' | 'revision_completed' | 'analysis_confidence' | 'confirmation_required' | 'done' | 'error' | 'ping';
-interface AIChatStreamEventBase {
-    event: AIChatStreamEventType;
+export type AIChatStreamEventName = 'scopeResolved' | 'pageSnapshotBuilt' | 'toolAffordanceBuilt' | 'routingStarted' | 'routingCompleted' | 'planCreated' | 'planUpdated' | 'commentary' | 'progressUpdate' | 'toolCall' | 'toolResult' | 'toolError' | 'approvalRequired' | 'approvalStateChanged' | 'formatterStarted' | 'formatterCompleted' | 'message' | 'citation' | 'done' | 'error' | 'ping';
+export interface AIChatStreamEventBase {
+    event: AIChatStreamEventName;
     sequence: number;
     conversationId: string;
+    turnId: string;
     timestamp: string;
+}
+export interface AIChatScopeResolvedEvent extends AIChatStreamEventBase {
+    event: 'scopeResolved';
+    chatMode: AIChatMode;
+    requestedScope?: AIWorkspaceScopeRequest;
+    resolvedScope: AIResolvedWorkspaceScope;
+}
+export interface AIChatPageSnapshotBuiltEvent extends AIChatStreamEventBase {
+    event: 'pageSnapshotBuilt';
+    snapshot: AIChatPageSnapshot;
+}
+export interface AIChatToolAffordanceBuiltEvent extends AIChatStreamEventBase {
+    event: 'toolAffordanceBuilt';
+    toolAffordanceSnapshot: AIChatToolAffordanceSnapshot;
+}
+export interface AIChatRoutingStartedEvent extends AIChatStreamEventBase {
+    event: 'routingStarted';
+    requestedMode?: AIChatMode;
+    requestedSkillPackIds?: AIChatSkillId[];
+}
+export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
+    event: 'routingCompleted';
+    path: AIOrchestrationPath;
+    confidence: number;
+    domains?: AIRouterDomainScore[];
+    missingInputs: string[];
+    reasonCode?: AIReasonCode;
+    whyThisPath?: string;
+    analysisConfidence?: number;
+    needsRetrieval?: boolean;
+    selectedSkillPackIds?: AIChatSkillId[];
+    complexity?: AIChatComplexity;
+}
+export interface AIChatPlanCreatedEvent extends AIChatStreamEventBase {
+    event: 'planCreated';
+    plan: AIChatPlanSnapshot;
+}
+export interface AIChatPlanUpdatedEvent extends AIChatStreamEventBase {
+    event: 'planUpdated';
+    plan: AIChatPlanSnapshot;
+}
+export interface AIChatCommentaryEvent extends AIChatStreamEventBase {
+    event: 'commentary';
+    entry: AIChatCommentaryEntry;
+}
+export interface AIChatProgressUpdateEvent extends AIChatStreamEventBase {
+    event: 'progressUpdate';
+    progress: AIChatProgressEntry;
+}
+export interface AIChatToolCallEvent extends AIChatStreamEventBase {
+    event: 'toolCall';
+    callId: string;
+    toolName: string;
+    arguments: Record<string, unknown>;
+}
+export interface AIChatToolResultEvent extends AIChatStreamEventBase {
+    event: 'toolResult';
+    callId: string;
+    toolName: string;
+    result: AIChatToolExecutionResult;
+}
+export interface AIChatToolErrorEvent extends AIChatStreamEventBase {
+    event: 'toolError';
+    callId: string;
+    toolName: string;
+    error: AIChatToolExecutionError;
+}
+export interface AIChatApprovalRequiredEvent extends AIChatStreamEventBase {
+    event: 'approvalRequired';
+    approval: AIChatApprovalRecord;
+}
+export interface AIChatApprovalStateChangedEvent extends AIChatStreamEventBase {
+    event: 'approvalStateChanged';
+    approval: AIChatApprovalRecord;
+}
+export interface AIChatFormatterStartedEvent extends AIChatStreamEventBase {
+    event: 'formatterStarted';
+    policy?: AIHtmlLitePolicy;
+}
+export interface AIChatFormatterCompletedEvent extends AIChatStreamEventBase {
+    event: 'formatterCompleted';
+    formatter?: AIFormatterOutput;
 }
 export interface AIChatMessageEvent extends AIChatStreamEventBase {
     event: 'message';
     delta: string;
 }
-interface AIChatReasoningEvent extends AIChatStreamEventBase {
-    event: 'reasoning';
-    delta: string;
-}
-interface AIChatCitation {
-    citationId?: string;
-    sourceType: string;
-    title: string;
-    locator: string;
-}
-interface AIChatToolCallEvent extends AIChatStreamEventBase {
-    event: 'tool_call';
-    callId: string;
-    tool: string;
-    arguments: Record<string, unknown>;
-}
-interface AIChatToolResultEvent extends AIChatStreamEventBase {
-    event: 'tool_result';
-    tool: string;
-    callId?: string;
-    result: AIToolResult;
-}
-interface AIChatToolErrorEvent extends AIChatStreamEventBase {
-    event: 'tool_error';
-    tool: string;
-    callId?: string;
-    error: AIToolError;
+export interface AIChatCitationEvent extends AIChatStreamEventBase {
+    event: 'citation';
+    citation: AIChatCitation;
 }
 export interface AIChatDoneEvent extends AIChatStreamEventBase {
     event: 'done';
@@ -384,20 +691,14 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
     resolvedScope?: AIResolvedWorkspaceScope;
     classification?: AIChatClassificationMetadata;
     routing?: AIChatRoutingMetadata;
-    selectedSkillIds?: AIChatSkillId[];
-    finalSnapshot?: AIChatFinalSnapshot;
     structuredResponse?: StructuredAIResponse;
     usage?: AIChatUsage;
     answer?: string;
     completionReason?: string;
-    reasoningSummary?: string;
     citations?: AIChatCitation[];
-    analysisConfidence?: AIAnalysisConfidence;
-    orchestration?: AIChatOrchestrationSummary;
-    planner?: AIChatPlannerCompletedPayload;
-    specialists?: AIChatSpecialistCompletedPayload[];
-    synthesis?: AIChatSynthesisCompletedPayload;
-    critic?: AIChatCriticCompletedPayload;
+    turnSnapshot: AIChatTurnSnapshot;
+    finalSnapshot?: AIChatFinalSnapshot;
+    auditArtifact?: AIChatAuditArtifact;
 }
 export interface AIChatErrorEvent extends AIChatStreamEventBase {
     event: 'error';
@@ -405,132 +706,9 @@ export interface AIChatErrorEvent extends AIChatStreamEventBase {
     message: string;
     retryable: boolean;
 }
-interface AIChatPingEvent extends AIChatStreamEventBase {
+export interface AIChatPingEvent extends AIChatStreamEventBase {
     event: 'ping';
 }
-interface AIChatStatusEvent extends AIChatStreamEventBase {
-    event: 'status';
-    message: string;
-    reasonCode?: AIChatReasonCode;
-}
-interface AIChatCitationEvent extends AIChatStreamEventBase {
-    event: 'citation';
-    citationId: string;
-    sourceType: string;
-    title: string;
-    locator: string;
-}
-interface AIChatSubtaskStartEvent extends AIChatStreamEventBase {
-    event: 'subtask_start';
-    subtaskId: string;
-    domain: string;
-    title: string;
-}
-interface AIChatSubtaskDoneEvent extends AIChatStreamEventBase {
-    event: 'subtask_done';
-    subtaskId: string;
-    domain: string;
-    summary: string;
-}
-interface AIChatScopeResolvedEvent extends AIChatStreamEventBase {
-    event: 'scope_resolved';
-    chatMode: AIChatMode;
-    requestedScope?: AIWorkspaceScopeRequest;
-    resolvedScope: AIResolvedWorkspaceScope;
-}
-export interface AIChatSkillClassificationCandidate {
-    skillId: AIChatSkillId;
-    score: number;
-    reasonCodes: AIChatReasonCode[];
-}
-interface AIChatSkillClassifiedEvent extends AIChatStreamEventBase {
-    event: 'skill_classified';
-    requestedSkillId?: AIChatSkillId;
-    selectedSkillId?: AIChatSkillId;
-    classifierVersion: string;
-    candidates: AIChatSkillClassificationCandidate[];
-    reasonCodes?: AIChatReasonCode[];
-}
-export type AIChatSkillRouteSource = 'auto' | 'explicit' | 'default';
-export type AIChatSkillRoutePolicyOutcome = 'accepted' | 'fallback' | 'rejected';
-interface AIChatSkillRoutedEvent extends AIChatStreamEventBase {
-    event: 'skill_routed';
-    skillId: AIChatSkillId;
-    skillVersion: string;
-    routeSource: AIChatSkillRouteSource;
-    policyOutcome: AIChatSkillRoutePolicyOutcome;
-    reasonCodes?: AIChatReasonCode[];
-}
-interface AIChatSkillFallbackEvent extends AIChatStreamEventBase {
-    event: 'skill_fallback';
-    fromSkillId?: AIChatSkillId;
-    toRoute: string;
-    reasonCode: AIChatReasonCode;
-    reasonCodes?: AIChatReasonCode[];
-}
-interface AIChatRoutingStartedEvent extends AIChatStreamEventBase, AIChatRoutingStartedPayload {
-    event: 'routing_started';
-}
-interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase, AIChatRoutingCompletedPayload {
-    event: 'routing_completed';
-}
-interface AIChatGenericStartedEvent extends AIChatStreamEventBase, AIChatGenericStartedPayload {
-    event: 'generic_started';
-}
-interface AIChatGenericCompletedEvent extends AIChatStreamEventBase, AIChatGenericCompletedPayload {
-    event: 'generic_completed';
-}
-interface AIChatPlannerStartedEvent extends AIChatStreamEventBase, AIChatPlannerStartedPayload {
-    event: 'planner_started';
-}
-interface AIChatPlannerCompletedEvent extends AIChatStreamEventBase, AIChatPlannerCompletedPayload {
-    event: 'planner_completed';
-}
-interface AIChatSpecialistStartedEvent extends AIChatStreamEventBase, AIChatSpecialistStartedPayload {
-    event: 'specialist_started';
-}
-interface AIChatSpecialistProgressEvent extends AIChatStreamEventBase, AIChatSpecialistProgressPayload {
-    event: 'specialist_progress';
-}
-interface AIChatSpecialistCompletedEvent extends AIChatStreamEventBase, AIChatSpecialistCompletedPayload {
-    event: 'specialist_completed';
-}
-interface AIChatSynthesisStartedEvent extends AIChatStreamEventBase, AIChatSynthesisStartedPayload {
-    event: 'synthesis_started';
-}
-interface AIChatSynthesisCompletedEvent extends AIChatStreamEventBase, AIChatSynthesisCompletedPayload {
-    event: 'synthesis_completed';
-}
-interface AIChatCriticStartedEvent extends AIChatStreamEventBase, AIChatCriticStartedPayload {
-    event: 'critic_started';
-}
-interface AIChatCriticCompletedEvent extends AIChatStreamEventBase, AIChatCriticCompletedPayload {
-    event: 'critic_completed';
-}
-interface AIChatRevisionStartedEvent extends AIChatStreamEventBase, AIChatRevisionStartedPayload {
-    event: 'revision_started';
-}
-interface AIChatRevisionCompletedEvent extends AIChatStreamEventBase, AIChatRevisionCompletedPayload {
-    event: 'revision_completed';
-}
-interface AIChatAnalysisConfidenceEvent extends AIChatStreamEventBase, AIChatAnalysisConfidencePayload {
-    event: 'analysis_confidence';
-}
-interface AIChatConfirmationRequiredEvent extends AIChatStreamEventBase {
-    event: 'confirmation_required';
-    challengeId: string;
-    actionSummary: string;
-    requiredRole: string;
-    riskLevel: 'low' | 'medium' | 'high';
-    expiresAt: string;
-    idempotencyKey: string;
-    /**
-     * Legacy alias fields retained for current API/UI consumers.
-     */
-    actionId?: string;
-    actionType?: string;
-    summary?: string;
-}
-export type AIChatStreamEvent = AIChatMessageEvent | AIChatReasoningEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatStatusEvent | AIChatCitationEvent | AIChatSubtaskStartEvent | AIChatSubtaskDoneEvent | AIChatScopeResolvedEvent | AIChatSkillClassifiedEvent | AIChatSkillRoutedEvent | AIChatSkillFallbackEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatGenericStartedEvent | AIChatGenericCompletedEvent | AIChatPlannerStartedEvent | AIChatPlannerCompletedEvent | AIChatSpecialistStartedEvent | AIChatSpecialistProgressEvent | AIChatSpecialistCompletedEvent | AIChatSynthesisStartedEvent | AIChatSynthesisCompletedEvent | AIChatCriticStartedEvent | AIChatCriticCompletedEvent | AIChatRevisionStartedEvent | AIChatRevisionCompletedEvent | AIChatAnalysisConfidenceEvent | AIChatConfirmationRequiredEvent | AIChatDoneEvent | AIChatErrorEvent | AIChatPingEvent;
+export type AIChatStreamEvent = AIChatScopeResolvedEvent | AIChatPageSnapshotBuiltEvent | AIChatToolAffordanceBuiltEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatPlanCreatedEvent | AIChatPlanUpdatedEvent | AIChatCommentaryEvent | AIChatProgressUpdateEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatApprovalRequiredEvent | AIChatApprovalStateChangedEvent | AIChatFormatterStartedEvent | AIChatFormatterCompletedEvent | AIChatMessageEvent | AIChatCitationEvent | AIChatDoneEvent | AIChatErrorEvent | AIChatPingEvent;
 export {};
 //# sourceMappingURL=index.d.ts.map
