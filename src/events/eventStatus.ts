@@ -28,6 +28,7 @@ export interface EventStatus {
   sharedWith?: string[];
   /** email / slack / jira … */
   channel?: string;
+  shareTicketMetadata?: ShareTicketMetadata;
   userId?: string;
   context?: Record<string, unknown>;
 }
@@ -52,5 +53,13 @@ export interface UserEvent {
   errorMessage?: string;
   channel?: string;
   sharedWith?: string[];
+  shareTicketMetadata?: ShareTicketMetadata;
   lastStatusRead: boolean;
+}
+
+export interface ShareTicketMetadata {
+  provider: 'jira' | 'halo' | 'connectwise';
+  ticketId?: string | number;
+  ticketUrl?: string;
+  integrationCompanyId?: string;
 }

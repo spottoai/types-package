@@ -93,3 +93,5 @@ jspm_packages/
 
 # Sample files
 samples/
+
+specs/*

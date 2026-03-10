@@ -1,4 +1,5 @@
 import { SurveyResponse } from '../company';
+export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export interface CloudAccount {
     /** Partition Key */
     companyId: string;
@@ -8,6 +9,8 @@ export interface CloudAccount {
     companyName: string;
     /** AWS, Azure, GCP, etc. */
     provider: string;
+    /** Optional list of subscription group names for this cloud account */
+    groupNames?: string[];
     /** Azure Tenant ID */
     tenantId?: string;
     secret?: string;
@@ -27,6 +30,12 @@ export interface SubscriptionInfoBase {
     friendlyName?: string;
     cloudAccountId: string;
     cloudAccountName: string;
+    /** Optional group name for subscription-level grouping */
+    groupName?: string;
+    /** Optional emoji shortcode (Slack-style, e.g. "/face") */
+    icon?: string;
+    /** Optional subscription type (Production, Non-Production, Mixed) */
+    subscriptionType?: SubscriptionType;
     status?: string;
     statusLabel?: string;
     error?: string;

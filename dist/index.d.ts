@@ -2,10 +2,13 @@
 export * from './azure/common';
 export * from './azure/budgets';
 export * from './azure/billingPlots';
+export * from './azure/benefits';
+export * from './azure/commitmentsPlanning';
 export * from './azure/configs';
 export * from './azure/metrics';
 export * from './azure/payloads';
 export * from './azure/prices';
+export * from './azure/relationships';
 export * from './azure/recommendations';
 export * from './azure/recommendationState';
 export * from './azure/resources';
@@ -24,6 +27,7 @@ export * from './common';
 export * from './company';
 export * from './ai';
 export * from './events';
+export * from './integrations';
 export * from './identity';
 export * from './tags';
 //# sourceMappingURL=index.d.ts.map
