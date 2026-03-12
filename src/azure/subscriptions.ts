@@ -5,6 +5,13 @@ import { Recommendation, RecommendationStats, RecommendationSummary } from './re
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
 
+export type SpendDataSource =
+  | 'billing'
+  | 'estimated_metrics_pricing'
+  | 'estimated_sku_pricing'
+  | 'blended'
+  | 'none';
+
 export interface SubscriptionSummaryLite {
   companyId: string;
   tenantId: string;
@@ -69,6 +76,26 @@ export interface SubscriptionStats {
   spend7DaysAmortized?: number;
   spendPrevious7Days?: number;
   spendPrevious7DaysAmortized?: number;
+  /** Source of spend30Days after billing-first + estimation fallback reconciliation */
+  spend30DaysSource?: SpendDataSource;
+  /** Source of spend30DaysAmortized after billing-first + estimation fallback reconciliation */
+  spend30DaysAmortizedSource?: SpendDataSource;
+  /** Confidence level for the spend30Days source attribution */
+  spend30DaysSourceConfidence?: 'high' | 'unknown';
+  /** Billing-only portion of spend30Days */
+  spend30DaysBilling?: number;
+  /** Billing-only portion of spend30DaysAmortized */
+  spend30DaysAmortizedBilling?: number;
+  /** Estimated-only fallback portion of spend30Days */
+  spend30DaysEstimated?: number;
+  /** Estimated-only fallback portion of spend30DaysAmortized */
+  spend30DaysAmortizedEstimated?: number;
+  /** Breakdown of estimated fallback by estimator source */
+  spend30DaysEstimatedSourceBreakdown?: {
+    billing: number;
+    estimated_metrics_pricing: number;
+    estimated_sku_pricing: number;
+  };
 }
 
 export interface SubscriptionHistory {
