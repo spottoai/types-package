@@ -2,6 +2,7 @@ import { Comment, RecommendationHistory } from './recommendationState';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential } from './views';
+import type { HaloRoutingOverrides } from '../integrations/halo';
 
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -223,6 +224,8 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
   shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
   email?: string;
+  halo?: HaloRoutingOverrides;
+  connectwise?: ConnectWiseRoutingFields;
 }
 
 export interface RecommendationActionRequest {
@@ -306,45 +309,105 @@ export interface ConnectWiseIntegrationRequestBase {
   publicKey: string;
   secret?: string;
   useStoredSecret?: boolean;
+  credentialOwnerCompanyId?: string;
 }
 
-export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase {
-  boardId?: string;
+export type ConnectWiseId = string | number;
+
+export interface ConnectWiseRoutingFields {
+  boardId?: ConnectWiseId;
   boardName?: string;
-  statusId?: string;
+  statusId?: ConnectWiseId;
   statusName?: string;
+  customerId?: ConnectWiseId;
+  customerName?: string;
+  projectId?: ConnectWiseId;
+  projectName?: string;
+  typeId?: ConnectWiseId;
+  typeName?: string;
+  subTypeId?: ConnectWiseId;
+  subTypeName?: string;
+  itemId?: ConnectWiseId;
+  itemName?: string;
+  priorityId?: ConnectWiseId;
+  priorityName?: string;
+  contactId?: ConnectWiseId;
+  contactName?: string;
+  agreementId?: ConnectWiseId;
+  agreementName?: string;
+  slaId?: ConnectWiseId;
+  slaName?: string;
+  source?: string;
 }
+
+export interface ConnectWiseIntegrationTestPayload extends ConnectWiseIntegrationRequestBase, ConnectWiseRoutingFields {}
 
 export type ConnectWiseBoardsPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseCompaniesPayload = ConnectWiseIntegrationRequestBase;
+export type ConnectWiseProjectsPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseStatusesPayload extends ConnectWiseIntegrationRequestBase {
   boardId?: string;
   boardName?: string;
 }
 
-export type ConnectWiseTypesPayload = ConnectWiseIntegrationRequestBase;
+export interface ConnectWiseTypesPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+}
 
 export interface ConnectWiseSubTypesPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
   typeId?: string;
   typeName?: string;
 }
 
 export interface ConnectWiseItemsPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+  typeId?: string;
+  typeName?: string;
   subTypeId?: string;
   subTypeName?: string;
 }
 
-export type ConnectWisePrioritiesPayload = ConnectWiseIntegrationRequestBase;
+export interface ConnectWiseTypeSubTypeItemAssociationsPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+}
+
+export interface ConnectWisePrioritiesPayload extends ConnectWiseIntegrationRequestBase {
+  boardId?: string;
+  boardName?: string;
+}
 
 export interface ConnectWiseContactsPayload extends ConnectWiseIntegrationRequestBase {
   searchQuery?: string;
 }
+
+export type ConnectWiseSourcesPayload = ConnectWiseIntegrationRequestBase;
+
+export type ConnectWiseAgreementsPayload = ConnectWiseIntegrationRequestBase;
+
+export type ConnectWiseSlasPayload = ConnectWiseIntegrationRequestBase;
 
 export interface ConnectWiseEntity {
   id: string | number;
   name: string;
 }
 
+export interface ConnectWiseTypeSubTypeItemAssociation {
+  type?: ConnectWiseEntity;
+  subType?: ConnectWiseEntity;
+  item?: ConnectWiseEntity;
+}
+
 export interface ConnectWiseContact extends ConnectWiseEntity {
   email?: string;
+}
+
+export interface ConnectWiseTicketMetadata extends ConnectWiseRoutingFields {
+  ticketId: ConnectWiseId;
+  ticketUrl?: string;
 }
