@@ -3,7 +3,7 @@ import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
-import { SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
+import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
 
@@ -66,6 +66,12 @@ export interface AzureResourcePortalItem {
   spend: number;
   /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
   spendAmortized: number;
+  /** Source of spend value (billing or high-confidence estimate fallback) */
+  spendSource?: Exclude<SpendDataSource, 'blended'>;
+  /** Confidence for spend source attribution */
+  spendSourceConfidence?: 'high' | 'unknown';
+  /** Optional source detail such as estimator method */
+  spendSourceDetail?: string;
   savings?: SavingsPotential;
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
@@ -119,6 +125,12 @@ export interface AzureResourcePluginItem {
   location: string;
   recommendations?: Recommendation[];
   cost?: CostSummaryDetails;
+  /** Source of cost value (billing or high-confidence estimate fallback) */
+  costSource?: Exclude<SpendDataSource, 'blended'>;
+  /** Confidence for cost source attribution */
+  costSourceConfidence?: 'high' | 'unknown';
+  /** Optional source detail such as estimator method */
+  costSourceDetail?: string;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
