@@ -134,6 +134,53 @@ export interface BlobInventoryUploadResponse {
     status?: InventoryAnalysisStatus;
     resultPath?: string;
 }
+export type InventoryAutomationStatus = 'disabled' | 'enabled' | 'warning' | 'error';
+export interface InventoryAutomationWarning {
+    code: string;
+    message: string;
+    at: string;
+}
+export interface InventoryAutomationError {
+    code: string;
+    message: string;
+    at: string;
+}
+export interface InventoryAutomationCleanupRequest {
+    deleteRule?: boolean;
+    deleteContainer?: boolean;
+}
+export interface InventoryAutomationProvisioning {
+    containerName: string;
+    policyName: string;
+    ruleName: string;
+    schedule: 'Daily';
+    containerProvisionedAt?: string;
+    ruleProvisionedAt?: string;
+}
+export interface InventoryAutomationConfig {
+    subscriptionId: string;
+    resourceId: string;
+    resourceGroup: string;
+    storageAccount: string;
+    cloudAccountId?: string;
+    enabled: boolean;
+    status: InventoryAutomationStatus;
+    provisioning: InventoryAutomationProvisioning;
+    lastCheckedAt?: string;
+    lastSyncedAt?: string;
+    lastReportDate?: string;
+    lastWarning?: InventoryAutomationWarning;
+    lastError?: InventoryAutomationError;
+    updatedAt?: string;
+    updatedBy?: string;
+}
+export interface EnableInventoryAutomationRequest {
+    resourceId?: string;
+}
+export interface DisableInventoryAutomationRequest {
+    resourceId?: string;
+    cleanup?: InventoryAutomationCleanupRequest;
+}
 export interface InventoryCostSummary {
     currency?: string;
     rates?: Partial<Record<TierName, number>>;
