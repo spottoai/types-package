@@ -1,6 +1,7 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
+import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
@@ -98,6 +99,13 @@ export interface BenefitCoverageSummary {
   coveredQuantity: number;
   benefitIds: string[];
   benefitNames: string[];
+  basis?: BenefitCostBasis;
+  eligibleQuantity?: number;
+  eligibleCost?: number;
+  coveredCost?: number;
+  uncoveredCost?: number;
+  coveragePercent?: number;
+  benefitBreakdown?: IBenefitCoverageBreakdownEntry[];
   warning?: string;
 }
 

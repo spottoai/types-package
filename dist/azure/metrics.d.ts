@@ -125,6 +125,11 @@ export interface AlertCondition {
     expression: string;
     description: string;
 }
+export interface MetricThreshold {
+    value: number;
+    unit?: string;
+    reasoning?: string;
+}
 export interface MetricPlot {
     /** e.g. "CPU and Memory Utilization" */
     title: string;
@@ -134,6 +139,8 @@ export interface MetricPlot {
     priority: number;
     /** reasoning of the metric plot */
     reasoning: string;
+    yAxisTitle?: string;
+    yAxisSuffix?: string;
     metrics: MetricPlotMetric[];
 }
 export interface MetricPlotMetric {
@@ -145,6 +152,9 @@ export interface MetricPlotMetric {
     details: string;
     alerts: MetricAlert[];
     stats: MetricStats;
+    unit?: string;
+    displayUnit?: string;
+    threshold?: MetricThreshold;
 }
 export interface MetricsDefinition {
     name: string;
@@ -154,6 +164,9 @@ export interface MetricsDefinition {
     stats: MetricStats;
     display?: MetricsDisplay;
     alerts?: MetricAlert[];
+    unit?: string;
+    displayUnit?: string;
+    threshold?: MetricThreshold;
 }
 export interface MetricAlert {
     severity: 'info' | 'warning' | 'critical' | 'underutilized';
