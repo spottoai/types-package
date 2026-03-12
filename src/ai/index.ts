@@ -132,8 +132,9 @@ type AIChatScopeReasonCode = 'AI_SCOPE_EMPTY_REQUEST' | 'AI_SCOPE_EMPTY_EFFECTIV
 type AIChatApprovalReasonCode = 'AI_MUTATION_CONFIRMATION_REQUIRED' | 'AI_MUTATION_CONFIRMATION_EXPIRED' | 'AI_MUTATION_CONFIRMATION_REJECTED';
 
 type AIChatDegradedReasonCode =
-  | 'AI_LEARN_MCP_UNAVAILABLE'
-  | 'AI_LEARN_MCP_TIMEOUT'
+  | 'AI_MCP_PROVIDER_UNAVAILABLE'
+  | 'AI_MCP_PROVIDER_TIMEOUT'
+  | 'AI_MCP_PARTIAL_FAILURE'
   | 'AI_TOOL_TIMEOUT'
   | 'AI_TOOL_PARTIAL_FAILURE'
   | 'AI_DEGRADED_NO_PATH';
@@ -322,6 +323,10 @@ export interface AIChatToolAffordanceSnapshot {
   blockedTools: AIChatBlockedToolAffordanceEntry[];
 }
 
+/**
+ * Canonical route taxonomy shared by UI, API, and persisted artifacts.
+ * These lowerCamelCase values are the only target-state route names.
+ */
 export type AIOrchestrationPath = 'clarify' | 'pageAnswer' | 'genericToolLoop' | 'analysisWithRetrieval';
 
 export interface AIRouterDomainScore {
@@ -426,7 +431,6 @@ export interface AIRetrievalExecutionStep {
   callId?: string;
   error?: AIToolError;
   citationIds: string[];
-  rawHandle?: string;
 }
 
 export interface AIEvidenceEntry {
@@ -436,7 +440,6 @@ export interface AIEvidenceEntry {
   timestamp: string;
   status: 'ok' | 'error' | 'partial';
   summary: string;
-  rawHandle?: string;
   citationIds: string[];
   domains?: string[];
   payloadMeta?: AIEvidencePayloadMeta;
@@ -634,7 +637,9 @@ export interface AIChatSkillPackDescriptor {
   toolPolicy: {
     allowedToolNames?: string[];
     blockedToolNames?: string[];
-    allowLearnMcp?: boolean;
+    allowMcpProviders?: boolean;
+    allowedMcpCapabilities?: string[];
+    blockedMcpCapabilities?: string[];
     allowMutations: boolean;
   };
   approvalPolicy: {
@@ -653,7 +658,10 @@ export interface AIChatSkillPackDescriptor {
 
 export interface AIChatToolDescriptor {
   toolName: string;
-  source: 'internal' | 'learnMcp' | string;
+  source: 'internal' | 'mcp' | `mcp:${string}` | string;
+  providerId?: string;
+  providerTitle?: string;
+  providerCapabilities?: string[];
   title: string;
   description: string;
   domains?: AIChatDomain[];
@@ -685,6 +693,9 @@ export interface AIChatTurnSnapshot {
 }
 
 export interface AIChatFinalSnapshot {
+  /**
+   * Authoritative final turn state. Additional stage outputs are additive sidecars.
+   */
   turnSnapshot: AIChatTurnSnapshot;
   pageSnapshot?: AIChatPageSnapshot;
   toolAffordanceSnapshot?: AIChatToolAffordanceSnapshot;
@@ -727,7 +738,11 @@ interface AIChatRequestBase {
   previousResponseId?: string;
   contextHash?: string;
   confirmationResponse?: AIChatConfirmationResponse;
-  stream?: true;
+  /**
+   * Live chat transport is streaming-only. Non-streaming requests are not part
+   * of the target shared contract.
+   */
+  stream: true;
 }
 
 interface AIChatRequestPage extends AIChatRequestBase {
@@ -738,6 +753,10 @@ interface AIChatRequestPage extends AIChatRequestBase {
 
 interface AIChatRequestWorkspace extends AIChatRequestBase {
   chatMode: 'workspace';
+  /**
+   * Workspace turns may still include page context when launched from a page,
+   * but pure workspace turns rely on workspaceScope alone.
+   */
   pageContext?: PageContext;
   workspaceScope: AIWorkspaceScopeRequest;
 }
@@ -770,6 +789,9 @@ export interface AIChatUsage {
   totalTokens: number;
 }
 
+/**
+ * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.
+ */
 export type AIChatStreamEventName =
   | 'scopeResolved'
   | 'pageSnapshotBuilt'
@@ -921,8 +943,17 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   answer?: string;
   completionReason?: string;
   citations?: AIChatCitation[];
+  /**
+   * Required minimum terminal artifact for successful turns.
+   */
   turnSnapshot: AIChatTurnSnapshot;
+  /**
+   * Optional additive sidecar for richer UI rehydration and debugging.
+   */
   finalSnapshot?: AIChatFinalSnapshot;
+  /**
+   * Optional additive sidecar for durable audit and server debugging.
+   */
   auditArtifact?: AIChatAuditArtifact;
 }
 
