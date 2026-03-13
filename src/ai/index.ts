@@ -482,21 +482,9 @@ export interface AIChatDegradedState {
   summary?: string;
 }
 
-export type AIChatCollaborationStatus =
-  | 'spawned'
-  | 'running'
-  | 'completed'
-  | 'cancelled'
-  | 'degraded'
-  | 'failed';
+export type AIChatCollaborationStatus = 'spawned' | 'running' | 'completed' | 'cancelled' | 'degraded' | 'failed';
 
-export type AIChatCollaborationRole =
-  | 'planner'
-  | 'retrieval'
-  | 'specialist'
-  | 'critic'
-  | 'subAgent'
-  | 'synthesis';
+export type AIChatCollaborationRole = 'planner' | 'retrieval' | 'specialist' | 'critic' | 'subAgent' | 'synthesis';
 
 export interface AIChatCollaborationItem {
   collaborationId: string;

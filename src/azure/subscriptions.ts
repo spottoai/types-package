@@ -5,12 +5,7 @@ import { Recommendation, RecommendationStats, RecommendationSummary } from './re
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
 
-export type SpendDataSource =
-  | 'billing'
-  | 'estimated_metrics_pricing'
-  | 'estimated_sku_pricing'
-  | 'blended'
-  | 'none';
+export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
 
 export interface SubscriptionSummaryLite {
   companyId: string;
