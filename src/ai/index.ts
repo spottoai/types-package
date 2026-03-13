@@ -390,6 +390,138 @@ export interface AIChatCitation {
   retrievedAt: string;
 }
 
+export interface AIChatAssistantProfileSummary {
+  profileId: string;
+  title: string;
+  description?: string;
+  mode?: AIChatMode;
+  selectedSkillPackId?: AIChatSkillId;
+  capabilityLabels: string[];
+  allowsMutations: boolean;
+  allowLearnMcp?: boolean;
+}
+
+export interface AIChatToolPolicySummary {
+  mode: 'readOnly' | 'approvalRequired' | 'mixed';
+  availableToolCount?: number;
+  mutationToolCount?: number;
+  approvalRequired: boolean;
+  summary: string;
+}
+
+export type AIChatRetrievalSourceType = 'operational' | 'memory' | 'knowledge' | 'external';
+
+export interface AIChatSourcePolicySummary {
+  sourceTypes: AIChatRetrievalSourceType[];
+  externalSourceEnabled: boolean;
+  summary: string;
+}
+
+export type AIChatQueueId = string;
+
+export interface AIChatQueuedPromptState {
+  queueId: AIChatQueueId;
+  text: string;
+  status: 'queued' | 'sending' | 'cancelled' | 'completed' | 'failed';
+  queuedAt: string;
+  replacedPromptId?: AIChatQueueId;
+}
+
+export interface AIChatMemorySourceSummary {
+  conversationId: string;
+  title?: string;
+  matchedAt?: string;
+}
+
+export interface AIChatMemoryMatch {
+  memoryId: string;
+  source: AIChatMemorySourceSummary;
+  score: number;
+  summary: string;
+  citationIds?: string[];
+}
+
+export interface AIChatEvidenceGroup {
+  groupId: string;
+  title: string;
+  sourceType: AIChatRetrievalSourceType;
+  citationIds: string[];
+  itemCount?: number;
+}
+
+export type AIChatNoCitationReasonCode =
+  | 'citation.not_required'
+  | 'citation.insufficient_evidence'
+  | 'citation.source_unavailable'
+  | `citation.${string}`;
+
+export interface AIChatCitationCoverage {
+  required: boolean;
+  satisfied: boolean;
+  citationCount: number;
+  noCitationReasonCode?: AIChatNoCitationReasonCode;
+}
+
+export interface AIChatEvidenceCoverage {
+  sourceTypes: AIChatRetrievalSourceType[];
+  evidenceGroups: AIChatEvidenceGroup[];
+  citationCoverage: AIChatCitationCoverage;
+  memoryMatches?: AIChatMemoryMatch[];
+}
+
+export interface AIChatReconnectState {
+  status: 'connected' | 'reconnecting' | 'resumed' | 'restarted' | 'degraded';
+  message?: string;
+  resumedTurnId?: string;
+  updatedAt: string;
+}
+
+export interface AIChatDegradedState {
+  degraded: boolean;
+  reasonCodes?: AIChatReasonCode[];
+  summary?: string;
+}
+
+export type AIChatCollaborationStatus =
+  | 'spawned'
+  | 'running'
+  | 'completed'
+  | 'cancelled'
+  | 'degraded'
+  | 'failed';
+
+export type AIChatCollaborationRole =
+  | 'planner'
+  | 'retrieval'
+  | 'specialist'
+  | 'critic'
+  | 'subAgent'
+  | 'synthesis';
+
+export interface AIChatCollaborationItem {
+  collaborationId: string;
+  parentCollaborationId?: string;
+  title: string;
+  role: AIChatCollaborationRole;
+  status: AIChatCollaborationStatus;
+  startedAt?: string;
+  updatedAt: string;
+  endedAt?: string;
+  summary?: string;
+  citationIds?: string[];
+  reasonCode?: AIReasonCode;
+}
+
+export interface AIChatCollaborationRun {
+  runId: string;
+  status: AIChatCollaborationStatus;
+  items: AIChatCollaborationItem[];
+  startedAt: string;
+  updatedAt: string;
+  endedAt?: string;
+  summary?: string;
+}
+
 export interface AIChatToolExecutionError {
   message: string;
   reasonCode?: AIReasonCode;
@@ -606,6 +738,7 @@ export interface AIChatProgressEntry {
   stepId?: string;
   callId?: string;
   subtaskId?: string;
+  collaborationId?: string;
   reasonCode?: AIReasonCode;
 }
 
@@ -685,11 +818,19 @@ export interface AIChatToolDescriptor {
 export interface AIChatTurnSnapshot {
   turn: AIChatTurnState;
   selectedSkillPack?: AIChatSkillPackDescriptor;
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
   plan?: AIChatPlanSnapshot;
   commentaryEntries?: AIChatCommentaryEntry[];
   progressEntries?: AIChatProgressEntry[];
   approvalRecords?: AIChatApprovalRecord[];
   toolDescriptors?: AIChatToolDescriptor[];
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
 }
 
 export interface AIChatFinalSnapshot {
@@ -706,6 +847,14 @@ export interface AIChatFinalSnapshot {
   synthesis?: AISynthesisOutput;
   critic?: AICriticOutput;
   formatter?: AIFormatterOutput;
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
 }
 
 export interface AIChatAuditArtifact {
@@ -724,6 +873,14 @@ export interface AIChatAuditArtifact {
   synthesis?: AISynthesisOutput;
   critic?: AICriticOutput;
   formatter?: AIFormatterOutput;
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
   analysisConfidence?: number;
 }
 
@@ -943,6 +1100,14 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   answer?: string;
   completionReason?: string;
   citations?: AIChatCitation[];
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
   /**
    * Required minimum terminal artifact for successful turns.
    */
