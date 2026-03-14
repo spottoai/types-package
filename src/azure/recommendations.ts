@@ -1,4 +1,5 @@
-import { Comment, RecommendationHistory } from './recommendationState';
+import type { Comment, RecommendationHistory } from './recommendationState';
+import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential } from './views';
@@ -228,10 +229,9 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
   connectwise?: ConnectWiseRoutingFields;
 }
 
-export interface RecommendationActionRequest {
+export interface RecommendationActionRequest extends ProviderScope {
   recommendationId: string;
   recommendationTitle?: string;
-  subscriptionId: string;
   resourceIds: string[];
   resourceGroupName?: string;
   companyId: string;

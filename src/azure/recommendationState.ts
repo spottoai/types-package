@@ -1,10 +1,23 @@
+import type { ProviderName, ProviderScope } from '../common/provider';
+
+export type GetRecommendationStatesQuery =
+  | {
+      providerName: ProviderName;
+      resourceId: string;
+      providerScopeId?: string;
+    }
+  | {
+      providerName: ProviderName;
+      resourceId?: string;
+      providerScopeId: string;
+    };
+
 /** Base state interface for recommendations */
-export interface RecommendationState {
+export interface RecommendationState extends ProviderScope {
   /** Partition Key: resourceId (Hash) */
   resourceId: string;
   /** Row Key */
   recommendationId: string;
-  subscriptionId: string;
   /** Company ID to which the resource belongs */
   companyId: string;
   category: 'Cost' | 'Performance' | 'Security' | 'Compliance' | 'Reliability' | 'Operational Excellence';
