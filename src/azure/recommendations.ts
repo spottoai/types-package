@@ -1,4 +1,4 @@
-import type { Comment, RecommendationHistory } from './recommendationState';
+import type { Comment, CommentScope, RecommendationHistory } from './recommendationState';
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
@@ -230,6 +230,8 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
 }
 
 export interface RecommendationActionRequest extends ProviderScope {
+  /** `providerScope` maps to subscription identity for Azure providers. */
+  scope?: CommentScope;
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];
