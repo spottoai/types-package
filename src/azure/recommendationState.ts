@@ -19,8 +19,7 @@ export type ProviderScopeRecommendationStatesQuery = {
 };
 
 /** @deprecated Use ProviderScopeRecommendationStatesQuery */
-export type SubscriptionRecommendationStatesQuery =
-  ProviderScopeRecommendationStatesQuery;
+export type SubscriptionRecommendationStatesQuery = ProviderScopeRecommendationStatesQuery;
 
 export type LegacyGetRecommendationStatesQuery =
   | {
@@ -90,22 +89,16 @@ export type ResourceRecommendationStateWriteRequest = RecommendationState & {
   providerScopeId: string;
 };
 
-export type ProviderScopeRecommendationStateWriteRequest = Omit<
-  RecommendationState,
-  'resourceId'
-> & {
+export type ProviderScopeRecommendationStateWriteRequest = Omit<RecommendationState, 'resourceId'> & {
   scope: 'providerScope';
   providerScopeId: string;
   resourceId?: string;
 };
 
 /** @deprecated Use ProviderScopeRecommendationStateWriteRequest */
-export type SubscriptionRecommendationStateWriteRequest =
-  ProviderScopeRecommendationStateWriteRequest;
+export type SubscriptionRecommendationStateWriteRequest = ProviderScopeRecommendationStateWriteRequest;
 
-export type SaveRecommendationStateRequest =
-  | ResourceRecommendationStateWriteRequest
-  | ProviderScopeRecommendationStateWriteRequest;
+export type SaveRecommendationStateRequest = ResourceRecommendationStateWriteRequest | ProviderScopeRecommendationStateWriteRequest;
 
 export interface RecommendationHistory {
   userId: string;
