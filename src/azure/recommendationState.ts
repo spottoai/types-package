@@ -6,21 +6,22 @@ export type ResourceRecommendationStatesQuery = {
   providerName: ProviderName;
   scope: 'resource';
   resourceId: string;
-  recommendationId?: string;
-  providerScopeId?: string;
+  recommendationId: string;
+  providerScopeId?: never;
 };
 
 export type ProviderScopeRecommendationStatesQuery = {
   providerName: ProviderName;
   scope: 'providerScope';
   providerScopeId: string;
-  recommendationId?: string;
-  resourceId?: string;
+  recommendationId: string;
+  resourceId?: never;
 };
 
 /** @deprecated Use ProviderScopeRecommendationStatesQuery */
 export type SubscriptionRecommendationStatesQuery = ProviderScopeRecommendationStatesQuery;
 
+/** @deprecated Use GetRecommendationStatesQuery */
 export type LegacyGetRecommendationStatesQuery =
   | {
       providerName: ProviderName;
@@ -37,18 +38,10 @@ export type LegacyGetRecommendationStatesQuery =
 
 export type GetRecommendationStatesQuery =
   | ResourceRecommendationStatesQuery
-  | ProviderScopeRecommendationStatesQuery
-  | LegacyGetRecommendationStatesQuery;
+  | ProviderScopeRecommendationStatesQuery;
 
-/** Base state interface for recommendations */
-export interface RecommendationState extends ProviderScope {
-  /**
-   * Scope discriminator for recommendation commentary identity.
-   * Optional for backward compatibility with legacy payloads.
-   */
-  scope?: CommentScope;
-  /** Partition Key: resourceId (Hash) */
-  resourceId: string;
+/** Shared recommendation-state properties across scope variants. */
+export interface RecommendationStateBase extends ProviderScope {
   /**
    * Deprecated alias retained for compatibility with older UI consumers.
    * Prefer `providerScopeId`.
@@ -83,17 +76,39 @@ export interface RecommendationState extends ProviderScope {
   statusEndAt?: string;
 }
 
-export type ResourceRecommendationStateWriteRequest = RecommendationState & {
+export interface ResourceRecommendationState extends RecommendationStateBase {
+  /**
+   * Scope discriminator for recommendation commentary identity.
+   * Resource scope identity is keyed by `resourceId + recommendationId`.
+   */
   scope: 'resource';
+  /** Partition Key: resourceId (Hash) */
   resourceId: string;
-  providerScopeId: string;
+}
+
+export interface ProviderScopeRecommendationState extends RecommendationStateBase {
+  /**
+   * Scope discriminator for recommendation commentary identity.
+   * Provider scope identity is keyed by `providerScopeId + recommendationId`.
+   */
+  scope: 'providerScope';
+  /** Provider-scope commentary must not rely on resource identity. */
+  resourceId?: never;
+}
+
+export type RecommendationState = ResourceRecommendationState | ProviderScopeRecommendationState;
+
+/** @deprecated Use RecommendationState */
+export type LegacyRecommendationState = RecommendationStateBase & {
+  scope?: CommentScope;
+  resourceId: string;
 };
 
-export type ProviderScopeRecommendationStateWriteRequest = Omit<RecommendationState, 'resourceId'> & {
-  scope: 'providerScope';
-  providerScopeId: string;
-  resourceId?: string;
-};
+/** @deprecated Use RecommendationState */
+export type RecommendationStateRecord = RecommendationState | LegacyRecommendationState;
+
+export type ResourceRecommendationStateWriteRequest = ResourceRecommendationState;
+export type ProviderScopeRecommendationStateWriteRequest = ProviderScopeRecommendationState;
 
 /** @deprecated Use ProviderScopeRecommendationStateWriteRequest */
 export type SubscriptionRecommendationStateWriteRequest = ProviderScopeRecommendationStateWriteRequest;
