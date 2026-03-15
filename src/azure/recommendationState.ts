@@ -36,9 +36,7 @@ export type LegacyGetRecommendationStatesQuery =
       providerScopeId: string;
     };
 
-export type GetRecommendationStatesQuery =
-  | ResourceRecommendationStatesQuery
-  | ProviderScopeRecommendationStatesQuery;
+export type GetRecommendationStatesQuery = ResourceRecommendationStatesQuery | ProviderScopeRecommendationStatesQuery;
 
 /** Shared recommendation-state properties across scope variants. */
 export interface RecommendationStateBase extends ProviderScope {
