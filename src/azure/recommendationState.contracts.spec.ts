@@ -21,6 +21,8 @@ const sharedStateFields: Omit<ProviderScopeRecommendationStateWriteRequest, 'sco
   status: 'Active',
   createdAt: new Date('2026-03-14T00:00:00.000Z'),
   flagged: false,
+  integrationProviderName: 'jira',
+  integrationTicketId: '33455',
   comments: [] as Comment[],
   history: [] as RecommendationHistory[],
   custom: false,
@@ -91,6 +93,14 @@ const invalidProviderScopeWrite: ProviderScopeRecommendationStateWriteRequest = 
   resourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/store1',
 };
 
+const invalidIntegrationTicketType: ProviderScopeRecommendationStateWriteRequest = {
+  ...sharedStateFields,
+  scope: 'providerScope',
+  // @ts-expect-error integrationTicketId must be a string when provided.
+  integrationTicketId: 33455,
+};
+
 void invalidResourceRead;
 void invalidProviderScopeRead;
 void invalidProviderScopeWrite;
+void invalidIntegrationTicketType;

@@ -63,6 +63,10 @@ export interface RecommendationStateBase extends ProviderScope {
   updatedAt?: Date;
   /** true if the recommendation is flagged */
   flagged: boolean;
+  /** Latest successful share provider (normalized lowercase channel name). */
+  integrationProviderName?: string;
+  /** Latest successful share reference (ticket id, recipient email, or provider identifier). */
+  integrationTicketId?: string;
   comments: Comment[];
   /** ID of the pinned comment */
   pinnedCommentId?: string;
