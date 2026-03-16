@@ -21,8 +21,6 @@ const sharedStateFields: Omit<ProviderScopeRecommendationStateWriteRequest, 'sco
   status: 'Active',
   createdAt: new Date('2026-03-14T00:00:00.000Z'),
   flagged: false,
-  integrationProviderName: 'jira',
-  integrationTicketId: '33455',
   comments: [] as Comment[],
   history: [] as RecommendationHistory[],
   custom: false,
@@ -56,11 +54,34 @@ const resourceScopeWrite: SaveRecommendationStateRequest = {
 const providerScopeWrite: SaveRecommendationStateRequest = {
   ...sharedStateFields,
   scope: 'providerScope',
+  integrationProviderName: 'jira',
+  integrationTicketId: '33455',
+};
+
+const emailShareProviderScopeWrite: SaveRecommendationStateRequest = {
+  ...sharedStateFields,
+  scope: 'providerScope',
+  integrationProviderName: 'email',
+  integrationTicketId: 'owner@example.com',
+};
+
+const slackShareProviderScopeWrite: SaveRecommendationStateRequest = {
+  ...sharedStateFields,
+  scope: 'providerScope',
+  integrationProviderName: 'slack',
+};
+
+const teamsShareProviderScopeWrite: SaveRecommendationStateRequest = {
+  ...sharedStateFields,
+  scope: 'providerScope',
+  integrationProviderName: 'teams',
 };
 
 const deprecatedSubscriptionWrite: SubscriptionRecommendationStateWriteRequest = {
   ...sharedStateFields,
   scope: 'providerScope',
+  integrationProviderName: 'jira',
+  integrationTicketId: '33455',
 };
 
 void resourceScopeQuery;
@@ -68,6 +89,9 @@ void providerScopeQuery;
 void legacyQuery;
 void resourceScopeWrite;
 void providerScopeWrite;
+void emailShareProviderScopeWrite;
+void slackShareProviderScopeWrite;
+void teamsShareProviderScopeWrite;
 void deprecatedSubscriptionWrite;
 
 // @ts-expect-error resource scope reads require recommendationId.
@@ -96,6 +120,7 @@ const invalidProviderScopeWrite: ProviderScopeRecommendationStateWriteRequest = 
 const invalidIntegrationTicketType: ProviderScopeRecommendationStateWriteRequest = {
   ...sharedStateFields,
   scope: 'providerScope',
+  integrationProviderName: 'email',
   // @ts-expect-error integrationTicketId must be a string when provided.
   integrationTicketId: 33455,
 };

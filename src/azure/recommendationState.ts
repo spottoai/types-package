@@ -65,7 +65,12 @@ export interface RecommendationStateBase extends ProviderScope {
   flagged: boolean;
   /** Latest successful share provider (normalized lowercase channel name). */
   integrationProviderName?: string;
-  /** Latest successful share reference (ticket id, recipient email, or provider identifier). */
+  /**
+   * Latest successful share reference.
+   * - `jira` | `halo` | `connectwise`: external ticket id
+   * - `email`: primary recipient email
+   * - `slack` | `teams`: unset
+   */
   integrationTicketId?: string;
   comments: Comment[];
   /** ID of the pinned comment */
