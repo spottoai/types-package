@@ -52,6 +52,10 @@ export interface AIMessage {
 
 export type AIChatMode = 'page' | 'workspace';
 
+export type AIChatResponseMode = 'fast' | 'thinking';
+
+export type AIChatResolvedResponseMode = AIChatResponseMode | 'adaptive';
+
 type AIWorkspaceScopePolicyOutcome = 'accepted' | 'intersected' | 'rejected';
 
 interface AIWorkspaceScopeAllAuthorizedRequest {
@@ -669,6 +673,7 @@ export interface AIChatTurnState {
   phase: AIChatTurnPhase;
   status: AIChatTurnStatus;
   updatedAt: string;
+  responseMode?: AIChatResolvedResponseMode;
   path?: AIOrchestrationPath;
   analysisConfidence?: number;
   selectedSkillPackId?: AIChatSkillId;
@@ -883,6 +888,7 @@ interface AIChatRequestBase {
   previousResponseId?: string;
   contextHash?: string;
   confirmationResponse?: AIChatConfirmationResponse;
+  responseMode?: AIChatResponseMode;
   /**
    * Live chat transport is streaming-only. Non-streaming requests are not part
    * of the target shared contract.
@@ -1079,6 +1085,7 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   event: 'done';
   responseId?: string;
   previousResponseId?: string;
+  resolvedResponseMode?: AIChatResolvedResponseMode;
   chatMode?: AIChatMode;
   resolvedScope?: AIResolvedWorkspaceScope;
   classification?: AIChatClassificationMetadata;
