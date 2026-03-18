@@ -82,14 +82,18 @@ export interface SubscriptionStats {
   spend30DaysAmortizedSource?: SpendDataSource;
   /** Confidence level for the spend30Days source attribution */
   spend30DaysSourceConfidence?: 'high' | 'unknown';
+  /** Billing-backed (actual) portion of spend30Days */
+  spend30DaysActual?: number;
+  /** Billing-backed (actual) portion of spend30DaysAmortized */
+  spend30DaysAmortizedActual?: number;
+  /** Estimated-only portion of spend30Days */
+  spend30DaysEstimated?: number;
+  /** Estimated-only portion of spend30DaysAmortized */
+  spend30DaysAmortizedEstimated?: number;
   /** Billing-only portion of spend30Days */
   spend30DaysBilling?: number;
   /** Billing-only portion of spend30DaysAmortized */
   spend30DaysAmortizedBilling?: number;
-  /** Estimated-only fallback portion of spend30Days */
-  spend30DaysEstimated?: number;
-  /** Estimated-only fallback portion of spend30DaysAmortized */
-  spend30DaysAmortizedEstimated?: number;
   /** Breakdown of estimated fallback by estimator source */
   spend30DaysEstimatedSourceBreakdown?: {
     billing: number;

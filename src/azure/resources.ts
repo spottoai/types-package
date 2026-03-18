@@ -11,6 +11,14 @@ export interface ResourcesByType {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** billing-backed portion of spend30Days */
+  spend30DaysActual?: number;
+  /** billing-backed portion of spend30DaysAmortized */
+  spend30DaysAmortizedActual?: number;
+  /** estimated portion of spend30Days */
+  spend30DaysEstimated?: number;
+  /** estimated portion of spend30DaysAmortized */
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
@@ -35,6 +43,14 @@ export interface ResourceByLocation {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** billing-backed portion of spend30Days */
+  spend30DaysActual?: number;
+  /** billing-backed portion of spend30DaysAmortized */
+  spend30DaysAmortizedActual?: number;
+  /** estimated portion of spend30Days */
+  spend30DaysEstimated?: number;
+  /** estimated portion of spend30DaysAmortized */
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
