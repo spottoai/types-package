@@ -476,6 +476,7 @@ export interface AIChatEvidenceCoverage {
 export interface AIChatReconnectState {
   status: 'connected' | 'reconnecting' | 'resumed' | 'restarted' | 'degraded';
   message?: string;
+  resumedRunId?: string;
   resumedTurnId?: string;
   updatedAt: string;
 }
@@ -668,7 +669,42 @@ export type AIChatTurnPhase =
 
 export type AIChatTurnStatus = 'running' | 'waiting' | 'completed' | 'errored' | 'cancelled';
 
+export type AIChatRunStatus = 'queued' | 'running' | 'paused' | 'resuming' | 'completed' | 'failed' | 'cancelled';
+
+export type AIChatRunPauseReason =
+  | 'approvalRequired'
+  | 'toolInputRequired'
+  | 'stalled'
+  | 'reconnectRequired'
+  | 'policyIntervention'
+  | `pause.${string}`;
+
+export type AIChatRunResumeReason = 'approvalDecision' | 'reconnect' | 'manual' | 'retry' | `resume.${string}`;
+
+export interface AIChatRunState {
+  runId: string;
+  status: AIChatRunStatus;
+  updatedAt: string;
+  startedAt?: string;
+  pausedAt?: string;
+  resumedAt?: string;
+  completedAt?: string;
+  pauseReason?: AIChatRunPauseReason;
+  resumeReason?: AIChatRunResumeReason;
+  terminalReasonCode?: AIReasonCode;
+  terminalMessage?: string;
+}
+
+export interface AIChatPausedRunInfo {
+  runId: string;
+  pauseReason: AIChatRunPauseReason;
+  pausedAt: string;
+  approvalChallengeId?: string;
+  pendingApprovals?: AIChatApprovalRecord[];
+}
+
 export interface AIChatTurnState {
+  runId: string;
   turnId: string;
   phase: AIChatTurnPhase;
   status: AIChatTurnStatus;
@@ -738,6 +774,7 @@ export interface AIChatProgressEntry {
 export type AIChatApprovalState = 'pending' | 'approved' | 'rejected' | 'consumed' | 'expired' | 'completed' | 'failed';
 
 export interface AIChatApprovalRecord {
+  runId: string;
   challengeId: string;
   state: AIChatApprovalState;
   actionSummary: string;
@@ -809,6 +846,7 @@ export interface AIChatToolDescriptor {
 }
 
 export interface AIChatTurnSnapshot {
+  run: AIChatRunState;
   turn: AIChatTurnState;
   selectedSkillPack?: AIChatSkillPackDescriptor;
   assistantProfileSummary?: AIChatAssistantProfileSummary;
@@ -830,6 +868,7 @@ export interface AIChatFinalSnapshot {
   /**
    * Authoritative final turn state. Additional stage outputs are additive sidecars.
    */
+  run: AIChatRunState;
   turnSnapshot: AIChatTurnSnapshot;
   pageSnapshot?: AIChatPageSnapshot;
   toolAffordanceSnapshot?: AIChatToolAffordanceSnapshot;
@@ -852,6 +891,7 @@ export interface AIChatFinalSnapshot {
 
 export interface AIChatAuditArtifact {
   conversationId: string;
+  runId: string;
   turnId: string;
   createdAt: string;
   turnSnapshot: AIChatTurnSnapshot;
@@ -877,18 +917,33 @@ export interface AIChatAuditArtifact {
   analysisConfidence?: number;
 }
 
-export interface AIChatConfirmationResponse {
+export interface AIChatApprovalDecision {
   challengeId: string;
   decision: 'approve' | 'reject';
   idempotencyKey: string;
+  submittedAt?: string;
+}
+
+export interface AIChatRunResumeDirective {
+  reason: AIChatRunResumeReason;
+  note?: string;
+}
+
+export interface AIChatApprovalSubmissionRequest {
+  conversationId: string;
+  runId: string;
+  decision: AIChatApprovalDecision;
+  resume?: AIChatRunResumeDirective & {
+    mode?: 'immediate' | 'manual';
+  };
 }
 
 interface AIChatRequestBase {
   conversationId?: string;
-  previousResponseId?: string;
+  runId?: string;
   contextHash?: string;
-  confirmationResponse?: AIChatConfirmationResponse;
   responseMode?: AIChatResponseMode;
+  queuedPrompt?: AIChatQueuedPromptState;
   /**
    * Live chat transport is streaming-only. Non-streaming requests are not part
    * of the target shared contract.
@@ -896,14 +951,19 @@ interface AIChatRequestBase {
   stream: true;
 }
 
-interface AIChatRequestPage extends AIChatRequestBase {
+interface AIChatRunStartRequestPage extends AIChatRequestBase {
+  action: 'start';
   chatMode: 'page';
+  input: string;
   pageContext: PageContext;
   workspaceScope?: never;
+  runId?: never;
 }
 
-interface AIChatRequestWorkspace extends AIChatRequestBase {
+interface AIChatRunStartRequestWorkspace extends AIChatRequestBase {
+  action: 'start';
   chatMode: 'workspace';
+  input: string;
   /**
    * Workspace turns may still include page context when launched from a page,
    * but pure workspace turns rely on workspaceScope alone.
@@ -912,7 +972,23 @@ interface AIChatRequestWorkspace extends AIChatRequestBase {
   workspaceScope: AIWorkspaceScopeRequest;
 }
 
-export type AIChatRequest = (AIChatRequestPage & { input: string }) | (AIChatRequestWorkspace & { input: string });
+export type AIChatRunStartRequest = AIChatRunStartRequestPage | AIChatRunStartRequestWorkspace;
+
+export interface AIChatRunResumeRequest extends AIChatRequestBase {
+  action: 'resume';
+  conversationId: string;
+  runId: string;
+  chatMode?: AIChatMode;
+  pageContext?: PageContext;
+  workspaceScope?: AIWorkspaceScopeRequest;
+  input?: string;
+  approvalDecision?: AIChatApprovalDecision;
+  resume: AIChatRunResumeDirective;
+}
+
+export type AIChatRunRequest = AIChatRunStartRequest | AIChatRunResumeRequest;
+
+export type AIChatRequest = AIChatRunRequest;
 
 export interface AIConversationScopeMetadata {
   chatMode?: AIChatMode;
@@ -940,10 +1016,42 @@ export interface AIChatUsage {
   totalTokens: number;
 }
 
+export interface AIChatTerminalSnapshot {
+  conversationId: string;
+  runId: string;
+  run: AIChatRunState;
+  turnSnapshot: AIChatTurnSnapshot;
+  finalSnapshot?: AIChatFinalSnapshot;
+  auditArtifact?: AIChatAuditArtifact;
+  resolvedResponseMode?: AIChatResolvedResponseMode;
+  chatMode?: AIChatMode;
+  resolvedScope?: AIResolvedWorkspaceScope;
+  classification?: AIChatClassificationMetadata;
+  routing?: AIChatRoutingMetadata;
+  structuredResponse?: StructuredAIResponse;
+  usage?: AIChatUsage;
+  answer?: string;
+  completionReason?: string;
+  citations?: AIChatCitation[];
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
+}
+
 /**
  * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.
  */
 export type AIChatStreamEventName =
+  | 'runStarted'
+  | 'runStatus'
+  | 'runPaused'
+  | 'runResumed'
+  | 'runCompleted'
   | 'scopeResolved'
   | 'pageSnapshotBuilt'
   | 'toolAffordanceBuilt'
@@ -962,6 +1070,9 @@ export type AIChatStreamEventName =
   | 'formatterCompleted'
   | 'message'
   | 'citation'
+  /**
+   * @deprecated Use `runCompleted`.
+   */
   | 'done'
   | 'error'
   | 'ping';
@@ -970,8 +1081,37 @@ export interface AIChatStreamEventBase {
   event: AIChatStreamEventName;
   sequence: number;
   conversationId: string;
+  runId: string;
   turnId: string;
   timestamp: string;
+}
+
+export interface AIChatRunStartedEvent extends AIChatStreamEventBase {
+  event: 'runStarted';
+  run: AIChatRunState;
+  chatMode: AIChatMode;
+  requestedScope?: AIWorkspaceScopeRequest;
+}
+
+export interface AIChatRunStatusEvent extends AIChatStreamEventBase {
+  event: 'runStatus';
+  run: AIChatRunState;
+  phase?: AIChatTurnPhase;
+}
+
+export interface AIChatRunPausedEvent extends AIChatStreamEventBase {
+  event: 'runPaused';
+  run: AIChatRunState;
+  pauseReason: AIChatRunPauseReason;
+  approval?: AIChatApprovalRecord;
+  pendingApprovals?: AIChatApprovalRecord[];
+  reconnectState?: AIChatReconnectState;
+}
+
+export interface AIChatRunResumedEvent extends AIChatStreamEventBase {
+  event: 'runResumed';
+  run: AIChatRunState;
+  resumeReason: AIChatRunResumeReason;
 }
 
 export interface AIChatScopeResolvedEvent extends AIChatStreamEventBase {
@@ -1053,11 +1193,13 @@ export interface AIChatToolErrorEvent extends AIChatStreamEventBase {
 
 export interface AIChatApprovalRequiredEvent extends AIChatStreamEventBase {
   event: 'approvalRequired';
+  run: AIChatRunState;
   approval: AIChatApprovalRecord;
 }
 
 export interface AIChatApprovalStateChangedEvent extends AIChatStreamEventBase {
   event: 'approvalStateChanged';
+  run: AIChatRunState;
   approval: AIChatApprovalRecord;
 }
 
@@ -1081,44 +1223,24 @@ export interface AIChatCitationEvent extends AIChatStreamEventBase {
   citation: AIChatCitation;
 }
 
+export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
+  event: 'runCompleted';
+  run: AIChatRunState;
+  terminalSnapshot: AIChatTerminalSnapshot;
+}
+
 export interface AIChatDoneEvent extends AIChatStreamEventBase {
+  /**
+   * @deprecated Use `runCompleted`.
+   */
   event: 'done';
-  responseId?: string;
-  previousResponseId?: string;
-  resolvedResponseMode?: AIChatResolvedResponseMode;
-  chatMode?: AIChatMode;
-  resolvedScope?: AIResolvedWorkspaceScope;
-  classification?: AIChatClassificationMetadata;
-  routing?: AIChatRoutingMetadata;
-  structuredResponse?: StructuredAIResponse;
-  usage?: AIChatUsage;
-  answer?: string;
-  completionReason?: string;
-  citations?: AIChatCitation[];
-  assistantProfileSummary?: AIChatAssistantProfileSummary;
-  toolPolicySummary?: AIChatToolPolicySummary;
-  sourcePolicySummary?: AIChatSourcePolicySummary;
-  queuedPrompt?: AIChatQueuedPromptState;
-  evidenceCoverage?: AIChatEvidenceCoverage;
-  reconnectState?: AIChatReconnectState;
-  degradedState?: AIChatDegradedState;
-  collaborationRun?: AIChatCollaborationRun;
-  /**
-   * Required minimum terminal artifact for successful turns.
-   */
-  turnSnapshot: AIChatTurnSnapshot;
-  /**
-   * Optional additive sidecar for richer UI rehydration and debugging.
-   */
-  finalSnapshot?: AIChatFinalSnapshot;
-  /**
-   * Optional additive sidecar for durable audit and server debugging.
-   */
-  auditArtifact?: AIChatAuditArtifact;
+  run: AIChatRunState;
+  terminalSnapshot: AIChatTerminalSnapshot;
 }
 
 export interface AIChatErrorEvent extends AIChatStreamEventBase {
   event: 'error';
+  run: AIChatRunState;
   code: string;
   message: string;
   retryable: boolean;
@@ -1129,6 +1251,11 @@ export interface AIChatPingEvent extends AIChatStreamEventBase {
 }
 
 export type AIChatStreamEvent =
+  | AIChatRunStartedEvent
+  | AIChatRunStatusEvent
+  | AIChatRunPausedEvent
+  | AIChatRunResumedEvent
+  | AIChatRunCompletedEvent
   | AIChatScopeResolvedEvent
   | AIChatPageSnapshotBuiltEvent
   | AIChatToolAffordanceBuiltEvent
