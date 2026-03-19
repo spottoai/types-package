@@ -54,6 +54,7 @@ const rowColumns: RecommendationAuditEventRowColumns = {
   ProviderName: ProviderName.Azure,
   ProviderScopeId: 'sub-123',
   SubscriptionId: 'sub-123',
+  RowKind: 'resource-view:target',
   ResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/store1',
   RecommendationId: 'rec-123',
   EventType: 'Viewed',

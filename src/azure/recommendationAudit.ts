@@ -7,7 +7,8 @@ export const RecommendationAuditRowKinds = {
   subscriptionProviderScopeFeed: 'scope-view:providerScope-feed',
 } as const;
 
-export type RecommendationAuditRowKind = (typeof RecommendationAuditRowKinds)[keyof typeof RecommendationAuditRowKinds];
+export type RecommendationAuditRowKind =
+  (typeof RecommendationAuditRowKinds)[keyof typeof RecommendationAuditRowKinds];
 
 export type RecommendationAuditScope = 'resource' | 'subscription';
 
@@ -92,6 +93,8 @@ export interface RecommendationAuditEventRowColumns {
   ProviderScopeId: string;
   /** For Azure providers, mirrors `ProviderScopeId` (subscription id). */
   SubscriptionId: string;
+  /** Storage row discriminator derived from query scope + view contract. */
+  RowKind: RecommendationAuditRowKind;
   ResourceId?: string | null;
   RecommendationId: string;
   EventType: RecommendationAuditEventType;
