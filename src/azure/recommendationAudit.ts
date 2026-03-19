@@ -7,8 +7,7 @@ export const RecommendationAuditRowKinds = {
   subscriptionProviderScopeFeed: 'scope-view:providerScope-feed',
 } as const;
 
-export type RecommendationAuditRowKind =
-  (typeof RecommendationAuditRowKinds)[keyof typeof RecommendationAuditRowKinds];
+export type RecommendationAuditRowKind = (typeof RecommendationAuditRowKinds)[keyof typeof RecommendationAuditRowKinds];
 
 export type RecommendationAuditScope = 'resource' | 'subscription';
 
