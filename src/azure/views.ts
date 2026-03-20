@@ -66,6 +66,14 @@ export interface AzureResourcePortalItem {
   spend: number;
   /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
   spendAmortized: number;
+  /** Billing-backed portion of spend over the last 30 days */
+  spendActual?: number;
+  /** Billing-backed portion of amortized spend over the last 30 days */
+  spendAmortizedActual?: number;
+  /** Estimated portion of spend over the last 30 days */
+  spendEstimated?: number;
+  /** Estimated portion of amortized spend over the last 30 days */
+  spendAmortizedEstimated?: number;
   /** Source of spend value (billing or high-confidence estimate fallback) */
   spendSource?: Exclude<SpendDataSource, 'blended'>;
   /** Confidence for spend source attribution */
@@ -125,6 +133,14 @@ export interface AzureResourcePluginItem {
   location: string;
   recommendations?: Recommendation[];
   cost?: CostSummaryDetails;
+  /** Billing-backed portion of cost total */
+  spendActual?: number;
+  /** Billing-backed portion of amortized cost total */
+  spendAmortizedActual?: number;
+  /** Estimated portion of cost total */
+  spendEstimated?: number;
+  /** Estimated portion of amortized cost total */
+  spendAmortizedEstimated?: number;
   /** Source of cost value (billing or high-confidence estimate fallback) */
   costSource?: Exclude<SpendDataSource, 'blended'>;
   /** Confidence for cost source attribution */
@@ -151,6 +167,10 @@ export interface AzureResourcePluginItemDetailed {
   name: string;
   recommendations?: Recommendation[];
   cost?: CostSummaryDetails;
+  spendActual?: number;
+  spendAmortizedActual?: number;
+  spendEstimated?: number;
+  spendAmortizedEstimated?: number;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;

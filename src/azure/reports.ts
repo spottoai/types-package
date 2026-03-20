@@ -73,6 +73,40 @@ export interface EstimationTree extends DecompositionTree {
   root: EstimationTreeNode;
 }
 
+export interface EstimationDetailComponent {
+  method?: string;
+  dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
+  pricingSource?: 'billing' | 'retail' | 'manual' | string;
+  formula?: string;
+  inputs?: {
+    coverageDays?: number;
+    missingDays?: number;
+    missingFactor?: number;
+    metricsInput?: Record<string, unknown>;
+    [key: string]: unknown;
+  };
+  rates?: Record<string, number>;
+  output?: {
+    actualCost?: number;
+    estimatedCost?: number;
+    estimatedCostByMetrics?: number;
+    estimatedCostByMA?: number;
+    totalCost?: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+export interface EstimationNodeDetails {
+  version?: number;
+  dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
+  actualShare?: number;
+  estimatedShare?: number;
+  componentCount?: number;
+  components?: EstimationDetailComponent[];
+  [key: string]: unknown;
+}
+
 export interface EstimationTreeNode extends DecompositionTreeNode {
   dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
   coveragePercent?: number;
@@ -120,56 +154,43 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
    * Generic metadata for other resource types
    * Allows extensibility for future resource types with sub-components
    */
-  metadata?: Record<string, unknown>;
+  metadata?: {
+    estimationDetails?: EstimationNodeDetails;
+    [key: string]: unknown;
+  };
   blendedComponents?:
-    | Array<{
-        componentCategory?: 'A' | 'B' | 'C' | 'D';
-        dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
-        actualCost: number;
-        estimatedCost: number;
-        estimatedCostByMetrics?: number;
-        estimatedCostByMA?: number;
-        coverageDays: number;
-        coveragePercent?: number;
-        missingDays: number;
-        method: string;
-        estimationMethod?: string;
-        estimatedDays?: string[];
-        estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
-        estimatedDaysBySource?: {
-          metrics?: string[];
-          ma7?: string[];
-          ma14?: string[];
-          ma?: string[];
-        };
-        pricingSource?: 'billing' | 'retail' | 'manual';
-        actualShare?: number;
-        estimatedShare?: number;
-      }>
+    | EstimationTreeNodeBlendedComponent[]
     // Backwards compatibility with earlier single-object shape
-    | {
-        componentCategory?: 'A' | 'B' | 'C' | 'D';
-        dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
-        actualCost: number;
-        estimatedCost: number;
-        estimatedCostByMetrics?: number;
-        estimatedCostByMA?: number;
-        coverageDays: number;
-        missingDays: number;
-        method: string;
-        estimationMethod?: string;
-        estimatedDays?: string[];
-        estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
-        estimatedDaysBySource?: {
-          metrics?: string[];
-          ma7?: string[];
-          ma14?: string[];
-          ma?: string[];
-        };
-        actualShare?: number;
-        estimatedShare?: number;
-      };
+    | EstimationTreeNodeBlendedComponent;
   children?: EstimationTreeNode[];
+}
+
+export interface EstimationTreeNodeBlendedComponent {
+  componentCategory?: 'A' | 'B' | 'C' | 'D';
+  dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
+  actualCost: number;
+  estimatedCost: number;
+  estimatedCostByMetrics?: number;
+  estimatedCostByMA?: number;
+  coverageDays: number;
+  coveragePercent?: number;
+  missingDays: number;
+  method: string;
+  estimationMethod?: string;
+  estimatedDays?: string[];
+  estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma';
+  estimatedDaysBySource?: {
+    metrics?: string[];
+    ma7?: string[];
+    ma14?: string[];
+    ma?: string[];
+  };
+  metricsInput?: Record<string, unknown>;
+  unitRates?: Record<string, number>;
+  pricingSource?: 'billing' | 'retail' | 'manual';
+  actualShare?: number;
+  estimatedShare?: number;
+  estimationDetails?: EstimationDetailComponent;
 }
 
 export interface DecompositionTreeEntry {
