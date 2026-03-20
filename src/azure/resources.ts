@@ -1,24 +1,16 @@
 export interface ResourcesByType {
   type: string;
   resources: number;
-  /** total spend in the current billing period */
+  /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
   spendBilling?: number;
-  /** total amortized spend in the current billing period */
+  /** amortized variant of spendBilling */
   spendBillingAmortized?: number;
-  /** total spend in the previous billing period */
+  /** previous-window baseline aligned with spendBilling semantics */
   spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
-  /** billing-backed portion of spend30Days */
-  spend30DaysActual?: number;
-  /** billing-backed portion of spend30DaysAmortized */
-  spend30DaysAmortizedActual?: number;
-  /** estimated portion of spend30Days */
-  spend30DaysEstimated?: number;
-  /** estimated portion of spend30DaysAmortized */
-  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
@@ -33,24 +25,16 @@ export interface ResourcesByType {
 export interface ResourceByLocation {
   location: string;
   resources: number;
-  /** total spend in the current billing period */
+  /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
   spendBilling?: number;
-  /** total amortized spend in the current billing period */
+  /** amortized variant of spendBilling */
   spendBillingAmortized?: number;
-  /** total spend in the previous billing period */
+  /** previous-window baseline aligned with spendBilling semantics */
   spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
-  /** billing-backed portion of spend30Days */
-  spend30DaysActual?: number;
-  /** billing-backed portion of spend30DaysAmortized */
-  spend30DaysAmortizedActual?: number;
-  /** estimated portion of spend30Days */
-  spend30DaysEstimated?: number;
-  /** estimated portion of spend30DaysAmortized */
-  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;

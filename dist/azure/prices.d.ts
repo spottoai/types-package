@@ -83,28 +83,10 @@ export interface CostSummaryDetails {
     amortizedTotal?: number;
     /** Total cost in the previous 30 days, taking into account reserved instances and savings plans */
     amortizedTotalPrevious?: number;
+    /** Optional active-day coverage for the 30-day spend window (e.g. 18 means 18/30 active days). */
+    coverageDays?: number;
     items?: ResourceCostSummary[];
     savingsRange?: SavingsRange;
-}
-export type CostSummaryDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
-export interface ResourceCostEstimationDetailComponent {
-    method?: string;
-    dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
-    pricingSource?: 'billing' | 'retail' | 'manual' | string;
-    formula?: string;
-    inputs?: Record<string, unknown>;
-    rates?: Record<string, number>;
-    output?: Record<string, unknown>;
-    [key: string]: unknown;
-}
-export interface ResourceCostEstimationDetails {
-    version?: number;
-    dataSource?: 'estimated' | 'actual' | 'blended' | 'metrics_pricing';
-    actualShare?: number;
-    estimatedShare?: number;
-    componentCount?: number;
-    components?: ResourceCostEstimationDetailComponent[];
-    [key: string]: unknown;
 }
 export interface ResourceCostSummary {
     /** e.g. "Basic Plan (B2 App)" */
@@ -151,34 +133,6 @@ export interface ResourceCostSummary {
     savingsRange?: SavingsRange;
     /** Reference to the recommendation that this target cost is associated with */
     recommendationId?: string;
-    /** Source attribution for this line item spend */
-    costSource?: CostSummaryDataSource;
-    /** Confidence of source attribution */
-    costSourceConfidence?: 'high' | 'unknown';
-    /** Optional source detail (for example estimation method) */
-    costSourceDetail?: string;
-    /** Billing-backed (actual) portion of spend */
-    spendActual?: number;
-    /** Estimated portion of spend */
-    spendEstimated?: number;
-    /** Billing-backed (actual) portion of amortized spend */
-    spendAmortizedActual?: number;
-    /** Estimated portion of amortized spend */
-    spendAmortizedEstimated?: number;
-    /** Estimation method (for example metrics_pricing, sku_pricing, ma7) */
-    estimationMethod?: string;
-    /** Estimated days source (for example metrics, ma7, ma14, ma) */
-    estimatedDaysSource?: string;
-    /** Pricing source used by estimator */
-    pricingSource?: 'billing' | 'retail' | 'manual' | string;
-    /** Human-readable formula used for estimation */
-    estimationFormula?: string;
-    /** Estimation inputs */
-    estimationInputs?: Record<string, unknown>;
-    /** Estimation rates */
-    estimationRates?: Record<string, number>;
-    /** Detailed estimation explainability payload */
-    estimationDetails?: ResourceCostEstimationDetailComponent | ResourceCostEstimationDetails;
 }
 export interface SavingsRange {
     min: SavingsDetail;
