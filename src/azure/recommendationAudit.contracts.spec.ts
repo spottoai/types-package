@@ -78,6 +78,12 @@ const rowColumnsWithAddedEventType: RecommendationAuditEventRowColumns = {
   EventType: 'Added',
 };
 
+const rowColumnsWithArchivedEventType: RecommendationAuditEventRowColumns = {
+  ...rowColumns,
+  EventId: 'evt-4',
+  EventType: 'Archived',
+};
+
 const timelineItem: RecommendationAuditTimelineEvent = {
   eventId: 'evt-1',
   eventType: 'Viewed',
@@ -107,7 +113,18 @@ const timelineItemWithAddedEventType: RecommendationAuditTimelineEvent = {
   eventType: 'Added',
 };
 
-const response: RecommendationAuditQueryResponse = [timelineItem, timelineItemWithNullableDisplayName, timelineItemWithAddedEventType];
+const timelineItemWithArchivedEventType: RecommendationAuditTimelineEvent = {
+  ...timelineItem,
+  eventId: 'evt-4',
+  eventType: 'Archived',
+};
+
+const response: RecommendationAuditQueryResponse = [
+  timelineItem,
+  timelineItemWithNullableDisplayName,
+  timelineItemWithAddedEventType,
+  timelineItemWithArchivedEventType,
+];
 
 void resourceTargetQuery;
 void subscriptionTargetQuery;
@@ -118,6 +135,7 @@ void canonicalSubscriptionFeed;
 void rowColumns;
 void rowColumnsWithNullableDisplayName;
 void rowColumnsWithAddedEventType;
+void rowColumnsWithArchivedEventType;
 void response;
 
 // @ts-expect-error target view requires recommendationId.
