@@ -1,11 +1,11 @@
 export interface ResourcesByType {
   type: string;
   resources: number;
-  /** total spend in the current billing period */
+  /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
   spendBilling?: number;
-  /** total amortized spend in the current billing period */
+  /** amortized variant of spendBilling */
   spendBillingAmortized?: number;
-  /** total spend in the previous billing period */
+  /** previous-window baseline aligned with spendBilling semantics */
   spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
   /** total spend over the last 30 days */
@@ -25,11 +25,11 @@ export interface ResourcesByType {
 export interface ResourceByLocation {
   location: string;
   resources: number;
-  /** total spend in the current billing period */
+  /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
   spendBilling?: number;
-  /** total amortized spend in the current billing period */
+  /** amortized variant of spendBilling */
   spendBillingAmortized?: number;
-  /** total spend in the previous billing period */
+  /** previous-window baseline aligned with spendBilling semantics */
   spendPreviousBilling?: number;
   spendPreviousBillingAmortized?: number;
   /** total spend over the last 30 days */

@@ -87,6 +87,8 @@ export interface CostSummaryDetails {
   amortizedTotal?: number;
   /** Total cost in the previous 30 days, taking into account reserved instances and savings plans */
   amortizedTotalPrevious?: number;
+  /** Optional active-day coverage for the 30-day spend window (e.g. 18 means 18/30 active days). */
+  coverageDays?: number;
   items?: ResourceCostSummary[];
   savingsRange?: SavingsRange;
 }
