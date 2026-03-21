@@ -31,6 +31,7 @@ const resourceFeedQuery: GetRecommendationAuditQuery = {
   providerScopeId: 'sub-123',
   scope: 'resource',
   view: 'providerScope-feed',
+  recommendationId: 'rec-123',
   limit: 500,
 };
 
@@ -173,6 +174,14 @@ const invalidCanonicalAliasScope: GetRecommendationAuditQueryCanonical = {
   recommendationId: 'rec-123',
 };
 
+// @ts-expect-error provider-scope feed queries require recommendationId.
+const invalidFeedWithoutRecommendationId: GetRecommendationAuditQuery = {
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  scope: 'subscription',
+  view: 'providerScope-feed',
+};
+
 // @ts-expect-error row kind is constrained to the four storage row prefixes.
 const invalidRowKind: RecommendationAuditRowKind = 'target';
 
@@ -181,6 +190,7 @@ const invalidTrackViewType: GetRecommendationAuditQuery = {
   providerScopeId: 'sub-123',
   scope: 'subscription',
   view: 'providerScope-feed',
+  recommendationId: 'rec-123',
   // @ts-expect-error trackView must be boolean.
   trackView: 'true',
 };
@@ -206,6 +216,7 @@ void invalidTargetWithoutRecommendationId;
 void invalidResourceTargetWithoutResourceId;
 void invalidFeedWithResourceId;
 void invalidCanonicalAliasScope;
+void invalidFeedWithoutRecommendationId;
 void invalidRowKind;
 void invalidTrackViewType;
 void invalidEnvelopeAsCanonicalResponse;
