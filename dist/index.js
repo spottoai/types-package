@@ -26,6 +26,7 @@ __exportStar(require("./azure/payloads"), exports);
 __exportStar(require("./azure/prices"), exports);
 __exportStar(require("./azure/relationships"), exports);
 __exportStar(require("./azure/recommendations"), exports);
+__exportStar(require("./azure/recommendationAudit"), exports);
 __exportStar(require("./azure/recommendationState"), exports);
 __exportStar(require("./azure/resources"), exports);
 __exportStar(require("./azure/reports"), exports);
