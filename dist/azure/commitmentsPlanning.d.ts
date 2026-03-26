@@ -11,6 +11,7 @@ export interface CommitmentsPlanningView {
     inventory: CommitmentsInventoryItem[];
     resourceCoverage: CommitmentsResourceCoverageItem[];
     obsoleteCandidates: CommitmentsObsoleteCandidate[];
+    reallocationOpportunities?: CommitmentsReallocationOpportunity[];
     pricingContext: CommitmentsPricingContext;
     termStrategy: CommitmentsTermStrategyScenario[];
 }
@@ -47,11 +48,30 @@ export interface CommitmentsInventoryItem {
     daysToExpiry?: number;
     reservedQuantity?: number;
     commitmentAmount?: number;
+    commitmentCurrencyCode?: string;
+    commitmentGrain?: string;
+    commitmentUnit?: string;
+    skuName?: string;
+    skuDescription?: string;
+    location?: string;
+    term?: string;
+    billingPlan?: string;
+    billingScopeId?: string;
+    appliedScopeDisplayName?: string;
+    provisioningState?: string;
+    renew?: boolean;
+    purchasedQuantity?: number;
+    usedQuantity?: number;
+    remainingQuantity?: number;
+    totalReservedQuantity?: number;
+    reservedHours?: number;
+    usedHours?: number;
     utilization?: IBenefitUtilization;
 }
 export interface CommitmentsResourceCoverageItem {
     resourceId: string;
     resourceName?: string;
+    resourceType?: string;
     month?: string;
     benefitIds: string[];
     benefitNames: string[];
@@ -62,8 +82,18 @@ export interface CommitmentsResourceCoverageItem {
     eligibleCost?: number;
     uncoveredCost?: number;
     coveragePercent?: number;
+    recommendationIds?: string[];
+    recommendationType?: CommitmentsRecommendationType;
+    recommendedAction?: CommitmentsRecommendationAction;
+    recommendationImpact?: {
+        amount?: number;
+        currency?: string;
+        source?: 'payg-cost' | 'amortized' | 'retail' | 'unknown';
+    };
     benefitBreakdown?: IBenefitCoverageBreakdownEntry[];
 }
+export type CommitmentsRecommendationType = 'reserved-instance' | 'savings-plan' | 'hybrid';
+export type CommitmentsRecommendationAction = 'buy' | 'exchange' | 'resize' | 'review';
 export type CommitmentsObsoleteCandidateType = 'underutilized' | 'coverage-drift' | 'sku-mismatch' | 'near-expiry';
 export type CommitmentsSuggestedAction = 'renew' | 'let-expire' | 'exchange' | 'resize' | 'review';
 export interface CommitmentsObsoleteCandidate {
@@ -80,8 +110,29 @@ export interface CommitmentsObsoleteCandidate {
     };
     relatedBenefitIds?: string[];
 }
+export interface CommitmentsReallocationResourceReference {
+    resourceId: string;
+    resourceName?: string;
+    resourceType?: string;
+    subscriptionId?: string;
+    subscriptionName?: string;
+}
+export interface CommitmentsReallocationOpportunity {
+    id: string;
+    fromResource: CommitmentsReallocationResourceReference;
+    toResource: CommitmentsReallocationResourceReference;
+    estimatedNetSavings?: number;
+    currency?: string;
+    source?: 'payg-cost' | 'amortized' | 'retail' | 'unknown';
+    confidence?: number;
+    assumptions?: string[];
+    benefitIds?: string[];
+    benefitNames?: string[];
+    recommendationIds?: string[];
+    obsoleteCandidateIds?: string[];
+}
 export interface CommitmentsPricingContext {
-    source: 'retail' | 'negotiated' | 'unknown';
+    source: 'retail' | 'negotiated' | 'unknown' | 'recommendation-apis';
     currency?: string;
     assumptions?: string[];
     confidenceNotes?: string;

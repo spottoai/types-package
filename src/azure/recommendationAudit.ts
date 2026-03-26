@@ -73,6 +73,7 @@ export type GetRecommendationAuditQuery = GetRecommendationAuditQueryCanonical;
 export type RecommendationAuditEventType =
   | 'Viewed'
   | 'Added'
+  | 'Archived'
   | 'CommentAdded'
   | 'CommentUpdated'
   | 'CommentDeleted'
