@@ -18,9 +18,7 @@ const cloudAccountWithRecommendationEffortProfile: CloudAccount = {
   createdBy: 'user-123',
   status: 'Active',
   effortProfile: 'enterprise',
-  readBitmask:
-    CloudAccountReadPermission.ManagementGroupReader |
-    CloudAccountReadPermission.GraphApplicationReadAll,
+  readBitmask: CloudAccountReadPermission.ManagementGroupReader | CloudAccountReadPermission.GraphApplicationReadAll,
 };
 
 const cloudAccountWithoutRecommendationEffortProfile: CloudAccount = {
@@ -32,13 +30,9 @@ const cloudAccountWithoutRecommendationEffortProfile: CloudAccount = {
 void cloudAccountWithRecommendationEffortProfile;
 void cloudAccountWithoutRecommendationEffortProfile;
 
-const combinedSubscriptionReadPermission =
-  SubscriptionReadPermission.MonitoringReader |
-  SubscriptionReadPermission.LogAnalyticsDataReader;
+const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
 
-const combinedCloudAccountReadPermission =
-  CloudAccountReadPermission.ReservationsReader |
-  CloudAccountReadPermission.SavingsPlanReader;
+const combinedCloudAccountReadPermission = CloudAccountReadPermission.ReservationsReader | CloudAccountReadPermission.SavingsPlanReader;
 
 const subscriptionReadPermissionMetadataShapeCheck = SUBSCRIPTION_READ_PERMISSIONS_METADATA.map(item => ({
   id: item.id,
