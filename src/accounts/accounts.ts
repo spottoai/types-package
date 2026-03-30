@@ -29,6 +29,7 @@ export interface CloudAccount {
   writeSecretExpiresAt?: Date;
   writeClientId?: string;
   writeBitmask?: number;
+  readBitmask?: number;
 }
 
 export interface SubscriptionInfoBase {
@@ -58,6 +59,7 @@ export interface SubscriptionInfoBase {
   billingItems?: number;
   activityItems?: number;
   eventId?: string;
+  readBitmask?: number;
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {
