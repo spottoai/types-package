@@ -56,3 +56,33 @@ export interface ResourceLink {
   doc: string;
   disabled?: boolean;
 }
+
+export interface AzureResourceNotesFields {
+  knownIssues?: string;
+  troubleshooting?: string;
+  performance?: string;
+  maintenance?: string;
+  migration?: string;
+  dependencies?: string;
+  securityCompliance?: string;
+}
+
+export type AzureResourceNotesField = keyof AzureResourceNotesFields;
+
+export interface GetAzureResourceNotesQuery {
+  resourceId: string;
+}
+
+export interface AzureResourceNotes {
+  resourceId: string;
+  subscriptionId: string;
+  notes: AzureResourceNotesFields;
+  updatedAt?: string;
+  updatedByUserId?: string;
+  updatedByDisplayName?: string;
+}
+
+export interface SaveAzureResourceNotesRequest {
+  resourceId: string;
+  notes: AzureResourceNotesFields;
+}
