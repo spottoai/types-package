@@ -136,4 +136,3 @@ export interface ISubscriptionBenefitsSummary {
   esr: IEffectiveSavingsRateSummary[];
   warnings?: string[];
 }
-
