@@ -31,6 +31,7 @@ const resourceFeedQuery: GetRecommendationAuditQuery = {
   providerScopeId: 'sub-123',
   scope: 'resource',
   view: 'providerScope-feed',
+  recommendationId: 'rec-123',
   limit: 500,
 };
 
@@ -78,6 +79,12 @@ const rowColumnsWithAddedEventType: RecommendationAuditEventRowColumns = {
   EventType: 'Added',
 };
 
+const rowColumnsWithArchivedEventType: RecommendationAuditEventRowColumns = {
+  ...rowColumns,
+  EventId: 'evt-4',
+  EventType: 'Archived',
+};
+
 const timelineItem: RecommendationAuditTimelineEvent = {
   eventId: 'evt-1',
   eventType: 'Viewed',
@@ -107,7 +114,18 @@ const timelineItemWithAddedEventType: RecommendationAuditTimelineEvent = {
   eventType: 'Added',
 };
 
-const response: RecommendationAuditQueryResponse = [timelineItem, timelineItemWithNullableDisplayName, timelineItemWithAddedEventType];
+const timelineItemWithArchivedEventType: RecommendationAuditTimelineEvent = {
+  ...timelineItem,
+  eventId: 'evt-4',
+  eventType: 'Archived',
+};
+
+const response: RecommendationAuditQueryResponse = [
+  timelineItem,
+  timelineItemWithNullableDisplayName,
+  timelineItemWithAddedEventType,
+  timelineItemWithArchivedEventType,
+];
 
 void resourceTargetQuery;
 void subscriptionTargetQuery;
@@ -118,6 +136,7 @@ void canonicalSubscriptionFeed;
 void rowColumns;
 void rowColumnsWithNullableDisplayName;
 void rowColumnsWithAddedEventType;
+void rowColumnsWithArchivedEventType;
 void response;
 
 // @ts-expect-error target view requires recommendationId.
@@ -155,6 +174,14 @@ const invalidCanonicalAliasScope: GetRecommendationAuditQueryCanonical = {
   recommendationId: 'rec-123',
 };
 
+// @ts-expect-error provider-scope feed queries require recommendationId.
+const invalidFeedWithoutRecommendationId: GetRecommendationAuditQuery = {
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  scope: 'subscription',
+  view: 'providerScope-feed',
+};
+
 // @ts-expect-error row kind is constrained to the four storage row prefixes.
 const invalidRowKind: RecommendationAuditRowKind = 'target';
 
@@ -163,6 +190,7 @@ const invalidTrackViewType: GetRecommendationAuditQuery = {
   providerScopeId: 'sub-123',
   scope: 'subscription',
   view: 'providerScope-feed',
+  recommendationId: 'rec-123',
   // @ts-expect-error trackView must be boolean.
   trackView: 'true',
 };
@@ -188,6 +216,7 @@ void invalidTargetWithoutRecommendationId;
 void invalidResourceTargetWithoutResourceId;
 void invalidFeedWithResourceId;
 void invalidCanonicalAliasScope;
+void invalidFeedWithoutRecommendationId;
 void invalidRowKind;
 void invalidTrackViewType;
 void invalidEnvelopeAsCanonicalResponse;

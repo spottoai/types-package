@@ -1,4 +1,5 @@
 import { SurveyResponse } from '../company';
+import type { EffortEstimateProfileName } from '../azure/recommendations';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 
@@ -22,10 +23,13 @@ export interface CloudAccount {
   createdBy: string;
   status: string;
   objectives?: SurveyResponse[];
+  /** Preferred recommendation effort-estimate profile for this cloud account. */
+  effortProfile?: EffortEstimateProfileName;
   writeSecret?: string;
   writeSecretExpiresAt?: Date;
   writeClientId?: string;
   writeBitmask?: number;
+  readBitmask?: number;
 }
 
 export interface SubscriptionInfoBase {
@@ -55,6 +59,7 @@ export interface SubscriptionInfoBase {
   billingItems?: number;
   activityItems?: number;
   eventId?: string;
+  readBitmask?: number;
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {

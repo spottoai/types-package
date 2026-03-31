@@ -28,7 +28,7 @@ export interface SubscriptionMessage {
   authClientSecret?: string;
   authTenantId?: string;
   subscription: Subscription;
-  companyId?: string;
+  companyId: string;
   cloudAccountId?: string;
   tenantId?: string;
   clientId?: string;
