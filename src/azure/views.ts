@@ -28,6 +28,8 @@ export interface AzureResourcesView {
   subscription: SubscriptionSummaryLite;
   timestamp: string;
   resources: AzureResourcePortalItem[];
+  /** 30-day billed spend not attributable to a specific resource (e.g. misc/security add-ons) */
+  miscCost?: number;
   /** e.g. { "environment": ["production", "staging"], "team": ["devops", "frontend"] } */
   tags?: Record<string, string[]>;
   spottoTags?: Tags;
@@ -74,12 +76,18 @@ export interface AzureResourcePortalItem {
   spendEstimated?: number;
   /** Estimated portion of amortized spend over the last 30 days */
   spendAmortizedEstimated?: number;
-  /** Source of spend value (billing or high-confidence estimate fallback) */
-  spendSource?: Exclude<SpendDataSource, 'blended'>;
+  /** Source of spend value */
+  spendSource?: SpendDataSource;
   /** Confidence for spend source attribution */
   spendSourceConfidence?: 'high' | 'unknown';
   /** Optional source detail such as estimator method */
   spendSourceDetail?: string;
+  /** Last day with actual billed cost for this resource in the current window */
+  billingActualThroughDate?: number;
+  /** First day of estimation gap (typically billingActualThroughDate + 1) */
+  estimationCutoffStartDate?: number;
+  /** Which savings basis should be shown for this resource */
+  savingsBasis?: 'billed' | 'amortized';
   savings?: SavingsPotential;
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
@@ -141,12 +149,16 @@ export interface AzureResourcePluginItem {
   spendEstimated?: number;
   /** Estimated portion of amortized cost total */
   spendAmortizedEstimated?: number;
-  /** Source of cost value (billing or high-confidence estimate fallback) */
-  costSource?: Exclude<SpendDataSource, 'blended'>;
+  /** Source of cost value */
+  costSource?: SpendDataSource;
   /** Confidence for cost source attribution */
   costSourceConfidence?: 'high' | 'unknown';
   /** Optional source detail such as estimator method */
   costSourceDetail?: string;
+  /** Last day with actual billed cost for this resource in the current window */
+  billingActualThroughDate?: number;
+  /** First day of estimation gap (typically billingActualThroughDate + 1) */
+  estimationCutoffStartDate?: number;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
@@ -171,6 +183,11 @@ export interface AzureResourcePluginItemDetailed {
   spendAmortizedActual?: number;
   spendEstimated?: number;
   spendAmortizedEstimated?: number;
+  costSource?: SpendDataSource;
+  costSourceConfidence?: 'high' | 'unknown';
+  costSourceDetail?: string;
+  billingActualThroughDate?: number;
+  estimationCutoffStartDate?: number;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;

@@ -1,5 +1,15 @@
 import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
+import type { SpendDataSource } from './subscriptions.js';
+
+export type ResourceCostSource = SpendDataSource;
+
+export type CostSourceConfidence = 'high' | 'unknown';
+
+export interface CostDateRangeMetadata {
+  startDate: number;
+  endDate: number;
+}
 
 export interface CostDetails {
   /** the amount spend on the resource over the last 30 days */
@@ -138,6 +148,36 @@ export interface ResourceCostSummary {
   savingsRange?: SavingsRange;
   /** Reference to the recommendation that this target cost is associated with */
   recommendationId?: string;
+  /** Billing and estimated split metadata */
+  costSource?: ResourceCostSource;
+  costSourceConfidence?: CostSourceConfidence;
+  costSourceDetail?: string;
+  spendActual?: number;
+  spendEstimated?: number;
+  spendAmortizedActual?: number;
+  spendAmortizedEstimated?: number;
+  /** Explainability metadata for estimated/blended rows */
+  estimationMethod?: string;
+  estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma' | string;
+  pricingSource?: 'billing' | 'retail' | 'manual' | string;
+  estimationFormula?: string;
+  estimationInputs?: Record<string, unknown>;
+  estimationRates?: Record<string, number>;
+  estimationDetails?: Record<string, unknown>;
+  /** Per-source date ranges derived from daily records */
+  billingDateRange?: CostDateRangeMetadata;
+  estimatedDateRange?: CostDateRangeMetadata;
+  /** Optional resource-level cutoff markers (when attached at item level) */
+  billingActualThroughDate?: number;
+  estimationCutoffStartDate?: number;
+  /** Unit normalization/debug metadata */
+  quantityRaw?: number;
+  unitOfMeasureRaw?: string;
+  unitPriceRaw?: string;
+  unitPriceAmortizedRaw?: string;
+  quantityNormalized?: number;
+  unitOfMeasureNormalized?: string;
+  unitNormalizationFactor?: number;
 }
 
 export interface SavingsRange {
