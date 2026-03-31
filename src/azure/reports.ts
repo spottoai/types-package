@@ -128,6 +128,18 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     ma14?: string[];
     ma?: string[];
   };
+  /** Last day with actual billed cost in the current estimation window */
+  billingActualThroughDate?: number;
+  /** First estimated day in the current estimation window */
+  estimationStartDate?: number;
+  /** Last estimated day in the current estimation window */
+  estimationEndDate?: number;
+  /** Resource lifecycle end date (if known) used to cap estimation */
+  resourceLifecycleEndDate?: number;
+  /** Detected billing cadence for this node */
+  billingCadence?: 'daily' | 'monthly' | 'unknown';
+  /** Confidence of billing cadence detection */
+  billingCadenceConfidence?: 'high' | 'medium' | 'low';
   /**
    * Type of this node: 'subscription' | 'resourceGroup' | 'provider' | 'service' | 'resource' | 'deployment' | 'component'
    * Helps frontend understand the hierarchy and render appropriately

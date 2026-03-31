@@ -10,6 +10,7 @@ export * from './azure/payloads';
 export * from './azure/prices';
 export * from './azure/relationships';
 export * from './azure/recommendations';
+export * from './azure/recommendationAudit';
 export * from './azure/recommendationState';
 export * from './azure/resources';
 export * from './azure/reports';

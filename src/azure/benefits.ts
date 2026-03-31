@@ -12,7 +12,7 @@ export interface IBenefitUtilization {
   oneDay?: number;
   sevenDay?: number;
   thirtyDay?: number;
-  source?: 'aggregate' | 'usage';
+  source?: 'aggregate' | 'usage' | 'reservation-summary';
 }
 
 export interface IBenefit {
@@ -27,6 +27,24 @@ export interface IBenefit {
   purchaseDate?: string | null;
   reservedQuantity?: number;
   commitmentAmount?: number;
+  commitmentCurrencyCode?: string;
+  commitmentGrain?: string;
+  commitmentUnit?: string;
+  skuName?: string;
+  skuDescription?: string;
+  location?: string;
+  term?: string;
+  billingPlan?: string;
+  billingScopeId?: string;
+  appliedScopeDisplayName?: string;
+  provisioningState?: string;
+  renew?: boolean;
+  purchasedQuantity?: number;
+  usedQuantity?: number;
+  remainingQuantity?: number;
+  totalReservedQuantity?: number;
+  reservedHours?: number;
+  usedHours?: number;
   utilization?: IBenefitUtilization;
 }
 
@@ -118,3 +136,4 @@ export interface ISubscriptionBenefitsSummary {
   esr: IEffectiveSavingsRateSummary[];
   warnings?: string[];
 }
+
