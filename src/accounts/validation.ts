@@ -1,11 +1,7 @@
 import type { SubscriptionAccount } from './accounts';
 
 export type SubscriptionValidationStatus =
-  | 'confirmed'
-  | 'forbidden'
-  | 'unauthorized'
-  | 'throttled'
-  | 'unavailable';
+  'confirmed' | 'forbidden' | 'unauthorized' | 'throttled' | 'unavailable';
 
 export interface SubscriptionReadValidationResult {
   subscription: SubscriptionAccount;
