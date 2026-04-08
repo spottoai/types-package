@@ -1,3 +1,4 @@
+import type { SubscriptionAccount } from './accounts';
 /**
  * Subscription-scoped read capability bitmask enum.
  * Each capability maps to a single bit.
@@ -39,6 +40,28 @@ export interface CloudAccountReadPermissionMetadata {
     displayName: string;
     description: string;
     requiredRoles: string[];
+}
+export type SubscriptionValidationStatus = 'confirmed' | 'unauthorized' | 'forbidden' | 'throttled' | 'unavailable';
+export interface SubscriptionReadValidationResult {
+    subscription: SubscriptionAccount;
+    valid: boolean;
+    status: SubscriptionValidationStatus;
+    statusCode: number;
+    message?: string;
+}
+export interface CloudAccountReadAccessValidation {
+    valid: boolean;
+    subscriptions: SubscriptionAccount[];
+    subscriptionResults: SubscriptionReadValidationResult[];
+}
+export interface CloudAccountWriteAccessValidation {
+    valid: boolean;
+    subscriptions: SubscriptionAccount[];
+}
+export interface CloudAccountValidationResult {
+    valid: boolean;
+    readAccess: CloudAccountReadAccessValidation;
+    writeAccess?: CloudAccountWriteAccessValidation;
 }
 export declare const SUBSCRIPTION_READ_PERMISSIONS_METADATA: SubscriptionReadPermissionMetadata[];
 export declare const CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA: CloudAccountReadPermissionMetadata[];
