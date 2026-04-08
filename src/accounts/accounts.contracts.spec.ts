@@ -1,4 +1,5 @@
 import type { CloudAccount } from './accounts';
+import type { CloudAccountTenantSyncRequestMessage } from '../index';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -27,8 +28,17 @@ const cloudAccountWithoutRecommendationEffortProfile: CloudAccount = {
   effortProfile: undefined,
 };
 
+const cloudAccountWithTenantSyncState: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  id: 'tenant-client-id-789',
+  tenantSyncStatus: 'Requested',
+  tenantSyncRequestedAt: new Date('2026-04-02T00:00:00.000Z'),
+  tenantSyncSource: 'manual',
+};
+
 void cloudAccountWithRecommendationEffortProfile;
 void cloudAccountWithoutRecommendationEffortProfile;
+void cloudAccountWithTenantSyncState;
 
 const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
 
@@ -52,7 +62,29 @@ const invalidCloudAccountRecommendationEffortProfile: CloudAccount = {
   effortProfile: 'manual',
 };
 
+const tenantSyncRequestMessage: CloudAccountTenantSyncRequestMessage = {
+  entity: 'cloudaccount',
+  action: 'tenant-sync',
+  companyId: 'comp-123',
+  cloudAccountId: 'tenant-client-id-123',
+  tenantId: 'tenant-123',
+  clientId: 'tenant-client-id-123',
+  source: 'manual',
+};
+
+// @ts-expect-error CloudAccountTenantSyncRequestMessage.source is required.
+const invalidTenantSyncRequestMessage: CloudAccountTenantSyncRequestMessage = {
+  entity: 'cloudaccount',
+  action: 'tenant-sync',
+  companyId: 'comp-123',
+  cloudAccountId: 'tenant-client-id-123',
+  tenantId: 'tenant-123',
+  clientId: 'tenant-client-id-123',
+};
+
 void invalidCloudAccountRecommendationEffortProfile;
+void tenantSyncRequestMessage;
+void invalidTenantSyncRequestMessage;
 void combinedSubscriptionReadPermission;
 void combinedCloudAccountReadPermission;
 void subscriptionReadPermissionMetadataShapeCheck;

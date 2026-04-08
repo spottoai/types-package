@@ -279,6 +279,8 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
 export interface RecommendationActionRequest extends ProviderScope {
   /** `providerScope` maps to subscription identity for Azure providers. */
   scope?: CommentScope;
+  /** Optional cloud-account identity enriched by trusted server-side callers before queue publish. */
+  cloudAccountId?: string;
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];

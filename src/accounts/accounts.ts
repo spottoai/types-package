@@ -2,6 +2,8 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
+export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
+export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 
 export interface CloudAccount {
   /** Partition Key */
@@ -30,6 +32,12 @@ export interface CloudAccount {
   writeClientId?: string;
   writeBitmask?: number;
   readBitmask?: number;
+  tenantSyncStatus?: CloudAccountTenantSyncStatus;
+  tenantSyncRequestedAt?: Date;
+  tenantSyncStartedAt?: Date;
+  tenantSyncCompletedAt?: Date;
+  tenantSyncError?: string;
+  tenantSyncSource?: CloudAccountTenantSyncSource;
 }
 
 export interface SubscriptionInfoBase {
