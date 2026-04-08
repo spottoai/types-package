@@ -14,6 +14,7 @@ export declare enum RecommendationCategory {
     OperationalExcellenceAlternative = "Operational Excellence"
 }
 export type RecommendationPriorityTier = 'must_do' | 'normal';
+export type EffortEstimateProfileName = 'clickops' | 'devops' | 'enterprise';
 export interface RecommendationBaseScores {
     cost_optimization: number;
     security: number;
@@ -21,6 +22,42 @@ export interface RecommendationBaseScores {
     reliability: number;
     compliance: number;
     operational_excellence: number;
+}
+export interface RecommendationEffortEstimateBreakdown {
+    discovery: number;
+    implementation: number;
+    validation: number;
+    rollbackPlanning: number;
+    coordination: number;
+}
+export interface RecommendationEffortEstimateProfile {
+    effortHours: number;
+    breakdown: RecommendationEffortEstimateBreakdown;
+    reason: string;
+}
+export interface RecommendationEffortEstimateProfiles {
+    clickops: RecommendationEffortEstimateProfile;
+    devops: RecommendationEffortEstimateProfile;
+    enterprise: RecommendationEffortEstimateProfile;
+}
+export interface RecommendationBulkEffortEstimateProfile {
+    setupHours: number;
+    perResourceHours: number;
+    validationHours: number;
+}
+export interface RecommendationBulkEffortEstimateProfiles {
+    clickops: RecommendationBulkEffortEstimateProfile;
+    devops: RecommendationBulkEffortEstimateProfile;
+    enterprise: RecommendationBulkEffortEstimateProfile;
+}
+export interface RecommendationBulkEffortEstimates {
+    supported: boolean;
+    threshold: number;
+    profiles: RecommendationBulkEffortEstimateProfiles;
+}
+export interface RecommendationEffortEstimates {
+    profiles: RecommendationEffortEstimateProfiles;
+    bulk: RecommendationBulkEffortEstimates;
 }
 export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;
@@ -47,6 +84,8 @@ export interface Recommendation {
     effortReason?: string;
     /** e.g. 10 hours */
     effortHours?: number;
+    /** Detailed implementation estimates by delivery profile and bulk rollout mode. */
+    effortEstimates?: RecommendationEffortEstimates;
     risk?: string;
     riskReason?: string;
     /** Could deprecate later */
@@ -219,6 +258,7 @@ export interface RecommendationActionRequest extends ProviderScope {
     resourceGroupName?: string;
     companyId: string;
     byUserId?: string;
+    byUserDisplayName?: string;
 }
 export interface RecommendationActionResponse {
     success: boolean;

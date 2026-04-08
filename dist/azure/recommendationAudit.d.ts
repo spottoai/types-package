@@ -43,13 +43,13 @@ export type SubscriptionTargetRecommendationAuditQuery = RecommendationAuditQuer
 export type ResourceProviderScopeFeedRecommendationAuditQuery = RecommendationAuditQueryBase & {
     scope: 'resource';
     view: 'providerScope-feed';
-    recommendationId?: string;
+    recommendationId: string;
     resourceId?: never;
 };
 export type SubscriptionProviderScopeFeedRecommendationAuditQuery = RecommendationAuditQueryBase & {
     scope: 'subscription';
     view: 'providerScope-feed';
-    recommendationId?: string;
+    recommendationId: string;
     resourceId?: never;
 };
 export type GetRecommendationAuditQueryCanonical = ResourceTargetRecommendationAuditQuery | SubscriptionTargetRecommendationAuditQuery | ResourceProviderScopeFeedRecommendationAuditQuery | SubscriptionProviderScopeFeedRecommendationAuditQuery;
