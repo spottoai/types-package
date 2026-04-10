@@ -864,6 +864,26 @@ export interface AIChatTurnSnapshot {
   collaborationRun?: AIChatCollaborationRun;
 }
 
+export interface AIChatRuntimeEvalSignals {
+  observedLeadSpecialist?: string;
+  observedSkillIds?: string[];
+  observedSpecialistDomains?: string[];
+  observedToolNames?: string[];
+  observedEvidenceKinds?: string[];
+  observedWorkflowOutcomes?: string[];
+  retrievalExecuted?: boolean;
+  followupPassExecuted?: boolean;
+  evidenceEntryCount?: number;
+  evidenceGapCount?: number;
+  sourceTypes?: AIChatRetrievalSourceType[];
+  memoryMatchCount?: number;
+  recommendationDetected?: boolean;
+  tradeoffDiscussionDetected?: boolean;
+  uncertaintyLanguageDetected?: boolean;
+  clarificationObserved?: boolean;
+  contextSufficientForAnswering?: boolean;
+}
+
 export interface AIChatFinalSnapshot {
   /**
    * Authoritative final turn state. Additional stage outputs are additive sidecars.
@@ -887,6 +907,7 @@ export interface AIChatFinalSnapshot {
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatAuditArtifact {
@@ -915,6 +936,7 @@ export interface AIChatAuditArtifact {
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
   analysisConfidence?: number;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatApprovalDecision {
@@ -1023,6 +1045,7 @@ export interface AIChatTerminalSnapshot {
   turnSnapshot: AIChatTurnSnapshot;
   finalSnapshot?: AIChatFinalSnapshot;
   auditArtifact?: AIChatAuditArtifact;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
   resolvedResponseMode?: AIChatResolvedResponseMode;
   chatMode?: AIChatMode;
   resolvedScope?: AIResolvedWorkspaceScope;
