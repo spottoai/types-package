@@ -884,26 +884,6 @@ export interface AIChatTurnSnapshot {
   collaborationRun?: AIChatCollaborationRun;
 }
 
-export interface AIChatRuntimeEvalSignals {
-  observedLeadSpecialist?: string;
-  observedSkillIds?: string[];
-  observedSpecialistDomains?: string[];
-  observedToolNames?: string[];
-  observedEvidenceKinds?: string[];
-  observedWorkflowOutcomes?: string[];
-  retrievalExecuted?: boolean;
-  followupPassExecuted?: boolean;
-  evidenceEntryCount?: number;
-  evidenceGapCount?: number;
-  sourceTypes?: AIChatRetrievalSourceType[];
-  memoryMatchCount?: number;
-  recommendationDetected?: boolean;
-  tradeoffDiscussionDetected?: boolean;
-  uncertaintyLanguageDetected?: boolean;
-  clarificationObserved?: boolean;
-  contextSufficientForAnswering?: boolean;
-}
-
 export interface AIChatFinalSnapshot {
   /**
    * Authoritative final turn state. Additional stage outputs are additive sidecars.
