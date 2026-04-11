@@ -473,6 +473,26 @@ export interface AIChatEvidenceCoverage {
   memoryMatches?: AIChatMemoryMatch[];
 }
 
+export interface AIChatRuntimeEvalSignals {
+  observedLeadSpecialist?: string;
+  observedSkillIds: string[];
+  observedSpecialistDomains: string[];
+  observedToolNames: string[];
+  observedEvidenceKinds: string[];
+  observedWorkflowOutcomes: string[];
+  retrievalExecuted: boolean;
+  followupPassExecuted: boolean;
+  evidenceEntryCount: number;
+  evidenceGapCount: number;
+  sourceTypes: AIChatRetrievalSourceType[];
+  memoryMatchCount: number;
+  recommendationDetected: boolean;
+  tradeoffDiscussionDetected: boolean;
+  uncertaintyLanguageDetected: boolean;
+  clarificationObserved: boolean;
+  contextSufficientForAnswering: boolean;
+}
+
 export interface AIChatReconnectState {
   status: 'connected' | 'reconnecting' | 'resumed' | 'restarted' | 'degraded';
   message?: string;
@@ -1030,6 +1050,18 @@ export interface AIConversationListItem extends AIConversationRoutingMetadata {
   lastResponseTime?: Date | string;
   pageUrl?: string;
   pageType?: string;
+}
+
+export type AIChatConversationFeedback = 'ThumbsUp' | 'ThumbsDown';
+
+export interface AIChatConversationFeedbackUpdateRequest {
+  feedback: AIChatConversationFeedback | null;
+}
+
+export interface AIChatConversationFeedbackUpdateResponse {
+  conversationId: string;
+  feedback: AIChatConversationFeedback | null;
+  updatedAt: string;
 }
 
 export interface AIChatUsage {
