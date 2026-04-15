@@ -1,4 +1,4 @@
-/** Dev-only Vite entrypoint that avoids stale sibling .js files under src/. */
+/** Main entry point - export all interfaces from this package */
 export * from './azure/common';
 export * from './azure/budgets';
 export * from './azure/billingPlots';
@@ -32,4 +32,4 @@ export * from './events/index';
 export * from './integrations/index';
 export * from './identity/index';
 export * from './tags/index';
-//# sourceMappingURL=index.vite.d.ts.map
+//# sourceMappingURL=index.d.ts.map

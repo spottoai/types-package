@@ -1,6 +1,6 @@
 {
   "name": "@spottoai/types-package",
-  "version": "1.0.2-beta.179",
+  "version": "1.0.2-beta.183",
   "description": "Shared TypeScript interfaces for SpottoAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -16,7 +16,7 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "prepare": "husky install",
+    "prepare": "test -x ./node_modules/.bin/husky && ./node_modules/.bin/husky install || true",
     "build:check": "./scripts/build-check.sh"
   },
   "keywords": [
