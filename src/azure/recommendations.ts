@@ -173,6 +173,18 @@ export interface RecommendationWithResources {
   savings?: SavingsPotential;
 }
 
+/**
+ * Contextual links from one recommendation row to other resources.
+ * Used to model "this disk belongs to that VM" style associations
+ * without changing which resource owns savings totals.
+ */
+export interface RecommendationResourceAssociation {
+  id: string;
+  name?: string;
+  type?: string;
+  relationship?: ResourceRelationship;
+}
+
 export interface RecommendationResource {
   id: string;
   name: string;
@@ -183,6 +195,7 @@ export interface RecommendationResource {
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
+  associations?: RecommendationResourceAssociation[];
 }
 
 export interface RecommendationsView {
@@ -206,6 +219,7 @@ export interface ResourceReference {
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
+  associations?: RecommendationResourceAssociation[];
 }
 
 export type ResourceRelationship = {
