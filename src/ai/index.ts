@@ -473,6 +473,26 @@ export interface AIChatEvidenceCoverage {
   memoryMatches?: AIChatMemoryMatch[];
 }
 
+export interface AIChatRuntimeEvalSignals {
+  observedLeadSpecialist?: string;
+  observedSkillIds: string[];
+  observedSpecialistDomains: string[];
+  observedToolNames: string[];
+  observedEvidenceKinds: string[];
+  observedWorkflowOutcomes: string[];
+  retrievalExecuted: boolean;
+  followupPassExecuted: boolean;
+  evidenceEntryCount: number;
+  evidenceGapCount: number;
+  sourceTypes: AIChatRetrievalSourceType[];
+  memoryMatchCount: number;
+  recommendationDetected: boolean;
+  tradeoffDiscussionDetected: boolean;
+  uncertaintyLanguageDetected: boolean;
+  clarificationObserved: boolean;
+  contextSufficientForAnswering: boolean;
+}
+
 export interface AIChatReconnectState {
   status: 'connected' | 'reconnecting' | 'resumed' | 'restarted' | 'degraded';
   message?: string;
@@ -887,6 +907,7 @@ export interface AIChatFinalSnapshot {
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatAuditArtifact {
@@ -915,6 +936,7 @@ export interface AIChatAuditArtifact {
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
   analysisConfidence?: number;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatApprovalDecision {
@@ -1010,6 +1032,18 @@ export interface AIConversationListItem extends AIConversationRoutingMetadata {
   pageType?: string;
 }
 
+export type AIChatConversationFeedback = 'ThumbsUp' | 'ThumbsDown';
+
+export interface AIChatConversationFeedbackUpdateRequest {
+  feedback: AIChatConversationFeedback | null;
+}
+
+export interface AIChatConversationFeedbackUpdateResponse {
+  conversationId: string;
+  feedback: AIChatConversationFeedback | null;
+  updatedAt: string;
+}
+
 export interface AIChatUsage {
   promptTokens: number;
   completionTokens: number;
@@ -1023,6 +1057,7 @@ export interface AIChatTerminalSnapshot {
   turnSnapshot: AIChatTurnSnapshot;
   finalSnapshot?: AIChatFinalSnapshot;
   auditArtifact?: AIChatAuditArtifact;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
   resolvedResponseMode?: AIChatResolvedResponseMode;
   chatMode?: AIChatMode;
   resolvedScope?: AIResolvedWorkspaceScope;

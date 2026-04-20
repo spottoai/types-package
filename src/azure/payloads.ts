@@ -9,6 +9,8 @@ export interface ProcessPayload {
   authClientSecret?: string;
   authTenantId?: string;
   companyId?: string;
+  cloudAccountId?: string;
+  clientId?: string;
 }
 
 export interface RequestMessage {
