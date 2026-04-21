@@ -1,4 +1,5 @@
 import { Subscription, SubscriptionPolicies } from './subscriptions.js';
+import type { CloudAccountTenantSyncSource } from '../accounts/accounts.js';
 export interface ProcessPayload {
     subscriptionId?: string;
     tenantId?: string;
@@ -7,6 +8,8 @@ export interface ProcessPayload {
     authClientSecret?: string;
     authTenantId?: string;
     companyId?: string;
+    cloudAccountId?: string;
+    clientId?: string;
 }
 export interface RequestMessage {
     entity: string;
@@ -18,6 +21,13 @@ export interface RequestMessage {
     clientId: string;
     subscriptionId?: string;
     refreshComponents?: string[];
+}
+export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
+    entity: 'cloudaccount' | 'cloudaccounts';
+    action: 'tenant-sync';
+    byUserId?: string;
+    source: CloudAccountTenantSyncSource;
+    correlationId?: string;
 }
 export interface SubscriptionMessage {
     authToken?: string;

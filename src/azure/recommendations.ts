@@ -75,7 +75,76 @@ export interface RecommendationResources {
   resourceIds: string[];
 }
 
+export interface RecommendationRenderStrategy<
+  TKey extends string = string,
+  TPayload = unknown,
+> {
+  /** Registry key used by UI render strategy mapping. */
+  key: TKey;
+  /** Version of the strategy payload contract. */
+  version: number;
+  /** Strategy-specific view model consumed by render components. */
+  payload: TPayload;
+}
+
+export type HddSsdMigrationTargetTier = 'standardSsd' | 'premiumSsd';
+
+export interface HddOsRetirementCurrentDiskPricing {
+  storageTier: 'standardHdd';
+  skuName: string;
+  sizeGiB: number;
+  monthlyActual: number;
+  monthlyRetail: number;
+}
+
+export interface HddOsRetirementTargetDiskPricing {
+  storageTier: HddSsdMigrationTargetTier;
+  skuName: string;
+  sizeGiB: number;
+  monthlyRetail: number;
+}
+
+export interface HddOsRetirementDiskRenderItem {
+  resourceId: string;
+  resourceName: string;
+  resourceType: string;
+  current: HddOsRetirementCurrentDiskPricing;
+  standardSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'standardSsd' };
+  premiumSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'premiumSsd' };
+  defaultSelection?: HddSsdMigrationTargetTier;
+}
+
+export interface HddOsRetirementRenderStrategyPayload {
+  retirementDate: string;
+  retirementLink: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  defaultTargetTier?: HddSsdMigrationTargetTier;
+  impactedDiskCount: number;
+  currentMonthlyActual: number;
+  currentMonthlyRetail: number;
+  standardSsdMonthlyRetail: number;
+  premiumSsdMonthlyRetail: number;
+  standardSsdMonthlyDelta: number;
+  premiumSsdMonthlyDelta: number;
+  disks: HddOsRetirementDiskRenderItem[];
+}
+
+export type HddOsRetirementRecommendationRenderStrategy = RecommendationRenderStrategy<
+  'azure_hdd_os_retirement',
+  HddOsRetirementRenderStrategyPayload
+>;
+
+export type RecommendationKnownRenderStrategy =
+  | HddOsRetirementRecommendationRenderStrategy;
+
+export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<
+  string,
+  unknown
+>;
+
 export interface Recommendation {
+  /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
   id: string;
   name: string;
   category: RecommendationCategory;
@@ -145,6 +214,17 @@ export interface Recommendation {
   finalScore?: number;
   /** UI display-only normalized score (0-100). */
   normalizedScore?: number;
+  /** Cross-feature linkage IDs used for deep links and related views. */
+  linkingIds?: RecommendationLinkingIds;
+  /**
+   * Optional UI render strategy metadata.
+   * `renderStrategy.key` is a renderer key and is intentionally separate from `id`.
+   */
+  renderStrategy?: RecommendationKnownRenderStrategy | AnyRecommendationRenderStrategy;
+}
+
+export interface RecommendationLinkingIds {
+  serviceRetirementIds?: string[];
 }
 
 /** Deprecated **/
@@ -325,6 +405,8 @@ export interface ServiceRetirementRecommendation {
   confidencePercentage: number;
   confidenceReason: string;
   lastProcessedAt: string;
+  /** Related recommendation IDs for cross-navigation from retirement tracker. */
+  linkedRecommendationIds?: string[];
 }
 
 export interface JiraShareDetails {

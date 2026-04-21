@@ -63,6 +63,59 @@ export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;
     resourceIds: string[];
 }
+export interface RecommendationRenderStrategy<TKey extends string = string, TPayload = unknown> {
+    /** Registry key used by UI render strategy mapping. */
+    key: TKey;
+    /** Version of the strategy payload contract. */
+    version: number;
+    /** Strategy-specific view model consumed by render components. */
+    payload: TPayload;
+}
+export type HddSsdMigrationTargetTier = 'standardSsd' | 'premiumSsd';
+export interface HddOsRetirementCurrentDiskPricing {
+    storageTier: 'standardHdd';
+    skuName: string;
+    sizeGiB: number;
+    monthlyActual: number;
+    monthlyRetail: number;
+}
+export interface HddOsRetirementTargetDiskPricing {
+    storageTier: HddSsdMigrationTargetTier;
+    skuName: string;
+    sizeGiB: number;
+    monthlyRetail: number;
+}
+export interface HddOsRetirementDiskRenderItem {
+    resourceId: string;
+    resourceName: string;
+    resourceType: string;
+    current: HddOsRetirementCurrentDiskPricing;
+    standardSsd: HddOsRetirementTargetDiskPricing & {
+        storageTier: 'standardSsd';
+    };
+    premiumSsd: HddOsRetirementTargetDiskPricing & {
+        storageTier: 'premiumSsd';
+    };
+    defaultSelection?: HddSsdMigrationTargetTier;
+}
+export interface HddOsRetirementRenderStrategyPayload {
+    retirementDate: string;
+    retirementLink: string;
+    currencyCode?: string;
+    currencySymbol?: string;
+    defaultTargetTier?: HddSsdMigrationTargetTier;
+    impactedDiskCount: number;
+    currentMonthlyActual: number;
+    currentMonthlyRetail: number;
+    standardSsdMonthlyRetail: number;
+    premiumSsdMonthlyRetail: number;
+    standardSsdMonthlyDelta: number;
+    premiumSsdMonthlyDelta: number;
+    disks: HddOsRetirementDiskRenderItem[];
+}
+export type HddOsRetirementRecommendationRenderStrategy = RecommendationRenderStrategy<'azure_hdd_os_retirement', HddOsRetirementRenderStrategyPayload>;
+export type RecommendationKnownRenderStrategy = HddOsRetirementRecommendationRenderStrategy;
+export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<string, unknown>;
 export interface Recommendation {
     id: string;
     name: string;
@@ -135,6 +188,13 @@ export interface Recommendation {
     finalScore?: number;
     /** UI display-only normalized score (0-100). */
     normalizedScore?: number;
+    /** Cross-feature linkage IDs used for deep links and related views. */
+    linkingIds?: RecommendationLinkingIds;
+    /** Optional strategy-based render model for feature-specific UI components. */
+    renderStrategy?: RecommendationKnownRenderStrategy | AnyRecommendationRenderStrategy;
+}
+export interface RecommendationLinkingIds {
+    serviceRetirementIds?: string[];
 }
 /** Deprecated **/
 export interface CostImpactDetails {
@@ -159,6 +219,17 @@ export interface RecommendationWithResources {
     resources: RecommendationResource[];
     savings?: SavingsPotential;
 }
+/**
+ * Contextual links from one recommendation row to other resources.
+ * Used to model "this disk belongs to that VM" style associations
+ * without changing which resource owns savings totals.
+ */
+export interface RecommendationResourceAssociation {
+    id: string;
+    name?: string;
+    type?: string;
+    relationship?: ResourceRelationship;
+}
 export interface RecommendationResource {
     id: string;
     name: string;
@@ -169,6 +240,7 @@ export interface RecommendationResource {
     currency?: string;
     currencySymbol?: string;
     relationship?: ResourceRelationship;
+    associations?: RecommendationResourceAssociation[];
 }
 export interface RecommendationsView {
     recommendations: RecommendationWithResources[];
@@ -189,6 +261,7 @@ export interface ResourceReference {
     currency?: string;
     currencySymbol?: string;
     relationship?: ResourceRelationship;
+    associations?: RecommendationResourceAssociation[];
 }
 export type ResourceRelationship = {
     role?: 'primary' | 'related';
@@ -252,6 +325,8 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
 export interface RecommendationActionRequest extends ProviderScope {
     /** `providerScope` maps to subscription identity for Azure providers. */
     scope?: CommentScope;
+    /** Optional cloud-account identity enriched by trusted server-side callers before queue publish. */
+    cloudAccountId?: string;
     recommendationId: string;
     recommendationTitle?: string;
     resourceIds: string[];
@@ -280,6 +355,8 @@ export interface ServiceRetirementRecommendation {
     confidencePercentage: number;
     confidenceReason: string;
     lastProcessedAt: string;
+    /** Related recommendation IDs for cross-navigation from retirement tracker. */
+    linkedRecommendationIds?: string[];
 }
 export interface JiraShareDetails {
     projectKey?: string;
