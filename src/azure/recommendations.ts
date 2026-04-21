@@ -75,10 +75,7 @@ export interface RecommendationResources {
   resourceIds: string[];
 }
 
-export interface RecommendationRenderStrategy<
-  TKey extends string = string,
-  TPayload = unknown,
-> {
+export interface RecommendationRenderStrategy<TKey extends string = string, TPayload = unknown> {
   /** Registry key used by UI render strategy mapping. */
   key: TKey;
   /** Version of the strategy payload contract. */
@@ -135,13 +132,9 @@ export type HddOsRetirementRecommendationRenderStrategy = RecommendationRenderSt
   HddOsRetirementRenderStrategyPayload
 >;
 
-export type RecommendationKnownRenderStrategy =
-  | HddOsRetirementRecommendationRenderStrategy;
+export type RecommendationKnownRenderStrategy = HddOsRetirementRecommendationRenderStrategy;
 
-export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<
-  string,
-  unknown
->;
+export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<string, unknown>;
 
 export interface Recommendation {
   /** Business identity of a recommendation record (routing/state/sharing/dedupe). */

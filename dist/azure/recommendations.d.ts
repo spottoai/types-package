@@ -117,6 +117,7 @@ export type HddOsRetirementRecommendationRenderStrategy = RecommendationRenderSt
 export type RecommendationKnownRenderStrategy = HddOsRetirementRecommendationRenderStrategy;
 export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<string, unknown>;
 export interface Recommendation {
+    /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
     id: string;
     name: string;
     category: RecommendationCategory;
@@ -190,7 +191,10 @@ export interface Recommendation {
     normalizedScore?: number;
     /** Cross-feature linkage IDs used for deep links and related views. */
     linkingIds?: RecommendationLinkingIds;
-    /** Optional strategy-based render model for feature-specific UI components. */
+    /**
+     * Optional UI render strategy metadata.
+     * `renderStrategy.key` is a renderer key and is intentionally separate from `id`.
+     */
     renderStrategy?: RecommendationKnownRenderStrategy | AnyRecommendationRenderStrategy;
 }
 export interface RecommendationLinkingIds {

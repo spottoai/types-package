@@ -1,8 +1,4 @@
-import type {
-  HddOsRetirementRecommendationRenderStrategy,
-  Recommendation,
-  RecommendationEffortEstimates,
-} from './recommendations';
+import type { HddOsRetirementRecommendationRenderStrategy, Recommendation, RecommendationEffortEstimates } from './recommendations';
 import { RecommendationCategory } from './recommendations';
 
 const effortEstimates: RecommendationEffortEstimates = {
@@ -97,54 +93,51 @@ const legacyRecommendationWithoutEffortEstimates: Recommendation = {
   effortEstimates: undefined,
 };
 
-const hddRetirementRenderStrategy: HddOsRetirementRecommendationRenderStrategy =
-  {
-    key: 'azure_hdd_os_retirement',
-    version: 1,
-    payload: {
-      retirementDate: '2028-09-08',
-      retirementLink:
-        'https://learn.microsoft.com/en-us/azure/virtual-machines/disks-hdd-os-retirement',
-      currencyCode: 'NZD',
-      currencySymbol: '$',
-      defaultTargetTier: 'standardSsd',
-      impactedDiskCount: 1,
-      currentMonthlyActual: 31.5,
-      currentMonthlyRetail: 31.48033,
-      standardSsdMonthlyRetail: 45.353018,
-      premiumSsdMonthlyRetail: 66.021957,
-      standardSsdMonthlyDelta: 13.872688,
-      premiumSsdMonthlyDelta: 34.541627,
-      disks: [
-        {
-          resourceId:
-            '/subscriptions/sub-dev/resourcegroups/rg-dev-003/providers/microsoft.compute/disks/disk-dev-hdd-db1-os',
-          resourceName: 'disk-dev-hdd-db1-os',
-          resourceType: 'microsoft.compute/disks',
-          current: {
-            storageTier: 'standardHdd',
-            skuName: 'S15 LRS',
-            sizeGiB: 256,
-            monthlyActual: 31.5,
-            monthlyRetail: 31.48033,
-          },
-          standardSsd: {
-            storageTier: 'standardSsd',
-            skuName: 'E15 LRS',
-            sizeGiB: 256,
-            monthlyRetail: 45.353018,
-          },
-          premiumSsd: {
-            storageTier: 'premiumSsd',
-            skuName: 'P15 LRS',
-            sizeGiB: 256,
-            monthlyRetail: 66.021957,
-          },
-          defaultSelection: 'standardSsd',
+const hddRetirementRenderStrategy: HddOsRetirementRecommendationRenderStrategy = {
+  key: 'azure_hdd_os_retirement',
+  version: 1,
+  payload: {
+    retirementDate: '2028-09-08',
+    retirementLink: 'https://learn.microsoft.com/en-us/azure/virtual-machines/disks-hdd-os-retirement',
+    currencyCode: 'NZD',
+    currencySymbol: '$',
+    defaultTargetTier: 'standardSsd',
+    impactedDiskCount: 1,
+    currentMonthlyActual: 31.5,
+    currentMonthlyRetail: 31.48033,
+    standardSsdMonthlyRetail: 45.353018,
+    premiumSsdMonthlyRetail: 66.021957,
+    standardSsdMonthlyDelta: 13.872688,
+    premiumSsdMonthlyDelta: 34.541627,
+    disks: [
+      {
+        resourceId: '/subscriptions/sub-dev/resourcegroups/rg-dev-003/providers/microsoft.compute/disks/disk-dev-hdd-db1-os',
+        resourceName: 'disk-dev-hdd-db1-os',
+        resourceType: 'microsoft.compute/disks',
+        current: {
+          storageTier: 'standardHdd',
+          skuName: 'S15 LRS',
+          sizeGiB: 256,
+          monthlyActual: 31.5,
+          monthlyRetail: 31.48033,
         },
-      ],
-    },
-  };
+        standardSsd: {
+          storageTier: 'standardSsd',
+          skuName: 'E15 LRS',
+          sizeGiB: 256,
+          monthlyRetail: 45.353018,
+        },
+        premiumSsd: {
+          storageTier: 'premiumSsd',
+          skuName: 'P15 LRS',
+          sizeGiB: 256,
+          monthlyRetail: 66.021957,
+        },
+        defaultSelection: 'standardSsd',
+      },
+    ],
+  },
+};
 
 const recommendationWithRenderStrategy: Recommendation = {
   ...recommendationWithEffortEstimates,
@@ -204,32 +197,30 @@ const invalidBulkProfileField: RecommendationEffortEstimates = {
   },
 };
 
-const invalidHddRenderStrategyKey: HddOsRetirementRecommendationRenderStrategy =
-  {
-    // @ts-expect-error HDD retirement render strategy key is fixed.
-    key: 'other_strategy',
-    version: 1,
-    payload: hddRetirementRenderStrategy.payload,
-  };
+const invalidHddRenderStrategyKey: HddOsRetirementRecommendationRenderStrategy = {
+  // @ts-expect-error HDD retirement render strategy key is fixed.
+  key: 'other_strategy',
+  version: 1,
+  payload: hddRetirementRenderStrategy.payload,
+};
 
-const invalidHddCurrentStorageTier: HddOsRetirementRecommendationRenderStrategy =
-  {
-    key: 'azure_hdd_os_retirement',
-    version: 1,
-    payload: {
-      ...hddRetirementRenderStrategy.payload,
-      disks: [
-        {
-          ...hddRetirementRenderStrategy.payload.disks[0],
-          current: {
-            ...hddRetirementRenderStrategy.payload.disks[0].current,
-            // @ts-expect-error current disk in HDD retirement must be standardHdd.
-            storageTier: 'standardSsd',
-          },
+const invalidHddCurrentStorageTier: HddOsRetirementRecommendationRenderStrategy = {
+  key: 'azure_hdd_os_retirement',
+  version: 1,
+  payload: {
+    ...hddRetirementRenderStrategy.payload,
+    disks: [
+      {
+        ...hddRetirementRenderStrategy.payload.disks[0],
+        current: {
+          ...hddRetirementRenderStrategy.payload.disks[0].current,
+          // @ts-expect-error current disk in HDD retirement must be standardHdd.
+          storageTier: 'standardSsd',
         },
-      ],
-    },
-  };
+      },
+    ],
+  },
+};
 
 void missingEnterpriseProfile;
 void invalidBreakdownShape;
