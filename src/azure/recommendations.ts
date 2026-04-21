@@ -105,6 +105,8 @@ export interface HddOsRetirementDiskRenderItem {
   resourceId: string;
   resourceName: string;
   resourceType: string;
+  /** Canonical location key used for pricing lookup, e.g. "westus". */
+  pricingLocation?: string;
   current: HddOsRetirementCurrentDiskPricing;
   standardSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'standardSsd' };
   premiumSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'premiumSsd' };
