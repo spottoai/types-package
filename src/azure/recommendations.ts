@@ -76,10 +76,12 @@ export interface RecommendationResources {
 }
 
 export type HddSsdMigrationTargetTier = 'standardSsd' | 'premiumSsd';
+export type HddDiskPricingRedundancy = 'LRS' | 'ZRS';
 
 export interface HddOsRetirementCurrentDiskPricing {
   storageTier: 'standardHdd';
   skuName: string;
+  pricingRedundancy?: HddDiskPricingRedundancy;
   sizeGiB: number;
   monthlyActual: number;
   monthlyRetail: number;
@@ -88,6 +90,7 @@ export interface HddOsRetirementCurrentDiskPricing {
 export interface HddOsRetirementTargetDiskPricing {
   storageTier: HddSsdMigrationTargetTier;
   skuName: string;
+  pricingRedundancy?: HddDiskPricingRedundancy;
   sizeGiB: number;
   monthlyRetail: number;
 }
