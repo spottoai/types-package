@@ -75,15 +75,6 @@ export interface RecommendationResources {
   resourceIds: string[];
 }
 
-export interface RecommendationRenderStrategy<TKey extends string = string, TPayload = unknown> {
-  /** Registry key used by UI render strategy mapping. */
-  key: TKey;
-  /** Version of the strategy payload contract. */
-  version: number;
-  /** Strategy-specific view model consumed by render components. */
-  payload: TPayload;
-}
-
 export type HddSsdMigrationTargetTier = 'standardSsd' | 'premiumSsd';
 
 export interface HddOsRetirementCurrentDiskPricing {
@@ -129,14 +120,9 @@ export interface HddOsRetirementRenderStrategyPayload {
   disks: HddOsRetirementDiskRenderItem[];
 }
 
-export type HddOsRetirementRecommendationRenderStrategy = RecommendationRenderStrategy<
-  'azure_hdd_os_retirement',
-  HddOsRetirementRenderStrategyPayload
->;
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload;
 
-export type RecommendationKnownRenderStrategy = HddOsRetirementRecommendationRenderStrategy;
-
-export type AnyRecommendationRenderStrategy = RecommendationRenderStrategy<string, unknown>;
+export type AnyRecommendationRenderData = Record<string, unknown>;
 
 export interface Recommendation {
   /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
@@ -211,11 +197,8 @@ export interface Recommendation {
   normalizedScore?: number;
   /** Cross-feature linkage IDs used for deep links and related views. */
   linkingIds?: RecommendationLinkingIds;
-  /**
-   * Optional UI render strategy metadata.
-   * `renderStrategy.key` is a renderer key and is intentionally separate from `id`.
-   */
-  renderStrategy?: RecommendationKnownRenderStrategy | AnyRecommendationRenderStrategy;
+  /** Optional UI render payload consumed by recommendation-specific components. */
+  renderData?: RecommendationKnownRenderData | AnyRecommendationRenderData;
 }
 
 export interface RecommendationLinkingIds {
