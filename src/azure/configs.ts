@@ -18,13 +18,7 @@ export type BillingModel =
 
 export type BillingComponentKind = 'base' | 'usage' | 'supporting' | 'linked' | 'parent_rollup';
 
-export type BillingQuantitySource =
-  | 'none'
-  | 'fixed_time'
-  | 'resource_property'
-  | 'billing_row'
-  | 'metric'
-  | 'linked_resource';
+export type BillingQuantitySource = 'none' | 'fixed_time' | 'resource_property' | 'billing_row' | 'metric' | 'linked_resource';
 
 export type PricingLookupLocationPolicy = 'local_only' | 'local_then_global';
 
