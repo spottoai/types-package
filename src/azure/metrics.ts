@@ -210,12 +210,19 @@ export interface MetricsDisplay {
   metrics: string[];
   title: string;
   yAxisTitle: string;
-  yAxisSuffix: string;
+  yAxisSuffix?: string;
   priority: number;
   maxAxis?: number;
   chartType: 'line' | 'area' | 'bar' | 'scatter';
   optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
   reasoning: string;
+  legends?: MetricsDisplayLegend | MetricsDisplayLegend[];
+}
+
+export interface MetricsDisplayLegend {
+  name: string;
+  label: string;
+  format?: string;
 }
 
 export interface MonthlyMetricsFile {
@@ -230,10 +237,14 @@ export interface MonthlyMetricsFile {
 }
 
 export interface AzureResourceMetrics {
+  schemaVersion?: number;
   id: string;
+  resourceId?: string;
   metrics: AzureMetricValue[];
   childMetrics?: AzureResourceMetrics[];
 }
+
+export type AzureResourceMetricsDocument = AzureResourceMetrics;
 
 export interface AzureMetricValue {
   name: string;
