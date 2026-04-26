@@ -1,6 +1,5 @@
-import { MetricDescription, MetricsDisplay } from './metrics.js';
+import { AzureResourceMetricsDefinition } from './metrics.js';
 import { ResourceLink, ResourceTypeReference } from './resources.js';
-import { AzureResourceMetric } from './metrics.js';
 
 export type BillingProfileSupport = 'ready' | 'partial' | 'manual_review';
 
@@ -113,9 +112,9 @@ export interface ResourceConfigItem {
 
   ttlHours?: number;
   references: { [key: string]: ResourceTypeReference };
-  metrics?: AzureResourceMetric[];
-  metricsDescription?: MetricDescription[];
-  metricsDisplay?: MetricsDisplay[];
+  metrics?: AzureResourceMetricsDefinition['metrics'];
+  metricsDescription?: AzureResourceMetricsDefinition['metricsDescription'];
+  metricsDisplay?: AzureResourceMetricsDefinition['metricsDisplay'];
 
   /** Loaded during processing */
   name: string;

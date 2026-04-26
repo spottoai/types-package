@@ -1,5 +1,5 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
-import { DisplayMetric, MetricPlot } from './metrics.js';
+import { AzureResourceMetricsDefinition, DisplayMetric, MetricPlot } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
@@ -192,6 +192,7 @@ export interface AzureResourcePluginItemDetailed {
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;
   plots?: MetricPlot[];
+  metricsDefinition?: AzureResourceMetricsDefinition;
   subscription: string;
   resourceGroup: string;
   tags?: Record<string, string>;

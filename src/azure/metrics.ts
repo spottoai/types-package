@@ -218,6 +218,12 @@ export interface MetricsDisplay {
   reasoning: string;
 }
 
+export interface AzureResourceMetricsDefinition {
+  metrics?: AzureResourceMetric[];
+  metricsDescription?: MetricDescription[];
+  metricsDisplay?: MetricsDisplay[];
+}
+
 export interface MonthlyMetricsFile {
   metadata: {
     resourceType: string;
