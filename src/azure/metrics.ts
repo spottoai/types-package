@@ -255,7 +255,7 @@ export interface AzureMetricValue {
 }
 
 export interface AzureTimeSeries {
-  metadata: AzureTimeSeriesMetadata[];
+  metadata?: AzureTimeSeriesMetadata[];
   data: AzureTimeSeriesData[];
 }
 
