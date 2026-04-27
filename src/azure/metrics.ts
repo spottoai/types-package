@@ -309,6 +309,7 @@ export interface AzureResourceMetric extends MetricConfigMetadata {
   expression?: string;
   filter?: string;
   metricNamespace?: string;
+  batchSupport?: boolean;
 }
 
 export interface UtilizationSummary {

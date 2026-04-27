@@ -112,6 +112,7 @@ export interface ResourceConfigItem {
 
   ttlHours?: number;
   references: { [key: string]: ResourceTypeReference };
+  metricsBatchSupport?: boolean;
   metrics?: AzureResourceMetric[];
   metricsDescription?: MetricDescription[];
   metricsDisplay?: MetricsDisplay[];
