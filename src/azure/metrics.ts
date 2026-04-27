@@ -142,14 +142,7 @@ export interface MetricThreshold {
   reasoning?: string;
 }
 
-export type MetricAggregationType =
-  | 'Average'
-  | 'Minimum'
-  | 'Maximum'
-  | 'Total'
-  | 'Count'
-  | 'Latest'
-  | (string & {});
+export type MetricAggregationType = 'Average' | 'Minimum' | 'Maximum' | 'Total' | 'Count' | 'Latest' | (string & {});
 
 /**
  * Config-derived metric metadata carried from azure-resource-config.json into
