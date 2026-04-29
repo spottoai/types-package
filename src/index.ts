@@ -26,6 +26,7 @@ export * from './accounts';
 export * from './users';
 export * from './common';
 export * from './company';
+export * from './scheduler';
 export * from './ai';
 export * from './events';
 export * from './integrations';
