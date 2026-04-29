@@ -46,7 +46,7 @@ export interface ScheduleDocument extends ScheduleSummary {
   configuration?: Record<string, unknown>;
 }
 
-export interface ScheduleDetailResponse extends ScheduleDocument {}
+export type ScheduleDetailResponse = ScheduleDocument;
 
 export interface ScheduleHistoryItem {
   eventId: string;
