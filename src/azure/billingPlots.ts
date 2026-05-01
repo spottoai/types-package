@@ -3,13 +3,7 @@
  */
 
 /** Named cost chart windows emitted by the Azure billing analyzer. */
-export type BillingChartViewKey =
-  | '7_days'
-  | '30_days'
-  | '90_days'
-  | '12_months'
-  | 'forecast_90_days'
-  | (string & {});
+export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
 
 /** Supported billing chart aggregation categories. */
 export type BillingChartAggregation = 'daily' | 'monthly' | (string & {});
@@ -139,10 +133,7 @@ export interface BillingForecastChartView {
   trend?: BillingChartTrend;
 }
 
-export type BillingChartView =
-  | BillingDailyChartView
-  | BillingMonthlyChartView
-  | BillingForecastChartView;
+export type BillingChartView = BillingDailyChartView | BillingMonthlyChartView | BillingForecastChartView;
 
 /** Named chart views emitted by the billing analyzer. */
 export interface BillingChartViews {
@@ -150,7 +141,7 @@ export interface BillingChartViews {
   '30_days'?: BillingDailyChartView;
   '90_days'?: BillingDailyChartView;
   '12_months'?: BillingMonthlyChartView;
-  'forecast_90_days'?: BillingForecastChartView;
+  forecast_90_days?: BillingForecastChartView;
   [key: string]: BillingChartView | undefined;
 }
 
