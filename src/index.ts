@@ -22,6 +22,7 @@ export * from './azure/serviceRetirement';
 export * from './azure/serviceRetirementState';
 export * from './azure/costEstimation';
 export * from './azure/storage-inventory';
+export * from './azure/governance';
 export * from './accounts';
 export * from './users';
 export * from './common';
