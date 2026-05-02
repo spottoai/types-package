@@ -1,8 +1,12 @@
 export const GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-01.slim-v1' as const;
 export const GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.graph-v1' as const;
+export const TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-02.tenant-slim-v1' as const;
+export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v1' as const;
 
 export const GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz' as const;
 export const GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz' as const;
+export const TENANT_GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz' as const;
+export const TENANT_GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz' as const;
 
 export type GovernanceJsonPrimitive = string | number | boolean | null;
 export type GovernanceJsonValue = GovernanceJsonPrimitive | GovernanceJsonValue[] | { [key: string]: GovernanceJsonValue };
@@ -432,4 +436,181 @@ export interface GovernanceGraphArtifact {
   nodes: GovernanceGraphNode[];
   edges: GovernanceGraphEdge[];
   stats: GovernanceGraphStats;
+}
+
+export interface TenantGovernanceScope {
+  tenantId: string;
+  displayName?: string;
+  primaryDomain?: string;
+  generatedAt: string;
+}
+
+export interface TenantGovernanceArtifactReference {
+  container?: string;
+  path: string;
+}
+
+export interface TenantGovernanceSubscriptionRollup {
+  policyAssignments: number;
+  policyExemptions: number;
+  roleAssignments: number;
+  privilegedAssignments: number;
+  customRoles: number;
+  findings: number;
+  criticalFindings: number;
+  highFindings: number;
+  nonCompliantResources: number;
+}
+
+export interface TenantGovernanceSubscriptionSummary {
+  subscriptionId: string;
+  displayName?: string;
+  state?: string;
+  quotaId?: string;
+  managementGroupPath?: GovernanceManagementGroupPathEntry[];
+  governanceReportPath: string;
+  governanceGraphPath: string;
+  coverage?: GovernanceCoverage;
+  summary: TenantGovernanceSubscriptionRollup;
+}
+
+export interface TenantGovernanceManagementGroup {
+  id: string;
+  name?: string;
+  displayName?: string;
+  parentId?: string;
+  path?: GovernanceManagementGroupPathEntry[];
+  childManagementGroupIds: string[];
+  subscriptionIds: string[];
+  summary?: TenantGovernanceScopeRollup;
+}
+
+export interface TenantGovernanceHierarchyCounts extends GovernanceHierarchyCounts {
+  tenantRootManagementGroups?: number;
+}
+
+export interface TenantGovernanceHierarchySection {
+  counts: TenantGovernanceHierarchyCounts;
+  managementGroups: TenantGovernanceManagementGroup[];
+  subscriptions: TenantGovernanceSubscriptionSummary[];
+}
+
+export interface TenantGovernanceScopeRollup {
+  scopeId: string;
+  scopeType: Exclude<GovernanceScopeType, 'resourceGroup' | 'resource' | 'unknown'>;
+  displayName?: string;
+  policyAssignments: number;
+  policyExemptions: number;
+  roleAssignments: number;
+  privilegedAssignments: number;
+  findings: number;
+  nonCompliantResources: number;
+}
+
+export interface TenantGovernancePolicySummary extends GovernancePolicySummary {
+  tenantScopedAssignments: number;
+  managementGroupScopedAssignments: number;
+  subscriptionScopedAssignments: number;
+}
+
+export interface TenantGovernancePolicySection {
+  summary: TenantGovernancePolicySummary;
+  definitionCatalog?: GovernancePolicyDefinitionCatalog;
+  assignments: GovernancePolicyAssignment[];
+  exemptions: GovernancePolicyExemption[];
+  byScope: TenantGovernanceScopeRollup[];
+}
+
+export interface TenantGovernanceRbacSummary extends GovernanceRbacSummary {
+  tenantScopedAssignments: number;
+  managementGroupScopedAssignments: number;
+  subscriptionScopedAssignments: number;
+}
+
+export interface TenantGovernanceRbacSection {
+  summary: TenantGovernanceRbacSummary;
+  roleDefinitionCatalog?: GovernanceRoleDefinitionCatalog;
+  roleAssignments: GovernanceRoleAssignment[];
+  privilegedAssignments: GovernanceRoleAssignment[];
+  customRoles: GovernanceRoleDefinition[];
+  byScope: TenantGovernanceScopeRollup[];
+}
+
+export interface TenantGovernanceFindingsSummary {
+  total: number;
+  bySeverity: GovernanceNamedCount[];
+  byCategory: GovernanceNamedCount[];
+  byScopeType: GovernanceNamedCount[];
+  bySubscription: GovernanceNamedCount[];
+  byManagementGroup: GovernanceNamedCount[];
+}
+
+export interface TenantGovernanceSourceMetadata {
+  tenantFiles: string[];
+  subscriptionReports: TenantGovernanceArtifactReference[];
+  subscriptionGraphs: TenantGovernanceArtifactReference[];
+  queryFiles: string[];
+}
+
+export interface TenantGovernanceReport {
+  schemaVersion: typeof TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION;
+  scope: TenantGovernanceScope;
+  coverage: GovernanceCoverage;
+  hierarchy: TenantGovernanceHierarchySection;
+  policy: TenantGovernancePolicySection;
+  rbac: TenantGovernanceRbacSection;
+  principals: GovernancePrincipalsSection;
+  findings: GovernanceFinding[];
+  findingSummary: TenantGovernanceFindingsSummary;
+  sourceMetadata: TenantGovernanceSourceMetadata;
+}
+
+export type TenantGovernanceGraphNodeType = 'tenant' | GovernanceGraphNodeType;
+
+export type TenantGovernanceGraphEdgeType = GovernanceGraphEdgeType | 'inheritsFrom' | 'summarizes';
+
+export interface TenantGovernanceGraphScope {
+  tenantId: string;
+  displayName?: string;
+  primaryDomain?: string;
+  generatedAt: string;
+}
+
+export interface TenantGovernanceGraphNode {
+  id: string;
+  type: TenantGovernanceGraphNodeType;
+  sourceId: string;
+  label?: string;
+  data?: GovernanceJsonObject;
+}
+
+export interface TenantGovernanceGraphEdge {
+  id: string;
+  type: TenantGovernanceGraphEdgeType;
+  from: string;
+  to: string;
+  data?: GovernanceJsonObject;
+}
+
+export interface TenantGovernanceGraphStats {
+  nodes: number;
+  edges: number;
+  nodesByType: Partial<Record<TenantGovernanceGraphNodeType, number>>;
+  edgesByType: Partial<Record<TenantGovernanceGraphEdgeType, number>>;
+}
+
+export interface TenantGovernanceGraphSourceMetadata {
+  tenantFiles: string[];
+  subscriptionReports: TenantGovernanceArtifactReference[];
+  subscriptionGraphs: TenantGovernanceArtifactReference[];
+}
+
+export interface TenantGovernanceGraphArtifact {
+  schemaVersion: typeof TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION;
+  scope: TenantGovernanceGraphScope;
+  coverage?: GovernanceCoverage;
+  sourceMetadata?: TenantGovernanceGraphSourceMetadata;
+  nodes: TenantGovernanceGraphNode[];
+  edges: TenantGovernanceGraphEdge[];
+  stats: TenantGovernanceGraphStats;
 }

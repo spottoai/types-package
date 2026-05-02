@@ -1,5 +1,10 @@
-import type { GovernanceGraphArtifact, GovernanceReport } from './governance';
-import { GOVERNANCE_GRAPH_SCHEMA_VERSION, GOVERNANCE_REPORT_SCHEMA_VERSION } from './governance';
+import type { GovernanceGraphArtifact, GovernanceReport, TenantGovernanceGraphArtifact, TenantGovernanceReport } from './governance';
+import {
+  GOVERNANCE_GRAPH_SCHEMA_VERSION,
+  GOVERNANCE_REPORT_SCHEMA_VERSION,
+  TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION,
+  TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
+} from './governance';
 
 const governanceReport: GovernanceReport = {
   schemaVersion: GOVERNANCE_REPORT_SCHEMA_VERSION,
@@ -274,6 +279,248 @@ const governanceGraph: GovernanceGraphArtifact = {
 void governanceReport;
 void governanceGraph;
 
+const tenantGovernanceReport: TenantGovernanceReport = {
+  schemaVersion: TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
+  scope: {
+    tenantId: 'tenant-1',
+    displayName: 'Example Tenant',
+    primaryDomain: 'example.com',
+    generatedAt: '2026-05-02T00:00:00.000Z',
+  },
+  coverage: {
+    mode: 'tenant',
+    hierarchy: { state: 'complete', source: 'tenant' },
+    policy: { state: 'complete', source: 'tenant' },
+    rbac: { state: 'complete', source: 'tenant' },
+    principals: { state: 'complete', source: 'tenant' },
+    findings: { state: 'complete', source: 'derived' },
+  },
+  hierarchy: {
+    counts: {
+      managementGroups: 1,
+      tenantRootManagementGroups: 1,
+      subscriptions: 1,
+    },
+    managementGroups: [
+      {
+        id: '/providers/microsoft.management/managementgroups/root',
+        name: 'root',
+        displayName: 'Root',
+        childManagementGroupIds: [],
+        subscriptionIds: ['sub-1'],
+        summary: {
+          scopeId: '/providers/microsoft.management/managementgroups/root',
+          scopeType: 'managementGroup',
+          displayName: 'Root',
+          policyAssignments: 1,
+          policyExemptions: 0,
+          roleAssignments: 1,
+          privilegedAssignments: 1,
+          findings: 1,
+          nonCompliantResources: 1,
+        },
+      },
+    ],
+    subscriptions: [
+      {
+        subscriptionId: 'sub-1',
+        displayName: 'Production',
+        state: 'Enabled',
+        quotaId: 'payg',
+        managementGroupPath: [
+          {
+            id: '/providers/microsoft.management/managementgroups/root',
+            name: 'root',
+            displayName: 'Root',
+          },
+        ],
+        governanceReportPath: 'subscriptions/sub-1/governance.json.gz',
+        governanceGraphPath: 'subscriptions/sub-1/governance-graph.json.gz',
+        coverage: governanceReport.coverage,
+        summary: {
+          policyAssignments: 1,
+          policyExemptions: 0,
+          roleAssignments: 1,
+          privilegedAssignments: 1,
+          customRoles: 0,
+          findings: 1,
+          criticalFindings: 0,
+          highFindings: 1,
+          nonCompliantResources: 1,
+        },
+      },
+    ],
+  },
+  policy: {
+    summary: {
+      definitions: 10,
+      setDefinitions: 1,
+      assignments: 1,
+      exemptions: 0,
+      complianceExpiryExemptions: 0,
+      locks: 0,
+      tags: 0,
+      securityContacts: 0,
+      nonCompliantResources: 1,
+      tenantScopedAssignments: 0,
+      managementGroupScopedAssignments: 1,
+      subscriptionScopedAssignments: 0,
+    },
+    definitionCatalog: governanceReport.policy.definitionCatalog,
+    assignments: governanceReport.policy.assignments,
+    exemptions: governanceReport.policy.exemptions,
+    byScope: [
+      {
+        scopeId: '/providers/microsoft.management/managementgroups/root',
+        scopeType: 'managementGroup',
+        displayName: 'Root',
+        policyAssignments: 1,
+        policyExemptions: 0,
+        roleAssignments: 0,
+        privilegedAssignments: 0,
+        findings: 1,
+        nonCompliantResources: 1,
+      },
+    ],
+  },
+  rbac: {
+    summary: {
+      roleDefinitions: 1,
+      roleAssignments: 1,
+      privilegedAssignments: 1,
+      customRoles: 0,
+      tenantScopedAssignments: 0,
+      managementGroupScopedAssignments: 1,
+      subscriptionScopedAssignments: 0,
+    },
+    roleDefinitionCatalog: governanceReport.rbac.roleDefinitionCatalog,
+    roleAssignments: governanceReport.rbac.roleAssignments,
+    privilegedAssignments: governanceReport.rbac.privilegedAssignments,
+    customRoles: governanceReport.rbac.customRoles,
+    byScope: [
+      {
+        scopeId: '/providers/microsoft.management/managementgroups/root',
+        scopeType: 'managementGroup',
+        displayName: 'Root',
+        policyAssignments: 0,
+        policyExemptions: 0,
+        roleAssignments: 1,
+        privilegedAssignments: 1,
+        findings: 0,
+        nonCompliantResources: 0,
+      },
+    ],
+  },
+  principals: governanceReport.principals,
+  findings: governanceReport.findings,
+  findingSummary: {
+    total: 1,
+    bySeverity: [{ name: 'high', count: 1 }],
+    byCategory: [{ name: 'policy', count: 1 }],
+    byScopeType: [{ name: 'subscription', count: 1 }],
+    bySubscription: [{ name: 'Production', count: 1 }],
+    byManagementGroup: [{ name: 'Root', count: 1 }],
+  },
+  sourceMetadata: {
+    tenantFiles: ['governance/policy-assignments.json.gz'],
+    subscriptionReports: [
+      {
+        container: 'azure-portal',
+        path: 'subscriptions/sub-1/governance.json.gz',
+      },
+    ],
+    subscriptionGraphs: [
+      {
+        container: 'azure-portal',
+        path: 'subscriptions/sub-1/governance-graph.json.gz',
+      },
+    ],
+    queryFiles: [],
+  },
+};
+
+const tenantGovernanceGraph: TenantGovernanceGraphArtifact = {
+  schemaVersion: TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION,
+  scope: {
+    tenantId: 'tenant-1',
+    displayName: 'Example Tenant',
+    primaryDomain: 'example.com',
+    generatedAt: '2026-05-02T00:00:00.000Z',
+  },
+  coverage: tenantGovernanceReport.coverage,
+  sourceMetadata: {
+    tenantFiles: ['governance/policy-assignments.json.gz'],
+    subscriptionReports: [
+      {
+        container: 'azure-portal',
+        path: 'subscriptions/sub-1/governance.json.gz',
+      },
+    ],
+    subscriptionGraphs: [
+      {
+        container: 'azure-portal',
+        path: 'subscriptions/sub-1/governance-graph.json.gz',
+      },
+    ],
+  },
+  nodes: [
+    {
+      id: 'tenant:tenant-1',
+      type: 'tenant',
+      sourceId: 'tenant-1',
+      label: 'Example Tenant',
+      data: {
+        primaryDomain: 'example.com',
+      },
+    },
+    {
+      id: 'managementGroup:/providers/microsoft.management/managementgroups/root',
+      type: 'managementGroup',
+      sourceId: '/providers/microsoft.management/managementgroups/root',
+      label: 'Root',
+    },
+    {
+      id: 'subscription:/subscriptions/sub-1',
+      type: 'subscription',
+      sourceId: '/subscriptions/sub-1',
+      label: 'Production',
+      data: {
+        governanceReportPath: 'subscriptions/sub-1/governance.json.gz',
+        governanceGraphPath: 'subscriptions/sub-1/governance-graph.json.gz',
+      },
+    },
+  ],
+  edges: [
+    {
+      id: 'contains:tenant:tenant-1->managementGroup:/providers/microsoft.management/managementgroups/root',
+      type: 'contains',
+      from: 'tenant:tenant-1',
+      to: 'managementGroup:/providers/microsoft.management/managementgroups/root',
+    },
+    {
+      id: 'contains:managementGroup:/providers/microsoft.management/managementgroups/root->subscription:/subscriptions/sub-1',
+      type: 'contains',
+      from: 'managementGroup:/providers/microsoft.management/managementgroups/root',
+      to: 'subscription:/subscriptions/sub-1',
+    },
+  ],
+  stats: {
+    nodes: 3,
+    edges: 2,
+    nodesByType: {
+      tenant: 1,
+      managementGroup: 1,
+      subscription: 1,
+    },
+    edgesByType: {
+      contains: 2,
+    },
+  },
+};
+
+void tenantGovernanceReport;
+void tenantGovernanceGraph;
+
 const invalidReportSchemaVersion: GovernanceReport = {
   ...governanceReport,
   // @ts-expect-error governance report schema version must match the published report contract.
@@ -293,3 +540,38 @@ const invalidGraphNodeType: GovernanceGraphArtifact = {
 
 void invalidReportSchemaVersion;
 void invalidGraphNodeType;
+
+const invalidTenantReportSchemaVersion: TenantGovernanceReport = {
+  ...tenantGovernanceReport,
+  // @ts-expect-error tenant governance report schema version must match the tenant report contract.
+  schemaVersion: '2026-05-01.slim-v1',
+};
+
+const invalidTenantGraphNodeType: TenantGovernanceGraphArtifact = {
+  ...tenantGovernanceGraph,
+  nodes: [
+    {
+      ...tenantGovernanceGraph.nodes[0],
+      // @ts-expect-error tenant governance graph nodes do not include resource-centric node types.
+      type: 'resource',
+    },
+  ],
+};
+
+const invalidTenantScopeRollup: TenantGovernanceReport = {
+  ...tenantGovernanceReport,
+  policy: {
+    ...tenantGovernanceReport.policy,
+    byScope: [
+      {
+        ...tenantGovernanceReport.policy.byScope[0],
+        // @ts-expect-error tenant rollups are only tenant, management group, or subscription scoped.
+        scopeType: 'resource',
+      },
+    ],
+  },
+};
+
+void invalidTenantReportSchemaVersion;
+void invalidTenantGraphNodeType;
+void invalidTenantScopeRollup;
