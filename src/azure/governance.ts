@@ -20,8 +20,10 @@ export type GovernanceCoverageSource = 'tenant' | 'subscription' | 'query' | 'de
 export interface GovernanceCoverageSection {
   state: GovernanceCoverageState;
   source: GovernanceCoverageSource;
+  message?: string;
   reason?: string;
   requiredPermissions?: string[];
+  diagnostics?: GovernanceCoverageDiagnostic[];
 }
 
 export interface GovernanceCoverage {
@@ -37,9 +39,82 @@ export interface GovernanceManagementGroupPathEntry {
   id: string;
   name?: string;
   displayName?: string;
+  label?: string;
+  pathLabel?: string;
+  resourceType?: string;
 }
 
 export type GovernanceScopeType = 'tenant' | 'managementGroup' | 'subscription' | 'resourceGroup' | 'resource' | 'unknown';
+
+export interface GovernanceCoverageDiagnostic {
+  code?: string;
+  message?: string;
+  status?: number;
+  requestMethod?: string;
+  requestUrl?: string;
+  source?: GovernanceCoverageSource;
+}
+
+export interface GovernanceScopeReference {
+  id: string;
+  scopeType: GovernanceScopeType;
+  displayName?: string;
+  label?: string;
+  pathLabel?: string;
+  resourceType?: string;
+  tenantId?: string;
+  subscriptionId?: string;
+  subscriptionName?: string;
+  managementGroupId?: string;
+  managementGroupName?: string;
+  managementGroupDisplayName?: string;
+  managementGroupPath?: GovernanceManagementGroupPathEntry[];
+  resourceGroupName?: string;
+  resourceName?: string;
+}
+
+export interface GovernancePrincipalReference {
+  id: string;
+  displayName?: string;
+  principalType?: string;
+  appId?: string;
+  servicePrincipalType?: string;
+  userPrincipalName?: string;
+  userType?: string;
+  resolved?: boolean;
+}
+
+export interface GovernanceRoleDefinitionReference {
+  id?: string;
+  name?: string;
+  roleName?: string;
+  roleType?: string;
+}
+
+export interface GovernancePolicyAssignmentReference {
+  id?: string;
+  name?: string;
+  displayName?: string;
+  scope?: GovernanceScopeReference;
+}
+
+export type GovernancePolicyEffectResolutionSource =
+  | 'fixed'
+  | 'assignmentParameter'
+  | 'definitionParameterDefault'
+  | 'definitionParameterAllowedValues'
+  | 'raw'
+  | 'unknown';
+
+export interface GovernancePolicyEffectSummary {
+  raw?: string;
+  value?: string;
+  displayName?: string;
+  source: GovernancePolicyEffectResolutionSource;
+  parameterName?: string;
+  defaultValue?: string;
+  allowedValues?: string[];
+}
 
 export interface GovernanceFinding {
   id: string;
@@ -103,6 +178,7 @@ export interface GovernancePolicyDefinitionReference {
   category?: string;
   version?: string;
   effect?: string;
+  effectSummary?: GovernancePolicyEffectSummary;
 }
 
 export interface GovernancePolicyDefinitionCatalog {
@@ -129,14 +205,17 @@ export interface GovernancePolicyAssignmentDefinition {
   category?: string;
   version?: string;
   effect?: string;
+  effectSummary?: GovernancePolicyEffectSummary;
 }
 
 export interface GovernancePolicyAssignmentRemediation {
   effect?: string;
+  effectSummary?: GovernancePolicyEffectSummary;
   supportsRemediation: boolean;
   hasManagedIdentity: boolean;
   hasServicePrincipalIdentity: boolean;
   principalId?: string;
+  principal?: GovernancePrincipalReference;
   roleAssignmentCount: number;
   roleAssignmentIds: string[];
 }
@@ -154,10 +233,13 @@ export interface GovernancePolicyAssignment {
   displayName?: string;
   description?: string;
   assignmentScope?: string;
+  assignmentScopeReference?: GovernanceScopeReference;
   scopeType?: GovernanceScopeType;
   inherited?: boolean;
   inheritedFrom?: string;
+  inheritedFromReference?: GovernanceScopeReference;
   excludedScopes: string[];
+  excludedScopeReferences?: GovernanceScopeReference[];
   excludedScopeCount: number;
   hasExcludedScopes: boolean;
   exemptionCount: number;
@@ -182,8 +264,10 @@ export interface GovernancePolicyExemption {
   displayName?: string;
   description?: string;
   scope?: string;
+  scopeReference?: GovernanceScopeReference;
   exemptionCategory?: string;
   policyAssignmentId?: string;
+  policyAssignment?: GovernancePolicyAssignmentReference;
   policyDefinitionReferenceIds: string[];
   expiresOn?: string;
   expired?: boolean;
@@ -194,9 +278,12 @@ export interface GovernancePolicyExemption {
 export interface GovernanceComplianceExpiryExemption {
   id?: string;
   resourceId?: string;
+  resource?: GovernanceScopeReference;
   policyAssignmentId?: string;
+  policyAssignment?: GovernancePolicyAssignmentReference;
   policyAssignmentDisplayName?: string;
   policyDefinitionDisplayName?: string;
+  policyDefinition?: GovernancePolicyDefinitionReference;
   policyDefinitionReferenceId?: string;
   expiresOn?: string;
   expired?: boolean;
@@ -209,6 +296,7 @@ export interface GovernanceLock {
   level?: string;
   notes?: string;
   scope?: string;
+  scopeReference?: GovernanceScopeReference;
 }
 
 export interface GovernanceTagValue {
@@ -235,15 +323,21 @@ export interface GovernanceSecurityContact {
 export interface GovernanceNonCompliantResource {
   id?: string;
   resourceId?: string;
+  resource?: GovernanceScopeReference;
   resourceType?: string;
   policyAssignmentId?: string;
+  policyAssignment?: GovernancePolicyAssignmentReference;
   policyDefinitionGuid?: string;
   policyDefinitionReferenceId?: string;
   policyAssignmentDisplayName?: string;
   policyDefinitionDisplayName?: string;
+  policyDefinition?: GovernancePolicyDefinitionReference;
   policySetDisplayName?: string;
+  policySetDefinition?: GovernancePolicyDefinitionReference;
   effect?: string;
+  effectSummary?: GovernancePolicyEffectSummary;
   assignmentScope?: string;
+  assignmentScopeReference?: GovernanceScopeReference;
 }
 
 export interface GovernanceNonComplianceSummary {
@@ -296,11 +390,14 @@ export interface GovernanceRoleAssignment {
   id?: string;
   name?: string;
   roleDefinitionId?: string;
+  roleDefinition?: GovernanceRoleDefinitionReference;
   roleName?: string;
   roleType?: string;
   principalId?: string;
+  principal?: GovernancePrincipalReference;
   principalType?: string;
   scope?: string;
+  scopeReference?: GovernanceScopeReference;
   scopeType?: GovernanceScopeType;
   broadScope: boolean;
   privileged: boolean;
@@ -405,7 +502,18 @@ export interface GovernanceGraphNode {
   type: GovernanceGraphNodeType;
   sourceId: string;
   label?: string;
+  display?: GovernanceGraphNodeDisplay;
   data?: GovernanceJsonObject;
+}
+
+export interface GovernanceGraphNodeDisplay {
+  label: string;
+  subtitle?: string;
+  resourceType?: string;
+  scope?: GovernanceScopeReference;
+  principal?: GovernancePrincipalReference;
+  roleDefinition?: GovernanceRoleDefinitionReference;
+  effect?: GovernancePolicyEffectSummary;
 }
 
 export interface GovernanceGraphEdge {
@@ -468,6 +576,7 @@ export interface TenantGovernanceSubscriptionSummary {
   state?: string;
   quotaId?: string;
   managementGroupPath?: GovernanceManagementGroupPathEntry[];
+  scopeReference?: GovernanceScopeReference;
   governanceReportPath: string;
   governanceGraphPath: string;
   coverage?: GovernanceCoverage;
@@ -480,6 +589,7 @@ export interface TenantGovernanceManagementGroup {
   displayName?: string;
   parentId?: string;
   path?: GovernanceManagementGroupPathEntry[];
+  scopeReference?: GovernanceScopeReference;
   childManagementGroupIds: string[];
   subscriptionIds: string[];
   summary?: TenantGovernanceScopeRollup;
@@ -499,6 +609,7 @@ export interface TenantGovernanceScopeRollup {
   scopeId: string;
   scopeType: Exclude<GovernanceScopeType, 'resourceGroup' | 'resource' | 'unknown'>;
   displayName?: string;
+  scopeReference?: GovernanceScopeReference;
   policyAssignments: number;
   policyExemptions: number;
   roleAssignments: number;
@@ -581,6 +692,7 @@ export interface TenantGovernanceGraphNode {
   type: TenantGovernanceGraphNodeType;
   sourceId: string;
   label?: string;
+  display?: GovernanceGraphNodeDisplay;
   data?: GovernanceJsonObject;
 }
 
