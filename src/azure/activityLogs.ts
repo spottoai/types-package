@@ -4,13 +4,7 @@ export const PORTAL_ACTIVITY_LOG_FILE = 'activity-logs.json' as const;
 
 export type PortalActivityLogActorType = 'user' | 'servicePrincipal' | 'managedIdentity' | 'platform' | 'unknown';
 
-export type PortalActivityLogActorResolutionSource =
-  | 'caller'
-  | 'arg'
-  | 'entra-signin'
-  | 'entra-audit'
-  | 'derived'
-  | 'tenant-principals';
+export type PortalActivityLogActorResolutionSource = 'caller' | 'arg' | 'entra-signin' | 'entra-audit' | 'derived' | 'tenant-principals';
 
 export type PortalActivityLogKind = 'change' | 'security' | 'operation' | 'health';
 
