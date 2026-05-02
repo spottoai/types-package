@@ -100,6 +100,8 @@ export interface AzureResourcePortalItem {
   benefitsCoverage?: BenefitCoverageSummary;
   /** This is simplfied */
   costEstimation?: ResourceSimpleCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
 }
 
 export interface SavingsPotential {
@@ -163,6 +165,8 @@ export interface AzureResourcePluginItem {
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
 }
 
 export interface AzureResourcePluginItemDetailed {
@@ -199,6 +203,87 @@ export interface AzureResourcePluginItemDetailed {
   spottoTags?: Tags;
   benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
+}
+
+export type VmPricePerformanceOsType = 'linux' | 'windows';
+
+export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
+
+export type VmPricePerformancePurchaseOption =
+  | 'payg'
+  | 'devtest'
+  | 'reserved1y'
+  | 'reserved3y'
+  | 'savingsplan1y'
+  | 'savingsplan3y'
+  | 'spot'
+  | string;
+
+export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
+
+export type VmPricePerformanceComparisonEligibility =
+  | 'default'
+  | 'excluded-tier'
+  | 'excluded-burstable'
+  | 'excluded-low-confidence'
+  | 'unavailable-in-subscription'
+  | string;
+
+export interface VmPricePerformanceCatalogSource {
+  /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
+  fileName: string;
+  /** Canonical region key used by the lookup file, e.g. `australiaeast`. */
+  region: string;
+  /** The current catalog is generated in USD for tenant-neutral comparison. */
+  currencyCode: 'USD';
+  generatedAt?: string;
+}
+
+export interface VmPricePerformanceSku {
+  armSkuName: string;
+  region: string;
+  currencyCode: 'USD';
+  osType: VmPricePerformanceOsType;
+  tier: VmPricePerformanceTier;
+  purchaseOption: VmPricePerformancePurchaseOption;
+  hourlyPriceUsd?: number;
+  monthlyPriceUsd?: number;
+  numberOfCores?: number;
+  memoryGB?: number;
+  family?: string;
+  sizeFamily?: string;
+  cpuArchitecture?: string;
+  acceleratedNetworking?: boolean;
+  hasGpu?: boolean;
+  hasTempDisk?: boolean;
+  maxNetworkBandwidthMbps?: number;
+  benchmarkScore?: number;
+  benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
+  pricePerPerformance?: number;
+  performancePerDollar?: number;
+  pricePerCoreUsd?: number;
+  pricePerMemoryGBUsd?: number;
+  comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+}
+
+export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
+  rank: number;
+  savingsHourlyUsd?: number;
+  savingsMonthlyUsd?: number;
+  savingsPercent?: number;
+  performanceDeltaPercent?: number;
+  pricePerPerformanceDeltaPercent?: number;
+  reason?: string;
+}
+
+export interface VmPricePerformanceInsights {
+  /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
+  comparisonScope: 'same-region';
+  current?: VmPricePerformanceSku;
+  alternatives: VmPricePerformanceAlternative[];
+  source: VmPricePerformanceCatalogSource;
 }
 
 /** This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page) */
