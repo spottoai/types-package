@@ -211,15 +211,7 @@ export type VmPricePerformanceOsType = 'linux' | 'windows';
 
 export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
 
-export type VmPricePerformancePurchaseOption =
-  | 'payg'
-  | 'devtest'
-  | 'reserved1y'
-  | 'reserved3y'
-  | 'savingsplan1y'
-  | 'savingsplan3y'
-  | 'spot'
-  | string;
+export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
 
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
 
