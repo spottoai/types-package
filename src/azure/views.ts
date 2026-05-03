@@ -231,6 +231,9 @@ export interface VmPricePerformanceCatalogSource {
   region: string;
   /** The current catalog is generated in USD for tenant-neutral comparison. */
   currencyCode: 'USD';
+  /** Subscription/display currency used for user-facing price fields when available. */
+  displayCurrencyCode?: string;
+  displayPricingSource?: 'Azure Retail Prices API' | string;
   generatedAt?: string;
 }
 
@@ -243,6 +246,11 @@ export interface VmPricePerformanceSku {
   purchaseOption: VmPricePerformancePurchaseOption;
   hourlyPriceUsd?: number;
   monthlyPriceUsd?: number;
+  /** Subscription-currency retail price. Prefer this over USD fields for UI display. */
+  localCurrencyCode?: string;
+  localCurrencySymbol?: string;
+  localHourlyPrice?: number;
+  localMonthlyPrice?: number;
   numberOfCores?: number;
   memoryGB?: number;
   maxDataDiskCount?: number;
@@ -276,6 +284,8 @@ export interface VmPricePerformanceSku {
   performancePerDollar?: number;
   pricePerCoreUsd?: number;
   pricePerMemoryGBUsd?: number;
+  localPricePerCore?: number;
+  localPricePerMemoryGB?: number;
   comparisonEligibility?: VmPricePerformanceComparisonEligibility;
 }
 
@@ -283,6 +293,9 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   rank: number;
   savingsHourlyUsd?: number;
   savingsMonthlyUsd?: number;
+  localSavingsHourly?: number;
+  localSavingsMonthly?: number;
+  localSavingsPercent?: number;
   savingsPercent?: number;
   performanceDeltaPercent?: number;
   pricePerPerformanceDeltaPercent?: number;
@@ -297,6 +310,9 @@ export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanc
 export interface VmPricePerformanceInsights {
   /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
   comparisonScope: 'same-region';
+  /** Subscription/display currency used for user-facing price fields when available. */
+  displayCurrencyCode?: string;
+  displayCurrencySymbol?: string;
   current?: VmPricePerformanceSku;
   /** Feature-compatible alternatives that are safe default candidates. */
   alternatives: VmPricePerformanceAlternative[];
