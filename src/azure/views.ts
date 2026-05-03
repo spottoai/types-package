@@ -221,6 +221,7 @@ export type VmPricePerformanceComparisonEligibility =
   | 'excluded-burstable'
   | 'excluded-low-confidence'
   | 'unavailable-in-subscription'
+  | 'feature-trade-off'
   | string;
 
 export interface VmPricePerformanceCatalogSource {
@@ -244,13 +245,31 @@ export interface VmPricePerformanceSku {
   monthlyPriceUsd?: number;
   numberOfCores?: number;
   memoryGB?: number;
+  maxDataDiskCount?: number;
+  maxRemoteStorageDisks?: number;
+  resourceDiskSizeMB?: number;
   family?: string;
   sizeFamily?: string;
   cpuArchitecture?: string;
+  supportsPremiumDisk?: boolean;
   acceleratedNetworking?: boolean;
+  rdmaEnabled?: boolean;
+  hyperVGenerations?: string[];
   hasGpu?: boolean;
+  gpuCount?: number;
+  gpuMemoryGB?: number;
+  gpuModel?: string;
   hasTempDisk?: boolean;
+  tempDiskType?: string;
+  maxTempStorageDisks?: number;
+  tempDiskSizePerDiskMiB?: number;
+  hasNvmeTempDisk?: boolean;
+  nvmeDiskCount?: number;
+  nvmeDiskSizePerDiskMiB?: number;
+  maxNics?: number;
   maxNetworkBandwidthMbps?: number;
+  supportsEphemeralOsDisk?: boolean;
+  supportedRemoteDiskTypes?: string[];
   benchmarkScore?: number;
   benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
   pricePerPerformance?: number;
@@ -270,11 +289,19 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   reason?: string;
 }
 
+export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
+  /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
+  lostCapabilities: string[];
+}
+
 export interface VmPricePerformanceInsights {
   /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
   comparisonScope: 'same-region';
   current?: VmPricePerformanceSku;
+  /** Feature-compatible alternatives that are safe default candidates. */
   alternatives: VmPricePerformanceAlternative[];
+  /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
+  tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
   source: VmPricePerformanceCatalogSource;
 }
 

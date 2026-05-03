@@ -124,6 +124,7 @@ export interface GovernanceFinding {
   summary: string;
   scopeType: Exclude<GovernanceScopeType, 'unknown'>;
   scopeId: string;
+  scopeReference?: GovernanceScopeReference;
   relatedIds?: string[];
   evidence?: GovernanceJsonObject;
 }
