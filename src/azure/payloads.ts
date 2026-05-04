@@ -23,6 +23,8 @@ export interface RequestMessage {
   clientId: string;
   subscriptionId?: string;
   refreshComponents?: string[];
+  correlationId?: string;
+  eventId?: string;
 }
 
 export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {

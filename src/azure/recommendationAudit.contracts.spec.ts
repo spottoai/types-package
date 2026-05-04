@@ -120,11 +120,18 @@ const timelineItemWithArchivedEventType: RecommendationAuditTimelineEvent = {
   eventType: 'Archived',
 };
 
+const timelineItemWithImplementationFailedEventType: RecommendationAuditTimelineEvent = {
+  ...timelineItem,
+  eventId: 'evt-5',
+  eventType: 'ImplementationFailed',
+};
+
 const response: RecommendationAuditQueryResponse = [
   timelineItem,
   timelineItemWithNullableDisplayName,
   timelineItemWithAddedEventType,
   timelineItemWithArchivedEventType,
+  timelineItemWithImplementationFailedEventType,
 ];
 
 void resourceTargetQuery;
@@ -137,6 +144,7 @@ void rowColumns;
 void rowColumnsWithNullableDisplayName;
 void rowColumnsWithAddedEventType;
 void rowColumnsWithArchivedEventType;
+void timelineItemWithImplementationFailedEventType;
 void response;
 
 // @ts-expect-error target view requires recommendationId.

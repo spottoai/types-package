@@ -70,6 +70,32 @@ export interface RecommendationEffortEstimates {
   bulk: RecommendationBulkEffortEstimates;
 }
 
+export interface RecommendationActionImpactAssessment {
+  downtime: string;
+  dataLoss: string;
+  accessImpact: string;
+  dependencies: string;
+}
+
+export interface RecommendationActionDefinition {
+  description: string;
+  estimatedDuration: string;
+  riskLevel: string;
+  preRequisites: string[];
+  impactAssessment: RecommendationActionImpactAssessment;
+}
+
+export type RecommendationActionMetadata = Partial<
+  Omit<RecommendationActionDefinition, 'impactAssessment'>
+> & {
+  impactAssessment?: Partial<RecommendationActionImpactAssessment>;
+};
+
+export type RecommendationImplementActionImpactAssessment =
+  Partial<RecommendationActionImpactAssessment>;
+
+export type RecommendationImplementAction = RecommendationActionMetadata;
+
 export interface RecommendationResources {
   recommendation: CustomAzureRecommendation;
   resourceIds: string[];
@@ -202,6 +228,8 @@ export interface Recommendation {
   linkingIds?: RecommendationLinkingIds;
   /** Optional UI render payload consumed by recommendation-specific components. */
   renderData?: RecommendationKnownRenderData | AnyRecommendationRenderData;
+  /** Optional action definition for implement-capable recommendations. */
+  action?: RecommendationActionMetadata;
 }
 
 export interface RecommendationLinkingIds {
@@ -330,7 +358,16 @@ export interface RecommendationStats {
 
 /** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
-  status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
+  status?:
+    | 'Active'
+    | 'Prioritized'
+    | 'Postponed'
+    | 'Dismissed'
+    | 'Completed'
+    | 'Archived'
+    | 'Implementing'
+    | 'Implemented'
+    | 'Failed';
   read?: boolean;
   scheduledAt?: Date;
   createdAt?: Date;
@@ -356,6 +393,8 @@ export interface RecommendationActionRequest extends ProviderScope {
   scope?: CommentScope;
   /** Optional cloud-account identity enriched by trusted server-side callers before queue publish. */
   cloudAccountId?: string;
+  /** Optional user-provided reason for queue-backed actions such as implement. */
+  reason?: string;
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];
@@ -369,6 +408,7 @@ export interface RecommendationActionResponse {
   success: boolean;
   message?: string;
   affectedResources?: string[];
+  eventId?: string;
 }
 
 export interface ServiceRetirementRecommendation {

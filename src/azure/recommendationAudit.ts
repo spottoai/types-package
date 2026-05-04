@@ -84,7 +84,9 @@ export type RecommendationAuditEventType =
   | 'Restored'
   | 'Prioritized'
   | 'Unprioritized'
-  | 'Implemented';
+  | 'Implementing'
+  | 'Implemented'
+  | 'ImplementationFailed';
 
 /** Flat recommendation audit row columns as persisted in `recommendationsevents`. */
 export interface RecommendationAuditEventRowColumns {
