@@ -78,6 +78,7 @@ export interface RecommendationActionImpactAssessment {
 }
 
 export interface RecommendationActionDefinition {
+  verified: boolean;
   description: string;
   estimatedDuration: string;
   riskLevel: string;

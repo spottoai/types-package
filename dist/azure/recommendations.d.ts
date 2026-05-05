@@ -66,6 +66,7 @@ export interface RecommendationActionImpactAssessment {
     dependencies: string;
 }
 export interface RecommendationActionDefinition {
+    verified: boolean;
     description: string;
     estimatedDuration: string;
     riskLevel: string;
