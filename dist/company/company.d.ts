@@ -6,6 +6,9 @@ export interface Company {
     website?: string;
     createdAt: Date;
     updatedAt: Date;
+    preferredTimezone?: string;
+    hourlyRateAmount?: number;
+    hourlyRateCurrency?: string;
     loginDomainNames?: string[];
     createdBy: string;
     domains?: string;
@@ -23,6 +26,9 @@ export interface Company {
 export interface CompanyCreate {
     name: string;
     website?: string;
+    preferredTimezone?: string;
+    hourlyRateAmount?: number;
+    hourlyRateCurrency?: string;
     domains?: string;
     requiresApproval?: boolean;
     defaultRole?: number;

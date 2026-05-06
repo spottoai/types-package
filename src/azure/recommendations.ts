@@ -4,7 +4,6 @@ import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } 
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
-
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -68,6 +67,9 @@ export interface RecommendationBulkEffortEstimates {
 export interface RecommendationEffortEstimates {
   profiles: RecommendationEffortEstimateProfiles;
   bulk: RecommendationBulkEffortEstimates;
+  overridden?: boolean;
+  lastUpdatedAt?: string;
+  notes?: string;
 }
 
 export interface RecommendationActionImpactAssessment {
