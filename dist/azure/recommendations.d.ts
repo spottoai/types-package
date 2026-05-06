@@ -2,7 +2,7 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsSummary, SavingsPotential } from './views';
+import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
 export declare enum RecommendationCategory {
     Cost = "Cost",
@@ -58,6 +58,9 @@ export interface RecommendationBulkEffortEstimates {
 export interface RecommendationEffortEstimates {
     profiles: RecommendationEffortEstimateProfiles;
     bulk: RecommendationBulkEffortEstimates;
+    overridden?: boolean;
+    lastUpdatedAt?: string;
+    notes?: string;
 }
 export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;
@@ -110,7 +113,7 @@ export interface HddOsRetirementRenderStrategyPayload {
     premiumSsdMonthlyDelta: number;
     disks: HddOsRetirementDiskRenderItem[];
 }
-export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload;
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
 export type AnyRecommendationRenderData = Record<string, unknown>;
 export interface Recommendation {
     /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
