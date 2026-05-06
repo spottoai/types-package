@@ -79,23 +79,46 @@ export interface RecommendationActionImpactAssessment {
   dependencies: string;
 }
 
-export interface RecommendationActionDefinition {
-  verified: boolean;
+export type RecommendationActionRiskLevel = 'low' | 'medium' | 'high';
+
+export interface RecommendationActionRollback {
+  supported: boolean;
   description: string;
-  estimatedDuration: string;
-  riskLevel: string;
-  preRequisites: string[];
-  impactAssessment: RecommendationActionImpactAssessment;
+  limitations: string[];
 }
 
-export type RecommendationActionMetadata = Partial<
-  Omit<RecommendationActionDefinition, 'impactAssessment'>
-> & {
-  impactAssessment?: Partial<RecommendationActionImpactAssessment>;
-};
+export interface RecommendationActionCheck {
+  label: string;
+  description: string;
+}
 
-export type RecommendationImplementActionImpactAssessment =
-  Partial<RecommendationActionImpactAssessment>;
+export interface RecommendationActionLink {
+  label: string;
+  url: string;
+}
+
+export interface RecommendationActionPostValidation {
+  label: string;
+  description: string;
+  expectedResult: string;
+  links?: RecommendationActionLink[];
+}
+
+export interface RecommendationActionDefinition {
+  verified: boolean;
+  title: string;
+  description: string;
+  estimatedDuration: string;
+  riskLevel: RecommendationActionRiskLevel;
+  impactAssessment: RecommendationActionImpactAssessment;
+  rollback: RecommendationActionRollback;
+  humanPreChecks: RecommendationActionCheck[];
+  postValidation: RecommendationActionPostValidation[];
+}
+
+export type RecommendationActionMetadata = RecommendationActionDefinition;
+
+export type RecommendationImplementActionImpactAssessment = RecommendationActionImpactAssessment;
 
 export type RecommendationImplementAction = RecommendationActionMetadata;
 

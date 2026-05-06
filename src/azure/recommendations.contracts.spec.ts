@@ -1,4 +1,9 @@
-import type { HddOsRetirementRenderStrategyPayload, Recommendation, RecommendationEffortEstimates } from './recommendations';
+import type {
+  HddOsRetirementRenderStrategyPayload,
+  Recommendation,
+  RecommendationActionMetadata,
+  RecommendationEffortEstimates,
+} from './recommendations';
 import { RecommendationCategory } from './recommendations';
 
 const effortEstimates: RecommendationEffortEstimates = {
@@ -141,11 +146,60 @@ const recommendationWithRenderStrategy: Recommendation = {
   renderData: hddRetirementRenderData,
 };
 
+const recommendationAction: RecommendationActionMetadata = {
+  verified: false,
+  title: 'Set minimum TLS version to TLS 1.2',
+  description: 'Updates the storage account minimum TLS version to TLS 1.2.',
+  estimatedDuration: '2-5 minutes',
+  riskLevel: 'medium',
+  impactAssessment: {
+    downtime: 'none expected',
+    dataLoss: 'none',
+    accessImpact: 'Clients that only support TLS 1.0 or TLS 1.1 will fail.',
+    dependencies: 'Applications and integrations that connect to this storage account',
+  },
+  rollback: {
+    supported: false,
+    description: 'This action cannot roll back to TLS 1.0 or TLS 1.1 after enforcement.',
+    limitations: [
+      'Azure Storage no longer supports TLS 1.0 or TLS 1.1 for client connections.',
+      'Compatibility issues must be remediated by updating clients to use TLS 1.2 or later.',
+    ],
+  },
+  humanPreChecks: [
+    {
+      label: 'Confirm client compatibility',
+      description: 'Verify required applications and integrations support TLS 1.2 or later.',
+    },
+  ],
+  postValidation: [
+    {
+      label: 'Confirm TLS setting',
+      description: 'Verify the storage account minimum TLS version is TLS 1.2.',
+      expectedResult: 'The storage account reports minimumTlsVersion as TLS1_2.',
+      links: [
+        {
+          label: 'Enforce a minimum TLS version for Azure Storage',
+          url: 'https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version',
+        },
+      ],
+    },
+  ],
+};
+
+const recommendationWithAction: Recommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-126',
+  action: recommendationAction,
+};
+
 void effortEstimates;
 void recommendationWithEffortEstimates;
 void legacyRecommendationWithoutEffortEstimates;
 void hddRetirementRenderData;
 void recommendationWithRenderStrategy;
+void recommendationAction;
+void recommendationWithAction;
 
 const missingEnterpriseProfile: RecommendationEffortEstimates = {
   // @ts-expect-error enterprise profile is required.
@@ -207,7 +261,14 @@ const invalidHddCurrentStorageTier: HddOsRetirementRenderStrategyPayload = {
   ],
 };
 
+const invalidActionRiskLevel: RecommendationActionMetadata = {
+  ...recommendationAction,
+  // @ts-expect-error action risk level must use the supported UI risk labels.
+  riskLevel: 'critical',
+};
+
 void missingEnterpriseProfile;
 void invalidBreakdownShape;
 void invalidBulkProfileField;
 void invalidHddCurrentStorageTier;
+void invalidActionRiskLevel;
