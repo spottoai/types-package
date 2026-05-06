@@ -1,3 +1,4 @@
+import type { RecommendationEffortEstimateBreakdown } from './recommendations';
 export interface ResourcesByType {
     type: string;
     resources: number;
@@ -77,5 +78,45 @@ export interface AzureResourceNotes {
 export interface SaveAzureResourceNotesRequest {
     resourceId: string;
     notes: AzureResourceNotesFields;
+}
+export interface RecommendationEffortEstimateProfileOverride {
+    effortHours?: number;
+    breakdown?: RecommendationEffortEstimateBreakdown;
+}
+export interface RecommendationEffortEstimateProfilesOverride {
+    clickops?: RecommendationEffortEstimateProfileOverride;
+    devops?: RecommendationEffortEstimateProfileOverride;
+    enterprise?: RecommendationEffortEstimateProfileOverride;
+}
+export interface RecommendationBulkEffortEstimateProfileOverride {
+    setupHours?: number;
+    perResourceHours?: number;
+    validationHours?: number;
+}
+export interface RecommendationBulkEffortEstimateProfilesOverride {
+    clickops?: RecommendationBulkEffortEstimateProfileOverride;
+    devops?: RecommendationBulkEffortEstimateProfileOverride;
+    enterprise?: RecommendationBulkEffortEstimateProfileOverride;
+}
+export interface RecommendationBulkEffortEstimatesOverride {
+    supported?: boolean;
+    threshold?: number;
+    profiles?: RecommendationBulkEffortEstimateProfilesOverride;
+}
+export interface RecommendationEffortEstimatesOverride {
+    profiles?: RecommendationEffortEstimateProfilesOverride;
+    bulk?: RecommendationBulkEffortEstimatesOverride;
+    notes?: string;
+}
+export interface AzureResourceEffortEstimateOverride {
+    recommendationId: string;
+    effortEstimatesOverride: RecommendationEffortEstimatesOverride;
+    updatedAt?: string;
+    updatedByUserId?: string;
+    updatedByDisplayName?: string;
+}
+export interface AzureResourceEffortEstimatesDocument {
+    version: '1.0';
+    overrides: AzureResourceEffortEstimateOverride[];
 }
 //# sourceMappingURL=resources.d.ts.map

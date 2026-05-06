@@ -1,5 +1,5 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
-import { DisplayMetric, MetricPlot } from './metrics.js';
+import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
@@ -96,6 +96,8 @@ export interface AzureResourcePortalItem {
     benefitsCoverage?: BenefitCoverageSummary;
     /** This is simplfied */
     costEstimation?: ResourceSimpleCostEstimationSummary;
+    /** VM-specific same-region price/performance lookup data. */
+    vmPricePerformance?: VmPricePerformanceInsights;
 }
 export interface SavingsPotential {
     minAmount: number;
@@ -155,6 +157,8 @@ export interface AzureResourcePluginItem {
     activityLogs?: ActivityLog[];
     benefitsCoverage?: BenefitCoverageSummary;
     costEstimation?: ResourceCostEstimationSummary;
+    /** VM-specific same-region price/performance lookup data. */
+    vmPricePerformance?: VmPricePerformanceInsights;
 }
 export interface AzureResourcePluginItemDetailed {
     currency: string;
@@ -183,12 +187,112 @@ export interface AzureResourcePluginItemDetailed {
     activityLogs?: ActivityLog[];
     properties?: Record<string, string>;
     plots?: MetricPlot[];
+    metricsDefinitions?: MetricsDefinition[];
     subscription: string;
     resourceGroup: string;
     tags?: Record<string, string>;
     spottoTags?: Tags;
     benefitsCoverage?: BenefitCoverageSummary;
     costEstimation?: ResourceCostEstimationSummary;
+    /** VM-specific same-region price/performance lookup data. */
+    vmPricePerformance?: VmPricePerformanceInsights;
+}
+export type VmPricePerformanceOsType = 'linux' | 'windows';
+export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
+export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
+export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
+export type VmPricePerformanceComparisonEligibility = 'default' | 'excluded-tier' | 'excluded-burstable' | 'excluded-low-confidence' | 'unavailable-in-subscription' | 'feature-trade-off' | string;
+export interface VmPricePerformanceCatalogSource {
+    /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
+    fileName: string;
+    /** Canonical region key used by the lookup file, e.g. `australiaeast`. */
+    region: string;
+    /** The current catalog is generated in USD for tenant-neutral comparison. */
+    currencyCode: 'USD';
+    /** Subscription/display currency used for user-facing price fields when available. */
+    displayCurrencyCode?: string;
+    displayPricingSource?: 'Azure Retail Prices API' | string;
+    generatedAt?: string;
+}
+export interface VmPricePerformanceSku {
+    armSkuName: string;
+    region: string;
+    currencyCode: 'USD';
+    osType: VmPricePerformanceOsType;
+    tier: VmPricePerformanceTier;
+    purchaseOption: VmPricePerformancePurchaseOption;
+    hourlyPriceUsd?: number;
+    monthlyPriceUsd?: number;
+    /** Subscription-currency retail price. Prefer this over USD fields for UI display. */
+    localCurrencyCode?: string;
+    localCurrencySymbol?: string;
+    localHourlyPrice?: number;
+    localMonthlyPrice?: number;
+    numberOfCores?: number;
+    memoryGB?: number;
+    maxDataDiskCount?: number;
+    maxRemoteStorageDisks?: number;
+    resourceDiskSizeMB?: number;
+    family?: string;
+    sizeFamily?: string;
+    cpuArchitecture?: string;
+    supportsPremiumDisk?: boolean;
+    acceleratedNetworking?: boolean;
+    rdmaEnabled?: boolean;
+    hyperVGenerations?: string[];
+    hasGpu?: boolean;
+    gpuCount?: number;
+    gpuMemoryGB?: number;
+    gpuModel?: string;
+    hasTempDisk?: boolean;
+    tempDiskType?: string;
+    maxTempStorageDisks?: number;
+    tempDiskSizePerDiskMiB?: number;
+    hasNvmeTempDisk?: boolean;
+    nvmeDiskCount?: number;
+    nvmeDiskSizePerDiskMiB?: number;
+    maxNics?: number;
+    maxNetworkBandwidthMbps?: number;
+    supportsEphemeralOsDisk?: boolean;
+    supportedRemoteDiskTypes?: string[];
+    benchmarkScore?: number;
+    benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
+    pricePerPerformance?: number;
+    performancePerDollar?: number;
+    pricePerCoreUsd?: number;
+    pricePerMemoryGBUsd?: number;
+    localPricePerCore?: number;
+    localPricePerMemoryGB?: number;
+    comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+}
+export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
+    rank: number;
+    savingsHourlyUsd?: number;
+    savingsMonthlyUsd?: number;
+    localSavingsHourly?: number;
+    localSavingsMonthly?: number;
+    localSavingsPercent?: number;
+    savingsPercent?: number;
+    performanceDeltaPercent?: number;
+    pricePerPerformanceDeltaPercent?: number;
+    reason?: string;
+}
+export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
+    /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
+    lostCapabilities: string[];
+}
+export interface VmPricePerformanceInsights {
+    /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
+    comparisonScope: 'same-region';
+    /** Subscription/display currency used for user-facing price fields when available. */
+    displayCurrencyCode?: string;
+    displayCurrencySymbol?: string;
+    current?: VmPricePerformanceSku;
+    /** Feature-compatible alternatives that are safe default candidates. */
+    alternatives: VmPricePerformanceAlternative[];
+    /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
+    tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
+    source: VmPricePerformanceCatalogSource;
 }
 /** This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page) */
 export interface AzurePluginResourcesLite {
