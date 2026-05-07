@@ -2,6 +2,7 @@ import type {
   HddOsRetirementRenderStrategyPayload,
   Recommendation,
   RecommendationActionMetadata,
+  RecommendationActionRequiredPermissions,
   RecommendationEffortEstimates,
 } from './recommendations';
 import { RecommendationCategory } from './recommendations';
@@ -152,6 +153,40 @@ const recommendationAction: RecommendationActionMetadata = {
   description: 'Updates the storage account minimum TLS version to TLS 1.2.',
   estimatedDuration: '2-5 minutes',
   riskLevel: 'medium',
+  requiredPermissions: {
+    provider: 'azure-rbac',
+    scope: 'targetResource',
+    actions: [
+      {
+        label: 'Update storage account configuration',
+        name: 'Microsoft.Storage/storageAccounts/write',
+        reason: 'Required to update the storage account minimum TLS setting.',
+        links: [
+          {
+            label: 'Azure resource provider operations',
+            url: 'https://learn.microsoft.com/azure/role-based-access-control/resource-provider-operations',
+          },
+        ],
+      },
+    ],
+    dataActions: [],
+    leastPrivilegeRole: {
+      label: 'Custom least-privilege role',
+      description: 'A custom Azure role can grant only the required action permissions listed above.',
+    },
+    suggestedRoles: [
+      {
+        label: 'Storage Account Contributor',
+        roleName: 'Storage Account Contributor',
+        reason: 'Common built-in role that includes storage account configuration write permissions.',
+      },
+      {
+        label: 'Contributor',
+        roleName: 'Contributor',
+        reason: 'Broad built-in fallback role that includes this permission, but grants more access than needed.',
+      },
+    ],
+  },
   impactAssessment: {
     downtime: 'none expected',
     dataLoss: 'none',
@@ -267,8 +302,22 @@ const invalidActionRiskLevel: RecommendationActionMetadata = {
   riskLevel: 'critical',
 };
 
+const invalidActionPermissionProvider: RecommendationActionRequiredPermissions = {
+  ...recommendationAction.requiredPermissions!,
+  // @ts-expect-error action permission provider must use the supported provider values.
+  provider: 'azure-resource-graph',
+};
+
+const invalidActionPermissionScope: RecommendationActionRequiredPermissions = {
+  ...recommendationAction.requiredPermissions!,
+  // @ts-expect-error action permission scope must use the supported scope values.
+  scope: 'managementGroup',
+};
+
 void missingEnterpriseProfile;
 void invalidBreakdownShape;
 void invalidBulkProfileField;
 void invalidHddCurrentStorageTier;
 void invalidActionRiskLevel;
+void invalidActionPermissionProvider;
+void invalidActionPermissionScope;

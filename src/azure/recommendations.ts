@@ -104,12 +104,45 @@ export interface RecommendationActionPostValidation {
   links?: RecommendationActionLink[];
 }
 
+export type RecommendationActionPermissionProvider = 'azure-rbac';
+
+export type RecommendationActionPermissionScope = 'targetResource' | 'resourceGroup' | 'subscription' | 'tenant';
+
+export interface RecommendationActionPermissionRequirement {
+  label: string;
+  name: string;
+  reason: string;
+  links?: RecommendationActionLink[];
+}
+
+export interface RecommendationActionLeastPrivilegeRole {
+  label: string;
+  description: string;
+}
+
+export interface RecommendationActionSuggestedRole {
+  label: string;
+  roleName: string;
+  roleDefinitionId?: string;
+  reason: string;
+}
+
+export interface RecommendationActionRequiredPermissions {
+  provider: RecommendationActionPermissionProvider;
+  scope: RecommendationActionPermissionScope;
+  actions: RecommendationActionPermissionRequirement[];
+  dataActions: RecommendationActionPermissionRequirement[];
+  leastPrivilegeRole?: RecommendationActionLeastPrivilegeRole;
+  suggestedRoles?: RecommendationActionSuggestedRole[];
+}
+
 export interface RecommendationActionDefinition {
   verified: boolean;
   title: string;
   description: string;
   estimatedDuration: string;
   riskLevel: RecommendationActionRiskLevel;
+  requiredPermissions?: RecommendationActionRequiredPermissions;
   impactAssessment: RecommendationActionImpactAssessment;
   rollback: RecommendationActionRollback;
   humanPreChecks: RecommendationActionCheck[];
