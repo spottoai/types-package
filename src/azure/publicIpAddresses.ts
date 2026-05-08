@@ -16,6 +16,39 @@ export type PublicIpAddressesExposureEvidenceSource = 'nsg_rule' | 'lb_rule' | '
 
 export type PublicIpAddressesExposureConfidence = 'high' | 'medium' | 'low';
 
+export type PublicIpAddressesExposureSourceKind =
+  | 'internet'
+  | 'restricted_public'
+  | 'private'
+  | 'service_tag'
+  | 'application_security_group'
+  | 'unknown';
+
+export type PublicIpAddressesExposureProtocol = 'tcp' | 'udp' | 'icmp' | 'ah' | 'esp' | 'any' | 'unknown';
+
+export type PublicIpAddressesExposureScopeKind = 'nic' | 'subnet' | 'load_balancer' | 'app_gateway' | 'direct' | 'derived';
+
+export type PublicIpAddressesEffectiveReachability = 'effective' | 'possible' | 'not_reachable' | 'unknown';
+
+export type PublicIpAddressesRuleDirection = 'inbound' | 'outbound' | 'unknown';
+
+export type PublicIpAddressesRuleAccess = 'allow' | 'deny' | 'unknown';
+
+export type PublicIpAddressesRemediationOptionKind =
+  | 'azure_bastion'
+  | 'vpn_gateway'
+  | 'jit_vm_access'
+  | 'azure_virtual_desktop'
+  | 'cloudflare_tunnel'
+  | 'restrict_nsg_allowlist'
+  | 'remove_public_ip'
+  | 'front_with_app_gateway_waf'
+  | 'document_exception';
+
+export type PublicIpAddressesRemediationSuitability = 'recommended' | 'suitable' | 'conditional' | 'not_recommended';
+
+export type PublicIpAddressesRemediationLevel = 'low' | 'medium' | 'high' | 'unknown';
+
 export type PublicIpAddressesAssignmentVia =
   | 'relationship_graph'
   | 'direct_ip_configuration'
@@ -82,6 +115,9 @@ export interface PublicIpAddressesSummary {
   byConcern: Record<string, number>;
   byLocation: Record<string, number>;
   byPrefix: Record<string, number>;
+  broadManagementExposure?: number;
+  restrictedManagementExposure?: number;
+  remediationOptionCounts?: Record<string, number>;
 }
 
 export interface PublicIpAddressesSku {
@@ -106,11 +142,80 @@ export interface PublicIpAddressesPrefix {
   ipPrefix: string | null;
 }
 
+export interface PublicIpAddressesPortRange {
+  value: string;
+  from: number | null;
+  to: number | null;
+}
+
+export interface PublicIpAddressesNsgRuleMetadata {
+  id?: string;
+  name?: string;
+  networkSecurityGroupId?: string;
+  networkSecurityGroupName?: string;
+  priority?: number;
+  direction?: PublicIpAddressesRuleDirection;
+  access?: PublicIpAddressesRuleAccess;
+  sourceAddressPrefixes?: string[];
+  sourcePortRanges?: string[];
+  destinationAddressPrefixes?: string[];
+  destinationPortRanges?: string[];
+  protocol?: PublicIpAddressesExposureProtocol;
+  description?: string;
+}
+
+export interface PublicIpAddressesExposureScope {
+  kind: PublicIpAddressesExposureScopeKind;
+  resourceId?: string;
+  resourceName?: string;
+  resourceType?: string;
+}
+
 export interface PublicIpAddressesExposure {
   kind: PublicIpAddressesExposureKind;
   evidenceSource: PublicIpAddressesExposureEvidenceSource;
   evidence: string;
   confidence: PublicIpAddressesExposureConfidence;
+  sourceKind?: PublicIpAddressesExposureSourceKind;
+  sourcePrefixes?: string[];
+  destinationPortRanges?: PublicIpAddressesPortRange[];
+  protocol?: PublicIpAddressesExposureProtocol;
+  nsgRule?: PublicIpAddressesNsgRuleMetadata;
+  scope?: PublicIpAddressesExposureScope;
+  effectiveReachability?: PublicIpAddressesEffectiveReachability;
+  reason?: string;
+}
+
+export interface PublicIpAddressesReferenceLink {
+  label: string;
+  url: string;
+}
+
+export interface PublicIpAddressesCostRange {
+  currency?: string;
+  minMonthly?: number;
+  maxMonthly?: number;
+  billingPeriod?: 'monthly' | 'one_time' | 'usage_based' | 'unknown';
+  summary?: string;
+}
+
+export interface PublicIpAddressesRemediationAction {
+  label: string;
+  summary?: string;
+  links?: PublicIpAddressesReferenceLink[];
+}
+
+export interface PublicIpAddressesRemediationOption {
+  kind: PublicIpAddressesRemediationOptionKind;
+  label: string;
+  summary: string;
+  suitability: PublicIpAddressesRemediationSuitability;
+  estimatedMonthlyCostRange?: PublicIpAddressesCostRange;
+  effort?: PublicIpAddressesRemediationLevel;
+  risk?: PublicIpAddressesRemediationLevel;
+  impact?: PublicIpAddressesRemediationLevel;
+  actions?: PublicIpAddressesRemediationAction[];
+  links?: PublicIpAddressesReferenceLink[];
 }
 
 export interface PublicIpAddressesItem {
@@ -131,6 +236,7 @@ export interface PublicIpAddressesItem {
   associatedService: PublicIpAddressesAssociatedService;
   prefix: PublicIpAddressesPrefix | null;
   exposures: PublicIpAddressesExposure[];
+  remediationOptions?: PublicIpAddressesRemediationOption[];
   concerns: PublicIpAddressesConcern[];
   tags: Record<string, string>;
 }
