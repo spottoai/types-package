@@ -2,8 +2,23 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
+export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export type AzureDelegatedOnboardingStatus = 'subscriptionSelectionRequired' | 'active' | 'setupExpired';
+export type AzureDelegatedAuthErrorCode =
+  | 'invalid_grant'
+  | 'interaction_required'
+  | 'consent_required'
+  | 'claims_challenge'
+  | 'forbidden'
+  | 'unknown';
+export type AzureDelegatedOAuthStatePhase =
+  | 'discoverTenants'
+  | 'tenantSelectionRequired'
+  | 'tenantConsent'
+  | 'completed'
+  | 'failed';
 
 export interface CloudAccount {
   /** Partition Key */
@@ -14,6 +29,8 @@ export interface CloudAccount {
   companyName: string;
   /** AWS, Azure, GCP, etc. */
   provider: string;
+  /** Missing authMode should be treated as servicePrincipal by consumers for backward compatibility. */
+  authMode?: CloudAccountAuthMode;
   /** Optional list of subscription group names for this cloud account */
   groupNames?: string[];
   /** Azure Tenant ID */
@@ -38,7 +55,25 @@ export interface CloudAccount {
   tenantSyncCompletedAt?: Date;
   tenantSyncError?: string;
   tenantSyncSource?: CloudAccountTenantSyncSource;
+  /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
+  delegatedTokenCache?: string;
+  onboardingStatus?: AzureDelegatedOnboardingStatus;
+  delegatedSetupExpiresAt?: Date | string;
+  delegatedTrialStartedAt?: Date | string;
+  delegatedTrialExpiresAt?: Date | string;
+  reauthRequired?: boolean;
+  lastAuthErrorCode?: AzureDelegatedAuthErrorCode;
+  lastAuthErrorAt?: Date | string;
+  connectedUserObjectId?: string;
+  connectedUserTenantId?: string;
+  connectedUserEmail?: string;
+  connectedUserDisplayName?: string;
+  connectedAt?: Date | string;
+  lastTokenRefreshAt?: Date | string;
+  lastDelegatedTokenCacheUpdatedAt?: Date | string;
 }
+
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'>;
 
 export interface SubscriptionInfoBase {
   name: string;

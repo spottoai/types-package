@@ -1,4 +1,9 @@
-import type { CloudAccount } from './accounts';
+import type {
+  AzureDelegatedAuthErrorCode,
+  CloudAccount,
+  CloudAccountAuthMode,
+  PublicCloudAccountDto,
+} from './accounts';
 import type { CloudAccountTenantSyncRequestMessage } from '../index';
 import {
   CloudAccountReadPermission,
@@ -28,6 +33,79 @@ const cloudAccountWithoutRecommendationEffortProfile: CloudAccount = {
   effortProfile: undefined,
 };
 
+const servicePrincipalAccountWithoutAuthMode: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  id: 'tenant-client-id-sp-compat',
+};
+
+const delegatedCloudAccount: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  id: 'delegated-account-123',
+  authMode: 'delegatedUser',
+  onboardingStatus: 'active',
+  delegatedTokenCache: 'internal-token-cache',
+  delegatedSetupExpiresAt: '2026-05-17T00:00:00.000Z',
+  delegatedTrialStartedAt: new Date('2026-05-10T00:00:00.000Z'),
+  delegatedTrialExpiresAt: '2026-06-09T00:00:00.000Z',
+  reauthRequired: false,
+  lastAuthErrorCode: 'interaction_required',
+  lastAuthErrorAt: '2026-05-11T00:00:00.000Z',
+  connectedUserObjectId: 'user-object-123',
+  connectedUserTenantId: 'tenant-123',
+  connectedUserEmail: 'owner@example.com',
+  connectedUserDisplayName: 'Azure Owner',
+  connectedAt: '2026-05-10T00:00:00.000Z',
+  lastTokenRefreshAt: new Date('2026-05-10T01:00:00.000Z'),
+  lastDelegatedTokenCacheUpdatedAt: '2026-05-10T01:00:00.000Z',
+};
+
+const delegatedAuthMode: CloudAccountAuthMode = 'delegatedUser';
+const delegatedAuthErrorCode: AzureDelegatedAuthErrorCode = 'claims_challenge';
+
+const publicCloudAccountDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'delegated-account-123',
+  name: 'Delegated Azure Account',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  authMode: 'delegatedUser',
+  tenantId: 'tenant-123',
+  createdAt: new Date('2026-03-29T00:00:00.000Z'),
+  updatedAt: new Date('2026-03-29T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  onboardingStatus: 'active',
+  connectedUserEmail: 'owner@example.com',
+};
+
+const invalidPublicCloudAccountDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-account-123',
+  name: 'Public Azure Account',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  createdAt: new Date('2026-05-10T00:00:00.000Z'),
+  updatedAt: new Date('2026-05-10T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose token cache data.
+  delegatedTokenCache: 'internal-token-cache',
+};
+
+const invalidPublicCloudAccountWriteSecretDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-account-write-secret-123',
+  name: 'Public Azure Account With Write Secret',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  createdAt: new Date('2026-05-10T00:00:00.000Z'),
+  updatedAt: new Date('2026-05-10T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose write secrets.
+  writeSecret: 'write-service-principal-secret',
+};
+
 const cloudAccountWithTenantSyncState: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   id: 'tenant-client-id-789',
@@ -38,6 +116,13 @@ const cloudAccountWithTenantSyncState: CloudAccount = {
 
 void cloudAccountWithRecommendationEffortProfile;
 void cloudAccountWithoutRecommendationEffortProfile;
+void servicePrincipalAccountWithoutAuthMode;
+void delegatedCloudAccount;
+void delegatedAuthMode;
+void delegatedAuthErrorCode;
+void publicCloudAccountDto;
+void invalidPublicCloudAccountDto;
+void invalidPublicCloudAccountWriteSecretDto;
 void cloudAccountWithTenantSyncState;
 
 const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
