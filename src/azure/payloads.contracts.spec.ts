@@ -1,4 +1,4 @@
-import type { CloudAccountTenantSyncRequestMessage, SubscriptionMessage } from './payloads';
+import type { SubscriptionMessage } from './payloads';
 import type { Subscription } from './subscriptions';
 import type * as PackageContracts from '../index';
 import type {
@@ -40,19 +40,6 @@ const invalidSubscriptionMessage: SubscriptionMessage = {
 };
 
 void invalidSubscriptionMessage;
-
-const tenantSyncMessage: CloudAccountTenantSyncRequestMessage = {
-  entity: 'cloudaccount',
-  action: 'tenant-sync',
-  companyId: 'comp-123',
-  cloudAccountId: 'cloud-account-123',
-  tenantId: 'tenant-123',
-  clientId: 'client-123',
-  source: 'onboarding',
-  runId: 'tenant-sync-run-123',
-};
-
-void tenantSyncMessage;
 
 const publicCloudAccount: PublicCloudAccountDto = {
   companyId: 'comp-123',

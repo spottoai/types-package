@@ -1,12 +1,3 @@
-export type InviteType = 'standard' | 'trial';
-export type OnboardingIntent = 'azureDelegatedConnect';
-export interface InviteOnboardingIntent {
-    inviteType?: InviteType;
-    onboardingIntent?: OnboardingIntent;
-    canConnectAzureTrial?: boolean;
-    onboardingIntentCreatedAt?: Date | string;
-    onboardingIntentExpiresAt?: Date | string;
-}
 export interface BaseUser {
     id: string;
     firstName: string;
@@ -20,11 +11,6 @@ export interface User extends BaseUser {
     role: number;
     isPendingInvite: boolean;
     invitedBy: string;
-    inviteType?: InviteType;
-    onboardingIntent?: OnboardingIntent;
-    canConnectAzureTrial?: boolean;
-    onboardingIntentCreatedAt?: Date | string;
-    onboardingIntentExpiresAt?: Date | string;
 }
 export interface UserProfile extends BaseUser {
     Timestamp: string;
@@ -35,7 +21,7 @@ export interface UserProfile extends BaseUser {
     monthlyReportsEnabled: boolean;
     newRecommendationsNotify: boolean;
 }
-export interface UserInviteLink extends InviteOnboardingIntent {
+export interface UserInviteLink {
     link: string;
 }
 //# sourceMappingURL=user.d.ts.map
