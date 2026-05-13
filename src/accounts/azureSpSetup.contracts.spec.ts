@@ -1,5 +1,6 @@
 import type {
   AzureSpBillingExportPlan,
+  AzureSpBillingExportResult,
   AzureSpPermissionManifestItem,
   AzureSpSetupExecuteRequest,
   AzureSpSetupMode,
@@ -50,12 +51,28 @@ const billingExportPlan: AzureSpBillingExportPlan = {
     {
       subscriptionId: 'sub-123',
       dataset: 'ActualCost',
+      effectiveDefinitionType: 'Usage',
       exportName: 'existing-actual-export',
       exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
       storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
       containerName: 'spotto-cost-exports',
       rootFolderPath: 'spotto/sub-123/actual/recurring',
       isCompatible: true,
+      isActiveDaily: true,
+      canBeReused: true,
+    },
+    {
+      subscriptionId: 'sub-123',
+      dataset: 'AmortizedCost',
+      effectiveDefinitionType: 'AmortizedCost',
+      exportName: 'existing-amortized-export',
+      exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-amortized-export',
+      storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+      containerName: 'spotto-cost-exports',
+      rootFolderPath: 'spotto/sub-123/amortized/recurring',
+      isCompatible: true,
+      isActiveDaily: true,
+      canBeReused: true,
     },
   ],
   storageOptions: [
@@ -70,8 +87,72 @@ const billingExportPlan: AzureSpBillingExportPlan = {
     },
   ],
   selectedMode: 'reuseExisting',
+  selectedReuseDetectedExportResourceIds: [
+    '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
+    '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-amortized-export',
+  ],
+  selectedStorageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
   selectedContainerName: 'spotto-cost-exports',
 };
+
+const billingExportResults: AzureSpBillingExportResult[] = [
+  {
+    subscriptionId: 'sub-123',
+    dataset: 'ActualCost',
+    effectiveDefinitionType: 'Usage',
+    exportKind: 'recurring',
+    exportName: 'existing-actual-export',
+    exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
+    status: 'existing',
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+    rootFolderPath: 'spotto/sub-123/actual/recurring',
+    message: 'Existing compatible Usage export is reused for actual-cost data.',
+  },
+  {
+    subscriptionId: 'sub-123',
+    dataset: 'ActualCost',
+    effectiveDefinitionType: 'Usage',
+    exportKind: 'backfill',
+    exportName: 'spotto-actual-backfill-202604',
+    exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/spotto-actual-backfill-202604',
+    periodName: '202604',
+    status: 'queued',
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+    rootFolderPath: 'spotto/sub-123/actual/backfill/202604',
+  },
+  {
+    subscriptionId: 'sub-123',
+    dataset: 'ActualCost',
+    effectiveDefinitionType: 'ActualCost',
+    exportKind: 'recurring',
+    exportName: 'spotto-actual-daily',
+    exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/spotto-actual-daily',
+    status: 'createdRunQueued',
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+    rootFolderPath: 'spotto/sub-123/actual/recurring',
+  },
+  {
+    subscriptionId: 'sub-123',
+    dataset: 'AmortizedCost',
+    effectiveDefinitionType: 'AmortizedCost',
+    exportKind: 'recurring',
+    exportName: 'spotto-amortized-daily',
+    status: 'unavailable',
+    errorCode: 'billing_export_unavailable',
+    message: 'Amortized exports are not available for this subscription agreement.',
+  },
+  {
+    subscriptionId: 'sub-123',
+    exportKind: 'storage',
+    status: 'updated',
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+    message: 'Storage Blob Data Reader grant and private container diagnostics are safe to return.',
+  },
+];
 
 const graphOperationResult: AzureSpSetupOperationResult = {
   operationKey: 'graphApplicationReadAll:tenant-123',
@@ -122,6 +203,7 @@ const statusResponse: AzureSpSetupStatusResponse = {
     },
   ],
   billingExportPlan,
+  billingExportResults,
   operationResults: [graphOperationResult],
   progress: [
     {
@@ -167,6 +249,33 @@ const executeRequest: AzureSpSetupExecuteRequest = {
   writeBitmask: 0,
 };
 
+const selectedExistingStorageExecuteRequest: AzureSpSetupExecuteRequest = {
+  subscriptionIds: ['sub-123'],
+  selectedPermissionInstanceKeys: ['subscriptionReader:/subscriptions/sub-123', 'billingExportStorage:sub-123'],
+  billingExports: {
+    enabled: true,
+    mode: 'useExistingStorage',
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+  },
+};
+
+const createStorageExecuteRequest: AzureSpSetupExecuteRequest = {
+  subscriptionIds: ['sub-123'],
+  selectedPermissionInstanceKeys: ['subscriptionReader:/subscriptions/sub-123', 'billingExportStorage:sub-123'],
+  billingExports: {
+    enabled: true,
+    mode: 'createStorage',
+    createStorage: {
+      subscriptionId: 'sub-123',
+      resourceGroupName: 'rg-spotto-cost-exports',
+      location: 'australiaeast',
+      storageAccountName: 'spottoexports123',
+      containerName: 'spotto-cost-exports',
+    },
+  },
+};
+
 const invalidPlanResponse: AzureSpSetupPlanResponse = {
   ...planResponse,
   permissionPlan: [
@@ -200,8 +309,11 @@ void setupMode;
 void invalidSetupMode;
 void subscriptionReaderManifestItem;
 void billingExportPlan;
+void billingExportResults;
 void graphOperationResult;
 void statusResponse;
 void planResponse;
 void executeRequest;
+void selectedExistingStorageExecuteRequest;
+void createStorageExecuteRequest;
 void invalidPlanResponse;

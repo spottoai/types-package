@@ -113,6 +113,7 @@ export type AzureSpOperationResultStatus =
 
 export type AzureSpBillingExportMode = 'skip' | 'reuseExisting' | 'useExistingStorage' | 'createStorage';
 export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost';
+export type AzureSpBillingExportEffectiveDefinitionType = 'ActualCost' | 'Usage' | 'AmortizedCost';
 export type AzureSpBillingExportResultStatus =
   | 'notStarted'
   | 'existing'
@@ -243,12 +244,15 @@ export interface AzureSpBillingExportStorageOption {
 export interface AzureSpBillingExportDetectedExport {
   subscriptionId: string;
   dataset: AzureSpBillingExportDataset;
+  effectiveDefinitionType?: AzureSpBillingExportEffectiveDefinitionType;
   exportName: string;
   exportResourceId: string;
   storageAccountResourceId: string;
   containerName: string;
   rootFolderPath?: string;
   isCompatible: boolean;
+  isActiveDaily?: boolean;
+  canBeReused?: boolean;
 }
 
 export interface AzureSpBillingExportPlan {
@@ -261,6 +265,7 @@ export interface AzureSpBillingExportPlan {
   detectedCompatibleExports: AzureSpBillingExportDetectedExport[];
   storageOptions: AzureSpBillingExportStorageOption[];
   selectedMode?: AzureSpBillingExportMode;
+  selectedReuseDetectedExportResourceIds?: string[];
   selectedStorageAccountResourceId?: string;
   selectedContainerName?: string;
   createStorage?: {
@@ -275,14 +280,16 @@ export interface AzureSpBillingExportPlan {
 export interface AzureSpBillingExportResult {
   subscriptionId: string;
   dataset?: AzureSpBillingExportDataset;
-  effectiveDefinitionType?: 'ActualCost' | 'Usage' | 'AmortizedCost';
+  effectiveDefinitionType?: AzureSpBillingExportEffectiveDefinitionType;
   exportKind: 'recurring' | 'backfill' | 'storage' | 'providerRegistration';
   exportName?: string;
+  exportResourceId?: string;
   periodName?: string;
   status: AzureSpBillingExportResultStatus;
   storageAccountResourceId?: string;
   containerName?: string;
   rootFolderPath?: string;
+  errorCode?: AzureSpSetupErrorCode;
   message?: string;
 }
 
