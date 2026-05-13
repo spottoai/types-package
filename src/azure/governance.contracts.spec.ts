@@ -570,9 +570,11 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
       excludedDenyAssignmentIds: ['/subscriptions/sub-1/providers/microsoft.authorization/denyassignments/deny-1'],
       expandedResources: {
         count: 1,
-        resourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+        expansionMode: 'sample',
+        sampleResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+        sampleLimit: 25,
+        hasMore: false,
       },
-      expandedResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
     },
     {
       accessType: 'pimEligible',
@@ -607,9 +609,11 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
       limitations: ['requires-pim-activation'],
       expandedResources: {
         count: 1,
-        resourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+        expansionMode: 'sample',
+        sampleResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+        sampleLimit: 25,
+        hasMore: false,
       },
-      expandedResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
     },
   ],
   resourceIndex: [

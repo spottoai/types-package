@@ -1,6 +1,6 @@
 export const GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-01.slim-v1' as const;
 export const GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.graph-v1' as const;
-export const GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-05-13.identity-access-v1' as const;
+export const GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-05-14.identity-access-v2' as const;
 export const TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-02.tenant-slim-v1' as const;
 export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v1' as const;
 
@@ -616,9 +616,14 @@ export interface GovernanceAccessPimAssignment {
   linkedEligibleAssignmentId?: string;
 }
 
+export type GovernanceAccessResourceExpansionMode = 'none' | 'summary' | 'sample' | 'full';
+
 export interface GovernanceAccessExpandedResources {
   count: number;
-  resourceIds: string[];
+  expansionMode?: GovernanceAccessResourceExpansionMode;
+  sampleResourceIds?: string[];
+  sampleLimit?: number;
+  hasMore?: boolean;
 }
 
 export interface GovernanceAccessEffectiveAccessRow {
@@ -651,7 +656,6 @@ export interface GovernanceAccessEffectiveAccessRow {
   appliedDenyAssignmentIds?: string[];
   excludedDenyAssignmentIds?: string[];
   expandedResources: GovernanceAccessExpandedResources;
-  expandedResourceIds: string[];
 }
 
 export interface GovernanceAccessResourceReference {
