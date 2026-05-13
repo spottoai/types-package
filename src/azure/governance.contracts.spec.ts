@@ -1,5 +1,12 @@
-import type { GovernanceGraphArtifact, GovernanceReport, TenantGovernanceGraphArtifact, TenantGovernanceReport } from './governance';
+import type {
+  GovernanceAccessArtifact,
+  GovernanceGraphArtifact,
+  GovernanceReport,
+  TenantGovernanceGraphArtifact,
+  TenantGovernanceReport,
+} from './governance';
 import {
+  GOVERNANCE_ACCESS_SCHEMA_VERSION,
   GOVERNANCE_GRAPH_SCHEMA_VERSION,
   GOVERNANCE_REPORT_SCHEMA_VERSION,
   TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION,
@@ -414,6 +421,109 @@ const governanceGraph: GovernanceGraphArtifact = {
 void governanceReport;
 void governanceGraph;
 
+const governanceAccessArtifact: GovernanceAccessArtifact = {
+  schemaVersion: GOVERNANCE_ACCESS_SCHEMA_VERSION,
+  generatedAt: '2026-05-13T00:00:00.000Z',
+  scope: {
+    tenantId: 'tenant-1',
+    subscriptionId: 'sub-1',
+    displayName: 'Production',
+  },
+  coverage: {
+    roleAssignments: { state: 'complete', source: 'tenant' },
+    roleDefinitions: { state: 'complete', source: 'tenant' },
+    rolePermissionActions: { state: 'complete', source: 'tenant' },
+    principals: { state: 'complete', source: 'tenant' },
+    groupMemberships: { state: 'complete', source: 'microsoft-graph' },
+    resources: { state: 'complete', source: 'portal:resources.json' },
+    pimAssignments: { state: 'skipped', source: 'microsoft-graph' },
+    denyAssignments: { state: 'skipped', source: 'azure-rbac' },
+  },
+  identities: [
+    {
+      id: 'principal-1',
+      displayName: 'Automation App',
+      principalType: 'ServicePrincipal',
+      resolved: true,
+      assignmentCount: 1,
+      directAssignmentCount: 1,
+      groupDerivedAssignmentCount: 0,
+      privilegedAssignmentCount: 1,
+    },
+  ],
+  roleDefinitions: [
+    {
+      id: '/providers/microsoft.authorization/roledefinitions/owner',
+      roleName: 'Owner',
+      roleType: 'BuiltInRole',
+      assignableScopes: ['/'],
+      permissions: [{ actions: ['*'], notActions: [], dataActions: [], notDataActions: [] }],
+      grantsRoleAssignmentWrite: true,
+      permissionSummary: {
+        actionCount: 1,
+        dataActionCount: 0,
+        hasWildcardAction: true,
+        hasWildcardDataAction: false,
+      },
+    },
+  ],
+  assignments: governanceReport.rbac.roleAssignments,
+  effectiveAccess: [
+    {
+      accessType: 'direct',
+      assignmentId: 'ra-1',
+      identityId: 'principal-1',
+      identityType: 'ServicePrincipal',
+      principalType: 'ServicePrincipal',
+      viaGroupIds: [],
+      roleDefinitionId: '/providers/microsoft.authorization/roledefinitions/owner',
+      roleName: 'Owner',
+      roleType: 'BuiltInRole',
+      permissionSummary: {
+        actionCount: 1,
+        dataActionCount: 0,
+        hasWildcardAction: true,
+        hasWildcardDataAction: false,
+      },
+      scope: '/subscriptions/sub-1',
+      scopeType: 'subscription',
+      broadScope: true,
+      privileged: true,
+      collectionConfidence: 'high',
+      limitations: [],
+      expandedResources: {
+        count: 1,
+        resourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+      },
+      expandedResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+    },
+  ],
+  resourceIndex: [
+    {
+      id: '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1',
+      name: 'vm1',
+      type: 'microsoft.compute/virtualmachines',
+      resourceGroup: 'rg',
+      subscriptionId: 'sub-1',
+    },
+  ],
+  limitations: [
+    {
+      code: 'pim-assignments-not-collected',
+      severity: 'warning',
+      message: 'Privileged Identity Management eligible assignments and activation state are not included.',
+      affects: ['effectiveAccess'],
+    },
+  ],
+  sourceMetadata: {
+    tenantFiles: ['governance/principals.json.gz'],
+    subscriptionFiles: ['governance/governance-raw.json.gz'],
+    portalFiles: ['resources.json'],
+  },
+};
+
+void governanceAccessArtifact;
+
 const tenantGovernanceReport: TenantGovernanceReport = {
   schemaVersion: TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
   scope: {
@@ -728,6 +838,26 @@ const invalidGraphNodeType: GovernanceGraphArtifact = {
 
 void invalidReportSchemaVersion;
 void invalidGraphNodeType;
+
+const invalidAccessSchemaVersion: GovernanceAccessArtifact = {
+  ...governanceAccessArtifact,
+  // @ts-expect-error governance access schema version must match the published access contract.
+  schemaVersion: '2026-05-01.slim-v1',
+};
+
+const invalidAccessType: GovernanceAccessArtifact = {
+  ...governanceAccessArtifact,
+  effectiveAccess: [
+    {
+      ...governanceAccessArtifact.effectiveAccess[0],
+      // @ts-expect-error access rows use the governance access type vocabulary.
+      accessType: 'nestedGroup',
+    },
+  ],
+};
+
+void invalidAccessSchemaVersion;
+void invalidAccessType;
 
 const invalidTenantReportSchemaVersion: TenantGovernanceReport = {
   ...tenantGovernanceReport,

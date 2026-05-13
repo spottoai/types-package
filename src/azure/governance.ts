@@ -1,10 +1,12 @@
 export const GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-01.slim-v1' as const;
 export const GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.graph-v1' as const;
+export const GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-05-13.identity-access-v1' as const;
 export const TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-02.tenant-slim-v1' as const;
 export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v1' as const;
 
 export const GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz' as const;
 export const GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz' as const;
+export const GOVERNANCE_ACCESS_PORTAL_FILE = 'governance-access.json.gz' as const;
 export const TENANT_GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz' as const;
 export const TENANT_GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz' as const;
 
@@ -442,6 +444,160 @@ export interface GovernancePrincipalsSection {
   servicePrincipals?: GovernancePrincipal[];
   applications?: GovernancePrincipal[];
   managedIdentities?: GovernancePrincipal[];
+  users?: GovernancePrincipal[];
+  groups?: GovernancePrincipal[];
+  groupMemberships?: GovernanceGroupMembership[];
+}
+
+export type GovernanceAccessCoverageKey =
+  | 'roleAssignments'
+  | 'roleDefinitions'
+  | 'rolePermissionActions'
+  | 'principals'
+  | 'users'
+  | 'groups'
+  | 'groupMemberships'
+  | 'nestedGroupMemberships'
+  | 'resources'
+  | 'denyAssignments'
+  | 'pimAssignments';
+
+export type GovernanceAccessCoverageSource =
+  | GovernanceCoverageSource
+  | 'azure-rbac'
+  | 'microsoft-graph'
+  | 'portal'
+  | 'portal:resources.json'
+  | 'governance';
+
+export interface GovernanceAccessCoverageSection {
+  state: GovernanceCoverageState;
+  source: GovernanceAccessCoverageSource | string;
+  reason?: string;
+  message?: string;
+  requiredPermissions?: string[];
+}
+
+export type GovernanceAccessCoverage = Partial<Record<GovernanceAccessCoverageKey, GovernanceAccessCoverageSection>>;
+
+export type GovernanceAccessIdentityType = 'User' | 'Group' | 'ServicePrincipal' | 'ManagedIdentity' | 'Application' | string;
+
+export type GovernanceAccessType = 'direct' | 'groupDerived' | 'pimActive' | 'pimEligible';
+
+export type GovernanceAccessCollectionConfidence = 'high' | 'medium' | 'partial' | 'unknown';
+
+export interface GovernanceGroupMembership {
+  groupId: string;
+  memberId: string;
+  memberType?: GovernanceAccessIdentityType;
+  member?: GovernancePrincipalReference;
+  transitive?: boolean;
+}
+
+export interface GovernanceAccessScope {
+  tenantId: string;
+  subscriptionId: string;
+  displayName?: string;
+  quotaId?: string;
+  state?: string;
+  managementGroupPath?: GovernanceManagementGroupPathEntry[];
+}
+
+export interface GovernanceAccessIdentity {
+  id: string;
+  displayName?: string;
+  principalType?: GovernanceAccessIdentityType;
+  appId?: string;
+  servicePrincipalType?: string;
+  userPrincipalName?: string;
+  userType?: string;
+  resolved: boolean;
+  assignmentCount: number;
+  directAssignmentCount: number;
+  groupDerivedAssignmentCount: number;
+  privilegedAssignmentCount: number;
+}
+
+export interface GovernanceAccessPermissionBlock {
+  actions: string[];
+  notActions: string[];
+  dataActions: string[];
+  notDataActions: string[];
+}
+
+export interface GovernanceAccessRoleDefinition extends Omit<GovernanceRoleDefinition, 'permissionSummary'> {
+  permissions: GovernanceAccessPermissionBlock[];
+  permissionSummary: GovernancePermissionSummary;
+}
+
+export interface GovernanceAccessAssignment extends GovernanceRoleAssignment {}
+
+export interface GovernanceAccessExpandedResources {
+  count: number;
+  resourceIds: string[];
+}
+
+export interface GovernanceAccessEffectiveAccessRow {
+  accessType: GovernanceAccessType;
+  assignmentId?: string;
+  identityId?: string;
+  identityType?: GovernanceAccessIdentityType;
+  principalType?: GovernanceAccessIdentityType;
+  identity?: GovernancePrincipalReference;
+  viaGroupIds: string[];
+  viaGroup?: GovernancePrincipalReference;
+  roleDefinitionId?: string;
+  roleName?: string;
+  roleType?: string;
+  permissionSummary?: GovernancePermissionSummary;
+  scope?: string;
+  scopeType?: GovernanceScopeType;
+  scopeReference?: GovernanceScopeReference;
+  broadScope: boolean;
+  privileged: boolean;
+  condition?: string;
+  conditionVersion?: string;
+  collectionConfidence: GovernanceAccessCollectionConfidence;
+  limitations: string[];
+  expandedResources: GovernanceAccessExpandedResources;
+  expandedResourceIds: string[];
+}
+
+export interface GovernanceAccessResourceReference {
+  id: string;
+  name?: string;
+  type?: string;
+  resourceGroup?: string;
+  location?: string;
+  subscriptionId?: string;
+}
+
+export interface GovernanceAccessLimitation {
+  code: string;
+  severity: 'info' | 'warning';
+  message: string;
+  affects: string[];
+}
+
+export interface GovernanceAccessSourceMetadata {
+  tenantFiles: string[];
+  subscriptionFiles: string[];
+  portalFiles?: string[];
+  rawFallbackFiles?: string[];
+}
+
+export interface GovernanceAccessArtifact {
+  schemaVersion: typeof GOVERNANCE_ACCESS_SCHEMA_VERSION;
+  generatedAt: string;
+  scope: GovernanceAccessScope;
+  coverage: GovernanceAccessCoverage;
+  identities: GovernanceAccessIdentity[];
+  roleDefinitions: GovernanceAccessRoleDefinition[];
+  assignments: GovernanceAccessAssignment[];
+  effectiveAccess: GovernanceAccessEffectiveAccessRow[];
+  resourceIndex: GovernanceAccessResourceReference[];
+  limitations: GovernanceAccessLimitation[];
+  sourceMetadata: GovernanceAccessSourceMetadata;
 }
 
 export interface GovernanceReportSourceMetadata {
