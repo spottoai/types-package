@@ -530,7 +530,7 @@ export interface GovernanceAccessRoleDefinition extends Omit<GovernanceRoleDefin
   permissionSummary: GovernancePermissionSummary;
 }
 
-export interface GovernanceAccessAssignment extends GovernanceRoleAssignment {}
+export type GovernanceAccessAssignment = GovernanceRoleAssignment;
 
 export interface GovernanceAccessExpandedResources {
   count: number;
