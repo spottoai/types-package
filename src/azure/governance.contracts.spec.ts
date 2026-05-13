@@ -436,8 +436,11 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
     principals: { state: 'complete', source: 'tenant' },
     groupMemberships: { state: 'complete', source: 'microsoft-graph' },
     resources: { state: 'complete', source: 'portal:resources.json' },
-    pimAssignments: { state: 'skipped', source: 'microsoft-graph' },
-    denyAssignments: { state: 'skipped', source: 'azure-rbac' },
+    pimAssignments: { state: 'complete', source: 'azure-rbac' },
+    pimActiveAssignments: { state: 'complete', source: 'azure-rbac' },
+    pimEligibleAssignments: { state: 'complete', source: 'azure-rbac' },
+    denyAssignments: { state: 'complete', source: 'azure-rbac' },
+    denyAssignmentActions: { state: 'complete', source: 'azure-rbac' },
   },
   identities: [
     {
@@ -468,6 +471,78 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
     },
   ],
   assignments: governanceReport.rbac.roleAssignments,
+  denyAssignments: [
+    {
+      id: '/subscriptions/sub-1/providers/microsoft.authorization/denyassignments/deny-1',
+      name: 'deny-1',
+      denyAssignmentName: 'Deployment stack protection',
+      description: 'Blocks writes to protected resources.',
+      scope: '/subscriptions/sub-1',
+      scopeType: 'subscription',
+      broadScope: true,
+      permissions: [
+        {
+          actions: ['Microsoft.Authorization/*/write'],
+          notActions: ['Microsoft.Authorization/roleAssignments/read'],
+          dataActions: [],
+          notDataActions: [],
+        },
+      ],
+      principals: [
+        {
+          id: '00000000-0000-0000-0000-000000000000',
+          type: 'SystemDefined',
+          allPrincipals: true,
+        },
+      ],
+      excludePrincipals: [
+        {
+          id: 'principal-1',
+          type: 'ServicePrincipal',
+          principal: {
+            id: 'principal-1',
+            displayName: 'Automation App',
+            principalType: 'ServicePrincipal',
+            resolved: true,
+          },
+        },
+      ],
+      doNotApplyToChildScopes: false,
+      isSystemProtected: true,
+      denyAssignmentEffect: 'enforced',
+    },
+  ],
+  pimAssignments: [
+    {
+      id: '/subscriptions/sub-1/providers/microsoft.authorization/roleeligibilityscheduleinstances/pim-eligible-1',
+      name: 'pim-eligible-1',
+      assignmentType: 'eligible',
+      source: 'roleEligibilityScheduleInstance',
+      principalId: 'principal-1',
+      principal: {
+        id: 'principal-1',
+        appId: 'app-1',
+        displayName: 'Automation App',
+        principalType: 'ServicePrincipal',
+        resolved: true,
+      },
+      principalType: 'ServicePrincipal',
+      roleDefinitionId: '/providers/microsoft.authorization/roledefinitions/owner',
+      roleName: 'Owner',
+      roleType: 'BuiltInRole',
+      scope: '/subscriptions/sub-1',
+      scopeType: 'subscription',
+      broadScope: true,
+      privileged: true,
+      schedule: {
+        startDateTime: '2026-05-13T00:00:00.000Z',
+        endDateTime: '2026-06-13T00:00:00.000Z',
+        expirationType: 'AfterDateTime',
+      },
+      status: 'Provisioned',
+      memberType: 'Direct',
+    },
+  ],
   effectiveAccess: [
     {
       accessType: 'direct',
@@ -491,6 +566,45 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
       privileged: true,
       collectionConfidence: 'high',
       limitations: [],
+      appliedDenyAssignmentIds: ['/subscriptions/sub-1/providers/microsoft.authorization/denyassignments/deny-1'],
+      excludedDenyAssignmentIds: ['/subscriptions/sub-1/providers/microsoft.authorization/denyassignments/deny-1'],
+      expandedResources: {
+        count: 1,
+        resourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+      },
+      expandedResourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
+    },
+    {
+      accessType: 'pimEligible',
+      assignmentId: 'pim-eligible-1',
+      pimAssignmentId: '/subscriptions/sub-1/providers/microsoft.authorization/roleeligibilityscheduleinstances/pim-eligible-1',
+      pimAssignmentType: 'eligible',
+      pimSource: 'roleEligibilityScheduleInstance',
+      pimSchedule: {
+        startDateTime: '2026-05-13T00:00:00.000Z',
+        endDateTime: '2026-06-13T00:00:00.000Z',
+        expirationType: 'AfterDateTime',
+      },
+      pimStatus: 'Provisioned',
+      identityId: 'principal-1',
+      identityType: 'ServicePrincipal',
+      principalType: 'ServicePrincipal',
+      viaGroupIds: [],
+      roleDefinitionId: '/providers/microsoft.authorization/roledefinitions/owner',
+      roleName: 'Owner',
+      roleType: 'BuiltInRole',
+      permissionSummary: {
+        actionCount: 1,
+        dataActionCount: 0,
+        hasWildcardAction: true,
+        hasWildcardDataAction: false,
+      },
+      scope: '/subscriptions/sub-1',
+      scopeType: 'subscription',
+      broadScope: true,
+      privileged: true,
+      collectionConfidence: 'high',
+      limitations: ['requires-pim-activation'],
       expandedResources: {
         count: 1,
         resourceIds: ['/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm1'],
@@ -856,8 +970,20 @@ const invalidAccessType: GovernanceAccessArtifact = {
   ],
 };
 
+const invalidPimAssignmentType: GovernanceAccessArtifact = {
+  ...governanceAccessArtifact,
+  pimAssignments: [
+    {
+      ...governanceAccessArtifact.pimAssignments![0],
+      // @ts-expect-error PIM assignments distinguish only active and eligible assignment records.
+      assignmentType: 'permanent',
+    },
+  ],
+};
+
 void invalidAccessSchemaVersion;
 void invalidAccessType;
+void invalidPimAssignmentType;
 
 const invalidTenantReportSchemaVersion: TenantGovernanceReport = {
   ...tenantGovernanceReport,
