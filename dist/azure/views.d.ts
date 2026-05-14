@@ -214,6 +214,37 @@ export interface VmPricePerformanceCatalogSource {
     displayPricingSource?: 'Azure Retail Prices API' | string;
     generatedAt?: string;
 }
+export type VmPricePerformanceCapabilityImpactSeverity = 'info' | 'warning' | 'blocking' | 'unknown' | string;
+export type VmPricePerformanceCapabilityImpactBasis = 'sku-capability' | 'current-setting' | 'observed-usage' | 'unknown' | string;
+export type VmPricePerformanceCapabilityImpactMateriality = 'used' | 'not-used' | 'unknown' | 'not-applicable' | string;
+export interface VmPricePerformanceCurrentRuntimeSettings {
+    osDiskStorageAccountType?: string;
+    dataDiskStorageAccountTypes?: string[];
+    dataDiskCount?: number;
+    premiumDiskInUse?: boolean;
+    premiumOsDiskInUse?: boolean;
+    premiumDataDiskInUse?: boolean;
+    premiumDataDiskCount?: number;
+    ultraSsdEnabled?: boolean;
+    ephemeralOsDiskConfigured?: boolean;
+    acceleratedNetworkingKnown?: boolean;
+    acceleratedNetworkingEnabled?: boolean;
+    networkInterfaceCount?: number;
+    resourceDiskUsageKnown?: boolean;
+    resourceDiskInUse?: boolean;
+    resourceDiskUsageBytes?: number;
+}
+export interface VmPricePerformanceCapabilityImpact {
+    /** Matches the existing lost-capability key when the impact describes a lost SKU capability. */
+    key: string;
+    label?: string;
+    severity: VmPricePerformanceCapabilityImpactSeverity;
+    basis: VmPricePerformanceCapabilityImpactBasis;
+    materiality?: VmPricePerformanceCapabilityImpactMateriality;
+    currentValue?: unknown;
+    alternativeValue?: unknown;
+    message?: string;
+}
 export interface VmPricePerformanceSku {
     armSkuName: string;
     region: string;
@@ -276,6 +307,7 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
     performanceDeltaPercent?: number;
     pricePerPerformanceDeltaPercent?: number;
     reason?: string;
+    capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
 }
 export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
     /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
@@ -288,6 +320,8 @@ export interface VmPricePerformanceInsights {
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
     current?: VmPricePerformanceSku;
+    /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
+    currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */
     alternatives: VmPricePerformanceAlternative[];
     /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
