@@ -73,7 +73,12 @@ export interface CloudAccount {
   lastDelegatedTokenCacheUpdatedAt?: Date | string;
 }
 
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'>;
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'> & {
+  /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
+  secretPreview?: string;
+  /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
+  writeSecretPreview?: string;
+};
 
 export interface SubscriptionInfoBase {
   name: string;
