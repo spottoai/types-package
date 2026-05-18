@@ -1,5 +1,6 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
+export type CompanyLifecycle = 'standard' | 'trial';
 export interface Company {
     id: string;
     name: string;
@@ -22,10 +23,15 @@ export interface Company {
     parentCompanyName?: string;
     hasChildren?: boolean;
     parentIntegrationSettings?: ParentIntegrationSettings[];
+    companyLifecycle?: CompanyLifecycle;
+    azureDelegatedTrialStartedAt?: Date | string;
+    azureDelegatedTrialUsedAt?: Date | string;
+    azureDelegatedTrialExpiresAt?: Date | string;
 }
 export interface CompanyCreate {
     name: string;
     website?: string;
+    createdAt?: Date | string;
     preferredTimezone?: string;
     hourlyRateAmount?: number;
     hourlyRateCurrency?: string;
@@ -37,6 +43,10 @@ export interface CompanyCreate {
     integrations?: CompanyIntegrations;
     parentId?: string;
     billingAccountId?: string;
+    companyLifecycle?: CompanyLifecycle;
+    azureDelegatedTrialStartedAt?: Date | string;
+    azureDelegatedTrialUsedAt?: Date | string;
+    azureDelegatedTrialExpiresAt?: Date | string;
 }
 export interface UserCompany {
     email: string;
@@ -47,6 +57,8 @@ export interface UserCompany {
     parentId?: string;
     parentCompanyName?: string;
     hasChildren?: boolean;
+    companyLifecycle?: CompanyLifecycle;
+    azureDelegatedTrialExpiresAt?: Date | string;
 }
 export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise';
 export type IntegrationProvider = KnownIntegrationProvider | (string & {});
