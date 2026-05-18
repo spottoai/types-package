@@ -138,6 +138,7 @@ export interface RecommendationActionRequiredPermissions {
 
 export interface RecommendationActionDefinition {
   verified: boolean;
+  actionDefinitionId?: string;
   title: string;
   description: string;
   estimatedDuration: string;
@@ -454,6 +455,8 @@ export interface RecommendationActionRequest extends ProviderScope {
   cloudAccountId?: string;
   /** Optional user-provided reason for queue-backed actions such as implement. */
   reason?: string;
+  /** Optional action permission metadata passed into API preflight before queue publish. */
+  requiredPermissions?: RecommendationActionRequiredPermissions;
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];
@@ -468,6 +471,26 @@ export interface RecommendationActionResponse {
   message?: string;
   affectedResources?: string[];
   eventId?: string;
+}
+
+export type RecommendationActionPermissionFailureStatus = 'missing' | 'unknown' | 'unsupported';
+
+export interface RecommendationActionPermissionFailure {
+  resourceId: string;
+  azureScope: string;
+  status: RecommendationActionPermissionFailureStatus;
+  message: string;
+  missingActions: string[];
+  missingDataActions: string[];
+}
+
+export interface RecommendationActionPermissionErrorResponse {
+  error: 'AzurePermissionMissing';
+  message: string;
+  action: 'implement';
+  providerName: string;
+  providerScopeId: string;
+  failures: RecommendationActionPermissionFailure[];
 }
 
 export interface ServiceRetirementRecommendation {

@@ -68,18 +68,67 @@ export interface RecommendationActionImpactAssessment {
     accessImpact: string;
     dependencies: string;
 }
+export type RecommendationActionRiskLevel = 'low' | 'medium' | 'high';
+export interface RecommendationActionRollback {
+    supported: boolean;
+    description: string;
+    limitations: string[];
+}
+export interface RecommendationActionCheck {
+    label: string;
+    description: string;
+}
+export interface RecommendationActionLink {
+    label: string;
+    url: string;
+}
+export interface RecommendationActionPostValidation {
+    label: string;
+    description: string;
+    expectedResult: string;
+    links?: RecommendationActionLink[];
+}
+export type RecommendationActionPermissionProvider = 'azure-rbac';
+export type RecommendationActionPermissionScope = 'targetResource' | 'resourceGroup' | 'subscription' | 'tenant';
+export interface RecommendationActionPermissionRequirement {
+    label: string;
+    name: string;
+    reason: string;
+    links?: RecommendationActionLink[];
+}
+export interface RecommendationActionLeastPrivilegeRole {
+    label: string;
+    description: string;
+}
+export interface RecommendationActionSuggestedRole {
+    label: string;
+    roleName: string;
+    roleDefinitionId?: string;
+    reason: string;
+}
+export interface RecommendationActionRequiredPermissions {
+    provider: RecommendationActionPermissionProvider;
+    scope: RecommendationActionPermissionScope;
+    actions: RecommendationActionPermissionRequirement[];
+    dataActions: RecommendationActionPermissionRequirement[];
+    leastPrivilegeRole?: RecommendationActionLeastPrivilegeRole;
+    suggestedRoles?: RecommendationActionSuggestedRole[];
+}
 export interface RecommendationActionDefinition {
     verified: boolean;
+    actionDefinitionId?: string;
+    title: string;
     description: string;
     estimatedDuration: string;
-    riskLevel: string;
-    preRequisites: string[];
+    riskLevel: RecommendationActionRiskLevel;
+    requiredPermissions?: RecommendationActionRequiredPermissions;
     impactAssessment: RecommendationActionImpactAssessment;
+    rollback: RecommendationActionRollback;
+    humanPreChecks: RecommendationActionCheck[];
+    postValidation: RecommendationActionPostValidation[];
 }
-export type RecommendationActionMetadata = Partial<Omit<RecommendationActionDefinition, 'impactAssessment'>> & {
-    impactAssessment?: Partial<RecommendationActionImpactAssessment>;
-};
-export type RecommendationImplementActionImpactAssessment = Partial<RecommendationActionImpactAssessment>;
+export type RecommendationActionMetadata = RecommendationActionDefinition;
+export type RecommendationImplementActionImpactAssessment = RecommendationActionImpactAssessment;
 export type RecommendationImplementAction = RecommendationActionMetadata;
 export interface RecommendationResources {
     recommendation: CustomAzureRecommendation;
@@ -350,6 +399,8 @@ export interface RecommendationActionRequest extends ProviderScope {
     cloudAccountId?: string;
     /** Optional user-provided reason for queue-backed actions such as implement. */
     reason?: string;
+    /** Optional action permission metadata passed into API preflight before queue publish. */
+    requiredPermissions?: RecommendationActionRequiredPermissions;
     recommendationId: string;
     recommendationTitle?: string;
     resourceIds: string[];
@@ -363,6 +414,23 @@ export interface RecommendationActionResponse {
     message?: string;
     affectedResources?: string[];
     eventId?: string;
+}
+export type RecommendationActionPermissionFailureStatus = 'missing' | 'unknown' | 'unsupported';
+export interface RecommendationActionPermissionFailure {
+    resourceId: string;
+    azureScope: string;
+    status: RecommendationActionPermissionFailureStatus;
+    message: string;
+    missingActions: string[];
+    missingDataActions: string[];
+}
+export interface RecommendationActionPermissionErrorResponse {
+    error: 'AzurePermissionMissing';
+    message: string;
+    action: 'implement';
+    providerName: string;
+    providerScopeId: string;
+    failures: RecommendationActionPermissionFailure[];
 }
 export interface ServiceRetirementRecommendation {
     Id: string;

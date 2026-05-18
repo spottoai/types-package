@@ -1,3 +1,4 @@
+import type { InviteType, OnboardingIntent } from './user';
 export declare class CompanyUser {
     id?: string;
     userId: string;
@@ -10,5 +11,10 @@ export declare class CompanyUser {
     invitedBy: string;
     createdAt: Date;
     updatedAt: Date;
+    inviteType?: InviteType;
+    onboardingIntent?: OnboardingIntent;
+    canConnectAzureTrial?: boolean;
+    onboardingIntentCreatedAt?: Date | string;
+    onboardingIntentExpiresAt?: Date | string;
 }
 //# sourceMappingURL=companyUser.d.ts.map
