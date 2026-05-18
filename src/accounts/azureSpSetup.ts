@@ -44,6 +44,15 @@ export type AzureSpPermissionRequirement = 'required' | 'recommended' | 'optiona
 export type AzureSpPermissionStatus = 'notStarted' | 'running' | 'succeeded' | 'failed' | 'skipped' | 'alreadyExists';
 export type AzureSpPermissionCapabilityStatus = 'unknown' | 'likelyAllowed' | 'likelyMissing';
 export type AzureSpPermissionFailureBehavior = 'blockSetup' | 'completePartial' | 'warnOnly';
+export type AzureSpSetupPermissionCapabilityGroupKey =
+  | 'baselineResourceInventory'
+  | 'monitoringLogs'
+  | 'costBillingExports'
+  | 'governanceIdentity'
+  | 'reservationsSavingsPlans'
+  | 'optionalWriteActions';
+export type AzureSpSetupPermissionCapabilityGroupStatus = AzureSpPermissionStatus | 'partial';
+export type AzureSpSetupPermissionCapabilitySeverity = 'required' | 'recommended' | 'optionalAdvanced';
 export type AzureSpPermissionScopeKind =
   | 'tenant'
   | 'application'
@@ -231,6 +240,50 @@ export interface AzureSpSetupProgressStep {
   message?: string;
 }
 
+export interface AzureSpSetupPermissionCapabilityCounts {
+  total: number;
+  selectedByDefault: number;
+  selectedForExecution: number;
+  succeeded: number;
+  alreadyExists: number;
+  failed: number;
+  skipped: number;
+  notStarted: number;
+  running: number;
+}
+
+export interface AzureSpSetupPermissionCapabilitySummary {
+  key: AzureSpSetupPermissionCapabilityGroupKey;
+  displayName: string;
+  description: string;
+  requirement: AzureSpPermissionRequirement;
+  severity: AzureSpSetupPermissionCapabilitySeverity;
+  selectedByDefault: boolean;
+  selectedForExecution: boolean;
+  status: AzureSpSetupPermissionCapabilityGroupStatus;
+  benefit: string;
+  skippedImpact: string;
+  permissionInstanceKeys: string[];
+  selectedPermissionInstanceKeys: string[];
+  counts: AzureSpSetupPermissionCapabilityCounts;
+}
+
+export interface AzureSpSetupPermissionSummary {
+  posture: 'recommendedReadOnly';
+  title: string;
+  description: string;
+  mode: AzureSpSetupMode;
+  modeLabel: string;
+  modeDescription: string;
+  recommendedReadOnlyByDefault: true;
+  optionalWriteSelectedByDefault: boolean;
+  totalPermissionCount: number;
+  selectedByDefaultCount: number;
+  selectedForExecutionCount: number;
+  optionalWritePermissionCount: number;
+  capabilityGroups: AzureSpSetupPermissionCapabilitySummary[];
+}
+
 export interface AzureSpBillingExportStorageOption {
   storageAccountResourceId: string;
   subscriptionId: string;
@@ -308,6 +361,7 @@ export interface AzureSpSetupStatusResponse {
   tenants?: AzureSpSetupTenant[];
   subscriptions?: AzureSpSetupSubscriptionOption[];
   permissionPlan?: AzureSpSetupPermissionPlanItem[];
+  permissionSummary?: AzureSpSetupPermissionSummary;
   billingExportPlan?: AzureSpBillingExportPlan;
   billingExportResults?: AzureSpBillingExportResult[];
   operationResults?: AzureSpSetupOperationResult[];
