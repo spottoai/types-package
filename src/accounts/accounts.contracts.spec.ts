@@ -76,9 +76,11 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   status: 'Active',
   onboardingStatus: 'active',
   connectedUserEmail: 'owner@example.com',
+  secretPreview: 'abc*****',
+  writeSecretPreview: 'xyz*****',
 };
 
-const invalidPublicCloudAccountDto: PublicCloudAccountDto = {
+const invalidPublicCloudAccountTokenCacheDto: PublicCloudAccountDto = {
   companyId: 'comp-123',
   id: 'public-account-123',
   name: 'Public Azure Account',
@@ -90,6 +92,20 @@ const invalidPublicCloudAccountDto: PublicCloudAccountDto = {
   status: 'Active',
   // @ts-expect-error public cloud-account DTOs must not expose token cache data.
   delegatedTokenCache: 'internal-token-cache',
+};
+
+const invalidPublicCloudAccountSecretDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-account-secret-123',
+  name: 'Public Azure Account With Secret',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  createdAt: new Date('2026-05-10T00:00:00.000Z'),
+  updatedAt: new Date('2026-05-10T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose read secrets.
+  secret: 'service-principal-secret',
 };
 
 const invalidPublicCloudAccountWriteSecretDto: PublicCloudAccountDto = {
@@ -121,7 +137,8 @@ void delegatedCloudAccount;
 void delegatedAuthMode;
 void delegatedAuthErrorCode;
 void publicCloudAccountDto;
-void invalidPublicCloudAccountDto;
+void invalidPublicCloudAccountTokenCacheDto;
+void invalidPublicCloudAccountSecretDto;
 void invalidPublicCloudAccountWriteSecretDto;
 void cloudAccountWithTenantSyncState;
 
