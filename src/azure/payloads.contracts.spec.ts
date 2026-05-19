@@ -2,6 +2,8 @@ import type { SubscriptionMessage } from './payloads';
 import type { Subscription } from './subscriptions';
 import type * as PackageContracts from '../index';
 import type {
+  ActionExecutionRequestMessage,
+  ActionExecutionSource,
   AzureDelegatedConnectionStartRequest,
   AzureDelegatedConfirmSubscriptionsRequest,
   AzureDelegatedConfirmSubscriptionsResponse,
@@ -15,6 +17,7 @@ import type {
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
   PublicCloudAccountDto,
+  RequestMessage,
 } from '../index';
 
 const subscription: Subscription = {
@@ -178,6 +181,63 @@ const invalidPublicDelegatedDto: PublicCloudAccountDto = {
   secret: 'service-principal-secret',
 };
 
+const actionExecutionSource: ActionExecutionSource = {
+  kind: 'schedule',
+  scheduleId: 'schedule-1',
+  scheduleRunId: 'run-1',
+  occurrenceId: 'schedule-1:2026-05-19T08:00:00Z',
+  desiredOutcome: 'running',
+};
+
+const actionExecutionRequestMessage: ActionExecutionRequestMessage = {
+  entity: 'actions',
+  action: 'execute',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  tenantId: 'tenant-1',
+  clientId: 'client-1',
+  subscriptionId: 'subscription-1',
+  providerName: 'azure',
+  providerScopeId: 'subscription-1',
+  actionDefinitionId: 'compute-virtualmachines_start',
+  resourceIds: [
+    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1',
+  ],
+  byUserId: 'user-1',
+  source: actionExecutionSource,
+};
+
+const baseRequestMessage: RequestMessage = actionExecutionRequestMessage;
+
+// @ts-expect-error ActionExecutionRequestMessage.actionDefinitionId is required.
+const missingActionDefinitionId: ActionExecutionRequestMessage = {
+  entity: 'actions',
+  action: 'execute',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  tenantId: 'tenant-1',
+  clientId: 'client-1',
+  resourceIds: [
+    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1',
+  ],
+};
+
+// @ts-expect-error ActionExecutionRequestMessage.resourceIds is required.
+const missingResourceIds: ActionExecutionRequestMessage = {
+  entity: 'actions',
+  action: 'execute',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  tenantId: 'tenant-1',
+  clientId: 'client-1',
+  actionDefinitionId: 'compute-virtualmachines_start',
+};
+
+const scaleOutActionExecutionSource: ActionExecutionSource = {
+  kind: 'schedule',
+  desiredOutcome: 'scale-out',
+};
+
 void publicCloudAccount;
 void startRequest;
 void reconnectRequest;
@@ -196,3 +256,8 @@ void trialExtensionRequest;
 void invalidTrialExtensionRequest;
 void trialExtensionResponse;
 void invalidPublicDelegatedDto;
+void actionExecutionRequestMessage;
+void baseRequestMessage;
+void missingActionDefinitionId;
+void missingResourceIds;
+void scaleOutActionExecutionSource;
