@@ -14,6 +14,7 @@ export interface ScheduleTargetBase {
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
 }
 
@@ -71,6 +72,7 @@ export interface SchedulerBatchRunItem {
   resourceId?: string;
   recommendationId?: string;
   operation?: string;
+  actionDefinitionId?: string;
   recommendationAction?: string;
 }
 
@@ -99,6 +101,7 @@ export interface BaseScheduleWriteRequest {
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
   selectedResourceIds?: string[];
   notes?: string;
