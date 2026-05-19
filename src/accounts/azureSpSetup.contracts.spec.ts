@@ -2,6 +2,7 @@ import type {
   AzureSpBillingExportPlan,
   AzureSpBillingExportResult,
   AzureSpPermissionManifestItem,
+  AzureSpSetupPermissionSummary,
   AzureSpSetupExecuteRequest,
   AzureSpSetupMode,
   AzureSpSetupOperationResult,
@@ -165,6 +166,48 @@ const graphOperationResult: AzureSpSetupOperationResult = {
   completedAt: '2026-05-11T00:00:00.000Z',
 };
 
+const permissionSummary: AzureSpSetupPermissionSummary = {
+  posture: 'recommendedReadOnly',
+  title: 'Recommended read-only setup',
+  description: 'Spotto will reuse the existing service principal and enable missing read-only access for selected subscriptions.',
+  mode: 'grantAdditionalPermissions',
+  modeLabel: 'Update existing service principal',
+  modeDescription: 'Reuses the existing Azure service principal and enables missing access only.',
+  recommendedReadOnlyByDefault: true,
+  optionalWriteSelectedByDefault: false,
+  totalPermissionCount: 1,
+  selectedByDefaultCount: 1,
+  selectedForExecutionCount: 1,
+  optionalWritePermissionCount: 0,
+  capabilityGroups: [
+    {
+      key: 'baselineResourceInventory',
+      displayName: 'Baseline resource inventory',
+      description: 'Reader access for selected Azure subscriptions.',
+      requirement: 'required',
+      severity: 'required',
+      selectedByDefault: true,
+      selectedForExecution: true,
+      status: 'alreadyExists',
+      benefit: 'Enables read-only Azure resource inventory and recurring scans.',
+      skippedImpact: 'Setup cannot complete unless at least one selected subscription has Reader access.',
+      permissionInstanceKeys: ['subscriptionReader:/subscriptions/sub-123'],
+      selectedPermissionInstanceKeys: ['subscriptionReader:/subscriptions/sub-123'],
+      counts: {
+        total: 1,
+        selectedByDefault: 1,
+        selectedForExecution: 1,
+        succeeded: 0,
+        alreadyExists: 1,
+        failed: 0,
+        skipped: 0,
+        notStarted: 0,
+        running: 0,
+      },
+    },
+  ],
+};
+
 const statusResponse: AzureSpSetupStatusResponse = {
   setupId: 'setup-123',
   companyId: 'comp-123',
@@ -202,6 +245,7 @@ const statusResponse: AzureSpSetupStatusResponse = {
       status: 'alreadyExists',
     },
   ],
+  permissionSummary,
   billingExportPlan,
   billingExportResults,
   operationResults: [graphOperationResult],
@@ -311,6 +355,7 @@ void subscriptionReaderManifestItem;
 void billingExportPlan;
 void billingExportResults;
 void graphOperationResult;
+void permissionSummary;
 void statusResponse;
 void planResponse;
 void executeRequest;

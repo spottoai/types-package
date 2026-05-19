@@ -32,6 +32,8 @@ export const RECOMMENDATION_FLAGS = {
   DISMISSED: 2,
   /** 100 */
   NEW: 4,
+  /** 1000 */
+  IMPLEMENTED: 8,
 } as const;
 
 /** Bitmask constants for users */
@@ -70,4 +72,5 @@ export const getRecommendationsFlags = (array: number[]) => ({
   new: hasArrayFlag(array, RECOMMENDATION_FLAGS.NEW),
   dismissed: hasArrayFlag(array, RECOMMENDATION_FLAGS.DISMISSED),
   prioritized: hasArrayFlag(array, RECOMMENDATION_FLAGS.PRIORITIZED),
+  implemented: hasArrayFlag(array, RECOMMENDATION_FLAGS.IMPLEMENTED),
 });

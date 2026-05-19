@@ -31,6 +31,8 @@ export declare const RECOMMENDATION_FLAGS: {
     readonly DISMISSED: 2;
     /** 100 */
     readonly NEW: 4;
+    /** 1000 */
+    readonly IMPLEMENTED: 8;
 };
 /** Bitmask constants for users */
 export declare const USER_FLAGS: {
@@ -62,5 +64,6 @@ export declare const getRecommendationsFlags: (array: number[]) => {
     new: boolean;
     dismissed: boolean;
     prioritized: boolean;
+    implemented: boolean;
 };
 //# sourceMappingURL=notification.d.ts.map
