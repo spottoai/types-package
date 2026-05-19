@@ -10,7 +10,6 @@ export type CompanyHierarchyMoveReasonCode =
   | 'max_depth_exceeded'
   | 'subtree_too_large'
   | 'sibling_name_conflict'
-  | 'stale_hierarchy_version'
   | 'not_found'
   | 'global_admin_required'
   | 'invalid_parent';
@@ -21,22 +20,16 @@ export type CompanyHierarchyRebuildViolationCode =
   | 'max_depth_exceeded'
   | 'sibling_name_conflict'
   | 'missing_metadata'
-  | 'snapshot_stale';
+  | 'tree_stale';
 
 export interface CompanyHierarchyMetadata {
   rootCompanyId?: string;
-  depth?: number;
-  pathCompanyIds?: string[];
-  classification?: CompanyClassification;
-  hierarchyVersion?: number;
 }
 
 export type CompanyWithHierarchy = Company & CompanyHierarchyMetadata;
 
 export interface CompanyHierarchyMoveRequest {
   newParentCompanyId: string;
-  expectedMovedHierarchyVersion: number;
-  expectedNewParentHierarchyVersion?: number;
 }
 
 export interface CompanyHierarchyMoveResponse {
@@ -45,27 +38,31 @@ export interface CompanyHierarchyMoveResponse {
   oldParentCompanyId?: string;
   newParentCompanyId: string;
   rootCompanyId: string;
-  pathCompanyIds: string[];
-  pathCompanyNames?: string[];
   affectedCompanyCount: number;
-  hierarchyVersion: number;
 }
 
-export interface CompanyHierarchyRootSnapshot {
+export interface CompanyHierarchyClassificationUpdateRequest {
+  classification: CompanyClassification;
+}
+
+export interface CompanyHierarchyClassificationUpdateResponse {
+  companyId: string;
   rootCompanyId: string;
-  hierarchyVersion: number;
-  builtAt: string;
-  root: CompanyHierarchySnapshotNode;
+  classification: CompanyClassification;
 }
 
-export type CompanyHierarchyResponse = CompanyHierarchyRootSnapshot;
+export interface CompanyHierarchyTreeDocument {
+  builtAt: string;
+  root: CompanyHierarchyTreeNode;
+}
 
-export interface CompanyHierarchySnapshotNode {
+export type CompanyHierarchyResponse = CompanyHierarchyTreeDocument;
+
+export interface CompanyHierarchyTreeNode {
   companyId: string;
   companyName: string;
   classification: CompanyClassification;
-  hierarchyVersion: number;
-  children: CompanyHierarchySnapshotNode[];
+  children: CompanyHierarchyTreeNode[];
 }
 
 export interface CompanyHierarchyRebuildReport {
@@ -73,7 +70,7 @@ export interface CompanyHierarchyRebuildReport {
   repaired: boolean;
   companiesScanned: number;
   companiesUpdated: number;
-  snapshotsWritten: number;
+  treesWritten: number;
   violations: CompanyHierarchyRebuildViolation[];
 }
 

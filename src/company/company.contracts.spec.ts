@@ -1,4 +1,11 @@
-import type { Company, CompanyCreate, CompanyHierarchyMoveRequest, UserCompany } from '../index';
+import type {
+  Company,
+  CompanyCreate,
+  CompanyHierarchyClassificationUpdateRequest,
+  CompanyHierarchyMoveRequest,
+  CompanyHierarchyTreeDocument,
+  UserCompany,
+} from '../index';
 
 const standardCompany: Company = {
   id: 'comp-123',
@@ -20,10 +27,6 @@ const trialCompany: Company = {
 const companyWithHierarchy: Company = {
   ...standardCompany,
   rootCompanyId: 'comp-root-123',
-  depth: 1,
-  pathCompanyIds: ['comp-root-123', 'comp-123'],
-  classification: 'customer',
-  hierarchyVersion: 2,
 };
 
 const trialCompanyCreate: CompanyCreate = {
@@ -31,7 +34,6 @@ const trialCompanyCreate: CompanyCreate = {
   createdAt: '2026-05-10T00:00:00.000Z',
   companyLifecycle: 'trial',
   azureDelegatedTrialExpiresAt: '2026-06-09T00:00:00.000Z',
-  classification: 'container',
 };
 
 const userCompanyTrialFields: UserCompany = {
@@ -41,17 +43,26 @@ const userCompanyTrialFields: UserCompany = {
   userId: 'user-123',
   role: 1,
   rootCompanyId: 'comp-trial-123',
-  depth: 0,
-  pathCompanyIds: ['comp-trial-123'],
-  classification: 'container',
-  hierarchyVersion: 1,
   companyLifecycle: 'trial',
   azureDelegatedTrialExpiresAt: '2026-06-09T00:00:00.000Z',
 };
 
 const moveRequest: CompanyHierarchyMoveRequest = {
   newParentCompanyId: 'comp-parent-123',
-  expectedMovedHierarchyVersion: 2,
+};
+
+const classificationUpdateRequest: CompanyHierarchyClassificationUpdateRequest = {
+  classification: 'container',
+};
+
+const hierarchyTree: CompanyHierarchyTreeDocument = {
+  builtAt: '2026-05-10T00:00:00.000Z',
+  root: {
+    companyId: 'comp-root-123',
+    companyName: 'Root',
+    classification: 'container',
+    children: [],
+  },
 };
 
 void standardCompany;
@@ -60,3 +71,5 @@ void companyWithHierarchy;
 void trialCompanyCreate;
 void userCompanyTrialFields;
 void moveRequest;
+void classificationUpdateRequest;
+void hierarchyTree;
