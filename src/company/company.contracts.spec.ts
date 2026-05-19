@@ -43,6 +43,7 @@ const userCompanyTrialFields: UserCompany = {
   userId: 'user-123',
   role: 1,
   rootCompanyId: 'comp-trial-123',
+  classification: 'customer',
   companyLifecycle: 'trial',
   azureDelegatedTrialExpiresAt: '2026-06-09T00:00:00.000Z',
 };

@@ -1,5 +1,6 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
+import type { CompanyClassification } from './companyHierarchy';
 
 export type CompanyLifecycle = 'standard' | 'trial';
 
@@ -63,6 +64,7 @@ export interface UserCompany {
   parentCompanyName?: string;
   hasChildren?: boolean;
   rootCompanyId?: string;
+  classification?: CompanyClassification;
   companyLifecycle?: CompanyLifecycle;
   azureDelegatedTrialExpiresAt?: Date | string;
 }
