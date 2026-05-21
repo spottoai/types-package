@@ -5,6 +5,22 @@ export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
+
+export interface BillingExportLocatorEntry {
+  scopeType: BillingExportLocatorScopeType;
+  scopePath: string;
+  exportName: string;
+  storageAccountName: string;
+  container: string;
+  rootFolderPath: string;
+}
+
+export interface CloudAccountBillingExportLocator {
+  actual?: BillingExportLocatorEntry;
+  amortized?: BillingExportLocatorEntry;
+}
+
 export const SUBSCRIPTION_SYNC_STEP_ORDER = [
   'metrics',
   'resourcegroups',
@@ -83,9 +99,11 @@ export interface CloudAccount {
   connectedAt?: Date | string;
   lastTokenRefreshAt?: Date | string;
   lastDelegatedTokenCacheUpdatedAt?: Date | string;
+  /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
+  billingExportLocator?: string | CloudAccountBillingExportLocator;
 }
 
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'> & {
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator'> & {
   /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
   secretPreview?: string;
   /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
