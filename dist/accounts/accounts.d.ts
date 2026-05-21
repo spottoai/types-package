@@ -4,6 +4,8 @@ export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export declare const SUBSCRIPTION_SYNC_STEP_ORDER: readonly ["metrics", "resourcegroups", "activities", "queries", "reliability", "billing", "costestimation", "pricing", "views"];
+export type SubscriptionSyncStepId = (typeof SUBSCRIPTION_SYNC_STEP_ORDER)[number];
 export type AzureDelegatedOnboardingStatus = 'subscriptionSelectionRequired' | 'active' | 'setupExpired';
 export type AzureDelegatedAuthErrorCode = 'invalid_grant' | 'interaction_required' | 'consent_required' | 'claims_challenge' | 'forbidden' | 'unknown';
 export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelectionRequired' | 'tenantConsent' | 'completed' | 'failed';
@@ -59,7 +61,54 @@ export interface CloudAccount {
     lastTokenRefreshAt?: Date | string;
     lastDelegatedTokenCacheUpdatedAt?: Date | string;
 }
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'>;
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret'> & {
+    /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
+    secretPreview?: string;
+    /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
+    writeSecretPreview?: string;
+};
+export interface SyncProgressIssue {
+    type: 'capabilityMissing' | 'billingExport';
+    scope: 'cloudAccount' | 'subscription';
+    capabilityKey?: string;
+    capabilityDisplayName?: string;
+    capabilityDescription?: string;
+    requiredRoles?: string[];
+    message: string;
+    code?: string;
+    title?: string;
+    remediation?: string;
+    sourceSelected?: 'export' | 'query';
+    fallbackUsed?: boolean;
+    degraded?: boolean;
+}
+export interface SubscriptionSyncProgressStep {
+    id: SubscriptionSyncStepId;
+    status: 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
+    attempts: number;
+    lastUpdated: string;
+    lastError?: string;
+    runId?: string;
+    active: boolean;
+    callCount?: number;
+    note?: string;
+    issue?: SyncProgressIssue;
+}
+export interface SubscriptionSyncProgress {
+    runId?: string;
+    overallStatus: 'idle' | 'processing' | 'completed' | 'error';
+    progressLabel: string;
+    completedSteps: number;
+    totalSteps: number;
+    activeComponents: SubscriptionSyncStepId[];
+    currentStepId?: SubscriptionSyncStepId;
+    lastErrorComponent?: SubscriptionSyncStepId;
+    lastErrorMessage?: string;
+    initiatedAt?: string;
+    completedAt?: string;
+    lastUpdated: string;
+    steps: SubscriptionSyncProgressStep[];
+}
 export interface SubscriptionInfoBase {
     name: string;
     friendlyName?: string;
@@ -88,6 +137,7 @@ export interface SubscriptionInfoBase {
     activityItems?: number;
     eventId?: string;
     readBitmask?: number;
+    syncProgress?: SubscriptionSyncProgress | string | null;
 }
 export interface SubscriptionAccount extends SubscriptionInfoBase {
     /** Partition Key (Azure Subscription ID) */

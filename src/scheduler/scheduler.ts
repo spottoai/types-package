@@ -3,7 +3,6 @@ export type ScheduleSelectorType = 'single-resource' | 'selected-resources' | 'p
 export type ScheduleType = 'once' | 'recurring';
 export type ScheduleStatus = 'active' | 'paused';
 export type ScheduleRunStatus = 'success' | 'dispatch-failed' | 'dispatching';
-export type ScheduleHistoryEventType = 'dispatch-succeeded' | 'dispatch-failed';
 
 export interface ScheduleTargetBase {
   companyId: string;
@@ -48,30 +47,23 @@ export interface ScheduleDocument extends ScheduleSummary {
 
 export type ScheduleDetailResponse = ScheduleDocument;
 
-export interface ScheduleHistoryItem {
-  eventId: string;
-  companyId: string;
-  scheduleId: string;
-  scheduleRunId: string;
-  eventType: ScheduleHistoryEventType;
-  eventTimeUtc: string;
-  batchId?: string;
-  providerName: string;
-  providerScopeId: string;
-  message?: string;
-}
-
 export interface SchedulerBatchRunItem {
   scheduleId: string;
   scheduleRunId: string;
+  scheduleName: string;
   targetType: ScheduleTargetType;
+  selectorType: ScheduleSelectorType;
   scheduleType: ScheduleType;
   providerScopeId: string;
   cloudAccountId?: string;
   resourceId?: string;
+  selectedResourceIds?: string[];
   recommendationId?: string;
   operation?: string;
   recommendationAction?: string;
+  targetCount?: number;
+  createdByUserId?: string;
+  updatedByUserId?: string;
 }
 
 export interface SchedulerBatchQueueMessage {

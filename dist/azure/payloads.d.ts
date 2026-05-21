@@ -31,6 +31,7 @@ export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
     byUserId?: string;
     source: CloudAccountTenantSyncSource;
     correlationId?: string;
+    runId?: string;
 }
 export interface SubscriptionMessage {
     authToken?: string;
