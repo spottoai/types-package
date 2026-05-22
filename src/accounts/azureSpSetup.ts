@@ -76,6 +76,7 @@ export type AzureSpPermissionKey =
   | 'rootManagementGroupReader'
   | 'managementGroupReader'
   | 'reservationsReader'
+  | 'reservationsContributor'
   | 'savingsPlanReader'
   | 'graphApplicationReadAll'
   | 'costManagementProviderRegistration'
