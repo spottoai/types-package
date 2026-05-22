@@ -102,6 +102,8 @@ export interface AzureResourcePortalItem {
   costEstimation?: ResourceSimpleCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Generic compute hosting model alternatives, including cross-platform options. */
+  computeAlternatives?: ComputeAlternativesInsights;
 }
 
 export interface SavingsPotential {
@@ -167,6 +169,8 @@ export interface AzureResourcePluginItem {
   costEstimation?: ResourceCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Generic compute hosting model alternatives, including cross-platform options. */
+  computeAlternatives?: ComputeAlternativesInsights;
 }
 
 export interface AzureResourcePluginItemDetailed {
@@ -205,6 +209,8 @@ export interface AzureResourcePluginItemDetailed {
   costEstimation?: ResourceCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Generic compute hosting model alternatives, including cross-platform options. */
+  computeAlternatives?: ComputeAlternativesInsights;
 }
 
 export type VmPricePerformanceOsType = 'linux' | 'windows';
@@ -358,6 +364,223 @@ export interface VmPricePerformanceInsights {
   /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
   tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
   source: VmPricePerformanceCatalogSource;
+}
+
+export type ComputeAlternativesComparisonScope = 'same-resource' | 'same-plan' | 'workload' | 'estimated-workload';
+
+export type ComputeServiceKind =
+  | 'virtual-machine'
+  | 'virtual-machine-scale-set'
+  | 'app-service-plan'
+  | 'functions-flex-consumption'
+  | 'functions-premium'
+  | 'functions-consumption'
+  | 'container-apps'
+  | 'azure-kubernetes-service'
+  | 'azure-batch'
+  | 'azure-container-instances'
+  | 'unknown'
+  | string;
+
+export type ComputeAlternativeCategory = 'same-platform' | 'cross-platform';
+
+export type ComputeAlternativeFit = 'good' | 'possible' | 'tradeoff' | 'poor' | 'blocked';
+
+export type ComputeAlternativeConfidence = 'high' | 'medium' | 'low' | 'unknown';
+
+export type ComputeAlternativeCostBasis = 'observed' | 'retail' | 'scenario' | 'amortized' | 'estimated' | 'requiresTelemetry' | string;
+
+export type ComputeAlternativeOsType = 'windows' | 'linux' | 'mixed' | 'unknown';
+
+export type ComputeAlternativeScalingModel =
+  | 'fixed'
+  | 'manual'
+  | 'autoscale'
+  | 'event-driven'
+  | 'scale-to-zero'
+  | 'always-ready'
+  | 'node-pool'
+  | 'unknown'
+  | string;
+
+export type ComputeAlternativeMigrationEffort =
+  | 'configuration'
+  | 'redeploy'
+  | 'runtime-migration'
+  | 'containerization'
+  | 'application-refactor'
+  | 'architecture-redesign'
+  | 'unknown';
+
+export type ComputeAlternativeSeverity = 'info' | 'warning' | 'blocking' | 'unknown' | string;
+
+export interface ComputeAlternativesSource {
+  generatedAt?: string;
+  pricingSource?: string;
+  evidenceSource?: string;
+  displayCurrencyCode?: string;
+  notes?: string[];
+}
+
+export interface ComputeCapacitySummary {
+  vcpu?: number;
+  memoryGB?: number;
+  instanceCount?: number;
+  minInstances?: number;
+  maxInstances?: number;
+  minReplicas?: number;
+  maxReplicas?: number;
+  storageGB?: number;
+}
+
+export interface ComputeScalingSummary {
+  model?: ComputeAlternativeScalingModel;
+  scaleToZero?: boolean;
+  autoscaleEnabled?: boolean;
+  alwaysReadyInstances?: number;
+  prewarmedInstances?: number;
+  minInstances?: number;
+  maxInstances?: number;
+  minReplicas?: number;
+  maxReplicas?: number;
+  notes?: string[];
+}
+
+export interface ComputeUtilizationSummary {
+  cpuAveragePercent?: number;
+  cpuP95Percent?: number;
+  cpuP99Percent?: number;
+  cpuMaxPercent?: number;
+  memoryAveragePercent?: number;
+  memoryP95Percent?: number;
+  memoryP99Percent?: number;
+  memoryMaxPercent?: number;
+  queueP95?: number;
+  queueMax?: number;
+  runningTimePercent?: number;
+}
+
+export interface ComputeAlternativePricing {
+  currencyCode?: string;
+  currencySymbol?: string;
+  hourlyPrice?: number;
+  monthlyPrice?: number;
+  reservationEligible?: boolean;
+  savingsPlanEligible?: boolean;
+  freeAllowanceEligible?: boolean;
+  basis: ComputeAlternativeCostBasis;
+  explanation?: string;
+}
+
+export interface ComputeMonthlyCostEstimate {
+  low?: number;
+  expected?: number;
+  high?: number;
+  currencyCode?: string;
+  currencySymbol?: string;
+  basis: ComputeAlternativeCostBasis;
+  confidence: ComputeAlternativeConfidence;
+  explanation: string;
+}
+
+export interface ComputeSavingsEstimate {
+  monthlyLow?: number;
+  monthlyExpected?: number;
+  monthlyHigh?: number;
+  percentLow?: number;
+  percentExpected?: number;
+  percentHigh?: number;
+  basis: ComputeAlternativeCostBasis;
+}
+
+export interface ComputeOperationalModel {
+  managedService?: boolean;
+  osManagementRequired?: boolean;
+  supportsDeploymentSlots?: boolean;
+  supportsRevisions?: boolean;
+  supportsManagedIdentity?: boolean;
+  supportsPrivateNetworking?: boolean;
+  supportsZoneRedundancy?: boolean;
+  notes?: string[];
+}
+
+export interface ComputeMigrationSummary {
+  effort: ComputeAlternativeMigrationEffort;
+  requiresCodeChange?: boolean;
+  requiresContainerization?: boolean;
+  requiresRuntimeMigration?: boolean;
+  requiresNetworkChanges?: boolean;
+  requiresDataMigration?: boolean;
+  notes?: string[];
+}
+
+export interface ComputeAlternativeEvidence {
+  label: string;
+  value: string;
+  severity?: ComputeAlternativeSeverity;
+  source?: string;
+}
+
+export interface ComputeAlternativeBlocker {
+  key: string;
+  label: string;
+  severity: ComputeAlternativeSeverity;
+  message: string;
+}
+
+export interface ComputeAlternativeTradeoff {
+  key: string;
+  label: string;
+  severity?: ComputeAlternativeSeverity;
+  message: string;
+}
+
+export interface ComputeAlternativeCurrent {
+  service: ComputeServiceKind;
+  label: string;
+  resourceType: string;
+  skuName?: string;
+  planType?: string;
+  osType?: ComputeAlternativeOsType;
+  region?: string;
+  monthlyCost?: number;
+  costBasis?: ComputeAlternativeCostBasis;
+  capacity?: ComputeCapacitySummary;
+  scaling?: ComputeScalingSummary;
+  utilization?: ComputeUtilizationSummary;
+}
+
+export interface ComputeAlternative {
+  id: string;
+  service: ComputeServiceKind;
+  label: string;
+  category: ComputeAlternativeCategory;
+  fit: ComputeAlternativeFit;
+  confidence: ComputeAlternativeConfidence;
+  rank?: number;
+  summary: string;
+  monthlyCostEstimate?: ComputeMonthlyCostEstimate;
+  savingsEstimate?: ComputeSavingsEstimate;
+  pricing?: ComputeAlternativePricing;
+  capacity?: ComputeCapacitySummary;
+  scaling?: ComputeScalingSummary;
+  operationalModel?: ComputeOperationalModel;
+  migration?: ComputeMigrationSummary;
+  evidence: ComputeAlternativeEvidence[];
+  blockers?: ComputeAlternativeBlocker[];
+  tradeoffs?: ComputeAlternativeTradeoff[];
+  assumptions?: string[];
+  nextSteps?: string[];
+}
+
+export interface ComputeAlternativesInsights {
+  version: 1;
+  comparisonScope: ComputeAlternativesComparisonScope;
+  displayCurrencyCode?: string;
+  displayCurrencySymbol?: string;
+  current: ComputeAlternativeCurrent;
+  alternatives: ComputeAlternative[];
+  source: ComputeAlternativesSource;
 }
 
 /** This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page) */
