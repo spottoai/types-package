@@ -41,12 +41,7 @@ export type AzureDelegatedAuthErrorCode =
   | 'claims_challenge'
   | 'forbidden'
   | 'unknown';
-export type AzureDelegatedOAuthStatePhase =
-  | 'discoverTenants'
-  | 'tenantSelectionRequired'
-  | 'tenantConsent'
-  | 'completed'
-  | 'failed';
+export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelectionRequired' | 'tenantConsent' | 'completed' | 'failed';
 
 export interface CloudAccount {
   /** Partition Key */
@@ -126,9 +121,24 @@ export interface SyncProgressIssue {
   degraded?: boolean;
 }
 
+export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
+export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';
+export type SubscriptionSyncProgressContextValue = string | number | boolean;
+
+export interface SubscriptionSyncProgressSubStep {
+  id: string;
+  status: SubscriptionSyncProgressSubStepStatus;
+  label?: string;
+  attempts?: number;
+  lastUpdated?: string;
+  lastError?: string;
+  durationMs?: number;
+  context?: Record<string, SubscriptionSyncProgressContextValue>;
+}
+
 export interface SubscriptionSyncProgressStep {
   id: SubscriptionSyncStepId;
-  status: 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
+  status: SubscriptionSyncProgressStepStatus;
   attempts: number;
   lastUpdated: string;
   lastError?: string;
@@ -137,6 +147,7 @@ export interface SubscriptionSyncProgressStep {
   callCount?: number;
   note?: string;
   issue?: SyncProgressIssue;
+  subSteps?: SubscriptionSyncProgressSubStep[];
 }
 
 export interface SubscriptionSyncProgress {
