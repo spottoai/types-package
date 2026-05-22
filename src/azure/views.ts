@@ -102,8 +102,6 @@ export interface AzureResourcePortalItem {
   costEstimation?: ResourceSimpleCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
-  /** Generic compute hosting model alternatives, including cross-platform options. */
-  computeAlternatives?: ComputeAlternativesInsights;
 }
 
 export interface SavingsPotential {
@@ -169,8 +167,6 @@ export interface AzureResourcePluginItem {
   costEstimation?: ResourceCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
-  /** Generic compute hosting model alternatives, including cross-platform options. */
-  computeAlternatives?: ComputeAlternativesInsights;
 }
 
 export interface AzureResourcePluginItemDetailed {
