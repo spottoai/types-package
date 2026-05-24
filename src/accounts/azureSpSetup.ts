@@ -79,6 +79,7 @@ export type AzureSpPermissionKey =
   | 'reservationsContributor'
   | 'savingsPlanReader'
   | 'graphApplicationReadAll'
+  | 'billingScopeReader'
   | 'costManagementProviderRegistration'
   | 'billingExportStorage'
   | 'billingExportContainer'
@@ -297,6 +298,9 @@ export interface AzureSpBillingExportStorageOption {
 
 export interface AzureSpBillingExportDetectedExport {
   subscriptionId: string;
+  exportScope?: string;
+  exportScopeLabel?: string;
+  requiresBillingScopeReader?: boolean;
   dataset: AzureSpBillingExportDataset;
   effectiveDefinitionType?: AzureSpBillingExportEffectiveDefinitionType;
   exportName: string;
