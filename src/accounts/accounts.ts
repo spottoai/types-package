@@ -30,6 +30,7 @@ export const SUBSCRIPTION_SYNC_STEP_ORDER = [
   'billing',
   'costestimation',
   'pricing',
+  'commitments',
   'views',
 ] as const;
 export type SubscriptionSyncStepId = (typeof SUBSCRIPTION_SYNC_STEP_ORDER)[number];
