@@ -2,6 +2,47 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
+export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
+export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
+export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
+
+export interface BillingExportLocatorEntry {
+  scopeType: BillingExportLocatorScopeType;
+  scopePath: string;
+  exportName: string;
+  storageAccountName: string;
+  container: string;
+  rootFolderPath: string;
+}
+
+export interface CloudAccountBillingExportLocator {
+  actual?: BillingExportLocatorEntry;
+  amortized?: BillingExportLocatorEntry;
+}
+
+export const SUBSCRIPTION_SYNC_STEP_ORDER = [
+  'metrics',
+  'resourcegroups',
+  'activities',
+  'queries',
+  'reliability',
+  'billing',
+  'costestimation',
+  'pricing',
+  'commitments',
+  'views',
+] as const;
+export type SubscriptionSyncStepId = (typeof SUBSCRIPTION_SYNC_STEP_ORDER)[number];
+export type AzureDelegatedOnboardingStatus = 'subscriptionSelectionRequired' | 'active' | 'setupExpired';
+export type AzureDelegatedAuthErrorCode =
+  | 'invalid_grant'
+  | 'interaction_required'
+  | 'consent_required'
+  | 'claims_challenge'
+  | 'forbidden'
+  | 'unknown';
+export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelectionRequired' | 'tenantConsent' | 'completed' | 'failed';
 
 export interface CloudAccount {
   /** Partition Key */
