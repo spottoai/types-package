@@ -1,5 +1,6 @@
 /** Main entry point - export all interfaces from this package */
 export * from './azure/common';
+export * from './azure/activityLogs';
 export * from './azure/budgets';
 export * from './azure/billingPlots';
 export * from './azure/benefits';
@@ -23,13 +24,16 @@ export * from './azure/serviceRetirement';
 export * from './azure/serviceRetirementState';
 export * from './azure/costEstimation';
 export * from './azure/storage-inventory';
-export * from './accounts/index';
-export * from './users/index';
-export * from './common/index';
-export * from './company/index';
-export * from './ai/index';
-export * from './events/index';
-export * from './integrations/index';
-export * from './identity/index';
-export * from './tags/index';
+export * from './azure/governance';
+export * from './azure/publicIpAddresses';
+export * from './accounts';
+export * from './users';
+export * from './common';
+export * from './company';
+export * from './scheduler';
+export * from './ai';
+export * from './events';
+export * from './integrations';
+export * from './identity';
+export * from './tags';
 //# sourceMappingURL=index.d.ts.map

@@ -1,7 +1,6 @@
 const js = require('@eslint/js');
 const tseslint = require('@typescript-eslint/eslint-plugin');
 const tsparser = require('@typescript-eslint/parser');
-const prettier = require('eslint-plugin-prettier');
 const prettierConfig = require('eslint-config-prettier');
 
 module.exports = [
@@ -18,12 +17,10 @@ module.exports = [
     },
     plugins: {
       '@typescript-eslint': tseslint,
-      prettier: prettier,
     },
     rules: {
       ...tseslint.configs.recommended.rules,
       ...prettierConfig.rules,
-      'prettier/prettier': 'error',
       '@typescript-eslint/no-unused-vars': 'off', // Disable unused variables check as this is a type sharing package
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/explicit-function-return-type': 'off',

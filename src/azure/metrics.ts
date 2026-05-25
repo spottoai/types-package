@@ -142,6 +142,25 @@ export interface MetricThreshold {
   reasoning?: string;
 }
 
+export type MetricAggregationType = 'Average' | 'Minimum' | 'Maximum' | 'Total' | 'Count' | 'Latest' | (string & {});
+
+/**
+ * Config-derived metric metadata carried from azure-resource-config.json into
+ * resource-facing DTOs so consumers can reason about cadence and aggregation.
+ */
+export interface MetricConfigMetadata {
+  timeSpan?: string;
+  isTimeSeries?: boolean;
+  isSummaryOnly?: boolean;
+  isSummarized?: boolean;
+  isTimeSeriesGroup?: boolean;
+  interval?: string;
+  aggregationType?: MetricAggregationType;
+  expression?: string;
+  filter?: string;
+  metricNamespace?: string;
+}
+
 export interface MetricPlot {
   /** e.g. "CPU and Memory Utilization" */
   title: string;
@@ -168,6 +187,7 @@ export interface MetricPlotMetric {
   unit?: string;
   displayUnit?: string;
   threshold?: MetricThreshold;
+  metricConfig?: MetricConfigMetadata;
 }
 
 export interface MetricsDefinition {
@@ -181,6 +201,7 @@ export interface MetricsDefinition {
   unit?: string;
   displayUnit?: string;
   threshold?: MetricThreshold;
+  metricConfig?: MetricConfigMetadata;
 }
 
 export interface MetricAlert {
@@ -210,12 +231,19 @@ export interface MetricsDisplay {
   metrics: string[];
   title: string;
   yAxisTitle: string;
-  yAxisSuffix: string;
+  yAxisSuffix?: string;
   priority: number;
   maxAxis?: number;
   chartType: 'line' | 'area' | 'bar' | 'scatter';
   optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
   reasoning: string;
+  legends?: MetricsDisplayLegend | MetricsDisplayLegend[];
+}
+
+export interface MetricsDisplayLegend {
+  name: string;
+  label: string;
+  format?: string;
 }
 
 export interface MonthlyMetricsFile {
@@ -230,10 +258,14 @@ export interface MonthlyMetricsFile {
 }
 
 export interface AzureResourceMetrics {
+  schemaVersion?: number;
   id: string;
+  resourceId?: string;
   metrics: AzureMetricValue[];
   childMetrics?: AzureResourceMetrics[];
 }
+
+export type AzureResourceMetricsDocument = AzureResourceMetrics;
 
 export interface AzureMetricValue {
   name: string;
@@ -241,10 +273,11 @@ export interface AzureMetricValue {
   collection: string;
   unit: string;
   timeseries: AzureTimeSeries[];
+  metricConfig?: MetricConfigMetadata;
 }
 
 export interface AzureTimeSeries {
-  metadata: AzureTimeSeriesMetadata[];
+  metadata?: AzureTimeSeriesMetadata[];
   data: AzureTimeSeriesData[];
 }
 
@@ -262,7 +295,7 @@ export interface AzureTimeSeriesData {
   t: number;
 }
 
-export interface AzureResourceMetric {
+export interface AzureResourceMetric extends MetricConfigMetadata {
   metricName: string;
   displayName: string;
   timeSpan: string;
@@ -271,10 +304,12 @@ export interface AzureResourceMetric {
   isSummaryOnly: boolean;
   isSummarized: boolean;
   interval?: string;
-  aggregationType: string;
+  isTimeSeriesGroup?: boolean;
+  aggregationType: MetricAggregationType;
   expression?: string;
   filter?: string;
   metricNamespace?: string;
+  batchSupport?: boolean;
 }
 
 export interface UtilizationSummary {

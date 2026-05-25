@@ -53,6 +53,8 @@ export interface CloudAccount {
   companyName: string;
   /** AWS, Azure, GCP, etc. */
   provider: string;
+  /** Missing authMode should be treated as servicePrincipal by consumers for backward compatibility. */
+  authMode?: CloudAccountAuthMode;
   /** Optional list of subscription group names for this cloud account */
   groupNames?: string[];
   /** Azure Tenant ID */
@@ -71,6 +73,98 @@ export interface CloudAccount {
   writeClientId?: string;
   writeBitmask?: number;
   readBitmask?: number;
+  tenantSyncStatus?: CloudAccountTenantSyncStatus;
+  tenantSyncRequestedAt?: Date;
+  tenantSyncStartedAt?: Date;
+  tenantSyncCompletedAt?: Date;
+  tenantSyncError?: string;
+  tenantSyncSource?: CloudAccountTenantSyncSource;
+  /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
+  delegatedTokenCache?: string;
+  onboardingStatus?: AzureDelegatedOnboardingStatus;
+  delegatedSetupExpiresAt?: Date | string;
+  delegatedTrialStartedAt?: Date | string;
+  delegatedTrialExpiresAt?: Date | string;
+  reauthRequired?: boolean;
+  lastAuthErrorCode?: AzureDelegatedAuthErrorCode;
+  lastAuthErrorAt?: Date | string;
+  connectedUserObjectId?: string;
+  connectedUserTenantId?: string;
+  connectedUserEmail?: string;
+  connectedUserDisplayName?: string;
+  connectedAt?: Date | string;
+  lastTokenRefreshAt?: Date | string;
+  lastDelegatedTokenCacheUpdatedAt?: Date | string;
+  /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
+  billingExportLocator?: string | CloudAccountBillingExportLocator;
+}
+
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator'> & {
+  /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
+  secretPreview?: string;
+  /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
+  writeSecretPreview?: string;
+};
+
+export interface SyncProgressIssue {
+  type: 'capabilityMissing' | 'billingExport';
+  scope: 'cloudAccount' | 'subscription';
+  capabilityKey?: string;
+  capabilityDisplayName?: string;
+  capabilityDescription?: string;
+  requiredRoles?: string[];
+  message: string;
+  code?: string;
+  title?: string;
+  remediation?: string;
+  sourceSelected?: 'export' | 'query';
+  fallbackUsed?: boolean;
+  degraded?: boolean;
+}
+
+export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
+export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';
+export type SubscriptionSyncProgressContextValue = string | number | boolean;
+
+export interface SubscriptionSyncProgressSubStep {
+  id: string;
+  status: SubscriptionSyncProgressSubStepStatus;
+  label?: string;
+  attempts?: number;
+  lastUpdated?: string;
+  lastError?: string;
+  durationMs?: number;
+  context?: Record<string, SubscriptionSyncProgressContextValue>;
+}
+
+export interface SubscriptionSyncProgressStep {
+  id: SubscriptionSyncStepId;
+  status: SubscriptionSyncProgressStepStatus;
+  attempts: number;
+  lastUpdated: string;
+  lastError?: string;
+  runId?: string;
+  active: boolean;
+  callCount?: number;
+  note?: string;
+  issue?: SyncProgressIssue;
+  subSteps?: SubscriptionSyncProgressSubStep[];
+}
+
+export interface SubscriptionSyncProgress {
+  runId?: string;
+  overallStatus: 'idle' | 'processing' | 'completed' | 'error';
+  progressLabel: string;
+  completedSteps: number;
+  totalSteps: number;
+  activeComponents: SubscriptionSyncStepId[];
+  currentStepId?: SubscriptionSyncStepId;
+  lastErrorComponent?: SubscriptionSyncStepId;
+  lastErrorMessage?: string;
+  initiatedAt?: string;
+  completedAt?: string;
+  lastUpdated: string;
+  steps: SubscriptionSyncProgressStep[];
 }
 
 export interface SubscriptionInfoBase {
@@ -101,6 +195,7 @@ export interface SubscriptionInfoBase {
   activityItems?: number;
   eventId?: string;
   readBitmask?: number;
+  syncProgress?: SubscriptionSyncProgress | string | null;
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {

@@ -1,4 +1,16 @@
-import type { SubscriptionAccount } from './accounts';
+export type {
+  CloudAccountCapabilityValidationPlan,
+  CloudAccountCapabilityValidationProgress,
+  CloudAccountCapabilityValidationResult,
+  CloudAccountCapabilityValidationScope,
+  CloudAccountCapabilityValidationStatus,
+  CloudAccountReadAccessValidation,
+  CloudAccountValidationResult,
+  CloudAccountValidationStreamEvent,
+  CloudAccountWriteAccessValidation,
+  SubscriptionReadValidationResult,
+  SubscriptionValidationStatus,
+} from './validation';
 
 /**
  * Subscription-scoped read capability bitmask enum.
@@ -62,38 +74,6 @@ export interface CloudAccountReadPermissionMetadata {
   description: string;
   requiredRoles: string[];
   documentationUrl?: string;
-}
-
-export type SubscriptionValidationStatus =
-  | 'confirmed'
-  | 'unauthorized'
-  | 'forbidden'
-  | 'throttled'
-  | 'unavailable';
-
-export interface SubscriptionReadValidationResult {
-  subscription: SubscriptionAccount;
-  valid: boolean;
-  status: SubscriptionValidationStatus;
-  statusCode: number;
-  message?: string;
-}
-
-export interface CloudAccountReadAccessValidation {
-  valid: boolean;
-  subscriptions: SubscriptionAccount[];
-  subscriptionResults: SubscriptionReadValidationResult[];
-}
-
-export interface CloudAccountWriteAccessValidation {
-  valid: boolean;
-  subscriptions: SubscriptionAccount[];
-}
-
-export interface CloudAccountValidationResult {
-  valid: boolean;
-  readAccess: CloudAccountReadAccessValidation;
-  writeAccess?: CloudAccountWriteAccessValidation;
 }
 
 export const SUBSCRIPTION_READ_PERMISSIONS_METADATA: SubscriptionReadPermissionMetadata[] = [
