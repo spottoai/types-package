@@ -25,12 +25,31 @@ export interface RequestMessage {
     correlationId?: string;
     eventId?: string;
 }
+export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
+export interface ActionExecutionSource {
+    kind: ActionExecutionSourceKind;
+    scheduleId?: string;
+    scheduleRunId?: string;
+    occurrenceId?: string;
+    desiredOutcome?: string;
+}
+export interface ActionExecutionRequestMessage extends RequestMessage {
+    entity: 'actions';
+    action: 'execute';
+    providerName?: 'azure';
+    providerScopeId?: string;
+    actionDefinitionId: string;
+    resourceIds: string[];
+    byUserId?: string;
+    source?: ActionExecutionSource;
+}
 export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
     entity: 'cloudaccount' | 'cloudaccounts';
     action: 'tenant-sync';
     byUserId?: string;
     source: CloudAccountTenantSyncSource;
     correlationId?: string;
+    runId?: string;
 }
 export interface SubscriptionMessage {
     authToken?: string;

@@ -1,0 +1,51 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+/** Dev-only Vite entrypoint that avoids stale sibling .js files under src/. */
+__exportStar(require("./azure/common"), exports);
+__exportStar(require("./azure/budgets"), exports);
+__exportStar(require("./azure/billingPlots"), exports);
+__exportStar(require("./azure/benefits"), exports);
+__exportStar(require("./azure/commitmentsPlanning"), exports);
+__exportStar(require("./azure/configs"), exports);
+__exportStar(require("./azure/metrics"), exports);
+__exportStar(require("./azure/payloads"), exports);
+__exportStar(require("./azure/prices"), exports);
+__exportStar(require("./azure/relationships"), exports);
+__exportStar(require("./azure/recommendations"), exports);
+__exportStar(require("./azure/recommendationAudit"), exports);
+__exportStar(require("./azure/recommendationWorkflow"), exports);
+__exportStar(require("./azure/recommendationState"), exports);
+__exportStar(require("./azure/resources"), exports);
+__exportStar(require("./azure/reports"), exports);
+__exportStar(require("./azure/reviewChecklist"), exports);
+__exportStar(require("./azure/subscriptions"), exports);
+__exportStar(require("./azure/views"), exports);
+__exportStar(require("./azure/security"), exports);
+__exportStar(require("./azure/serviceRetirement"), exports);
+__exportStar(require("./azure/serviceRetirementState"), exports);
+__exportStar(require("./azure/costEstimation"), exports);
+__exportStar(require("./azure/storage-inventory"), exports);
+__exportStar(require("./accounts/index"), exports);
+__exportStar(require("./users/index"), exports);
+__exportStar(require("./common/index"), exports);
+__exportStar(require("./company/index"), exports);
+__exportStar(require("./ai/index"), exports);
+__exportStar(require("./events/index"), exports);
+__exportStar(require("./integrations/index"), exports);
+__exportStar(require("./identity/index"), exports);
+__exportStar(require("./tags/index"), exports);
+//# sourceMappingURL=index.vite.js.map

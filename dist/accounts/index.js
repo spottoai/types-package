@@ -18,5 +18,4 @@ __exportStar(require("./accounts"), exports);
 __exportStar(require("./azureSpSetup"), exports);
 __exportStar(require("./writePermissions"), exports);
 __exportStar(require("./readPermissions"), exports);
-__exportStar(require("./validation"), exports);
 //# sourceMappingURL=index.js.map
