@@ -35,6 +35,7 @@ export interface PageContext {
   companyId: string;
   subscriptionIds?: string[];
   cloudAccountId?: string;
+  resourceIds?: string[];
   resourceId?: string;
   recommendationId?: string;
   pageUrl?: string;
@@ -1271,6 +1272,24 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   event: 'done';
   run: AIChatRunState;
   terminalSnapshot: AIChatTerminalSnapshot;
+  responseId?: string;
+  answer?: string;
+  turnSnapshot?: AIChatTurnSnapshot;
+  finalSnapshot?: AIChatFinalSnapshot | null;
+  completionReason?: string;
+  structuredResponse?: StructuredAIResponse;
+  citations?: AIChatCitation[];
+  routing?: AIChatRoutingMetadata;
+  chatMode?: AIChatMode;
+  resolvedScope?: AIResolvedWorkspaceScope;
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
 }
 
 export interface AIChatErrorEvent extends AIChatStreamEventBase {

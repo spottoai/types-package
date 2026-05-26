@@ -140,7 +140,7 @@ export interface RecommendationHistory {
 export interface Comment {
   id: string;
   userId: string;
-  userName: string;
+  userName?: string;
   userAvatar?: string;
   content: string;
   createdAt: string;

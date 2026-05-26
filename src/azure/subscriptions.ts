@@ -98,6 +98,7 @@ export interface SubscriptionStats {
 }
 
 export interface SubscriptionHistory {
+  id?: string;
   subscriptionId: string;
   displayName: string;
   history: SubscriptionHistoryItem[];

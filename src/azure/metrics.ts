@@ -161,6 +161,8 @@ export interface MetricConfigMetadata {
   metricNamespace?: string;
 }
 
+export interface MetricConfig extends MetricConfigMetadata {}
+
 export interface MetricPlot {
   /** e.g. "CPU and Memory Utilization" */
   title: string;
@@ -238,6 +240,15 @@ export interface MetricsDisplay {
   optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
   reasoning: string;
   legends?: MetricsDisplayLegend | MetricsDisplayLegend[];
+  actualMetrics?: Record<string, string | string[]>;
+  seriesTransforms?: Record<
+    string,
+    {
+      strategy: string;
+      label?: string;
+      unit?: string;
+    }
+  >;
 }
 
 export interface MetricsDisplayLegend {

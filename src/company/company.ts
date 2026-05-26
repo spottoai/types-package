@@ -7,6 +7,8 @@ export type CompanyLifecycle = 'standard' | 'trial';
 export interface Company {
   id: string;
   name: string;
+  companyId?: string;
+  companyName?: string;
   website?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -60,6 +62,8 @@ export interface UserCompany {
   companyName: string;
   userId: string;
   role: number;
+  cloudAccountCount?: number;
+  isDemo?: boolean;
   parentId?: string;
   parentCompanyName?: string;
   hasChildren?: boolean;
