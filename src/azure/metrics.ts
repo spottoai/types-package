@@ -161,7 +161,7 @@ export interface MetricConfigMetadata {
   metricNamespace?: string;
 }
 
-export interface MetricConfig extends MetricConfigMetadata {}
+export type MetricConfig = MetricConfigMetadata;
 
 export interface MetricPlot {
   /** e.g. "CPU and Memory Utilization" */
