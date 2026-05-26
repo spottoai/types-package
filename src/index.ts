@@ -32,3 +32,4 @@ export * from './events/index';
 export * from './integrations/index';
 export * from './identity/index';
 export * from './tags/index';
+export * from './scheduler/index';

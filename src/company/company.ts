@@ -20,6 +20,7 @@ export interface Company {
   parentCompanyName?: string;
   hasChildren?: boolean;
   parentIntegrationSettings?: ParentIntegrationSettings[];
+  preferredTimezone?: string;
 }
 
 export interface CompanyCreate {
@@ -33,6 +34,7 @@ export interface CompanyCreate {
   integrations?: CompanyIntegrations;
   parentId?: string;
   billingAccountId?: string;
+  preferredTimezone?: string;
 }
 
 export interface UserCompany {
