@@ -17,7 +17,9 @@ import type {
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
   PublicCloudAccountDto,
+  ProcessPayload,
   RequestMessage,
+  WorkflowTracingOptions,
 } from '../index';
 
 const subscription: Subscription = {
@@ -35,7 +37,26 @@ const subscriptionMessage: SubscriptionMessage = {
   companyId: 'comp-123',
 };
 
+const tracing: WorkflowTracingOptions = {
+  enabled: true,
+};
+
+const tracedSubscriptionMessage: SubscriptionMessage = {
+  subscription,
+  companyId: 'comp-123',
+  tracing,
+};
+
+const tracedProcessPayload: ProcessPayload = {
+  subscriptionId: 'sub-123',
+  tenantId: 'tenant-123',
+  companyId: 'comp-123',
+  tracing,
+};
+
 void subscriptionMessage;
+void tracedSubscriptionMessage;
+void tracedProcessPayload;
 
 // @ts-expect-error SubscriptionMessage.companyId is required for queue payload compatibility.
 const invalidSubscriptionMessage: SubscriptionMessage = {
@@ -205,9 +226,21 @@ const actionExecutionRequestMessage: ActionExecutionRequestMessage = {
   ],
   byUserId: 'user-1',
   source: actionExecutionSource,
+  tracing,
 };
 
 const baseRequestMessage: RequestMessage = actionExecutionRequestMessage;
+
+const tracedRequestMessage: RequestMessage = {
+  entity: 'cloudaccounts',
+  action: 'refreshcomponents',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  tenantId: 'tenant-1',
+  clientId: 'client-1',
+  refreshComponents: ['costestimation'],
+  tracing,
+};
 
 // @ts-expect-error ActionExecutionRequestMessage.actionDefinitionId is required.
 const missingActionDefinitionId: ActionExecutionRequestMessage = {
@@ -258,6 +291,7 @@ void trialExtensionResponse;
 void invalidPublicDelegatedDto;
 void actionExecutionRequestMessage;
 void baseRequestMessage;
+void tracedRequestMessage;
 void missingActionDefinitionId;
 void missingResourceIds;
 void scaleOutActionExecutionSource;

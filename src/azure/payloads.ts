@@ -9,6 +9,10 @@ import type {
 } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
 
+export interface WorkflowTracingOptions {
+  enabled: boolean;
+}
+
 export interface ProcessPayload {
   subscriptionId?: string;
   tenantId?: string;
@@ -19,6 +23,7 @@ export interface ProcessPayload {
   companyId?: string;
   cloudAccountId?: string;
   clientId?: string;
+  tracing?: WorkflowTracingOptions;
 }
 
 export interface RequestMessage {
@@ -33,6 +38,7 @@ export interface RequestMessage {
   refreshComponents?: string[];
   correlationId?: string;
   eventId?: string;
+  tracing?: WorkflowTracingOptions;
 }
 
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
@@ -79,6 +85,7 @@ export interface SubscriptionMessage {
   refreshComponents?: string[];
   sagaRunId?: string;
   eventId?: string;
+  tracing?: WorkflowTracingOptions;
 }
 
 export interface SubscriptionResponse {
