@@ -13,6 +13,14 @@ export interface WorkflowTracingOptions {
   enabled: boolean;
 }
 
+export interface SubscriptionSyncRequest {
+  tracing?: WorkflowTracingOptions;
+}
+
+export interface CloudAccountTenantSyncRequest {
+  tracing?: WorkflowTracingOptions;
+}
+
 export interface ProcessPayload {
   subscriptionId?: string;
   tenantId?: string;

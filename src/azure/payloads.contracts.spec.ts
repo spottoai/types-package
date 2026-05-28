@@ -16,9 +16,11 @@ import type {
   AzureDelegatedTenantSelectionRequest,
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
+  CloudAccountTenantSyncRequest,
   PublicCloudAccountDto,
   ProcessPayload,
   RequestMessage,
+  SubscriptionSyncRequest,
   WorkflowTracingOptions,
 } from '../index';
 
@@ -54,9 +56,19 @@ const tracedProcessPayload: ProcessPayload = {
   tracing,
 };
 
+const subscriptionSyncRequest: SubscriptionSyncRequest = {
+  tracing,
+};
+
+const tenantSyncRequest: CloudAccountTenantSyncRequest = {
+  tracing,
+};
+
 void subscriptionMessage;
 void tracedSubscriptionMessage;
 void tracedProcessPayload;
+void subscriptionSyncRequest;
+void tenantSyncRequest;
 
 // @ts-expect-error SubscriptionMessage.companyId is required for queue payload compatibility.
 const invalidSubscriptionMessage: SubscriptionMessage = {
