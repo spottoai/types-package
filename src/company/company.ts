@@ -30,6 +30,7 @@ export interface Company {
   rootCompanyId?: string;
   parentIntegrationSettings?: ParentIntegrationSettings[];
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
@@ -51,6 +52,7 @@ export interface CompanyCreate {
   parentId?: string;
   billingAccountId?: string;
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
@@ -70,6 +72,7 @@ export interface UserCompany {
   rootCompanyId?: string;
   classification?: CompanyClassification;
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialExpiresAt?: Date | string;
 }
 
