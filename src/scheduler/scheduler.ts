@@ -33,6 +33,7 @@ export interface ScheduleTargetBase {
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
   definitionId?: string;
   definitionClass?: ScheduleDefinitionClass;
@@ -97,6 +98,7 @@ export interface SchedulerBatchRunItem {
   resourceId?: string;
   recommendationId?: string;
   operation?: string;
+  actionDefinitionId?: string;
   recommendationAction?: string;
   definitionId?: string;
   definitionClass?: ScheduleDefinitionClass;
@@ -132,6 +134,7 @@ export interface BaseScheduleWriteRequest {
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
   selectedResourceIds?: string[];
   notes?: string;
@@ -235,6 +238,7 @@ export interface AtomicResourceScheduleDefinition
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
   selectedResourceIds?: string[];
   configuration?: Record<string, unknown>;
@@ -287,6 +291,7 @@ export interface AtomicResourceScheduleWriteRequest {
   recommendationId?: string;
   recommendationAction?: string;
   operation?: string;
+  actionDefinitionId?: string;
   targetCount?: number;
   selectedResourceIds?: string[];
   configuration?: Record<string, unknown>;

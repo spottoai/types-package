@@ -54,7 +54,14 @@ export interface RecommendationStateBase extends ProviderScope {
   effort: 'High' | 'Medium' | 'Low';
   /** true if the user has read the recommendation */
   read: boolean;
-  status: 'Active' | 'Prioritized' | 'Dismissed' | 'Archived';
+  status:
+    | 'Active'
+    | 'Prioritized'
+    | 'Dismissed'
+    | 'Archived'
+    | 'Implementing'
+    | 'Implemented'
+    | 'Failed';
   /** Date the recommendation was scheduled for */
   scheduledAt?: Date;
   /** Date the recommendation state was created */
@@ -133,7 +140,7 @@ export interface RecommendationHistory {
 export interface Comment {
   id: string;
   userId: string;
-  userName: string;
+  userName?: string;
   userAvatar?: string;
   content: string;
   createdAt: string;

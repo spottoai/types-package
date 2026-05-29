@@ -54,7 +54,7 @@ export type SubscriptionProviderScopeFeedRecommendationAuditQuery = Recommendati
 };
 export type GetRecommendationAuditQueryCanonical = ResourceTargetRecommendationAuditQuery | SubscriptionTargetRecommendationAuditQuery | ResourceProviderScopeFeedRecommendationAuditQuery | SubscriptionProviderScopeFeedRecommendationAuditQuery;
 export type GetRecommendationAuditQuery = GetRecommendationAuditQueryCanonical;
-export type RecommendationAuditEventType = 'Viewed' | 'Added' | 'Archived' | 'CommentAdded' | 'CommentUpdated' | 'CommentDeleted' | 'CommentPinned' | 'CommentUnpinned' | 'Shared' | 'Dismissed' | 'Restored' | 'Prioritized' | 'Unprioritized' | 'Implemented';
+export type RecommendationAuditEventType = 'Viewed' | 'Added' | 'Archived' | 'CommentAdded' | 'CommentUpdated' | 'CommentDeleted' | 'CommentPinned' | 'CommentUnpinned' | 'Shared' | 'Dismissed' | 'Restored' | 'Prioritized' | 'Unprioritized' | 'Implementing' | 'Implemented' | 'ImplementationFailed';
 /** Flat recommendation audit row columns as persisted in `recommendationsevents`. */
 export interface RecommendationAuditEventRowColumns {
     CompanyId: string;

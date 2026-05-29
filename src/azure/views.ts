@@ -1,5 +1,5 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
-import { DisplayMetric, MetricPlot } from './metrics.js';
+import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation } from './recommendations.js';
@@ -100,6 +100,8 @@ export interface AzureResourcePortalItem {
   benefitsCoverage?: BenefitCoverageSummary;
   /** This is simplfied */
   costEstimation?: ResourceSimpleCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
 }
 
 export interface SavingsPotential {
@@ -163,6 +165,8 @@ export interface AzureResourcePluginItem {
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
 }
 
 export interface AzureResourcePluginItemDetailed {
@@ -192,12 +196,387 @@ export interface AzureResourcePluginItemDetailed {
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;
   plots?: MetricPlot[];
+  metricsDefinitions?: MetricsDefinition[];
   subscription: string;
   resourceGroup: string;
   tags?: Record<string, string>;
   spottoTags?: Tags;
   benefitsCoverage?: BenefitCoverageSummary;
   costEstimation?: ResourceCostEstimationSummary;
+  /** VM-specific same-region price/performance lookup data. */
+  vmPricePerformance?: VmPricePerformanceInsights;
+  /** Generic compute hosting model alternatives, including cross-platform options. */
+  computeAlternatives?: ComputeAlternativesInsights;
+}
+
+export type VmPricePerformanceOsType = 'linux' | 'windows';
+
+export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
+
+export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
+
+export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
+
+export type VmPricePerformanceComparisonEligibility =
+  | 'default'
+  | 'excluded-tier'
+  | 'excluded-burstable'
+  | 'excluded-low-confidence'
+  | 'unavailable-in-subscription'
+  | 'feature-trade-off'
+  | string;
+
+export interface VmPricePerformanceCatalogSource {
+  /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
+  fileName: string;
+  /** Canonical region key used by the lookup file, e.g. `australiaeast`. */
+  region: string;
+  /** The current catalog is generated in USD for tenant-neutral comparison. */
+  currencyCode: 'USD';
+  /** Subscription/display currency used for user-facing price fields when available. */
+  displayCurrencyCode?: string;
+  displayPricingSource?: 'Azure Retail Prices API' | string;
+  generatedAt?: string;
+}
+
+export type VmPricePerformanceCapabilityImpactSeverity = 'info' | 'warning' | 'blocking' | 'unknown' | string;
+
+export type VmPricePerformanceCapabilityImpactBasis = 'sku-capability' | 'current-setting' | 'observed-usage' | 'unknown' | string;
+
+export type VmPricePerformanceCapabilityImpactMateriality = 'used' | 'not-used' | 'unknown' | 'not-applicable' | string;
+
+export interface VmPricePerformanceCurrentRuntimeSettings {
+  osDiskStorageAccountType?: string;
+  dataDiskStorageAccountTypes?: string[];
+  dataDiskCount?: number;
+  premiumDiskInUse?: boolean;
+  premiumOsDiskInUse?: boolean;
+  premiumDataDiskInUse?: boolean;
+  premiumDataDiskCount?: number;
+  ultraSsdEnabled?: boolean;
+  ephemeralOsDiskConfigured?: boolean;
+  acceleratedNetworkingKnown?: boolean;
+  acceleratedNetworkingEnabled?: boolean;
+  networkInterfaceCount?: number;
+  resourceDiskUsageKnown?: boolean;
+  resourceDiskInUse?: boolean;
+  resourceDiskUsageBytes?: number;
+}
+
+export interface VmPricePerformanceCapabilityImpact {
+  /** Matches the existing lost-capability key when the impact describes a lost SKU capability. */
+  key: string;
+  label?: string;
+  severity: VmPricePerformanceCapabilityImpactSeverity;
+  basis: VmPricePerformanceCapabilityImpactBasis;
+  materiality?: VmPricePerformanceCapabilityImpactMateriality;
+  currentValue?: unknown;
+  alternativeValue?: unknown;
+  message?: string;
+}
+
+export interface VmPricePerformanceSku {
+  armSkuName: string;
+  region: string;
+  currencyCode: 'USD';
+  osType: VmPricePerformanceOsType;
+  tier: VmPricePerformanceTier;
+  purchaseOption: VmPricePerformancePurchaseOption;
+  hourlyPriceUsd?: number;
+  monthlyPriceUsd?: number;
+  /** Subscription-currency retail price. Prefer this over USD fields for UI display. */
+  localCurrencyCode?: string;
+  localCurrencySymbol?: string;
+  localHourlyPrice?: number;
+  localMonthlyPrice?: number;
+  numberOfCores?: number;
+  memoryGB?: number;
+  maxDataDiskCount?: number;
+  maxRemoteStorageDisks?: number;
+  resourceDiskSizeMB?: number;
+  family?: string;
+  sizeFamily?: string;
+  cpuArchitecture?: string;
+  supportsPremiumDisk?: boolean;
+  acceleratedNetworking?: boolean;
+  rdmaEnabled?: boolean;
+  hyperVGenerations?: string[];
+  hasGpu?: boolean;
+  gpuCount?: number;
+  gpuMemoryGB?: number;
+  gpuModel?: string;
+  hasTempDisk?: boolean;
+  tempDiskType?: string;
+  maxTempStorageDisks?: number;
+  tempDiskSizePerDiskMiB?: number;
+  hasNvmeTempDisk?: boolean;
+  nvmeDiskCount?: number;
+  nvmeDiskSizePerDiskMiB?: number;
+  maxNics?: number;
+  maxNetworkBandwidthMbps?: number;
+  supportsEphemeralOsDisk?: boolean;
+  supportedRemoteDiskTypes?: string[];
+  benchmarkScore?: number;
+  benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
+  pricePerPerformance?: number;
+  performancePerDollar?: number;
+  pricePerCoreUsd?: number;
+  pricePerMemoryGBUsd?: number;
+  localPricePerCore?: number;
+  localPricePerMemoryGB?: number;
+  comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+}
+
+export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
+  rank: number;
+  savingsHourlyUsd?: number;
+  savingsMonthlyUsd?: number;
+  localSavingsHourly?: number;
+  localSavingsMonthly?: number;
+  localSavingsPercent?: number;
+  savingsPercent?: number;
+  performanceDeltaPercent?: number;
+  pricePerPerformanceDeltaPercent?: number;
+  reason?: string;
+  capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+}
+
+export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
+  /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
+  lostCapabilities: string[];
+}
+
+export interface VmPricePerformanceInsights {
+  /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
+  comparisonScope: 'same-region';
+  /** Subscription/display currency used for user-facing price fields when available. */
+  displayCurrencyCode?: string;
+  displayCurrencySymbol?: string;
+  current?: VmPricePerformanceSku;
+  /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
+  currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
+  /** Feature-compatible alternatives that are safe default candidates. */
+  alternatives: VmPricePerformanceAlternative[];
+  /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
+  tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
+  source: VmPricePerformanceCatalogSource;
+}
+
+export type ComputeAlternativesComparisonScope = 'same-resource' | 'same-plan' | 'workload' | 'estimated-workload';
+
+export type ComputeServiceKind =
+  | 'virtual-machine'
+  | 'virtual-machine-scale-set'
+  | 'app-service-plan'
+  | 'functions-flex-consumption'
+  | 'functions-premium'
+  | 'functions-consumption'
+  | 'container-apps'
+  | 'azure-kubernetes-service'
+  | 'azure-batch'
+  | 'azure-container-instances'
+  | 'unknown'
+  | string;
+
+export type ComputeAlternativeCategory = 'same-platform' | 'cross-platform';
+
+export type ComputeAlternativeFit = 'good' | 'possible' | 'tradeoff' | 'poor' | 'blocked';
+
+export type ComputeAlternativeConfidence = 'high' | 'medium' | 'low' | 'unknown';
+
+export type ComputeAlternativeCostBasis = 'observed' | 'retail' | 'scenario' | 'amortized' | 'estimated' | 'requiresTelemetry' | string;
+
+export type ComputeAlternativeOsType = 'windows' | 'linux' | 'mixed' | 'unknown';
+
+export type ComputeAlternativeScalingModel =
+  | 'fixed'
+  | 'manual'
+  | 'autoscale'
+  | 'event-driven'
+  | 'scale-to-zero'
+  | 'always-ready'
+  | 'node-pool'
+  | 'unknown'
+  | string;
+
+export type ComputeAlternativeMigrationEffort =
+  | 'configuration'
+  | 'redeploy'
+  | 'runtime-migration'
+  | 'containerization'
+  | 'application-refactor'
+  | 'architecture-redesign'
+  | 'unknown';
+
+export type ComputeAlternativeSeverity = 'info' | 'warning' | 'blocking' | 'unknown' | string;
+
+export interface ComputeAlternativesSource {
+  generatedAt?: string;
+  pricingSource?: string;
+  evidenceSource?: string;
+  displayCurrencyCode?: string;
+  notes?: string[];
+}
+
+export interface ComputeCapacitySummary {
+  vcpu?: number;
+  memoryGB?: number;
+  instanceCount?: number;
+  minInstances?: number;
+  maxInstances?: number;
+  minReplicas?: number;
+  maxReplicas?: number;
+  storageGB?: number;
+}
+
+export interface ComputeScalingSummary {
+  model?: ComputeAlternativeScalingModel;
+  scaleToZero?: boolean;
+  autoscaleEnabled?: boolean;
+  alwaysReadyInstances?: number;
+  prewarmedInstances?: number;
+  minInstances?: number;
+  maxInstances?: number;
+  minReplicas?: number;
+  maxReplicas?: number;
+  notes?: string[];
+}
+
+export interface ComputeUtilizationSummary {
+  cpuAveragePercent?: number;
+  cpuP95Percent?: number;
+  cpuP99Percent?: number;
+  cpuMaxPercent?: number;
+  memoryAveragePercent?: number;
+  memoryP95Percent?: number;
+  memoryP99Percent?: number;
+  memoryMaxPercent?: number;
+  queueP95?: number;
+  queueMax?: number;
+  runningTimePercent?: number;
+}
+
+export interface ComputeAlternativePricing {
+  currencyCode?: string;
+  currencySymbol?: string;
+  hourlyPrice?: number;
+  monthlyPrice?: number;
+  reservationEligible?: boolean;
+  savingsPlanEligible?: boolean;
+  freeAllowanceEligible?: boolean;
+  basis: ComputeAlternativeCostBasis;
+  explanation?: string;
+}
+
+export interface ComputeMonthlyCostEstimate {
+  low?: number;
+  expected?: number;
+  high?: number;
+  currencyCode?: string;
+  currencySymbol?: string;
+  basis: ComputeAlternativeCostBasis;
+  confidence: ComputeAlternativeConfidence;
+  explanation: string;
+}
+
+export interface ComputeSavingsEstimate {
+  monthlyLow?: number;
+  monthlyExpected?: number;
+  monthlyHigh?: number;
+  percentLow?: number;
+  percentExpected?: number;
+  percentHigh?: number;
+  basis: ComputeAlternativeCostBasis;
+}
+
+export interface ComputeOperationalModel {
+  managedService?: boolean;
+  osManagementRequired?: boolean;
+  supportsDeploymentSlots?: boolean;
+  supportsRevisions?: boolean;
+  supportsManagedIdentity?: boolean;
+  supportsPrivateNetworking?: boolean;
+  supportsZoneRedundancy?: boolean;
+  notes?: string[];
+}
+
+export interface ComputeMigrationSummary {
+  effort: ComputeAlternativeMigrationEffort;
+  requiresCodeChange?: boolean;
+  requiresContainerization?: boolean;
+  requiresRuntimeMigration?: boolean;
+  requiresNetworkChanges?: boolean;
+  requiresDataMigration?: boolean;
+  notes?: string[];
+}
+
+export interface ComputeAlternativeEvidence {
+  label: string;
+  value: string;
+  severity?: ComputeAlternativeSeverity;
+  source?: string;
+}
+
+export interface ComputeAlternativeBlocker {
+  key: string;
+  label: string;
+  severity: ComputeAlternativeSeverity;
+  message: string;
+}
+
+export interface ComputeAlternativeTradeoff {
+  key: string;
+  label: string;
+  severity?: ComputeAlternativeSeverity;
+  message: string;
+}
+
+export interface ComputeAlternativeCurrent {
+  service: ComputeServiceKind;
+  label: string;
+  resourceType: string;
+  skuName?: string;
+  planType?: string;
+  osType?: ComputeAlternativeOsType;
+  region?: string;
+  monthlyCost?: number;
+  costBasis?: ComputeAlternativeCostBasis;
+  capacity?: ComputeCapacitySummary;
+  scaling?: ComputeScalingSummary;
+  utilization?: ComputeUtilizationSummary;
+}
+
+export interface ComputeAlternative {
+  id: string;
+  service: ComputeServiceKind;
+  label: string;
+  category: ComputeAlternativeCategory;
+  fit: ComputeAlternativeFit;
+  confidence: ComputeAlternativeConfidence;
+  rank?: number;
+  summary: string;
+  monthlyCostEstimate?: ComputeMonthlyCostEstimate;
+  savingsEstimate?: ComputeSavingsEstimate;
+  pricing?: ComputeAlternativePricing;
+  capacity?: ComputeCapacitySummary;
+  scaling?: ComputeScalingSummary;
+  operationalModel?: ComputeOperationalModel;
+  migration?: ComputeMigrationSummary;
+  evidence: ComputeAlternativeEvidence[];
+  blockers?: ComputeAlternativeBlocker[];
+  tradeoffs?: ComputeAlternativeTradeoff[];
+  assumptions?: string[];
+  nextSteps?: string[];
+}
+
+export interface ComputeAlternativesInsights {
+  version: 1;
+  comparisonScope: ComputeAlternativesComparisonScope;
+  displayCurrencyCode?: string;
+  displayCurrencySymbol?: string;
+  current: ComputeAlternativeCurrent;
+  alternatives: ComputeAlternative[];
+  source: ComputeAlternativesSource;
 }
 
 /** This is used by the plugin summaryu (e.g. A list of all the VMs on the VMs page) */

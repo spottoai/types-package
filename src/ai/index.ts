@@ -35,6 +35,7 @@ export interface PageContext {
   companyId: string;
   subscriptionIds?: string[];
   cloudAccountId?: string;
+  resourceIds?: string[];
   resourceId?: string;
   recommendationId?: string;
   pageUrl?: string;
@@ -473,6 +474,26 @@ export interface AIChatEvidenceCoverage {
   memoryMatches?: AIChatMemoryMatch[];
 }
 
+export interface AIChatRuntimeEvalSignals {
+  observedLeadSpecialist?: string;
+  observedSkillIds: string[];
+  observedSpecialistDomains: string[];
+  observedToolNames: string[];
+  observedEvidenceKinds: string[];
+  observedWorkflowOutcomes: string[];
+  retrievalExecuted: boolean;
+  followupPassExecuted: boolean;
+  evidenceEntryCount: number;
+  evidenceGapCount: number;
+  sourceTypes: AIChatRetrievalSourceType[];
+  memoryMatchCount: number;
+  recommendationDetected: boolean;
+  tradeoffDiscussionDetected: boolean;
+  uncertaintyLanguageDetected: boolean;
+  clarificationObserved: boolean;
+  contextSufficientForAnswering: boolean;
+}
+
 export interface AIChatReconnectState {
   status: 'connected' | 'reconnecting' | 'resumed' | 'restarted' | 'degraded';
   message?: string;
@@ -887,6 +908,7 @@ export interface AIChatFinalSnapshot {
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatAuditArtifact {
@@ -915,6 +937,7 @@ export interface AIChatAuditArtifact {
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
   analysisConfidence?: number;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
 }
 
 export interface AIChatApprovalDecision {
@@ -1010,6 +1033,18 @@ export interface AIConversationListItem extends AIConversationRoutingMetadata {
   pageType?: string;
 }
 
+export type AIChatConversationFeedback = 'ThumbsUp' | 'ThumbsDown';
+
+export interface AIChatConversationFeedbackUpdateRequest {
+  feedback: AIChatConversationFeedback | null;
+}
+
+export interface AIChatConversationFeedbackUpdateResponse {
+  conversationId: string;
+  feedback: AIChatConversationFeedback | null;
+  updatedAt: string;
+}
+
 export interface AIChatUsage {
   promptTokens: number;
   completionTokens: number;
@@ -1023,6 +1058,7 @@ export interface AIChatTerminalSnapshot {
   turnSnapshot: AIChatTurnSnapshot;
   finalSnapshot?: AIChatFinalSnapshot;
   auditArtifact?: AIChatAuditArtifact;
+  runtimeEvalSignals?: AIChatRuntimeEvalSignals;
   resolvedResponseMode?: AIChatResolvedResponseMode;
   chatMode?: AIChatMode;
   resolvedScope?: AIResolvedWorkspaceScope;
@@ -1236,6 +1272,24 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   event: 'done';
   run: AIChatRunState;
   terminalSnapshot: AIChatTerminalSnapshot;
+  responseId?: string;
+  answer?: string;
+  turnSnapshot?: AIChatTurnSnapshot;
+  finalSnapshot?: AIChatFinalSnapshot | null;
+  completionReason?: string;
+  structuredResponse?: StructuredAIResponse;
+  citations?: AIChatCitation[];
+  routing?: AIChatRoutingMetadata;
+  chatMode?: AIChatMode;
+  resolvedScope?: AIResolvedWorkspaceScope;
+  assistantProfileSummary?: AIChatAssistantProfileSummary;
+  toolPolicySummary?: AIChatToolPolicySummary;
+  sourcePolicySummary?: AIChatSourcePolicySummary;
+  queuedPrompt?: AIChatQueuedPromptState;
+  evidenceCoverage?: AIChatEvidenceCoverage;
+  reconnectState?: AIChatReconnectState;
+  degradedState?: AIChatDegradedState;
+  collaborationRun?: AIChatCollaborationRun;
 }
 
 export interface AIChatErrorEvent extends AIChatStreamEventBase {

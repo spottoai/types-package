@@ -1,4 +1,10 @@
-import type { Recommendation, RecommendationEffortEstimates } from './recommendations';
+import type {
+  HddOsRetirementRenderStrategyPayload,
+  Recommendation,
+  RecommendationActionMetadata,
+  RecommendationActionRequiredPermissions,
+  RecommendationEffortEstimates,
+} from './recommendations';
 import { RecommendationCategory } from './recommendations';
 
 const effortEstimates: RecommendationEffortEstimates = {
@@ -93,9 +99,142 @@ const legacyRecommendationWithoutEffortEstimates: Recommendation = {
   effortEstimates: undefined,
 };
 
+const hddRetirementRenderData: HddOsRetirementRenderStrategyPayload = {
+  retirementDate: '2028-09-08',
+  retirementLink: 'https://learn.microsoft.com/en-us/azure/virtual-machines/disks-hdd-os-retirement',
+  currencyCode: 'NZD',
+  currencySymbol: '$',
+  defaultTargetTier: 'standardSsd',
+  impactedDiskCount: 1,
+  currentMonthlyActual: 31.5,
+  currentMonthlyRetail: 31.48033,
+  standardSsdMonthlyRetail: 45.353018,
+  premiumSsdMonthlyRetail: 66.021957,
+  standardSsdMonthlyDelta: 13.872688,
+  premiumSsdMonthlyDelta: 34.541627,
+  disks: [
+    {
+      resourceId: '/subscriptions/sub-dev/resourcegroups/rg-dev-003/providers/microsoft.compute/disks/disk-dev-hdd-db1-os',
+      resourceName: 'disk-dev-hdd-db1-os',
+      resourceType: 'microsoft.compute/disks',
+      current: {
+        storageTier: 'standardHdd',
+        skuName: 'S15 LRS',
+        sizeGiB: 256,
+        monthlyActual: 31.5,
+        monthlyRetail: 31.48033,
+      },
+      standardSsd: {
+        storageTier: 'standardSsd',
+        skuName: 'E15 LRS',
+        sizeGiB: 256,
+        monthlyRetail: 45.353018,
+      },
+      premiumSsd: {
+        storageTier: 'premiumSsd',
+        skuName: 'P15 LRS',
+        sizeGiB: 256,
+        monthlyRetail: 66.021957,
+      },
+      defaultSelection: 'standardSsd',
+    },
+  ],
+};
+
+const recommendationWithRenderStrategy: Recommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-125',
+  renderData: hddRetirementRenderData,
+};
+
+const recommendationAction: RecommendationActionMetadata = {
+  verified: false,
+  title: 'Set minimum TLS version to TLS 1.2',
+  description: 'Updates the storage account minimum TLS version to TLS 1.2.',
+  estimatedDuration: '2-5 minutes',
+  riskLevel: 'medium',
+  requiredPermissions: {
+    provider: 'azure-rbac',
+    scope: 'targetResource',
+    actions: [
+      {
+        label: 'Update storage account configuration',
+        name: 'Microsoft.Storage/storageAccounts/write',
+        reason: 'Required to update the storage account minimum TLS setting.',
+        links: [
+          {
+            label: 'Azure resource provider operations',
+            url: 'https://learn.microsoft.com/azure/role-based-access-control/resource-provider-operations',
+          },
+        ],
+      },
+    ],
+    dataActions: [],
+    leastPrivilegeRole: {
+      label: 'Custom least-privilege role',
+      description: 'A custom Azure role can grant only the required action permissions listed above.',
+    },
+    suggestedRoles: [
+      {
+        label: 'Storage Account Contributor',
+        roleName: 'Storage Account Contributor',
+        reason: 'Common built-in role that includes storage account configuration write permissions.',
+      },
+      {
+        label: 'Contributor',
+        roleName: 'Contributor',
+        reason: 'Broad built-in fallback role that includes this permission, but grants more access than needed.',
+      },
+    ],
+  },
+  impactAssessment: {
+    downtime: 'none expected',
+    dataLoss: 'none',
+    accessImpact: 'Clients that only support TLS 1.0 or TLS 1.1 will fail.',
+    dependencies: 'Applications and integrations that connect to this storage account',
+  },
+  rollback: {
+    supported: false,
+    description: 'This action cannot roll back to TLS 1.0 or TLS 1.1 after enforcement.',
+    limitations: [
+      'Azure Storage no longer supports TLS 1.0 or TLS 1.1 for client connections.',
+      'Compatibility issues must be remediated by updating clients to use TLS 1.2 or later.',
+    ],
+  },
+  humanPreChecks: [
+    {
+      label: 'Confirm client compatibility',
+      description: 'Verify required applications and integrations support TLS 1.2 or later.',
+    },
+  ],
+  postValidation: [
+    {
+      label: 'Confirm TLS setting',
+      description: 'Verify the storage account minimum TLS version is TLS 1.2.',
+      expectedResult: 'The storage account reports minimumTlsVersion as TLS1_2.',
+      links: [
+        {
+          label: 'Enforce a minimum TLS version for Azure Storage',
+          url: 'https://learn.microsoft.com/azure/storage/common/transport-layer-security-configure-minimum-version',
+        },
+      ],
+    },
+  ],
+};
+
+const recommendationWithAction: Recommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-126',
+  action: recommendationAction,
+};
+
 void effortEstimates;
 void recommendationWithEffortEstimates;
 void legacyRecommendationWithoutEffortEstimates;
+void hddRetirementRenderData;
+void recommendationWithRenderStrategy;
+void recommendationAction;
+void recommendationWithAction;
 
 const missingEnterpriseProfile: RecommendationEffortEstimates = {
   // @ts-expect-error enterprise profile is required.
@@ -143,6 +282,42 @@ const invalidBulkProfileField: RecommendationEffortEstimates = {
   },
 };
 
+const invalidHddCurrentStorageTier: HddOsRetirementRenderStrategyPayload = {
+  ...hddRetirementRenderData,
+  disks: [
+    {
+      ...hddRetirementRenderData.disks[0],
+      current: {
+        ...hddRetirementRenderData.disks[0].current,
+        // @ts-expect-error current disk in HDD retirement must be standardHdd.
+        storageTier: 'standardSsd',
+      },
+    },
+  ],
+};
+
+const invalidActionRiskLevel: RecommendationActionMetadata = {
+  ...recommendationAction,
+  // @ts-expect-error action risk level must use the supported UI risk labels.
+  riskLevel: 'critical',
+};
+
+const invalidActionPermissionProvider: RecommendationActionRequiredPermissions = {
+  ...recommendationAction.requiredPermissions!,
+  // @ts-expect-error action permission provider must use the supported provider values.
+  provider: 'azure-resource-graph',
+};
+
+const invalidActionPermissionScope: RecommendationActionRequiredPermissions = {
+  ...recommendationAction.requiredPermissions!,
+  // @ts-expect-error action permission scope must use the supported scope values.
+  scope: 'managementGroup',
+};
+
 void missingEnterpriseProfile;
 void invalidBreakdownShape;
 void invalidBulkProfileField;
+void invalidHddCurrentStorageTier;
+void invalidActionRiskLevel;
+void invalidActionPermissionProvider;
+void invalidActionPermissionScope;

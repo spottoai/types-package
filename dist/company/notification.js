@@ -9,6 +9,8 @@ exports.RECOMMENDATION_FLAGS = {
     DISMISSED: 2,
     /** 100 */
     NEW: 4,
+    /** 1000 */
+    IMPLEMENTED: 8,
 };
 /** Bitmask constants for users */
 exports.USER_FLAGS = {
@@ -46,6 +48,7 @@ const getRecommendationsFlags = (array) => ({
     new: (0, exports.hasArrayFlag)(array, exports.RECOMMENDATION_FLAGS.NEW),
     dismissed: (0, exports.hasArrayFlag)(array, exports.RECOMMENDATION_FLAGS.DISMISSED),
     prioritized: (0, exports.hasArrayFlag)(array, exports.RECOMMENDATION_FLAGS.PRIORITIZED),
+    implemented: (0, exports.hasArrayFlag)(array, exports.RECOMMENDATION_FLAGS.IMPLEMENTED),
 });
 exports.getRecommendationsFlags = getRecommendationsFlags;
 //# sourceMappingURL=notification.js.map

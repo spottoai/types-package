@@ -1,17 +1,142 @@
 /**
- * Billing plot types for Azure cost visualization
+ * Billing cost analysis types for Azure cost visualization.
  */
-/** Supported billing plot categories */
-export type BillingPlotType = 'daily' | 'forecast' | 'monthly' | 'yearly';
-export interface BillingPlot {
-    /** File path to the plot image */
-    file: string;
-    /** Type of plot (e.g., 'daily', 'forecast') */
-    type: BillingPlotType;
-    /** Start date of the plot data (Unix timestamp) */
+/** Named cost chart windows emitted by the Azure billing analyzer. */
+export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
+/** Supported billing chart aggregation categories. */
+export type BillingChartAggregation = 'daily' | 'monthly' | (string & {});
+/** Linear trend metadata used to render trend overlays. */
+export interface BillingChartTrend {
+    method: 'linear' | (string & {});
+    slope: number;
+    intercept: number;
+}
+/** Full date range covered by the chart data payload. */
+export interface BillingChartDataWindow {
+    /** Start date of the available chart data (Unix timestamp). */
     startDate: number;
-    /** End date of the plot data (Unix timestamp) */
+    /** End date of the available chart data (Unix timestamp). */
     endDate: number;
+    /** Number of source daily points included in the data window. */
+    pointCount: number;
+}
+/** Detector method metadata used to explain anomaly markers. */
+export interface BillingChartDetectorMethod {
+    name: string;
+    status?: string;
+    error?: string | null;
+    /** Dates triggered by this detector (Unix timestamps). */
+    triggeredDates: number[];
+}
+/** Metadata for the anomaly detector ensemble behind the chart payload. */
+export interface BillingChartDetectorMetadata {
+    threshold: number;
+    methods: BillingChartDetectorMethod[];
+}
+/** Daily cost point used by historical cost chart views. */
+export interface BillingDailyChartPoint {
+    /** ISO date string for the point. */
+    date: string;
+    /** UTC date for the point (Unix timestamp). */
+    timestamp: number;
+    /** Cost for the point. */
+    cost: number;
+    /** Whether this point is considered an anomaly by quorum detection. */
+    isAnomaly: boolean;
+    /** Number of detector votes for this point. */
+    anomalyVotes: number;
+    /** Optional rendered trend value for this point. */
+    trendCost?: number;
+    /** Detector methods that triggered for anomalous points. */
+    anomalyMethods?: string[];
+}
+/** Monthly cost point used by the 12-month cost chart view. */
+export interface BillingMonthlyChartPoint {
+    /** Month key in YYYY-MM format. */
+    month: string;
+    /** Start date of the monthly point window (Unix timestamp). */
+    startDate: number;
+    /** End date of the monthly point window (Unix timestamp). */
+    endDate: number;
+    /** Total cost for the month. */
+    cost: number;
+    /** Average daily cost inside the month window. */
+    averageDailyCost: number;
+    /** Count of anomaly dates inside the month window. */
+    anomalyCount: number;
+    /** Optional rendered trend value for this point. */
+    trendCost?: number;
+    /** Anomaly dates inside the month window (Unix timestamps). */
+    anomalyDates?: number[];
+}
+/** Forecast or fitted cost point used by forecast chart overlays. */
+export interface BillingForecastChartPoint {
+    /** ISO date string for the point. */
+    date: string;
+    /** UTC date for the point (Unix timestamp). */
+    timestamp: number;
+    /** Cost for the point. */
+    cost: number;
+    /** Optional rendered trend value for this point. */
+    trendCost?: number;
+}
+/** Historical daily chart view. */
+export interface BillingDailyChartView {
+    aggregation: 'daily';
+    /** Start date of the view window (Unix timestamp). */
+    startDate: number;
+    /** End date of the view window (Unix timestamp). */
+    endDate: number;
+    averageDailyCost: number;
+    totalCost: number;
+    points: BillingDailyChartPoint[];
+    trend?: BillingChartTrend;
+}
+/** Monthly chart view. */
+export interface BillingMonthlyChartView {
+    aggregation: 'monthly';
+    /** Start date of the view window (Unix timestamp). */
+    startDate: number;
+    /** End date of the view window (Unix timestamp). */
+    endDate: number;
+    averageDailyCost: number;
+    totalCost: number;
+    points: BillingMonthlyChartPoint[];
+    trend?: BillingChartTrend;
+}
+/** Forecast chart view containing actual, fitted, and future forecast series. */
+export interface BillingForecastChartView {
+    aggregation: 'daily';
+    forecastMethod: string;
+    /** Start date of the forecast view window (Unix timestamp). */
+    startDate: number;
+    /** End date of the forecast view window (Unix timestamp). */
+    endDate: number;
+    actualTotalCost: number;
+    forecastRemaining: number;
+    forecastMonthTotal: number;
+    actualPoints: BillingDailyChartPoint[];
+    forecastPoints: BillingForecastChartPoint[];
+    fittedPoints: BillingForecastChartPoint[];
+    trend?: BillingChartTrend;
+}
+export type BillingChartView = BillingDailyChartView | BillingMonthlyChartView | BillingForecastChartView;
+/** Named chart views emitted by the billing analyzer. */
+export interface BillingChartViews {
+    '7_days'?: BillingDailyChartView;
+    '30_days'?: BillingDailyChartView;
+    '90_days'?: BillingDailyChartView;
+    '12_months'?: BillingMonthlyChartView;
+    forecast_90_days?: BillingForecastChartView;
+    [key: string]: BillingChartView | undefined;
+}
+/** Interactive chart data for cost analysis. */
+export interface BillingChartData {
+    schemaVersion: number;
+    source: 'aggregated' | (string & {});
+    dataWindow: BillingChartDataWindow;
+    views: BillingChartViews;
+    detectors: BillingChartDetectorMetadata;
 }
 /** Impact metrics associated with a billing anomaly */
 export interface BillingAnomalyImpact {
@@ -42,6 +167,12 @@ export interface BillingAnomalyImpact {
 export interface BillingAnomalyDriverResource {
     /** Resource identifier */
     name: string;
+    /** Scope/category used by the analyzer for the resource row */
+    resourceScope?: string;
+    /** Full cloud resource ID when the anomaly can be tied to a resource */
+    resourceId?: string;
+    /** Whether the driver row represents subscription-level spend */
+    isSubscriptionLevel?: boolean;
     /** Total cost attributed to the resource */
     cost: number;
     /** Baseline cost for the resource */
@@ -95,14 +226,24 @@ export interface BillingAnomaly {
     /** Additional contextual notes for the anomaly */
     notes: string[];
 }
-export interface BillingPlotsMetadata {
+export interface BillingCostAnalysisMetadata {
     /** Azure subscription ID */
     subscriptionId: string;
-    /** Array of billing plots */
-    plots: BillingPlot[];
+    /** Interactive chart data for cost analysis. */
+    chartData: BillingChartData;
     /** Detected anomalies for the subscription */
     anomalies: BillingAnomaly[];
     currencyCode: string;
     currencySymbol: string;
+    /** Forecast method used for top-level forecast summaries. */
+    forecastMethod?: string;
+    /** Forecast month total used for top-level forecast summaries. */
+    forecastMonthTotal?: number;
+    /** Forecast amount remaining in the current period. */
+    forecastRemaining?: number;
+    /** Forecast amount at the end of the current period. */
+    forecastPeriodEnd?: number;
 }
+/** @deprecated Use BillingCostAnalysisMetadata. */
+export type BillingPlotsMetadata = BillingCostAnalysisMetadata;
 //# sourceMappingURL=billingPlots.d.ts.map

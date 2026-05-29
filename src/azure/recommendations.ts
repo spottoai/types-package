@@ -2,9 +2,9 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsSummary, SavingsPotential } from './views';
+import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
-
+import type { Tags } from '../tags';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -68,18 +68,159 @@ export interface RecommendationBulkEffortEstimates {
 export interface RecommendationEffortEstimates {
   profiles: RecommendationEffortEstimateProfiles;
   bulk: RecommendationBulkEffortEstimates;
+  overridden?: boolean;
+  lastUpdatedAt?: string;
+  notes?: string;
 }
+
+export interface RecommendationActionImpactAssessment {
+  downtime: string;
+  dataLoss: string;
+  accessImpact: string;
+  dependencies: string;
+}
+
+export type RecommendationActionRiskLevel = 'low' | 'medium' | 'high';
+
+export interface RecommendationActionRollback {
+  supported: boolean;
+  description: string;
+  limitations: string[];
+}
+
+export interface RecommendationActionCheck {
+  label: string;
+  description: string;
+}
+
+export interface RecommendationActionLink {
+  label: string;
+  url: string;
+}
+
+export interface RecommendationActionPostValidation {
+  label: string;
+  description: string;
+  expectedResult: string;
+  links?: RecommendationActionLink[];
+}
+
+export type RecommendationActionPermissionProvider = 'azure-rbac';
+
+export type RecommendationActionPermissionScope = 'targetResource' | 'resourceGroup' | 'subscription' | 'tenant';
+
+export interface RecommendationActionPermissionRequirement {
+  label: string;
+  name: string;
+  reason: string;
+  links?: RecommendationActionLink[];
+}
+
+export interface RecommendationActionLeastPrivilegeRole {
+  label: string;
+  description: string;
+}
+
+export interface RecommendationActionSuggestedRole {
+  label: string;
+  roleName: string;
+  roleDefinitionId?: string;
+  reason: string;
+}
+
+export interface RecommendationActionRequiredPermissions {
+  provider: RecommendationActionPermissionProvider;
+  scope: RecommendationActionPermissionScope;
+  actions: RecommendationActionPermissionRequirement[];
+  dataActions: RecommendationActionPermissionRequirement[];
+  leastPrivilegeRole?: RecommendationActionLeastPrivilegeRole;
+  suggestedRoles?: RecommendationActionSuggestedRole[];
+}
+
+export interface RecommendationActionDefinition {
+  verified: boolean;
+  actionDefinitionId?: string;
+  title: string;
+  description: string;
+  estimatedDuration: string;
+  riskLevel: RecommendationActionRiskLevel;
+  requiredPermissions?: RecommendationActionRequiredPermissions;
+  impactAssessment: RecommendationActionImpactAssessment;
+  rollback: RecommendationActionRollback;
+  humanPreChecks: RecommendationActionCheck[];
+  postValidation: RecommendationActionPostValidation[];
+}
+
+export type RecommendationActionMetadata = RecommendationActionDefinition;
+
+export type RecommendationImplementActionImpactAssessment = RecommendationActionImpactAssessment;
+
+export type RecommendationImplementAction = RecommendationActionMetadata;
 
 export interface RecommendationResources {
   recommendation: CustomAzureRecommendation;
   resourceIds: string[];
 }
 
+export type HddSsdMigrationTargetTier = 'standardSsd' | 'premiumSsd';
+export type HddDiskPricingRedundancy = 'LRS' | 'ZRS';
+
+export interface HddOsRetirementCurrentDiskPricing {
+  storageTier: 'standardHdd';
+  skuName: string;
+  pricingRedundancy?: HddDiskPricingRedundancy;
+  sizeGiB: number;
+  monthlyActual: number;
+  monthlyRetail: number;
+}
+
+export interface HddOsRetirementTargetDiskPricing {
+  storageTier: HddSsdMigrationTargetTier;
+  skuName: string;
+  pricingRedundancy?: HddDiskPricingRedundancy;
+  sizeGiB: number;
+  monthlyRetail: number;
+}
+
+export interface HddOsRetirementDiskRenderItem {
+  resourceId: string;
+  resourceName: string;
+  resourceType: string;
+  /** Canonical location key used for pricing lookup, e.g. "westus". */
+  pricingLocation?: string;
+  current: HddOsRetirementCurrentDiskPricing;
+  standardSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'standardSsd' };
+  premiumSsd: HddOsRetirementTargetDiskPricing & { storageTier: 'premiumSsd' };
+  defaultSelection?: HddSsdMigrationTargetTier;
+}
+
+export interface HddOsRetirementRenderStrategyPayload {
+  retirementDate: string;
+  retirementLink: string;
+  currencyCode?: string;
+  currencySymbol?: string;
+  defaultTargetTier?: HddSsdMigrationTargetTier;
+  impactedDiskCount: number;
+  currentMonthlyActual: number;
+  currentMonthlyRetail: number;
+  standardSsdMonthlyRetail: number;
+  premiumSsdMonthlyRetail: number;
+  standardSsdMonthlyDelta: number;
+  premiumSsdMonthlyDelta: number;
+  disks: HddOsRetirementDiskRenderItem[];
+}
+
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
+
+export type AnyRecommendationRenderData = Record<string, unknown>;
+
 export interface Recommendation {
+  /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
   id: string;
   name: string;
   category: RecommendationCategory;
   subCategory?: string;
+  aggregateDescription?: string;
   /** custom */
   type?: string;
   description?: string;
@@ -88,7 +229,9 @@ export interface Recommendation {
   impactReason?: string;
   links?: { name: string; url: string }[];
   considerations?: string;
+  currency?: string;
   potentialBenefits?: string;
+  potentialMonthlySavings?: number;
   effort?: string;
   effortReason?: string;
   /** e.g. 10 hours */
@@ -97,6 +240,7 @@ export interface Recommendation {
   effortEstimates?: RecommendationEffortEstimates;
   risk?: string;
   riskReason?: string;
+  severity?: string;
   /** Could deprecate later */
   costImpact?: number;
   costImpactReason?: string;
@@ -108,6 +252,8 @@ export interface Recommendation {
   confidenceReason?: string;
   /** array of resources that have this recommendation */
   resources?: ResourceReference[];
+  /** Compact resource references for resource-specific detail payloads. */
+  resourceIds?: string[];
   /** only for security recommendations */
   securityImpactDetails?: SecurityImpact;
   /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
@@ -125,13 +271,15 @@ export interface Recommendation {
   /** Avoids conflict with RecommendationWithState.updatedAt */
   lastUpdatedTime?: string;
   /** Business story properties */
-  headline: string;
-  bottomLine: string;
-  plainSummary: string;
-  quickSteps: string[];
-  businessOwner: string;
-  keyConstraint: string;
-  validationEvidence: string;
+  title?: string;
+  headline?: string;
+  bottomLine?: string;
+  plainSummary?: string;
+  quickSteps?: string[];
+  businessOwner?: string;
+  keyConstraint?: string;
+  validationEvidence?: string;
+  read?: boolean;
   /** Technical playbook (only for multi-step implementations) */
   technicalPlaybook?: string;
   /** Static recommendation scoring metadata (library-level). */
@@ -145,6 +293,16 @@ export interface Recommendation {
   finalScore?: number;
   /** UI display-only normalized score (0-100). */
   normalizedScore?: number;
+  /** Cross-feature linkage IDs used for deep links and related views. */
+  linkingIds?: RecommendationLinkingIds;
+  /** Optional UI render payload consumed by recommendation-specific components. */
+  renderData?: RecommendationKnownRenderData | AnyRecommendationRenderData;
+  /** Optional action definition for implement-capable recommendations. */
+  action?: RecommendationActionMetadata;
+}
+
+export interface RecommendationLinkingIds {
+  serviceRetirementIds?: string[];
 }
 
 /** Deprecated **/
@@ -173,16 +331,43 @@ export interface RecommendationWithResources {
   savings?: SavingsPotential;
 }
 
+/**
+ * Contextual links from one recommendation row to other resources.
+ * Used to model "this disk belongs to that VM" style associations
+ * without changing which resource owns savings totals.
+ */
+export interface RecommendationResourceAssociation {
+  id: string;
+  name?: string;
+  type?: string;
+  relationship?: ResourceRelationship;
+}
+
 export interface RecommendationResource {
   id: string;
   name: string;
   type: string;
+  resourceGroup?: string;
+  location?: string;
+  subscriptionId?: string;
+  subscriptionName?: string;
+  tags?: Record<string, string>;
+  spottoTags?: Tags;
+  createdTime?: string;
+  typeInfo?: {
+    name: string;
+    icon: string;
+    description: string;
+    product: string;
+    aliases?: string[];
+  };
   spend: number;
   spendAmortized: number;
   savings?: SavingsPotential;
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
+  associations?: RecommendationResourceAssociation[];
 }
 
 export interface RecommendationsView {
@@ -202,10 +387,12 @@ export interface ResourceReference {
   id: string;
   name: string;
   type?: string;
+  subscriptionName?: string;
   savings?: SavingsPotential;
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
+  associations?: RecommendationResourceAssociation[];
 }
 
 export type ResourceRelationship = {
@@ -255,7 +442,16 @@ export interface RecommendationStats {
 
 /** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
-  status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived';
+  status?:
+    | 'Active'
+    | 'Prioritized'
+    | 'Postponed'
+    | 'Dismissed'
+    | 'Completed'
+    | 'Archived'
+    | 'Implementing'
+    | 'Implemented'
+    | 'Failed';
   read?: boolean;
   scheduledAt?: Date;
   createdAt?: Date;
@@ -279,6 +475,12 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
 export interface RecommendationActionRequest extends ProviderScope {
   /** `providerScope` maps to subscription identity for Azure providers. */
   scope?: CommentScope;
+  /** Optional cloud-account identity enriched by trusted server-side callers before queue publish. */
+  cloudAccountId?: string;
+  /** Optional user-provided reason for queue-backed actions such as implement. */
+  reason?: string;
+  /** Optional action permission metadata passed into API preflight before queue publish. */
+  requiredPermissions?: RecommendationActionRequiredPermissions;
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];
@@ -292,6 +494,27 @@ export interface RecommendationActionResponse {
   success: boolean;
   message?: string;
   affectedResources?: string[];
+  eventId?: string;
+}
+
+export type RecommendationActionPermissionFailureStatus = 'missing' | 'unknown' | 'unsupported';
+
+export interface RecommendationActionPermissionFailure {
+  resourceId: string;
+  azureScope: string;
+  status: RecommendationActionPermissionFailureStatus;
+  message: string;
+  missingActions: string[];
+  missingDataActions: string[];
+}
+
+export interface RecommendationActionPermissionErrorResponse {
+  error: 'AzurePermissionMissing';
+  message: string;
+  action: 'implement';
+  providerName: string;
+  providerScopeId: string;
+  failures: RecommendationActionPermissionFailure[];
 }
 
 export interface ServiceRetirementRecommendation {
@@ -309,6 +532,8 @@ export interface ServiceRetirementRecommendation {
   confidencePercentage: number;
   confidenceReason: string;
   lastProcessedAt: string;
+  /** Related recommendation IDs for cross-navigation from retirement tracker. */
+  linkedRecommendationIds?: string[];
 }
 
 export interface JiraShareDetails {

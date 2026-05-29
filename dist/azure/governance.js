@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.TENANT_GOVERNANCE_GRAPH_PORTAL_FILE = exports.TENANT_GOVERNANCE_REPORT_PORTAL_FILE = exports.GOVERNANCE_ACCESS_PORTAL_FILE = exports.GOVERNANCE_GRAPH_PORTAL_FILE = exports.GOVERNANCE_REPORT_PORTAL_FILE = exports.TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = exports.TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = exports.GOVERNANCE_ACCESS_SCHEMA_VERSION = exports.GOVERNANCE_GRAPH_SCHEMA_VERSION = exports.GOVERNANCE_REPORT_SCHEMA_VERSION = void 0;
+exports.GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-01.slim-v1';
+exports.GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.graph-v1';
+exports.GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-05-14.identity-access-v2';
+exports.TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-02.tenant-slim-v1';
+exports.TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v1';
+exports.GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz';
+exports.GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz';
+exports.GOVERNANCE_ACCESS_PORTAL_FILE = 'governance-access.json.gz';
+exports.TENANT_GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz';
+exports.TENANT_GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz';
+//# sourceMappingURL=governance.js.map

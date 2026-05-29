@@ -1,3 +1,5 @@
+import type { InviteType, OnboardingIntent } from './user';
+
 export class CompanyUser {
   id?: string;
   userId!: string;
@@ -10,4 +12,9 @@ export class CompanyUser {
   invitedBy!: string;
   createdAt!: Date;
   updatedAt!: Date;
+  inviteType?: InviteType;
+  onboardingIntent?: OnboardingIntent;
+  canConnectAzureTrial?: boolean;
+  onboardingIntentCreatedAt?: Date | string;
+  onboardingIntentExpiresAt?: Date | string;
 }
