@@ -2,7 +2,7 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
+import { CostSavingsAggregationPolicy, CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
 import type { Tags } from '../tags';
 export enum RecommendationCategory {
@@ -329,6 +329,14 @@ export interface RecommendationWithResources {
   recommendation: Recommendation;
   resources: RecommendationResource[];
   savings?: SavingsPotential;
+  /** Canonical resource ID that owns this recommendation savings amount for aggregation */
+  savingsOwnerResourceId?: string;
+  /** Resource IDs that may display this recommendation savings amount as context */
+  savingsDisplayResourceIds?: string[];
+  /** Billable component key used with the owner ID to prevent double counting */
+  billableComponentKey?: string;
+  /** Aggregation rule for this recommendation savings amount */
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
 }
 
 /**
@@ -364,6 +372,14 @@ export interface RecommendationResource {
   spend: number;
   spendAmortized: number;
   savings?: SavingsPotential;
+  /** Canonical resource ID that owns this resource savings amount for aggregation */
+  savingsOwnerResourceId?: string;
+  /** Resource IDs that may display this resource savings amount as context */
+  savingsDisplayResourceIds?: string[];
+  /** Billable component key used with the owner ID to prevent double counting */
+  billableComponentKey?: string;
+  /** Aggregation rule for this resource savings amount */
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
@@ -442,16 +458,7 @@ export interface RecommendationStats {
 
 /** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
-  status?:
-    | 'Active'
-    | 'Prioritized'
-    | 'Postponed'
-    | 'Dismissed'
-    | 'Completed'
-    | 'Archived'
-    | 'Implementing'
-    | 'Implemented'
-    | 'Failed';
+  status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived' | 'Implementing' | 'Implemented' | 'Failed';
   read?: boolean;
   scheduledAt?: Date;
   createdAt?: Date;
