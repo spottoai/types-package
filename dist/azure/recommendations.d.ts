@@ -183,6 +183,33 @@ export interface HddOsRetirementRenderStrategyPayload {
 }
 export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
 export type AnyRecommendationRenderData = Record<string, unknown>;
+export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
+export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
+export type RecommendationDecisionReviewPriority = 'review_first' | 'normal';
+/**
+ * Resource-specific relationship from one recommendation to another.
+ * Used by UIs to explain alternatives and follow-ups without changing recommendation state.
+ */
+export interface RecommendationDecisionLink {
+    recommendationId: string;
+    kind: RecommendationDecisionRelationshipKind;
+    label?: string;
+    reason?: string;
+    condition?: string;
+}
+/**
+ * Resource-specific decision context for an existing recommendation.
+ * The recommendation remains independently visible and actionable by recommendationId.
+ */
+export interface RecommendationDecisionContext {
+    recommendationId: string;
+    role?: RecommendationDecisionContextRole;
+    reviewPriority?: RecommendationDecisionReviewPriority;
+    groupId?: string;
+    title?: string;
+    explanation?: string;
+    links: RecommendationDecisionLink[];
+}
 export interface Recommendation {
     /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
     id: string;
