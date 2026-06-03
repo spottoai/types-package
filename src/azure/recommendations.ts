@@ -4,6 +4,9 @@ import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } 
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsAggregationPolicy, CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { AutotaskShareOverrides } from '../integrations/autotask';
+import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
+import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -214,13 +217,7 @@ export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload
 
 export type AnyRecommendationRenderData = Record<string, unknown>;
 
-export type RecommendationDecisionRelationshipKind =
-  | 'review_first'
-  | 'alternative'
-  | 'trade_off'
-  | 'follow_up'
-  | 'unlocks'
-  | 'conflicts_with';
+export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
 
 export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
 
@@ -511,10 +508,13 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 }
 
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
-  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
+  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
   email?: string;
   halo?: HaloRoutingOverrides;
   connectwise?: ConnectWiseRoutingFields;
+  autotask?: AutotaskShareOverrides;
+  azuredevops?: AzureDevOpsShareOverrides;
+  github?: GitHubShareOverrides;
 }
 
 export interface RecommendationActionRequest extends ProviderScope {
