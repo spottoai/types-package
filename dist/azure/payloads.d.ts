@@ -1,6 +1,15 @@
 import { Subscription, SubscriptionPolicies } from './subscriptions.js';
 import type { AzureDelegatedAuthErrorCode, AzureDelegatedOAuthStatePhase, AzureDelegatedOnboardingStatus, CloudAccountAuthMode, CloudAccountTenantSyncSource, PublicCloudAccountDto } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
+export interface WorkflowTracingOptions {
+    enabled: boolean;
+}
+export interface SubscriptionSyncRequest {
+    tracing?: WorkflowTracingOptions;
+}
+export interface CloudAccountTenantSyncRequest {
+    tracing?: WorkflowTracingOptions;
+}
 export interface ProcessPayload {
     subscriptionId?: string;
     tenantId?: string;
@@ -11,6 +20,7 @@ export interface ProcessPayload {
     companyId?: string;
     cloudAccountId?: string;
     clientId?: string;
+    tracing?: WorkflowTracingOptions;
 }
 export interface RequestMessage {
     entity: string;
@@ -24,6 +34,7 @@ export interface RequestMessage {
     refreshComponents?: string[];
     correlationId?: string;
     eventId?: string;
+    tracing?: WorkflowTracingOptions;
 }
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
 export interface ActionExecutionSource {
@@ -65,6 +76,7 @@ export interface SubscriptionMessage {
     refreshComponents?: string[];
     sagaRunId?: string;
     eventId?: string;
+    tracing?: WorkflowTracingOptions;
 }
 export interface SubscriptionResponse {
     displayName: string;

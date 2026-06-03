@@ -35,5 +35,6 @@ export * from './ai';
 export * from './events';
 export * from './integrations';
 export * from './identity';
+export * from './features-and-permissions';
 export * from './tags';
 //# sourceMappingURL=index.d.ts.map

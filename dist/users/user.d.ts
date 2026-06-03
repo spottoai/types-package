@@ -27,6 +27,7 @@ export interface User extends BaseUser {
     onboardingIntentExpiresAt?: Date | string;
 }
 export interface UserProfile extends BaseUser {
+    name?: string;
     Timestamp: string;
     criticalAlertsEnabled: boolean;
     emailNotificationsEnabled: boolean;

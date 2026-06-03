@@ -51,5 +51,6 @@ __exportStar(require("./ai"), exports);
 __exportStar(require("./events"), exports);
 __exportStar(require("./integrations"), exports);
 __exportStar(require("./identity"), exports);
+__exportStar(require("./features-and-permissions"), exports);
 __exportStar(require("./tags"), exports);
 //# sourceMappingURL=index.js.map

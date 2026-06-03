@@ -3,8 +3,10 @@ export interface ApiKeyCreateRequest {
     name: string;
     /** Optional description of the API key */
     description?: string;
-    /** Role permissions mask (bitmask) */
-    roleMask: number;
+    /** Legacy role permissions mask (bitmask), retained for compatibility */
+    roleMask?: number;
+    /** Catalog role keys selected for this API key */
+    roleKeys?: string[];
     /** Allowed IP address ranges (e.g., ["192.168.1.0/24", "10.0.0.0/8"]) */
     allowedIpRanges?: string[];
     /** Allowed country codes (e.g., ["US", "CA", "GB"]) */
@@ -17,8 +19,10 @@ export interface ApiKeyUpdateRequest {
     name?: string;
     /** Optional description of the API key */
     description?: string;
-    /** Role permissions mask (bitmask) */
+    /** Legacy role permissions mask (bitmask), retained for compatibility */
     roleMask?: number;
+    /** Catalog role keys selected for this API key */
+    roleKeys?: string[];
     /** Allowed IP address ranges (e.g., ["192.168.1.0/24", "10.0.0.0/8"]) */
     allowedIpRanges?: string[];
     /** Allowed country codes (e.g., ["US", "CA", "GB"]) */
@@ -37,6 +41,8 @@ export interface ApiKeySummary {
     description?: string;
     /** Role permissions mask (bitmask) */
     roleMask: number;
+    /** Catalog role keys represented by the role mask, when known */
+    roleKeys?: string[];
     /** Allowed IP address ranges (e.g., ["192.168.1.0/24", "10.0.0.0/8"]) */
     allowedIpRanges?: string[];
     /** Allowed country codes (e.g., ["US", "CA", "GB"]) */
@@ -63,5 +69,16 @@ export interface ApiKeyProvisionResult {
     maskedKey: string;
     /** The API key summary record */
     record: ApiKeySummary;
+}
+export interface ApiKeyRoleOption {
+    roleKey: string;
+    displayName: string;
+    description?: string;
+    permissionKeys: string[];
+    roleMask: number;
+    issuableWithLegacyRoleMask: boolean;
+}
+export interface ApiKeyRoleOptionsResponse {
+    roles: ApiKeyRoleOption[];
 }
 //# sourceMappingURL=apikey.d.ts.map
