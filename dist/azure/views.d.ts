@@ -2,7 +2,7 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
@@ -134,6 +134,8 @@ export interface AzureResourcePluginItem {
     type: string;
     location: string;
     recommendations?: Recommendation[];
+    /** Optional linked context explaining related recommendations for this resource. */
+    recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
     /** Billing-backed portion of cost total */
     spendActual?: number;
@@ -173,6 +175,8 @@ export interface AzureResourcePluginItemDetailed {
     type: string;
     name: string;
     recommendations?: Recommendation[];
+    /** Optional linked context explaining related recommendations for this resource. */
+    recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
     spendActual?: number;
     spendAmortizedActual?: number;

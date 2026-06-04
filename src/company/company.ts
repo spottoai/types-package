@@ -76,7 +76,7 @@ export interface UserCompany {
   azureDelegatedTrialExpiresAt?: Date | string;
 }
 
-export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise';
+export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
 export type IntegrationProvider = KnownIntegrationProvider | (string & {});
 
 export interface ParentIntegrationSettings {

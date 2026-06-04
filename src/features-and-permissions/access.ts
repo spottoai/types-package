@@ -51,6 +51,7 @@ export interface PortalFeatureSetDefinition {
   displayName: string;
   description?: string;
   defaultAvailability: PortalSystemAvailability;
+  customerManaged: boolean;
   featureKeys: string[];
 }
 
@@ -91,6 +92,12 @@ export interface PortalCompanyFeatureOverride {
   updatedAt: string;
 }
 
+export interface PortalCompanyFeatureOverrideUpsertRequest {
+  decision: PortalFeatureSetOverrideDecision;
+  presentationMode?: PortalPresentationMode;
+  reason?: string;
+}
+
 export type PortalRoleAssignmentSource = 'legacy_migration' | 'admin_assignment' | 'seed';
 
 export interface PortalPrincipalRoleAssignment {
@@ -105,13 +112,11 @@ export interface PortalPrincipalRoleAssignment {
   updatedAt: string;
 }
 
-export type PortalEffectiveAccessSourceType =
-  | 'feature_set'
-  | 'role'
-  | 'permission'
-  | 'delegation_scope'
-  | 'parent_restriction'
-  | 'presentation';
+export interface PortalPrincipalRoleAssignmentUpsertRequest {
+  delegationScope?: PortalDelegationScope;
+}
+
+export type PortalEffectiveAccessSourceType = 'feature_set' | 'role' | 'permission' | 'delegation_scope' | 'parent_restriction' | 'presentation';
 
 export interface PortalEffectiveAccessSource {
   sourceType: PortalEffectiveAccessSourceType;
@@ -145,10 +150,21 @@ export interface PortalFeatureAccessSummary {
   actions: Partial<Record<PortalAccessAction, PortalFeatureActionAccess>>;
 }
 
+export interface PortalFeatureSetAccessSummary {
+  featureSetKey: string;
+  entitlementState: PortalEntitlementState;
+  visibilityState: PortalVisibilityState;
+  reasonCode: PortalAccessReasonCode;
+  sourceCompanyId?: string;
+  presentationMode: PortalPresentationMode;
+  sources: PortalEffectiveAccessSource[];
+}
+
 export interface PortalAccessBootstrapResponse {
   customerId: string;
   principalType: PortalPrincipalType;
   principalId: string;
   catalogVersion: string;
+  featureSets: PortalFeatureSetAccessSummary[];
   features: PortalFeatureAccessSummary[];
 }

@@ -2,7 +2,7 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
@@ -87,7 +87,15 @@ export interface AzureResourcePortalItem {
   /** First day of estimation gap (typically billingActualThroughDate + 1) */
   estimationCutoffStartDate?: number;
   /** Which savings basis should be shown for this resource */
-  savingsBasis?: 'billed' | 'amortized';
+  savingsBasis?: CostSavingsSpendBasis;
+  /** Canonical resource ID that owns this savings amount for aggregation */
+  savingsOwnerResourceId?: string;
+  /** Resource IDs that may display this savings amount as context */
+  savingsDisplayResourceIds?: string[];
+  /** Billable component key used with the owner ID to prevent double counting */
+  billableComponentKey?: string;
+  /** Aggregation rule for this savings amount */
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   savings?: SavingsPotential;
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
@@ -110,6 +118,10 @@ export interface SavingsPotential {
   maxAmount: number;
   maxPercentage: number;
 }
+
+export type CostSavingsSpendBasis = 'billed' | 'amortized';
+
+export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 
 export interface BenefitCoverageSummary {
   windowStart: string;
@@ -142,6 +154,8 @@ export interface AzureResourcePluginItem {
   type: string;
   location: string;
   recommendations?: Recommendation[];
+  /** Optional linked context explaining related recommendations for this resource. */
+  recommendationDecisionContexts?: RecommendationDecisionContext[];
   cost?: CostSummaryDetails;
   /** Billing-backed portion of cost total */
   spendActual?: number;
@@ -182,6 +196,8 @@ export interface AzureResourcePluginItemDetailed {
   type: string;
   name: string;
   recommendations?: Recommendation[];
+  /** Optional linked context explaining related recommendations for this resource. */
+  recommendationDecisionContexts?: RecommendationDecisionContext[];
   cost?: CostSummaryDetails;
   spendActual?: number;
   spendAmortizedActual?: number;
@@ -611,6 +627,36 @@ export interface CostSavingsSummary {
     maxSavingsPercent?: number;
   };
   categories: CostSavingsCategoryBreakdown[];
+  billingBasis?: CostSavingsBillingBasis;
+  savingsBasis?: CostSavingsSummaryBasis;
+}
+
+export interface CostSavingsBillingBasis {
+  rule: 'exclude_latest_billing_date_estimated_rows_and_billing_lag' | string;
+  source?: string;
+  observedStartDate?: number;
+  observedEndDate?: number;
+  stableStartDate?: number;
+  stableEndDate?: number;
+  excludedDates: number[];
+  totalRows: number;
+  stableRows: number;
+  excludedRows: number;
+  excludedEstimatedRows: number;
+  excludedLatestDateRows: number;
+  excludedBillingLagRows: number;
+  billingLagDays: number;
+  stableCutoffDate?: number;
+  includesEstimatedRows: boolean;
+}
+
+export interface CostSavingsSummaryBasis {
+  categoryScope: 'Cost' | string;
+  projection: 'projected_monthly' | string;
+  observedPeriod: 'stable_billing_window' | 'mixed_stable_and_legacy' | string;
+  excludesEstimatedRows: boolean;
+  appliesTo: 'all_included_savings' | 'stable_savings_only' | string;
+  containsLegacySavings: boolean;
 }
 
 export interface CostSavingsCategoryBreakdown {
@@ -624,4 +670,42 @@ export interface CostSavingsCategoryBreakdown {
   maxSavings: number;
   sampleRecommendations: string[]; // Up to N IDs for drilldowns
   sampleResources: string[]; // Up to N IDs
+}
+
+export interface StableWholeResourceDeletionBackfillDiagnostics {
+  recommendationCount: number;
+  resourceCount: number;
+  stableBillingRowCount: number;
+  stableSpendIndexResourceCount: number;
+  registeredResourceCount: number;
+  missingStableSpendResourceCount: number;
+  missingStableSpendReasonCounts: Record<string, number>;
+  relatedResourceCount: number;
+  registeredMaxMonthlySavings: number;
+  registeredRecommendations: Record<string, { resourceCount: number; maxMonthlySavings: number }>;
+  missingStableSpendResourceSamples: string[];
+}
+
+export interface CompletedViewCostSavingsManifest {
+  costStartDate?: number;
+  costEndDate?: number;
+  billingBasis?: CostSavingsBillingBasis;
+  savingsBasis?: CostSavingsSummaryBasis;
+  stableWholeResourceDeletionBackfill?: StableWholeResourceDeletionBackfillDiagnostics;
+}
+
+export interface CompletedViewArtifactGeneration {
+  runId: string;
+  generatedAt: string;
+}
+
+export interface CompletedViewManifest {
+  status: 'in_progress' | 'completed';
+  runId: string;
+  subscriptionId: string;
+  artifacts: string[];
+  artifactGeneration: CompletedViewArtifactGeneration;
+  costSavings?: CompletedViewCostSavingsManifest;
+  startedAt?: string;
+  completedAt?: string;
 }
