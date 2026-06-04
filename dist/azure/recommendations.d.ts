@@ -4,6 +4,7 @@ import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } 
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { Tags } from '../tags';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -216,6 +217,7 @@ export interface Recommendation {
     name: string;
     category: RecommendationCategory;
     subCategory?: string;
+    aggregateDescription?: string;
     /** custom */
     type?: string;
     description?: string;
@@ -227,7 +229,9 @@ export interface Recommendation {
         url: string;
     }[];
     considerations?: string;
+    currency?: string;
     potentialBenefits?: string;
+    potentialMonthlySavings?: number;
     effort?: string;
     effortReason?: string;
     /** e.g. 10 hours */
@@ -236,6 +240,7 @@ export interface Recommendation {
     effortEstimates?: RecommendationEffortEstimates;
     risk?: string;
     riskReason?: string;
+    severity?: string;
     /** Could deprecate later */
     costImpact?: number;
     costImpactReason?: string;
@@ -265,13 +270,15 @@ export interface Recommendation {
     /** Avoids conflict with RecommendationWithState.updatedAt */
     lastUpdatedTime?: string;
     /** Business story properties */
-    headline: string;
-    bottomLine: string;
-    plainSummary: string;
-    quickSteps: string[];
-    businessOwner: string;
-    keyConstraint: string;
-    validationEvidence: string;
+    title?: string;
+    headline?: string;
+    bottomLine?: string;
+    plainSummary?: string;
+    quickSteps?: string[];
+    businessOwner?: string;
+    keyConstraint?: string;
+    validationEvidence?: string;
+    read?: boolean;
     /** Technical playbook (only for multi-step implementations) */
     technicalPlaybook?: string;
     /** Static recommendation scoring metadata (library-level). */
@@ -333,6 +340,20 @@ export interface RecommendationResource {
     id: string;
     name: string;
     type: string;
+    resourceGroup?: string;
+    location?: string;
+    subscriptionId?: string;
+    subscriptionName?: string;
+    tags?: Record<string, string>;
+    spottoTags?: Tags;
+    createdTime?: string;
+    typeInfo?: {
+        name: string;
+        icon: string;
+        description: string;
+        product: string;
+        aliases?: string[];
+    };
     spend: number;
     spendAmortized: number;
     savings?: SavingsPotential;
@@ -356,6 +377,7 @@ export interface ResourceReference {
     id: string;
     name: string;
     type?: string;
+    subscriptionName?: string;
     savings?: SavingsPotential;
     currency?: string;
     currencySymbol?: string;
