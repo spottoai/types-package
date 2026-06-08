@@ -1,6 +1,7 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
 import type { CompanyClassification } from './companyHierarchy';
+import type { PortalDelegationScope } from '../features-and-permissions/access';
 
 export type CompanyLifecycle = 'standard' | 'trial';
 
@@ -64,6 +65,10 @@ export interface UserCompany {
   companyName: string;
   userId: string;
   role: number;
+  advancedRoles?: Array<{
+    roleKey: string;
+    delegationScope: PortalDelegationScope;
+  }>;
   cloudAccountCount?: number;
   isDemo?: boolean;
   parentId?: string;

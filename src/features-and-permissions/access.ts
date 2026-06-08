@@ -18,6 +18,8 @@ export type PortalSystemAvailability = 'available_by_default' | 'unavailable_by_
 
 export type PortalFeatureSetOverrideDecision = 'allow' | 'deny' | 'restrict';
 
+export type PortalFeatureSetOverrideAppliesTo = 'all_users' | 'local_company_users' | 'delegated_admins';
+
 export type PortalEntitlementState = 'enabled' | 'not_available' | 'disabled' | 'blocked_by_parent';
 
 export type PortalVisibilityState = 'hidden' | 'visible' | 'teaser' | 'promo';
@@ -52,6 +54,7 @@ export interface PortalFeatureSetDefinition {
   description?: string;
   defaultAvailability: PortalSystemAvailability;
   customerManaged: boolean;
+  rootCompanyOnly?: boolean;
   featureKeys: string[];
 }
 
@@ -85,6 +88,7 @@ export interface PortalCompanyFeatureOverride {
   companyId: string;
   featureSetKey: string;
   decision: PortalFeatureSetOverrideDecision;
+  appliesTo?: PortalFeatureSetOverrideAppliesTo;
   presentationMode?: PortalPresentationMode;
   reason?: string;
   createdBy: string;
@@ -94,6 +98,7 @@ export interface PortalCompanyFeatureOverride {
 
 export interface PortalCompanyFeatureOverrideUpsertRequest {
   decision: PortalFeatureSetOverrideDecision;
+  appliesTo?: PortalFeatureSetOverrideAppliesTo;
   presentationMode?: PortalPresentationMode;
   reason?: string;
 }

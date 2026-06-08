@@ -1,5 +1,6 @@
 /** Dev-only Vite entrypoint that avoids stale sibling .js files under src/. */
 export * from './azure/common';
+export * from './azure/activityLogs';
 export * from './azure/budgets';
 export * from './azure/billingPlots';
 export * from './azure/benefits';
@@ -23,12 +24,17 @@ export * from './azure/serviceRetirement';
 export * from './azure/serviceRetirementState';
 export * from './azure/costEstimation';
 export * from './azure/storage-inventory';
+export * from './azure/governance';
+export * from './azure/publicIpAddresses';
 export * from './accounts/index';
 export * from './users/index';
+export * from './common/provider';
 export * from './common/index';
 export * from './company/index';
+export * from './scheduler';
 export * from './ai/index';
 export * from './events/index';
 export * from './integrations/index';
 export * from './identity/index';
+export * from './features-and-permissions';
 export * from './tags/index';
