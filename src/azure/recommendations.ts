@@ -4,6 +4,9 @@ import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } 
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsAggregationPolicy, CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { AutotaskShareOverrides } from '../integrations/autotask';
+import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
+import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -213,6 +216,38 @@ export interface HddOsRetirementRenderStrategyPayload {
 export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
 
 export type AnyRecommendationRenderData = Record<string, unknown>;
+
+export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
+
+export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
+
+export type RecommendationDecisionReviewPriority = 'review_first' | 'normal';
+
+/**
+ * Resource-specific relationship from one recommendation to another.
+ * Used by UIs to explain alternatives and follow-ups without changing recommendation state.
+ */
+export interface RecommendationDecisionLink {
+  recommendationId: string;
+  kind: RecommendationDecisionRelationshipKind;
+  label?: string;
+  reason?: string;
+  condition?: string;
+}
+
+/**
+ * Resource-specific decision context for an existing recommendation.
+ * The recommendation remains independently visible and actionable by recommendationId.
+ */
+export interface RecommendationDecisionContext {
+  recommendationId: string;
+  role?: RecommendationDecisionContextRole;
+  reviewPriority?: RecommendationDecisionReviewPriority;
+  groupId?: string;
+  title?: string;
+  explanation?: string;
+  links: RecommendationDecisionLink[];
+}
 
 export interface Recommendation {
   /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
@@ -473,10 +508,13 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 }
 
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
-  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
+  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
   email?: string;
   halo?: HaloRoutingOverrides;
   connectwise?: ConnectWiseRoutingFields;
+  autotask?: AutotaskShareOverrides;
+  azuredevops?: AzureDevOpsShareOverrides;
+  github?: GitHubShareOverrides;
 }
 
 export interface RecommendationActionRequest extends ProviderScope {

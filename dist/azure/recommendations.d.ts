@@ -4,6 +4,7 @@ import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } 
 import { SubscriptionSummaryLite } from './subscriptions';
 import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { Tags } from '../tags';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -183,12 +184,40 @@ export interface HddOsRetirementRenderStrategyPayload {
 }
 export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
 export type AnyRecommendationRenderData = Record<string, unknown>;
+export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
+export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
+export type RecommendationDecisionReviewPriority = 'review_first' | 'normal';
+/**
+ * Resource-specific relationship from one recommendation to another.
+ * Used by UIs to explain alternatives and follow-ups without changing recommendation state.
+ */
+export interface RecommendationDecisionLink {
+    recommendationId: string;
+    kind: RecommendationDecisionRelationshipKind;
+    label?: string;
+    reason?: string;
+    condition?: string;
+}
+/**
+ * Resource-specific decision context for an existing recommendation.
+ * The recommendation remains independently visible and actionable by recommendationId.
+ */
+export interface RecommendationDecisionContext {
+    recommendationId: string;
+    role?: RecommendationDecisionContextRole;
+    reviewPriority?: RecommendationDecisionReviewPriority;
+    groupId?: string;
+    title?: string;
+    explanation?: string;
+    links: RecommendationDecisionLink[];
+}
 export interface Recommendation {
     /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
     id: string;
     name: string;
     category: RecommendationCategory;
     subCategory?: string;
+    aggregateDescription?: string;
     /** custom */
     type?: string;
     description?: string;
@@ -200,7 +229,9 @@ export interface Recommendation {
         url: string;
     }[];
     considerations?: string;
+    currency?: string;
     potentialBenefits?: string;
+    potentialMonthlySavings?: number;
     effort?: string;
     effortReason?: string;
     /** e.g. 10 hours */
@@ -209,6 +240,7 @@ export interface Recommendation {
     effortEstimates?: RecommendationEffortEstimates;
     risk?: string;
     riskReason?: string;
+    severity?: string;
     /** Could deprecate later */
     costImpact?: number;
     costImpactReason?: string;
@@ -238,13 +270,15 @@ export interface Recommendation {
     /** Avoids conflict with RecommendationWithState.updatedAt */
     lastUpdatedTime?: string;
     /** Business story properties */
-    headline: string;
-    bottomLine: string;
-    plainSummary: string;
-    quickSteps: string[];
-    businessOwner: string;
-    keyConstraint: string;
-    validationEvidence: string;
+    title?: string;
+    headline?: string;
+    bottomLine?: string;
+    plainSummary?: string;
+    quickSteps?: string[];
+    businessOwner?: string;
+    keyConstraint?: string;
+    validationEvidence?: string;
+    read?: boolean;
     /** Technical playbook (only for multi-step implementations) */
     technicalPlaybook?: string;
     /** Static recommendation scoring metadata (library-level). */
@@ -306,6 +340,20 @@ export interface RecommendationResource {
     id: string;
     name: string;
     type: string;
+    resourceGroup?: string;
+    location?: string;
+    subscriptionId?: string;
+    subscriptionName?: string;
+    tags?: Record<string, string>;
+    spottoTags?: Tags;
+    createdTime?: string;
+    typeInfo?: {
+        name: string;
+        icon: string;
+        description: string;
+        product: string;
+        aliases?: string[];
+    };
     spend: number;
     spendAmortized: number;
     savings?: SavingsPotential;
@@ -329,6 +377,7 @@ export interface ResourceReference {
     id: string;
     name: string;
     type?: string;
+    subscriptionName?: string;
     savings?: SavingsPotential;
     currency?: string;
     currencySymbol?: string;

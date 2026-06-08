@@ -1,4 +1,4 @@
-import { SubscriptionInfoBase } from '../accounts/accounts.js';
+import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
@@ -44,6 +44,8 @@ export interface Subscription {
   tenantSubscriptionIds: string[];
   subscriptionId: string;
   displayName: string;
+  /** Optional subscription type (Production, Non-Production, Mixed) */
+  subscriptionType?: SubscriptionType;
   properties?: SubscriptionProperties;
   recommendations?: Recommendation[];
   spendingLimit: boolean;
