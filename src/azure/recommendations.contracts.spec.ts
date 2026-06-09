@@ -1,6 +1,7 @@
 import type {
   HddOsRetirementRenderStrategyPayload,
   Recommendation,
+  RecommendationActionRequest,
   RecommendationActionMetadata,
   RecommendationActionRequiredPermissions,
   RecommendationEffortEstimates,
@@ -104,6 +105,15 @@ const recommendationWithSampledResourceIds: Recommendation = {
   id: 'rec-sampled-resource-ids',
   resourceIds: ['/subscriptions/sub-dev/resourcegroups/rg-dev/providers/microsoft.compute/disks/disk-high-cost'],
   resourcesCount: 315,
+};
+
+const allAffectedRecommendationActionRequest: RecommendationActionRequest = {
+  companyId: 'company-1',
+  providerName: 'Azure',
+  providerScopeId: 'sub-dev',
+  recommendationId: 'rec-sampled-resource-ids',
+  resourceIds: [],
+  targetSelection: 'allAffectedResources',
 };
 
 const hddRetirementRenderData: HddOsRetirementRenderStrategyPayload = {
@@ -239,6 +249,7 @@ void effortEstimates;
 void recommendationWithEffortEstimates;
 void legacyRecommendationWithoutEffortEstimates;
 void recommendationWithSampledResourceIds;
+void allAffectedRecommendationActionRequest;
 void hddRetirementRenderData;
 void recommendationWithRenderStrategy;
 void recommendationAction;
