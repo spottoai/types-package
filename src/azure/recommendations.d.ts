@@ -156,6 +156,8 @@ export interface RecommendationSummary {
 }
 export interface RecommendationWithResources {
     recommendation: Recommendation;
+    /** Total affected resources when the resources array is trimmed or sampled. */
+    resourcesCount?: number;
     resources: RecommendationResource[];
     savings?: SavingsPotential;
 }
