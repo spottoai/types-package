@@ -98,6 +98,10 @@ export interface Recommendation {
     confidenceReason?: string;
     /** array of resources that have this recommendation */
     resources?: ResourceReference[];
+    /** Compact resource references for resource-specific detail payloads. */
+    resourceIds?: string[];
+    /** Total affected resources when resourceIds is trimmed or sampled. */
+    resourcesCount?: number;
     /** only for security recommendations */
     securityImpactDetails?: SecurityImpact;
     /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */

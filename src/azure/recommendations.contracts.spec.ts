@@ -99,6 +99,13 @@ const legacyRecommendationWithoutEffortEstimates: Recommendation = {
   effortEstimates: undefined,
 };
 
+const recommendationWithSampledResourceIds: Recommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-sampled-resource-ids',
+  resourceIds: ['/subscriptions/sub-dev/resourcegroups/rg-dev/providers/microsoft.compute/disks/disk-high-cost'],
+  resourcesCount: 315,
+};
+
 const hddRetirementRenderData: HddOsRetirementRenderStrategyPayload = {
   retirementDate: '2028-09-08',
   retirementLink: 'https://learn.microsoft.com/en-us/azure/virtual-machines/disks-hdd-os-retirement',
@@ -231,6 +238,7 @@ const recommendationWithAction: Recommendation = {
 void effortEstimates;
 void recommendationWithEffortEstimates;
 void legacyRecommendationWithoutEffortEstimates;
+void recommendationWithSampledResourceIds;
 void hddRetirementRenderData;
 void recommendationWithRenderStrategy;
 void recommendationAction;
