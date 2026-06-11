@@ -5,6 +5,7 @@ export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
 export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
 
 export interface BillingExportLocatorEntry {
@@ -79,6 +80,8 @@ export interface CloudAccount {
   tenantSyncCompletedAt?: Date;
   tenantSyncError?: string;
   tenantSyncSource?: CloudAccountTenantSyncSource;
+  firstSyncNotificationStatus?: CloudAccountFirstSyncNotificationStatus;
+  firstSyncNotificationUserId?: string;
   /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
   delegatedTokenCache?: string;
   onboardingStatus?: AzureDelegatedOnboardingStatus;

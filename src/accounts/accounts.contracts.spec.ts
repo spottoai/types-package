@@ -2,6 +2,7 @@ import type {
   AzureDelegatedAuthErrorCode,
   CloudAccount,
   CloudAccountAuthMode,
+  CloudAccountFirstSyncNotificationStatus,
   PublicCloudAccountDto,
 } from './accounts';
 import type { CloudAccountTenantSyncRequestMessage } from '../index';
@@ -130,6 +131,15 @@ const cloudAccountWithTenantSyncState: CloudAccount = {
   tenantSyncSource: 'manual',
 };
 
+const cloudAccountWithFirstSyncNotification: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  id: 'tenant-client-id-first-sync',
+  firstSyncNotificationStatus: 'Pending',
+  firstSyncNotificationUserId: 'user-123',
+};
+
+const firstSyncNotificationStatus: CloudAccountFirstSyncNotificationStatus = 'Sending';
+
 void cloudAccountWithRecommendationEffortProfile;
 void cloudAccountWithoutRecommendationEffortProfile;
 void servicePrincipalAccountWithoutAuthMode;
@@ -141,6 +151,8 @@ void invalidPublicCloudAccountTokenCacheDto;
 void invalidPublicCloudAccountSecretDto;
 void invalidPublicCloudAccountWriteSecretDto;
 void cloudAccountWithTenantSyncState;
+void cloudAccountWithFirstSyncNotification;
+void firstSyncNotificationStatus;
 
 const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
 
@@ -164,6 +176,12 @@ const invalidCloudAccountRecommendationEffortProfile: CloudAccount = {
   effortProfile: 'manual',
 };
 
+const invalidFirstSyncNotificationStatus: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  // @ts-expect-error first sync notification status must use the supported status union.
+  firstSyncNotificationStatus: 'Queued',
+};
+
 const tenantSyncRequestMessage: CloudAccountTenantSyncRequestMessage = {
   entity: 'cloudaccount',
   action: 'tenant-sync',
@@ -185,6 +203,7 @@ const invalidTenantSyncRequestMessage: CloudAccountTenantSyncRequestMessage = {
 };
 
 void invalidCloudAccountRecommendationEffortProfile;
+void invalidFirstSyncNotificationStatus;
 void tenantSyncRequestMessage;
 void invalidTenantSyncRequestMessage;
 void combinedSubscriptionReadPermission;
