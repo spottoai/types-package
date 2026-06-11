@@ -331,6 +331,8 @@ export interface VmPricePerformanceSku {
   maxNics?: number;
   maxNetworkBandwidthMbps?: number;
   supportsEphemeralOsDisk?: boolean;
+  supportsAzureSiteRecovery?: boolean;
+  azureSiteRecoveryUnsupportedReasons?: string[];
   supportedRemoteDiskTypes?: string[];
   benchmarkScore?: number;
   benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
