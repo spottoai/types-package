@@ -3,6 +3,7 @@ import type {
   AzureDelegatedAuthErrorCode,
   AzureDelegatedOAuthStatePhase,
   AzureDelegatedOnboardingStatus,
+  AzureCloudAccountAuthContext,
   CloudAccountAuthMode,
   CloudAccountTenantSyncSource,
   PublicCloudAccountDto,
@@ -31,6 +32,13 @@ export interface ProcessPayload {
   companyId?: string;
   cloudAccountId?: string;
   clientId?: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
   tracing?: WorkflowTracingOptions;
 }
 
@@ -42,6 +50,13 @@ export interface RequestMessage {
   cloudAccountId: string;
   tenantId: string;
   clientId: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
   subscriptionId?: string;
   refreshComponents?: string[];
   correlationId?: string;
@@ -89,11 +104,59 @@ export interface SubscriptionMessage {
   cloudAccountId?: string;
   tenantId?: string;
   clientId?: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
   /** Provide a list of components to refresh. Leave empty to refresh all components. */
   refreshComponents?: string[];
   sagaRunId?: string;
   eventId?: string;
   tracing?: WorkflowTracingOptions;
+}
+
+export interface AzureGdapQueueAuthContext
+  extends Omit<
+    AzureCloudAccountAuthContext,
+    'authMode' | 'cloudAccountId' | 'customerTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference'
+  > {
+  authMode?: 'gdap';
+  cloudAccountId?: string;
+  customerTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: never;
+  credentialReference?: never;
+}
+
+export interface AzureGdapSubscriptionMessage
+  extends Omit<
+    SubscriptionMessage,
+    | 'authToken'
+    | 'authClientId'
+    | 'authClientSecret'
+    | 'authTenantId'
+    | 'authMode'
+    | 'cloudAccountId'
+    | 'tenantId'
+    | 'customerTenantId'
+    | 'authorityTenantId'
+    | 'partnerTenantId'
+    | 'principalClientId'
+    | 'credentialReference'
+    | 'authContext'
+  > {
+  authMode: 'gdap';
+  cloudAccountId: string;
+  tenantId: string;
+  customerTenantId: string;
+  partnerTenantId: string;
+  authorityTenantId?: string;
+  principalClientId?: never;
+  credentialReference?: never;
+  authContext?: AzureGdapQueueAuthContext;
 }
 
 export interface SubscriptionResponse {

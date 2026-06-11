@@ -2,11 +2,77 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
-export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
+export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
 export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
+export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
+export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
+export type AzureGdapValidationStatus = 'notValidated' | 'ready' | 'degraded' | 'blocked' | 'expired' | 'reauthRequired';
+export type AzureGdapCapabilityKey =
+  | 'partnerAuthorization'
+  | 'relationship'
+  | 'accessAssignment'
+  | 'appConsent'
+  | 'subscriptionDiscovery'
+  | 'resourceInventory'
+  | 'resourceGraph'
+  | 'costRead'
+  | 'billingExportSetup'
+  | 'monitoringRead'
+  | 'graphInventory'
+  | 'scheduledScan';
+export type AzureGdapCapabilityStatusValue = 'ready' | 'degraded' | 'blocked' | 'unsupported' | 'notChecked';
+
+export interface AzureGdapCapabilityStatus {
+  key: AzureGdapCapabilityKey;
+  status: AzureGdapCapabilityStatusValue;
+  reason?: string;
+  checkedAt?: string;
+  requiredRoles?: string[];
+  requiredAzureRoles?: string[];
+}
+
+export interface AzureGdapRoleAssignment {
+  roleId?: string;
+  roleTemplateId?: string;
+  displayName: string;
+}
+
+export interface AzureGdapCloudAccountMetadata {
+  gdapPartnerTenantId: string;
+  gdapCustomerTenantId: string;
+  gdapRelationshipId: string;
+  gdapRelationshipDisplayName?: string;
+  gdapRelationshipStatus?: AzureGdapRelationshipStatus;
+  gdapAccessAssignmentId?: string;
+  gdapAccessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+  gdapSecurityGroupId?: string;
+  gdapSecurityGroupDisplayName?: string;
+  gdapRoles?: AzureGdapRoleAssignment[];
+  gdapExpiresAt?: string;
+  gdapAutoExtendEnabled?: boolean;
+  gdapPartnerAuthorizationStatus?: AzureGdapValidationStatus;
+  gdapAppConsentStatus?: AzureGdapValidationStatus;
+  gdapLastValidatedAt?: string;
+  gdapLastValidationStatus?: AzureGdapValidationStatus;
+  gdapLastValidationErrorCode?: string;
+  gdapLastValidationMessage?: string;
+  gdapScheduledEligible?: boolean;
+  gdapScheduledEligibilityReason?: string;
+  gdapCapabilities?: AzureGdapCapabilityStatus[];
+}
+
+export interface AzureCloudAccountAuthContext {
+  authMode?: CloudAccountAuthMode;
+  cloudAccountId: string;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+}
 
 export interface BillingExportLocatorEntry {
   scopeType: BillingExportLocatorScopeType;
@@ -98,11 +164,38 @@ export interface CloudAccount {
   connectedAt?: Date | string;
   lastTokenRefreshAt?: Date | string;
   lastDelegatedTokenCacheUpdatedAt?: Date | string;
+  gdapPartnerTenantId?: string;
+  gdapCustomerTenantId?: string;
+  gdapRelationshipId?: string;
+  gdapRelationshipDisplayName?: string;
+  gdapRelationshipStatus?: AzureGdapRelationshipStatus;
+  gdapAccessAssignmentId?: string;
+  gdapAccessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+  gdapSecurityGroupId?: string;
+  gdapSecurityGroupDisplayName?: string;
+  gdapRolesJson?: string;
+  gdapExpiresAt?: Date | string;
+  gdapAutoExtendEnabled?: boolean;
+  gdapPartnerAuthorizationStatus?: AzureGdapValidationStatus;
+  gdapAppConsentStatus?: AzureGdapValidationStatus;
+  gdapLastValidatedAt?: Date | string;
+  gdapLastValidationStatus?: AzureGdapValidationStatus;
+  gdapLastValidationErrorCode?: string;
+  /** Sanitized public-safe validation message. Do not store raw Microsoft claims or token errors here. */
+  gdapLastValidationMessage?: string;
+  gdapScheduledEligible?: boolean;
+  gdapScheduledEligibilityReason?: string;
+  gdapCapabilities?: AzureGdapCapabilityStatus[];
+  /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
+  gdapCredentialReference?: string;
   /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
   billingExportLocator?: string | CloudAccountBillingExportLocator;
 }
 
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator'> & {
+export type PublicCloudAccountDto = Omit<
+  CloudAccount,
+  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference'
+> & {
   /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
   secretPreview?: string;
   /** Display-only masked preview of the stored write secret. Never contains the full secret value. */

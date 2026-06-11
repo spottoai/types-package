@@ -4,6 +4,7 @@ import type * as PackageContracts from '../index';
 import type {
   ActionExecutionRequestMessage,
   ActionExecutionSource,
+  AzureCloudAccountAuthContext,
   AzureDelegatedConnectionStartRequest,
   AzureDelegatedConfirmSubscriptionsRequest,
   AzureDelegatedConfirmSubscriptionsResponse,
@@ -16,6 +17,7 @@ import type {
   AzureDelegatedTenantSelectionRequest,
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
+  AzureGdapSubscriptionMessage,
   CloudAccountTenantSyncRequest,
   PublicCloudAccountDto,
   ProcessPayload,
@@ -56,6 +58,63 @@ const tracedProcessPayload: ProcessPayload = {
   tracing,
 };
 
+const azureCloudAccountAuthContext: AzureCloudAccountAuthContext = {
+  authMode: 'gdap',
+  cloudAccountId: 'gdap-account-123',
+  customerTenantId: 'customer-tenant-123',
+  authorityTenantId: 'customer-tenant-123',
+  partnerTenantId: 'partner-tenant-123',
+};
+
+const gdapSubscriptionMessage: AzureGdapSubscriptionMessage = {
+  subscription,
+  companyId: 'comp-123',
+  cloudAccountId: 'gdap-account-123',
+  tenantId: 'customer-tenant-123',
+  clientId: 'gdap-account-123',
+  authMode: 'gdap',
+  customerTenantId: 'customer-tenant-123',
+  authorityTenantId: 'customer-tenant-123',
+  partnerTenantId: 'partner-tenant-123',
+  authContext: {
+    authMode: 'gdap',
+    cloudAccountId: 'gdap-account-123',
+    customerTenantId: 'customer-tenant-123',
+    authorityTenantId: 'customer-tenant-123',
+    partnerTenantId: 'partner-tenant-123',
+  },
+};
+
+const invalidGdapSubscriptionMessageWithToken: AzureGdapSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  // @ts-expect-error GDAP queue messages must not carry bearer tokens.
+  authToken: 'access-token',
+};
+
+const invalidGdapSubscriptionMessageWithSecret: AzureGdapSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  // @ts-expect-error GDAP queue messages must not carry client secrets.
+  authClientSecret: 'client-secret',
+};
+
+const invalidGdapSubscriptionMessageWithCredentialReference: AzureGdapSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  // @ts-expect-error GDAP queue messages should load credential references from storage.
+  credentialReference: 'internal-gdap-credential-reference',
+};
+
+const invalidGdapSubscriptionMessageWithAuthContextCredentialReference: AzureGdapSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  authContext: {
+    authMode: 'gdap',
+    cloudAccountId: 'gdap-account-123',
+    customerTenantId: 'customer-tenant-123',
+    partnerTenantId: 'partner-tenant-123',
+    // @ts-expect-error GDAP queue auth context must not carry credential references.
+    credentialReference: 'internal-gdap-credential-reference',
+  },
+};
+
 const subscriptionSyncRequest: SubscriptionSyncRequest = {
   tracing,
 };
@@ -67,6 +126,12 @@ const tenantSyncRequest: CloudAccountTenantSyncRequest = {
 void subscriptionMessage;
 void tracedSubscriptionMessage;
 void tracedProcessPayload;
+void azureCloudAccountAuthContext;
+void gdapSubscriptionMessage;
+void invalidGdapSubscriptionMessageWithToken;
+void invalidGdapSubscriptionMessageWithSecret;
+void invalidGdapSubscriptionMessageWithCredentialReference;
+void invalidGdapSubscriptionMessageWithAuthContextCredentialReference;
 void subscriptionSyncRequest;
 void tenantSyncRequest;
 
@@ -233,9 +298,7 @@ const actionExecutionRequestMessage: ActionExecutionRequestMessage = {
   providerName: 'azure',
   providerScopeId: 'subscription-1',
   actionDefinitionId: 'compute-virtualmachines_start',
-  resourceIds: [
-    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1',
-  ],
+  resourceIds: ['/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1'],
   byUserId: 'user-1',
   source: actionExecutionSource,
   tracing,
@@ -262,9 +325,7 @@ const missingActionDefinitionId: ActionExecutionRequestMessage = {
   cloudAccountId: 'cloud-account-1',
   tenantId: 'tenant-1',
   clientId: 'client-1',
-  resourceIds: [
-    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1',
-  ],
+  resourceIds: ['/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1'],
 };
 
 // @ts-expect-error ActionExecutionRequestMessage.resourceIds is required.

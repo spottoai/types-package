@@ -1,4 +1,7 @@
 import type {
+  AzureGdapCapabilityStatus,
+  AzureGdapCloudAccountMetadata,
+  AzureGdapValidationStatus,
   AzureDelegatedAuthErrorCode,
   CloudAccount,
   CloudAccountAuthMode,
@@ -61,7 +64,71 @@ const delegatedCloudAccount: CloudAccount = {
 };
 
 const delegatedAuthMode: CloudAccountAuthMode = 'delegatedUser';
+const gdapAuthMode: CloudAccountAuthMode = 'gdap';
 const delegatedAuthErrorCode: AzureDelegatedAuthErrorCode = 'claims_challenge';
+const gdapValidationStatus: AzureGdapValidationStatus = 'degraded';
+
+const gdapCapabilityStatus: AzureGdapCapabilityStatus = {
+  key: 'partnerAuthorization',
+  status: 'ready',
+  checkedAt: '2026-06-11T00:00:00.000Z',
+};
+
+const gdapCloudAccountMetadata: AzureGdapCloudAccountMetadata = {
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  gdapRelationshipId: 'relationship-123',
+  gdapRelationshipDisplayName: 'Customer GDAP relationship',
+  gdapRelationshipStatus: 'active',
+  gdapAccessAssignmentId: 'assignment-123',
+  gdapAccessAssignmentStatus: 'active',
+  gdapSecurityGroupId: 'security-group-123',
+  gdapSecurityGroupDisplayName: 'Azure Managers',
+  gdapRoles: [
+    {
+      roleTemplateId: 'directory-readers-template-id',
+      displayName: 'Directory Readers',
+    },
+  ],
+  gdapExpiresAt: '2026-12-11T00:00:00.000Z',
+  gdapPartnerAuthorizationStatus: 'ready',
+  gdapAppConsentStatus: 'ready',
+  gdapLastValidatedAt: '2026-06-11T00:00:00.000Z',
+  gdapLastValidationStatus: 'degraded',
+  gdapLastValidationErrorCode: 'cost_management_unavailable',
+  gdapLastValidationMessage: 'Cost Management read access is unavailable.',
+  gdapScheduledEligible: false,
+  gdapScheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
+  gdapCapabilities: [gdapCapabilityStatus],
+};
+
+const gdapCloudAccount: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  id: 'gdap-account-123',
+  authMode: 'gdap',
+  tenantId: 'customer-tenant-123',
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  gdapRelationshipId: 'relationship-123',
+  gdapRelationshipDisplayName: 'Customer GDAP relationship',
+  gdapRelationshipStatus: 'active',
+  gdapAccessAssignmentId: 'assignment-123',
+  gdapAccessAssignmentStatus: 'active',
+  gdapSecurityGroupId: 'security-group-123',
+  gdapSecurityGroupDisplayName: 'Azure Managers',
+  gdapRolesJson: JSON.stringify(gdapCloudAccountMetadata.gdapRoles),
+  gdapExpiresAt: '2026-12-11T00:00:00.000Z',
+  gdapPartnerAuthorizationStatus: 'ready',
+  gdapAppConsentStatus: 'ready',
+  gdapLastValidatedAt: new Date('2026-06-11T00:00:00.000Z'),
+  gdapLastValidationStatus: 'degraded',
+  gdapLastValidationErrorCode: 'cost_management_unavailable',
+  gdapLastValidationMessage: 'Cost Management read access is unavailable.',
+  gdapScheduledEligible: false,
+  gdapScheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
+  gdapCapabilities: [gdapCapabilityStatus],
+  gdapCredentialReference: 'internal-gdap-credential-reference',
+};
 
 const publicCloudAccountDto: PublicCloudAccountDto = {
   companyId: 'comp-123',
@@ -79,6 +146,31 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   connectedUserEmail: 'owner@example.com',
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
+};
+
+const publicGdapCloudAccountDto: PublicCloudAccountDto = {
+  ...publicCloudAccountDto,
+  id: 'gdap-account-123',
+  name: 'GDAP Azure Account',
+  authMode: 'gdap',
+  tenantId: 'customer-tenant-123',
+  onboardingStatus: undefined,
+  connectedUserEmail: undefined,
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  gdapRelationshipId: 'relationship-123',
+  gdapRelationshipStatus: 'active',
+  gdapAccessAssignmentId: 'assignment-123',
+  gdapAccessAssignmentStatus: 'active',
+  gdapPartnerAuthorizationStatus: 'ready',
+  gdapAppConsentStatus: 'ready',
+  gdapLastValidatedAt: '2026-06-11T00:00:00.000Z',
+  gdapLastValidationStatus: 'degraded',
+  gdapLastValidationErrorCode: 'cost_management_unavailable',
+  gdapLastValidationMessage: 'Cost Management read access is unavailable.',
+  gdapScheduledEligible: false,
+  gdapScheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
+  gdapCapabilities: [gdapCapabilityStatus],
 };
 
 const invalidPublicCloudAccountTokenCacheDto: PublicCloudAccountDto = {
@@ -123,6 +215,21 @@ const invalidPublicCloudAccountWriteSecretDto: PublicCloudAccountDto = {
   writeSecret: 'write-service-principal-secret',
 };
 
+const invalidPublicCloudAccountGdapCredentialReferenceDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-gdap-account-123',
+  name: 'Public GDAP Azure Account',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  authMode: 'gdap',
+  createdAt: new Date('2026-06-11T00:00:00.000Z'),
+  updatedAt: new Date('2026-06-11T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose GDAP credential references.
+  gdapCredentialReference: 'internal-gdap-credential-reference',
+};
+
 const cloudAccountWithTenantSyncState: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   id: 'tenant-client-id-789',
@@ -145,11 +252,18 @@ void cloudAccountWithoutRecommendationEffortProfile;
 void servicePrincipalAccountWithoutAuthMode;
 void delegatedCloudAccount;
 void delegatedAuthMode;
+void gdapAuthMode;
 void delegatedAuthErrorCode;
+void gdapValidationStatus;
+void gdapCapabilityStatus;
+void gdapCloudAccountMetadata;
+void gdapCloudAccount;
 void publicCloudAccountDto;
+void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;
 void invalidPublicCloudAccountSecretDto;
 void invalidPublicCloudAccountWriteSecretDto;
+void invalidPublicCloudAccountGdapCredentialReferenceDto;
 void cloudAccountWithTenantSyncState;
 void cloudAccountWithFirstSyncNotification;
 void firstSyncNotificationStatus;
