@@ -138,6 +138,7 @@ export interface AzureGdapSubscriptionMessage
     | 'authClientId'
     | 'authClientSecret'
     | 'authTenantId'
+    | 'clientId'
     | 'authMode'
     | 'cloudAccountId'
     | 'tenantId'
@@ -154,6 +155,7 @@ export interface AzureGdapSubscriptionMessage
   customerTenantId: string;
   partnerTenantId: string;
   authorityTenantId?: string;
+  clientId?: never;
   principalClientId?: never;
   credentialReference?: never;
   authContext?: AzureGdapQueueAuthContext;

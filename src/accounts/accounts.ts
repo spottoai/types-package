@@ -41,6 +41,8 @@ export interface AzureGdapRoleAssignment {
 }
 
 export interface AzureGdapCloudAccountMetadata {
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
   gdapPartnerTenantId: string;
   gdapCustomerTenantId: string;
   gdapRelationshipId: string;
@@ -67,11 +69,27 @@ export interface AzureGdapCloudAccountMetadata {
 export interface AzureCloudAccountAuthContext {
   authMode?: CloudAccountAuthMode;
   cloudAccountId: string;
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
   customerTenantId?: string;
   authorityTenantId?: string;
   partnerTenantId?: string;
   principalClientId?: string;
   credentialReference?: string;
+}
+
+export interface AzureGdapAuthorizationProfileSummary {
+  id: string;
+  companyId: string;
+  displayName: string;
+  partnerTenantId: string;
+  authorizationStatus: AzureGdapValidationStatus;
+  authorizedAt?: string;
+  expiresAt?: string;
+  lastValidatedAt?: string;
+  lastValidationStatus?: AzureGdapValidationStatus;
+  lastValidationErrorCode?: string;
+  lastValidationMessage?: string;
 }
 
 export interface BillingExportLocatorEntry {
@@ -164,6 +182,8 @@ export interface CloudAccount {
   connectedAt?: Date | string;
   lastTokenRefreshAt?: Date | string;
   lastDelegatedTokenCacheUpdatedAt?: Date | string;
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
   gdapPartnerTenantId?: string;
   gdapCustomerTenantId?: string;
   gdapRelationshipId?: string;

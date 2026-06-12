@@ -1,5 +1,6 @@
 import type {
   AzureGdapCapabilityStatus,
+  AzureGdapAuthorizationProfileSummary,
   AzureGdapCloudAccountMetadata,
   AzureGdapValidationStatus,
   AzureDelegatedAuthErrorCode,
@@ -75,6 +76,8 @@ const gdapCapabilityStatus: AzureGdapCapabilityStatus = {
 };
 
 const gdapCloudAccountMetadata: AzureGdapCloudAccountMetadata = {
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
   gdapPartnerTenantId: 'partner-tenant-123',
   gdapCustomerTenantId: 'customer-tenant-123',
   gdapRelationshipId: 'relationship-123',
@@ -107,6 +110,8 @@ const gdapCloudAccount: CloudAccount = {
   id: 'gdap-account-123',
   authMode: 'gdap',
   tenantId: 'customer-tenant-123',
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
   gdapPartnerTenantId: 'partner-tenant-123',
   gdapCustomerTenantId: 'customer-tenant-123',
   gdapRelationshipId: 'relationship-123',
@@ -128,6 +133,24 @@ const gdapCloudAccount: CloudAccount = {
   gdapScheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
   gdapCapabilities: [gdapCapabilityStatus],
   gdapCredentialReference: 'internal-gdap-credential-reference',
+};
+
+const gdapAuthorizationProfileSummary: AzureGdapAuthorizationProfileSummary = {
+  id: 'gdapauth-profile-123',
+  companyId: 'root-msp-123',
+  displayName: 'Root MSP GDAP authorization',
+  partnerTenantId: 'partner-tenant-123',
+  authorizationStatus: 'ready',
+  authorizedAt: '2026-06-11T00:00:00.000Z',
+  expiresAt: '2026-12-11T00:00:00.000Z',
+  lastValidatedAt: '2026-06-11T00:00:00.000Z',
+  lastValidationStatus: 'ready',
+};
+
+const invalidGdapAuthorizationProfileSummaryWithCredentialReference: AzureGdapAuthorizationProfileSummary = {
+  ...gdapAuthorizationProfileSummary,
+  // @ts-expect-error public authorization profile summaries must not expose credential references.
+  credentialReference: 'cloudaccounts/credentials/gdap/profile-token-cache.json',
 };
 
 const publicCloudAccountDto: PublicCloudAccountDto = {
@@ -157,6 +180,8 @@ const publicGdapCloudAccountDto: PublicCloudAccountDto = {
   onboardingStatus: undefined,
   connectedUserEmail: undefined,
   gdapPartnerTenantId: 'partner-tenant-123',
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
   gdapCustomerTenantId: 'customer-tenant-123',
   gdapRelationshipId: 'relationship-123',
   gdapRelationshipStatus: 'active',
@@ -258,6 +283,8 @@ void gdapValidationStatus;
 void gdapCapabilityStatus;
 void gdapCloudAccountMetadata;
 void gdapCloudAccount;
+void gdapAuthorizationProfileSummary;
+void invalidGdapAuthorizationProfileSummaryWithCredentialReference;
 void publicCloudAccountDto;
 void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;

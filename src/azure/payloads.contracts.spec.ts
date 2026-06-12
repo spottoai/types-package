@@ -61,6 +61,8 @@ const tracedProcessPayload: ProcessPayload = {
 const azureCloudAccountAuthContext: AzureCloudAccountAuthContext = {
   authMode: 'gdap',
   cloudAccountId: 'gdap-account-123',
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
   customerTenantId: 'customer-tenant-123',
   authorityTenantId: 'customer-tenant-123',
   partnerTenantId: 'partner-tenant-123',
@@ -71,7 +73,6 @@ const gdapSubscriptionMessage: AzureGdapSubscriptionMessage = {
   companyId: 'comp-123',
   cloudAccountId: 'gdap-account-123',
   tenantId: 'customer-tenant-123',
-  clientId: 'gdap-account-123',
   authMode: 'gdap',
   customerTenantId: 'customer-tenant-123',
   authorityTenantId: 'customer-tenant-123',
@@ -79,6 +80,8 @@ const gdapSubscriptionMessage: AzureGdapSubscriptionMessage = {
   authContext: {
     authMode: 'gdap',
     cloudAccountId: 'gdap-account-123',
+    gdapAuthorizationCompanyId: 'root-msp-123',
+    gdapAuthorizationProfileId: 'gdapauth-profile-123',
     customerTenantId: 'customer-tenant-123',
     authorityTenantId: 'customer-tenant-123',
     partnerTenantId: 'partner-tenant-123',
@@ -95,6 +98,12 @@ const invalidGdapSubscriptionMessageWithSecret: AzureGdapSubscriptionMessage = {
   ...gdapSubscriptionMessage,
   // @ts-expect-error GDAP queue messages must not carry client secrets.
   authClientSecret: 'client-secret',
+};
+
+const invalidGdapSubscriptionMessageWithClientId: AzureGdapSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  // @ts-expect-error GDAP queue messages must not treat cloud account IDs as Azure client IDs.
+  clientId: 'gdap-account-123',
 };
 
 const invalidGdapSubscriptionMessageWithCredentialReference: AzureGdapSubscriptionMessage = {
@@ -130,6 +139,7 @@ void azureCloudAccountAuthContext;
 void gdapSubscriptionMessage;
 void invalidGdapSubscriptionMessageWithToken;
 void invalidGdapSubscriptionMessageWithSecret;
+void invalidGdapSubscriptionMessageWithClientId;
 void invalidGdapSubscriptionMessageWithCredentialReference;
 void invalidGdapSubscriptionMessageWithAuthContextCredentialReference;
 void subscriptionSyncRequest;
