@@ -106,6 +106,116 @@ export interface CloudAccountBillingExportLocator {
   amortized?: BillingExportLocatorEntry;
 }
 
+export const AZURE_SYNC_FEATURE_ORDER = [
+  'activityMonitoring',
+  'metrics',
+  'billing',
+  'pricing',
+  'costEstimation',
+  'commitments',
+  'relationshipGraphs',
+  'governance',
+  'availabilityZones',
+  'reliability',
+  'perimeterInsights',
+  'reportEvidencePack',
+] as const;
+
+export type AzureSyncFeatureId = (typeof AZURE_SYNC_FEATURE_ORDER)[number];
+export type AzureSyncFeatureConfigurationScope = 'cloudAccount' | 'subscription';
+
+export interface AzureSyncFeatureMetadata {
+  id: AzureSyncFeatureId;
+  displayName: string;
+  description: string;
+  supportedScopes: readonly AzureSyncFeatureConfigurationScope[];
+  warning?: string;
+}
+
+export const AZURE_SYNC_FEATURE_METADATA: readonly AzureSyncFeatureMetadata[] = [
+  {
+    id: 'activityMonitoring',
+    displayName: 'Activity monitoring',
+    description: 'Collects Azure activity logs and activity-derived operational events.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+    warning: 'Disabling activity monitoring prevents activity log collection and related detections.',
+  },
+  {
+    id: 'metrics',
+    displayName: 'Metrics',
+    description: 'Collects subscription resource metrics used for utilization and rightsizing insights.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'billing',
+    displayName: 'Billing',
+    description: 'Collects billing and cost usage data.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'pricing',
+    displayName: 'Pricing',
+    description: 'Collects Azure price data used for cost calculations.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'costEstimation',
+    displayName: 'Cost estimation',
+    description: 'Builds estimated costs when billing-backed usage is unavailable or incomplete.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'commitments',
+    displayName: 'Reservations and commitments',
+    description: 'Collects reserved instances, savings plans, and commitment utilization data.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'relationshipGraphs',
+    displayName: 'Relationship graphs',
+    description: 'Builds relationship graph artifacts from scanned Azure resources.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'governance',
+    displayName: 'Governance',
+    description: 'Builds tenant and subscription governance reports and graph artifacts.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'availabilityZones',
+    displayName: 'Availability zones',
+    description: 'Collects tenant-level availability zone mappings.',
+    supportedScopes: ['cloudAccount'],
+  },
+  {
+    id: 'reliability',
+    displayName: 'Reliability',
+    description: 'Collects reliability signals and recommendations for subscription resources.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'perimeterInsights',
+    displayName: 'Perimeter insights',
+    description: 'Builds public IP and perimeter exposure insights.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'reportEvidencePack',
+    displayName: 'Report evidence pack',
+    description: 'Builds evidence artifacts used by reports and review workflows.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+] as const;
+
+export interface CloudAccountSyncFeatureOptOutsUpdateRequest {
+  syncFeatureOptOuts: AzureSyncFeatureId[];
+}
+
+export interface SubscriptionSyncFeatureOptOutsUpdateRequest {
+  syncFeatureOptOuts: AzureSyncFeatureId[];
+}
+
 export const SUBSCRIPTION_SYNC_STEP_ORDER = [
   'metrics',
   'resourcegroups',
@@ -166,6 +276,8 @@ export interface CloudAccount {
   tenantSyncSource?: CloudAccountTenantSyncSource;
   firstSyncNotificationStatus?: CloudAccountFirstSyncNotificationStatus;
   firstSyncNotificationUserId?: string;
+  /** Azure sync features disabled for this cloud account. Cloud-account opt-outs are hard denies for subscriptions. */
+  syncFeatureOptOuts?: AzureSyncFeatureId[];
   /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
   delegatedTokenCache?: string;
   onboardingStatus?: AzureDelegatedOnboardingStatus;
@@ -312,6 +424,8 @@ export interface SubscriptionInfoBase {
   eventId?: string;
   readBitmask?: number;
   syncProgress?: SubscriptionSyncProgress | string | null;
+  /** Azure sync features disabled for this subscription in addition to cloud-account opt-outs. */
+  syncFeatureOptOuts?: AzureSyncFeatureId[];
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {

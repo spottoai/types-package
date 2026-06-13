@@ -1,4 +1,5 @@
 import type {
+  AzureSyncFeatureId,
   AzureGdapCapabilityStatus,
   AzureGdapAuthorizationProfileSummary,
   AzureGdapCloudAccountMetadata,
@@ -7,9 +8,15 @@ import type {
   CloudAccount,
   CloudAccountAuthMode,
   CloudAccountFirstSyncNotificationStatus,
+  CloudAccountSyncFeatureOptOutsUpdateRequest,
   PublicCloudAccountDto,
+  SubscriptionAccount,
+  SubscriptionInfoBase,
+  SubscriptionSyncFeatureOptOutsUpdateRequest,
 } from './accounts';
 import type { CloudAccountTenantSyncRequestMessage } from '../index';
+import type { CompanySubscription } from '../azure/subscriptions';
+import { AZURE_SYNC_FEATURE_METADATA, AZURE_SYNC_FEATURE_ORDER } from './accounts';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -30,6 +37,7 @@ const cloudAccountWithRecommendationEffortProfile: CloudAccount = {
   status: 'Active',
   effortProfile: 'enterprise',
   readBitmask: CloudAccountReadPermission.ManagementGroupReader | CloudAccountReadPermission.GraphApplicationReadAll,
+  syncFeatureOptOuts: ['activityMonitoring', 'relationshipGraphs'],
 };
 
 const cloudAccountWithoutRecommendationEffortProfile: CloudAccount = {
@@ -169,6 +177,54 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   connectedUserEmail: 'owner@example.com',
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
+  syncFeatureOptOuts: ['billing'],
+};
+
+const azureSyncFeatureId: AzureSyncFeatureId = 'activityMonitoring';
+
+// @ts-expect-error resource inventory is always enabled and cannot be configured as an opt-out.
+const invalidAzureSyncFeatureId: AzureSyncFeatureId = 'resourceInventory';
+
+const azureSyncFeatureOrderShapeCheck: readonly AzureSyncFeatureId[] = AZURE_SYNC_FEATURE_ORDER;
+
+const azureSyncFeatureMetadataShapeCheck = AZURE_SYNC_FEATURE_METADATA.map(item => ({
+  id: item.id,
+  displayName: item.displayName,
+  description: item.description,
+  supportedScopes: item.supportedScopes,
+  warning: item.warning,
+}));
+
+const cloudAccountSyncFeatureOptOutsUpdateRequest: CloudAccountSyncFeatureOptOutsUpdateRequest = {
+  syncFeatureOptOuts: ['activityMonitoring', 'commitments', 'availabilityZones'],
+};
+
+const subscriptionSyncFeatureOptOutsUpdateRequest: SubscriptionSyncFeatureOptOutsUpdateRequest = {
+  syncFeatureOptOuts: ['activityMonitoring', 'relationshipGraphs'],
+};
+
+const invalidCloudAccountSyncFeatureOptOutsUpdateRequest: CloudAccountSyncFeatureOptOutsUpdateRequest = {
+  // @ts-expect-error resourceInventory is not part of AzureSyncFeatureId.
+  syncFeatureOptOuts: ['resourceInventory'],
+};
+
+const subscriptionInfoBaseWithSyncFeatureOptOuts: SubscriptionInfoBase = {
+  name: 'Production Subscription',
+  cloudAccountId: 'tenant-client-id-123',
+  cloudAccountName: 'Production Azure Tenant',
+  syncFeatureOptOuts: ['activityMonitoring'],
+};
+
+const subscriptionAccountWithSyncFeatureOptOuts: SubscriptionAccount = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  id: 'sub-123',
+  companyId: 'comp-123',
+};
+
+const companySubscriptionWithSyncFeatureOptOuts: CompanySubscription = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  id: 'sub-123',
+  companyId: 'comp-123',
 };
 
 const publicGdapCloudAccountDto: PublicCloudAccountDto = {
@@ -286,6 +342,16 @@ void gdapCloudAccount;
 void gdapAuthorizationProfileSummary;
 void invalidGdapAuthorizationProfileSummaryWithCredentialReference;
 void publicCloudAccountDto;
+void azureSyncFeatureId;
+void invalidAzureSyncFeatureId;
+void azureSyncFeatureOrderShapeCheck;
+void azureSyncFeatureMetadataShapeCheck;
+void cloudAccountSyncFeatureOptOutsUpdateRequest;
+void subscriptionSyncFeatureOptOutsUpdateRequest;
+void invalidCloudAccountSyncFeatureOptOutsUpdateRequest;
+void subscriptionInfoBaseWithSyncFeatureOptOuts;
+void subscriptionAccountWithSyncFeatureOptOuts;
+void companySubscriptionWithSyncFeatureOptOuts;
 void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;
 void invalidPublicCloudAccountSecretDto;
