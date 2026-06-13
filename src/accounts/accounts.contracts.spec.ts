@@ -1,5 +1,7 @@
 import type {
+  AzureCloudAccountSyncFeatureId,
   AzureSyncFeatureId,
+  AzureSubscriptionSyncFeatureId,
   AzureGdapCapabilityStatus,
   AzureGdapAuthorizationProfileSummary,
   AzureGdapCloudAccountMetadata,
@@ -16,7 +18,16 @@ import type {
 } from './accounts';
 import type { CloudAccountTenantSyncRequestMessage } from '../index';
 import type { CompanySubscription } from '../azure/subscriptions';
-import { AZURE_SYNC_FEATURE_METADATA, AZURE_SYNC_FEATURE_ORDER } from './accounts';
+import {
+  AZURE_SYNC_FEATURE_METADATA,
+  AZURE_SYNC_FEATURE_ORDER,
+  getAzureSyncFeatureIdsForScope,
+  getAzureSyncFeatureMetadata,
+  getAzureSyncFeatureOptions,
+  isAzureSyncFeatureId,
+  isAzureSyncFeatureSupportedInScope,
+  sortAzureSyncFeatureIds,
+} from './accounts';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -186,14 +197,37 @@ const azureSyncFeatureId: AzureSyncFeatureId = 'activityMonitoring';
 const invalidAzureSyncFeatureId: AzureSyncFeatureId = 'resourceInventory';
 
 const azureSyncFeatureOrderShapeCheck: readonly AzureSyncFeatureId[] = AZURE_SYNC_FEATURE_ORDER;
+const azureCloudAccountSyncFeatureId: AzureCloudAccountSyncFeatureId = 'availabilityZones';
+const azureSubscriptionSyncFeatureId: AzureSubscriptionSyncFeatureId = 'activityMonitoring';
+
+// @ts-expect-error availability zones are cloud-account scoped and cannot be configured directly on a subscription.
+const invalidAzureSubscriptionSyncFeatureId: AzureSubscriptionSyncFeatureId = 'availabilityZones';
 
 const azureSyncFeatureMetadataShapeCheck = AZURE_SYNC_FEATURE_METADATA.map(item => ({
   id: item.id,
   displayName: item.displayName,
   description: item.description,
   supportedScopes: item.supportedScopes,
-  warning: item.warning,
+  warning: 'warning' in item ? item.warning : undefined,
 }));
+
+const azureSyncFeatureHelperShapeCheck: {
+  isKnown: boolean;
+  availabilityZonesCloudAccountOnly: boolean;
+  subscriptionOptions: readonly { id: AzureSyncFeatureId }[];
+  subscriptionOptionIds: AzureSyncFeatureId[];
+  metadata: { id: AzureSyncFeatureId };
+  sorted: AzureSyncFeatureId[];
+} = {
+  isKnown: isAzureSyncFeatureId('activityMonitoring'),
+  availabilityZonesCloudAccountOnly:
+    isAzureSyncFeatureSupportedInScope('availabilityZones', 'cloudAccount') &&
+    !isAzureSyncFeatureSupportedInScope('availabilityZones', 'subscription'),
+  subscriptionOptions: getAzureSyncFeatureOptions('subscription'),
+  subscriptionOptionIds: getAzureSyncFeatureIdsForScope('subscription'),
+  metadata: getAzureSyncFeatureMetadata('billing'),
+  sorted: sortAzureSyncFeatureIds(['pricing', 'activityMonitoring']),
+};
 
 const cloudAccountSyncFeatureOptOutsUpdateRequest: CloudAccountSyncFeatureOptOutsUpdateRequest = {
   syncFeatureOptOuts: ['activityMonitoring', 'commitments', 'availabilityZones'],
@@ -201,6 +235,11 @@ const cloudAccountSyncFeatureOptOutsUpdateRequest: CloudAccountSyncFeatureOptOut
 
 const subscriptionSyncFeatureOptOutsUpdateRequest: SubscriptionSyncFeatureOptOutsUpdateRequest = {
   syncFeatureOptOuts: ['activityMonitoring', 'relationshipGraphs'],
+};
+
+const invalidSubscriptionSyncFeatureOptOutsUpdateRequest: SubscriptionSyncFeatureOptOutsUpdateRequest = {
+  // @ts-expect-error availabilityZones is not configurable at subscription scope.
+  syncFeatureOptOuts: ['availabilityZones'],
 };
 
 const invalidCloudAccountSyncFeatureOptOutsUpdateRequest: CloudAccountSyncFeatureOptOutsUpdateRequest = {
@@ -345,9 +384,14 @@ void publicCloudAccountDto;
 void azureSyncFeatureId;
 void invalidAzureSyncFeatureId;
 void azureSyncFeatureOrderShapeCheck;
+void azureCloudAccountSyncFeatureId;
+void azureSubscriptionSyncFeatureId;
+void invalidAzureSubscriptionSyncFeatureId;
 void azureSyncFeatureMetadataShapeCheck;
+void azureSyncFeatureHelperShapeCheck;
 void cloudAccountSyncFeatureOptOutsUpdateRequest;
 void subscriptionSyncFeatureOptOutsUpdateRequest;
+void invalidSubscriptionSyncFeatureOptOutsUpdateRequest;
 void invalidCloudAccountSyncFeatureOptOutsUpdateRequest;
 void subscriptionInfoBaseWithSyncFeatureOptOuts;
 void subscriptionAccountWithSyncFeatureOptOuts;

@@ -132,7 +132,7 @@ export interface AzureSyncFeatureMetadata {
   warning?: string;
 }
 
-export const AZURE_SYNC_FEATURE_METADATA: readonly AzureSyncFeatureMetadata[] = [
+export const AZURE_SYNC_FEATURE_METADATA = [
   {
     id: 'activityMonitoring',
     displayName: 'Activity monitoring',
@@ -206,14 +206,66 @@ export const AZURE_SYNC_FEATURE_METADATA: readonly AzureSyncFeatureMetadata[] = 
     description: 'Builds evidence artifacts used by reports and review workflows.',
     supportedScopes: ['cloudAccount', 'subscription'],
   },
-] as const;
+] as const satisfies readonly AzureSyncFeatureMetadata[];
+
+type AzureSyncFeatureMetadataEntry = (typeof AZURE_SYNC_FEATURE_METADATA)[number];
+type AzureSyncFeatureIdsForScope<Scope extends AzureSyncFeatureConfigurationScope> =
+  AzureSyncFeatureMetadataEntry extends infer Feature
+    ? Feature extends { id: AzureSyncFeatureId; supportedScopes: readonly AzureSyncFeatureConfigurationScope[] }
+      ? Scope extends Feature['supportedScopes'][number]
+        ? Feature['id']
+        : never
+      : never
+    : never;
+
+export type AzureCloudAccountSyncFeatureId = AzureSyncFeatureIdsForScope<'cloudAccount'>;
+export type AzureSubscriptionSyncFeatureId = AzureSyncFeatureIdsForScope<'subscription'>;
+
+const AZURE_SYNC_FEATURE_ORDER_INDEX = new Map<AzureSyncFeatureId, number>(
+  AZURE_SYNC_FEATURE_ORDER.map((featureId, index) => [featureId, index])
+);
+
+const AZURE_SYNC_FEATURE_IDS = new Set<string>(AZURE_SYNC_FEATURE_ORDER);
+
+export const isAzureSyncFeatureId = (value: string): value is AzureSyncFeatureId => AZURE_SYNC_FEATURE_IDS.has(value);
+
+export const getAzureSyncFeatureMetadata = (featureId: AzureSyncFeatureId): AzureSyncFeatureMetadata =>
+  AZURE_SYNC_FEATURE_METADATA.find((feature) => feature.id === featureId) ?? {
+    id: featureId,
+    displayName: featureId,
+    description: '',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  };
+
+export const isAzureSyncFeatureSupportedInScope = (
+  featureId: AzureSyncFeatureId,
+  scope: AzureSyncFeatureConfigurationScope
+): boolean => getAzureSyncFeatureMetadata(featureId).supportedScopes.includes(scope);
+
+export const sortAzureSyncFeatureIds = (featureIds: readonly AzureSyncFeatureId[]): AzureSyncFeatureId[] =>
+  [...featureIds].sort(
+    (left, right) =>
+      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) -
+      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER)
+  );
+
+const supportsAzureSyncFeatureScope = (
+  feature: AzureSyncFeatureMetadata,
+  scope: AzureSyncFeatureConfigurationScope
+): boolean => feature.supportedScopes.includes(scope);
+
+export const getAzureSyncFeatureOptions = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureMetadata[] =>
+  AZURE_SYNC_FEATURE_METADATA.filter((feature) => supportsAzureSyncFeatureScope(feature, scope));
+
+export const getAzureSyncFeatureIdsForScope = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureId[] =>
+  getAzureSyncFeatureOptions(scope).map((feature) => feature.id);
 
 export interface CloudAccountSyncFeatureOptOutsUpdateRequest {
-  syncFeatureOptOuts: AzureSyncFeatureId[];
+  syncFeatureOptOuts: AzureCloudAccountSyncFeatureId[];
 }
 
 export interface SubscriptionSyncFeatureOptOutsUpdateRequest {
-  syncFeatureOptOuts: AzureSyncFeatureId[];
+  syncFeatureOptOuts: AzureSubscriptionSyncFeatureId[];
 }
 
 export const SUBSCRIPTION_SYNC_STEP_ORDER = [
@@ -426,6 +478,10 @@ export interface SubscriptionInfoBase {
   syncProgress?: SubscriptionSyncProgress | string | null;
   /** Azure sync features disabled for this subscription in addition to cloud-account opt-outs. */
   syncFeatureOptOuts?: AzureSyncFeatureId[];
+  /** Azure sync features disabled by the parent cloud account. Returned to administrators only. */
+  cloudAccountSyncFeatureOptOuts?: AzureSyncFeatureId[];
+  /** Effective Azure sync features disabled after applying cloud-account hard denies. Returned to administrators only. */
+  effectiveSyncFeatureOptOuts?: AzureSyncFeatureId[];
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {
