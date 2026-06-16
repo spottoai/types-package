@@ -290,6 +290,42 @@ export type AzureDelegatedAuthErrorCode =
   | 'forbidden'
   | 'unknown';
 export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelectionRequired' | 'tenantConsent' | 'completed' | 'failed';
+export type CloudAccountScanSchedulingMode = 'every12Hours' | 'daily' | 'weekly' | 'onDemandOnly';
+export type AzureGuestAccessScanSchedulingMode = 'onDemandOnly';
+export type AzureGuestAccessStatus =
+  | 'created'
+  | 'deviceCodePending'
+  | 'tenantDiscoveryRequired'
+  | 'tenantSelectionRequired'
+  | 'tenantAuthorizationRequired'
+  | 'subscriptionSelectionRequired'
+  | 'queued'
+  | 'scanning'
+  | 'completed'
+  | 'partial'
+  | 'failed'
+  | 'reauthRequired'
+  | 'cancelled'
+  | 'expired';
+export type AzureGuestAccessStatusReason =
+  | 'device_code_expired'
+  | 'tenant_discovery_failed'
+  | 'tenant_selection_required'
+  | 'tenant_authorization_required'
+  | 'no_readable_subscriptions'
+  | 'subscription_read_forbidden'
+  | 'token_relay_missing'
+  | 'setup_expired'
+  | 'stale_message'
+  | 'refresh_token_expired'
+  | 'token_refresh_failed'
+  | 'refresh_requires_interaction'
+  | 'resource_inventory_failed'
+  | 'resource_graph_failed'
+  | 'billing_2m_failed'
+  | 'scan_failed'
+  | 'cancelled_by_user'
+  | 'unknown';
 
 export interface CloudAccount {
   /** Partition Key */
@@ -330,9 +366,18 @@ export interface CloudAccount {
   firstSyncNotificationUserId?: string;
   /** Azure sync features disabled for this cloud account. Cloud-account opt-outs are hard denies for subscriptions. */
   syncFeatureOptOuts?: AzureSyncFeatureId[];
-  /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
+  /** Internal legacy delegated-user token cache. Do not expose this field in public API DTOs. */
   delegatedTokenCache?: string;
   onboardingStatus?: AzureDelegatedOnboardingStatus;
+  scanSchedulingMode?: CloudAccountScanSchedulingMode;
+  guestAccessStatus?: AzureGuestAccessStatus;
+  guestAccessStatusReason?: AzureGuestAccessStatusReason;
+  guestAccessRunId?: string;
+  guestAccessLastRunId?: string;
+  guestAccessQueuedAt?: Date | string;
+  guestAccessScanStartedAt?: Date | string;
+  guestAccessScanCompletedAt?: Date | string;
+  guestAccessLastSuccessfulScanAt?: Date | string;
   delegatedSetupExpiresAt?: Date | string;
   delegatedTrialStartedAt?: Date | string;
   delegatedTrialExpiresAt?: Date | string;

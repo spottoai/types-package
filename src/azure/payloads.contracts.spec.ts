@@ -4,6 +4,17 @@ import type * as PackageContracts from '../index';
 import type {
   ActionExecutionRequestMessage,
   ActionExecutionSource,
+  AzureGuestAccessConfirmSubscriptionsRequest,
+  AzureGuestAccessDeviceCodeResponse,
+  AzureGuestAccessManualScanRequest,
+  AzureGuestAccessStartRequest,
+  AzureGuestAccessStatusResponse,
+  AzureGuestAccessSubscriptionItem,
+  AzureGuestAccessSubscriptionMessage,
+  AzureGuestAccessSubscriptionMessageMetadata,
+  AzureGuestAccessTenantItem,
+  AzureGuestAccessTenantSelectionRequest,
+  AzureGuestAccessTokenRelayPayload,
   AzureCloudAccountAuthContext,
   AzureDelegatedConnectionStartRequest,
   AzureDelegatedConfirmSubscriptionsRequest,
@@ -145,6 +156,69 @@ void invalidGdapSubscriptionMessageWithAuthContextCredentialReference;
 void subscriptionSyncRequest;
 void tenantSyncRequest;
 
+const guestAccessSubscriptionMessageMetadata: AzureGuestAccessSubscriptionMessageMetadata = {
+  guestAccessRun: true,
+  scanSchedulingMode: 'onDemandOnly',
+  guestAccessSource: 'initial',
+  authFlow: 'azurePowerShellDeviceCode',
+};
+
+const guestAccessSubscriptionMessage: AzureGuestAccessSubscriptionMessage = {
+  subscription,
+  companyId: 'comp-123',
+  cloudAccountId: 'guest-account-123',
+  tenantId: 'tenant-123',
+  clientId: 'guest-account-123',
+  authMode: 'delegatedUser',
+  sagaRunId: 'guest-run-123',
+  metadata: guestAccessSubscriptionMessageMetadata,
+  refreshComponents: ['queries', 'billing'],
+};
+
+const invalidGuestAccessSubscriptionMessageWithToken: AzureGuestAccessSubscriptionMessage = {
+  ...guestAccessSubscriptionMessage,
+  // @ts-expect-error guest access queue messages must not carry bearer tokens.
+  authToken: 'access-token',
+};
+
+const invalidGuestAccessSubscriptionMessageWithSecret: AzureGuestAccessSubscriptionMessage = {
+  ...guestAccessSubscriptionMessage,
+  // @ts-expect-error guest access queue messages must not carry client secrets.
+  authClientSecret: 'client-secret',
+};
+
+const invalidGuestAccessSubscriptionMessageWithCredentialReference: AzureGuestAccessSubscriptionMessage = {
+  ...guestAccessSubscriptionMessage,
+  // @ts-expect-error guest access queue messages must not carry token relay storage locators.
+  credentialReference: 'internal-token-relay-reference',
+};
+
+const invalidGuestAccessSubscriptionMessageWithScheduledSource: AzureGuestAccessSubscriptionMessage = {
+  ...guestAccessSubscriptionMessage,
+  metadata: {
+    ...guestAccessSubscriptionMessageMetadata,
+    // @ts-expect-error guest access queue metadata supports initial/manual sources only.
+    guestAccessSource: 'scheduled',
+  },
+};
+
+const invalidGuestAccessSubscriptionMessageWithPeriodicMode: AzureGuestAccessSubscriptionMessage = {
+  ...guestAccessSubscriptionMessage,
+  metadata: {
+    ...guestAccessSubscriptionMessageMetadata,
+    // @ts-expect-error guest access queue metadata is on-demand only.
+    scanSchedulingMode: 'daily',
+  },
+};
+
+void guestAccessSubscriptionMessageMetadata;
+void guestAccessSubscriptionMessage;
+void invalidGuestAccessSubscriptionMessageWithToken;
+void invalidGuestAccessSubscriptionMessageWithSecret;
+void invalidGuestAccessSubscriptionMessageWithCredentialReference;
+void invalidGuestAccessSubscriptionMessageWithScheduledSource;
+void invalidGuestAccessSubscriptionMessageWithPeriodicMode;
+
 // @ts-expect-error SubscriptionMessage.companyId is required for queue payload compatibility.
 const invalidSubscriptionMessage: SubscriptionMessage = {
   subscription,
@@ -167,6 +241,112 @@ const publicCloudAccount: PublicCloudAccountDto = {
   onboardingStatus: 'active',
   connectedUserEmail: 'owner@example.com',
 };
+
+const guestAccessStartRequest: AzureGuestAccessStartRequest = {
+  displayName: 'Customer Tenant Guest Scan',
+};
+
+const guestAccessDeviceCodeResponse: AzureGuestAccessDeviceCodeResponse = {
+  setupId: 'setup-123',
+  userCode: 'ABCD-EFGH',
+  deviceCodeExpiresAt: '2026-06-16T09:00:00.000Z',
+  verificationUri: 'https://microsoft.com/devicelogin',
+  verificationUriComplete: 'https://microsoft.com/devicelogin?user_code=ABCD-EFGH',
+  message: 'Use the code to sign in.',
+  intervalSeconds: 5,
+  status: 'deviceCodePending',
+};
+
+const guestAccessTenantItem: AzureGuestAccessTenantItem = {
+  tenantId: 'tenant-123',
+  displayName: 'Customer Tenant',
+  domainName: 'customer.example',
+  selected: true,
+};
+
+const guestAccessSubscriptionItem: AzureGuestAccessSubscriptionItem = {
+  subscriptionId: 'sub-123',
+  displayName: 'Production Subscription',
+  tenantId: 'tenant-123',
+  state: 'Enabled',
+  selectable: true,
+};
+
+const guestAccessTenantSelectionRequest: AzureGuestAccessTenantSelectionRequest = {
+  tenantId: 'tenant-123',
+};
+
+const guestAccessConfirmSubscriptionsRequest: AzureGuestAccessConfirmSubscriptionsRequest = {
+  subscriptionIds: ['sub-123'],
+  displayName: 'Customer Guest Scan',
+};
+
+const guestAccessManualScanRequest: AzureGuestAccessManualScanRequest = {
+  refreshComponents: ['queries', 'billing'],
+};
+
+const guestAccessStatusResponse: AzureGuestAccessStatusResponse = {
+  setupId: 'setup-123',
+  cloudAccountId: 'guest-account-123',
+  tenantId: 'tenant-123',
+  status: 'completed',
+  statusReason: 'billing_2m_failed',
+  cloudAccount: publicCloudAccount,
+  tenants: [guestAccessTenantItem],
+  subscriptions: [guestAccessSubscriptionItem],
+  scanSchedulingMode: 'onDemandOnly',
+  guestAccessRunId: 'guest-run-123',
+  guestAccessLastSuccessfulScanAt: '2026-06-16T08:30:00.000Z',
+};
+
+const invalidGuestAccessStatusResponseWithPeriodicMode: AzureGuestAccessStatusResponse = {
+  ...guestAccessStatusResponse,
+  // @ts-expect-error guest access status responses must be on-demand only.
+  scanSchedulingMode: 'weekly',
+};
+
+// @ts-expect-error guest access does not expose a schedule update request DTO.
+type InvalidGuestAccessScheduleUpdateRequest = PackageContracts.AzureGuestAccessScheduleUpdateRequest;
+
+const guestAccessTokenRelayPayload: AzureGuestAccessTokenRelayPayload = {
+  authFlow: 'azurePowerShellDeviceCode',
+  authorityHost: 'https://login.microsoftonline.com',
+  authorityTenantId: 'tenant-123',
+  selectedTenantId: 'tenant-123',
+  clientId: '1950a258-227b-4e31-a9cf-717495945fc2',
+  scopes: ['https://management.azure.com/user_impersonation', 'offline_access'],
+  tokenType: 'Bearer',
+  accessToken: 'access-token',
+  accessTokenExpiresAt: '2026-06-16T09:00:00.000Z',
+  refreshToken: 'refresh-token',
+  connectedUser: {
+    homeAccountId: 'home-account-123',
+    username: 'guest@example.com',
+    name: 'Guest User',
+    objectId: 'user-object-123',
+  },
+  receivedAt: '2026-06-16T08:00:00.000Z',
+  updatedAt: '2026-06-16T08:00:00.000Z',
+};
+
+const invalidGuestAccessTokenRelayPayloadWithVersion: AzureGuestAccessTokenRelayPayload = {
+  ...guestAccessTokenRelayPayload,
+  // @ts-expect-error guest access token relay payloads must not include a version property.
+  version: 1,
+};
+
+void guestAccessStartRequest;
+void guestAccessDeviceCodeResponse;
+void guestAccessTenantItem;
+void guestAccessSubscriptionItem;
+void guestAccessTenantSelectionRequest;
+void guestAccessConfirmSubscriptionsRequest;
+void guestAccessManualScanRequest;
+void guestAccessStatusResponse;
+void invalidGuestAccessStatusResponseWithPeriodicMode;
+void (null as unknown as InvalidGuestAccessScheduleUpdateRequest);
+void guestAccessTokenRelayPayload;
+void invalidGuestAccessTokenRelayPayloadWithVersion;
 
 const startRequest: AzureDelegatedConnectionStartRequest = {
   redirectAfter: '/company/comp-123/settings/cloud-accounts',

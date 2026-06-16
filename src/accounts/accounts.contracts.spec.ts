@@ -7,8 +7,12 @@ import type {
   AzureGdapCloudAccountMetadata,
   AzureGdapValidationStatus,
   AzureDelegatedAuthErrorCode,
+  AzureGuestAccessScanSchedulingMode,
+  AzureGuestAccessStatus,
+  AzureGuestAccessStatusReason,
   CloudAccount,
   CloudAccountAuthMode,
+  CloudAccountScanSchedulingMode,
   CloudAccountFirstSyncNotificationStatus,
   CloudAccountSyncFeatureOptOutsUpdateRequest,
   PublicCloudAccountDto,
@@ -67,6 +71,15 @@ const delegatedCloudAccount: CloudAccount = {
   id: 'delegated-account-123',
   authMode: 'delegatedUser',
   onboardingStatus: 'active',
+  scanSchedulingMode: 'onDemandOnly',
+  guestAccessStatus: 'completed',
+  guestAccessStatusReason: 'billing_2m_failed',
+  guestAccessRunId: 'guest-run-123',
+  guestAccessLastRunId: 'guest-run-122',
+  guestAccessQueuedAt: '2026-06-16T08:00:00.000Z',
+  guestAccessScanStartedAt: '2026-06-16T08:01:00.000Z',
+  guestAccessScanCompletedAt: '2026-06-16T08:30:00.000Z',
+  guestAccessLastSuccessfulScanAt: '2026-06-16T08:30:00.000Z',
   delegatedTokenCache: 'internal-token-cache',
   delegatedSetupExpiresAt: '2026-05-17T00:00:00.000Z',
   delegatedTrialStartedAt: new Date('2026-05-10T00:00:00.000Z'),
@@ -86,7 +99,14 @@ const delegatedCloudAccount: CloudAccount = {
 const delegatedAuthMode: CloudAccountAuthMode = 'delegatedUser';
 const gdapAuthMode: CloudAccountAuthMode = 'gdap';
 const delegatedAuthErrorCode: AzureDelegatedAuthErrorCode = 'claims_challenge';
+const cloudAccountScanSchedulingMode: CloudAccountScanSchedulingMode = 'daily';
+const guestAccessScanSchedulingMode: AzureGuestAccessScanSchedulingMode = 'onDemandOnly';
+const guestAccessStatus: AzureGuestAccessStatus = 'tenantAuthorizationRequired';
+const guestAccessStatusReason: AzureGuestAccessStatusReason = 'refresh_requires_interaction';
 const gdapValidationStatus: AzureGdapValidationStatus = 'degraded';
+
+// @ts-expect-error guest access scan scheduling is on-demand only.
+const invalidGuestAccessScanSchedulingMode: AzureGuestAccessScanSchedulingMode = 'daily';
 
 const gdapCapabilityStatus: AzureGdapCapabilityStatus = {
   key: 'partnerAuthorization',
@@ -185,6 +205,11 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   createdBy: 'user-123',
   status: 'Active',
   onboardingStatus: 'active',
+  scanSchedulingMode: 'onDemandOnly',
+  guestAccessStatus: 'completed',
+  guestAccessStatusReason: 'billing_2m_failed',
+  guestAccessRunId: 'guest-run-123',
+  guestAccessLastSuccessfulScanAt: '2026-06-16T08:30:00.000Z',
   connectedUserEmail: 'owner@example.com',
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
@@ -307,6 +332,34 @@ const invalidPublicCloudAccountTokenCacheDto: PublicCloudAccountDto = {
   delegatedTokenCache: 'internal-token-cache',
 };
 
+const invalidPublicCloudAccountTokenRelayPayloadDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-account-token-relay-123',
+  name: 'Public Azure Account With Token Relay',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  createdAt: new Date('2026-06-16T00:00:00.000Z'),
+  updatedAt: new Date('2026-06-16T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose guest access token relay payloads.
+  guestAccessTokenRelayPayload: 'encrypted-or-raw-token-relay-payload',
+};
+
+const invalidPublicCloudAccountTokenRelayReferenceDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-account-token-relay-ref-123',
+  name: 'Public Azure Account With Token Relay Reference',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  createdAt: new Date('2026-06-16T00:00:00.000Z'),
+  updatedAt: new Date('2026-06-16T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose token relay storage locators.
+  guestAccessTokenRelayReference: 'cloudaccounts/guest-access/token-relay/run.json',
+};
+
 const invalidPublicCloudAccountSecretDto: PublicCloudAccountDto = {
   companyId: 'comp-123',
   id: 'public-account-secret-123',
@@ -374,6 +427,11 @@ void delegatedCloudAccount;
 void delegatedAuthMode;
 void gdapAuthMode;
 void delegatedAuthErrorCode;
+void cloudAccountScanSchedulingMode;
+void guestAccessScanSchedulingMode;
+void guestAccessStatus;
+void guestAccessStatusReason;
+void invalidGuestAccessScanSchedulingMode;
 void gdapValidationStatus;
 void gdapCapabilityStatus;
 void gdapCloudAccountMetadata;
@@ -398,6 +456,8 @@ void subscriptionAccountWithSyncFeatureOptOuts;
 void companySubscriptionWithSyncFeatureOptOuts;
 void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;
+void invalidPublicCloudAccountTokenRelayPayloadDto;
+void invalidPublicCloudAccountTokenRelayReferenceDto;
 void invalidPublicCloudAccountSecretDto;
 void invalidPublicCloudAccountWriteSecretDto;
 void invalidPublicCloudAccountGdapCredentialReferenceDto;
