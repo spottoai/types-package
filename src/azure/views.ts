@@ -6,6 +6,8 @@ import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext 
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
+import type { AdvisorScoreSummary } from './advisorScore.js';
+import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 
 export interface AzureDashboardView {
   subscription: SubscriptionSummary;
@@ -17,6 +19,8 @@ export interface AzureDashboardView {
   summary?: ExecutiveSummary;
   dailySummary?: DailySummary;
   costSavingsSummary?: CostSavingsSummary;
+  advisorScore?: AdvisorScoreSummary;
+  healthEvents?: AzurePortalHealthEventsSummary;
 }
 
 export interface ExecutiveSummary {
@@ -110,6 +114,8 @@ export interface AzureResourcePortalItem {
   costEstimation?: ResourceSimpleCostEstimationSummary;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Current Azure Resource Health availability status for this resource, when available. */
+  resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
 
 export interface SavingsPotential {

@@ -469,6 +469,12 @@ export interface SubscriptionInfoBase {
   foundCurrency?: boolean;
   ready?: boolean;
   secureScore?: number;
+  advisorScore?: number;
+  advisorScoreCost?: number;
+  advisorScoreSecurity?: number;
+  advisorScorePerformance?: number;
+  advisorScoreReliability?: number;
+  advisorScoreOperationalExcellence?: number;
   showAmortizedCosts?: boolean;
   totalCost?: number;
   billingItems?: number;

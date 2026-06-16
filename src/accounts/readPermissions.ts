@@ -33,7 +33,7 @@ export enum SubscriptionReadPermission {
   CostManagementReader = 1 << 6, // 64
   /** Permission to read Azure Consumption usage details. */
   ConsumptionUsageReader = 1 << 7, // 128
-  /** Permission to read Azure Advisor recommendations. */
+  /** Permission to read Azure Advisor recommendations and Advisor score. */
   AdvisorRecommendationsReader = 1 << 8, // 256
   /** Permission to read Defender for Cloud security posture data. */
   SecurityReader = 1 << 9, // 512
@@ -135,8 +135,8 @@ export const SUBSCRIPTION_READ_PERMISSIONS_METADATA: SubscriptionReadPermissionM
   },
   {
     id: SubscriptionReadPermission.AdvisorRecommendationsReader,
-    displayName: 'Advisor Recommendations Reader',
-    description: 'Allows Spotto to read Azure Advisor recommendations for recommendation import and optimization workflows.',
+    displayName: 'Advisor Reader',
+    description: 'Allows Spotto to read Azure Advisor recommendations and Advisor score for recommendation import and optimization workflows.',
     requiredRoles: ['Reader'],
     documentationUrl: 'https://learn.microsoft.com/en-us/azure/advisor/advisor-overview',
   },
