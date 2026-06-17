@@ -8,6 +8,7 @@ import type { AutotaskShareOverrides } from '../integrations/autotask';
 import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
 import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
+import type { AzurePortalVersionedArtifact } from './portalArtifacts';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -425,7 +426,7 @@ export interface RecommendationResource {
   associations?: RecommendationResourceAssociation[];
 }
 
-export interface RecommendationsView {
+export interface RecommendationsView extends AzurePortalVersionedArtifact {
   recommendations: RecommendationWithResources[];
   securityImpactDetails?: SecurityImpact[];
   subscriptionSecurityStatus?: SubscriptionSecurityStatus;

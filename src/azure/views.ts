@@ -7,9 +7,10 @@ import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from '.
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
+import type { AzurePortalVersionedArtifact } from './portalArtifacts.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 
-export interface AzureDashboardView {
+export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummary;
   timestamp: string;
   costStartDate?: number;
@@ -28,7 +29,7 @@ export interface ExecutiveSummary {
   details: string;
 }
 
-export interface AzureResourcesView {
+export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummaryLite;
   timestamp: string;
   resources: AzureResourcePortalItem[];
