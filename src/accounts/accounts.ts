@@ -403,7 +403,26 @@ export type AzureGuestAccessStatusReason =
   | 'cancelled_by_user'
   | 'unknown';
 
-export interface CloudAccount {
+export interface AzureGuestAccessCloudAccountFields {
+  /** Public-safe guest access lifecycle status. Token relay payloads are never stored in this field. */
+  guestAccessStatus?: AzureGuestAccessStatus;
+  /** Public-safe reason for the current guest access lifecycle state. */
+  guestAccessStatusReason?: AzureGuestAccessStatusReason;
+  /** Current guest access run correlation ID. This is not a token relay storage locator. */
+  guestAccessRunId?: string;
+  /** Previous guest access run correlation ID. This is not a token relay storage locator. */
+  guestAccessLastRunId?: string;
+  /** Timestamp for when the current guest access run was queued. */
+  guestAccessQueuedAt?: Date | string;
+  /** Timestamp for when the current guest access scan started. */
+  guestAccessScanStartedAt?: Date | string;
+  /** Timestamp for when the current guest access scan completed. */
+  guestAccessScanCompletedAt?: Date | string;
+  /** Timestamp for the last completed guest access scan with usable results. */
+  guestAccessLastSuccessfulScanAt?: Date | string;
+}
+
+export interface CloudAccount extends AzureGuestAccessCloudAccountFields {
   /** Partition Key */
   companyId: string;
   /** Row Key (Azure Client ID, AWS Access Key ID) */
@@ -442,18 +461,15 @@ export interface CloudAccount {
   firstSyncNotificationUserId?: string;
   /** Azure sync features disabled for this cloud account. Cloud-account opt-outs are hard denies for subscriptions. */
   syncFeatureOptOuts?: AzureSyncFeatureId[];
-  /** Internal legacy delegated-user token cache. Do not expose this field in public API DTOs. */
+  /**
+   * Internal legacy delegated-user token cache. Do not expose this field in public API DTOs.
+   * Guest access token relay payloads use AzureGuestAccessTokenRelayPayload and must not be
+   * stored on CloudAccount or returned through PublicCloudAccountDto.
+   */
   delegatedTokenCache?: string;
+  /** Legacy delegated-user onboarding status. Guest access lifecycle state uses guestAccessStatus fields. */
   onboardingStatus?: AzureDelegatedOnboardingStatus;
   scanSchedulingMode?: CloudAccountScanSchedulingMode;
-  guestAccessStatus?: AzureGuestAccessStatus;
-  guestAccessStatusReason?: AzureGuestAccessStatusReason;
-  guestAccessRunId?: string;
-  guestAccessLastRunId?: string;
-  guestAccessQueuedAt?: Date | string;
-  guestAccessScanStartedAt?: Date | string;
-  guestAccessScanCompletedAt?: Date | string;
-  guestAccessLastSuccessfulScanAt?: Date | string;
   delegatedSetupExpiresAt?: Date | string;
   delegatedTrialStartedAt?: Date | string;
   delegatedTrialExpiresAt?: Date | string;
@@ -505,6 +521,10 @@ export type PublicCloudAccountDto = Omit<
   secretPreview?: string;
   /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
   writeSecretPreview?: string;
+  /** Guest access token relay payloads are internal only and must never appear in public DTOs. */
+  guestAccessTokenRelayPayload?: never;
+  /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
+  guestAccessTokenRelayReference?: never;
 };
 
 export interface SyncProgressIssue {
