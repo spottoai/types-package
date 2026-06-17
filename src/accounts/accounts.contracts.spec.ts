@@ -4,7 +4,16 @@ import type {
   AzureSubscriptionSyncFeatureId,
   AzureGdapCapabilityStatus,
   AzureGdapAuthorizationProfileSummary,
+  AzureGdapAuthorizationProfileListResponse,
+  AzureGdapCloudAccountCreateRequest,
   AzureGdapCloudAccountMetadata,
+  AzureGdapCloudAccountStatusResponse,
+  AzureGdapCreateAuthorizationProfileRequest,
+  AzureGdapDraftValidationRequest,
+  AzureGdapDraftValidationResponse,
+  AzureGdapEligibleAuthorizationProfilesResponse,
+  AzureGdapPartnerAuthorizationStartResponse,
+  AzureGdapStartPartnerAuthorizationRequest,
   AzureGdapValidationStatus,
   AzureDelegatedAuthErrorCode,
   AzureGuestAccessScanSchedulingMode,
@@ -180,16 +189,92 @@ const gdapAuthorizationProfileSummary: AzureGdapAuthorizationProfileSummary = {
   displayName: 'Root MSP GDAP authorization',
   partnerTenantId: 'partner-tenant-123',
   authorizationStatus: 'ready',
+  hasCredential: true,
   authorizedAt: '2026-06-11T00:00:00.000Z',
   expiresAt: '2026-12-11T00:00:00.000Z',
   lastValidatedAt: '2026-06-11T00:00:00.000Z',
   lastValidationStatus: 'ready',
+  createdAt: '2026-06-10T00:00:00.000Z',
+  updatedAt: '2026-06-11T00:00:00.000Z',
 };
 
 const invalidGdapAuthorizationProfileSummaryWithCredentialReference: AzureGdapAuthorizationProfileSummary = {
   ...gdapAuthorizationProfileSummary,
   // @ts-expect-error public authorization profile summaries must not expose credential references.
   credentialReference: 'cloudaccounts/credentials/gdap/profile-token-cache.json',
+};
+
+const gdapAuthorizationProfileListResponse: AzureGdapAuthorizationProfileListResponse = {
+  profiles: [gdapAuthorizationProfileSummary],
+};
+
+const gdapEligibleAuthorizationProfilesResponse: AzureGdapEligibleAuthorizationProfilesResponse = {
+  rootCompanyId: 'root-msp-123',
+  profiles: [gdapAuthorizationProfileSummary],
+};
+
+const gdapCreateAuthorizationProfileRequest: AzureGdapCreateAuthorizationProfileRequest = {
+  displayName: 'Root MSP GDAP authorization',
+  partnerTenantId: 'partner-tenant-123',
+};
+
+const gdapStartPartnerAuthorizationRequest: AzureGdapStartPartnerAuthorizationRequest = {
+  redirectAfter: '/companies/root-msp-123/cloud-accounts/connect-gdap',
+};
+
+const gdapPartnerAuthorizationStartResponse: AzureGdapPartnerAuthorizationStartResponse = {
+  profileId: 'gdapauth-profile-123',
+  authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=spotto-gdap-client-id',
+  expiresAt: '2026-06-11T01:00:00.000Z',
+};
+
+const gdapDraftValidationRequest: AzureGdapDraftValidationRequest = {
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  tenantId: 'customer-tenant-123',
+  gdapRelationshipId: 'relationship-123',
+  gdapAccessAssignmentId: 'assignment-123',
+  gdapSecurityGroupId: 'security-group-123',
+};
+
+const gdapDraftValidationResponse: AzureGdapDraftValidationResponse = {
+  valid: true,
+  status: 'ready',
+  profile: gdapAuthorizationProfileSummary,
+  capabilities: [gdapCapabilityStatus],
+  message: 'GDAP validation succeeded.',
+};
+
+const gdapCloudAccountStatusResponse: AzureGdapCloudAccountStatusResponse = {
+  cloudAccountId: 'gdap-account-123',
+  companyId: 'customer-company-123',
+  status: 'degraded',
+  partnerAuthorizationStatus: 'ready',
+  appConsentStatus: 'ready',
+  lastValidatedAt: '2026-06-11T00:00:00.000Z',
+  lastValidationStatus: 'degraded',
+  lastValidationErrorCode: 'cost_management_unavailable',
+  lastValidationMessage: 'Cost Management read access is unavailable.',
+  scheduledEligible: false,
+  scheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
+  capabilities: [gdapCapabilityStatus],
+};
+
+const gdapCloudAccountCreateRequest: AzureGdapCloudAccountCreateRequest = {
+  companyId: 'customer-company-123',
+  name: 'GDAP Azure Account',
+  provider: 'Azure',
+  authMode: 'gdap',
+  tenantId: 'customer-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapRelationshipId: 'relationship-123',
+  gdapAccessAssignmentId: 'assignment-123',
+  gdapSecurityGroupId: 'security-group-123',
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
 };
 
 const publicCloudAccountDto: PublicCloudAccountDto = {
@@ -438,6 +523,15 @@ void gdapCloudAccountMetadata;
 void gdapCloudAccount;
 void gdapAuthorizationProfileSummary;
 void invalidGdapAuthorizationProfileSummaryWithCredentialReference;
+void gdapAuthorizationProfileListResponse;
+void gdapEligibleAuthorizationProfilesResponse;
+void gdapCreateAuthorizationProfileRequest;
+void gdapStartPartnerAuthorizationRequest;
+void gdapPartnerAuthorizationStartResponse;
+void gdapDraftValidationRequest;
+void gdapDraftValidationResponse;
+void gdapCloudAccountStatusResponse;
+void gdapCloudAccountCreateRequest;
 void publicCloudAccountDto;
 void azureSyncFeatureId;
 void invalidAzureSyncFeatureId;

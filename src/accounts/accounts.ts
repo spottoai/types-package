@@ -84,12 +84,88 @@ export interface AzureGdapAuthorizationProfileSummary {
   displayName: string;
   partnerTenantId: string;
   authorizationStatus: AzureGdapValidationStatus;
+  hasCredential: boolean;
   authorizedAt?: string;
   expiresAt?: string;
   lastValidatedAt?: string;
   lastValidationStatus?: AzureGdapValidationStatus;
   lastValidationErrorCode?: string;
   lastValidationMessage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AzureGdapAuthorizationProfileListResponse {
+  profiles: AzureGdapAuthorizationProfileSummary[];
+}
+
+export interface AzureGdapEligibleAuthorizationProfilesResponse {
+  rootCompanyId: string;
+  profiles: AzureGdapAuthorizationProfileSummary[];
+}
+
+export interface AzureGdapCreateAuthorizationProfileRequest {
+  displayName?: string;
+  partnerTenantId?: string;
+}
+
+export interface AzureGdapStartPartnerAuthorizationRequest {
+  redirectAfter?: string;
+}
+
+export interface AzureGdapPartnerAuthorizationStartResponse {
+  profileId: string;
+  authorizationUrl: string;
+  expiresAt: string;
+}
+
+export interface AzureGdapDraftValidationRequest {
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
+  gdapPartnerTenantId?: string;
+  gdapCustomerTenantId?: string;
+  tenantId?: string;
+  gdapRelationshipId?: string;
+  gdapAccessAssignmentId?: string;
+  gdapSecurityGroupId?: string;
+}
+
+export interface AzureGdapDraftValidationResponse {
+  valid: boolean;
+  status: AzureGdapValidationStatus;
+  profile?: AzureGdapAuthorizationProfileSummary;
+  capabilities: AzureGdapCapabilityStatus[];
+  message?: string;
+}
+
+export interface AzureGdapCloudAccountStatusResponse {
+  cloudAccountId: string;
+  companyId: string;
+  status: AzureGdapValidationStatus;
+  partnerAuthorizationStatus?: AzureGdapValidationStatus;
+  appConsentStatus?: AzureGdapValidationStatus;
+  lastValidatedAt?: string | Date;
+  lastValidationStatus?: AzureGdapValidationStatus;
+  lastValidationErrorCode?: string;
+  lastValidationMessage?: string;
+  scheduledEligible?: boolean;
+  scheduledEligibilityReason?: string;
+  capabilities?: AzureGdapCapabilityStatus[];
+}
+
+export interface AzureGdapCloudAccountCreateRequest {
+  companyId: string;
+  name: string;
+  provider: 'Azure';
+  authMode: 'gdap';
+  tenantId: string;
+  gdapCustomerTenantId: string;
+  gdapPartnerTenantId: string;
+  gdapRelationshipId: string;
+  gdapAccessAssignmentId?: string;
+  gdapSecurityGroupId?: string;
+  gdapAuthorizationCompanyId: string;
+  gdapAuthorizationProfileId: string;
 }
 
 export interface BillingExportLocatorEntry {
