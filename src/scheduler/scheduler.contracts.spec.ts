@@ -32,13 +32,17 @@ const resourceOperationSchedule: ScheduleDocument = {
 const schedulerBatchRunItem: SchedulerBatchRunItem = {
   scheduleId: 'schedule-1',
   scheduleRunId: 'run-1',
+  scheduleName: 'Weekday deallocate',
   targetType: 'resource-operation',
+  selectorType: 'single-resource',
   scheduleType: 'recurring',
   providerScopeId: 'subscription-1',
   cloudAccountId: 'cloud-account-1',
   resourceId:
     '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm1',
   actionDefinitionId: 'compute-virtualmachines_deallocate',
+  compiledOperation: 'deallocate',
+  targetCount: 1,
 };
 
 const writeRequest: BaseScheduleWriteRequest = {
