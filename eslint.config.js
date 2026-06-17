@@ -7,6 +7,7 @@ module.exports = [
   js.configs.recommended,
   {
     files: ['src/**/*.ts'],
+    ignores: ['src/**/*.d.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
