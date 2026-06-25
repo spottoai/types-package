@@ -20,7 +20,7 @@ export declare enum SubscriptionReadPermission {
     CostManagementReader = 64,// 64
     /** Permission to read Azure Consumption usage details. */
     ConsumptionUsageReader = 128,// 128
-    /** Permission to read Azure Advisor recommendations. */
+    /** Permission to read Azure Advisor recommendations and Advisor score. */
     AdvisorRecommendationsReader = 256,// 256
     /** Permission to read Defender for Cloud security posture data. */
     SecurityReader = 512

@@ -255,6 +255,12 @@ export interface TargetCostSummary {
     targetLabel?: string;
     /** e.g. Windows to Linux migration */
     targetLabel2?: string;
+    /** Stable short title for rendering a specific optimization option */
+    targetTitle?: string;
+    /** Stable optimization kind for rendering and grouping */
+    optimizationKind?: string;
+    /** Stable target SKU or plan identifier when available */
+    targetSkuName?: string;
     /** e.g. "Basic Plan (B2 App)" */
     label1: string;
     /** e.g. "Azure App Service" */

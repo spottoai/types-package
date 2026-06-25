@@ -5,6 +5,17 @@ import type { PortalDelegationScope } from '../features-and-permissions/access';
 
 export type CompanyLifecycle = 'standard' | 'trial';
 
+export interface CompanyBusinessHoursPeriod {
+  startDayOfWeek: number;
+  startTimeLocal: string;
+  endDayOfWeek: number;
+  endTimeLocal: string;
+}
+
+export interface CompanyBusinessHours {
+  periods: CompanyBusinessHoursPeriod[];
+}
+
 export interface Company {
   id: string;
   name: string;
@@ -14,6 +25,7 @@ export interface Company {
   createdAt: Date;
   updatedAt: Date;
   preferredTimezone?: string;
+  businessHours?: CompanyBusinessHours;
   hourlyRateAmount?: number;
   hourlyRateCurrency?: string;
   loginDomainNames?: string[];
@@ -42,6 +54,7 @@ export interface CompanyCreate {
   website?: string;
   createdAt?: Date | string;
   preferredTimezone?: string;
+  businessHours?: CompanyBusinessHours;
   hourlyRateAmount?: number;
   hourlyRateCurrency?: string;
   domains?: string;

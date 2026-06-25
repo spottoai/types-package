@@ -382,6 +382,8 @@ export interface VmPricePerformanceInsights {
   currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
   /** Feature-compatible alternatives that are safe default candidates. */
   alternatives: VmPricePerformanceAlternative[];
+  /** Burstable VM alternatives that require burst-credit validation and workload compatibility review. */
+  burstableAlternatives?: VmPricePerformanceAlternative[];
   /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
   tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
   source: VmPricePerformanceCatalogSource;

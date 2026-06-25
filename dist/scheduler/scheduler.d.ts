@@ -69,11 +69,14 @@ export interface ScheduleHistoryItem {
 export interface SchedulerBatchRunItem {
     scheduleId: string;
     scheduleRunId: string;
+    scheduleName?: string;
     targetType: ScheduleTargetType;
+    selectorType: ScheduleSelectorType;
     scheduleType: ScheduleType;
     providerScopeId: string;
     cloudAccountId?: string;
     resourceId?: string;
+    selectedResourceIds?: string[];
     recommendationId?: string;
     operation?: string;
     actionDefinitionId?: string;
@@ -85,6 +88,9 @@ export interface SchedulerBatchRunItem {
     scheduleGroupType?: ResourceScheduleGroupType;
     compiledRuleId?: string;
     compiledOperation?: string;
+    targetCount?: number;
+    createdByUserId?: string;
+    updatedByUserId?: string;
 }
 export interface SchedulerBatchQueueMessage {
     batchId: string;

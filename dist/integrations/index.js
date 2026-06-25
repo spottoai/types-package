@@ -16,4 +16,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./integrationTickets"), exports);
 __exportStar(require("./halo"), exports);
+__exportStar(require("./autotask"), exports);
+__exportStar(require("./azureDevOps"), exports);
+__exportStar(require("./github"), exports);
 //# sourceMappingURL=index.js.map

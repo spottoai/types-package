@@ -2,9 +2,13 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
+import { CostSavingsAggregationPolicy, CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { AutotaskShareOverrides } from '../integrations/autotask';
+import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
+import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
+import type { AzurePortalVersionedArtifact } from './portalArtifacts';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -253,6 +257,8 @@ export interface Recommendation {
     resources?: ResourceReference[];
     /** Compact resource references for resource-specific detail payloads. */
     resourceIds?: string[];
+    /** Total affected resources when resourceIds is trimmed or sampled. */
+    resourcesCount?: number;
     /** only for security recommendations */
     securityImpactDetails?: SecurityImpact;
     /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
@@ -322,8 +328,18 @@ export interface RecommendationSummary {
 }
 export interface RecommendationWithResources {
     recommendation: Recommendation;
+    /** Total affected resources when the resources array is trimmed or sampled. */
+    resourcesCount?: number;
     resources: RecommendationResource[];
     savings?: SavingsPotential;
+    /** Canonical resource ID that owns this recommendation savings amount for aggregation */
+    savingsOwnerResourceId?: string;
+    /** Resource IDs that may display this recommendation savings amount as context */
+    savingsDisplayResourceIds?: string[];
+    /** Billable component key used with the owner ID to prevent double counting */
+    billableComponentKey?: string;
+    /** Aggregation rule for this recommendation savings amount */
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
 }
 /**
  * Contextual links from one recommendation row to other resources.
@@ -357,12 +373,20 @@ export interface RecommendationResource {
     spend: number;
     spendAmortized: number;
     savings?: SavingsPotential;
+    /** Canonical resource ID that owns this resource savings amount for aggregation */
+    savingsOwnerResourceId?: string;
+    /** Resource IDs that may display this resource savings amount as context */
+    savingsDisplayResourceIds?: string[];
+    /** Billable component key used with the owner ID to prevent double counting */
+    billableComponentKey?: string;
+    /** Aggregation rule for this resource savings amount */
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     currency?: string;
     currencySymbol?: string;
     relationship?: ResourceRelationship;
     associations?: RecommendationResourceAssociation[];
 }
-export interface RecommendationsView {
+export interface RecommendationsView extends AzurePortalVersionedArtifact {
     recommendations: RecommendationWithResources[];
     securityImpactDetails?: SecurityImpact[];
     subscriptionSecurityStatus?: SubscriptionSecurityStatus;
@@ -438,11 +462,15 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
     dismissReason: string;
 }
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
-    shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
+    shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
     email?: string;
     halo?: HaloRoutingOverrides;
     connectwise?: ConnectWiseRoutingFields;
+    autotask?: AutotaskShareOverrides;
+    azuredevops?: AzureDevOpsShareOverrides;
+    github?: GitHubShareOverrides;
 }
+export type RecommendationActionTargetSelection = 'selectedResources' | 'allAffectedResources';
 export interface RecommendationActionRequest extends ProviderScope {
     /** `providerScope` maps to subscription identity for Azure providers. */
     scope?: CommentScope;
@@ -455,6 +483,8 @@ export interface RecommendationActionRequest extends ProviderScope {
     recommendationId: string;
     recommendationTitle?: string;
     resourceIds: string[];
+    /** Whether resourceIds are the exact selected targets or a sampled display subset for an all-affected action. */
+    targetSelection?: RecommendationActionTargetSelection;
     resourceGroupName?: string;
     companyId: string;
     byUserId?: string;

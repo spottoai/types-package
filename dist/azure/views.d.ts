@@ -6,7 +6,10 @@ import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext 
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
-export interface AzureDashboardView {
+import type { AdvisorScoreSummary } from './advisorScore.js';
+import type { AzurePortalVersionedArtifact } from './portalArtifacts.js';
+import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
+export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
     costStartDate?: number;
@@ -16,12 +19,14 @@ export interface AzureDashboardView {
     summary?: ExecutiveSummary;
     dailySummary?: DailySummary;
     costSavingsSummary?: CostSavingsSummary;
+    advisorScore?: AdvisorScoreSummary;
+    healthEvents?: AzurePortalHealthEventsSummary;
 }
 export interface ExecutiveSummary {
     summary: string;
     details: string;
 }
-export interface AzureResourcesView {
+export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummaryLite;
     timestamp: string;
     resources: AzureResourcePortalItem[];
@@ -83,7 +88,15 @@ export interface AzureResourcePortalItem {
     /** First day of estimation gap (typically billingActualThroughDate + 1) */
     estimationCutoffStartDate?: number;
     /** Which savings basis should be shown for this resource */
-    savingsBasis?: 'billed' | 'amortized';
+    savingsBasis?: CostSavingsSpendBasis;
+    /** Canonical resource ID that owns this savings amount for aggregation */
+    savingsOwnerResourceId?: string;
+    /** Resource IDs that may display this savings amount as context */
+    savingsDisplayResourceIds?: string[];
+    /** Billable component key used with the owner ID to prevent double counting */
+    billableComponentKey?: string;
+    /** Aggregation rule for this savings amount */
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     savings?: SavingsPotential;
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
@@ -98,6 +111,8 @@ export interface AzureResourcePortalItem {
     costEstimation?: ResourceSimpleCostEstimationSummary;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
+    /** Current Azure Resource Health availability status for this resource, when available. */
+    resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
 export interface SavingsPotential {
     minAmount: number;
@@ -105,6 +120,8 @@ export interface SavingsPotential {
     maxAmount: number;
     maxPercentage: number;
 }
+export type CostSavingsSpendBasis = 'billed' | 'amortized';
+export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 export interface BenefitCoverageSummary {
     windowStart: string;
     windowEnd: string;
@@ -291,6 +308,8 @@ export interface VmPricePerformanceSku {
     maxNics?: number;
     maxNetworkBandwidthMbps?: number;
     supportsEphemeralOsDisk?: boolean;
+    azureSiteRecoverySkuEligible?: boolean;
+    azureSiteRecoverySkuIneligibleReasons?: string[];
     supportedRemoteDiskTypes?: string[];
     benchmarkScore?: number;
     benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
@@ -330,6 +349,8 @@ export interface VmPricePerformanceInsights {
     currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */
     alternatives: VmPricePerformanceAlternative[];
+    /** Burstable VM alternatives that require burst-credit validation and workload compatibility review. */
+    burstableAlternatives?: VmPricePerformanceAlternative[];
     /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
     tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
     source: VmPricePerformanceCatalogSource;
@@ -528,6 +549,34 @@ export interface CostSavingsSummary {
         maxSavingsPercent?: number;
     };
     categories: CostSavingsCategoryBreakdown[];
+    billingBasis?: CostSavingsBillingBasis;
+    savingsBasis?: CostSavingsSummaryBasis;
+}
+export interface CostSavingsBillingBasis {
+    rule: 'exclude_latest_billing_date_estimated_rows_and_billing_lag' | string;
+    source?: string;
+    observedStartDate?: number;
+    observedEndDate?: number;
+    stableStartDate?: number;
+    stableEndDate?: number;
+    excludedDates: number[];
+    totalRows: number;
+    stableRows: number;
+    excludedRows: number;
+    excludedEstimatedRows: number;
+    excludedLatestDateRows: number;
+    excludedBillingLagRows: number;
+    billingLagDays: number;
+    stableCutoffDate?: number;
+    includesEstimatedRows: boolean;
+}
+export interface CostSavingsSummaryBasis {
+    categoryScope: 'Cost' | string;
+    projection: 'projected_monthly' | string;
+    observedPeriod: 'stable_billing_window' | 'mixed_stable_and_legacy' | string;
+    excludesEstimatedRows: boolean;
+    appliesTo: 'all_included_savings' | 'stable_savings_only' | string;
+    containsLegacySavings: boolean;
 }
 export interface CostSavingsCategoryBreakdown {
     key: string;
@@ -540,5 +589,42 @@ export interface CostSavingsCategoryBreakdown {
     maxSavings: number;
     sampleRecommendations: string[];
     sampleResources: string[];
+}
+export interface StableWholeResourceDeletionBackfillDiagnostics {
+    recommendationCount: number;
+    resourceCount: number;
+    stableBillingRowCount: number;
+    stableSpendIndexResourceCount: number;
+    registeredResourceCount: number;
+    missingStableSpendResourceCount: number;
+    missingStableSpendReasonCounts: Record<string, number>;
+    relatedResourceCount: number;
+    registeredMaxMonthlySavings: number;
+    registeredRecommendations: Record<string, {
+        resourceCount: number;
+        maxMonthlySavings: number;
+    }>;
+    missingStableSpendResourceSamples: string[];
+}
+export interface CompletedViewCostSavingsManifest {
+    costStartDate?: number;
+    costEndDate?: number;
+    billingBasis?: CostSavingsBillingBasis;
+    savingsBasis?: CostSavingsSummaryBasis;
+    stableWholeResourceDeletionBackfill?: StableWholeResourceDeletionBackfillDiagnostics;
+}
+export interface CompletedViewArtifactGeneration {
+    runId: string;
+    generatedAt: string;
+}
+export interface CompletedViewManifest {
+    status: 'in_progress' | 'completed';
+    runId: string;
+    subscriptionId: string;
+    artifacts: string[];
+    artifactGeneration: CompletedViewArtifactGeneration;
+    costSavings?: CompletedViewCostSavingsManifest;
+    startedAt?: string;
+    completedAt?: string;
 }
 //# sourceMappingURL=views.d.ts.map

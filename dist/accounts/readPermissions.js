@@ -23,7 +23,7 @@ var SubscriptionReadPermission;
     SubscriptionReadPermission[SubscriptionReadPermission["CostManagementReader"] = 64] = "CostManagementReader";
     /** Permission to read Azure Consumption usage details. */
     SubscriptionReadPermission[SubscriptionReadPermission["ConsumptionUsageReader"] = 128] = "ConsumptionUsageReader";
-    /** Permission to read Azure Advisor recommendations. */
+    /** Permission to read Azure Advisor recommendations and Advisor score. */
     SubscriptionReadPermission[SubscriptionReadPermission["AdvisorRecommendationsReader"] = 256] = "AdvisorRecommendationsReader";
     /** Permission to read Defender for Cloud security posture data. */
     SubscriptionReadPermission[SubscriptionReadPermission["SecurityReader"] = 512] = "SecurityReader";
@@ -102,8 +102,8 @@ exports.SUBSCRIPTION_READ_PERMISSIONS_METADATA = [
     },
     {
         id: SubscriptionReadPermission.AdvisorRecommendationsReader,
-        displayName: 'Advisor Recommendations Reader',
-        description: 'Allows Spotto to read Azure Advisor recommendations for recommendation import and optimization workflows.',
+        displayName: 'Advisor Reader',
+        description: 'Allows Spotto to read Azure Advisor recommendations and Advisor score for recommendation import and optimization workflows.',
         requiredRoles: ['Reader'],
         documentationUrl: 'https://learn.microsoft.com/en-us/azure/advisor/advisor-overview',
     },

@@ -1,9 +1,10 @@
-import { SubscriptionInfoBase } from '../accounts/accounts.js';
+import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
+import type { AdvisorScorePillarScores } from './advisorScore.js';
 export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
 export interface SubscriptionSummaryLite {
     companyId: string;
@@ -39,6 +40,8 @@ export interface Subscription {
     tenantSubscriptionIds: string[];
     subscriptionId: string;
     displayName: string;
+    /** Optional subscription type (Production, Non-Production, Mixed) */
+    subscriptionType?: SubscriptionType;
     properties?: SubscriptionProperties;
     recommendations?: Recommendation[];
     spendingLimit: boolean;
@@ -100,6 +103,8 @@ export interface SubscriptionHistoryItem {
     /** 20250520 */
     date: number;
     secureScore: number;
+    advisorScore?: number;
+    advisorScores?: AdvisorScorePillarScores;
     resourcesTotal: number;
     recommendations: RecommendationStats;
     recommendationsUnique: RecommendationStats;
@@ -113,6 +118,12 @@ export interface SubscriptionPolicies {
 }
 export interface SubscriptionProperties {
     secureScore: number;
+    advisorScore?: number;
+    advisorScoreCost?: number;
+    advisorScoreSecurity?: number;
+    advisorScorePerformance?: number;
+    advisorScoreReliability?: number;
+    advisorScoreOperationalExcellence?: number;
     currency: string;
     currencySymbol: string;
     foundCurrency: boolean;
