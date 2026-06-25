@@ -1,7 +1,10 @@
 import type {
+  GlobalAdminCoverage,
   GovernanceAccessArtifact,
+  GovernanceAccessGlobalAdminSection,
   GovernanceGraphArtifact,
   GovernanceReport,
+  TenantGovernanceAccessArtifact,
   TenantGovernanceGraphArtifact,
   TenantGovernanceReport,
 } from './governance';
@@ -9,6 +12,7 @@ import {
   GOVERNANCE_ACCESS_SCHEMA_VERSION,
   GOVERNANCE_GRAPH_SCHEMA_VERSION,
   GOVERNANCE_REPORT_SCHEMA_VERSION,
+  TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION,
   TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION,
   TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
 } from './governance';
@@ -421,6 +425,60 @@ const governanceGraph: GovernanceGraphArtifact = {
 void governanceReport;
 void governanceGraph;
 
+const globalAdminCoverage: GlobalAdminCoverage = {
+  roleDefinitions: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['RoleManagement.Read.Directory'] },
+  roleAssignmentScheduleInstances: {
+    state: 'complete',
+    source: 'microsoft-graph',
+    requiredPermissions: ['RoleAssignmentSchedule.Read.Directory'],
+  },
+  roleEligibilityScheduleInstances: {
+    state: 'complete',
+    source: 'microsoft-graph',
+    requiredPermissions: ['RoleEligibilitySchedule.Read.Directory'],
+  },
+  directoryAudits: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['AuditLog.Read.All'] },
+  users: { state: 'complete', source: 'governance', requiredPermissions: ['User.Read.All'] },
+  groups: { state: 'complete', source: 'governance', requiredPermissions: ['GroupMember.Read.All'] },
+  groupMemberships: { state: 'complete', source: 'governance', requiredPermissions: ['GroupMember.Read.All'] },
+  globalAdminResolution: { state: 'complete', source: 'derived' },
+};
+
+const governanceAccessGlobalAdmins: GovernanceAccessGlobalAdminSection = {
+  summary: {
+    totalPrincipals: 1,
+    directPrincipals: 1,
+    groupDerivedPrincipals: 0,
+    permanentPrincipals: 0,
+    eligiblePrincipals: 1,
+    activePrincipals: 1,
+    pimBackedPrincipals: 1,
+    unknownPrincipals: 0,
+  },
+  principals: [
+    {
+      principalId: 'global-admin-1',
+      principalType: 'user',
+      displayName: 'Global Admin',
+      userPrincipalName: 'global.admin@example.com',
+      mail: 'global.admin@example.com',
+      accountEnabled: true,
+      assignmentSource: 'direct',
+      assignmentModes: ['eligible', 'active'],
+      isPimBacked: true,
+      directAssignmentIds: ['role-assignment-schedule-1'],
+      sourceGroupIds: [],
+      eligibleAssignmentIds: ['role-eligibility-schedule-1'],
+      activeAssignmentIds: ['role-assignment-schedule-1'],
+      lastActivatedAt: '2026-05-13T00:00:00.000Z',
+      lastActivatedEvidence: 'roleAssignmentScheduleInstance',
+      coverage: globalAdminCoverage,
+    },
+  ],
+  coverage: globalAdminCoverage,
+  warnings: [],
+};
+
 const governanceAccessArtifact: GovernanceAccessArtifact = {
   schemaVersion: GOVERNANCE_ACCESS_SCHEMA_VERSION,
   generatedAt: '2026-05-13T00:00:00.000Z',
@@ -633,6 +691,7 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
       affects: ['effectiveAccess'],
     },
   ],
+  globalAdmins: governanceAccessGlobalAdmins,
   sourceMetadata: {
     tenantFiles: ['governance/principals.json.gz'],
     subscriptionFiles: ['governance/governance-raw.json.gz'],
@@ -641,6 +700,21 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
 };
 
 void governanceAccessArtifact;
+
+const tenantGovernanceAccessArtifact: TenantGovernanceAccessArtifact = {
+  schemaVersion: TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION,
+  generatedAt: '2026-05-13T00:00:00.000Z',
+  scope: {
+    tenantId: 'tenant-1',
+  },
+  globalAdmins: governanceAccessGlobalAdmins,
+  sourceMetadata: {
+    tenantFiles: ['governance/principals.json.gz'],
+    graphEndpoints: ['https://graph.microsoft.com/v1.0/roleManagement/directory/roleDefinitions'],
+  },
+};
+
+void tenantGovernanceAccessArtifact;
 
 const tenantGovernanceReport: TenantGovernanceReport = {
   schemaVersion: TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
