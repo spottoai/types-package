@@ -68,7 +68,6 @@ const cloudAccountWithRecommendationEffortProfile: CloudAccount = {
     CloudAccountReadPermission.GraphRoleManagementReadDirectory |
     CloudAccountReadPermission.GraphGroupMemberReadAll |
     CloudAccountReadPermission.GraphUserReadAll |
-    CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory |
     CloudAccountReadPermission.GraphAuditLogReadAll,
   syncFeatureOptOuts: ['activityMonitoring', 'relationshipGraphs'],
 };
@@ -579,7 +578,6 @@ const combinedCloudAccountReadPermission =
   CloudAccountReadPermission.GraphRoleManagementReadDirectory |
   CloudAccountReadPermission.GraphGroupMemberReadAll |
   CloudAccountReadPermission.GraphUserReadAll |
-  CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory |
   CloudAccountReadPermission.GraphAuditLogReadAll;
 
 const subscriptionReadPermissionMetadataShapeCheck = SUBSCRIPTION_READ_PERMISSIONS_METADATA.map(item => ({

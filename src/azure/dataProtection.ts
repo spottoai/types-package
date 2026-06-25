@@ -30,6 +30,8 @@ export type DataProtectionBackupCostScope = 'protectedResource' | 'parentResourc
 
 export type DataProtectionBackupCostEstimateStatus = 'available' | 'partial' | 'unavailable';
 
+export type DataProtectionBackupCostEstimatePricingSource = 'billingObservedAverage' | 'retail' | 'unavailable';
+
 export type DataProtectionWorkloadPricingModel =
   | 'vm'
   | 'azureFiles'
@@ -39,6 +41,7 @@ export type DataProtectionWorkloadPricingModel =
   | 'sqlDatabase'
   | 'sqlManagedInstance'
   | 'mysqlFlexibleServer'
+  | 'postgresqlFlexibleServer'
   | 'unknown';
 
 export type DataProtectionFinding =
@@ -71,7 +74,7 @@ export interface DataProtectionCostAllocationRule {
 export interface DataProtectionCostEstimationAssumption {
   key: string;
   value: string | number | boolean;
-  source: 'observed' | 'billing' | 'resourceInventory' | 'default' | 'policy' | 'unknown';
+  source: 'observed' | 'billing' | 'retail' | 'resourceInventory' | 'default' | 'policy' | 'unknown';
 }
 
 export interface DataProtectionBillingMeterEvidence {
@@ -103,9 +106,23 @@ export interface DataProtectionBackupCostEstimate {
   monthlyHigh?: number;
   confidence: DataProtectionCostConfidence;
   estimateStatus: DataProtectionBackupCostEstimateStatus;
+  pricingSource?: DataProtectionBackupCostEstimatePricingSource;
   workloadPricingModel: DataProtectionWorkloadPricingModel;
   assumptions: DataProtectionCostEstimationAssumption[];
+  retailMeters?: DataProtectionRetailMeterEvidence[];
   unavailableReason?: string;
+}
+
+export interface DataProtectionRetailMeterEvidence {
+  serviceName?: string;
+  productName?: string;
+  skuName?: string;
+  meterName?: string;
+  unitOfMeasure?: string;
+  unitPrice?: number;
+  retailPrice?: number;
+  currencyCode?: string;
+  armRegionName?: string;
 }
 
 export interface DataProtectionBackupCost {

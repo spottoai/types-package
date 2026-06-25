@@ -32,8 +32,6 @@ export declare enum CloudAccountReadPermission {
     GraphGroupMemberReadAll = 128,// 128
     /** Permission to read Microsoft Graph user metadata. */
     GraphUserReadAll = 256,// 256
-    /** Permission to inspect Microsoft Graph privileged role assignment schedule requests. */
-    GraphRoleAssignmentScheduleReadWriteDirectory = 512,// 512
     /** Permission to read Microsoft Graph audit logs. */
     GraphAuditLogReadAll = 1024
 }

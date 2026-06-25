@@ -149,12 +149,36 @@ const projection: DataProtectionPostureProjection = {
           monthlyHigh: 12.75,
           confidence: 'estimated',
           estimateStatus: 'available',
+          pricingSource: 'billingObservedAverage',
           workloadPricingModel: 'vm',
           assumptions: [
             {
               key: 'pricingBasis',
               value: 'observed average 30-day backup cost for protected resources in this subscription',
               source: 'billing',
+            },
+            {
+              key: 'vmAttachedDiskSizeGb',
+              value: 128,
+              source: 'resourceInventory',
+            },
+            {
+              key: 'pricingSourceExample',
+              value: 'retail meters are also supported',
+              source: 'retail',
+            },
+          ],
+          retailMeters: [
+            {
+              serviceName: 'Backup',
+              productName: 'Azure Backup',
+              skuName: 'Standard GRS',
+              meterName: 'Standard GRS Data Stored',
+              unitOfMeasure: '1 GB/Month',
+              unitPrice: 0.1,
+              retailPrice: 0.1,
+              currencyCode: 'NZD',
+              armRegionName: 'australiaeast',
             },
           ],
         },

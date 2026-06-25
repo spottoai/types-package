@@ -84,7 +84,6 @@ export type AzureSpPermissionKey =
   | 'graphRoleManagementReadDirectory'
   | 'graphGroupMemberReadAll'
   | 'graphUserReadAll'
-  | 'graphRoleAssignmentScheduleReadWriteDirectory'
   | 'graphAuditLogReadAll'
   | 'billingScopeReader'
   | 'costManagementProviderRegistration'

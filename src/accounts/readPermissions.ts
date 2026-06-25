@@ -62,8 +62,6 @@ export enum CloudAccountReadPermission {
   GraphGroupMemberReadAll = 1 << 7, // 128
   /** Permission to read Microsoft Graph user metadata. */
   GraphUserReadAll = 1 << 8, // 256
-  /** Permission to inspect Microsoft Graph privileged role assignment schedule requests. */
-  GraphRoleAssignmentScheduleReadWriteDirectory = 1 << 9, // 512
   /** Permission to read Microsoft Graph audit logs. */
   GraphAuditLogReadAll = 1 << 10, // 1024
 }
@@ -226,13 +224,6 @@ export const CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA: CloudAccountReadPermission
     description: 'Allows Spotto to read Microsoft Graph user metadata.',
     requiredRoles: ['User.Read.All'],
     documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#userreadall',
-  },
-  {
-    id: CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory,
-    displayName: 'Graph RoleAssignmentSchedule ReadWrite.Directory',
-    description: 'Allows Spotto to inspect Microsoft Graph role assignment schedule requests for privileged-access governance.',
-    requiredRoles: ['RoleAssignmentSchedule.ReadWrite.Directory'],
-    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleassignmentschedulereadwritedirectory',
   },
   {
     id: CloudAccountReadPermission.GraphAuditLogReadAll,
