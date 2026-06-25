@@ -60,7 +60,16 @@ const cloudAccountWithRecommendationEffortProfile: CloudAccount = {
   createdBy: 'user-123',
   status: 'Active',
   effortProfile: 'enterprise',
-  readBitmask: CloudAccountReadPermission.ManagementGroupReader | CloudAccountReadPermission.GraphApplicationReadAll,
+  readBitmask:
+    CloudAccountReadPermission.ManagementGroupReader |
+    CloudAccountReadPermission.GraphApplicationReadAll |
+    CloudAccountReadPermission.GraphRoleAssignmentScheduleReadDirectory |
+    CloudAccountReadPermission.GraphRoleEligibilityScheduleReadDirectory |
+    CloudAccountReadPermission.GraphRoleManagementReadDirectory |
+    CloudAccountReadPermission.GraphGroupMemberReadAll |
+    CloudAccountReadPermission.GraphUserReadAll |
+    CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory |
+    CloudAccountReadPermission.GraphAuditLogReadAll,
   syncFeatureOptOuts: ['activityMonitoring', 'relationshipGraphs'],
 };
 
@@ -561,7 +570,17 @@ void firstSyncNotificationStatus;
 
 const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
 
-const combinedCloudAccountReadPermission = CloudAccountReadPermission.ReservationsReader | CloudAccountReadPermission.SavingsPlanReader;
+const combinedCloudAccountReadPermission =
+  CloudAccountReadPermission.ReservationsReader |
+  CloudAccountReadPermission.SavingsPlanReader |
+  CloudAccountReadPermission.GraphApplicationReadAll |
+  CloudAccountReadPermission.GraphRoleAssignmentScheduleReadDirectory |
+  CloudAccountReadPermission.GraphRoleEligibilityScheduleReadDirectory |
+  CloudAccountReadPermission.GraphRoleManagementReadDirectory |
+  CloudAccountReadPermission.GraphGroupMemberReadAll |
+  CloudAccountReadPermission.GraphUserReadAll |
+  CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory |
+  CloudAccountReadPermission.GraphAuditLogReadAll;
 
 const subscriptionReadPermissionMetadataShapeCheck = SUBSCRIPTION_READ_PERMISSIONS_METADATA.map(item => ({
   id: item.id,
@@ -572,6 +591,13 @@ const subscriptionReadPermissionMetadataShapeCheck = SUBSCRIPTION_READ_PERMISSIO
 const cloudAccountReadPermissionMetadataShapeCheck = CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA.map(item => ({
   id: item.id,
   displayName: item.displayName,
+  requiredRoles: item.requiredRoles,
+}));
+
+const graphCloudAccountReadPermissionMetadataShapeCheck = CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA.filter(item =>
+  item.requiredRoles.some(role => role.includes('.'))
+).map(item => ({
+  id: item.id,
   requiredRoles: item.requiredRoles,
 }));
 
@@ -615,3 +641,4 @@ void combinedSubscriptionReadPermission;
 void combinedCloudAccountReadPermission;
 void subscriptionReadPermissionMetadataShapeCheck;
 void cloudAccountReadPermissionMetadataShapeCheck;
+void graphCloudAccountReadPermissionMetadataShapeCheck;

@@ -44,7 +44,7 @@ export interface DecompositionTree {
     period: {
         startDate: string;
         endDate: string;
-        type: 'billing_period' | 'calendar_month' | 'rolling_30_days';
+        type: 'billing_period' | 'calendar_month' | 'calendar_day' | 'rolling_30_days';
     };
     lastUpdated: string;
     totalSpend: number;

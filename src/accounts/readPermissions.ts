@@ -52,6 +52,20 @@ export enum CloudAccountReadPermission {
   SavingsPlanReader = 1 << 2, // 4
   /** Permission to read Microsoft Graph applications/service principals. */
   GraphApplicationReadAll = 1 << 3, // 8
+  /** Permission to read Microsoft Graph privileged role assignment schedules. */
+  GraphRoleAssignmentScheduleReadDirectory = 1 << 4, // 16
+  /** Permission to read Microsoft Graph privileged role eligibility schedules. */
+  GraphRoleEligibilityScheduleReadDirectory = 1 << 5, // 32
+  /** Permission to read Microsoft Graph role-management metadata. */
+  GraphRoleManagementReadDirectory = 1 << 6, // 64
+  /** Permission to read Microsoft Graph group memberships. */
+  GraphGroupMemberReadAll = 1 << 7, // 128
+  /** Permission to read Microsoft Graph user metadata. */
+  GraphUserReadAll = 1 << 8, // 256
+  /** Permission to inspect Microsoft Graph privileged role assignment schedule requests. */
+  GraphRoleAssignmentScheduleReadWriteDirectory = 1 << 9, // 512
+  /** Permission to read Microsoft Graph audit logs. */
+  GraphAuditLogReadAll = 1 << 10, // 1024
 }
 
 /**
@@ -177,5 +191,54 @@ export const CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA: CloudAccountReadPermission
     description: 'Allows Spotto to read Microsoft Graph applications and service principals.',
     requiredRoles: ['Application.Read.All'],
     documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#applicationreadall',
+  },
+  {
+    id: CloudAccountReadPermission.GraphRoleAssignmentScheduleReadDirectory,
+    displayName: 'Graph RoleAssignmentSchedule Read.Directory',
+    description: 'Allows Spotto to read active Microsoft Graph role assignment schedules.',
+    requiredRoles: ['RoleAssignmentSchedule.Read.Directory'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleassignmentschedulereaddirectory',
+  },
+  {
+    id: CloudAccountReadPermission.GraphRoleEligibilityScheduleReadDirectory,
+    displayName: 'Graph RoleEligibilitySchedule Read.Directory',
+    description: 'Allows Spotto to read eligible Microsoft Graph role schedules.',
+    requiredRoles: ['RoleEligibilitySchedule.Read.Directory'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleeligibilityschedulereaddirectory',
+  },
+  {
+    id: CloudAccountReadPermission.GraphRoleManagementReadDirectory,
+    displayName: 'Graph RoleManagement Read.Directory',
+    description: 'Allows Spotto to read Microsoft Graph role-management metadata.',
+    requiredRoles: ['RoleManagement.Read.Directory'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#rolemanagementreaddirectory',
+  },
+  {
+    id: CloudAccountReadPermission.GraphGroupMemberReadAll,
+    displayName: 'Graph GroupMember Read.All',
+    description: 'Allows Spotto to read Microsoft Graph group memberships.',
+    requiredRoles: ['GroupMember.Read.All'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall',
+  },
+  {
+    id: CloudAccountReadPermission.GraphUserReadAll,
+    displayName: 'Graph User Read.All',
+    description: 'Allows Spotto to read Microsoft Graph user metadata.',
+    requiredRoles: ['User.Read.All'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#userreadall',
+  },
+  {
+    id: CloudAccountReadPermission.GraphRoleAssignmentScheduleReadWriteDirectory,
+    displayName: 'Graph RoleAssignmentSchedule ReadWrite.Directory',
+    description: 'Allows Spotto to inspect Microsoft Graph role assignment schedule requests for privileged-access governance.',
+    requiredRoles: ['RoleAssignmentSchedule.ReadWrite.Directory'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleassignmentschedulereadwritedirectory',
+  },
+  {
+    id: CloudAccountReadPermission.GraphAuditLogReadAll,
+    displayName: 'Graph AuditLog Read.All',
+    description: 'Allows Spotto to read Microsoft Graph audit logs.',
+    requiredRoles: ['AuditLog.Read.All'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#auditlogreadall',
   },
 ];
