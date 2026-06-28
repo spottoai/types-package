@@ -92,3 +92,17 @@ export interface DeleteCompanyNoteResponse {
   noteId: string;
   deletedAt: string;
 }
+
+export interface CompanyNotesAIRequest {
+  companyId: string;
+  noteId?: string;
+  title: string;
+  noteDate: string;
+  plainText: string;
+  userPrompt: string;
+}
+
+export interface CompanyNotesAIResponse {
+  message: string;
+  proposedPlainText: string;
+}

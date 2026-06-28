@@ -3,6 +3,8 @@ import type {
   CompanyNoteDocument,
   CompanyNoteListResponse,
   CompanyNoteSummary,
+  CompanyNotesAIRequest,
+  CompanyNotesAIResponse,
   CompanyNotesFeatureKey,
   CompanyNotesPermissionKey,
   CreateCompanyNoteRequest,
@@ -83,6 +85,20 @@ const deleteResponse: DeleteCompanyNoteResponse = {
   deletedAt: '2026-06-26T11:00:00.000Z',
 };
 
+const aiRequest: CompanyNotesAIRequest = {
+  companyId: 'company-123',
+  noteId: 'note-123',
+  title: 'Monthly service review',
+  noteDate: '2026-06-26',
+  plainText: 'Reviewed Azure cost actions and backup posture.',
+  userPrompt: 'Summarize the follow-up actions.',
+};
+
+const aiResponse: CompanyNotesAIResponse = {
+  message: 'Prepared an updated note with clearer follow-up actions.',
+  proposedPlainText: 'Reviewed Azure cost actions and backup posture.\n\nFollow up on the Azure cost actions and validate backup posture.',
+};
+
 const featureKey: CompanyNotesFeatureKey = COMPANY_NOTES_FEATURE_KEY;
 const permissionKey: CompanyNotesPermissionKey = COMPANY_NOTES_MANAGE_PERMISSION_KEY;
 
@@ -94,6 +110,8 @@ void listResponse;
 void createRequest;
 void updateRequest;
 void deleteResponse;
+void aiRequest;
+void aiResponse;
 void featureKey;
 void permissionKey;
 
