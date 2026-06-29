@@ -2,6 +2,8 @@ import type {
   CompanyNoteByCategoryResponse,
   CompanyNoteCategory,
   CompanyNoteContent,
+  CompanyNoteContextQuestion,
+  CompanyNoteStructuredContextContent,
   CompanyNoteContextCategory,
   CompanyNoteContextTemplateKey,
   CompanyNoteDocument,
@@ -12,6 +14,7 @@ import type {
   CompanyNoteTemplateDefinition,
   CompanyNoteTemplateKey,
   CompanyNotesAIRequest,
+  CompanyNotesAIAnswerProposal,
   CompanyNotesAIResponse,
   CompanyNotesFeatureKey,
   CompanyNotesPermissionKey,
@@ -51,6 +54,25 @@ const noteContent: CompanyNoteContent = {
   plainText: 'Reviewed Azure cost actions and backup posture.',
 };
 
+const structuredSecurityContent: CompanyNoteStructuredContextContent = {
+  format: 'structured-context-v1',
+  responses: [
+    {
+      questionId: 'security.current-posture',
+      label: 'Current Security Posture',
+      value: 'Identity posture and public exposure require follow-up review.',
+      commentary: 'Confirm conditional access exclusions with the customer.',
+    },
+    {
+      questionId: 'security.priority-controls',
+      label: 'Priority Controls',
+      value: ['identity', 'backup'],
+    },
+  ],
+  commentary: 'Security priorities appear concentrated around identity posture and backup confidence.',
+  plainText: 'Current Security Posture: Identity posture and public exposure require follow-up review.\nPriority Controls: Identity, Backup',
+};
+
 const noteSummary: CompanyNoteSummary = {
   noteId: 'note-123',
   companyId: 'company-123',
@@ -69,8 +91,22 @@ const noteSummary: CompanyNoteSummary = {
 
 const noteDocument: CompanyNoteDocument = {
   ...noteSummary,
+  category: 'general',
+  templateKey: undefined,
   schemaVersion: COMPANY_NOTE_SCHEMA_VERSION,
   content: noteContent,
+};
+
+const securityQuestion: CompanyNoteContextQuestion = {
+  questionId: 'security.current-posture',
+  type: 'textarea',
+  label: 'Current Security Posture',
+  question: 'What is the customer security posture today?',
+  description: 'Capture identity, exposure, and control posture that matters to this customer.',
+  help: 'Use durable customer context rather than one-off incident notes.',
+  rationale: 'This answer gives advisors enough context to tailor future security recommendations.',
+  placeholder: 'Summarize identity posture, exposed assets, controls, and known gaps.',
+  required: true,
 };
 
 const securityTemplate: CompanyNoteTemplateDefinition = {
@@ -78,12 +114,29 @@ const securityTemplate: CompanyNoteTemplateDefinition = {
   templateKey: 'security-v1',
   templateVersion: 1,
   title: 'Security',
-  sections: [
+  questions: [
+    securityQuestion,
     {
-      sectionId: 'current-security-posture',
-      heading: 'Current Security Posture',
-      helperText: 'Capture identity, exposure, and control posture that matters to this customer.',
-      aiPromptHint: 'Summarize current security signals and risks.',
+      questionId: 'security.priority-controls',
+      type: 'multi-select',
+      label: 'Priority Controls',
+      question: 'Which control areas should receive the most attention?',
+      description: 'Select the security control themes that are most relevant to future advice.',
+      help: 'Use the top recurring areas rather than every possible control.',
+      rationale: 'A bounded list keeps future recommendations focused on the customer context.',
+      options: [
+        {
+          value: 'identity',
+          label: 'Identity',
+          description: 'Conditional access, MFA, privileged roles, and identity hygiene.',
+        },
+        {
+          value: 'backup',
+          label: 'Backup',
+          description: 'Backup coverage, recovery testing, and retention posture.',
+        },
+      ],
+      maxSelections: 3,
     },
   ],
 };
@@ -128,6 +181,7 @@ const savedByCategoryResponse: CompanyNoteByCategoryResponse = {
   category: 'security',
   templateKey: 'security-v1',
   templateVersion: 1,
+  content: structuredSecurityContent,
   template: securityTemplate,
 };
 
@@ -141,7 +195,7 @@ const virtualByCategoryResponse: CompanyNoteByCategoryResponse = {
   schemaVersion: COMPANY_NOTE_SCHEMA_VERSION,
   title: 'Security',
   noteDate: '2026-06-26',
-  content: noteContent,
+  content: structuredSecurityContent,
   template: securityTemplate,
 };
 
@@ -187,7 +241,7 @@ const contextCreateRequest: CreateCompanyNoteRequest = {
   category: 'security',
   templateKey: 'security-v1',
   templateVersion: 1,
-  content: noteContent,
+  content: structuredSecurityContent,
 };
 
 const deleteResponse: DeleteCompanyNoteResponse = {
@@ -215,6 +269,8 @@ const templateAIRequest: CompanyNotesAIRequest = {
   noteDate: '2026-06-26',
   plainText: 'Current Security Posture',
   userPrompt: 'Draft the security context from Spotto data.',
+  selectedQuestionId: 'security.current-posture',
+  content: structuredSecurityContent,
   sourceMode: 'spotto-only',
 };
 
@@ -225,14 +281,26 @@ const aiResponse: CompanyNotesAIResponse = {
 
 const templateAIResponse: CompanyNotesAIResponse = {
   mode: 'template-draft',
-  message: 'Prepared section proposals for review.',
+  message: 'Prepared answer proposals for review.',
   advisorSummary: 'Security priorities appear concentrated around identity posture and public exposure.',
+  proposedAnswers: [
+    {
+      questionId: 'security.current-posture',
+      value: 'Identity posture and public exposure require follow-up review.',
+      commentary: 'Confirm conditional access exclusions with the customer.',
+      rationale: 'Based on current Defender and exposure signals.',
+    },
+  ],
+};
+
+const sectionTemplateAIResponse: CompanyNotesAIResponse = {
+  mode: 'template-draft',
+  message: 'Prepared section proposals for review.',
   proposedSections: [
     {
-      sectionId: 'current-security-posture',
-      heading: 'Current Security Posture',
-      content: 'Identity posture and public exposure require follow-up review.',
-      rationale: 'Based on current Defender and exposure signals.',
+      sectionId: 'meeting-summary',
+      heading: 'Meeting Summary',
+      content: 'Reviewed Azure cost actions and backup posture.',
     },
   ],
 };
@@ -240,11 +308,10 @@ const templateAIResponse: CompanyNotesAIResponse = {
 const companyResearchAIResponse: CompanyNotesAIResponse = {
   mode: 'company-research',
   message: 'Prepared sourced company profile proposals for review.',
-  proposedSections: [
+  proposedAnswers: [
     {
-      sectionId: 'public-research-and-sources',
-      heading: 'Public Research and Sources',
-      content: 'Public profile research is ready for review.',
+      questionId: 'company-profile.public-research-and-sources',
+      value: 'Public profile research is ready for review.',
     },
   ],
   sources: [
@@ -252,7 +319,7 @@ const companyResearchAIResponse: CompanyNotesAIResponse = {
       title: 'Company website',
       url: 'https://example.com',
       retrievedAt: '2026-06-26T11:00:00.000Z',
-      sectionId: 'public-research-and-sources',
+      questionId: 'company-profile.public-research-and-sources',
       sourceType: 'web',
     },
   ],
@@ -267,8 +334,10 @@ const featureKey: CompanyNotesFeatureKey = COMPANY_NOTES_FEATURE_KEY;
 const permissionKey: CompanyNotesPermissionKey = COMPANY_NOTES_MANAGE_PERMISSION_KEY;
 
 void noteContent;
+void structuredSecurityContent;
 void noteSummary;
 void noteDocument;
+void securityQuestion;
 void securityTemplate;
 void ordinaryListItem;
 void savedContextSlotListItem;
@@ -286,6 +355,7 @@ void aiRequest;
 void templateAIRequest;
 void aiResponse;
 void templateAIResponse;
+void sectionTemplateAIResponse;
 void companyResearchAIResponse;
 void category;
 void ordinaryCategory;
@@ -297,7 +367,7 @@ void featureKey;
 void permissionKey;
 
 const invalidContentFormat: CompanyNoteContent = {
-  // @ts-expect-error Company Notes content is stored as TipTap JSON.
+  // @ts-expect-error Company Notes content format must be one of the published formats.
   format: 'html',
   document: {
     type: 'doc',
@@ -312,6 +382,35 @@ const invalidCategory: CompanyNoteCategory = 'sales';
 
 // @ts-expect-error template key must be one of the built-in v1 template keys.
 const invalidTemplateKey: CompanyNoteTemplateKey = 'security-v2';
+
+// @ts-expect-error context note saves must use structured context content.
+const invalidContextCreateRequest: CreateCompanyNoteRequest = {
+  title: 'Security',
+  noteDate: '2026-06-26',
+  category: 'security',
+  templateKey: 'security-v1',
+  templateVersion: 1,
+  content: noteContent,
+};
+
+// @ts-expect-error context templates expose questions rather than TipTap sections.
+const invalidContextTemplate: CompanyNoteTemplateDefinition = {
+  category: 'security',
+  templateKey: 'security-v1',
+  templateVersion: 1,
+  title: 'Security',
+  sections: [
+    {
+      sectionId: 'current-security-posture',
+      heading: 'Current Security Posture',
+    },
+  ],
+};
+
+// @ts-expect-error AI answer proposals must target a stable question ID.
+const invalidAnswerProposal: CompanyNotesAIAnswerProposal = {
+  value: 'Identity posture requires review.',
+};
 
 const invalidUnsavedContextSlot: CompanyNoteListItem = {
   kind: 'context-slot',
@@ -343,6 +442,9 @@ void invalidContentFormat;
 void invalidPermissionKey;
 void invalidCategory;
 void invalidTemplateKey;
+void invalidContextCreateRequest;
+void invalidContextTemplate;
+void invalidAnswerProposal;
 void invalidUnsavedContextSlot;
 void invalidOrdinaryListItem;
 void invalidTemplateAIResponse;

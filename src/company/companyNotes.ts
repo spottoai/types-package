@@ -34,7 +34,7 @@ export const COMPANY_NOTES_AI_SOURCE_MODES = ['spotto-only', 'public-research'] 
 export type CompanyNoteSchemaVersion = typeof COMPANY_NOTE_SCHEMA_VERSION;
 export type CompanyNotesFeatureKey = typeof COMPANY_NOTES_FEATURE_KEY;
 export type CompanyNotesPermissionKey = (typeof COMPANY_NOTES_PERMISSION_KEYS)[number];
-export type CompanyNoteContentFormat = 'tiptap-json';
+export type CompanyNoteContentFormat = 'tiptap-json' | 'structured-context-v1';
 export type CompanyNoteCategory = (typeof COMPANY_NOTE_CATEGORIES)[number];
 export type CompanyNoteOrdinaryCategory = (typeof COMPANY_NOTE_ORDINARY_CATEGORIES)[number];
 export type CompanyNoteContextCategory = (typeof COMPANY_NOTE_CONTEXT_CATEGORIES)[number];
@@ -44,6 +44,9 @@ export type CompanyNoteContextTemplateKey = (typeof COMPANY_NOTE_CONTEXT_TEMPLAT
 export type CompanyNoteTemplateKey = (typeof COMPANY_NOTE_TEMPLATE_KEYS)[number];
 export type CompanyNotesAIMode = (typeof COMPANY_NOTES_AI_MODES)[number];
 export type CompanyNotesAISourceMode = (typeof COMPANY_NOTES_AI_SOURCE_MODES)[number];
+export type CompanyNoteContextQuestionId = string;
+export type CompanyNoteContextQuestionType = 'text' | 'textarea' | 'select' | 'multi-select' | 'sortable-list';
+export type CompanyNoteContextAnswerValue = string | string[];
 
 export interface CompanyNoteRichTextMark {
   type: string;
@@ -58,11 +61,49 @@ export interface CompanyNoteRichTextNode {
   text?: string;
 }
 
-export interface CompanyNoteContent {
-  format: CompanyNoteContentFormat;
+export interface CompanyNoteTipTapContent {
+  format: 'tiptap-json';
   document: CompanyNoteRichTextNode;
   plainText?: string;
 }
+
+export interface CompanyNoteContextQuestionOption {
+  value: string;
+  label: string;
+  description?: string;
+  help?: string;
+  rationale?: string;
+}
+
+export interface CompanyNoteContextQuestion {
+  questionId: CompanyNoteContextQuestionId;
+  type: CompanyNoteContextQuestionType;
+  label: string;
+  question: string;
+  description?: string;
+  help?: string;
+  rationale?: string;
+  placeholder?: string;
+  options?: CompanyNoteContextQuestionOption[];
+  maxSelections?: number;
+  required?: boolean;
+}
+
+export interface CompanyNoteContextQuestionResponse {
+  questionId: CompanyNoteContextQuestionId;
+  value: CompanyNoteContextAnswerValue;
+  label?: string;
+  commentary?: string;
+}
+
+export interface CompanyNoteStructuredContextContent {
+  format: 'structured-context-v1';
+  responses: CompanyNoteContextQuestionResponse[];
+  commentary?: string;
+  plainText?: string;
+}
+
+export type CompanyNoteContent = CompanyNoteTipTapContent | CompanyNoteStructuredContextContent;
 
 export interface CompanyNoteAuditFields {
   createdAt: string;
@@ -91,10 +132,24 @@ export interface CompanyNoteSummary extends CompanyNoteBase {
   plainTextPreview?: string;
 }
 
-export interface CompanyNoteDocument extends CompanyNoteBase {
+export interface CompanyNoteDocumentBase extends CompanyNoteBase {
   schemaVersion: CompanyNoteSchemaVersion;
-  content: CompanyNoteContent;
 }
+
+export type CompanyNoteOrdinaryDocument = Omit<CompanyNoteDocumentBase, 'category' | 'templateKey'> & {
+  category: CompanyNoteOrdinaryCategory;
+  templateKey?: CompanyNoteMeetingTemplateKey;
+  content: CompanyNoteTipTapContent;
+};
+
+export type CompanyNoteContextDocument = Omit<CompanyNoteDocumentBase, 'category' | 'templateKey' | 'templateVersion'> & {
+  category: CompanyNoteContextCategory;
+  templateKey: CompanyNoteContextTemplateKey;
+  templateVersion: number;
+  content: CompanyNoteStructuredContextContent;
+};
+
+export type CompanyNoteDocument = CompanyNoteOrdinaryDocument | CompanyNoteContextDocument;
 
 export interface CompanyNoteSectionTemplate {
   sectionId: string;
@@ -103,13 +158,25 @@ export interface CompanyNoteSectionTemplate {
   aiPromptHint?: string;
 }
 
-export interface CompanyNoteTemplateDefinition {
-  category: CompanyNoteTemplateCategory;
-  templateKey: CompanyNoteTemplateKey;
+export interface CompanyNoteMeetingTemplateDefinition {
+  category: 'meeting';
+  templateKey: CompanyNoteMeetingTemplateKey;
   templateVersion: number;
   title: string;
   sections: CompanyNoteSectionTemplate[];
+  questions?: never;
 }
+
+export interface CompanyNoteContextTemplateDefinition {
+  category: CompanyNoteContextCategory;
+  templateKey: CompanyNoteContextTemplateKey;
+  templateVersion: number;
+  title: string;
+  questions: CompanyNoteContextQuestion[];
+  sections?: never;
+}
+
+export type CompanyNoteTemplateDefinition = CompanyNoteMeetingTemplateDefinition | CompanyNoteContextTemplateDefinition;
 
 export type CompanyNoteSavedContextSlotListItem = Omit<CompanyNoteSummary, 'category' | 'templateKey' | 'templateVersion'> & {
   kind: 'context-slot';
@@ -137,13 +204,13 @@ export type CompanyNoteOrdinaryListItem = Omit<CompanyNoteSummary, 'category'> &
 
 export type CompanyNoteListItem = CompanyNoteSavedContextSlotListItem | CompanyNoteUnsavedContextSlotListItem | CompanyNoteOrdinaryListItem;
 
-export type CompanyNoteSavedByCategoryResponse = Omit<CompanyNoteDocument, 'category' | 'templateKey' | 'templateVersion'> & {
+export type CompanyNoteSavedByCategoryResponse = Omit<CompanyNoteContextDocument, 'category' | 'templateKey' | 'templateVersion'> & {
   kind: 'context-slot';
   saved: true;
   category: CompanyNoteContextCategory;
   templateKey: CompanyNoteContextTemplateKey;
   templateVersion: number;
-  template?: CompanyNoteTemplateDefinition;
+  template?: CompanyNoteContextTemplateDefinition;
 };
 
 export interface CompanyNoteVirtualByCategoryResponse {
@@ -157,8 +224,8 @@ export interface CompanyNoteVirtualByCategoryResponse {
   title: string;
   /** Date-only value in yyyy-mm-dd format. */
   noteDate: string;
-  content: CompanyNoteContent;
-  template: CompanyNoteTemplateDefinition;
+  content: CompanyNoteStructuredContextContent;
+  template: CompanyNoteContextTemplateDefinition;
 }
 
 export type CompanyNoteByCategoryResponse = CompanyNoteSavedByCategoryResponse | CompanyNoteVirtualByCategoryResponse;
@@ -182,15 +249,25 @@ export interface CompanyNoteListResponse {
   };
 }
 
-export interface SaveCompanyNoteRequest {
+export interface SaveCompanyNoteRequestBase {
   title: string;
   noteDate: string;
-  content: CompanyNoteContent;
-  category?: CompanyNoteCategory;
-  templateKey?: CompanyNoteTemplateKey;
-  templateVersion?: number;
   expectedRevision?: number;
 }
+
+export type SaveCompanyNoteRequest =
+  | (SaveCompanyNoteRequestBase & {
+      category?: CompanyNoteOrdinaryCategory;
+      templateKey?: CompanyNoteMeetingTemplateKey;
+      templateVersion?: number;
+      content: CompanyNoteTipTapContent;
+    })
+  | (SaveCompanyNoteRequestBase & {
+      category: CompanyNoteContextCategory;
+      templateKey: CompanyNoteContextTemplateKey;
+      templateVersion: number;
+      content: CompanyNoteStructuredContextContent;
+    });
 
 export type CreateCompanyNoteRequest = SaveCompanyNoteRequest;
 export type UpdateCompanyNoteRequest = SaveCompanyNoteRequest;
@@ -216,6 +293,8 @@ export interface CompanyNotesAIRequest {
   userPrompt: string;
   selectedPlainText?: string;
   selectedSectionId?: string;
+  selectedQuestionId?: CompanyNoteContextQuestionId;
+  content?: CompanyNoteContent;
   sourceMode?: CompanyNotesAISourceMode;
 }
 
@@ -226,11 +305,19 @@ export interface CompanyNotesAISectionProposal {
   rationale?: string;
 }
 
+export interface CompanyNotesAIAnswerProposal {
+  questionId: CompanyNoteContextQuestionId;
+  value: CompanyNoteContextAnswerValue;
+  commentary?: string;
+  rationale?: string;
+}
+
 export interface CompanyNotesAISource {
   title: string;
   url?: string;
   retrievedAt: string;
   sectionId?: string;
+  questionId?: CompanyNoteContextQuestionId;
   sourceType: 'web' | 'spotto';
 }
 
@@ -240,13 +327,22 @@ export interface CompanyNotesAIGeneralResponse {
   proposedPlainText: string;
 }
 
-export interface CompanyNotesAITemplateResponse {
+export interface CompanyNotesAITemplateResponseBase {
   mode: 'template-draft' | 'company-research';
   message: string;
   advisorSummary?: string;
-  proposedSections: CompanyNotesAISectionProposal[];
   proposedPlainText?: string;
   sources?: CompanyNotesAISource[];
 }
+
+export type CompanyNotesAITemplateResponse =
+  | (CompanyNotesAITemplateResponseBase & {
+      proposedSections: CompanyNotesAISectionProposal[];
+      proposedAnswers?: CompanyNotesAIAnswerProposal[];
+    })
+  | (CompanyNotesAITemplateResponseBase & {
+      proposedAnswers: CompanyNotesAIAnswerProposal[];
+      proposedSections?: CompanyNotesAISectionProposal[];
+    });
 
 export type CompanyNotesAIResponse = CompanyNotesAIGeneralResponse | CompanyNotesAITemplateResponse;
