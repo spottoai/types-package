@@ -28,7 +28,13 @@ export const COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS = [
   'roadmap-v1',
 ] as const;
 export const COMPANY_NOTE_TEMPLATE_KEYS = [COMPANY_NOTE_MEETING_TEMPLATE_KEY, ...COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS] as const;
-export const COMPANY_NOTES_AI_MODES = ['general-note', 'template-draft', 'coach-selection', 'company-research'] as const;
+export const COMPANY_NOTES_AI_MODES = [
+  'general-note',
+  'template-draft',
+  'section-draft',
+  'coach-selection',
+  'company-research',
+] as const;
 export const COMPANY_NOTES_AI_SOURCE_MODES = ['spotto-only', 'public-research'] as const;
 
 export type CompanyNoteSchemaVersion = typeof COMPANY_NOTE_SCHEMA_VERSION;
@@ -45,8 +51,7 @@ export type CompanyNoteTemplateKey = (typeof COMPANY_NOTE_TEMPLATE_KEYS)[number]
 export type CompanyNotesAIMode = (typeof COMPANY_NOTES_AI_MODES)[number];
 export type CompanyNotesAISourceMode = (typeof COMPANY_NOTES_AI_SOURCE_MODES)[number];
 export type CompanyNoteContextQuestionId = string;
-export type CompanyNoteContextQuestionType = 'text' | 'textarea' | 'select' | 'multi-select' | 'sortable-list';
-export type CompanyNoteContextAnswerValue = string | string[];
+export type CompanyNoteContextQuestionType = 'text' | 'textarea' | 'rich-text' | 'select' | 'multi-select' | 'sortable-list';
 
 export interface CompanyNoteRichTextMark {
   type: string;
@@ -66,6 +71,14 @@ export interface CompanyNoteTipTapContent {
   document: CompanyNoteRichTextNode;
   plainText?: string;
 }
+
+export interface CompanyNoteRichTextAnswerValue {
+  format: 'tiptap-json';
+  doc: CompanyNoteRichTextNode;
+  plainText?: string;
+}
+
+export type CompanyNoteContextAnswerValue = string | string[] | CompanyNoteRichTextAnswerValue;
 
 export interface CompanyNoteContextQuestionOption {
   value: string;
@@ -92,14 +105,11 @@ export interface CompanyNoteContextQuestion {
 export interface CompanyNoteContextQuestionResponse {
   questionId: CompanyNoteContextQuestionId;
   value: CompanyNoteContextAnswerValue;
-  label?: string;
-  commentary?: string;
 }
 
 export interface CompanyNoteStructuredContextContent {
   format: 'structured-context-v1';
   responses: CompanyNoteContextQuestionResponse[];
-  commentary?: string;
   plainText?: string;
 }
 
@@ -296,6 +306,7 @@ export interface CompanyNotesAIRequest {
   selectedQuestionId?: CompanyNoteContextQuestionId;
   content?: CompanyNoteContent;
   sourceMode?: CompanyNotesAISourceMode;
+  allowPublicWebSearch?: boolean;
 }
 
 export interface CompanyNotesAISectionProposal {
@@ -308,7 +319,6 @@ export interface CompanyNotesAISectionProposal {
 export interface CompanyNotesAIAnswerProposal {
   questionId: CompanyNoteContextQuestionId;
   value: CompanyNoteContextAnswerValue;
-  commentary?: string;
   rationale?: string;
 }
 
@@ -328,7 +338,7 @@ export interface CompanyNotesAIGeneralResponse {
 }
 
 export interface CompanyNotesAITemplateResponseBase {
-  mode: 'template-draft' | 'company-research';
+  mode: 'template-draft' | 'section-draft' | 'company-research';
   message: string;
   advisorSummary?: string;
   proposedPlainText?: string;

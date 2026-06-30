@@ -3,6 +3,7 @@ import type {
   CompanyNoteCategory,
   CompanyNoteContent,
   CompanyNoteContextQuestion,
+  CompanyNoteContextQuestionResponse,
   CompanyNoteStructuredContextContent,
   CompanyNoteContextCategory,
   CompanyNoteContextTemplateKey,
@@ -10,6 +11,7 @@ import type {
   CompanyNoteListItem,
   CompanyNoteListResponse,
   CompanyNoteOrdinaryCategory,
+  CompanyNoteRichTextAnswerValue,
   CompanyNoteSummary,
   CompanyNoteTemplateDefinition,
   CompanyNoteTemplateKey,
@@ -54,22 +56,37 @@ const noteContent: CompanyNoteContent = {
   plainText: 'Reviewed Azure cost actions and backup posture.',
 };
 
+const richTextAnswerValue: CompanyNoteRichTextAnswerValue = {
+  format: 'tiptap-json',
+  doc: {
+    type: 'doc',
+    content: [
+      {
+        type: 'paragraph',
+        content: [
+          {
+            type: 'text',
+            text: 'Identity posture and public exposure require follow-up review.',
+          },
+        ],
+      },
+    ],
+  },
+  plainText: 'Identity posture and public exposure require follow-up review.',
+};
+
 const structuredSecurityContent: CompanyNoteStructuredContextContent = {
   format: 'structured-context-v1',
   responses: [
     {
       questionId: 'security.current-posture',
-      label: 'Current Security Posture',
-      value: 'Identity posture and public exposure require follow-up review.',
-      commentary: 'Confirm conditional access exclusions with the customer.',
+      value: richTextAnswerValue,
     },
     {
       questionId: 'security.priority-controls',
-      label: 'Priority Controls',
       value: ['identity', 'backup'],
     },
   ],
-  commentary: 'Security priorities appear concentrated around identity posture and backup confidence.',
   plainText: 'Current Security Posture: Identity posture and public exposure require follow-up review.\nPriority Controls: Identity, Backup',
 };
 
@@ -99,7 +116,7 @@ const noteDocument: CompanyNoteDocument = {
 
 const securityQuestion: CompanyNoteContextQuestion = {
   questionId: 'security.current-posture',
-  type: 'textarea',
+  type: 'rich-text',
   label: 'Current Security Posture',
   question: 'What is the customer security posture today?',
   description: 'Capture identity, exposure, and control posture that matters to this customer.',
@@ -274,6 +291,37 @@ const templateAIRequest: CompanyNotesAIRequest = {
   sourceMode: 'spotto-only',
 };
 
+const sectionAIRequest: CompanyNotesAIRequest = {
+  companyId: 'company-123',
+  noteId: 'note-security',
+  mode: 'section-draft',
+  category: 'security',
+  templateKey: 'security-v1',
+  templateVersion: 1,
+  title: 'Security',
+  noteDate: '2026-06-26',
+  plainText: 'Current Security Posture',
+  userPrompt: 'Draft only the current posture section.',
+  selectedQuestionId: 'security.current-posture',
+  content: structuredSecurityContent,
+  sourceMode: 'spotto-only',
+};
+
+const companyResearchAIRequest: CompanyNotesAIRequest = {
+  companyId: 'company-123',
+  mode: 'company-research',
+  category: 'company-profile',
+  templateKey: 'company-profile-v1',
+  templateVersion: 1,
+  title: 'Company Profile',
+  noteDate: '2026-06-26',
+  plainText: 'Company Profile',
+  userPrompt: 'Research this company profile.',
+  selectedQuestionId: 'company-profile.products-and-services',
+  sourceMode: 'public-research',
+  allowPublicWebSearch: true,
+};
+
 const aiResponse: CompanyNotesAIResponse = {
   message: 'Prepared an updated note with clearer follow-up actions.',
   proposedPlainText: 'Reviewed Azure cost actions and backup posture.\n\nFollow up on the Azure cost actions and validate backup posture.',
@@ -286,21 +334,19 @@ const templateAIResponse: CompanyNotesAIResponse = {
   proposedAnswers: [
     {
       questionId: 'security.current-posture',
-      value: 'Identity posture and public exposure require follow-up review.',
-      commentary: 'Confirm conditional access exclusions with the customer.',
+      value: richTextAnswerValue,
       rationale: 'Based on current Defender and exposure signals.',
     },
   ],
 };
 
-const sectionTemplateAIResponse: CompanyNotesAIResponse = {
-  mode: 'template-draft',
-  message: 'Prepared section proposals for review.',
-  proposedSections: [
+const sectionDraftAIResponse: CompanyNotesAIResponse = {
+  mode: 'section-draft',
+  message: 'Prepared a section proposal for review.',
+  proposedAnswers: [
     {
-      sectionId: 'meeting-summary',
-      heading: 'Meeting Summary',
-      content: 'Reviewed Azure cost actions and backup posture.',
+      questionId: 'security.current-posture',
+      value: richTextAnswerValue,
     },
   ],
 };
@@ -311,7 +357,7 @@ const companyResearchAIResponse: CompanyNotesAIResponse = {
   proposedAnswers: [
     {
       questionId: 'company-profile.public-research-and-sources',
-      value: 'Public profile research is ready for review.',
+      value: richTextAnswerValue,
     },
   ],
   sources: [
@@ -334,6 +380,7 @@ const featureKey: CompanyNotesFeatureKey = COMPANY_NOTES_FEATURE_KEY;
 const permissionKey: CompanyNotesPermissionKey = COMPANY_NOTES_MANAGE_PERMISSION_KEY;
 
 void noteContent;
+void richTextAnswerValue;
 void structuredSecurityContent;
 void noteSummary;
 void noteDocument;
@@ -353,9 +400,11 @@ void contextCreateRequest;
 void deleteResponse;
 void aiRequest;
 void templateAIRequest;
+void sectionAIRequest;
+void companyResearchAIRequest;
 void aiResponse;
 void templateAIResponse;
-void sectionTemplateAIResponse;
+void sectionDraftAIResponse;
 void companyResearchAIResponse;
 void category;
 void ordinaryCategory;
@@ -412,6 +461,26 @@ const invalidAnswerProposal: CompanyNotesAIAnswerProposal = {
   value: 'Identity posture requires review.',
 };
 
+const invalidStructuredResponseLabel: CompanyNoteContextQuestionResponse = {
+  questionId: 'security.current-posture',
+  value: 'Identity posture requires review.',
+  // @ts-expect-error persisted structured responses must not store question labels.
+  label: 'Current Security Posture',
+};
+
+const invalidStructuredResponseCommentary: CompanyNoteContextQuestionResponse = {
+  questionId: 'security.current-posture',
+  value: 'Identity posture requires review.',
+  // @ts-expect-error persisted structured responses must not store commentary fields.
+  commentary: 'Confirm conditional access exclusions with the customer.',
+};
+
+// @ts-expect-error rich-text answer values must include a TipTap document.
+const invalidRichTextAnswerValue: CompanyNoteRichTextAnswerValue = {
+  format: 'tiptap-json',
+  plainText: 'Missing TipTap document.',
+};
+
 const invalidUnsavedContextSlot: CompanyNoteListItem = {
   kind: 'context-slot',
   saved: false,
@@ -445,6 +514,9 @@ void invalidTemplateKey;
 void invalidContextCreateRequest;
 void invalidContextTemplate;
 void invalidAnswerProposal;
+void invalidStructuredResponseLabel;
+void invalidStructuredResponseCommentary;
+void invalidRichTextAnswerValue;
 void invalidUnsavedContextSlot;
 void invalidOrdinaryListItem;
 void invalidTemplateAIResponse;
