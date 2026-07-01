@@ -3,11 +3,15 @@ export declare const GOVERNANCE_GRAPH_SCHEMA_VERSION: "2026-05-02.graph-v1";
 export declare const GOVERNANCE_ACCESS_SCHEMA_VERSION: "2026-05-14.identity-access-v2";
 export declare const TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION: "2026-05-02.tenant-slim-v1";
 export declare const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION: "2026-05-02.tenant-graph-v1";
+export declare const GLOBAL_ADMIN_RAW_SCHEMA_VERSION: "2026-06-24.global-admin-raw-v1";
+export declare const PRIVILEGED_ROLE_SUMMARY_SCHEMA_VERSION: "2026-06-24.privileged-role-summary-v1";
+export declare const TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION: "2026-06-24.tenant-governance-access-v1";
 export declare const GOVERNANCE_REPORT_PORTAL_FILE: "governance.json.gz";
 export declare const GOVERNANCE_GRAPH_PORTAL_FILE: "governance-graph.json.gz";
 export declare const GOVERNANCE_ACCESS_PORTAL_FILE: "governance-access.json.gz";
 export declare const TENANT_GOVERNANCE_REPORT_PORTAL_FILE: "governance.json.gz";
 export declare const TENANT_GOVERNANCE_GRAPH_PORTAL_FILE: "governance-graph.json.gz";
+export declare const TENANT_GOVERNANCE_ACCESS_PORTAL_FILE: "governance-access.json.gz";
 export type GovernanceJsonPrimitive = string | number | boolean | null;
 export type GovernanceJsonValue = GovernanceJsonPrimitive | GovernanceJsonValue[] | {
     [key: string]: GovernanceJsonValue;
@@ -577,6 +581,104 @@ export interface GovernanceAccessSourceMetadata {
     portalFiles?: string[];
     rawFallbackFiles?: string[];
 }
+export type GlobalAdminPrincipalType = 'user' | 'group' | 'servicePrincipal' | 'unknown';
+export type GlobalAdminAssignmentSource = 'direct' | 'groupDerived' | 'unknown';
+export type GlobalAdminAssignmentMode = 'permanent' | 'eligible' | 'active' | 'unknown';
+export type GlobalAdminLastActivatedEvidence = 'roleAssignmentScheduleInstance' | 'directoryAudit' | 'none' | 'unavailable';
+export interface GlobalAdminCoverageSection {
+    state: GovernanceCoverageState;
+    source: GovernanceAccessCoverageSource | string;
+    reason?: string;
+    message?: string;
+    requiredPermissions?: string[];
+}
+export interface GlobalAdminCoverage {
+    roleDefinitions: GlobalAdminCoverageSection;
+    roleAssignmentScheduleInstances: GlobalAdminCoverageSection;
+    roleEligibilityScheduleInstances: GlobalAdminCoverageSection;
+    directoryAudits: GlobalAdminCoverageSection;
+    users: GlobalAdminCoverageSection;
+    groups: GlobalAdminCoverageSection;
+    groupMemberships: GlobalAdminCoverageSection;
+    globalAdminResolution: GlobalAdminCoverageSection;
+}
+export interface GlobalAdminWarning {
+    code: string;
+    severity: 'info' | 'warning';
+    message: string;
+    principalId?: string;
+    sourceGroupId?: string;
+}
+export interface GlobalAdminRoleDefinition {
+    id: string;
+    displayName?: string;
+    templateId?: string;
+}
+export interface GlobalAdminPrincipal {
+    principalId: string;
+    principalType: GlobalAdminPrincipalType;
+    displayName?: string;
+    userPrincipalName?: string;
+    mail?: string;
+    accountEnabled?: boolean;
+    assignmentSource: GlobalAdminAssignmentSource;
+    assignmentModes: GlobalAdminAssignmentMode[];
+    isPimBacked: boolean | 'unknown';
+    directAssignmentIds: string[];
+    sourceGroupIds: string[];
+    eligibleAssignmentIds: string[];
+    activeAssignmentIds: string[];
+    lastActivatedAt?: string;
+    lastActivatedEvidence: GlobalAdminLastActivatedEvidence;
+    coverage: GlobalAdminCoverage;
+}
+export interface GlobalAdminsRawArtifact {
+    schemaVersion: typeof GLOBAL_ADMIN_RAW_SCHEMA_VERSION;
+    generatedAt: string;
+    tenantId: string;
+    roleDefinition: GlobalAdminRoleDefinition | null;
+    principals: GlobalAdminPrincipal[];
+    sourceMetadata: {
+        graphEndpoints: string[];
+        sourceFiles?: string[];
+    };
+    coverage: GlobalAdminCoverage;
+    warnings: GlobalAdminWarning[];
+}
+export interface PrivilegedRoleSummaryEntry {
+    roleDefinitionId: string;
+    roleName?: string;
+    templateId?: string;
+    activeAssignments: number;
+    eligibleAssignments: number;
+    activatedAssignments: number;
+    directPrincipals: number;
+    groupPrincipals: number;
+}
+export interface PrivilegedRoleSummaryRawArtifact {
+    schemaVersion: typeof PRIVILEGED_ROLE_SUMMARY_SCHEMA_VERSION;
+    generatedAt: string;
+    tenantId: string;
+    roles: PrivilegedRoleSummaryEntry[];
+    coverage: GlobalAdminCoverage;
+    warnings: GlobalAdminWarning[];
+}
+export interface GovernanceAccessGlobalAdminSummary {
+    totalPrincipals: number;
+    directPrincipals: number;
+    groupDerivedPrincipals: number;
+    permanentPrincipals: number;
+    eligiblePrincipals: number;
+    activePrincipals: number;
+    pimBackedPrincipals: number;
+    unknownPrincipals: number;
+}
+export interface GovernanceAccessGlobalAdminSection {
+    summary: GovernanceAccessGlobalAdminSummary;
+    principals: GlobalAdminPrincipal[];
+    coverage: GlobalAdminCoverage;
+    warnings: GlobalAdminWarning[];
+}
 export interface GovernanceAccessArtifact {
     schemaVersion: typeof GOVERNANCE_ACCESS_SCHEMA_VERSION;
     generatedAt: string;
@@ -590,7 +692,21 @@ export interface GovernanceAccessArtifact {
     effectiveAccess: GovernanceAccessEffectiveAccessRow[];
     resourceIndex: GovernanceAccessResourceReference[];
     limitations: GovernanceAccessLimitation[];
+    globalAdmins?: GovernanceAccessGlobalAdminSection;
     sourceMetadata: GovernanceAccessSourceMetadata;
+}
+export interface TenantGovernanceAccessSourceMetadata {
+    tenantFiles: string[];
+    graphEndpoints: string[];
+}
+export interface TenantGovernanceAccessArtifact {
+    schemaVersion: typeof TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION;
+    generatedAt: string;
+    scope: {
+        tenantId: string;
+    };
+    globalAdmins: GovernanceAccessGlobalAdminSection;
+    sourceMetadata: TenantGovernanceAccessSourceMetadata;
 }
 export interface GovernanceReportSourceMetadata {
     tenantFiles: string[];

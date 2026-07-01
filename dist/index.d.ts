@@ -9,6 +9,7 @@ export * from './azure/configs';
 export * from './azure/metrics';
 export * from './azure/payloads';
 export * from './azure/portalArtifacts';
+export * from './azure/dataProtection';
 export * from './azure/prices';
 export * from './azure/relationships';
 export * from './azure/recommendations';

@@ -37,7 +37,19 @@ export declare enum CloudAccountReadPermission {
     /** Permission to read savings plan resources. */
     SavingsPlanReader = 4,// 4
     /** Permission to read Microsoft Graph applications/service principals. */
-    GraphApplicationReadAll = 8
+    GraphApplicationReadAll = 8,// 8
+    /** Permission to read Microsoft Graph privileged role assignment schedules. */
+    GraphRoleAssignmentScheduleReadDirectory = 16,// 16
+    /** Permission to read Microsoft Graph privileged role eligibility schedules. */
+    GraphRoleEligibilityScheduleReadDirectory = 32,// 32
+    /** Permission to read Microsoft Graph role-management metadata. */
+    GraphRoleManagementReadDirectory = 64,// 64
+    /** Permission to read Microsoft Graph group memberships. */
+    GraphGroupMemberReadAll = 128,// 128
+    /** Permission to read Microsoft Graph user metadata. */
+    GraphUserReadAll = 256,// 256
+    /** Permission to read Microsoft Graph audit logs. */
+    GraphAuditLogReadAll = 1024
 }
 /**
  * Metadata for a subscription-scoped read capability.

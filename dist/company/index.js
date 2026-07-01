@@ -19,4 +19,5 @@ __exportStar(require("./companyHierarchy"), exports);
 __exportStar(require("./notification"), exports);
 __exportStar(require("./survey"), exports);
 __exportStar(require("./billingAccount"), exports);
+__exportStar(require("./companyNotes"), exports);
 //# sourceMappingURL=index.js.map

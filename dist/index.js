@@ -25,6 +25,7 @@ __exportStar(require("./azure/configs"), exports);
 __exportStar(require("./azure/metrics"), exports);
 __exportStar(require("./azure/payloads"), exports);
 __exportStar(require("./azure/portalArtifacts"), exports);
+__exportStar(require("./azure/dataProtection"), exports);
 __exportStar(require("./azure/prices"), exports);
 __exportStar(require("./azure/relationships"), exports);
 __exportStar(require("./azure/recommendations"), exports);
