@@ -29,6 +29,14 @@ export interface CostDetails {
   retailPrices?: AzurePrice[];
 }
 
+export type BusinessHoursEstimateSource = 'company-business-hours' | 'fallback-business-hours-only';
+
+export interface BusinessHoursEstimateMetadata {
+  source: BusinessHoursEstimateSource;
+  windowSummary: string;
+  fallbackTemplate?: 'business-hours-only';
+}
+
 export interface AzurePrice {
   currencyCode: string;
   tierMinimumUnits: number;
@@ -79,6 +87,8 @@ export interface AzurePrice {
   displayQuantity?: number;
   /** Reference to the recommendation that this target cost is associated with */
   recommendationId?: string;
+  /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+  businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 
 export interface SavingsPlan {
@@ -311,6 +321,8 @@ export interface TargetCostSummary {
   recommendationId?: string;
   /** Resource Type */
   resourceType?: string;
+  /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+  businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 
 export interface ResourceSpend {

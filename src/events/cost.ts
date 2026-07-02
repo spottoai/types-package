@@ -290,6 +290,16 @@ export interface CostAlertSummary {
    * For cost anomaly alerts: 'confidence' | 'minDelta' | 'minPercentChange' | 'minCost' | 'dodThreshold' | 'momThreshold' | string
    */
   triggerReason?: string | string[];
+  /**
+   * Earliest configured actual-spend trigger converted to an amount in the alert currency.
+   * Used to explain the budget condition in UI summaries and notifications.
+   */
+  actualTriggerAmount?: number;
+  /**
+   * Earliest configured forecast trigger converted to an amount in the alert currency.
+   * Used to explain the forecast condition in UI summaries and notifications.
+   */
+  forecastTriggerAmount?: number;
 }
 
 /**
