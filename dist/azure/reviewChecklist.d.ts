@@ -100,7 +100,7 @@ export interface ReviewChecklistSubscriptionResult {
     subscriptionId: string;
     items: ReviewChecklistItemOutput[];
 }
-export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress';
+export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress' | 'NotRun';
 export interface ReviewChecklistDocument {
     checklistId: string;
     tenantId: string;
