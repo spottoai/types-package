@@ -14,6 +14,8 @@ export interface BaseUser {
   firstName: string;
   lastName: string;
   email: string;
+  authProviderName?: string;
+  authProviderType?: string;
   createdAt: string;
   updatedAt: string;
 }
