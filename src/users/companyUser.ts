@@ -1,5 +1,7 @@
 import type { InviteType, OnboardingIntent } from './user';
 
+export type CompanyUserAuthMode = 'cognito' | 'sso' | 'unknown';
+
 export class CompanyUser {
   id?: string;
   userId!: string;
@@ -9,6 +11,11 @@ export class CompanyUser {
   lastName!: string;
   role!: number;
   isPendingInvite!: boolean;
+  authProviderName?: string;
+  authProviderType?: string;
+  authMode?: CompanyUserAuthMode;
+  canResetPassword?: boolean;
+  canResetMfa?: boolean;
   invitedBy!: string;
   createdAt!: Date;
   updatedAt!: Date;
