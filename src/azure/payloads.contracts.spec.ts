@@ -291,6 +291,11 @@ const guestAccessStatusResponse: AzureGuestAccessStatusResponse = {
   tenantId: 'tenant-123',
   status: 'completed',
   statusReason: 'billing_2m_failed',
+  connectedUser: {
+    username: 'guest@example.com',
+    name: 'Guest User',
+    objectId: 'user-object-123',
+  },
   cloudAccount: publicCloudAccount,
   tenants: [guestAccessTenantItem],
   subscriptions: [guestAccessSubscriptionItem],

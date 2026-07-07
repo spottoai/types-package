@@ -388,6 +388,7 @@ export type AzureGuestAccessStatusReason =
   | 'tenant_discovery_failed'
   | 'tenant_selection_required'
   | 'tenant_authorization_required'
+  | 'microsoft_account_mismatch'
   | 'no_readable_subscriptions'
   | 'subscription_read_forbidden'
   | 'token_relay_missing'
