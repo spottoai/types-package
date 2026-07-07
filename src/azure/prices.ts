@@ -113,6 +113,49 @@ export interface CostSummaryDetails {
   savingsRange?: SavingsRange;
 }
 
+export interface ResourceCostPeriodRollingMetadata {
+  kind: 'rolling';
+  name: 'cost-last-30-days';
+  label: string;
+}
+
+export interface ResourceCostPeriodDailyMetadata {
+  kind: 'daily';
+  name: string;
+  label: string;
+  date: string;
+  startDate: number;
+  endDate: number;
+}
+
+export interface ResourceCostPeriodMonthMetadata {
+  kind: 'month';
+  name: string;
+  label: string;
+  month: string;
+  startDate: number;
+  endDate: number;
+}
+
+export type ResourceCostPeriodMetadata =
+  | ResourceCostPeriodRollingMetadata
+  | ResourceCostPeriodDailyMetadata
+  | ResourceCostPeriodMonthMetadata;
+
+export interface AzureResourceCostPeriodsCatalog {
+  resourceId: string;
+  periods: ResourceCostPeriodMetadata[];
+}
+
+export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
+  resourceId: string;
+  total: number;
+  amortizedTotal: number;
+  items: ResourceCostSummary[];
+  billingActualThroughDate?: number;
+  estimationCutoffStartDate?: number;
+};
+
 export interface ResourceCostSummary {
   /** e.g. "Basic Plan (B2 App)" */
   label1: string;
