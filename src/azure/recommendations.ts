@@ -9,6 +9,7 @@ import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
 import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 import type { AzurePortalVersionedArtifact } from './portalArtifacts';
+import type { LicensingRecommendationRenderData } from './licensing';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -214,7 +215,7 @@ export interface HddOsRetirementRenderStrategyPayload {
   disks: HddOsRetirementDiskRenderItem[];
 }
 
-export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights | LicensingRecommendationRenderData;
 
 export type AnyRecommendationRenderData = Record<string, unknown>;
 
