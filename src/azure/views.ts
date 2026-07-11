@@ -234,6 +234,12 @@ export interface AzureResourcePluginItemDetailed {
 
 export type VmPricePerformanceOsType = 'linux' | 'windows';
 
+/** Operating system installed on the VM or VM scale set. */
+export type VmPricePerformanceGuestOsType = 'linux' | 'windows';
+
+/** How Windows licensing is represented in the VM catalog price. */
+export type VmPricePerformanceWindowsLicensePricing = 'azure-hybrid-benefit' | 'license-included' | 'not-applicable';
+
 export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
 
 export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
@@ -302,7 +308,13 @@ export interface VmPricePerformanceSku {
   armSkuName: string;
   region: string;
   currencyCode: 'USD';
+  /**
+   * Legacy catalog operating-system dimension. This describes the pricing row,
+   * not necessarily the guest operating system. Prefer `pricingOsType`.
+   */
   osType: VmPricePerformanceOsType;
+  /** Operating-system dimension used to select this catalog pricing row. */
+  pricingOsType?: VmPricePerformanceOsType;
   tier: VmPricePerformanceTier;
   purchaseOption: VmPricePerformancePurchaseOption;
   hourlyPriceUsd?: number;
@@ -377,6 +389,14 @@ export interface VmPricePerformanceInsights {
   /** Subscription/display currency used for user-facing price fields when available. */
   displayCurrencyCode?: string;
   displayCurrencySymbol?: string;
+  /** Operating system installed on the resource. */
+  guestOsType?: VmPricePerformanceGuestOsType;
+  /** Operating-system dimension used for catalog pricing and comparison rows. */
+  pricingOsType?: VmPricePerformanceOsType;
+  /** Explains whether a Windows license is included in, or excluded from, the displayed catalog price. */
+  windowsLicensePricing?: VmPricePerformanceWindowsLicensePricing;
+  /** True only when the displayed catalog price includes the Windows license component. */
+  windowsLicenseIncludedInPrice?: boolean;
   current?: VmPricePerformanceSku;
   /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
   currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
