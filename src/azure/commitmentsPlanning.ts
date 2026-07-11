@@ -1,4 +1,11 @@
-import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization } from './benefits.js';
+import type {
+  BenefitCostBasis,
+  BenefitScope,
+  BenefitType,
+  IBenefitCoverageBreakdownEntry,
+  IBenefitUtilization,
+  IBenefitWeightedUtilizationAggregate,
+} from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
 
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
@@ -70,12 +77,16 @@ export interface CommitmentsUtilizationSummary {
   withData: number;
   sevenDayAverage?: number;
   thirtyDayAverage?: number;
+  sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+  thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
   byBenefitType: Array<{
     benefitType: BenefitType;
     total: number;
     withData: number;
     sevenDayAverage?: number;
     thirtyDayAverage?: number;
+    sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+    thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
   }>;
 }
 
@@ -228,11 +239,7 @@ export interface CommitmentUnlockFinancialLedger {
   notes?: string[];
 }
 
-export type CommitmentTargetSelectionStrategy =
-  | 'capacity-equivalent'
-  | 'charge-equivalent'
-  | 'source-backed'
-  | 'target-required-but-missing';
+export type CommitmentTargetSelectionStrategy = 'capacity-equivalent' | 'charge-equivalent' | 'source-backed' | 'target-required-but-missing';
 
 export interface CommitmentEligibilityMetadata {
   status: CommitmentEligibilityStatus;

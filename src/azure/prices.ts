@@ -137,10 +137,7 @@ export interface ResourceCostPeriodMonthMetadata {
   endDate: number;
 }
 
-export type ResourceCostPeriodMetadata =
-  | ResourceCostPeriodRollingMetadata
-  | ResourceCostPeriodDailyMetadata
-  | ResourceCostPeriodMonthMetadata;
+export type ResourceCostPeriodMetadata = ResourceCostPeriodRollingMetadata | ResourceCostPeriodDailyMetadata | ResourceCostPeriodMonthMetadata;
 
 export interface AzureResourceCostPeriodsCatalog {
   resourceId: string;
@@ -220,6 +217,10 @@ export interface ResourceCostSummary {
   /** Per-source date ranges derived from daily records */
   billingDateRange?: CostDateRangeMetadata;
   estimatedDateRange?: CostDateRangeMetadata;
+  /** Canonical disjoint billing-backed coverage segments. Prefer over the legacy single range when present. */
+  billingDateRanges?: CostDateRangeMetadata[];
+  /** Canonical disjoint estimated coverage segments. Prefer over the legacy single range when present. */
+  estimatedDateRanges?: CostDateRangeMetadata[];
   /** Optional resource-level cutoff markers (when attached at item level) */
   billingActualThroughDate?: number;
   estimationCutoffStartDate?: number;

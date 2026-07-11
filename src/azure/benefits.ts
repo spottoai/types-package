@@ -15,6 +15,33 @@ export interface IBenefitUtilization {
   source?: 'aggregate' | 'usage' | 'reservation-summary';
 }
 
+export type BenefitUtilizationAggregateUnit = 'hours' | 'quantity' | 'currency';
+
+/**
+ * Lossless utilization numerator and denominator for weighted aggregation.
+ * `used` and `reserved` use the same unit. Keep separate entries when unit or
+ * currency differs, then aggregate only compatible entries.
+ */
+export interface IBenefitWeightedUtilizationAggregateBase {
+  used: number;
+  reserved: number;
+  /** Derived percentage on a 0-100 scale. */
+  percentage?: number;
+  sampleCount?: number;
+}
+
+export type IBenefitWeightedUtilizationAggregate = IBenefitWeightedUtilizationAggregateBase &
+  (
+    | {
+        unit: Exclude<BenefitUtilizationAggregateUnit, 'currency'>;
+        currency?: never;
+      }
+    | {
+        unit: 'currency';
+        currency: string;
+      }
+  );
+
 export interface IBenefit {
   id: string;
   benefitType: BenefitType;
@@ -61,12 +88,16 @@ export interface IBenefitUtilizationSummary {
   withData: number;
   sevenDayAverage?: number;
   thirtyDayAverage?: number;
+  sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+  thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
   byBenefitType: Array<{
     benefitType: BenefitType;
     total: number;
     withData: number;
     sevenDayAverage?: number;
     thirtyDayAverage?: number;
+    sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+    thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
   }>;
 }
 
