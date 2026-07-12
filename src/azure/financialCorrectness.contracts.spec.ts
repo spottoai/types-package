@@ -3,6 +3,7 @@ import type { CommitmentsUtilizationSummary } from './commitmentsPlanning';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts';
 import type { ResourceCostSummary } from './prices';
 import { RecommendationCategory, type Recommendation, type RecommendationWithResources } from './recommendations';
+import type { SecureScoreEvidence, SubscriptionProperties } from './subscriptions';
 import type { CompletedViewManifestV2, CurrencySavingsGroup, SavingsPotential } from './views';
 
 const generation: AzurePortalArtifactGeneration = {
@@ -40,6 +41,37 @@ const nzdSavings: SavingsPotential = {
   maxAmount: 200,
   maxPercentage: 20,
   currency: 'NZD',
+};
+
+const availableSecureScoreEvidence: SecureScoreEvidence = {
+  status: 'available',
+  percentage: 72,
+  currentScore: 43.2,
+  maxScore: 60,
+  weight: 125,
+  assessedResourceCount: 125,
+  observedAt: '2026-07-12T00:00:00.000Z',
+};
+
+const subscriptionPropertiesWithSecureScoreEvidence: SubscriptionProperties = {
+  secureScore: 72,
+  secureScoreEvidence: availableSecureScoreEvidence,
+  currency: 'NZD',
+  currencySymbol: '$',
+  foundCurrency: true,
+  showAmortizedCosts: true,
+};
+
+const unavailableSecureScoreEvidence: SecureScoreEvidence = {
+  status: 'unavailable',
+};
+
+const subscriptionPropertiesWithoutFabricatedSecureScore: SubscriptionProperties = {
+  secureScoreEvidence: unavailableSecureScoreEvidence,
+  currency: 'NZD',
+  currencySymbol: '$',
+  foundCurrency: true,
+  showAmortizedCosts: true,
 };
 
 const currencySavings: CurrencySavingsGroup = {
@@ -150,6 +182,9 @@ const invalidRecommendationImpact: Recommendation = {
 void versionedArtifact;
 void partialManifest;
 void currencySavings;
+void subscriptionPropertiesWithSecureScoreEvidence;
+void unavailableSecureScoreEvidence;
+void subscriptionPropertiesWithoutFabricatedSecureScore;
 void blendedCost;
 void recommendationWithPercentageImpact;
 void recommendationWithCurrencyGroups;
