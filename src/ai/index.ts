@@ -1082,7 +1082,7 @@ export interface AIChatTerminalSnapshot {
 /**
  * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.
  */
-export type AIChatStreamEventName =
+export type AIChatCanonicalStreamEventName =
   | 'runStarted'
   | 'runStatus'
   | 'runPaused'
@@ -1106,12 +1106,16 @@ export type AIChatStreamEventName =
   | 'formatterCompleted'
   | 'message'
   | 'citation'
-  /**
-   * @deprecated Use `runCompleted`.
-   */
-  | 'done'
   | 'error'
   | 'ping';
+
+/**
+ * Legacy terminal event accepted only during the runCompleted migration.
+ * New producers and protocol assertions must use AIChatCanonicalStreamEventName.
+ */
+export type AIChatCompatibilityStreamEventName = 'done';
+
+export type AIChatStreamEventName = AIChatCanonicalStreamEventName | AIChatCompatibilityStreamEventName;
 
 export interface AIChatStreamEventBase {
   event: AIChatStreamEventName;
@@ -1265,10 +1269,11 @@ export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
   terminalSnapshot: AIChatTerminalSnapshot;
 }
 
+/**
+ * @deprecated Compatibility-only parser shape. New producers must emit
+ * AIChatRunCompletedEvent with its required terminalSnapshot.
+ */
 export interface AIChatDoneEvent extends AIChatStreamEventBase {
-  /**
-   * @deprecated Use `runCompleted`.
-   */
   event: 'done';
   run: AIChatRunState;
   terminalSnapshot: AIChatTerminalSnapshot;
@@ -1304,7 +1309,7 @@ export interface AIChatPingEvent extends AIChatStreamEventBase {
   event: 'ping';
 }
 
-export type AIChatStreamEvent =
+export type AIChatCanonicalStreamEvent =
   | AIChatRunStartedEvent
   | AIChatRunStatusEvent
   | AIChatRunPausedEvent
@@ -1328,6 +1333,11 @@ export type AIChatStreamEvent =
   | AIChatFormatterCompletedEvent
   | AIChatMessageEvent
   | AIChatCitationEvent
-  | AIChatDoneEvent
   | AIChatErrorEvent
   | AIChatPingEvent;
+
+/**
+ * Includes the deprecated done event so clients can parse streams during the
+ * migration. Use AIChatCanonicalStreamEvent for producers and contract gates.
+ */
+export type AIChatStreamEvent = AIChatCanonicalStreamEvent | AIChatDoneEvent;
