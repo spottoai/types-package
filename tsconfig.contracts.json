@@ -5,7 +5,8 @@
   },
   "include": [
     "src/accounts/accounts.contracts.spec.ts",
-    "src/ai/ai.contracts.spec.ts"
+    "src/ai/ai.contracts.spec.ts",
+    "src/azure/licensing.contracts.spec.ts"
   ],
   "exclude": [
     "node_modules",
