@@ -1,4 +1,4 @@
-import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization } from './benefits.js';
+import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization, IBenefitWeightedUtilizationAggregate } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
 export type CommitmentsCommitmentFamily = 'compute-reservation' | 'compute-savings-plan' | 'app-service-reservation' | 'managed-disk-reservation' | 'blob-storage-reserved-capacity' | 'adls-reserved-capacity' | 'azure-files-reservation' | 'redis-reserved-capacity' | 'sql-reserved-capacity' | 'mysql-reserved-capacity' | 'postgresql-reserved-capacity' | 'mariadb-reserved-capacity' | 'cosmos-db-reserved-capacity' | 'azure-openai-provisioned-throughput-reservation' | 'generic-reservation';
@@ -43,12 +43,16 @@ export interface CommitmentsUtilizationSummary {
     withData: number;
     sevenDayAverage?: number;
     thirtyDayAverage?: number;
+    sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+    thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
     byBenefitType: Array<{
         benefitType: BenefitType;
         total: number;
         withData: number;
         sevenDayAverage?: number;
         thirtyDayAverage?: number;
+        sevenDayAggregates?: IBenefitWeightedUtilizationAggregate[];
+        thirtyDayAggregates?: IBenefitWeightedUtilizationAggregate[];
     }>;
 }
 export interface CommitmentsExpirySummary {

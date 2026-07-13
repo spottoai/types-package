@@ -165,6 +165,7 @@ export interface AzureGuestAccessStatusResponse {
     status: AzureGuestAccessStatus;
     statusReason?: AzureGuestAccessStatusReason;
     authErrorCode?: AzureDelegatedAuthErrorCode;
+    connectedUser?: AzureGuestAccessConnectedUser;
     cloudAccount?: PublicCloudAccountDto;
     tenants?: AzureGuestAccessTenantItem[];
     subscriptions?: AzureGuestAccessSubscriptionItem[];

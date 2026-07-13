@@ -2,13 +2,14 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsAggregationPolicy, CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
+import type { CostSavingsAggregationPolicy, CostSavingsSummary, CurrencySavingsGroup, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
 import type { AutotaskShareOverrides } from '../integrations/autotask';
 import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
 import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 import type { AzurePortalVersionedArtifact } from './portalArtifacts';
+import type { LicensingRecommendationRenderData } from './licensing';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -19,6 +20,7 @@ export declare enum RecommendationCategory {
     OperationalExcellenceAlternative = "Operational Excellence"
 }
 export type RecommendationPriorityTier = 'must_do' | 'normal';
+export type RecommendationCostImpactUnit = 'percent';
 export type EffortEstimateProfileName = 'clickops' | 'devops' | 'enterprise';
 export interface RecommendationBaseScores {
     cost_optimization: number;
@@ -186,7 +188,7 @@ export interface HddOsRetirementRenderStrategyPayload {
     premiumSsdMonthlyDelta: number;
     disks: HddOsRetirementDiskRenderItem[];
 }
-export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights | LicensingRecommendationRenderData;
 export type AnyRecommendationRenderData = Record<string, unknown>;
 export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
 export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
@@ -245,8 +247,10 @@ export interface Recommendation {
     risk?: string;
     riskReason?: string;
     severity?: string;
-    /** Could deprecate later */
+    /** Relative cost percentage, e.g. -40 means a 40% reduction. Never a currency amount. */
     costImpact?: number;
+    /** Explicit discriminator for new payloads while legacy percentage-only payloads remain readable. */
+    costImpactUnit?: RecommendationCostImpactUnit;
     costImpactReason?: string;
     /*** costImpactDetails is deprecated **/
     performanceImpact?: number;
@@ -331,7 +335,10 @@ export interface RecommendationWithResources {
     /** Total affected resources when the resources array is trimmed or sampled. */
     resourcesCount?: number;
     resources: RecommendationResource[];
+    /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
     savings?: SavingsPotential;
+    /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+    savingsByCurrency?: CurrencySavingsGroup[];
     /** Canonical resource ID that owns this recommendation savings amount for aggregation */
     savingsOwnerResourceId?: string;
     /** Resource IDs that may display this recommendation savings amount as context */
@@ -390,7 +397,10 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
     recommendations: RecommendationWithResources[];
     securityImpactDetails?: SecurityImpact[];
     subscriptionSecurityStatus?: SubscriptionSecurityStatus;
+    /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
     savings?: SavingsPotential;
+    /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+    savingsByCurrency?: CurrencySavingsGroup[];
     subscription: SubscriptionSummaryLite;
     costSavingsSummary?: CostSavingsSummary;
 }
