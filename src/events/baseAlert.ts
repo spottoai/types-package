@@ -78,6 +78,21 @@ export interface BaseAlertDefinition<
   updatedByUserId?: string;
 }
 
+type AlertDefinitionServerAuthoredKey = 'id' | 'companyId' | 'createdAt' | 'createdByUserId' | 'updatedAt' | 'updatedByUserId';
+
+export type CreateAlertDefinitionInput<TDefinition extends BaseAlertDefinition = BaseAlertDefinition> = TDefinition extends BaseAlertDefinition
+  ? Omit<TDefinition, AlertDefinitionServerAuthoredKey>
+  : never;
+
+export type UpdateAlertDefinitionInput<
+  TDefinition extends BaseAlertDefinition = BaseAlertDefinition,
+  TCriteria = TDefinition['criteria'],
+> = TDefinition extends BaseAlertDefinition
+  ? Pick<TDefinition, 'name' | 'enabled' | 'scope' | 'destinations'> & {
+      criteria?: TCriteria;
+    }
+  : never;
+
 export type BaseAlertSummary = Record<string, unknown>;
 
 export interface BaseAlertComment {
@@ -129,6 +144,8 @@ export interface BaseAlertInstance<TSummary = BaseAlertSummary, TScope = BaseAle
   summary?: TSummary;
   breakdown?: TBreakdown;
   detailPath?: string;
+  /** Internal definition snapshot used to keep history readable after definition deletion. */
+  definitionSnapshot?: string;
 }
 
 export interface ListAlertsParams<TType extends string = string> extends PaginationParams {

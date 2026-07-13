@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "test:contracts": "tsc -p tsconfig.contract-tests.json",
     "dev": "tsc --watch",
     "clean": "rimraf dist",
     "prepublishOnly": "npm run clean && npm run build",
