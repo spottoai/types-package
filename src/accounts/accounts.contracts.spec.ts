@@ -25,6 +25,7 @@ import type {
   CloudAccountFirstSyncNotificationStatus,
   CloudAccountSyncFeatureOptOutsUpdateRequest,
   PublicCloudAccountDto,
+  SyncProgressIssue,
   SubscriptionAccount,
   SubscriptionInfoBase,
   SubscriptionSyncFeatureOptOutsUpdateRequest,
@@ -504,6 +505,20 @@ const cloudAccountWithTenantSyncState: CloudAccount = {
   tenantSyncSource: 'manual',
 };
 
+const partialDataSyncProgressIssue: SyncProgressIssue = {
+  type: 'partialData',
+  scope: 'component',
+  title: 'Log Analytics table coverage is partial',
+  message: 'Cost-only analysis completed, but table-level recommendations and metrics are incomplete.',
+  degraded: true,
+  metadata: {
+    reason: 'topTablesAccessDenied',
+    affectedWorkspaceCount: 2,
+    retryable: false,
+    error: undefined,
+  },
+};
+
 const cloudAccountWithFirstSyncNotification: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   id: 'tenant-client-id-first-sync',
@@ -565,6 +580,7 @@ void invalidPublicCloudAccountWriteSecretDto;
 void invalidPublicCloudAccountGdapCredentialReferenceDto;
 void cloudAccountWithTenantSyncState;
 void cloudAccountWithFirstSyncNotification;
+void partialDataSyncProgressIssue;
 void firstSyncNotificationStatus;
 
 const combinedSubscriptionReadPermission = SubscriptionReadPermission.MonitoringReader | SubscriptionReadPermission.LogAnalyticsDataReader;
