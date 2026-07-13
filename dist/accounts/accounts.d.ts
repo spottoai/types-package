@@ -370,9 +370,12 @@ export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | '
     /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
     guestAccessTokenRelayReference?: never;
 };
+export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
+export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';
+export type SyncProgressIssueMetadataValue = string | number | boolean | undefined;
 export interface SyncProgressIssue {
-    type: 'capabilityMissing' | 'billingExport';
-    scope: 'cloudAccount' | 'subscription';
+    type: SyncProgressIssueType;
+    scope: SyncProgressIssueScope;
     capabilityKey?: string;
     capabilityDisplayName?: string;
     capabilityDescription?: string;
@@ -384,6 +387,7 @@ export interface SyncProgressIssue {
     sourceSelected?: 'export' | 'query';
     fallbackUsed?: boolean;
     degraded?: boolean;
+    metadata?: Record<string, SyncProgressIssueMetadataValue>;
 }
 export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
 export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';

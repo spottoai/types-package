@@ -848,11 +848,13 @@ export interface AIChatTerminalSnapshot {
 /**
  * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.
  */
-export type AIChatStreamEventName = 'runStarted' | 'runStatus' | 'runPaused' | 'runResumed' | 'runCompleted' | 'scopeResolved' | 'pageSnapshotBuilt' | 'toolAffordanceBuilt' | 'routingStarted' | 'routingCompleted' | 'planCreated' | 'planUpdated' | 'commentary' | 'progressUpdate' | 'toolCall' | 'toolResult' | 'toolError' | 'approvalRequired' | 'approvalStateChanged' | 'formatterStarted' | 'formatterCompleted' | 'message' | 'citation'
+export type AIChatCanonicalStreamEventName = 'runStarted' | 'runStatus' | 'runPaused' | 'runResumed' | 'runCompleted' | 'scopeResolved' | 'pageSnapshotBuilt' | 'toolAffordanceBuilt' | 'routingStarted' | 'routingCompleted' | 'planCreated' | 'planUpdated' | 'commentary' | 'progressUpdate' | 'toolCall' | 'toolResult' | 'toolError' | 'approvalRequired' | 'approvalStateChanged' | 'formatterStarted' | 'formatterCompleted' | 'message' | 'citation' | 'error' | 'ping';
 /**
- * @deprecated Use `runCompleted`.
+ * Legacy terminal event accepted only during the runCompleted migration.
+ * New producers and protocol assertions must use AIChatCanonicalStreamEventName.
  */
- | 'done' | 'error' | 'ping';
+export type AIChatCompatibilityStreamEventName = 'done';
+export type AIChatStreamEventName = AIChatCanonicalStreamEventName | AIChatCompatibilityStreamEventName;
 export interface AIChatStreamEventBase {
     event: AIChatStreamEventName;
     sequence: number;
@@ -981,10 +983,11 @@ export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
     run: AIChatRunState;
     terminalSnapshot: AIChatTerminalSnapshot;
 }
+/**
+ * @deprecated Compatibility-only parser shape. New producers must emit
+ * AIChatRunCompletedEvent with its required terminalSnapshot.
+ */
 export interface AIChatDoneEvent extends AIChatStreamEventBase {
-    /**
-     * @deprecated Use `runCompleted`.
-     */
     event: 'done';
     run: AIChatRunState;
     terminalSnapshot: AIChatTerminalSnapshot;
@@ -1017,6 +1020,11 @@ export interface AIChatErrorEvent extends AIChatStreamEventBase {
 export interface AIChatPingEvent extends AIChatStreamEventBase {
     event: 'ping';
 }
-export type AIChatStreamEvent = AIChatRunStartedEvent | AIChatRunStatusEvent | AIChatRunPausedEvent | AIChatRunResumedEvent | AIChatRunCompletedEvent | AIChatScopeResolvedEvent | AIChatPageSnapshotBuiltEvent | AIChatToolAffordanceBuiltEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatPlanCreatedEvent | AIChatPlanUpdatedEvent | AIChatCommentaryEvent | AIChatProgressUpdateEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatApprovalRequiredEvent | AIChatApprovalStateChangedEvent | AIChatFormatterStartedEvent | AIChatFormatterCompletedEvent | AIChatMessageEvent | AIChatCitationEvent | AIChatDoneEvent | AIChatErrorEvent | AIChatPingEvent;
+export type AIChatCanonicalStreamEvent = AIChatRunStartedEvent | AIChatRunStatusEvent | AIChatRunPausedEvent | AIChatRunResumedEvent | AIChatRunCompletedEvent | AIChatScopeResolvedEvent | AIChatPageSnapshotBuiltEvent | AIChatToolAffordanceBuiltEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatPlanCreatedEvent | AIChatPlanUpdatedEvent | AIChatCommentaryEvent | AIChatProgressUpdateEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatApprovalRequiredEvent | AIChatApprovalStateChangedEvent | AIChatFormatterStartedEvent | AIChatFormatterCompletedEvent | AIChatMessageEvent | AIChatCitationEvent | AIChatErrorEvent | AIChatPingEvent;
+/**
+ * Includes the deprecated done event so clients can parse streams during the
+ * migration. Use AIChatCanonicalStreamEvent for producers and contract gates.
+ */
+export type AIChatStreamEvent = AIChatCanonicalStreamEvent | AIChatDoneEvent;
 export {};
 //# sourceMappingURL=index.d.ts.map
