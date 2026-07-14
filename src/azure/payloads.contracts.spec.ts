@@ -33,6 +33,7 @@ import type {
   PublicCloudAccountDto,
   ProcessPayload,
   RequestMessage,
+  ReviewChecklistPayload,
   SubscriptionSyncRequest,
   WorkflowTracingOptions,
 } from '../index';
@@ -175,6 +176,26 @@ const guestAccessSubscriptionMessage: AzureGuestAccessSubscriptionMessage = {
   refreshComponents: ['queries', 'billing'],
 };
 
+const guestAccessReviewChecklistPayload: ReviewChecklistPayload = {
+  companyId: 'comp-123',
+  cloudAccountId: 'guest-account-123',
+  tenantId: 'tenant-123',
+  subscriptionIds: ['sub-123'],
+  checklistId: 'alz',
+  authMode: 'delegatedUser',
+  guestAccessRunId: 'guest-run-123',
+  metadata: {
+    ...guestAccessSubscriptionMessageMetadata,
+    guestAccessRunId: 'guest-run-123',
+  },
+};
+
+const invalidGuestAccessReviewChecklistPayloadWithToken: ReviewChecklistPayload = {
+  ...guestAccessReviewChecklistPayload,
+  // @ts-expect-error review checklist queue payloads do not carry bearer tokens.
+  accessToken: 'access-token',
+};
+
 const invalidGuestAccessSubscriptionMessageWithToken: AzureGuestAccessSubscriptionMessage = {
   ...guestAccessSubscriptionMessage,
   // @ts-expect-error guest access queue messages must not carry bearer tokens.
@@ -213,6 +234,8 @@ const invalidGuestAccessSubscriptionMessageWithPeriodicMode: AzureGuestAccessSub
 
 void guestAccessSubscriptionMessageMetadata;
 void guestAccessSubscriptionMessage;
+void guestAccessReviewChecklistPayload;
+void invalidGuestAccessReviewChecklistPayloadWithToken;
 void invalidGuestAccessSubscriptionMessageWithToken;
 void invalidGuestAccessSubscriptionMessageWithSecret;
 void invalidGuestAccessSubscriptionMessageWithCredentialReference;
@@ -285,6 +308,14 @@ const guestAccessManualScanRequest: AzureGuestAccessManualScanRequest = {
   refreshComponents: ['queries', 'billing'],
 };
 
+const guestAccessReviewChecklistManualScanRequest: AzureGuestAccessManualScanRequest = {
+  workload: {
+    kind: 'reviewChecklist',
+    checklistId: 'alz',
+    subscriptionIds: ['sub-123'],
+  },
+};
+
 const guestAccessStatusResponse: AzureGuestAccessStatusResponse = {
   setupId: 'setup-123',
   cloudAccountId: 'guest-account-123',
@@ -299,6 +330,7 @@ const guestAccessStatusResponse: AzureGuestAccessStatusResponse = {
   cloudAccount: publicCloudAccount,
   tenants: [guestAccessTenantItem],
   subscriptions: [guestAccessSubscriptionItem],
+  workload: guestAccessReviewChecklistManualScanRequest.workload,
   scanSchedulingMode: 'onDemandOnly',
   guestAccessRunId: 'guest-run-123',
   guestAccessLastSuccessfulScanAt: '2026-06-16T08:30:00.000Z',
@@ -556,6 +588,7 @@ void replaceWithServicePrincipalResponse;
 void trialExtensionRequest;
 void invalidTrialExtensionRequest;
 void trialExtensionResponse;
+void guestAccessReviewChecklistManualScanRequest;
 void invalidPublicDelegatedDto;
 void actionExecutionRequestMessage;
 void baseRequestMessage;
