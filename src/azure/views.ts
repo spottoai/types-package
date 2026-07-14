@@ -388,7 +388,48 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   performanceDeltaPercent?: number;
   pricePerPerformanceDeltaPercent?: number;
   reason?: string;
+  alternativeCategory?: string;
+  lostCapabilities?: string[];
+  burstableFit?: VmBurstableFitEvidence;
   capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+}
+
+export type VmBurstableFit = 'strong' | 'possible';
+
+export type VmBurstableAlternativeRole =
+  | 'lowest-cost'
+  | 'balanced'
+  | 'maximum-headroom'
+  | 'additional';
+
+export type VmBurstableDemandNormalizationBasis =
+  | 'benchmark-capacity'
+  | 'core-count';
+
+export interface VmBurstableCreditScenarioEvidence {
+  creditsExhausted: boolean;
+  estimatedThrottleHours: number;
+  minimumCredits: number;
+  endingCredits: number;
+  bankingTimePercent: number;
+  consumingTimePercent: number;
+}
+
+export interface VmBurstableFitEvidence {
+  fit: VmBurstableFit;
+  role: VmBurstableAlternativeRole;
+  demandNormalizationBasis: VmBurstableDemandNormalizationBasis;
+  baselineCpuPercent: number;
+  baselineCpuCores: number;
+  projectedAverageCpuPercent: number;
+  projectedP95CpuPercent: number;
+  projectedP99CpuPercent: number;
+  projectedMemoryP95Percent?: number;
+  projectedMemoryP99Percent?: number;
+  growthStressPercent: number;
+  observedHours: number;
+  observed: VmBurstableCreditScenarioEvidence;
+  growthStress: VmBurstableCreditScenarioEvidence;
 }
 
 export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
