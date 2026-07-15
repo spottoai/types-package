@@ -6,9 +6,15 @@ export type ResourceCostSource = SpendDataSource;
 
 export type CostSourceConfidence = 'high' | 'unknown';
 
+/** Calendar used to interpret a financial date-only value. */
+export type CostDateBasis = 'utc' | 'company-local' | 'billing-calendar';
+
 export interface CostDateRangeMetadata {
   startDate: number;
   endDate: number;
+  basis?: CostDateBasis;
+  /** IANA timezone when basis is company-local. */
+  timeZone?: string;
 }
 
 export interface CostDetails {
@@ -117,6 +123,8 @@ export interface ResourceCostPeriodRollingMetadata {
   kind: 'rolling';
   name: 'cost-last-30-days';
   label: string;
+  basis?: CostDateBasis;
+  timeZone?: string;
 }
 
 export interface ResourceCostPeriodDailyMetadata {
@@ -126,6 +134,8 @@ export interface ResourceCostPeriodDailyMetadata {
   date: string;
   startDate: number;
   endDate: number;
+  basis?: CostDateBasis;
+  timeZone?: string;
 }
 
 export interface ResourceCostPeriodMonthMetadata {
@@ -135,6 +145,8 @@ export interface ResourceCostPeriodMonthMetadata {
   month: string;
   startDate: number;
   endDate: number;
+  basis?: CostDateBasis;
+  timeZone?: string;
 }
 
 export type ResourceCostPeriodMetadata = ResourceCostPeriodRollingMetadata | ResourceCostPeriodDailyMetadata | ResourceCostPeriodMonthMetadata;
@@ -376,6 +388,10 @@ export interface ResourceSpend {
   costAmortized?: number;
   quantity: number;
   date?: number;
+  /** Calendar basis for a date-only row. New derived rows should provide this. */
+  dateBasis?: CostDateBasis;
+  /** IANA timezone when dateBasis is company-local. */
+  dateTimeZone?: string;
   activeDates?: ActiveDates[];
   /** e.g. true means the resource is active, false means the resource was active (old SKU) */
   active?: boolean;

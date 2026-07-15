@@ -471,6 +471,10 @@ export interface SubscriptionInfoBase {
     cloudAccountSyncFeatureOptOuts?: AzureSyncFeatureId[];
     /** Effective Azure sync features disabled after applying cloud-account hard denies. Returned to administrators only. */
     effectiveSyncFeatureOptOuts?: AzureSyncFeatureId[];
+    /** Purpose bound to the current delegated guest-access run. */
+    guestAccessWorkloadKind?: 'fullScan' | 'reviewChecklist';
+    /** Normalized checklist identifier when the current guest-access run is review-checklist-only. */
+    guestAccessChecklistId?: string;
 }
 export interface SubscriptionAccount extends SubscriptionInfoBase {
     /** Partition Key (Azure Subscription ID) */
