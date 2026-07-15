@@ -251,7 +251,7 @@ export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelection
 export type CloudAccountScanSchedulingMode = 'every12Hours' | 'daily' | 'weekly' | 'onDemandOnly';
 export type AzureGuestAccessScanSchedulingMode = 'onDemandOnly';
 export type AzureGuestAccessStatus = 'created' | 'deviceCodePending' | 'tenantDiscoveryRequired' | 'tenantSelectionRequired' | 'tenantAuthorizationRequired' | 'subscriptionSelectionRequired' | 'queued' | 'scanning' | 'completed' | 'partial' | 'failed' | 'reauthRequired' | 'cancelled' | 'expired';
-export type AzureGuestAccessStatusReason = 'device_code_expired' | 'tenant_discovery_failed' | 'tenant_selection_required' | 'tenant_authorization_required' | 'no_readable_subscriptions' | 'subscription_read_forbidden' | 'token_relay_missing' | 'setup_expired' | 'stale_message' | 'refresh_token_expired' | 'token_refresh_failed' | 'refresh_requires_interaction' | 'resource_inventory_failed' | 'resource_graph_failed' | 'billing_2m_failed' | 'scan_failed' | 'cancelled_by_user' | 'unknown';
+export type AzureGuestAccessStatusReason = 'device_code_expired' | 'tenant_discovery_failed' | 'tenant_selection_required' | 'tenant_authorization_required' | 'microsoft_account_mismatch' | 'no_readable_subscriptions' | 'subscription_read_forbidden' | 'token_relay_missing' | 'setup_expired' | 'stale_message' | 'refresh_token_expired' | 'token_refresh_failed' | 'refresh_requires_interaction' | 'resource_inventory_failed' | 'resource_graph_failed' | 'billing_2m_failed' | 'scan_failed' | 'cancelled_by_user' | 'unknown';
 export interface AzureGuestAccessCloudAccountFields {
     /** Public-safe guest access lifecycle status. Token relay payloads are never stored in this field. */
     guestAccessStatus?: AzureGuestAccessStatus;
@@ -370,9 +370,12 @@ export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | '
     /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
     guestAccessTokenRelayReference?: never;
 };
+export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
+export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';
+export type SyncProgressIssueMetadataValue = string | number | boolean | undefined;
 export interface SyncProgressIssue {
-    type: 'capabilityMissing' | 'billingExport';
-    scope: 'cloudAccount' | 'subscription';
+    type: SyncProgressIssueType;
+    scope: SyncProgressIssueScope;
     capabilityKey?: string;
     capabilityDisplayName?: string;
     capabilityDescription?: string;
@@ -384,6 +387,7 @@ export interface SyncProgressIssue {
     sourceSelected?: 'export' | 'query';
     fallbackUsed?: boolean;
     degraded?: boolean;
+    metadata?: Record<string, SyncProgressIssueMetadataValue>;
 }
 export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
 export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';
@@ -467,6 +471,10 @@ export interface SubscriptionInfoBase {
     cloudAccountSyncFeatureOptOuts?: AzureSyncFeatureId[];
     /** Effective Azure sync features disabled after applying cloud-account hard denies. Returned to administrators only. */
     effectiveSyncFeatureOptOuts?: AzureSyncFeatureId[];
+    /** Purpose bound to the current delegated guest-access run. */
+    guestAccessWorkloadKind?: 'fullScan' | 'reviewChecklist';
+    /** Normalized checklist identifier when the current guest-access run is review-checklist-only. */
+    guestAccessChecklistId?: string;
 }
 export interface SubscriptionAccount extends SubscriptionInfoBase {
     /** Partition Key (Azure Subscription ID) */

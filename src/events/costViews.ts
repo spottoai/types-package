@@ -8,6 +8,8 @@ export interface CostAlertDefinitionReference {
   id: string;
   name: string;
   criteria?: CostAlertCriteria;
+  /** The referenced definition no longer exists, but the alert instance remains in history. */
+  deleted?: boolean;
 }
 
 /**

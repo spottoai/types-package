@@ -155,8 +155,15 @@ export interface AzureGuestAccessConfirmSubscriptionsRequest {
     subscriptionIds: string[];
     displayName?: string;
 }
+export interface AzureGuestAccessReviewChecklistWorkload {
+    kind: 'reviewChecklist';
+    checklistId: string;
+    subscriptionIds: string[];
+}
+export type AzureGuestAccessManualScanWorkload = AzureGuestAccessReviewChecklistWorkload;
 export interface AzureGuestAccessManualScanRequest {
     refreshComponents?: string[];
+    workload?: AzureGuestAccessManualScanWorkload;
 }
 export interface AzureGuestAccessStatusResponse {
     setupId?: string;
@@ -165,9 +172,11 @@ export interface AzureGuestAccessStatusResponse {
     status: AzureGuestAccessStatus;
     statusReason?: AzureGuestAccessStatusReason;
     authErrorCode?: AzureDelegatedAuthErrorCode;
+    connectedUser?: AzureGuestAccessConnectedUser;
     cloudAccount?: PublicCloudAccountDto;
     tenants?: AzureGuestAccessTenantItem[];
     subscriptions?: AzureGuestAccessSubscriptionItem[];
+    workload?: AzureGuestAccessManualScanWorkload;
     scanSchedulingMode: AzureGuestAccessScanSchedulingMode;
     guestAccessRunId?: string;
     guestAccessLastRunId?: string;
