@@ -1,8 +1,10 @@
 import type { IBenefitUtilizationSummary, IBenefitWeightedUtilizationAggregate } from './benefits';
 import type { CommitmentsUtilizationSummary } from './commitmentsPlanning';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts';
-import type { ResourceCostSummary } from './prices';
+import type { CostDateBasis, ResourceCostPeriodMetadata, ResourceCostSummary } from './prices';
+import type { DailyMetrics } from './metrics';
 import { RecommendationCategory, type Recommendation, type RecommendationWithResources } from './recommendations';
+import type { DecompositionTree } from './reports';
 import type { SecureScoreEvidence, SubscriptionProperties } from './subscriptions';
 import type { CompletedViewManifestV2, CurrencySavingsGroup, SavingsPotential } from './views';
 
@@ -98,10 +100,68 @@ const blendedCost: ResourceCostSummary = {
   retailDiscount: '',
   costSource: 'blended',
   billingDateRanges: [
-    { startDate: 20260701, endDate: 20260701 },
-    { startDate: 20260703, endDate: 20260703 },
+    { startDate: 20260701, endDate: 20260701, basis: 'billing-calendar' },
+    { startDate: 20260703, endDate: 20260703, basis: 'billing-calendar' },
   ],
-  estimatedDateRanges: [{ startDate: 20260702, endDate: 20260702 }],
+  estimatedDateRanges: [{ startDate: 20260702, endDate: 20260702, basis: 'company-local', timeZone: 'Pacific/Auckland' }],
+};
+
+const utcCostDateBasis: CostDateBasis = 'utc';
+const companyLocalCostDateBasis: CostDateBasis = 'company-local';
+
+const companyLocalEstimatedSpend: ResourceCostSummary = {
+  ...blendedCost,
+  costSource: 'estimated_metrics_pricing',
+  billingDateRanges: undefined,
+  estimatedDateRanges: [{ startDate: 20260714, endDate: 20260714, basis: 'company-local', timeZone: 'Pacific/Auckland' }],
+};
+
+const companyLocalEstimatedRow = {
+  cost: 10,
+  costAmortized: 10,
+  quantity: 100,
+  date: 20260714,
+  dateBasis: 'company-local',
+  dateTimeZone: 'Pacific/Auckland',
+  meterCategory: 'Cognitive Services',
+  meterSubCategory: 'Azure OpenAI',
+  serviceName: 'Cognitive Services',
+  meter: 'Input Tokens',
+  serviceTier: 'Standard',
+  resourceGuid: 'resource-guid',
+} satisfies import('./prices').ResourceSpend;
+
+const dailyFinancialPeriod: ResourceCostPeriodMetadata = {
+  kind: 'daily',
+  name: 'daily_2026-07-14',
+  label: 'Jul 14, 2026',
+  date: '2026-07-14',
+  startDate: 20260714,
+  endDate: 20260714,
+  basis: 'billing-calendar',
+};
+
+const companyLocalDailyMetric: DailyMetrics = {
+  date: 20260714,
+  basis: 'company-local',
+  timeZone: 'Pacific/Auckland',
+  spend: 10,
+  costAmortized: 10,
+  summary: [],
+};
+
+const decompositionTreeWithFinancialBasis: DecompositionTree = {
+  root: { name: 'subscription', cost: 0, percentageOfTotal: 100 },
+  period: {
+    startDate: '2026-07-14',
+    endDate: '2026-07-14',
+    type: 'calendar_day',
+    basis: 'billing-calendar',
+  },
+  lastUpdated: '2026-07-15T00:00:00.000Z',
+  totalSpend: 0,
+  currency: 'NZD',
+  currencySymbol: '$',
 };
 
 const recommendationWithPercentageImpact: Recommendation = {
@@ -180,12 +240,19 @@ const invalidRecommendationImpact: Recommendation = {
 };
 
 void versionedArtifact;
+void companyLocalDailyMetric;
 void partialManifest;
 void currencySavings;
 void subscriptionPropertiesWithSecureScoreEvidence;
 void unavailableSecureScoreEvidence;
 void subscriptionPropertiesWithoutFabricatedSecureScore;
 void blendedCost;
+void utcCostDateBasis;
+void companyLocalCostDateBasis;
+void companyLocalEstimatedSpend;
+void companyLocalEstimatedRow;
+void dailyFinancialPeriod;
+void decompositionTreeWithFinancialBasis;
 void recommendationWithPercentageImpact;
 void recommendationWithCurrencyGroups;
 void commitmentsUtilization;

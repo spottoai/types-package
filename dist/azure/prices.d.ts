@@ -3,9 +3,14 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
 export type ResourceCostSource = SpendDataSource;
 export type CostSourceConfidence = 'high' | 'unknown';
+/** Calendar used to interpret a financial date-only value. */
+export type CostDateBasis = 'utc' | 'company-local' | 'billing-calendar';
 export interface CostDateRangeMetadata {
     startDate: number;
     endDate: number;
+    basis?: CostDateBasis;
+    /** IANA timezone when basis is company-local. */
+    timeZone?: string;
 }
 export interface CostDetails {
     /** the amount spend on the resource over the last 30 days */
@@ -107,6 +112,8 @@ export interface ResourceCostPeriodRollingMetadata {
     kind: 'rolling';
     name: 'cost-last-30-days';
     label: string;
+    basis?: CostDateBasis;
+    timeZone?: string;
 }
 export interface ResourceCostPeriodDailyMetadata {
     kind: 'daily';
@@ -115,6 +122,8 @@ export interface ResourceCostPeriodDailyMetadata {
     date: string;
     startDate: number;
     endDate: number;
+    basis?: CostDateBasis;
+    timeZone?: string;
 }
 export interface ResourceCostPeriodMonthMetadata {
     kind: 'month';
@@ -123,6 +132,8 @@ export interface ResourceCostPeriodMonthMetadata {
     month: string;
     startDate: number;
     endDate: number;
+    basis?: CostDateBasis;
+    timeZone?: string;
 }
 export type ResourceCostPeriodMetadata = ResourceCostPeriodRollingMetadata | ResourceCostPeriodDailyMetadata | ResourceCostPeriodMonthMetadata;
 export interface AzureResourceCostPeriodsCatalog {
@@ -201,6 +212,10 @@ export interface ResourceCostSummary {
     /** Per-source date ranges derived from daily records */
     billingDateRange?: CostDateRangeMetadata;
     estimatedDateRange?: CostDateRangeMetadata;
+    /** Canonical disjoint billing-backed coverage segments. Prefer over the legacy single range when present. */
+    billingDateRanges?: CostDateRangeMetadata[];
+    /** Canonical disjoint estimated coverage segments. Prefer over the legacy single range when present. */
+    estimatedDateRanges?: CostDateRangeMetadata[];
     /** Optional resource-level cutoff markers (when attached at item level) */
     billingActualThroughDate?: number;
     estimationCutoffStartDate?: number;
@@ -349,6 +364,10 @@ export interface ResourceSpend {
     costAmortized?: number;
     quantity: number;
     date?: number;
+    /** Calendar basis for a date-only row. New derived rows should provide this. */
+    dateBasis?: CostDateBasis;
+    /** IANA timezone when dateBasis is company-local. */
+    dateTimeZone?: string;
     activeDates?: ActiveDates[];
     /** e.g. true means the resource is active, false means the resource was active (old SKU) */
     active?: boolean;

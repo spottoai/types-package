@@ -8,6 +8,10 @@ export interface DisplayMetric {
 export interface DailyMetrics {
   /** YYYYMMDD */
   date: number;
+  /** Calendar semantics for the date-only value. */
+  basis?: 'utc' | 'company-local' | 'billing-calendar';
+  /** IANA timezone when basis is company-local. */
+  timeZone?: string;
   /** number spend on the resource that day */
   spend: number;
   /** number amortized spend on the resource that day */

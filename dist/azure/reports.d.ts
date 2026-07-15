@@ -1,4 +1,5 @@
 import { Tags } from '../tags';
+import type { CostDateBasis } from './prices';
 export interface DecompositionTreeNode {
     [key: string]: unknown;
     id?: string;
@@ -66,6 +67,8 @@ export interface DecompositionTree {
         startDate: string;
         endDate: string;
         type: 'billing_period' | 'calendar_month' | 'calendar_day' | 'rolling_30_days';
+        basis?: CostDateBasis;
+        timeZone?: string;
     };
     lastUpdated: string;
     totalSpend: number;
