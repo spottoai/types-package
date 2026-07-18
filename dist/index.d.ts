@@ -32,6 +32,7 @@ export * from './azure/costEstimation';
 export * from './azure/storage-inventory';
 export * from './azure/governance';
 export * from './azure/publicIpAddresses';
+export * from './aws';
 export * from './accounts';
 export * from './assessments';
 export * from './users';

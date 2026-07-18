@@ -1,8 +1,10 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
+import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
+import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
-export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap';
+export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
@@ -285,56 +287,48 @@ export const AZURE_SYNC_FEATURE_METADATA = [
 ] as const satisfies readonly AzureSyncFeatureMetadata[];
 
 type AzureSyncFeatureMetadataEntry = (typeof AZURE_SYNC_FEATURE_METADATA)[number];
-type AzureSyncFeatureIdsForScope<Scope extends AzureSyncFeatureConfigurationScope> =
-  AzureSyncFeatureMetadataEntry extends infer Feature
-    ? Feature extends { id: AzureSyncFeatureId; supportedScopes: readonly AzureSyncFeatureConfigurationScope[] }
-      ? Scope extends Feature['supportedScopes'][number]
-        ? Feature['id']
-        : never
+type AzureSyncFeatureIdsForScope<Scope extends AzureSyncFeatureConfigurationScope> = AzureSyncFeatureMetadataEntry extends infer Feature
+  ? Feature extends { id: AzureSyncFeatureId; supportedScopes: readonly AzureSyncFeatureConfigurationScope[] }
+    ? Scope extends Feature['supportedScopes'][number]
+      ? Feature['id']
       : never
-    : never;
+    : never
+  : never;
 
 export type AzureCloudAccountSyncFeatureId = AzureSyncFeatureIdsForScope<'cloudAccount'>;
 export type AzureSubscriptionSyncFeatureId = AzureSyncFeatureIdsForScope<'subscription'>;
 
-const AZURE_SYNC_FEATURE_ORDER_INDEX = new Map<AzureSyncFeatureId, number>(
-  AZURE_SYNC_FEATURE_ORDER.map((featureId, index) => [featureId, index])
-);
+const AZURE_SYNC_FEATURE_ORDER_INDEX = new Map<AzureSyncFeatureId, number>(AZURE_SYNC_FEATURE_ORDER.map((featureId, index) => [featureId, index]));
 
 const AZURE_SYNC_FEATURE_IDS = new Set<string>(AZURE_SYNC_FEATURE_ORDER);
 
 export const isAzureSyncFeatureId = (value: string): value is AzureSyncFeatureId => AZURE_SYNC_FEATURE_IDS.has(value);
 
 export const getAzureSyncFeatureMetadata = (featureId: AzureSyncFeatureId): AzureSyncFeatureMetadata =>
-  AZURE_SYNC_FEATURE_METADATA.find((feature) => feature.id === featureId) ?? {
+  AZURE_SYNC_FEATURE_METADATA.find(feature => feature.id === featureId) ?? {
     id: featureId,
     displayName: featureId,
     description: '',
     supportedScopes: ['cloudAccount', 'subscription'],
   };
 
-export const isAzureSyncFeatureSupportedInScope = (
-  featureId: AzureSyncFeatureId,
-  scope: AzureSyncFeatureConfigurationScope
-): boolean => getAzureSyncFeatureMetadata(featureId).supportedScopes.includes(scope);
+export const isAzureSyncFeatureSupportedInScope = (featureId: AzureSyncFeatureId, scope: AzureSyncFeatureConfigurationScope): boolean =>
+  getAzureSyncFeatureMetadata(featureId).supportedScopes.includes(scope);
 
 export const sortAzureSyncFeatureIds = (featureIds: readonly AzureSyncFeatureId[]): AzureSyncFeatureId[] =>
   [...featureIds].sort(
     (left, right) =>
-      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) -
-      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER)
+      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) - (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER)
   );
 
-const supportsAzureSyncFeatureScope = (
-  feature: AzureSyncFeatureMetadata,
-  scope: AzureSyncFeatureConfigurationScope
-): boolean => feature.supportedScopes.includes(scope);
+const supportsAzureSyncFeatureScope = (feature: AzureSyncFeatureMetadata, scope: AzureSyncFeatureConfigurationScope): boolean =>
+  feature.supportedScopes.includes(scope);
 
 export const getAzureSyncFeatureOptions = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureMetadata[] =>
-  AZURE_SYNC_FEATURE_METADATA.filter((feature) => supportsAzureSyncFeatureScope(feature, scope));
+  AZURE_SYNC_FEATURE_METADATA.filter(feature => supportsAzureSyncFeatureScope(feature, scope));
 
 export const getAzureSyncFeatureIdsForScope = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureId[] =>
-  getAzureSyncFeatureOptions(scope).map((feature) => feature.id);
+  getAzureSyncFeatureOptions(scope).map(feature => feature.id);
 
 export interface CloudAccountSyncFeatureOptOutsUpdateRequest {
   syncFeatureOptOuts: AzureCloudAccountSyncFeatureId[];
@@ -423,10 +417,30 @@ export interface AzureGuestAccessCloudAccountFields {
   guestAccessLastSuccessfulScanAt?: Date | string;
 }
 
-export interface CloudAccount extends AzureGuestAccessCloudAccountFields {
+/** Secret-free AWS fields shared by generic cloud-account list and detail responses. */
+export interface AwsPublicCloudAccountFields {
+  /** Canonical 12-digit AWS account identifier. */
+  accountId?: string;
+  /** Legacy storage/response alias. Prefer accountId in new public responses. */
+  awsAccountId?: string;
+  /** Cross-account role ARN. This is role metadata, not a credential. */
+  roleArn?: string;
+  /** Sanitized machine-readable reason for the current lifecycle state. */
+  statusReason?: string;
+  /** Sanitized user-facing lifecycle detail. */
+  statusMessage?: string;
+  /** Sanitized billing-export lifecycle state. Raw billing configuration is never public. */
+  billingStatus?: AwsCloudAccountBillingStatus;
+  billingStatusReason?: string;
+  billingStatusMessage?: string;
+  /** Evidence that a provider sync produced usable artifacts, when available. */
+  lastSuccessfulSyncAt?: string;
+}
+
+export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPublicCloudAccountFields {
   /** Partition Key */
   companyId: string;
-  /** Row Key (Azure Client ID, AWS Access Key ID) */
+  /** Stable cloud-account row identifier. Provider account metadata is carried in provider-specific fields. */
   id: string;
   name: string;
   companyName: string;
@@ -444,6 +458,11 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields {
   updatedAt: Date;
   createdBy: string;
   status: string;
+  /** Internal AWS billing-export locator. It is JSON-serialized for Table Storage and omitted from public DTOs. */
+  awsBillingExport?: AwsBillingExportConfiguration;
+  /** Current admitted AWS engine request identity. */
+  currentRequestId?: string;
+  correlationId?: string;
   objectives?: SurveyResponse[];
   /** Preferred recommendation effort-estimate profile for this cloud account. */
   effortProfile?: EffortEstimateProfileName;
@@ -516,17 +535,22 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields {
 
 export type PublicCloudAccountDto = Omit<
   CloudAccount,
-  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference'
-> & {
-  /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
-  secretPreview?: string;
-  /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
-  writeSecretPreview?: string;
-  /** Guest access token relay payloads are internal only and must never appear in public DTOs. */
-  guestAccessTokenRelayPayload?: never;
-  /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
-  guestAccessTokenRelayReference?: never;
-};
+  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'awsBillingExport'
+> &
+  AwsRequestForbiddenCredentialFields & {
+    /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
+    secretPreview?: string;
+    /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
+    writeSecretPreview?: string;
+    /** Guest access token relay payloads are internal only and must never appear in public DTOs. */
+    guestAccessTokenRelayPayload?: never;
+    /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
+    guestAccessTokenRelayReference?: never;
+    /** AWS trust-policy external IDs are setup-only and must never appear in public DTOs. */
+    externalId?: never;
+    awsOnboardingCommandFingerprint?: never;
+    awsDeleteRequestedAt?: never;
+  };
 
 export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
 export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';

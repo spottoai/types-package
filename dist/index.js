@@ -48,6 +48,7 @@ __exportStar(require("./azure/costEstimation"), exports);
 __exportStar(require("./azure/storage-inventory"), exports);
 __exportStar(require("./azure/governance"), exports);
 __exportStar(require("./azure/publicIpAddresses"), exports);
+__exportStar(require("./aws"), exports);
 __exportStar(require("./accounts"), exports);
 __exportStar(require("./assessments"), exports);
 __exportStar(require("./users"), exports);

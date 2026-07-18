@@ -116,6 +116,7 @@ const delegatedCloudAccount: CloudAccount = {
 
 const delegatedAuthMode: CloudAccountAuthMode = 'delegatedUser';
 const gdapAuthMode: CloudAccountAuthMode = 'gdap';
+const awsCrossAccountRoleAuthMode: CloudAccountAuthMode = 'crossAccountRole';
 const delegatedAuthErrorCode: AzureDelegatedAuthErrorCode = 'claims_challenge';
 const cloudAccountScanSchedulingMode: CloudAccountScanSchedulingMode = 'daily';
 const guestAccessScanSchedulingMode: AzureGuestAccessScanSchedulingMode = 'onDemandOnly';
@@ -308,6 +309,40 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
   syncFeatureOptOuts: ['billing'],
+};
+
+const publicAwsCloudAccountDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'aws-account-123',
+  name: 'Production AWS',
+  companyName: 'Spotto',
+  provider: 'AWS',
+  authMode: 'crossAccountRole',
+  accountId: '123456789012',
+  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
+  status: 'pending',
+  statusMessage: 'AWS onboarding request accepted.',
+  createdAt: new Date('2026-07-15T00:00:00.000Z'),
+  updatedAt: new Date('2026-07-15T00:00:00.000Z'),
+  createdBy: 'user-123',
+};
+
+const invalidPublicAwsCloudAccountExternalIdDto: PublicCloudAccountDto = {
+  ...publicAwsCloudAccountDto,
+  // @ts-expect-error AWS external IDs are setup-only and must not appear in public DTOs.
+  externalId: 'customer-secret-external-id',
+};
+
+const invalidPublicAwsCloudAccountCredentialsDto: PublicCloudAccountDto = {
+  ...publicAwsCloudAccountDto,
+  // @ts-expect-error Resolved AWS credentials must not appear in public DTOs.
+  credentials: { accessKeyId: 'AKIAEXAMPLE', secretAccessKey: 'raw-secret' },
+};
+
+const invalidPublicAwsCloudAccountCredentialReferenceDto: PublicCloudAccountDto = {
+  ...publicAwsCloudAccountDto,
+  // @ts-expect-error Internal AWS credential locators must not appear in public DTOs.
+  credentialReference: 'cloudaccounts/credentials/example',
 };
 
 const azureSyncFeatureId: AzureSyncFeatureId = 'activityMonitoring';
@@ -534,6 +569,7 @@ void servicePrincipalAccountWithoutAuthMode;
 void delegatedCloudAccount;
 void delegatedAuthMode;
 void gdapAuthMode;
+void awsCrossAccountRoleAuthMode;
 void delegatedAuthErrorCode;
 void cloudAccountScanSchedulingMode;
 void guestAccessScanSchedulingMode;
@@ -556,6 +592,10 @@ void gdapDraftValidationResponse;
 void gdapCloudAccountStatusResponse;
 void gdapCloudAccountCreateRequest;
 void publicCloudAccountDto;
+void publicAwsCloudAccountDto;
+void invalidPublicAwsCloudAccountExternalIdDto;
+void invalidPublicAwsCloudAccountCredentialsDto;
+void invalidPublicAwsCloudAccountCredentialReferenceDto;
 void azureSyncFeatureId;
 void invalidAzureSyncFeatureId;
 void azureSyncFeatureOrderShapeCheck;

@@ -94,7 +94,7 @@ const AZURE_SYNC_FEATURE_ORDER_INDEX = new Map(exports.AZURE_SYNC_FEATURE_ORDER.
 const AZURE_SYNC_FEATURE_IDS = new Set(exports.AZURE_SYNC_FEATURE_ORDER);
 const isAzureSyncFeatureId = (value) => AZURE_SYNC_FEATURE_IDS.has(value);
 exports.isAzureSyncFeatureId = isAzureSyncFeatureId;
-const getAzureSyncFeatureMetadata = (featureId) => exports.AZURE_SYNC_FEATURE_METADATA.find((feature) => feature.id === featureId) ?? {
+const getAzureSyncFeatureMetadata = (featureId) => exports.AZURE_SYNC_FEATURE_METADATA.find(feature => feature.id === featureId) ?? {
     id: featureId,
     displayName: featureId,
     description: '',
@@ -103,13 +103,12 @@ const getAzureSyncFeatureMetadata = (featureId) => exports.AZURE_SYNC_FEATURE_ME
 exports.getAzureSyncFeatureMetadata = getAzureSyncFeatureMetadata;
 const isAzureSyncFeatureSupportedInScope = (featureId, scope) => (0, exports.getAzureSyncFeatureMetadata)(featureId).supportedScopes.includes(scope);
 exports.isAzureSyncFeatureSupportedInScope = isAzureSyncFeatureSupportedInScope;
-const sortAzureSyncFeatureIds = (featureIds) => [...featureIds].sort((left, right) => (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) -
-    (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER));
+const sortAzureSyncFeatureIds = (featureIds) => [...featureIds].sort((left, right) => (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) - (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER));
 exports.sortAzureSyncFeatureIds = sortAzureSyncFeatureIds;
 const supportsAzureSyncFeatureScope = (feature, scope) => feature.supportedScopes.includes(scope);
-const getAzureSyncFeatureOptions = (scope) => exports.AZURE_SYNC_FEATURE_METADATA.filter((feature) => supportsAzureSyncFeatureScope(feature, scope));
+const getAzureSyncFeatureOptions = (scope) => exports.AZURE_SYNC_FEATURE_METADATA.filter(feature => supportsAzureSyncFeatureScope(feature, scope));
 exports.getAzureSyncFeatureOptions = getAzureSyncFeatureOptions;
-const getAzureSyncFeatureIdsForScope = (scope) => (0, exports.getAzureSyncFeatureOptions)(scope).map((feature) => feature.id);
+const getAzureSyncFeatureIdsForScope = (scope) => (0, exports.getAzureSyncFeatureOptions)(scope).map(feature => feature.id);
 exports.getAzureSyncFeatureIdsForScope = getAzureSyncFeatureIdsForScope;
 exports.SUBSCRIPTION_SYNC_STEP_ORDER = [
     'metrics',

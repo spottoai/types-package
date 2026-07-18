@@ -1,0 +1,192 @@
+import {
+  AWS_REQUEST_ACTIONS,
+  AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS,
+  AWS_REQUEST_PROVIDER,
+  AWS_REQUEST_SCHEMA_VERSION,
+  type AwsCloudAccountSetupAcceptedResponse,
+  type AwsCloudAccountSetupPreparationRequest,
+  type AwsCloudAccountSetupPreparationResponse,
+  type AwsCloudAccountSetupRequest,
+  type AwsOnboardRequestMessageV1,
+  type AwsRequestActionV1,
+  type AwsRequestForbiddenCredentialField,
+  type CostDateBasis,
+  type DailyMetrics,
+  type DecompositionTree,
+  type PublicCloudAccountDto,
+  type ResourceCostPeriodMetadata,
+  type ResourceSpend,
+} from '@spottoai/types-package';
+
+const requestActions: readonly AwsRequestActionV1[] = AWS_REQUEST_ACTIONS;
+const forbiddenCredentialFields: readonly AwsRequestForbiddenCredentialField[] = AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS;
+
+const setupRequest: AwsCloudAccountSetupRequest = {
+  provider: 'AWS',
+  companyId: 'company-123',
+  name: 'Production AWS',
+  authMode: 'crossAccountRole',
+  accountId: '123456789012',
+  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
+};
+
+const setupPreparationRequest: AwsCloudAccountSetupPreparationRequest = {};
+
+const setupPreparationResponse: AwsCloudAccountSetupPreparationResponse = {
+  provider: 'AWS',
+  externalId: 'spotto-generated-external-id',
+  createdAt: '2026-07-15T00:00:00.000Z',
+  onboardingBundle: {
+    schemaVersion: 1,
+    roleName: 'SpottoReadOnlyRole',
+    trustedPrincipalArn: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod',
+    trustedPrincipalAccountId: '715809501612',
+    trustPolicy: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: 'AllowSpottoCloudEngineAccess',
+          Effect: 'Allow',
+          Principal: { AWS: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod' },
+          Action: 'sts:AssumeRole',
+        },
+      ],
+    },
+    managedPolicies: [
+      {
+        name: 'ReadOnlyAccess',
+        arn: 'arn:aws:iam::aws:policy/ReadOnlyAccess',
+        accessScope: 'broad-read-only-preview',
+        warning: 'Broad preview access.',
+      },
+    ],
+    guardrailPolicyName: 'SpottoGuardrails',
+    guardrailPolicy: {
+      Version: '2012-10-17',
+      Statement: [{ Sid: 'DenySecretReads', Effect: 'Deny', Action: 'secretsmanager:GetSecretValue', Resource: '*' }],
+    },
+    instructionsMarkdown: '# Spotto AWS onboarding instructions',
+  },
+};
+
+const acceptedResponse: AwsCloudAccountSetupAcceptedResponse = {
+  provider: 'AWS',
+  cloudAccountId: 'cloud-account-123',
+  accountId: '123456789012',
+  requestId: 'request-123',
+  correlationId: 'correlation-123',
+  status: 'pending',
+  acceptedAt: '2026-07-15T00:00:00.000Z',
+};
+
+const onboardRequest: AwsOnboardRequestMessageV1 = {
+  schemaVersion: AWS_REQUEST_SCHEMA_VERSION,
+  provider: AWS_REQUEST_PROVIDER,
+  entity: 'cloudaccount',
+  action: 'onboard',
+  companyId: 'company-123',
+  cloudAccountId: 'cloud-account-123',
+  awsAccountId: '123456789012',
+  roleArn: setupRequest.roleArn,
+  externalId: setupPreparationResponse.externalId,
+  requestId: acceptedResponse.requestId,
+  correlationId: acceptedResponse.correlationId,
+  requestedAt: acceptedResponse.acceptedAt,
+  billingExport: {
+    type: 'CUR',
+    reportName: 'customer-cur',
+    bucketName: 'customer-billing-export',
+    prefix: 'billing',
+    region: 'ap-southeast-2',
+    ownerAccountId: '123456789012',
+  },
+};
+
+const publicAwsAccount: PublicCloudAccountDto = {
+  companyId: 'company-123',
+  id: 'cloud-account-123',
+  name: 'Production AWS',
+  companyName: 'Spotto',
+  provider: 'AWS',
+  authMode: 'crossAccountRole',
+  accountId: '123456789012',
+  roleArn: setupRequest.roleArn,
+  status: 'pending',
+  createdAt: new Date(acceptedResponse.acceptedAt),
+  updatedAt: new Date(acceptedResponse.acceptedAt),
+  createdBy: 'user-123',
+};
+
+const publicAwsAccountWithExternalId: PublicCloudAccountDto = {
+  ...publicAwsAccount,
+  // @ts-expect-error Setup-only external IDs must remain excluded from the packed public DTO.
+  externalId: 'customer-secret-external-id',
+};
+
+const publicAwsAccountWithResolvedCredentials: PublicCloudAccountDto = {
+  ...publicAwsAccount,
+  // @ts-expect-error Resolved AWS credentials must remain excluded from the packed public DTO.
+  credentials: { accessKeyId: 'AKIAEXAMPLE', secretAccessKey: 'raw-secret' },
+};
+
+const dateBasis: CostDateBasis = 'company-local';
+const dailyMetrics: DailyMetrics = {
+  date: 20260715,
+  basis: dateBasis,
+  timeZone: 'Pacific/Auckland',
+  spend: 1,
+  costAmortized: 1,
+  summary: [],
+};
+const dailyCostPeriod: ResourceCostPeriodMetadata = {
+  kind: 'daily',
+  name: 'daily_2026-07-15',
+  label: 'Jul 15, 2026',
+  date: '2026-07-15',
+  startDate: 20260715,
+  endDate: 20260715,
+  basis: 'billing-calendar',
+};
+const resourceSpend = {
+  cost: 1,
+  quantity: 1,
+  date: 20260715,
+  dateBasis,
+  dateTimeZone: 'Pacific/Auckland',
+  meterCategory: 'Compute',
+  meterSubCategory: 'Virtual Machines',
+  serviceName: 'Virtual Machines',
+  meter: 'Hours',
+  serviceTier: 'Standard',
+  resourceGuid: 'resource-guid',
+} satisfies ResourceSpend;
+const report: DecompositionTree = {
+  root: { name: 'AWS', cost: 1, percentageOfTotal: 100 },
+  period: {
+    startDate: '2026-07-15',
+    endDate: '2026-07-15',
+    type: 'calendar_day',
+    basis: 'billing-calendar',
+  },
+  lastUpdated: acceptedResponse.acceptedAt,
+  totalSpend: 1,
+  currency: 'NZD',
+  currencySymbol: '$',
+};
+
+void [
+  setupRequest,
+  setupPreparationRequest,
+  setupPreparationResponse,
+  requestActions,
+  forbiddenCredentialFields,
+  acceptedResponse,
+  onboardRequest,
+  publicAwsAccount,
+  publicAwsAccountWithExternalId,
+  publicAwsAccountWithResolvedCredentials,
+  dailyMetrics,
+  dailyCostPeriod,
+  resourceSpend,
+  report,
+];
