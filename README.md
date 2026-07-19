@@ -42,6 +42,7 @@ import * as Types from '@spotto/types-package';
 // Import specific interfaces
 import { User } from '@spotto/types-package';
 ```
+
 ## Development
 
 ### Setup
@@ -92,11 +93,14 @@ src/
 
 ## Versioning
 
-This package follows semantic versioning. When making changes:
+This package follows semantic versioning with automated prereleases from `main`:
 
-1. Update the version in `package.json`
-2. Create a Git tag for the new version
-3. Push the tag to the repository
+1. Do not manually bump `package.json` in a feature change.
+2. Merge the validated change to `main`.
+3. The `Prerelease and Publish` workflow runs lint/build checks, increments the prerelease version, publishes it to npm, and creates the matching Git tag.
+4. Consumers must update their dependency and lockfile to the published version before removing any temporary compatibility declarations.
+
+`prepublishOnly` performs a clean build and compiles a consumer against the packed artifact, preventing source-only exports from being published accidentally.
 
 ## Contributing
 

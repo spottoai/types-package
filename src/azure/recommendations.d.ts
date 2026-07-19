@@ -98,6 +98,10 @@ export interface Recommendation {
     confidenceReason?: string;
     /** array of resources that have this recommendation */
     resources?: ResourceReference[];
+    /** Compact resource references for resource-specific detail payloads. */
+    resourceIds?: string[];
+    /** Total affected resources when resourceIds is trimmed or sampled. */
+    resourcesCount?: number;
     /** only for security recommendations */
     securityImpactDetails?: SecurityImpact;
     /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
@@ -156,6 +160,8 @@ export interface RecommendationSummary {
 }
 export interface RecommendationWithResources {
     recommendation: Recommendation;
+    /** Total affected resources when the resources array is trimmed or sampled. */
+    resourcesCount?: number;
     resources: RecommendationResource[];
     savings?: SavingsPotential;
 }
@@ -249,12 +255,15 @@ export interface ShareRecommendationRequest extends RecommendationActionRequest 
     halo?: HaloRoutingOverrides;
     connectwise?: ConnectWiseRoutingFields;
 }
+export type RecommendationActionTargetSelection = 'selectedResources' | 'allAffectedResources';
 export interface RecommendationActionRequest extends ProviderScope {
     /** `providerScope` maps to subscription identity for Azure providers. */
     scope?: CommentScope;
     recommendationId: string;
     recommendationTitle?: string;
     resourceIds: string[];
+    /** Whether resourceIds are the exact selected targets or a sampled display subset for an all-affected action. */
+    targetSelection?: RecommendationActionTargetSelection;
     resourceGroupName?: string;
     companyId: string;
     byUserId?: string;

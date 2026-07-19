@@ -1,3 +1,6 @@
+import type { CloudAccountAuthMode } from '../accounts/accounts.js';
+import type { AzureGuestAccessSubscriptionMessageMetadata } from './payloads.js';
+
 export interface ReviewChecklistRequest {
   tenantId?: string;
   subscriptionIds: string[];
@@ -9,6 +12,10 @@ export interface ReviewChecklistRequest {
 
 export interface ReviewChecklistPayload extends ReviewChecklistRequest {
   cloudAccountId: string;
+  companyId?: string;
+  authMode?: CloudAccountAuthMode;
+  guestAccessRunId?: string;
+  metadata?: AzureGuestAccessSubscriptionMessageMetadata & { guestAccessRunId?: string };
 }
 
 export interface ReviewChecklistScanRequest {
@@ -111,7 +118,7 @@ export interface ReviewChecklistSubscriptionResult {
   items: ReviewChecklistItemOutput[];
 }
 
-export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress';
+export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress' | 'NotRun';
 
 export interface ReviewChecklistDocument {
   checklistId: string;

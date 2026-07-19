@@ -2,11 +2,14 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
 import { Tags } from '../tags/tags.js';
-export interface AzureDashboardView {
+import type { AdvisorScoreSummary } from './advisorScore.js';
+import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
+import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
+export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
     costStartDate?: number;
@@ -16,12 +19,14 @@ export interface AzureDashboardView {
     summary?: ExecutiveSummary;
     dailySummary?: DailySummary;
     costSavingsSummary?: CostSavingsSummary;
+    advisorScore?: AdvisorScoreSummary;
+    healthEvents?: AzurePortalHealthEventsSummary;
 }
 export interface ExecutiveSummary {
     summary: string;
     details: string;
 }
-export interface AzureResourcesView {
+export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummaryLite;
     timestamp: string;
     resources: AzureResourcePortalItem[];
@@ -83,7 +88,15 @@ export interface AzureResourcePortalItem {
     /** First day of estimation gap (typically billingActualThroughDate + 1) */
     estimationCutoffStartDate?: number;
     /** Which savings basis should be shown for this resource */
-    savingsBasis?: 'billed' | 'amortized';
+    savingsBasis?: CostSavingsSpendBasis;
+    /** Canonical resource ID that owns this savings amount for aggregation */
+    savingsOwnerResourceId?: string;
+    /** Resource IDs that may display this savings amount as context */
+    savingsDisplayResourceIds?: string[];
+    /** Billable component key used with the owner ID to prevent double counting */
+    billableComponentKey?: string;
+    /** Aggregation rule for this savings amount */
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     savings?: SavingsPotential;
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
@@ -98,13 +111,30 @@ export interface AzureResourcePortalItem {
     costEstimation?: ResourceSimpleCostEstimationSummary;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
+    /** Current Azure Resource Health availability status for this resource, when available. */
+    resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
 export interface SavingsPotential {
     minAmount: number;
     minPercentage: number;
     maxAmount: number;
     maxPercentage: number;
+    /**
+     * ISO 4217 currency for monetary amounts when not inherited from a containing subscription artifact.
+     * Consumers must reject a conflict with an enclosing artifact currency.
+     */
+    currency?: string;
 }
+/** Monetary savings kept separate by one canonical ISO currency during cross-scope aggregation. */
+export type CurrencySavingsValue = Omit<SavingsPotential, 'currency'> & {
+    currency?: never;
+};
+export interface CurrencySavingsGroup {
+    currency: string;
+    savings: CurrencySavingsValue;
+}
+export type CostSavingsSpendBasis = 'billed' | 'amortized';
+export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 export interface BenefitCoverageSummary {
     windowStart: string;
     windowEnd: string;
@@ -134,6 +164,8 @@ export interface AzureResourcePluginItem {
     type: string;
     location: string;
     recommendations?: Recommendation[];
+    /** Optional linked context explaining related recommendations for this resource. */
+    recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
     /** Billing-backed portion of cost total */
     spendActual?: number;
@@ -173,6 +205,8 @@ export interface AzureResourcePluginItemDetailed {
     type: string;
     name: string;
     recommendations?: Recommendation[];
+    /** Optional linked context explaining related recommendations for this resource. */
+    recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
     spendActual?: number;
     spendAmortizedActual?: number;
@@ -200,6 +234,10 @@ export interface AzureResourcePluginItemDetailed {
     computeAlternatives?: ComputeAlternativesInsights;
 }
 export type VmPricePerformanceOsType = 'linux' | 'windows';
+/** Operating system installed on the VM or VM scale set. */
+export type VmPricePerformanceGuestOsType = 'linux' | 'windows';
+/** How Windows licensing is represented in the VM catalog price. */
+export type VmPricePerformanceWindowsLicensePricing = 'azure-hybrid-benefit' | 'license-included' | 'not-applicable';
 export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
 export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
@@ -251,7 +289,13 @@ export interface VmPricePerformanceSku {
     armSkuName: string;
     region: string;
     currencyCode: 'USD';
+    /**
+     * Legacy catalog operating-system dimension. This describes the pricing row,
+     * not necessarily the guest operating system. Prefer `pricingOsType`.
+     */
     osType: VmPricePerformanceOsType;
+    /** Operating-system dimension used to select this catalog pricing row. */
+    pricingOsType?: VmPricePerformanceOsType;
     tier: VmPricePerformanceTier;
     purchaseOption: VmPricePerformancePurchaseOption;
     hourlyPriceUsd?: number;
@@ -287,6 +331,8 @@ export interface VmPricePerformanceSku {
     maxNics?: number;
     maxNetworkBandwidthMbps?: number;
     supportsEphemeralOsDisk?: boolean;
+    azureSiteRecoverySkuEligible?: boolean;
+    azureSiteRecoverySkuIneligibleReasons?: string[];
     supportedRemoteDiskTypes?: string[];
     benchmarkScore?: number;
     benchmarkConfidence?: VmPricePerformanceBenchmarkConfidence;
@@ -309,7 +355,37 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
     performanceDeltaPercent?: number;
     pricePerPerformanceDeltaPercent?: number;
     reason?: string;
+    alternativeCategory?: string;
+    lostCapabilities?: string[];
+    burstableFit?: VmBurstableFitEvidence;
     capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+}
+export type VmBurstableFit = 'strong' | 'possible';
+export type VmBurstableAlternativeRole = 'lowest-cost' | 'balanced' | 'maximum-headroom' | 'additional';
+export type VmBurstableDemandNormalizationBasis = 'benchmark-capacity' | 'core-count';
+export interface VmBurstableCreditScenarioEvidence {
+    creditsExhausted: boolean;
+    estimatedThrottleHours: number;
+    minimumCredits: number;
+    endingCredits: number;
+    bankingTimePercent: number;
+    consumingTimePercent: number;
+}
+export interface VmBurstableFitEvidence {
+    fit: VmBurstableFit;
+    role: VmBurstableAlternativeRole;
+    demandNormalizationBasis: VmBurstableDemandNormalizationBasis;
+    baselineCpuPercent: number;
+    baselineCpuCores: number;
+    projectedAverageCpuPercent: number;
+    projectedP95CpuPercent: number;
+    projectedP99CpuPercent: number;
+    projectedMemoryP95Percent?: number;
+    projectedMemoryP99Percent?: number;
+    growthStressPercent: number;
+    observedHours: number;
+    observed: VmBurstableCreditScenarioEvidence;
+    growthStress: VmBurstableCreditScenarioEvidence;
 }
 export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
     /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
@@ -321,11 +397,21 @@ export interface VmPricePerformanceInsights {
     /** Subscription/display currency used for user-facing price fields when available. */
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
+    /** Operating system installed on the resource. */
+    guestOsType?: VmPricePerformanceGuestOsType;
+    /** Operating-system dimension used for catalog pricing and comparison rows. */
+    pricingOsType?: VmPricePerformanceOsType;
+    /** Explains whether a Windows license is included in, or excluded from, the displayed catalog price. */
+    windowsLicensePricing?: VmPricePerformanceWindowsLicensePricing;
+    /** True only when the displayed catalog price includes the Windows license component. */
+    windowsLicenseIncludedInPrice?: boolean;
     current?: VmPricePerformanceSku;
     /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
     currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */
     alternatives: VmPricePerformanceAlternative[];
+    /** Burstable VM alternatives that require burst-credit validation and workload compatibility review. */
+    burstableAlternatives?: VmPricePerformanceAlternative[];
     /** Cheaper or better price/performance options that require review because they lose current SKU capabilities. */
     tradeOffAlternatives?: VmPricePerformanceTradeOffAlternative[];
     source: VmPricePerformanceCatalogSource;
@@ -524,6 +610,34 @@ export interface CostSavingsSummary {
         maxSavingsPercent?: number;
     };
     categories: CostSavingsCategoryBreakdown[];
+    billingBasis?: CostSavingsBillingBasis;
+    savingsBasis?: CostSavingsSummaryBasis;
+}
+export interface CostSavingsBillingBasis {
+    rule: 'exclude_latest_billing_date_estimated_rows_and_billing_lag' | string;
+    source?: string;
+    observedStartDate?: number;
+    observedEndDate?: number;
+    stableStartDate?: number;
+    stableEndDate?: number;
+    excludedDates: number[];
+    totalRows: number;
+    stableRows: number;
+    excludedRows: number;
+    excludedEstimatedRows: number;
+    excludedLatestDateRows: number;
+    excludedBillingLagRows: number;
+    billingLagDays: number;
+    stableCutoffDate?: number;
+    includesEstimatedRows: boolean;
+}
+export interface CostSavingsSummaryBasis {
+    categoryScope: 'Cost' | string;
+    projection: 'projected_monthly' | string;
+    observedPeriod: 'stable_billing_window' | 'mixed_stable_and_legacy' | string;
+    excludesEstimatedRows: boolean;
+    appliesTo: 'all_included_savings' | 'stable_savings_only' | string;
+    containsLegacySavings: boolean;
 }
 export interface CostSavingsCategoryBreakdown {
     key: string;
@@ -537,4 +651,104 @@ export interface CostSavingsCategoryBreakdown {
     sampleRecommendations: string[];
     sampleResources: string[];
 }
+export interface StableWholeResourceDeletionBackfillDiagnostics {
+    recommendationCount: number;
+    resourceCount: number;
+    stableBillingRowCount: number;
+    stableSpendIndexResourceCount: number;
+    registeredResourceCount: number;
+    missingStableSpendResourceCount: number;
+    missingStableSpendReasonCounts: Record<string, number>;
+    relatedResourceCount: number;
+    registeredMaxMonthlySavings: number;
+    registeredRecommendations: Record<string, {
+        resourceCount: number;
+        maxMonthlySavings: number;
+    }>;
+    missingStableSpendResourceSamples: string[];
+}
+export interface CompletedViewCostSavingsManifest {
+    costStartDate?: number;
+    costEndDate?: number;
+    billingBasis?: CostSavingsBillingBasis;
+    savingsBasis?: CostSavingsSummaryBasis;
+    stableWholeResourceDeletionBackfill?: StableWholeResourceDeletionBackfillDiagnostics;
+}
+export type CompletedViewArtifactGeneration = AzurePortalArtifactGeneration;
+/** Legacy manifest shape retained for backward-compatible readers and writers. */
+export interface CompletedViewManifest {
+    status: 'in_progress' | 'completed';
+    runId: string;
+    subscriptionId: string;
+    artifacts: string[];
+    artifactGeneration: CompletedViewArtifactGeneration;
+    costSavings?: CompletedViewCostSavingsManifest;
+    startedAt?: string;
+    completedAt?: string;
+}
+export interface CompletedViewManifestV2RequestedCounts {
+    requestedArtifactCount: number;
+    requestedResourceCount: number;
+}
+export interface CompletedViewManifestV2Base extends CompletedViewManifestV2RequestedCounts {
+    schemaVersion: 2;
+    runId: string;
+    subscriptionId: string;
+    /** Requested artifact paths for this generation. */
+    artifacts: string[];
+    artifactGeneration: CompletedViewArtifactGeneration;
+    costSavings?: CompletedViewCostSavingsManifest;
+}
+export interface CompletedViewManifestV2ProgressCounts {
+    completedArtifactCount: number;
+    completedResourceCount: number;
+}
+export type CompletedViewManifestV2PartialFailure = {
+    failureKind: 'artifact';
+    failedArtifactCount: number;
+    failedArtifacts: [string, ...string[]];
+    failedResourceCount: 0;
+    failedResourceIds: [];
+} | {
+    failureKind: 'resource';
+    failedArtifactCount: 0;
+    failedArtifacts: [];
+    failedResourceCount: number;
+    failedResourceIds: [string, ...string[]];
+} | {
+    failureKind: 'artifact-and-resource';
+    failedArtifactCount: number;
+    failedArtifacts: [string, ...string[]];
+    failedResourceCount: number;
+    failedResourceIds: [string, ...string[]];
+};
+/**
+ * Strict generation manifest for new writers. Runtime readers must additionally
+ * validate non-negative integer counts, requested/completed/failed reconciliation,
+ * bounded failure samples, and equality of `runId` and `artifactGeneration.runId`.
+ */
+export type CompletedViewManifestV2 = CompletedViewManifestV2Base & ((CompletedViewManifestV2ProgressCounts & {
+    status: 'in_progress';
+    startedAt: string;
+    completedAt?: never;
+    failedArtifactCount: 0;
+    failedResourceCount: 0;
+    failedArtifacts?: never;
+    failedResourceIds?: never;
+}) | {
+    status: 'completed';
+    startedAt?: string;
+    completedAt: string;
+    completedArtifactCount?: never;
+    completedResourceCount?: never;
+    failedArtifactCount: 0;
+    failedResourceCount: 0;
+    failedArtifacts?: never;
+    failedResourceIds?: never;
+} | (CompletedViewManifestV2ProgressCounts & CompletedViewManifestV2PartialFailure & {
+    status: 'partial';
+    startedAt?: string;
+    completedAt: string;
+}));
+export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
 //# sourceMappingURL=views.d.ts.map

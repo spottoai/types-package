@@ -23,6 +23,8 @@ const invitedUser: User = {
   firstName: 'Azure',
   lastName: 'Owner',
   email: 'owner@example.com',
+  authProviderName: 'AzureAD',
+  authProviderType: 'SAML',
   createdAt: '2026-05-10T00:00:00.000Z',
   updatedAt: '2026-05-10T00:00:00.000Z',
   companyId: 'comp-123',

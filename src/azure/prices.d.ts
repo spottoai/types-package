@@ -24,6 +24,12 @@ export interface CostDetails {
     totalSpend30DaysAmortizedPrevious?: number;
     retailPrices?: AzurePrice[];
 }
+export type BusinessHoursEstimateSource = 'company-business-hours' | 'fallback-business-hours-only';
+export interface BusinessHoursEstimateMetadata {
+    source: BusinessHoursEstimateSource;
+    windowSummary: string;
+    fallbackTemplate?: 'business-hours-only';
+}
 export interface AzurePrice {
     currencyCode: string;
     tierMinimumUnits: number;
@@ -74,6 +80,8 @@ export interface AzurePrice {
     displayQuantity?: number;
     /** Reference to the recommendation that this target cost is associated with */
     recommendationId?: string;
+    /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+    businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 export interface SavingsPlan {
     unitPrice: number;
@@ -255,6 +263,12 @@ export interface TargetCostSummary {
     targetLabel?: string;
     /** e.g. Windows to Linux migration */
     targetLabel2?: string;
+    /** Stable short title for rendering a specific optimization option */
+    targetTitle?: string;
+    /** Stable optimization kind for rendering and grouping */
+    optimizationKind?: string;
+    /** Stable target SKU or plan identifier when available */
+    targetSkuName?: string;
     /** e.g. "Basic Plan (B2 App)" */
     label1: string;
     /** e.g. "Azure App Service" */
@@ -291,6 +305,8 @@ export interface TargetCostSummary {
     recommendationId?: string;
     /** Resource Type */
     resourceType?: string;
+    /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+    businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 export interface ResourceSpend {
     /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */

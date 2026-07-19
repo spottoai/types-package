@@ -1,0 +1,27 @@
+export declare const ARCHITECTURE_ASSESSMENT_TYPE: "architecture";
+export declare const ASSESSMENT_TYPES: readonly ["architecture"];
+export type ArchitectureAssessmentType = typeof ARCHITECTURE_ASSESSMENT_TYPE;
+export type AssessmentType = (typeof ASSESSMENT_TYPES)[number];
+export declare const ASSESSMENT_PROVIDER_NAMES: readonly ["azure"];
+export type AssessmentProviderName = (typeof ASSESSMENT_PROVIDER_NAMES)[number];
+export declare const ASSESSMENT_RELEASE_STAGES: readonly ["preview", "ga"];
+export type AssessmentReleaseStage = (typeof ASSESSMENT_RELEASE_STAGES)[number];
+export declare const ASSESSMENT_RUN_STATUSES: readonly ["draft", "queued", "running", "needs_review", "approved", "published", "failed"];
+export type AssessmentRunStatus = (typeof ASSESSMENT_RUN_STATUSES)[number];
+export declare const ASSESSMENT_EXPORT_FORMATS: readonly ["docx"];
+export type AssessmentExportFormat = (typeof ASSESSMENT_EXPORT_FORMATS)[number];
+export declare const ASSESSMENT_EXPORT_STATUSES: readonly ["requested", "completed", "failed"];
+export type AssessmentExportStatus = (typeof ASSESSMENT_EXPORT_STATUSES)[number];
+export declare const ASSESSMENT_EVIDENCE_SOURCE_TYPES: readonly ["company_context_note", "subscription_report_evidence_pack", "portal_artifact", "raw_artifact", "conformed_artifact", "review_checklist", "derived_summary", "ai_inference", "evidence_gap"];
+export type AssessmentEvidenceSourceType = (typeof ASSESSMENT_EVIDENCE_SOURCE_TYPES)[number];
+export declare const ASSESSMENT_EVIDENCE_CONFIDENCE_LEVELS: readonly ["confirmed", "customer_supplied", "derived", "inferred", "gap"];
+export type AssessmentEvidenceConfidence = (typeof ASSESSMENT_EVIDENCE_CONFIDENCE_LEVELS)[number];
+export declare const ASSESSMENT_PRIORITY_LEVELS: readonly ["critical", "high", "medium", "low", "informational"];
+export type AssessmentPriority = (typeof ASSESSMENT_PRIORITY_LEVELS)[number];
+export declare const ASSESSMENT_EFFORT_BANDS: readonly ["low", "medium", "high", "unknown"];
+export type AssessmentEffortBand = (typeof ASSESSMENT_EFFORT_BANDS)[number];
+export declare const ASSESSMENT_IMPACT_LEVELS: readonly ["low", "medium", "high", "unknown"];
+export type AssessmentImpactLevel = (typeof ASSESSMENT_IMPACT_LEVELS)[number];
+export declare const ASSESSMENT_PILLARS: readonly ["architecture", "security", "reliability", "performance", "operations", "finops", "roadmap"];
+export type AssessmentPillar = (typeof ASSESSMENT_PILLARS)[number];
+//# sourceMappingURL=status.d.ts.map

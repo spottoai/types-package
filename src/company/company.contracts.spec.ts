@@ -1,5 +1,6 @@
 import type {
   Company,
+  CompanyBusinessHours,
   CompanyCreate,
   CompanyHierarchyClassificationUpdateRequest,
   CompanyHierarchyMoveRequest,
@@ -29,9 +30,21 @@ const companyWithHierarchy: Company = {
   rootCompanyId: 'comp-root-123',
 };
 
+const businessHours: CompanyBusinessHours = {
+  periods: [
+    {
+      startDayOfWeek: 1,
+      startTimeLocal: '08:00',
+      endDayOfWeek: 5,
+      endTimeLocal: '18:00',
+    },
+  ],
+};
+
 const trialCompanyCreate: CompanyCreate = {
   name: 'Trial Company',
   createdAt: '2026-05-10T00:00:00.000Z',
+  businessHours,
   companyLifecycle: 'trial',
   azureDelegatedTrialExpiresAt: '2026-06-09T00:00:00.000Z',
 };
@@ -69,6 +82,7 @@ const hierarchyTree: CompanyHierarchyTreeDocument = {
 void standardCompany;
 void trialCompany;
 void companyWithHierarchy;
+void businessHours;
 void trialCompanyCreate;
 void userCompanyTrialFields;
 void moveRequest;

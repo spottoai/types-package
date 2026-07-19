@@ -1,6 +1,6 @@
 {
   "name": "@spottoai/types-package",
-  "version": "1.0.2-beta.240",
+  "version": "1.0.2-beta.305",
   "description": "Shared TypeScript interfaces for SpottoAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,10 +8,12 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run typecheck:contracts",
+    "typecheck:contracts": "tsc --noEmit --project tsconfig.contracts.json",
     "dev": "tsc --watch",
     "clean": "rimraf dist",
-    "prepublishOnly": "npm run clean && npm run build",
+    "check:packed-exports": "node scripts/check-packed-aws-exports.mjs",
+    "prepublishOnly": "npm run clean && npm run build && npm run check:packed-exports",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",

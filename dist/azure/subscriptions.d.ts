@@ -1,10 +1,33 @@
-import { SubscriptionInfoBase } from '../accounts/accounts.js';
+import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
+import type { AdvisorScorePillarScores } from './advisorScore.js';
 export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
+export type SecureScoreEvidenceStatus = 'available' | 'unavailable' | 'stale';
+/**
+ * Provider evidence for one Defender for Cloud Secure Score observation.
+ *
+ * The legacy scalar score remains on SubscriptionProperties for compatibility.
+ * Consumers should use this evidence to distinguish a genuine zero from missing
+ * provider data and must not aggregate percentages when weight is unavailable.
+ */
+export interface SecureScoreEvidence {
+    status: SecureScoreEvidenceStatus;
+    /** Provider-reported 0-100 percentage when available. */
+    percentage?: number;
+    /** Provider score points earned. */
+    currentScore?: number;
+    /** Provider score points available. */
+    maxScore?: number;
+    /** Provider aggregation weight for this subscription/scope, when supplied. */
+    weight?: number;
+    /** Healthy + unhealthy assessed resources, excluding not-applicable resources. */
+    assessedResourceCount?: number;
+    observedAt?: string;
+}
 export interface SubscriptionSummaryLite {
     companyId: string;
     tenantId: string;
@@ -39,6 +62,8 @@ export interface Subscription {
     tenantSubscriptionIds: string[];
     subscriptionId: string;
     displayName: string;
+    /** Optional subscription type (Production, Non-Production, Mixed) */
+    subscriptionType?: SubscriptionType;
     properties?: SubscriptionProperties;
     recommendations?: Recommendation[];
     spendingLimit: boolean;
@@ -91,6 +116,7 @@ export interface SubscriptionStats {
     };
 }
 export interface SubscriptionHistory {
+    id?: string;
     subscriptionId: string;
     displayName: string;
     history: SubscriptionHistoryItem[];
@@ -98,7 +124,11 @@ export interface SubscriptionHistory {
 export interface SubscriptionHistoryItem {
     /** 20250520 */
     date: number;
-    secureScore: number;
+    /** Omitted when Defender for Cloud did not return an observed score. */
+    secureScore?: number;
+    secureScoreEvidence?: SecureScoreEvidence;
+    advisorScore?: number;
+    advisorScores?: AdvisorScorePillarScores;
     resourcesTotal: number;
     recommendations: RecommendationStats;
     recommendationsUnique: RecommendationStats;
@@ -111,7 +141,15 @@ export interface SubscriptionPolicies {
     spendingLimit: string;
 }
 export interface SubscriptionProperties {
-    secureScore: number;
+    /** Omitted when no current or last-known Defender for Cloud score exists. */
+    secureScore?: number;
+    secureScoreEvidence?: SecureScoreEvidence;
+    advisorScore?: number;
+    advisorScoreCost?: number;
+    advisorScoreSecurity?: number;
+    advisorScorePerformance?: number;
+    advisorScoreReliability?: number;
+    advisorScoreOperationalExcellence?: number;
     currency: string;
     currencySymbol: string;
     foundCurrency: boolean;

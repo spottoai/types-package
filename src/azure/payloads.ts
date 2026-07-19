@@ -3,11 +3,27 @@ import type {
   AzureDelegatedAuthErrorCode,
   AzureDelegatedOAuthStatePhase,
   AzureDelegatedOnboardingStatus,
+  AzureGuestAccessScanSchedulingMode,
+  AzureGuestAccessStatus,
+  AzureGuestAccessStatusReason,
+  AzureCloudAccountAuthContext,
   CloudAccountAuthMode,
   CloudAccountTenantSyncSource,
   PublicCloudAccountDto,
 } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
+
+export interface WorkflowTracingOptions {
+  enabled: boolean;
+}
+
+export interface SubscriptionSyncRequest {
+  tracing?: WorkflowTracingOptions;
+}
+
+export interface CloudAccountTenantSyncRequest {
+  tracing?: WorkflowTracingOptions;
+}
 
 export interface ProcessPayload {
   subscriptionId?: string;
@@ -19,6 +35,14 @@ export interface ProcessPayload {
   companyId?: string;
   cloudAccountId?: string;
   clientId?: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
+  tracing?: WorkflowTracingOptions;
 }
 
 export interface RequestMessage {
@@ -29,10 +53,18 @@ export interface RequestMessage {
   cloudAccountId: string;
   tenantId: string;
   clientId: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
   subscriptionId?: string;
   refreshComponents?: string[];
   correlationId?: string;
   eventId?: string;
+  tracing?: WorkflowTracingOptions;
 }
 
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
@@ -75,10 +107,208 @@ export interface SubscriptionMessage {
   cloudAccountId?: string;
   tenantId?: string;
   clientId?: string;
+  authMode?: CloudAccountAuthMode;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+  authContext?: AzureCloudAccountAuthContext;
   /** Provide a list of components to refresh. Leave empty to refresh all components. */
   refreshComponents?: string[];
   sagaRunId?: string;
   eventId?: string;
+  tracing?: WorkflowTracingOptions;
+  metadata?: Record<string, unknown>;
+}
+
+export interface AzureGdapQueueAuthContext
+  extends Omit<
+    AzureCloudAccountAuthContext,
+    'authMode' | 'cloudAccountId' | 'customerTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference'
+  > {
+  authMode?: 'gdap';
+  cloudAccountId?: string;
+  customerTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: never;
+  credentialReference?: never;
+}
+
+export interface AzureGdapSubscriptionMessage
+  extends Omit<
+    SubscriptionMessage,
+    | 'authToken'
+    | 'authClientId'
+    | 'authClientSecret'
+    | 'authTenantId'
+    | 'clientId'
+    | 'authMode'
+    | 'cloudAccountId'
+    | 'tenantId'
+    | 'customerTenantId'
+    | 'authorityTenantId'
+    | 'partnerTenantId'
+    | 'principalClientId'
+    | 'credentialReference'
+    | 'authContext'
+  > {
+  authMode: 'gdap';
+  cloudAccountId: string;
+  tenantId: string;
+  customerTenantId: string;
+  partnerTenantId: string;
+  authorityTenantId?: string;
+  clientId?: never;
+  principalClientId?: never;
+  credentialReference?: never;
+  authContext?: AzureGdapQueueAuthContext;
+}
+
+export type AzureGuestAccessAuthFlow = 'azurePowerShellDeviceCode';
+
+export interface AzureGuestAccessDeviceCodeResponse {
+  setupId: string;
+  userCode: string;
+  deviceCodeExpiresAt: string;
+  verificationUri: string;
+  verificationUriComplete?: string;
+  message?: string;
+  intervalSeconds?: number;
+  status: AzureGuestAccessStatus;
+}
+
+export interface AzureGuestAccessStartRequest {
+  displayName?: string;
+}
+
+export interface AzureGuestAccessTenantItem {
+  tenantId: string;
+  displayName?: string;
+  domainName?: string;
+  selected?: boolean;
+}
+
+export interface AzureGuestAccessSubscriptionItem {
+  subscriptionId: string;
+  displayName?: string;
+  tenantId: string;
+  state?: string;
+  selectable: boolean;
+  statusReason?: AzureGuestAccessStatusReason;
+}
+
+export interface AzureGuestAccessTenantSelectionRequest {
+  tenantId: string;
+}
+
+export interface AzureGuestAccessConfirmSubscriptionsRequest {
+  subscriptionIds: string[];
+  displayName?: string;
+}
+
+export interface AzureGuestAccessReviewChecklistWorkload {
+  kind: 'reviewChecklist';
+  checklistId: string;
+  subscriptionIds: string[];
+}
+
+export type AzureGuestAccessManualScanWorkload = AzureGuestAccessReviewChecklistWorkload;
+
+export interface AzureGuestAccessManualScanRequest {
+  refreshComponents?: string[];
+  workload?: AzureGuestAccessManualScanWorkload;
+}
+
+export interface AzureGuestAccessStatusResponse {
+  setupId?: string;
+  cloudAccountId?: string;
+  tenantId?: string;
+  status: AzureGuestAccessStatus;
+  statusReason?: AzureGuestAccessStatusReason;
+  authErrorCode?: AzureDelegatedAuthErrorCode;
+  connectedUser?: AzureGuestAccessConnectedUser;
+  cloudAccount?: PublicCloudAccountDto;
+  tenants?: AzureGuestAccessTenantItem[];
+  subscriptions?: AzureGuestAccessSubscriptionItem[];
+  workload?: AzureGuestAccessManualScanWorkload;
+  scanSchedulingMode: AzureGuestAccessScanSchedulingMode;
+  guestAccessRunId?: string;
+  guestAccessLastRunId?: string;
+  guestAccessQueuedAt?: string;
+  guestAccessScanStartedAt?: string;
+  guestAccessScanCompletedAt?: string;
+  guestAccessLastSuccessfulScanAt?: string;
+  expiresAt?: string;
+  reauthRequired?: boolean;
+}
+
+export interface AzureGuestAccessConnectedUser {
+  homeAccountId?: string;
+  username?: string;
+  name?: string;
+  objectId?: string;
+}
+
+export interface AzureGuestAccessTokenRelayPayload {
+  authFlow: AzureGuestAccessAuthFlow;
+  authorityHost: string;
+  authorityTenantId: string;
+  selectedTenantId?: string;
+  clientId: string;
+  scopes: string[];
+  tokenType: 'Bearer';
+  accessToken: string;
+  accessTokenExpiresAt: string;
+  refreshToken: string;
+  connectedUser?: AzureGuestAccessConnectedUser;
+  receivedAt: string;
+  updatedAt: string;
+}
+
+export interface AzureGuestAccessSubscriptionMessageMetadata {
+  guestAccessRun: true;
+  scanSchedulingMode: AzureGuestAccessScanSchedulingMode;
+  guestAccessSource: 'initial' | 'manual';
+  authFlow: AzureGuestAccessAuthFlow;
+}
+
+export interface AzureGuestAccessSubscriptionMessage
+  extends Omit<
+    SubscriptionMessage,
+    | 'authToken'
+    | 'authClientId'
+    | 'authClientSecret'
+    | 'authTenantId'
+    | 'authMode'
+    | 'cloudAccountId'
+    | 'tenantId'
+    | 'clientId'
+    | 'customerTenantId'
+    | 'authorityTenantId'
+    | 'partnerTenantId'
+    | 'principalClientId'
+    | 'credentialReference'
+    | 'authContext'
+    | 'sagaRunId'
+    | 'metadata'
+  > {
+  authMode: 'delegatedUser';
+  cloudAccountId: string;
+  tenantId: string;
+  clientId: string;
+  sagaRunId: string;
+  metadata: AzureGuestAccessSubscriptionMessageMetadata;
+  authToken?: never;
+  authClientId?: never;
+  authClientSecret?: never;
+  authTenantId?: never;
+  customerTenantId?: never;
+  authorityTenantId?: never;
+  partnerTenantId?: never;
+  principalClientId?: never;
+  credentialReference?: never;
+  authContext?: never;
 }
 
 export interface SubscriptionResponse {

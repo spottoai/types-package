@@ -166,6 +166,17 @@ const graphOperationResult: AzureSpSetupOperationResult = {
   completedAt: '2026-05-11T00:00:00.000Z',
 };
 
+const graphAuditLogOperationResult: AzureSpSetupOperationResult = {
+  operationKey: 'graphAuditLogReadAll:https://graph.microsoft.com/AuditLog.Read.All',
+  permissionKey: 'graphAuditLogReadAll',
+  instanceKey: 'graphAuditLogReadAll:https://graph.microsoft.com/AuditLog.Read.All',
+  operationKind: 'grantGraphAppRole',
+  idempotencyKey: 'tenant-123:graphAuditLogReadAll:https://graph.microsoft.com/AuditLog.Read.All',
+  status: 'granted',
+  externalResourceId: 'graph-sp-object-id:audit-log-read-all-role-id',
+  completedAt: '2026-05-11T00:00:00.000Z',
+};
+
 const permissionSummary: AzureSpSetupPermissionSummary = {
   posture: 'recommendedReadOnly',
   title: 'Recommended read-only setup',
@@ -248,7 +259,7 @@ const statusResponse: AzureSpSetupStatusResponse = {
   permissionSummary,
   billingExportPlan,
   billingExportResults,
-  operationResults: [graphOperationResult],
+  operationResults: [graphOperationResult, graphAuditLogOperationResult],
   progress: [
     {
       key: 'readerAccess',
@@ -355,6 +366,7 @@ void subscriptionReaderManifestItem;
 void billingExportPlan;
 void billingExportResults;
 void graphOperationResult;
+void graphAuditLogOperationResult;
 void permissionSummary;
 void statusResponse;
 void planResponse;

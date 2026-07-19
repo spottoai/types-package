@@ -3,9 +3,14 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
 export type ResourceCostSource = SpendDataSource;
 export type CostSourceConfidence = 'high' | 'unknown';
+/** Calendar used to interpret a financial date-only value. */
+export type CostDateBasis = 'utc' | 'company-local' | 'billing-calendar';
 export interface CostDateRangeMetadata {
     startDate: number;
     endDate: number;
+    basis?: CostDateBasis;
+    /** IANA timezone when basis is company-local. */
+    timeZone?: string;
 }
 export interface CostDetails {
     /** the amount spend on the resource over the last 30 days */
@@ -23,6 +28,12 @@ export interface CostDetails {
     /** the total amount spend on the resource over the previous 30 days, taking into account reserved instances and savings plans */
     totalSpend30DaysAmortizedPrevious?: number;
     retailPrices?: AzurePrice[];
+}
+export type BusinessHoursEstimateSource = 'company-business-hours' | 'fallback-business-hours-only';
+export interface BusinessHoursEstimateMetadata {
+    source: BusinessHoursEstimateSource;
+    windowSummary: string;
+    fallbackTemplate?: 'business-hours-only';
 }
 export interface AzurePrice {
     currencyCode: string;
@@ -74,6 +85,8 @@ export interface AzurePrice {
     displayQuantity?: number;
     /** Reference to the recommendation that this target cost is associated with */
     recommendationId?: string;
+    /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+    businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 export interface SavingsPlan {
     unitPrice: number;
@@ -95,6 +108,46 @@ export interface CostSummaryDetails {
     items?: ResourceCostSummary[];
     savingsRange?: SavingsRange;
 }
+export interface ResourceCostPeriodRollingMetadata {
+    kind: 'rolling';
+    name: 'cost-last-30-days';
+    label: string;
+    basis?: CostDateBasis;
+    timeZone?: string;
+}
+export interface ResourceCostPeriodDailyMetadata {
+    kind: 'daily';
+    name: string;
+    label: string;
+    date: string;
+    startDate: number;
+    endDate: number;
+    basis?: CostDateBasis;
+    timeZone?: string;
+}
+export interface ResourceCostPeriodMonthMetadata {
+    kind: 'month';
+    name: string;
+    label: string;
+    month: string;
+    startDate: number;
+    endDate: number;
+    basis?: CostDateBasis;
+    timeZone?: string;
+}
+export type ResourceCostPeriodMetadata = ResourceCostPeriodRollingMetadata | ResourceCostPeriodDailyMetadata | ResourceCostPeriodMonthMetadata;
+export interface AzureResourceCostPeriodsCatalog {
+    resourceId: string;
+    periods: ResourceCostPeriodMetadata[];
+}
+export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
+    resourceId: string;
+    total: number;
+    amortizedTotal: number;
+    items: ResourceCostSummary[];
+    billingActualThroughDate?: number;
+    estimationCutoffStartDate?: number;
+};
 export interface ResourceCostSummary {
     /** e.g. "Basic Plan (B2 App)" */
     label1: string;
@@ -159,6 +212,10 @@ export interface ResourceCostSummary {
     /** Per-source date ranges derived from daily records */
     billingDateRange?: CostDateRangeMetadata;
     estimatedDateRange?: CostDateRangeMetadata;
+    /** Canonical disjoint billing-backed coverage segments. Prefer over the legacy single range when present. */
+    billingDateRanges?: CostDateRangeMetadata[];
+    /** Canonical disjoint estimated coverage segments. Prefer over the legacy single range when present. */
+    estimatedDateRanges?: CostDateRangeMetadata[];
     /** Optional resource-level cutoff markers (when attached at item level) */
     billingActualThroughDate?: number;
     estimationCutoffStartDate?: number;
@@ -255,6 +312,12 @@ export interface TargetCostSummary {
     targetLabel?: string;
     /** e.g. Windows to Linux migration */
     targetLabel2?: string;
+    /** Stable short title for rendering a specific optimization option */
+    targetTitle?: string;
+    /** Stable optimization kind for rendering and grouping */
+    optimizationKind?: string;
+    /** Stable target SKU or plan identifier when available */
+    targetSkuName?: string;
     /** e.g. "Basic Plan (B2 App)" */
     label1: string;
     /** e.g. "Azure App Service" */
@@ -291,6 +354,8 @@ export interface TargetCostSummary {
     recommendationId?: string;
     /** Resource Type */
     resourceType?: string;
+    /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
+    businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 export interface ResourceSpend {
     /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
@@ -299,6 +364,10 @@ export interface ResourceSpend {
     costAmortized?: number;
     quantity: number;
     date?: number;
+    /** Calendar basis for a date-only row. New derived rows should provide this. */
+    dateBasis?: CostDateBasis;
+    /** IANA timezone when dateBasis is company-local. */
+    dateTimeZone?: string;
     activeDates?: ActiveDates[];
     /** e.g. true means the resource is active, false means the resource was active (old SKU) */
     active?: boolean;

@@ -1,4 +1,5 @@
 import { Tags } from '../tags';
+import type { CostDateBasis } from './prices';
 
 export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
 
@@ -19,6 +20,8 @@ export interface ResourceLifecycleContext {
 }
 
 export interface DecompositionTreeNode {
+  [key: string]: unknown;
+  id?: string;
   /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
   name: string;
   cost: number;
@@ -33,7 +36,26 @@ export interface DecompositionTreeNode {
   costChangePercent?: number;
   children?: DecompositionTreeNode[];
   /** Total spend at this level (for percentage calculation) */
-  totalSpend: number;
+  totalSpend?: number;
+  totalSpendAmortized?: number;
+  totalSpendPrevious?: number;
+  totalSpendAmortizedPrevious?: number;
+  displayName?: string;
+  nodePath?: string;
+  expanded?: boolean;
+  collapsed?: boolean;
+  hasChildren?: boolean;
+  forceCollapsedView?: boolean;
+  subscriptionId?: string;
+  dataSource?: string;
+  actualShare?: number;
+  estimatedShare?: number;
+  estimationMethod?: string;
+  pricingSource?: string;
+  metricsInput?: Record<string, unknown>;
+  unitRates?: Record<string, number>;
+  metadata?: Record<string, unknown>;
+  blendedComponents?: unknown;
   /** Analysis of why costs changed (only present on leaf nodes) */
   changeAnalysis?: CostChangeAnalysis;
   /** Only present on leaf nodes (individual resources) */
@@ -67,7 +89,9 @@ export interface DecompositionTree {
   period: {
     startDate: string;
     endDate: string;
-    type: 'billing_period' | 'calendar_month' | 'rolling_30_days';
+    type: 'billing_period' | 'calendar_month' | 'calendar_day' | 'rolling_30_days';
+    basis?: CostDateBasis;
+    timeZone?: string;
   };
   lastUpdated: string;
   totalSpend: number;
@@ -234,6 +258,15 @@ export interface DecompositionTreeEntry {
 }
 
 export interface DecompositionTreeSummary {
+  id?: string;
+  root?: DecompositionTreeNode;
+  currency?: string;
+  currencySymbol?: string;
+  totalSpend?: number;
+  totalSpendAmortized?: number;
+  totalSpendPrevious?: number;
+  totalSpendAmortizedPrevious?: number;
+  version?: string;
   entries: DecompositionTreeEntry[];
   lastUpdated: string;
 }

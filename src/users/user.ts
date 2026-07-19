@@ -14,6 +14,8 @@ export interface BaseUser {
   firstName: string;
   lastName: string;
   email: string;
+  authProviderName?: string;
+  authProviderType?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,6 +33,7 @@ export interface User extends BaseUser {
 }
 
 export interface UserProfile extends BaseUser {
+  name?: string;
   Timestamp: string;
   criticalAlertsEnabled: boolean;
   emailNotificationsEnabled: boolean;

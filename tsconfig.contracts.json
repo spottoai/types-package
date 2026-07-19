@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": [
+    "src/accounts/accounts.contracts.spec.ts",
+    "src/ai/ai.contracts.spec.ts",
+    "src/aws/aws.contracts.spec.ts",
+    "src/azure/financialCorrectness.contracts.spec.ts",
+    "src/azure/licensing.contracts.spec.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist"]
+}

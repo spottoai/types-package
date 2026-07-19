@@ -20,4 +20,5 @@ __exportStar(require("./costViews"), exports);
 __exportStar(require("./costAnomalies"), exports);
 __exportStar(require("./baseAlert"), exports);
 __exportStar(require("./alertDefinitionRun"), exports);
+__exportStar(require("./quickAlerts"), exports);
 //# sourceMappingURL=index.js.map

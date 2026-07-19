@@ -1,16 +1,31 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
 import type { CompanyClassification } from './companyHierarchy';
+import type { PortalDelegationScope } from '../features-and-permissions/access';
 
 export type CompanyLifecycle = 'standard' | 'trial';
+
+export interface CompanyBusinessHoursPeriod {
+  startDayOfWeek: number;
+  startTimeLocal: string;
+  endDayOfWeek: number;
+  endTimeLocal: string;
+}
+
+export interface CompanyBusinessHours {
+  periods: CompanyBusinessHoursPeriod[];
+}
 
 export interface Company {
   id: string;
   name: string;
+  companyId?: string;
+  companyName?: string;
   website?: string;
   createdAt: Date;
   updatedAt: Date;
   preferredTimezone?: string;
+  businessHours?: CompanyBusinessHours;
   hourlyRateAmount?: number;
   hourlyRateCurrency?: string;
   loginDomainNames?: string[];
@@ -28,6 +43,7 @@ export interface Company {
   rootCompanyId?: string;
   parentIntegrationSettings?: ParentIntegrationSettings[];
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
@@ -38,6 +54,7 @@ export interface CompanyCreate {
   website?: string;
   createdAt?: Date | string;
   preferredTimezone?: string;
+  businessHours?: CompanyBusinessHours;
   hourlyRateAmount?: number;
   hourlyRateCurrency?: string;
   domains?: string;
@@ -49,6 +66,7 @@ export interface CompanyCreate {
   parentId?: string;
   billingAccountId?: string;
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
@@ -60,16 +78,23 @@ export interface UserCompany {
   companyName: string;
   userId: string;
   role: number;
+  advancedRoles?: Array<{
+    roleKey: string;
+    delegationScope: PortalDelegationScope;
+  }>;
+  cloudAccountCount?: number;
+  isDemo?: boolean;
   parentId?: string;
   parentCompanyName?: string;
   hasChildren?: boolean;
   rootCompanyId?: string;
   classification?: CompanyClassification;
   companyLifecycle?: CompanyLifecycle;
+  setupComplete?: boolean;
   azureDelegatedTrialExpiresAt?: Date | string;
 }
 
-export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise';
+export type KnownIntegrationProvider = 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
 export type IntegrationProvider = KnownIntegrationProvider | (string & {});
 
 export interface ParentIntegrationSettings {

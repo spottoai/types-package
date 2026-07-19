@@ -8,6 +8,10 @@ export interface DisplayMetric {
 export interface DailyMetrics {
   /** YYYYMMDD */
   date: number;
+  /** Calendar semantics for the date-only value. */
+  basis?: 'utc' | 'company-local' | 'billing-calendar';
+  /** IANA timezone when basis is company-local. */
+  timeZone?: string;
   /** number spend on the resource that day */
   spend: number;
   /** number amortized spend on the resource that day */
@@ -161,6 +165,8 @@ export interface MetricConfigMetadata {
   metricNamespace?: string;
 }
 
+export type MetricConfig = MetricConfigMetadata;
+
 export interface MetricPlot {
   /** e.g. "CPU and Memory Utilization" */
   title: string;
@@ -238,6 +244,15 @@ export interface MetricsDisplay {
   optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
   reasoning: string;
   legends?: MetricsDisplayLegend | MetricsDisplayLegend[];
+  actualMetrics?: Record<string, string | string[]>;
+  seriesTransforms?: Record<
+    string,
+    {
+      strategy: string;
+      label?: string;
+      unit?: string;
+    }
+  >;
 }
 
 export interface MetricsDisplayLegend {

@@ -7,6 +7,7 @@ module.exports = [
   js.configs.recommended,
   {
     files: ['src/**/*.ts'],
+    ignores: ['src/**/*.d.ts'],
     languageOptions: {
       parser: tsparser,
       parserOptions: {
@@ -28,6 +29,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '**/*.js', '**/*.js.map'],
+    ignores: ['dist/', 'node_modules/', '**/*.d.ts', '**/*.js', '**/*.js.map'],
   },
 ];

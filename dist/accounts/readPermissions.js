@@ -23,7 +23,7 @@ var SubscriptionReadPermission;
     SubscriptionReadPermission[SubscriptionReadPermission["CostManagementReader"] = 64] = "CostManagementReader";
     /** Permission to read Azure Consumption usage details. */
     SubscriptionReadPermission[SubscriptionReadPermission["ConsumptionUsageReader"] = 128] = "ConsumptionUsageReader";
-    /** Permission to read Azure Advisor recommendations. */
+    /** Permission to read Azure Advisor recommendations and Advisor score. */
     SubscriptionReadPermission[SubscriptionReadPermission["AdvisorRecommendationsReader"] = 256] = "AdvisorRecommendationsReader";
     /** Permission to read Defender for Cloud security posture data. */
     SubscriptionReadPermission[SubscriptionReadPermission["SecurityReader"] = 512] = "SecurityReader";
@@ -42,6 +42,18 @@ var CloudAccountReadPermission;
     CloudAccountReadPermission[CloudAccountReadPermission["SavingsPlanReader"] = 4] = "SavingsPlanReader";
     /** Permission to read Microsoft Graph applications/service principals. */
     CloudAccountReadPermission[CloudAccountReadPermission["GraphApplicationReadAll"] = 8] = "GraphApplicationReadAll";
+    /** Permission to read Microsoft Graph privileged role assignment schedules. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphRoleAssignmentScheduleReadDirectory"] = 16] = "GraphRoleAssignmentScheduleReadDirectory";
+    /** Permission to read Microsoft Graph privileged role eligibility schedules. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphRoleEligibilityScheduleReadDirectory"] = 32] = "GraphRoleEligibilityScheduleReadDirectory";
+    /** Permission to read Microsoft Graph role-management metadata. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphRoleManagementReadDirectory"] = 64] = "GraphRoleManagementReadDirectory";
+    /** Permission to read Microsoft Graph group memberships. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphGroupMemberReadAll"] = 128] = "GraphGroupMemberReadAll";
+    /** Permission to read Microsoft Graph user metadata. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphUserReadAll"] = 256] = "GraphUserReadAll";
+    /** Permission to read Microsoft Graph audit logs. */
+    CloudAccountReadPermission[CloudAccountReadPermission["GraphAuditLogReadAll"] = 1024] = "GraphAuditLogReadAll";
 })(CloudAccountReadPermission || (exports.CloudAccountReadPermission = CloudAccountReadPermission = {}));
 exports.SUBSCRIPTION_READ_PERMISSIONS_METADATA = [
     {
@@ -102,8 +114,8 @@ exports.SUBSCRIPTION_READ_PERMISSIONS_METADATA = [
     },
     {
         id: SubscriptionReadPermission.AdvisorRecommendationsReader,
-        displayName: 'Advisor Recommendations Reader',
-        description: 'Allows Spotto to read Azure Advisor recommendations for recommendation import and optimization workflows.',
+        displayName: 'Advisor Reader',
+        description: 'Allows Spotto to read Azure Advisor recommendations and Advisor score for recommendation import and optimization workflows.',
         requiredRoles: ['Reader'],
         documentationUrl: 'https://learn.microsoft.com/en-us/azure/advisor/advisor-overview',
     },
@@ -143,6 +155,48 @@ exports.CLOUD_ACCOUNT_READ_PERMISSIONS_METADATA = [
         description: 'Allows Spotto to read Microsoft Graph applications and service principals.',
         requiredRoles: ['Application.Read.All'],
         documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#applicationreadall',
+    },
+    {
+        id: CloudAccountReadPermission.GraphRoleAssignmentScheduleReadDirectory,
+        displayName: 'Graph RoleAssignmentSchedule Read.Directory',
+        description: 'Allows Spotto to read active Microsoft Graph role assignment schedules.',
+        requiredRoles: ['RoleAssignmentSchedule.Read.Directory'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleassignmentschedulereaddirectory',
+    },
+    {
+        id: CloudAccountReadPermission.GraphRoleEligibilityScheduleReadDirectory,
+        displayName: 'Graph RoleEligibilitySchedule Read.Directory',
+        description: 'Allows Spotto to read eligible Microsoft Graph role schedules.',
+        requiredRoles: ['RoleEligibilitySchedule.Read.Directory'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#roleeligibilityschedulereaddirectory',
+    },
+    {
+        id: CloudAccountReadPermission.GraphRoleManagementReadDirectory,
+        displayName: 'Graph RoleManagement Read.Directory',
+        description: 'Allows Spotto to read Microsoft Graph role-management metadata.',
+        requiredRoles: ['RoleManagement.Read.Directory'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#rolemanagementreaddirectory',
+    },
+    {
+        id: CloudAccountReadPermission.GraphGroupMemberReadAll,
+        displayName: 'Graph GroupMember Read.All',
+        description: 'Allows Spotto to read Microsoft Graph group memberships.',
+        requiredRoles: ['GroupMember.Read.All'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall',
+    },
+    {
+        id: CloudAccountReadPermission.GraphUserReadAll,
+        displayName: 'Graph User Read.All',
+        description: 'Allows Spotto to read Microsoft Graph user metadata.',
+        requiredRoles: ['User.Read.All'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#userreadall',
+    },
+    {
+        id: CloudAccountReadPermission.GraphAuditLogReadAll,
+        displayName: 'Graph AuditLog Read.All',
+        description: 'Allows Spotto to read Microsoft Graph audit logs.',
+        requiredRoles: ['AuditLog.Read.All'],
+        documentationUrl: 'https://learn.microsoft.com/en-us/graph/permissions-reference#auditlogreadall',
     },
 ];
 //# sourceMappingURL=readPermissions.js.map

@@ -2,8 +2,14 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import { CostSavingsSummary, SavingsPotential, VmPricePerformanceInsights } from './views';
+import type { CostSavingsAggregationPolicy, CostSavingsSummary, CurrencySavingsGroup, SavingsPotential, VmPricePerformanceInsights } from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
+import type { AutotaskShareOverrides } from '../integrations/autotask';
+import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
+import type { GitHubShareOverrides } from '../integrations/github';
+import type { Tags } from '../tags';
+import type { AzurePortalVersionedArtifact } from './portalArtifacts';
+import type { LicensingRecommendationRenderData } from './licensing';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -15,6 +21,7 @@ export enum RecommendationCategory {
 }
 
 export type RecommendationPriorityTier = 'must_do' | 'normal';
+export type RecommendationCostImpactUnit = 'percent';
 export type EffortEstimateProfileName = 'clickops' | 'devops' | 'enterprise';
 
 export interface RecommendationBaseScores {
@@ -209,9 +216,41 @@ export interface HddOsRetirementRenderStrategyPayload {
   disks: HddOsRetirementDiskRenderItem[];
 }
 
-export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights;
+export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights | LicensingRecommendationRenderData;
 
 export type AnyRecommendationRenderData = Record<string, unknown>;
+
+export type RecommendationDecisionRelationshipKind = 'review_first' | 'alternative' | 'trade_off' | 'follow_up' | 'unlocks' | 'conflicts_with';
+
+export type RecommendationDecisionContextRole = 'primary' | 'alternative' | 'trade_off' | 'follow_up' | 'supporting';
+
+export type RecommendationDecisionReviewPriority = 'review_first' | 'normal';
+
+/**
+ * Resource-specific relationship from one recommendation to another.
+ * Used by UIs to explain alternatives and follow-ups without changing recommendation state.
+ */
+export interface RecommendationDecisionLink {
+  recommendationId: string;
+  kind: RecommendationDecisionRelationshipKind;
+  label?: string;
+  reason?: string;
+  condition?: string;
+}
+
+/**
+ * Resource-specific decision context for an existing recommendation.
+ * The recommendation remains independently visible and actionable by recommendationId.
+ */
+export interface RecommendationDecisionContext {
+  recommendationId: string;
+  role?: RecommendationDecisionContextRole;
+  reviewPriority?: RecommendationDecisionReviewPriority;
+  groupId?: string;
+  title?: string;
+  explanation?: string;
+  links: RecommendationDecisionLink[];
+}
 
 export interface Recommendation {
   /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
@@ -219,6 +258,7 @@ export interface Recommendation {
   name: string;
   category: RecommendationCategory;
   subCategory?: string;
+  aggregateDescription?: string;
   /** custom */
   type?: string;
   description?: string;
@@ -227,7 +267,9 @@ export interface Recommendation {
   impactReason?: string;
   links?: { name: string; url: string }[];
   considerations?: string;
+  currency?: string;
   potentialBenefits?: string;
+  potentialMonthlySavings?: number;
   effort?: string;
   effortReason?: string;
   /** e.g. 10 hours */
@@ -236,8 +278,11 @@ export interface Recommendation {
   effortEstimates?: RecommendationEffortEstimates;
   risk?: string;
   riskReason?: string;
-  /** Could deprecate later */
+  severity?: string;
+  /** Relative cost percentage, e.g. -40 means a 40% reduction. Never a currency amount. */
   costImpact?: number;
+  /** Explicit discriminator for new payloads while legacy percentage-only payloads remain readable. */
+  costImpactUnit?: RecommendationCostImpactUnit;
   costImpactReason?: string;
   /*** costImpactDetails is deprecated **/
   // costImpactDetails?: CostImpactDetails;
@@ -249,6 +294,8 @@ export interface Recommendation {
   resources?: ResourceReference[];
   /** Compact resource references for resource-specific detail payloads. */
   resourceIds?: string[];
+  /** Total affected resources when resourceIds is trimmed or sampled. */
+  resourcesCount?: number;
   /** only for security recommendations */
   securityImpactDetails?: SecurityImpact;
   /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
@@ -266,13 +313,15 @@ export interface Recommendation {
   /** Avoids conflict with RecommendationWithState.updatedAt */
   lastUpdatedTime?: string;
   /** Business story properties */
-  headline: string;
-  bottomLine: string;
-  plainSummary: string;
-  quickSteps: string[];
-  businessOwner: string;
-  keyConstraint: string;
-  validationEvidence: string;
+  title?: string;
+  headline?: string;
+  bottomLine?: string;
+  plainSummary?: string;
+  quickSteps?: string[];
+  businessOwner?: string;
+  keyConstraint?: string;
+  validationEvidence?: string;
+  read?: boolean;
   /** Technical playbook (only for multi-step implementations) */
   technicalPlaybook?: string;
   /** Static recommendation scoring metadata (library-level). */
@@ -320,8 +369,21 @@ export interface RecommendationSummary {
 
 export interface RecommendationWithResources {
   recommendation: Recommendation;
+  /** Total affected resources when the resources array is trimmed or sampled. */
+  resourcesCount?: number;
   resources: RecommendationResource[];
+  /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
   savings?: SavingsPotential;
+  /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+  savingsByCurrency?: CurrencySavingsGroup[];
+  /** Canonical resource ID that owns this recommendation savings amount for aggregation */
+  savingsOwnerResourceId?: string;
+  /** Resource IDs that may display this recommendation savings amount as context */
+  savingsDisplayResourceIds?: string[];
+  /** Billable component key used with the owner ID to prevent double counting */
+  billableComponentKey?: string;
+  /** Aggregation rule for this recommendation savings amount */
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
 }
 
 /**
@@ -340,20 +402,45 @@ export interface RecommendationResource {
   id: string;
   name: string;
   type: string;
+  resourceGroup?: string;
+  location?: string;
+  subscriptionId?: string;
+  subscriptionName?: string;
+  tags?: Record<string, string>;
+  spottoTags?: Tags;
+  createdTime?: string;
+  typeInfo?: {
+    name: string;
+    icon: string;
+    description: string;
+    product: string;
+    aliases?: string[];
+  };
   spend: number;
   spendAmortized: number;
   savings?: SavingsPotential;
+  /** Canonical resource ID that owns this resource savings amount for aggregation */
+  savingsOwnerResourceId?: string;
+  /** Resource IDs that may display this resource savings amount as context */
+  savingsDisplayResourceIds?: string[];
+  /** Billable component key used with the owner ID to prevent double counting */
+  billableComponentKey?: string;
+  /** Aggregation rule for this resource savings amount */
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   currency?: string;
   currencySymbol?: string;
   relationship?: ResourceRelationship;
   associations?: RecommendationResourceAssociation[];
 }
 
-export interface RecommendationsView {
+export interface RecommendationsView extends AzurePortalVersionedArtifact {
   recommendations: RecommendationWithResources[];
   securityImpactDetails?: SecurityImpact[];
   subscriptionSecurityStatus?: SubscriptionSecurityStatus;
+  /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
   savings?: SavingsPotential;
+  /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+  savingsByCurrency?: CurrencySavingsGroup[];
   subscription: SubscriptionSummaryLite;
   costSavingsSummary?: CostSavingsSummary;
 }
@@ -366,6 +453,7 @@ export interface ResourceReference {
   id: string;
   name: string;
   type?: string;
+  subscriptionName?: string;
   savings?: SavingsPotential;
   currency?: string;
   currencySymbol?: string;
@@ -420,16 +508,7 @@ export interface RecommendationStats {
 
 /** Recommendation with state information, name "ExtendedRecommendation" in the portal at the moment */
 export interface RecommendationWithState extends Recommendation {
-  status?:
-    | 'Active'
-    | 'Prioritized'
-    | 'Postponed'
-    | 'Dismissed'
-    | 'Completed'
-    | 'Archived'
-    | 'Implementing'
-    | 'Implemented'
-    | 'Failed';
+  status?: 'Active' | 'Prioritized' | 'Postponed' | 'Dismissed' | 'Completed' | 'Archived' | 'Implementing' | 'Implemented' | 'Failed';
   read?: boolean;
   scheduledAt?: Date;
   createdAt?: Date;
@@ -444,11 +523,16 @@ export interface DismissRecommendationRequest extends RecommendationActionReques
 }
 
 export interface ShareRecommendationRequest extends RecommendationActionRequest {
-  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise';
+  shareType: 'email' | 'slack' | 'teams' | 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
   email?: string;
   halo?: HaloRoutingOverrides;
   connectwise?: ConnectWiseRoutingFields;
+  autotask?: AutotaskShareOverrides;
+  azuredevops?: AzureDevOpsShareOverrides;
+  github?: GitHubShareOverrides;
 }
+
+export type RecommendationActionTargetSelection = 'selectedResources' | 'allAffectedResources';
 
 export interface RecommendationActionRequest extends ProviderScope {
   /** `providerScope` maps to subscription identity for Azure providers. */
@@ -462,6 +546,8 @@ export interface RecommendationActionRequest extends ProviderScope {
   recommendationId: string;
   recommendationTitle?: string;
   resourceIds: string[];
+  /** Whether resourceIds are the exact selected targets or a sampled display subset for an all-affected action. */
+  targetSelection?: RecommendationActionTargetSelection;
   resourceGroupName?: string;
   companyId: string;
   byUserId?: string;

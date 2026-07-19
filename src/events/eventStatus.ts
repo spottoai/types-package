@@ -58,7 +58,7 @@ export interface UserEvent {
 }
 
 export interface ShareTicketMetadata {
-  provider: 'jira' | 'halo' | 'connectwise';
+  provider: 'jira' | 'halo' | 'connectwise' | 'autotask' | 'azuredevops' | 'github';
   ticketId?: string | number;
   ticketUrl?: string;
   integrationCompanyId?: string;

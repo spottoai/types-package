@@ -1,11 +1,174 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
+import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
+import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
-export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser';
+export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
+export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
 export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
+export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
+export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
+export type AzureGdapValidationStatus = 'notValidated' | 'ready' | 'degraded' | 'blocked' | 'expired' | 'reauthRequired';
+export type AzureGdapCapabilityKey =
+  | 'partnerAuthorization'
+  | 'relationship'
+  | 'accessAssignment'
+  | 'appConsent'
+  | 'subscriptionDiscovery'
+  | 'resourceInventory'
+  | 'resourceGraph'
+  | 'costRead'
+  | 'billingExportSetup'
+  | 'monitoringRead'
+  | 'graphInventory'
+  | 'scheduledScan';
+export type AzureGdapCapabilityStatusValue = 'ready' | 'degraded' | 'blocked' | 'unsupported' | 'notChecked';
+
+export interface AzureGdapCapabilityStatus {
+  key: AzureGdapCapabilityKey;
+  status: AzureGdapCapabilityStatusValue;
+  reason?: string;
+  checkedAt?: string;
+  requiredRoles?: string[];
+  requiredAzureRoles?: string[];
+}
+
+export interface AzureGdapRoleAssignment {
+  roleId?: string;
+  roleTemplateId?: string;
+  displayName: string;
+}
+
+export interface AzureGdapCloudAccountMetadata {
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
+  gdapPartnerTenantId: string;
+  gdapCustomerTenantId: string;
+  gdapRelationshipId: string;
+  gdapRelationshipDisplayName?: string;
+  gdapRelationshipStatus?: AzureGdapRelationshipStatus;
+  gdapAccessAssignmentId?: string;
+  gdapAccessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+  gdapSecurityGroupId?: string;
+  gdapSecurityGroupDisplayName?: string;
+  gdapRoles?: AzureGdapRoleAssignment[];
+  gdapExpiresAt?: string;
+  gdapAutoExtendEnabled?: boolean;
+  gdapPartnerAuthorizationStatus?: AzureGdapValidationStatus;
+  gdapAppConsentStatus?: AzureGdapValidationStatus;
+  gdapLastValidatedAt?: string;
+  gdapLastValidationStatus?: AzureGdapValidationStatus;
+  gdapLastValidationErrorCode?: string;
+  gdapLastValidationMessage?: string;
+  gdapScheduledEligible?: boolean;
+  gdapScheduledEligibilityReason?: string;
+  gdapCapabilities?: AzureGdapCapabilityStatus[];
+}
+
+export interface AzureCloudAccountAuthContext {
+  authMode?: CloudAccountAuthMode;
+  cloudAccountId: string;
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
+  customerTenantId?: string;
+  authorityTenantId?: string;
+  partnerTenantId?: string;
+  principalClientId?: string;
+  credentialReference?: string;
+}
+
+export interface AzureGdapAuthorizationProfileSummary {
+  id: string;
+  companyId: string;
+  displayName: string;
+  partnerTenantId: string;
+  authorizationStatus: AzureGdapValidationStatus;
+  hasCredential: boolean;
+  authorizedAt?: string;
+  expiresAt?: string;
+  lastValidatedAt?: string;
+  lastValidationStatus?: AzureGdapValidationStatus;
+  lastValidationErrorCode?: string;
+  lastValidationMessage?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AzureGdapAuthorizationProfileListResponse {
+  profiles: AzureGdapAuthorizationProfileSummary[];
+}
+
+export interface AzureGdapEligibleAuthorizationProfilesResponse {
+  rootCompanyId: string;
+  profiles: AzureGdapAuthorizationProfileSummary[];
+}
+
+export interface AzureGdapCreateAuthorizationProfileRequest {
+  displayName?: string;
+  partnerTenantId?: string;
+}
+
+export interface AzureGdapStartPartnerAuthorizationRequest {
+  redirectAfter?: string;
+}
+
+export interface AzureGdapPartnerAuthorizationStartResponse {
+  profileId: string;
+  authorizationUrl: string;
+  expiresAt: string;
+}
+
+export interface AzureGdapDraftValidationRequest {
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
+  gdapPartnerTenantId?: string;
+  gdapCustomerTenantId?: string;
+  tenantId?: string;
+  gdapRelationshipId?: string;
+  gdapAccessAssignmentId?: string;
+  gdapSecurityGroupId?: string;
+}
+
+export interface AzureGdapDraftValidationResponse {
+  valid: boolean;
+  status: AzureGdapValidationStatus;
+  profile?: AzureGdapAuthorizationProfileSummary;
+  capabilities: AzureGdapCapabilityStatus[];
+  message?: string;
+}
+
+export interface AzureGdapCloudAccountStatusResponse {
+  cloudAccountId: string;
+  companyId: string;
+  status: AzureGdapValidationStatus;
+  partnerAuthorizationStatus?: AzureGdapValidationStatus;
+  appConsentStatus?: AzureGdapValidationStatus;
+  lastValidatedAt?: string | Date;
+  lastValidationStatus?: AzureGdapValidationStatus;
+  lastValidationErrorCode?: string;
+  lastValidationMessage?: string;
+  scheduledEligible?: boolean;
+  scheduledEligibilityReason?: string;
+  capabilities?: AzureGdapCapabilityStatus[];
+}
+
+export interface AzureGdapCloudAccountCreateRequest {
+  companyId: string;
+  name: string;
+  provider: 'Azure';
+  authMode: 'gdap';
+  tenantId: string;
+  gdapCustomerTenantId: string;
+  gdapPartnerTenantId: string;
+  gdapRelationshipId: string;
+  gdapAccessAssignmentId?: string;
+  gdapSecurityGroupId?: string;
+  gdapAuthorizationCompanyId: string;
+  gdapAuthorizationProfileId: string;
+}
 
 export interface BillingExportLocatorEntry {
   scopeType: BillingExportLocatorScopeType;
@@ -19,6 +182,160 @@ export interface BillingExportLocatorEntry {
 export interface CloudAccountBillingExportLocator {
   actual?: BillingExportLocatorEntry;
   amortized?: BillingExportLocatorEntry;
+}
+
+export const AZURE_SYNC_FEATURE_ORDER = [
+  'activityMonitoring',
+  'metrics',
+  'billing',
+  'pricing',
+  'costEstimation',
+  'commitments',
+  'relationshipGraphs',
+  'governance',
+  'availabilityZones',
+  'reliability',
+  'perimeterInsights',
+  'reportEvidencePack',
+] as const;
+
+export type AzureSyncFeatureId = (typeof AZURE_SYNC_FEATURE_ORDER)[number];
+export type AzureSyncFeatureConfigurationScope = 'cloudAccount' | 'subscription';
+
+export interface AzureSyncFeatureMetadata {
+  id: AzureSyncFeatureId;
+  displayName: string;
+  description: string;
+  supportedScopes: readonly AzureSyncFeatureConfigurationScope[];
+  warning?: string;
+}
+
+export const AZURE_SYNC_FEATURE_METADATA = [
+  {
+    id: 'activityMonitoring',
+    displayName: 'Activity monitoring',
+    description: 'Collects Azure activity logs and activity-derived operational events.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+    warning: 'Disabling activity monitoring prevents activity log collection and related detections.',
+  },
+  {
+    id: 'metrics',
+    displayName: 'Metrics',
+    description: 'Collects subscription resource metrics used for utilization and rightsizing insights.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'billing',
+    displayName: 'Billing',
+    description: 'Collects billing and cost usage data.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'pricing',
+    displayName: 'Pricing',
+    description: 'Collects Azure price data used for cost calculations.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'costEstimation',
+    displayName: 'Cost estimation',
+    description: 'Builds estimated costs when billing-backed usage is unavailable or incomplete.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'commitments',
+    displayName: 'Reservations and commitments',
+    description: 'Collects reserved instances, savings plans, and commitment utilization data.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'relationshipGraphs',
+    displayName: 'Relationship graphs',
+    description: 'Builds relationship graph artifacts from scanned Azure resources.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'governance',
+    displayName: 'Governance',
+    description: 'Builds tenant and subscription governance reports and graph artifacts.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'availabilityZones',
+    displayName: 'Availability zones',
+    description: 'Collects tenant-level availability zone mappings.',
+    supportedScopes: ['cloudAccount'],
+  },
+  {
+    id: 'reliability',
+    displayName: 'Reliability',
+    description: 'Collects reliability signals and recommendations for subscription resources.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'perimeterInsights',
+    displayName: 'Perimeter insights',
+    description: 'Builds public IP and perimeter exposure insights.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+  {
+    id: 'reportEvidencePack',
+    displayName: 'Report evidence pack',
+    description: 'Builds evidence artifacts used by reports and review workflows.',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  },
+] as const satisfies readonly AzureSyncFeatureMetadata[];
+
+type AzureSyncFeatureMetadataEntry = (typeof AZURE_SYNC_FEATURE_METADATA)[number];
+type AzureSyncFeatureIdsForScope<Scope extends AzureSyncFeatureConfigurationScope> = AzureSyncFeatureMetadataEntry extends infer Feature
+  ? Feature extends { id: AzureSyncFeatureId; supportedScopes: readonly AzureSyncFeatureConfigurationScope[] }
+    ? Scope extends Feature['supportedScopes'][number]
+      ? Feature['id']
+      : never
+    : never
+  : never;
+
+export type AzureCloudAccountSyncFeatureId = AzureSyncFeatureIdsForScope<'cloudAccount'>;
+export type AzureSubscriptionSyncFeatureId = AzureSyncFeatureIdsForScope<'subscription'>;
+
+const AZURE_SYNC_FEATURE_ORDER_INDEX = new Map<AzureSyncFeatureId, number>(AZURE_SYNC_FEATURE_ORDER.map((featureId, index) => [featureId, index]));
+
+const AZURE_SYNC_FEATURE_IDS = new Set<string>(AZURE_SYNC_FEATURE_ORDER);
+
+export const isAzureSyncFeatureId = (value: string): value is AzureSyncFeatureId => AZURE_SYNC_FEATURE_IDS.has(value);
+
+export const getAzureSyncFeatureMetadata = (featureId: AzureSyncFeatureId): AzureSyncFeatureMetadata =>
+  AZURE_SYNC_FEATURE_METADATA.find(feature => feature.id === featureId) ?? {
+    id: featureId,
+    displayName: featureId,
+    description: '',
+    supportedScopes: ['cloudAccount', 'subscription'],
+  };
+
+export const isAzureSyncFeatureSupportedInScope = (featureId: AzureSyncFeatureId, scope: AzureSyncFeatureConfigurationScope): boolean =>
+  getAzureSyncFeatureMetadata(featureId).supportedScopes.includes(scope);
+
+export const sortAzureSyncFeatureIds = (featureIds: readonly AzureSyncFeatureId[]): AzureSyncFeatureId[] =>
+  [...featureIds].sort(
+    (left, right) =>
+      (AZURE_SYNC_FEATURE_ORDER_INDEX.get(left) ?? Number.MAX_SAFE_INTEGER) - (AZURE_SYNC_FEATURE_ORDER_INDEX.get(right) ?? Number.MAX_SAFE_INTEGER)
+  );
+
+const supportsAzureSyncFeatureScope = (feature: AzureSyncFeatureMetadata, scope: AzureSyncFeatureConfigurationScope): boolean =>
+  feature.supportedScopes.includes(scope);
+
+export const getAzureSyncFeatureOptions = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureMetadata[] =>
+  AZURE_SYNC_FEATURE_METADATA.filter(feature => supportsAzureSyncFeatureScope(feature, scope));
+
+export const getAzureSyncFeatureIdsForScope = (scope: AzureSyncFeatureConfigurationScope): AzureSyncFeatureId[] =>
+  getAzureSyncFeatureOptions(scope).map(feature => feature.id);
+
+export interface CloudAccountSyncFeatureOptOutsUpdateRequest {
+  syncFeatureOptOuts: AzureCloudAccountSyncFeatureId[];
+}
+
+export interface SubscriptionSyncFeatureOptOutsUpdateRequest {
+  syncFeatureOptOuts: AzureSubscriptionSyncFeatureId[];
 }
 
 export const SUBSCRIPTION_SYNC_STEP_ORDER = [
@@ -43,11 +360,87 @@ export type AzureDelegatedAuthErrorCode =
   | 'forbidden'
   | 'unknown';
 export type AzureDelegatedOAuthStatePhase = 'discoverTenants' | 'tenantSelectionRequired' | 'tenantConsent' | 'completed' | 'failed';
+export type CloudAccountScanSchedulingMode = 'every12Hours' | 'daily' | 'weekly' | 'onDemandOnly';
+export type AzureGuestAccessScanSchedulingMode = 'onDemandOnly';
+export type AzureGuestAccessStatus =
+  | 'created'
+  | 'deviceCodePending'
+  | 'tenantDiscoveryRequired'
+  | 'tenantSelectionRequired'
+  | 'tenantAuthorizationRequired'
+  | 'subscriptionSelectionRequired'
+  | 'queued'
+  | 'scanning'
+  | 'completed'
+  | 'partial'
+  | 'failed'
+  | 'reauthRequired'
+  | 'cancelled'
+  | 'expired';
+export type AzureGuestAccessStatusReason =
+  | 'device_code_expired'
+  | 'tenant_discovery_failed'
+  | 'tenant_selection_required'
+  | 'tenant_authorization_required'
+  | 'microsoft_account_mismatch'
+  | 'no_readable_subscriptions'
+  | 'subscription_read_forbidden'
+  | 'token_relay_missing'
+  | 'setup_expired'
+  | 'stale_message'
+  | 'refresh_token_expired'
+  | 'token_refresh_failed'
+  | 'refresh_requires_interaction'
+  | 'resource_inventory_failed'
+  | 'resource_graph_failed'
+  | 'billing_2m_failed'
+  | 'scan_failed'
+  | 'cancelled_by_user'
+  | 'unknown';
 
-export interface CloudAccount {
+export interface AzureGuestAccessCloudAccountFields {
+  /** Public-safe guest access lifecycle status. Token relay payloads are never stored in this field. */
+  guestAccessStatus?: AzureGuestAccessStatus;
+  /** Public-safe reason for the current guest access lifecycle state. */
+  guestAccessStatusReason?: AzureGuestAccessStatusReason;
+  /** Current guest access run correlation ID. This is not a token relay storage locator. */
+  guestAccessRunId?: string;
+  /** Previous guest access run correlation ID. This is not a token relay storage locator. */
+  guestAccessLastRunId?: string;
+  /** Timestamp for when the current guest access run was queued. */
+  guestAccessQueuedAt?: Date | string;
+  /** Timestamp for when the current guest access scan started. */
+  guestAccessScanStartedAt?: Date | string;
+  /** Timestamp for when the current guest access scan completed. */
+  guestAccessScanCompletedAt?: Date | string;
+  /** Timestamp for the last completed guest access scan with usable results. */
+  guestAccessLastSuccessfulScanAt?: Date | string;
+}
+
+/** Secret-free AWS fields shared by generic cloud-account list and detail responses. */
+export interface AwsPublicCloudAccountFields {
+  /** Canonical 12-digit AWS account identifier. */
+  accountId?: string;
+  /** Legacy storage/response alias. Prefer accountId in new public responses. */
+  awsAccountId?: string;
+  /** Cross-account role ARN. This is role metadata, not a credential. */
+  roleArn?: string;
+  /** Sanitized machine-readable reason for the current lifecycle state. */
+  statusReason?: string;
+  /** Sanitized user-facing lifecycle detail. */
+  statusMessage?: string;
+  /** Sanitized billing-export lifecycle state. Raw billing configuration is never public. */
+  billingStatus?: AwsCloudAccountBillingStatus;
+  billingStatusReason?: string;
+  billingStatusMessage?: string;
+  /** Evidence that a provider sync produced usable artifacts, when available. */
+  lastSuccessfulSyncAt?: string;
+}
+
+export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPublicCloudAccountFields {
   /** Partition Key */
   companyId: string;
-  /** Row Key (Azure Client ID, AWS Access Key ID) */
+  /** Stable cloud-account row identifier. Provider account metadata is carried in provider-specific fields. */
   id: string;
   name: string;
   companyName: string;
@@ -65,6 +458,11 @@ export interface CloudAccount {
   updatedAt: Date;
   createdBy: string;
   status: string;
+  /** Internal AWS billing-export locator. It is JSON-serialized for Table Storage and omitted from public DTOs. */
+  awsBillingExport?: AwsBillingExportConfiguration;
+  /** Current admitted AWS engine request identity. */
+  currentRequestId?: string;
+  correlationId?: string;
   objectives?: SurveyResponse[];
   /** Preferred recommendation effort-estimate profile for this cloud account. */
   effortProfile?: EffortEstimateProfileName;
@@ -79,9 +477,19 @@ export interface CloudAccount {
   tenantSyncCompletedAt?: Date;
   tenantSyncError?: string;
   tenantSyncSource?: CloudAccountTenantSyncSource;
-  /** Internal delegated-user token cache. Do not expose this field in public API DTOs. */
+  firstSyncNotificationStatus?: CloudAccountFirstSyncNotificationStatus;
+  firstSyncNotificationUserId?: string;
+  /** Azure sync features disabled for this cloud account. Cloud-account opt-outs are hard denies for subscriptions. */
+  syncFeatureOptOuts?: AzureSyncFeatureId[];
+  /**
+   * Internal legacy delegated-user token cache. Do not expose this field in public API DTOs.
+   * Guest access token relay payloads use AzureGuestAccessTokenRelayPayload and must not be
+   * stored on CloudAccount or returned through PublicCloudAccountDto.
+   */
   delegatedTokenCache?: string;
+  /** Legacy delegated-user onboarding status. Guest access lifecycle state uses guestAccessStatus fields. */
   onboardingStatus?: AzureDelegatedOnboardingStatus;
+  scanSchedulingMode?: CloudAccountScanSchedulingMode;
   delegatedSetupExpiresAt?: Date | string;
   delegatedTrialStartedAt?: Date | string;
   delegatedTrialExpiresAt?: Date | string;
@@ -95,20 +503,62 @@ export interface CloudAccount {
   connectedAt?: Date | string;
   lastTokenRefreshAt?: Date | string;
   lastDelegatedTokenCacheUpdatedAt?: Date | string;
+  gdapAuthorizationCompanyId?: string;
+  gdapAuthorizationProfileId?: string;
+  gdapPartnerTenantId?: string;
+  gdapCustomerTenantId?: string;
+  gdapRelationshipId?: string;
+  gdapRelationshipDisplayName?: string;
+  gdapRelationshipStatus?: AzureGdapRelationshipStatus;
+  gdapAccessAssignmentId?: string;
+  gdapAccessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+  gdapSecurityGroupId?: string;
+  gdapSecurityGroupDisplayName?: string;
+  gdapRolesJson?: string;
+  gdapExpiresAt?: Date | string;
+  gdapAutoExtendEnabled?: boolean;
+  gdapPartnerAuthorizationStatus?: AzureGdapValidationStatus;
+  gdapAppConsentStatus?: AzureGdapValidationStatus;
+  gdapLastValidatedAt?: Date | string;
+  gdapLastValidationStatus?: AzureGdapValidationStatus;
+  gdapLastValidationErrorCode?: string;
+  /** Sanitized public-safe validation message. Do not store raw Microsoft claims or token errors here. */
+  gdapLastValidationMessage?: string;
+  gdapScheduledEligible?: boolean;
+  gdapScheduledEligibilityReason?: string;
+  gdapCapabilities?: AzureGdapCapabilityStatus[];
+  /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
+  gdapCredentialReference?: string;
   /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
   billingExportLocator?: string | CloudAccountBillingExportLocator;
 }
 
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator'> & {
-  /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
-  secretPreview?: string;
-  /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
-  writeSecretPreview?: string;
-};
+export type PublicCloudAccountDto = Omit<
+  CloudAccount,
+  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'awsBillingExport'
+> &
+  AwsRequestForbiddenCredentialFields & {
+    /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
+    secretPreview?: string;
+    /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
+    writeSecretPreview?: string;
+    /** Guest access token relay payloads are internal only and must never appear in public DTOs. */
+    guestAccessTokenRelayPayload?: never;
+    /** Guest access token relay storage locators are internal only and must never appear in public DTOs. */
+    guestAccessTokenRelayReference?: never;
+    /** AWS trust-policy external IDs are setup-only and must never appear in public DTOs. */
+    externalId?: never;
+    awsOnboardingCommandFingerprint?: never;
+    awsDeleteRequestedAt?: never;
+  };
+
+export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
+export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';
+export type SyncProgressIssueMetadataValue = string | number | boolean | undefined;
 
 export interface SyncProgressIssue {
-  type: 'capabilityMissing' | 'billingExport';
-  scope: 'cloudAccount' | 'subscription';
+  type: SyncProgressIssueType;
+  scope: SyncProgressIssueScope;
   capabilityKey?: string;
   capabilityDisplayName?: string;
   capabilityDescription?: string;
@@ -120,6 +570,7 @@ export interface SyncProgressIssue {
   sourceSelected?: 'export' | 'query';
   fallbackUsed?: boolean;
   degraded?: boolean;
+  metadata?: Record<string, SyncProgressIssueMetadataValue>;
 }
 
 export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
@@ -189,6 +640,12 @@ export interface SubscriptionInfoBase {
   foundCurrency?: boolean;
   ready?: boolean;
   secureScore?: number;
+  advisorScore?: number;
+  advisorScoreCost?: number;
+  advisorScoreSecurity?: number;
+  advisorScorePerformance?: number;
+  advisorScoreReliability?: number;
+  advisorScoreOperationalExcellence?: number;
   showAmortizedCosts?: boolean;
   totalCost?: number;
   billingItems?: number;
@@ -196,6 +653,16 @@ export interface SubscriptionInfoBase {
   eventId?: string;
   readBitmask?: number;
   syncProgress?: SubscriptionSyncProgress | string | null;
+  /** Azure sync features disabled for this subscription in addition to cloud-account opt-outs. */
+  syncFeatureOptOuts?: AzureSyncFeatureId[];
+  /** Azure sync features disabled by the parent cloud account. Returned to administrators only. */
+  cloudAccountSyncFeatureOptOuts?: AzureSyncFeatureId[];
+  /** Effective Azure sync features disabled after applying cloud-account hard denies. Returned to administrators only. */
+  effectiveSyncFeatureOptOuts?: AzureSyncFeatureId[];
+  /** Purpose bound to the current delegated guest-access run. */
+  guestAccessWorkloadKind?: 'fullScan' | 'reviewChecklist';
+  /** Normalized checklist identifier when the current guest-access run is review-checklist-only. */
+  guestAccessChecklistId?: string;
 }
 
 export interface SubscriptionAccount extends SubscriptionInfoBase {

@@ -62,8 +62,8 @@ export interface ResourceSimpleCostEstimationPlan {
 
 export interface ResourceSimpleCostEstimationSummary {
   currency: string;
-  currentMonthlyCost: number;
-  currentObservedDiscounts?: Record<string, DiscountObservation>;
+  currentMonthlyCost?: number;
+  currentCost?: number;
   plans: ResourceSimpleCostEstimationPlan[];
   savingsRange?: {
     min: number;

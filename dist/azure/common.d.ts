@@ -25,6 +25,12 @@ export interface ResourceCostType {
     cost: number;
     /** e.g. 100 */
     costAmortized?: number;
+    /** Optional classification for non-usage cost shown in dashboards. */
+    costKind?: 'usage' | 'commitment-purchase' | 'mixed';
+    /** Portion of cost attributable to commitment purchases such as RI or savings plan orders. */
+    commitmentPurchaseCost?: number;
+    /** Portion of amortized cost attributable to commitment purchases such as RI or savings plan orders. */
+    commitmentPurchaseCostAmortized?: number;
 }
 export interface MonthSummary {
     entries: MonthSummaryEntry[];
@@ -38,6 +44,10 @@ export interface DailySummaryEntry {
     cost?: number;
     /** sum of costAmortized for the day */
     costAmortized?: number;
+    /** Portion of the day's cost attributable to commitment purchases such as RI or savings plan orders. */
+    commitmentPurchaseCost?: number;
+    /** Portion of the day's amortized cost attributable to commitment purchases such as RI or savings plan orders. */
+    commitmentPurchaseCostAmortized?: number;
     /** Top resources by cost */
     resourceTypes: ResourceCostType[];
 }
