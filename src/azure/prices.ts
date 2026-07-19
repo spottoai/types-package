@@ -325,6 +325,8 @@ export interface ResourceSpend {
   meterCategory: string;
   meterSubCategory: string;
   serviceName: string;
+  /** Azure Cost Management publisher classification, for example Marketplace. */
+  publisherType?: string;
   meter: string;
   partNumber?: string;
   serviceTier: string;

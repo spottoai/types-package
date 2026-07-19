@@ -1,4 +1,18 @@
 import { Tags } from '../tags';
+export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
+export type BillingCadence = 'daily' | 'monthly' | 'unknown';
+/** Billing-source facts attached by the backend. This is not lifecycle evidence. */
+export interface BillingChargeContext {
+    source: BillingChargeSource;
+    publisher?: string;
+    product?: string;
+    cadence?: BillingCadence;
+}
+/** Azure inventory lifecycle facts. An absent createdInPeriod means unknown. */
+export interface ResourceLifecycleContext {
+    createdAt?: string;
+    createdInPeriod?: boolean;
+}
 export interface DecompositionTreeNode {
     /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
     name: string;
@@ -22,6 +36,8 @@ export interface DecompositionTreeNode {
     tags?: Record<string, string>;
     spottoTags?: Tags;
     resourceId?: string;
+    chargeContext?: BillingChargeContext;
+    resourceLifecycle?: ResourceLifecycleContext;
 }
 export interface MeterDetail {
     /** "P1 v3 App" */
@@ -129,7 +145,7 @@ export interface EstimationTreeNode extends DecompositionTreeNode {
     /** Resource lifecycle end date (if known) used to cap estimation */
     resourceLifecycleEndDate?: number;
     /** Detected billing cadence for this node */
-    billingCadence?: 'daily' | 'monthly' | 'unknown';
+    billingCadence?: BillingCadence;
     /** Confidence of billing cadence detection */
     billingCadenceConfidence?: 'high' | 'medium' | 'low';
     /**
