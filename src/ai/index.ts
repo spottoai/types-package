@@ -57,6 +57,22 @@ export type AIChatResponseMode = 'fast' | 'thinking';
 
 export type AIChatResolvedResponseMode = AIChatResponseMode | 'adaptive';
 
+export type AIChatOutputContract = 'customerDecisionBrief';
+
+export interface AICustomerDecisionBriefOutput {
+  headline: string;
+  businessOutcomes: [string, string];
+  costOfDelay: [string, string];
+  decisionRequired: string;
+}
+
+export interface AICustomerDecisionBriefContractOutput {
+  contract: 'customerDecisionBrief';
+  value: AICustomerDecisionBriefOutput;
+}
+
+export type AIChatContractOutput = AICustomerDecisionBriefContractOutput;
+
 type AIWorkspaceScopePolicyOutcome = 'accepted' | 'intersected' | 'rejected';
 
 interface AIWorkspaceScopeAllAuthorizedRequest {
@@ -654,6 +670,7 @@ export interface AISynthesisOutput {
   unresolvedGaps: string[];
   confidence: number;
   disagreement: boolean;
+  customerDecisionBrief?: AICustomerDecisionBriefOutput;
 }
 
 export interface AICriticOutput {
@@ -979,6 +996,7 @@ interface AIChatRunStartRequestPage extends AIChatRequestBase {
   chatMode: 'page';
   input: string;
   pageContext: PageContext;
+  outputContract?: AIChatOutputContract;
   workspaceScope?: never;
   runId?: never;
 }
@@ -992,6 +1010,7 @@ interface AIChatRunStartRequestWorkspace extends AIChatRequestBase {
    * but pure workspace turns rely on workspaceScope alone.
    */
   pageContext?: PageContext;
+  outputContract?: never;
   workspaceScope: AIWorkspaceScopeRequest;
 }
 
@@ -1004,6 +1023,7 @@ export interface AIChatRunResumeRequest extends AIChatRequestBase {
   chatMode?: AIChatMode;
   pageContext?: PageContext;
   workspaceScope?: AIWorkspaceScopeRequest;
+  outputContract?: never;
   input?: string;
   approvalDecision?: AIChatApprovalDecision;
   resume: AIChatRunResumeDirective;
@@ -1065,6 +1085,7 @@ export interface AIChatTerminalSnapshot {
   classification?: AIChatClassificationMetadata;
   routing?: AIChatRoutingMetadata;
   structuredResponse?: StructuredAIResponse;
+  contractOutput?: AIChatContractOutput;
   usage?: AIChatUsage;
   answer?: string;
   completionReason?: string;

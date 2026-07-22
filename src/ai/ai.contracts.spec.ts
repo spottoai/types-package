@@ -28,6 +28,15 @@ const terminalSnapshot: AIChatTerminalSnapshot = {
     },
   },
   answer: 'Completed answer',
+  contractOutput: {
+    contract: 'customerDecisionBrief',
+    value: {
+      headline: 'Reduce the highest production exposure first.',
+      businessOutcomes: ['Improve audit readiness.', 'Reduce avoidable access risk.'],
+      costOfDelay: ['Known exposure remains open.', 'Remediation evidence remains incomplete.'],
+      decisionRequired: 'Approve the first package, owner, and review date.',
+    },
+  },
 };
 
 const completedEvent: AIChatRunCompletedEvent = {
@@ -49,6 +58,7 @@ const pageStartRequest: AIChatRunStartRequest = {
   chatMode: 'page',
   input: 'What should I focus on?',
   stream: true,
+  outputContract: 'customerDecisionBrief',
   pageContext: {
     pageType: 'dashboard',
     companyId: 'comp-1',
