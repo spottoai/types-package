@@ -5,4 +5,5 @@ export * from './costAnomalies';
 export * from './baseAlert';
 export * from './alertDefinitionRun';
 export * from './quickAlerts';
+export * from './actionGroups';
 //# sourceMappingURL=index.d.ts.map

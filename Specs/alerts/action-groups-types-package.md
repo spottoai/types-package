@@ -1,10 +1,10 @@
 # Action Groups — Types Package Implementation Plan
 
 ## Metadata
-Status: draft
-Approved: No
-Iterations: 0
-Last updated: 2026-07-22
+Status: approved
+Approved: Yes
+Iterations: 1
+Last updated: 2026-07-23
 Repo: types-package
 Domain: alerts
 Parent spec: core/specs/action-groups/README.md
