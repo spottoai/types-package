@@ -9,11 +9,15 @@ const fixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.cons
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
+const subprocessEnvironment = { ...process.env };
+delete subprocessEnvironment.npm_config_dry_run;
+delete subprocessEnvironment.NPM_CONFIG_DRY_RUN;
 
 const run = (command, args, cwd, captureOutput = false) => {
   const result = spawnSync(command, args, {
     cwd,
     encoding: 'utf8',
+    env: subprocessEnvironment,
     stdio: captureOutput ? ['ignore', 'pipe', 'inherit'] : 'inherit',
   });
 

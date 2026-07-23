@@ -49,6 +49,16 @@ export type ArtifactSourceGeneration<Provider extends ArtifactProvider = Artifac
       reason: string;
     });
 
+export type AvailableArtifactSourceGeneration<Provider extends ArtifactProvider = ArtifactProvider, AccountId extends string = string> = Extract<
+  ArtifactSourceGeneration<Provider, AccountId>,
+  { status: 'available' }
+>;
+
+export type DegradedArtifactSourceGeneration<Provider extends ArtifactProvider = ArtifactProvider, AccountId extends string = string> = Exclude<
+  ArtifactSourceGeneration<Provider, AccountId>,
+  AvailableArtifactSourceGeneration<Provider, AccountId>
+>;
+
 export type ArtifactContentEncoding = 'identity' | 'gzip';
 
 /** Logical artifact metadata; storage paths remain application-owned. */
@@ -85,7 +95,6 @@ type ArtifactGenerationManifestBase<Provider extends ArtifactProvider, AccountId
   schemaVersion: ArtifactGenerationSchemaVersion;
   artifactGeneration: ArtifactGeneration<RunId>;
   artifacts: [ArtifactDescriptor, ...ArtifactDescriptor[]];
-  sourceGenerations: ArtifactSourceGeneration<Provider, AccountId>[];
 };
 
 export type ArtifactGenerationManifest<
@@ -96,10 +105,12 @@ export type ArtifactGenerationManifest<
   (
     | {
         status: 'completed';
+        sourceGenerations: [AvailableArtifactSourceGeneration<Provider, AccountId>, ...AvailableArtifactSourceGeneration<Provider, AccountId>[]];
         evidence: Extract<ArtifactManifestEvidence, { status: 'complete' }>;
       }
     | {
         status: 'partial';
+        sourceGenerations: [ArtifactSourceGeneration<Provider, AccountId>, ...ArtifactSourceGeneration<Provider, AccountId>[]];
         evidence: Extract<ArtifactManifestEvidence, { status: 'partial' }>;
       }
   );

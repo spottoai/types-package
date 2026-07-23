@@ -143,6 +143,26 @@ const invalidSourceStatus: ArtifactSourceGeneration<'aws', '123456789012'> = {
   status: 'unknown',
 };
 
+// @ts-expect-error A completed manifest cannot claim a degraded source generation.
+const invalidCompletedSourceGeneration: ArtifactGenerationManifest<'aws', '123456789012', 'portal-run-1'> = {
+  ...completedManifest,
+  sourceGenerations: [
+    {
+      provider: 'aws',
+      accountId: '123456789012',
+      source: 'billing',
+      status: 'missing',
+      reason: 'No accepted billing generation exists.',
+    },
+  ],
+};
+
+const invalidEmptyCompletedSourceGenerations: ArtifactGenerationManifest<'aws', '123456789012', 'portal-run-1'> = {
+  ...completedManifest,
+  // @ts-expect-error A completed manifest must identify at least one available source generation.
+  sourceGenerations: [],
+};
+
 void [
   completedManifest,
   partialManifest,
@@ -154,4 +174,6 @@ void [
   invalidGenerationPointer,
   invalidCompletedEvidence,
   invalidSourceStatus,
+  invalidCompletedSourceGeneration,
+  invalidEmptyCompletedSourceGenerations,
 ];

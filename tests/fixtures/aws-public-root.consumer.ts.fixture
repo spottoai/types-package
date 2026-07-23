@@ -211,7 +211,16 @@ const generationManifest = {
       sha256: 'a'.repeat(64),
     },
   ],
-  sourceGenerations: [],
+  sourceGenerations: [
+    {
+      provider: 'aws',
+      accountId: '123456789012',
+      source: 'ec2-instances',
+      status: 'available',
+      generationId: 'ec2-generation-1',
+      generatedAt: acceptedResponse.acceptedAt,
+    },
+  ],
   evidence: {
     status: 'complete',
     issues: [],
