@@ -4,6 +4,25 @@
   "description": "Shared TypeScript interfaces for SpottoAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "aws": [
+        "dist/aws/index.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./aws": {
+      "types": "./dist/aws/index.d.ts",
+      "import": "./dist/aws/index.js",
+      "require": "./dist/aws/index.js"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -14,6 +33,7 @@
     "clean": "rimraf dist",
     "check:packed-exports": "node scripts/check-packed-aws-exports.mjs",
     "prepublishOnly": "npm run clean && npm run build && npm run check:packed-exports",
+    "test": "npm run typecheck:contracts && npm run check:packed-exports",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",

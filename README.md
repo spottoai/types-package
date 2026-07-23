@@ -37,11 +37,21 @@ Or for a specific branch/tag:
 
 ```typescript
 // Import all interfaces
-import * as Types from '@spotto/types-package';
+import * as Types from '@spottoai/types-package';
 
 // Import specific interfaces
-import { User } from '@spotto/types-package';
+import { User } from '@spottoai/types-package';
+
+// Import AWS-only public artifact contracts
+import type {
+  AwsPortalAccountSummaryArtifact,
+  AwsPortalResourceCollectionArtifact,
+} from '@spottoai/types-package/aws';
 ```
+
+The root entry point also exports the provider-neutral artifact generation,
+manifest, descriptor, and completed-pointer contracts. Storage paths and
+runtime persistence records deliberately remain owned by the producing engine.
 
 ## Development
 

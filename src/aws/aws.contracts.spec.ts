@@ -69,7 +69,6 @@ const setupRequest: AwsCloudAccountSetupRequest = {
   companyId: 'company-123',
   name: 'Production AWS',
   authMode: 'crossAccountRole',
-  accountId: '123456789012',
   roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
   billingExport: {
     type: 'CUR',
@@ -267,6 +266,12 @@ const invalidSetupWithExternalId: AwsCloudAccountSetupRequest = {
   externalId: 'caller-controlled-external-id',
 };
 
+const invalidSetupWithAccountId: AwsCloudAccountSetupRequest = {
+  ...setupRequest,
+  // @ts-expect-error The API derives the AWS account ID from roleArn; setup requests must not submit it.
+  accountId: '123456789012',
+};
+
 const invalidPreparationWithExternalId: AwsCloudAccountSetupPreparationRequest = {
   // @ts-expect-error Preparation is company-scoped and the API generates the External ID.
   externalId: 'caller-controlled-external-id',
@@ -316,6 +321,7 @@ void invalidOnboardWithCredentials;
 void invalidOnboardWithEncryptedSecret;
 void invalidSetupWithAccessKey;
 void invalidSetupWithExternalId;
+void invalidSetupWithAccountId;
 void invalidPreparationWithExternalId;
 void invalidPreparationWithAccountId;
 void invalidLowercaseSetupProvider;

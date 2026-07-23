@@ -1,8 +1,10 @@
 import {
+  ARTIFACT_GENERATION_SCHEMA_VERSION,
   AWS_REQUEST_ACTIONS,
   AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS,
   AWS_REQUEST_PROVIDER,
   AWS_REQUEST_SCHEMA_VERSION,
+  type ArtifactGenerationManifest,
   type AwsCloudAccountSetupAcceptedResponse,
   type AwsCloudAccountSetupPreparationRequest,
   type AwsCloudAccountSetupPreparationResponse,
@@ -17,16 +19,33 @@ import {
   type ResourceCostPeriodMetadata,
   type ResourceSpend,
 } from '@spottoai/types-package';
+import {
+  AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PUBLIC_ARTIFACT_TYPES,
+  type AwsPluginResourceArtifact,
+  type AwsPluginSubscriptionArtifact,
+  type AwsPortalAccountSummaryArtifact,
+  type AwsPortalLifecycleArtifact,
+  type AwsPortalRelationshipArtifact,
+  type AwsPortalResourceCollectionArtifact,
+} from '@spottoai/types-package/aws';
 
 const requestActions: readonly AwsRequestActionV1[] = AWS_REQUEST_ACTIONS;
 const forbiddenCredentialFields: readonly AwsRequestForbiddenCredentialField[] = AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS;
+const publicArtifactTypes = AWS_PUBLIC_ARTIFACT_TYPES;
+type PackedAwsPublicArtifacts =
+  | AwsPortalAccountSummaryArtifact
+  | AwsPortalResourceCollectionArtifact
+  | AwsPortalRelationshipArtifact
+  | AwsPortalLifecycleArtifact
+  | AwsPluginSubscriptionArtifact
+  | AwsPluginResourceArtifact;
 
 const setupRequest: AwsCloudAccountSetupRequest = {
   provider: 'AWS',
   companyId: 'company-123',
   name: 'Production AWS',
   authMode: 'crossAccountRole',
-  accountId: '123456789012',
   roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
 };
 
@@ -174,6 +193,46 @@ const report: DecompositionTree = {
   currencySymbol: '$',
 };
 
+const generationManifest = {
+  schemaVersion: ARTIFACT_GENERATION_SCHEMA_VERSION,
+  provider: 'aws',
+  accountId: '123456789012',
+  artifactGeneration: {
+    runId: 'portal-run-1',
+    generatedAt: acceptedResponse.acceptedAt,
+  },
+  status: 'completed',
+  artifacts: [
+    {
+      name: 'account-summary',
+      mediaType: 'application/json',
+      contentEncoding: 'gzip',
+      byteLength: 100,
+      sha256: 'a'.repeat(64),
+    },
+  ],
+  sourceGenerations: [],
+  evidence: {
+    status: 'complete',
+    issues: [],
+  },
+} satisfies ArtifactGenerationManifest<'aws', '123456789012', 'portal-run-1'>;
+
+const publicAccountSummary = {
+  schemaVersion: AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  provider: 'aws',
+  accountId: '123456789012',
+  artifactType: 'account-summary',
+  artifactGeneration: generationManifest.artifactGeneration,
+  account: {
+    provider: 'aws',
+    accountId: '123456789012',
+    displayName: 'Production AWS',
+  },
+  timestamp: acceptedResponse.acceptedAt,
+} satisfies AwsPortalAccountSummaryArtifact<'123456789012', 'portal-run-1'>;
+const packedAwsPublicArtifact: PackedAwsPublicArtifacts = publicAccountSummary;
+
 void [
   setupRequest,
   setupPreparationRequest,
@@ -189,4 +248,8 @@ void [
   dailyCostPeriod,
   resourceSpend,
   report,
+  generationManifest,
+  publicAccountSummary,
+  publicArtifactTypes,
+  packedAwsPublicArtifact,
 ];

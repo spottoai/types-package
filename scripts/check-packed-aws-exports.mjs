@@ -38,7 +38,7 @@ try {
 
   const consumerRoot = join(tempRoot, 'consumer');
   await mkdir(consumerRoot, { recursive: true });
-  await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true }, null, 2));
+  await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true, type: 'module' }, null, 2));
   await copyFile(fixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
 
   run(
@@ -53,11 +53,11 @@ try {
       '--strict',
       '--skipLibCheck',
       '--target',
-      'ES2020',
+      'ES2022',
       '--module',
-      'commonjs',
+      'NodeNext',
       '--moduleResolution',
-      'node',
+      'NodeNext',
       'aws-public-root.consumer.ts',
     ],
     consumerRoot
@@ -65,13 +65,22 @@ try {
   run(
     process.execPath,
     [
+      '--input-type=module',
       '-e',
-      "const pkg = require('@spottoai/types-package'); if (pkg.AWS_REQUEST_PROVIDER !== 'aws' || pkg.AWS_REQUEST_SCHEMA_VERSION !== 1 || !Array.isArray(pkg.AWS_REQUEST_ACTIONS) || !Array.isArray(pkg.AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS)) process.exit(1);",
+      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; if (root.AWS_REQUEST_PROVIDER !== 'aws' || root.AWS_REQUEST_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || !Array.isArray(root.AWS_REQUEST_ACTIONS) || !Array.isArray(root.AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource')) process.exit(1);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1) process.exit(1);",
     ],
     consumerRoot
   );
 
-  process.stdout.write('Packed AWS and existing Azure compatibility exports verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS and existing Azure compatibility exports verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

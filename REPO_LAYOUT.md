@@ -18,6 +18,8 @@ Folder `README.md` files are authoritative for local implementation details.
 - `src/index.ts` package export surface.
 - `src/accounts/`, `src/company/`, `src/users/` domain DTOs.
 - `src/azure/`, `src/tags/`, `src/events/` platform contract types.
+- `src/aws/` AWS public request and artifact contracts, also published through
+  `@spottoai/types-package/aws`.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
 
 ## Specs and tooling
