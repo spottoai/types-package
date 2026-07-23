@@ -75,7 +75,7 @@ jobs:
         run: git push origin HEAD:main
 
       - name: Publish to npm
-        run: npm publish --access public --tag beta
+        run: npm publish --access public --tag latest
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

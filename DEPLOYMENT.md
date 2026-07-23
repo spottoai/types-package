@@ -32,8 +32,9 @@ npm run build:check
 ## Publish
 
 - `npm run prepublishOnly` runs clean + build before publish.
-- Prereleases use the explicit `beta` distribution tag. For a supervised manual
-  recovery, run `npm publish --access public --tag beta`.
+- Prereleases use the explicit `latest` distribution tag so the package page
+  and default installs expose the newest prerelease. For a supervised manual
+  recovery, run `npm publish --access public --tag latest`.
 
 ## Release workflow
 
