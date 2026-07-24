@@ -114,11 +114,23 @@ export interface AzureResourcePortalItem {
     /** Current Azure Resource Health availability status for this resource, when available. */
     resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
+export interface SavingsOpportunity {
+    /** Stable identifier for the customer-facing savings opportunity. */
+    id: string;
+    /** Customer-facing explanation of the action or scenario that produces the saving. */
+    label: string;
+    /** Monthly saving represented by this opportunity. */
+    amount: number;
+    /** Percentage of the same monthly baseline, when available. */
+    percentage?: number;
+}
 export interface SavingsPotential {
     minAmount: number;
     minPercentage: number;
     maxAmount: number;
     maxPercentage: number;
+    /** Source-agnostic explanations for the displayed savings amount. */
+    opportunities?: SavingsOpportunity[];
     /**
      * ISO 4217 currency for monetary amounts when not inherited from a containing subscription artifact.
      * Consumers must reject a conflict with an enclosing artifact currency.

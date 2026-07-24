@@ -43,6 +43,14 @@ const nzdSavings: SavingsPotential = {
   maxAmount: 200,
   maxPercentage: 20,
   currency: 'NZD',
+  opportunities: [
+    {
+      id: 'storage-hot-cold-mix',
+      label: 'Hot & Cold Mix',
+      amount: 200,
+      percentage: 20,
+    },
+  ],
 };
 
 const availableSecureScoreEvidence: SecureScoreEvidence = {
