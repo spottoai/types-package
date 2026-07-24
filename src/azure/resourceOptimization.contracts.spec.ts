@@ -25,7 +25,7 @@ const profile: ResourceOptimizationProfile = {
   scenarios: [scenario],
 };
 
-const portalResource = {
+const portalResource: AzureResourcePortalItem = {
   id: '/subscriptions/sub/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/example',
   name: 'example',
   type: 'microsoft.storage/storageaccounts',
@@ -47,9 +47,9 @@ const portalResource = {
       },
     ],
   },
-} satisfies AzureResourcePortalItem;
+};
 
-const pluginResource = {
+const pluginResource: AzureResourcePluginItemDetailed = {
   id: portalResource.id,
   name: portalResource.name,
   type: portalResource.type,
@@ -60,19 +60,23 @@ const pluginResource = {
   currencySymbol: '$',
   timestamp: '2026-07-24T00:00:00.000Z',
   optimizationProfile: profile,
-} satisfies AzureResourcePluginItemDetailed;
+};
 
-const recommendationResource = {
+const recommendationResource: RecommendationResource = {
   id: portalResource.id,
   name: portalResource.name,
   type: portalResource.type,
   spend: portalResource.spend,
   spendAmortized: portalResource.spendAmortized,
   optimizationProfile: portalResource.optimizationProfile,
-} satisfies RecommendationResource;
+};
 
 // @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
 void portalResource.costEstimation;
+// @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
+void pluginResource.costEstimation;
+// @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
+void recommendationResource.costEstimation;
 
 void pluginResource;
 void recommendationResource;
