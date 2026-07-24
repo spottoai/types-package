@@ -5,7 +5,7 @@ import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement
 import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
 import type { AwsRequestForbiddenCredentialFields } from './requests';
 export declare const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION: 1;
-export declare const AWS_PUBLIC_ARTIFACT_TYPES: readonly ["resource-collection", "account-summary", "relationships", "lifecycle", "plugin-subscription", "plugin-resource"];
+export declare const AWS_PUBLIC_ARTIFACT_TYPES: readonly ["resource-collection", "resource-collection-history", "account-summary", "account-summary-history", "account-summary-ai-cost-summary", "relationships", "lifecycle", "plugin-subscription", "plugin-resource"];
 export type AwsPublicArtifactSchemaVersion = typeof AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION;
 export type AwsPublicArtifactType = (typeof AWS_PUBLIC_ARTIFACT_TYPES)[number];
 /** Public artifacts must not expose setup values or credential-store locators. */

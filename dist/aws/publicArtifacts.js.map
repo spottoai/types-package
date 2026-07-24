@@ -1,1 +1,1 @@
-{"version":3,"file":"publicArtifacts.js","sourceRoot":"","sources":["../../src/aws/publicArtifacts.ts"],"names":[],"mappings":";;;AAgBa,QAAA,kCAAkC,GAAG,CAAU,CAAC;AAEhD,QAAA,yBAAyB,GAAG;IACvC,qBAAqB;IACrB,iBAAiB;IACjB,eAAe;IACf,WAAW;IACX,qBAAqB;IACrB,iBAAiB;CACT,CAAC"}
+{"version":3,"file":"publicArtifacts.js","sourceRoot":"","sources":["../../src/aws/publicArtifacts.ts"],"names":[],"mappings":";;;AAgBa,QAAA,kCAAkC,GAAG,CAAU,CAAC;AAEhD,QAAA,yBAAyB,GAAG;IACvC,qBAAqB;IACrB,6BAA6B;IAC7B,iBAAiB;IACjB,yBAAyB;IACzB,iCAAiC;IACjC,eAAe;IACf,WAAW;IACX,qBAAqB;IACrB,iBAAiB;CACT,CAAC"}

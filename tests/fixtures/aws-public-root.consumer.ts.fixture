@@ -21,6 +21,9 @@ import {
 } from '@spottoai/types-package';
 import {
   AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
+  AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
   AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PUBLIC_ARTIFACT_TYPES,
   buildAwsPluginResourceLogicalName,
@@ -28,15 +31,21 @@ import {
   validateAwsPluginGenerationManifest,
   validateAwsPluginResourceDetailArtifact,
   validateAwsPluginSubscriptionDetailArtifact,
+  validateAwsPortalAccountSummaryAiCostSummaryArtifact,
+  validateAwsPortalAccountSummaryDetailArtifact,
+  validateAwsPortalResourceCollectionDetailArtifact,
   type AwsPluginGenerationManifest,
   type AwsPluginResourceDetailArtifact,
   type AwsPluginResourceArtifact,
   type AwsPluginSubscriptionDetailArtifact,
   type AwsPluginSubscriptionArtifact,
   type AwsPortalAccountSummaryArtifact,
+  type AwsPortalAccountSummaryAiCostSummaryArtifact,
+  type AwsPortalAccountSummaryDetailArtifact,
   type AwsPortalLifecycleArtifact,
   type AwsPortalRelationshipArtifact,
   type AwsPortalResourceCollectionArtifact,
+  type AwsPortalResourceCollectionDetailArtifact,
 } from '@spottoai/types-package/aws';
 
 const requestActions: readonly AwsRequestActionV1[] = AWS_REQUEST_ACTIONS;
@@ -51,6 +60,20 @@ const pluginValidators = [
   validateAwsPluginResourceDetailArtifact,
   validateAwsPluginGenerationManifest,
 ] as const;
+const portalArtifactConstants = [
+  AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
+  AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
+] as const;
+const portalArtifactValidators = [
+  validateAwsPortalResourceCollectionDetailArtifact,
+  validateAwsPortalAccountSummaryDetailArtifact,
+  validateAwsPortalAccountSummaryAiCostSummaryArtifact,
+] as const;
+type PackedAwsPortalContracts =
+  | AwsPortalResourceCollectionDetailArtifact
+  | AwsPortalAccountSummaryDetailArtifact
+  | AwsPortalAccountSummaryAiCostSummaryArtifact;
 type PackedAwsPublicArtifacts =
   | AwsPortalAccountSummaryArtifact
   | AwsPortalResourceCollectionArtifact
@@ -282,7 +305,10 @@ void [
   pluginSubscriptionLogicalName,
   pluginResourceLogicalName,
   pluginValidators,
+  portalArtifactConstants,
+  portalArtifactValidators,
   packedAwsPublicArtifact,
 ];
 
 void (undefined as unknown as PackedAwsPluginContracts);
+void (undefined as unknown as PackedAwsPortalContracts);

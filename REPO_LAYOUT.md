@@ -23,7 +23,9 @@ Folder `README.md` files are authoritative for local implementation details.
 - `src/aws/` AWS public request and artifact contracts, also published through
   `@spottoai/types-package/aws`. This includes lossless AWS plugin body,
   source-binding, logical-name, complete active-set, retirement, and shared
-  runtime validation contracts.
+  runtime validation contracts. It also owns lossless resource/account current
+  bodies, compact history bodies and references, AI sibling contracts, and
+  their dependency-free rejection validators.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
 
 ## Specs and tooling
@@ -32,6 +34,9 @@ Folder `README.md` files are authoritative for local implementation details.
 - `scripts/build-check.sh` build verification helper.
 - `scripts/check-plugin-public-artifacts.mjs` executes focused AWS plugin body
   and active-set round-trip and rejection checks against built package output.
+- `scripts/check-portal-public-artifacts.mjs` executes focused resource,
+  account, history, AI sibling, cross-scope, undeclared-field, and prohibited
+  path/credential rejection checks against built package output.
 - `scripts/release.sh` release automation helper.
 - `dist/` generated package output.
 

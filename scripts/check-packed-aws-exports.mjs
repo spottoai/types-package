@@ -71,7 +71,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; if (root.AWS_REQUEST_PROVIDER !== 'aws' || root.AWS_REQUEST_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || !Array.isArray(root.AWS_REQUEST_ACTIONS) || !Array.isArray(root.AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function') process.exit(1);",
+      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; if (root.AWS_REQUEST_PROVIDER !== 'aws' || root.AWS_REQUEST_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || !Array.isArray(root.AWS_REQUEST_ACTIONS) || !Array.isArray(root.AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function') process.exit(1);",
     ],
     consumerRoot
   );
@@ -79,7 +79,7 @@ try {
     process.execPath,
     [
       '-e',
-      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function') process.exit(1);",
+      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function') process.exit(1);",
     ],
     consumerRoot
   );

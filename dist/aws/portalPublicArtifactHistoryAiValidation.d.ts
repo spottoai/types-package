@@ -1,0 +1,8 @@
+import { type AwsPortalAccountSummaryAiCostSummaryArtifact, type AwsPortalAccountSummaryHistoryArtifact, type AwsPortalResourceCollectionHistoryArtifact, type AwsPortalRetainedHistoryBodyReference } from './portalPublicArtifactHistoryTypes';
+export declare function validateAwsPortalResourceCollectionHistoryArtifact(value: unknown): AwsPortalResourceCollectionHistoryArtifact;
+export declare function validateAwsPortalAccountSummaryHistoryArtifact(value: unknown): AwsPortalAccountSummaryHistoryArtifact;
+export declare function validateAwsPortalRetainedHistoryBodyReference(value: unknown): AwsPortalRetainedHistoryBodyReference;
+export declare function validateAwsPortalRetainedHistoryBodyBinding(referenceValue: unknown, artifactValue: unknown): AwsPortalRetainedHistoryBodyReference;
+export declare function validateAwsPortalAccountSummaryAiCostSummaryArtifact(value: unknown): AwsPortalAccountSummaryAiCostSummaryArtifact;
+export declare function validateAwsPortalAccountSummaryAiCostSummarySiblingBinding(aiValue: unknown, siblingValue: unknown, siblingBodyDescriptorValue: unknown): AwsPortalAccountSummaryAiCostSummaryArtifact;
+//# sourceMappingURL=portalPublicArtifactHistoryAiValidation.d.ts.map

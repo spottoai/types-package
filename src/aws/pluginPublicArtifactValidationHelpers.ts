@@ -6,7 +6,9 @@ const FORBIDDEN_PUBLIC_KEYS = new Set<string>([
   'roleArn',
   'secretArn',
   'secretReference',
+  'credentialReference',
   'storagePath',
+  'sourcePath',
   'path',
   'blobPath',
   'containerPath',
@@ -16,8 +18,21 @@ const FORBIDDEN_PUBLIC_KEYS = new Set<string>([
   'retries',
   'retry',
   'refreshState',
+  'lastRefreshExecutionRequestId',
+  'lastRefreshExecutionRequestedAt',
+  'prompt',
+  'promptInput',
+  'sourceBytes',
+  'maxSourceBytes',
+  'bedrockRegion',
+  'guardrailId',
+  'guardrailVersion',
+  'etag',
+  'eTag',
   'retiredAt',
 ]);
+const FORBIDDEN_PUBLIC_KEY_PATTERN =
+  /^(?:source|storage|blob|container)(?:path|uri|url|key)$|^s3(?:bucket|key|uri|url)$/i;
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
@@ -89,7 +104,7 @@ export function assertNoForbiddenKeys(value: unknown, field: string): void {
   }
   if (!value || typeof value !== 'object') return;
   for (const [key, child] of Object.entries(value)) {
-    if (FORBIDDEN_PUBLIC_KEYS.has(key)) throw new Error(`${field}.${key} is not allowed in a public artifact.`);
+    if (isForbiddenPublicKey(key)) throw new Error(`${field}.${key} is not allowed in a public artifact.`);
     assertNoForbiddenKeys(child, `${field}.${key}`);
   }
 }
@@ -109,9 +124,17 @@ export function assertPublicJson(value: unknown, field: string): void {
     throw new Error(`${field} must contain only plain JSON values.`);
   }
   for (const [key, child] of Object.entries(value)) {
-    if (FORBIDDEN_PUBLIC_KEYS.has(key)) throw new Error(`${field}.${key} is not allowed in a public artifact.`);
+    if (isForbiddenPublicKey(key)) throw new Error(`${field}.${key} is not allowed in a public artifact.`);
     assertPublicJson(child, `${field}.${key}`);
   }
+}
+
+function isForbiddenPublicKey(key: string): boolean {
+  const normalized = key.toLowerCase();
+  return (
+    Array.from(FORBIDDEN_PUBLIC_KEYS).some(forbidden => forbidden.toLowerCase() === normalized) ||
+    FORBIDDEN_PUBLIC_KEY_PATTERN.test(key)
+  );
 }
 
 export function assertRequiredKeys(value: Record<string, unknown>, required: readonly string[], field: string): void {
@@ -151,9 +174,18 @@ export function validateBilling(value: unknown, field = 'target.billing'): void 
   }
   const period = asRecord(billing.billingPeriod, `${field}.billingPeriod`);
   assertExactKeys(period, ['start', 'end'], `${field}.billingPeriod`);
-  requiredString(period.start, `${field}.billingPeriod.start`);
-  requiredString(period.end, `${field}.billingPeriod.end`);
+  calendarDate(period.start, `${field}.billingPeriod.start`);
+  calendarDate(period.end, `${field}.billingPeriod.end`);
   if (String(period.start) > String(period.end)) throw new Error(`${field}.billingPeriod start must not exceed end.`);
+}
+
+function calendarDate(value: unknown, field: string): string {
+  const date = requiredString(value, field);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(Date.parse(`${date}T00:00:00.000Z`)))
+    throw new Error(`${field} must be a valid calendar date.`);
+  if (new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date)
+    throw new Error(`${field} must be a valid calendar date.`);
+  return date;
 }
 
 export function validateSelector(value: unknown, field: string): void {
