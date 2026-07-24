@@ -4,7 +4,7 @@ import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
-import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
+import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
@@ -112,7 +112,7 @@ export interface AzureResourcePortalItem {
   createdTime?: number;
   benefitsCoverage?: BenefitCoverageSummary;
   /** This is simplfied */
-  costEstimation?: ResourceSimpleCostEstimationSummary;
+  optimizationProfile?: ResourceSimpleOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
   /** Current Azure Resource Health availability status for this resource, when available. */
@@ -211,7 +211,7 @@ export interface AzureResourcePluginItem {
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
-  costEstimation?: ResourceCostEstimationSummary;
+  optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
 }
@@ -259,7 +259,7 @@ export interface AzureResourcePluginItemDetailed {
   tags?: Record<string, string>;
   spottoTags?: Tags;
   benefitsCoverage?: BenefitCoverageSummary;
-  costEstimation?: ResourceCostEstimationSummary;
+  optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
   /** Generic compute hosting model alternatives, including cross-platform options. */

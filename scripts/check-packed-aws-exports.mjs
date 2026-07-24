@@ -5,7 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const fixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
+const awsFixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
+const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-optimization.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -43,7 +44,8 @@ try {
   const consumerRoot = join(tempRoot, 'consumer');
   await mkdir(consumerRoot, { recursive: true });
   await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true, type: 'module' }, null, 2));
-  await copyFile(fixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
+  await copyFile(awsFixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
+  await copyFile(resourceOptimizationFixturePath, join(consumerRoot, 'resource-optimization.consumer.ts'));
 
   run(
     npmCommand,
@@ -63,6 +65,7 @@ try {
       '--moduleResolution',
       'NodeNext',
       'aws-public-root.consumer.ts',
+      'resource-optimization.consumer.ts',
     ],
     consumerRoot
   );

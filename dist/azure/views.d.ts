@@ -4,7 +4,7 @@ import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
-import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
+import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
@@ -108,7 +108,7 @@ export interface AzureResourcePortalItem {
     createdTime?: number;
     benefitsCoverage?: BenefitCoverageSummary;
     /** This is simplfied */
-    costEstimation?: ResourceSimpleCostEstimationSummary;
+    optimizationProfile?: ResourceSimpleOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Current Azure Resource Health availability status for this resource, when available. */
@@ -200,7 +200,7 @@ export interface AzureResourcePluginItem {
     metrics?: DisplayMetric[];
     activityLogs?: ActivityLog[];
     benefitsCoverage?: BenefitCoverageSummary;
-    costEstimation?: ResourceCostEstimationSummary;
+    optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
 }
@@ -216,6 +216,14 @@ export interface AzureResourcePluginItemDetailed {
     companyId?: string;
     type: string;
     name: string;
+    /** Resource-specific display name resolved by the artifact producer. */
+    serviceName?: string;
+    /** Resource-specific icon key resolved by the artifact producer. */
+    icon?: string;
+    /** Resource-specific description resolved by the artifact producer. */
+    description?: string;
+    /** Resource-specific product URL resolved by the artifact producer. */
+    product?: string;
     recommendations?: Recommendation[];
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];
@@ -239,7 +247,7 @@ export interface AzureResourcePluginItemDetailed {
     tags?: Record<string, string>;
     spottoTags?: Tags;
     benefitsCoverage?: BenefitCoverageSummary;
-    costEstimation?: ResourceCostEstimationSummary;
+    optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Generic compute hosting model alternatives, including cross-platform options. */
