@@ -1,6 +1,7 @@
 import type {
   AzureResourcePluginItemDetailed,
   AzureResourcePortalItem,
+  RecommendationResource,
   ResourceOptimizationProfile,
   ResourceOptimizationScenario,
 } from '../index.js';
@@ -61,7 +62,17 @@ const pluginResource = {
   optimizationProfile: profile,
 } satisfies AzureResourcePluginItemDetailed;
 
+const recommendationResource = {
+  id: portalResource.id,
+  name: portalResource.name,
+  type: portalResource.type,
+  spend: portalResource.spend,
+  spendAmortized: portalResource.spendAmortized,
+  optimizationProfile: portalResource.optimizationProfile,
+} satisfies RecommendationResource;
+
 // @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
 void portalResource.costEstimation;
 
 void pluginResource;
+void recommendationResource;
