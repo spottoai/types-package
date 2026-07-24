@@ -51,7 +51,12 @@ export interface AutotaskCredentialFields {
   credentialOwnerCompanyId?: string;
 }
 
-export interface AutotaskIntegrationConfig extends AutotaskCredentialFields, AutotaskRoutingFields {
+export interface AutotaskTenancyContractSelection {
+  contractId?: AutotaskId;
+  contractName?: string;
+}
+
+export interface AutotaskIntegrationConfig extends AutotaskCredentialFields, AutotaskRoutingFields, AutotaskTenancyContractSelection {
   enabled?: boolean;
   secret?: string;
 }
@@ -75,13 +80,18 @@ export interface AutotaskIntegrationMetadataPayload extends AutotaskIntegrationR
   maxResults?: number;
 }
 
-export interface AutotaskIntegrationTestPayload extends AutotaskIntegrationRequestBase, AutotaskRoutingFields {}
+export interface AutotaskIntegrationTestPayload extends AutotaskIntegrationRequestBase, AutotaskRoutingFields, AutotaskTenancyContractSelection {}
 
 export type AutotaskZonePayload = AutotaskIntegrationRequestBase;
 export type AutotaskCompaniesPayload = AutotaskIntegrationMetadataPayload;
 export type AutotaskProjectsPayload = AutotaskIntegrationMetadataPayload;
 export type AutotaskContactsPayload = AutotaskIntegrationMetadataPayload;
 export type AutotaskResourcesPayload = AutotaskIntegrationMetadataPayload;
+
+export interface AutotaskContractsPayload extends AutotaskIntegrationMetadataPayload {
+  autotaskCompanyId: AutotaskId;
+  selectedContractId?: AutotaskId;
+}
 
 export interface AutotaskTicketFieldOptionsPayload extends AutotaskIntegrationMetadataPayload {
   field: AutotaskTicketFieldName;
@@ -105,7 +115,18 @@ export interface AutotaskTicketFieldOption extends AutotaskEntity {
   isActive?: boolean;
 }
 
-export interface AutotaskTicketMetadata extends AutotaskRoutingFields {
+export interface AutotaskContractOption extends AutotaskEntity {
+  companyId: AutotaskId;
+  contractNumber?: string;
+  status?: AutotaskId;
+  statusLabel?: string;
+  startDate?: string;
+  endDate?: string;
+  isDefaultContract?: boolean;
+  isAvailable: boolean;
+}
+
+export interface AutotaskTicketMetadata extends AutotaskRoutingFields, AutotaskTenancyContractSelection {
   ticketId?: AutotaskId;
   ticketUrl?: string;
   integrationCompanyId?: string;
