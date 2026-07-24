@@ -20,9 +20,18 @@ import {
   type ResourceSpend,
 } from '@spottoai/types-package';
 import {
+  AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PUBLIC_ARTIFACT_TYPES,
+  buildAwsPluginResourceLogicalName,
+  buildAwsPluginSubscriptionLogicalName,
+  validateAwsPluginGenerationManifest,
+  validateAwsPluginResourceDetailArtifact,
+  validateAwsPluginSubscriptionDetailArtifact,
+  type AwsPluginGenerationManifest,
+  type AwsPluginResourceDetailArtifact,
   type AwsPluginResourceArtifact,
+  type AwsPluginSubscriptionDetailArtifact,
   type AwsPluginSubscriptionArtifact,
   type AwsPortalAccountSummaryArtifact,
   type AwsPortalLifecycleArtifact,
@@ -33,6 +42,15 @@ import {
 const requestActions: readonly AwsRequestActionV1[] = AWS_REQUEST_ACTIONS;
 const forbiddenCredentialFields: readonly AwsRequestForbiddenCredentialField[] = AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS;
 const publicArtifactTypes = AWS_PUBLIC_ARTIFACT_TYPES;
+const pluginSchemaVersion = AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION;
+const pluginSubscriptionLogicalName = buildAwsPluginSubscriptionLogicalName('a'.repeat(64));
+const pluginResourceLogicalName = buildAwsPluginResourceLogicalName('b'.repeat(64), 'a'.repeat(64));
+type PackedAwsPluginContracts = AwsPluginSubscriptionDetailArtifact | AwsPluginResourceDetailArtifact | AwsPluginGenerationManifest;
+const pluginValidators = [
+  validateAwsPluginSubscriptionDetailArtifact,
+  validateAwsPluginResourceDetailArtifact,
+  validateAwsPluginGenerationManifest,
+] as const;
 type PackedAwsPublicArtifacts =
   | AwsPortalAccountSummaryArtifact
   | AwsPortalResourceCollectionArtifact
@@ -260,5 +278,11 @@ void [
   generationManifest,
   publicAccountSummary,
   publicArtifactTypes,
+  pluginSchemaVersion,
+  pluginSubscriptionLogicalName,
+  pluginResourceLogicalName,
+  pluginValidators,
   packedAwsPublicArtifact,
 ];
+
+void (undefined as unknown as PackedAwsPluginContracts);

@@ -92,8 +92,9 @@ export type AwsPublicRecommendation = Pick<Recommendation, 'id' | 'name' | 'cate
     renderData?: never;
     action?: never;
 };
-/** AWS plugin subscription summary reuses the Azure dashboard field contract. */
+/** @deprecated Use AwsPluginSubscriptionDetailArtifact for lossless plugin publication. */
 export type AwsPluginSubscriptionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'plugin-subscription', AccountId, RunId> & AwsPortalAccountSummaryBody<AccountId>;
+/** @deprecated Use AwsPluginResourceDetailArtifact for lossless plugin publication. */
 export type AwsPluginResourceArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'plugin-resource', AccountId, RunId> & Omit<AzureResourcePluginItemDetailed, 'subscription' | 'resourceGroup' | 'properties' | 'recommendations' | 'vmPricePerformance' | 'computeAlternatives'> & {
     arn?: string;
     region: string;

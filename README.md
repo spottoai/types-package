@@ -53,6 +53,12 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+The root and `/aws` entry points also export the lossless AWS plugin
+subscription/resource body contracts, deterministic logical-name builders, one
+complete active-set manifest, and dependency-free runtime validators. These
+validators are the bounded shared rejection boundary required for immutable
+plugin publication; they perform no I/O.
+
 ## Development
 
 ### Setup

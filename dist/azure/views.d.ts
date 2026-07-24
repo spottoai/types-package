@@ -204,6 +204,14 @@ export interface AzureResourcePluginItemDetailed {
     companyId?: string;
     type: string;
     name: string;
+    /** Resource-specific display name resolved by the artifact producer. */
+    serviceName?: string;
+    /** Resource-specific icon key resolved by the artifact producer. */
+    icon?: string;
+    /** Resource-specific description resolved by the artifact producer. */
+    description?: string;
+    /** Resource-specific product URL resolved by the artifact producer. */
+    product?: string;
     recommendations?: Recommendation[];
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];

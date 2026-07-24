@@ -231,7 +231,7 @@ export type AwsPublicRecommendation = Pick<
     action?: never;
   };
 
-/** AWS plugin subscription summary reuses the Azure dashboard field contract. */
+/** @deprecated Use AwsPluginSubscriptionDetailArtifact for lossless plugin publication. */
 export type AwsPluginSubscriptionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
   'plugin-subscription',
   AccountId,
@@ -239,6 +239,7 @@ export type AwsPluginSubscriptionArtifact<AccountId extends string = string, Run
 > &
   AwsPortalAccountSummaryBody<AccountId>;
 
+/** @deprecated Use AwsPluginResourceDetailArtifact for lossless plugin publication. */
 export type AwsPluginResourceArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
   'plugin-resource',
   AccountId,

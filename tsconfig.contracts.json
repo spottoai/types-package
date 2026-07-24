@@ -9,6 +9,7 @@
     "src/ai/ai.contracts.spec.ts",
     "src/aws/aws.contracts.spec.ts",
     "src/aws/publicArtifacts.contracts.spec.ts",
+    "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/azure/financialCorrectness.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
     "src/common/artifactGeneration.contracts.spec.ts",

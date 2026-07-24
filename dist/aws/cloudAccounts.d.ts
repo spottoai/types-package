@@ -61,14 +61,12 @@ export interface AwsCloudAccountOnboardingBundleV1 {
 export type AwsCloudAccountOnboardingStatus = 'pending' | 'validating' | 'syncing' | 'active' | 'failed' | 'deleting' | 'deleted';
 /** Portal-to-API request for the supported AWS cross-account AssumeRole setup path. */
 export interface AwsCloudAccountSetupRequest extends AwsRequestForbiddenCredentialFields {
-    /** Compatibility wire value used by the existing Portal/API create edge. The queue adapter normalizes it to `aws`. */
+    /** Public setup-provider discriminator. The queue adapter normalizes it to lowercase `aws`. */
     provider: 'AWS';
-    /** Accepted for legacy body compatibility; API routes must treat the route company ID as authoritative. */
+    /** Optional body echo; API routes must treat the route company ID as authoritative. */
     companyId?: string;
     name: string;
     authMode: 'crossAccountRole';
-    /** Optional legacy compatibility field. The API derives the authoritative account ID from roleArn. */
-    accountId?: string;
     roleArn: string;
     /** Optional for connections that do not yet configure billing export ingestion. */
     billingExport?: AwsBillingExportConfiguration;
@@ -92,7 +90,7 @@ export interface AwsCloudAccountSetupPreparationResponse extends AwsRequestForbi
     createdAt: string;
     onboardingBundle: AwsCloudAccountOnboardingBundleV1;
 }
-/** API response confirming that AWS onboarding was admitted to asynchronous processing. */
+/** API response confirming that live access validation passed and AWS onboarding was admitted to asynchronous processing. */
 export interface AwsCloudAccountSetupAcceptedResponse extends AwsRequestForbiddenCredentialFields {
     provider: 'AWS';
     cloudAccountId: string;
