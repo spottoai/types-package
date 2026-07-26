@@ -59,6 +59,8 @@ export interface ActionGroupSummary {
   name: string;
   counts: ActionGroupCounts;
   usageCount: number;
+  alertUsageCount: number;
+  notificationUsageCount: number;
   createdAt: string;
   createdByUserId: string;
   updatedAt: string;

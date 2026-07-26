@@ -5,6 +5,7 @@ import type {
   AlertDefinitionCreateInput,
   AlertDefinitionUpdateInput,
   CreateActionGroupInput,
+  NotificationSubscription,
   UpdateActionGroupInput,
 } from '../src/index';
 
@@ -51,11 +52,25 @@ const summary = {
   name: group.name,
   counts: { emails: 1, slack: 1, teams: 1, webhooks: 1, jira: 1, total: 5 },
   usageCount: 2,
+  alertUsageCount: 1,
+  notificationUsageCount: 1,
   createdAt: group.createdAt,
   createdByUserId: group.createdByUserId,
   updatedAt: group.updatedAt,
   updatedByUserId: group.updatedByUserId,
 } satisfies ActionGroupSummary;
+
+const groupNotification = {
+  name: 'Operations events',
+  actionGroupId: group.id,
+  channel: { type: '' },
+  subscriptions: {
+    recommendations: [1],
+    users: [],
+    cloudAccounts: [],
+    sharing: [],
+  },
+} satisfies NotificationSubscription;
 
 const list = { results: [summary] } satisfies ActionGroupListResponse;
 
@@ -95,4 +110,15 @@ const invalidUpdateGroup: UpdateActionGroupInput = {
   companyId: 'company-2',
 };
 
-void [createGroup, updateGroup, group, summary, list, groupAlert, updateGroupAlert, invalidCreateGroup, invalidUpdateGroup];
+void [
+  createGroup,
+  updateGroup,
+  group,
+  summary,
+  list,
+  groupNotification,
+  groupAlert,
+  updateGroupAlert,
+  invalidCreateGroup,
+  invalidUpdateGroup,
+];
