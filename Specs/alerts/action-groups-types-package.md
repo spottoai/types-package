@@ -24,9 +24,10 @@ In scope:
 Out of scope:
 - Runtime validation, persistence, permissions, notification dispatch, or UI state.
 - Migration or removal of Alert `destinations` or Company Notification `channel`.
+- Per-record recipient additions, edits, exclusions, or overrides in Action Group mode.
 
 ## Deferred Ideas
-- Delivery history, test-send contracts, nested Groups, inheritance, multiple Groups per Alert/Notification, and Company Notification Jira semantics.
+- Delivery history, test-send contracts, nested Groups, inheritance, multiple Groups per Alert/Notification, additive recipients or overrides, and Company Notification Jira semantics.
 
 ## Success Criteria (Repo)
 - All consumers can import Action Group contracts from the package root.
