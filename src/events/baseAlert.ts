@@ -68,6 +68,8 @@ export interface BaseAlertDefinition<
   type: TType;
   scope: TScope;
   criteria?: TCriteria;
+  actionGroupId?: string;
+  notifyOn?: AlertLifecycleEvent[];
   destinations?: TDestinations;
   /**
    * Server-authored audit fields. Optional on create/update requests; always present on persisted records.
@@ -88,7 +90,7 @@ export type UpdateAlertDefinitionInput<
   TDefinition extends BaseAlertDefinition = BaseAlertDefinition,
   TCriteria = TDefinition['criteria'],
 > = TDefinition extends BaseAlertDefinition
-  ? Pick<TDefinition, 'name' | 'enabled' | 'scope' | 'destinations'> & {
+  ? Pick<TDefinition, 'name' | 'enabled' | 'scope' | 'actionGroupId' | 'notifyOn' | 'destinations'> & {
       criteria?: TCriteria;
     }
   : never;
