@@ -1,6 +1,7 @@
 import type {
   ActionGroup,
   ActionGroupListResponse,
+  ActionGroupPreview,
   ActionGroupSummary,
   AlertDefinitionCreateInput,
   AlertDefinitionUpdateInput,
@@ -72,6 +73,31 @@ const groupNotification = {
   },
 } satisfies NotificationSubscription;
 
+const preview = {
+  ...summary,
+  recipients: {
+    emails: [{ name: 'Primary', email: 'primary@example.com' }],
+    slack: [{ name: 'Operations' }],
+    teams: [{ name: 'Cloud team' }],
+    webhooks: [{ name: 'Incident intake' }],
+    hasJira: true,
+  },
+} satisfies ActionGroupPreview;
+
+const invalidPreview = {
+  ...preview,
+  recipients: {
+    ...preview.recipients,
+    slack: [
+      {
+        name: 'Operations',
+        // @ts-expect-error Preview records must not expose webhook URLs.
+        webhookUrl: 'https://hooks.slack.com/secret',
+      },
+    ],
+  },
+} satisfies ActionGroupPreview;
+
 const list = { results: [summary] } satisfies ActionGroupListResponse;
 
 const groupAlert = {
@@ -116,6 +142,8 @@ void [
   group,
   summary,
   list,
+  preview,
+  invalidPreview,
   groupNotification,
   groupAlert,
   updateGroupAlert,

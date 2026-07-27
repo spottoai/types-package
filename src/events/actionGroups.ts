@@ -67,6 +67,18 @@ export interface ActionGroupSummary {
   updatedByUserId: string;
 }
 
+export interface ActionGroupRecipientPreview {
+  emails: Array<Pick<ActionGroupEmailAction, 'name' | 'email'>>;
+  slack: Array<Pick<ActionGroupSlackOrTeamsAction, 'name'>>;
+  teams: Array<Pick<ActionGroupSlackOrTeamsAction, 'name'>>;
+  webhooks: Array<Pick<ActionGroupWebhookAction, 'name'>>;
+  hasJira: boolean;
+}
+
+export interface ActionGroupPreview extends ActionGroupSummary {
+  recipients: ActionGroupRecipientPreview;
+}
+
 export interface ActionGroupListResponse {
   results: ActionGroupSummary[];
 }
