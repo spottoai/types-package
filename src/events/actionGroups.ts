@@ -79,8 +79,18 @@ export interface ActionGroupPreview extends ActionGroupSummary {
   recipients: ActionGroupRecipientPreview;
 }
 
+export interface ActionGroupDestinationPreview {
+  type: 'email' | 'slack' | 'teams' | 'webhook' | 'jira';
+  label: string;
+}
+
+export interface ActionGroupListItem extends ActionGroupSummary {
+  destinationPreviews: ActionGroupDestinationPreview[];
+  remainingDestinationCount: number;
+}
+
 export interface ActionGroupListResponse {
-  results: ActionGroupSummary[];
+  results: ActionGroupListItem[];
 }
 
 export type CreateActionGroupInput = Pick<ActionGroup, 'name' | 'actions'>;

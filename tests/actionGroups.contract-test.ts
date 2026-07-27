@@ -1,5 +1,6 @@
 import type {
   ActionGroup,
+  ActionGroupListItem,
   ActionGroupListResponse,
   ActionGroupPreview,
   ActionGroupSummary,
@@ -98,7 +99,29 @@ const invalidPreview = {
   },
 } satisfies ActionGroupPreview;
 
-const list = { results: [summary] } satisfies ActionGroupListResponse;
+const listItem = {
+  ...summary,
+  destinationPreviews: [
+    { type: 'email', label: 'primary@example.com' },
+    { type: 'slack', label: 'Operations' },
+    { type: 'teams', label: 'Cloud team' },
+  ],
+  remainingDestinationCount: 2,
+} satisfies ActionGroupListItem;
+
+const invalidListItem = {
+  ...listItem,
+  destinationPreviews: [
+    {
+      type: 'slack',
+      label: 'Operations',
+      // @ts-expect-error List previews must not expose webhook URLs.
+      webhookUrl: 'https://hooks.slack.com/secret',
+    },
+  ],
+} satisfies ActionGroupListItem;
+
+const list = { results: [listItem] } satisfies ActionGroupListResponse;
 
 const groupAlert = {
   name: 'Production backup failures',
@@ -144,6 +167,8 @@ void [
   list,
   preview,
   invalidPreview,
+  listItem,
+  invalidListItem,
   groupNotification,
   groupAlert,
   updateGroupAlert,
