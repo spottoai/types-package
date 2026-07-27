@@ -52,13 +52,33 @@ export interface ActionGroupSummary {
     name: string;
     counts: ActionGroupCounts;
     usageCount: number;
+    alertUsageCount: number;
+    notificationUsageCount: number;
     createdAt: string;
     createdByUserId: string;
     updatedAt: string;
     updatedByUserId: string;
 }
+export interface ActionGroupRecipientPreview {
+    emails: Array<Pick<ActionGroupEmailAction, 'name' | 'email'>>;
+    slack: Array<Pick<ActionGroupSlackOrTeamsAction, 'name'>>;
+    teams: Array<Pick<ActionGroupSlackOrTeamsAction, 'name'>>;
+    webhooks: Array<Pick<ActionGroupWebhookAction, 'name'>>;
+    hasJira: boolean;
+}
+export interface ActionGroupPreview extends ActionGroupSummary {
+    recipients: ActionGroupRecipientPreview;
+}
+export interface ActionGroupDestinationPreview {
+    type: 'email' | 'slack' | 'teams' | 'webhook' | 'jira';
+    label: string;
+}
+export interface ActionGroupListItem extends ActionGroupSummary {
+    destinationPreviews: ActionGroupDestinationPreview[];
+    remainingDestinationCount: number;
+}
 export interface ActionGroupListResponse {
-    results: ActionGroupSummary[];
+    results: ActionGroupListItem[];
 }
 export type CreateActionGroupInput = Pick<ActionGroup, 'name' | 'actions'>;
 export type UpdateActionGroupInput = Pick<ActionGroup, 'name' | 'actions'>;

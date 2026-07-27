@@ -2,6 +2,7 @@
 export interface NotificationSubscription {
     id?: string;
     name: string;
+    actionGroupId?: string;
     channel: {
         type: 'slack' | 'teams' | 'email' | 'webhook' | '';
         url?: string;
