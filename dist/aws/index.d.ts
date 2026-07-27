@@ -1,3 +1,12 @@
 export * from './cloudAccounts';
+export * from './pluginPublicArtifacts';
+export * from './pluginPublicArtifactEvidence';
+export * from './pluginPublicArtifactValidation';
+export * from './portalPublicArtifacts';
+export * from './portalPublicArtifactHistoryTypes';
+export * from './portalPublicArtifactNestedEvidence';
+export * from './portalPublicArtifactNestedEvidenceValidation';
+export * from './portalPublicArtifactValidation';
+export * from './publicArtifacts';
 export * from './requests';
 //# sourceMappingURL=index.d.ts.map

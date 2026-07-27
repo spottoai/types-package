@@ -43,15 +43,25 @@ import * as Types from '@spottoai/types-package';
 import { User } from '@spottoai/types-package';
 
 // Import AWS-only public artifact contracts
-import type {
-  AwsPortalAccountSummaryArtifact,
-  AwsPortalResourceCollectionArtifact,
-} from '@spottoai/types-package/aws';
+import type { AwsPortalAccountSummaryArtifact, AwsPortalResourceCollectionArtifact } from '@spottoai/types-package/aws';
 ```
 
 The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
+
+The root and `/aws` entry points also export the lossless AWS plugin
+subscription/resource body contracts, deterministic logical-name builders, one
+complete active-set manifest, and dependency-free runtime validators. These
+validators are the bounded shared rejection boundary required for immutable
+plugin publication; they perform no I/O.
+
+The same entry points export the lossless AWS resource collection, account
+summary, compact retained-history, retained body-reference, and audience-indexed
+AI cost-summary contracts. Package-owned logical names and dependency-free
+validators bind exact account/scope/generation/sibling identity while rejecting
+undeclared, credential-bearing, physical-path, operational-marker, and lossy
+bodies.
 
 ## Development
 

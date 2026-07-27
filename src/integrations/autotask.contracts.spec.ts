@@ -1,4 +1,5 @@
 import type {
+  AutotaskIntegrationConfig,
   AutotaskIntegrationSanitizedConfig,
   AutotaskShareOverrides,
   AutotaskTicketFieldOption,
@@ -33,6 +34,12 @@ const sanitizedConfig: AutotaskIntegrationSanitizedConfig = {
   ...autotaskOverrides,
 };
 
+const tenancyConfig: AutotaskIntegrationConfig = {
+  ...sanitizedConfig,
+  contractId: 20,
+  contractName: 'Managed Services',
+};
+
 const fieldOptionsPayload: AutotaskTicketFieldOptionsPayload = {
   username: 'api-user@example.com',
   secret: 'secret-value',
@@ -63,6 +70,8 @@ const ticketMetadata: AutotaskTicketMetadata = {
   ticketId: 'T20260604.0001',
   ticketUrl: 'https://ww3.autotask.net/Mvc/ServiceDesk/TicketDetail.mvc?ticketId=456',
   integrationCompanyId: 'parent-comp-123',
+  contractId: 20,
+  contractName: 'Managed Services',
   ...autotaskOverrides,
 };
 
@@ -84,6 +93,7 @@ const statusRequestItem: IntegrationTicketStatusRequestItem = {
 };
 
 void sanitizedConfig;
+void tenancyConfig;
 void fieldOptionsPayload;
 void fieldOption;
 void shareRequest;
@@ -108,5 +118,12 @@ const invalidFieldOptionsPayload: AutotaskTicketFieldOptionsPayload = {
   field: 'boardID',
 };
 
+const invalidShareOverrides: AutotaskShareOverrides = {
+  companyId: 123,
+  // @ts-expect-error Contracts are tenancy configuration, not per-share overrides.
+  contractId: 20,
+};
+
 void invalidShareRequest;
 void invalidFieldOptionsPayload;
+void invalidShareOverrides;
