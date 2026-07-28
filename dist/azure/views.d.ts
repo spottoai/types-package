@@ -4,7 +4,7 @@ import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
-import { ResourceCostEstimationSummary, ResourceSimpleCostEstimationSummary } from './costEstimation';
+import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
@@ -108,17 +108,29 @@ export interface AzureResourcePortalItem {
     createdTime?: number;
     benefitsCoverage?: BenefitCoverageSummary;
     /** This is simplfied */
-    costEstimation?: ResourceSimpleCostEstimationSummary;
+    optimizationProfile?: ResourceSimpleOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Current Azure Resource Health availability status for this resource, when available. */
     resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
+}
+export interface SavingsOpportunity {
+    /** Stable identifier for the customer-facing savings opportunity. */
+    id: string;
+    /** Customer-facing explanation of the action or scenario that produces the saving. */
+    label: string;
+    /** Monthly saving represented by this opportunity. */
+    amount: number;
+    /** Percentage of the same monthly baseline, when available. */
+    percentage?: number;
 }
 export interface SavingsPotential {
     minAmount: number;
     minPercentage: number;
     maxAmount: number;
     maxPercentage: number;
+    /** Source-agnostic explanations for the displayed savings amount. */
+    opportunities?: SavingsOpportunity[];
     /**
      * ISO 4217 currency for monetary amounts when not inherited from a containing subscription artifact.
      * Consumers must reject a conflict with an enclosing artifact currency.
@@ -188,7 +200,7 @@ export interface AzureResourcePluginItem {
     metrics?: DisplayMetric[];
     activityLogs?: ActivityLog[];
     benefitsCoverage?: BenefitCoverageSummary;
-    costEstimation?: ResourceCostEstimationSummary;
+    optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
 }
@@ -235,7 +247,7 @@ export interface AzureResourcePluginItemDetailed {
     tags?: Record<string, string>;
     spottoTags?: Tags;
     benefitsCoverage?: BenefitCoverageSummary;
-    costEstimation?: ResourceCostEstimationSummary;
+    optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Generic compute hosting model alternatives, including cross-platform options. */

@@ -10,6 +10,7 @@ import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 import type { AzurePortalVersionedArtifact } from './portalArtifacts';
 import type { LicensingRecommendationRenderData } from './licensing';
+import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -418,6 +419,7 @@ export interface RecommendationResource {
   };
   spend: number;
   spendAmortized: number;
+  optimizationProfile?: ResourceSimpleOptimizationProfile;
   savings?: SavingsPotential;
   /** Canonical resource ID that owns this resource savings amount for aggregation */
   savingsOwnerResourceId?: string;

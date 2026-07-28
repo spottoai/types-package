@@ -13,6 +13,7 @@
     "src/aws/portalPublicArtifacts.contracts.spec.ts",
     "src/azure/financialCorrectness.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
+    "src/azure/resourceOptimization.contracts.spec.ts",
     "src/common/artifactGeneration.contracts.spec.ts",
     "tests/**/*.ts"
   ],

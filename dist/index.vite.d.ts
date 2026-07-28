@@ -27,7 +27,7 @@ export * from './azure/views';
 export * from './azure/security';
 export * from './azure/serviceRetirement';
 export * from './azure/serviceRetirementState';
-export * from './azure/costEstimation';
+export * from './azure/resourceOptimization';
 export * from './azure/storage-inventory';
 export * from './azure/governance';
 export * from './azure/publicIpAddresses';

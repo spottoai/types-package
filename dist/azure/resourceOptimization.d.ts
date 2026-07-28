@@ -1,4 +1,4 @@
-export interface ResourceCostEstimationSegmentMeter {
+export interface ResourceOptimizationSegmentMeter {
     meterName: string;
     productName: string;
     skuName: string;
@@ -11,7 +11,7 @@ export interface ResourceCostEstimationSegmentMeter {
     unitOfMeasure?: string;
     notes?: string;
 }
-export interface ResourceCostEstimationSegment {
+export interface ResourceOptimizationSegment {
     name: string;
     description: string | null;
     usage: Record<string, number>;
@@ -20,48 +20,49 @@ export interface ResourceCostEstimationSegment {
         unit?: string;
         description?: string;
     }>;
-    meters: Record<string, ResourceCostEstimationSegmentMeter>;
+    meters: Record<string, ResourceOptimizationSegmentMeter>;
     subtotal: number;
 }
-export interface ResourceCostEstimationPlan {
+export interface ResourceOptimizationScenario {
     tierKey: string;
     label: string;
     recommendationIds: string[];
     parameters: Record<string, number>;
-    segments: ResourceCostEstimationSegment[];
+    segments: ResourceOptimizationSegment[];
     summaryTotals: Record<string, number>;
     projectedMonthlyCost: number;
     savingsAmount: number;
     savingsPercent: number;
 }
-export interface ResourceCostEstimationSummary {
-    sourceProfile?: string;
-    currency: string;
-    currentMonthlyCost: number;
-    currentObservedDiscounts?: Record<string, DiscountObservation>;
-    plans: ResourceCostEstimationPlan[];
-    currentCost?: number;
-    sourceMeta?: CostEstimationSourceMeta;
-}
-export type CostEstimationSourceType = 'rolling-30-days' | 'calendar-month';
-export interface CostEstimationSourceMeta {
-    type: CostEstimationSourceType;
+export type ResourceOptimizationSourceType = 'rolling-30-days' | 'calendar-month';
+export interface ResourceOptimizationSourceMeta {
+    type: ResourceOptimizationSourceType;
     startDate: string;
     endDate: string;
     excludedRecentDays?: number;
     sourcePath?: string;
 }
-export interface ResourceSimpleCostEstimationPlan {
+export interface ResourceOptimizationProfile {
+    sourceProfile?: string;
+    currency: string;
+    currentMonthlyCost?: number;
+    currentObservedDiscounts?: Record<string, DiscountObservation>;
+    scenarios: ResourceOptimizationScenario[];
+    currentCost?: number;
+    sourceMeta?: ResourceOptimizationSourceMeta;
+}
+export interface ResourceSimpleOptimizationScenario {
+    tierKey: string;
     label: string;
     recommendationIds: string[];
     projectedMonthlyCost: number;
     savingsAmount: number;
 }
-export interface ResourceSimpleCostEstimationSummary {
+export interface ResourceSimpleOptimizationProfile {
     currency: string;
     currentMonthlyCost?: number;
     currentCost?: number;
-    plans: ResourceSimpleCostEstimationPlan[];
+    scenarios: ResourceSimpleOptimizationScenario[];
     savingsRange?: {
         min: number;
         max: number;
@@ -75,4 +76,4 @@ export interface DiscountObservation {
     quantity: number;
     cost: number;
 }
-//# sourceMappingURL=costEstimation.d.ts.map
+//# sourceMappingURL=resourceOptimization.d.ts.map
