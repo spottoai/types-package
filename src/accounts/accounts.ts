@@ -2,7 +2,9 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
 import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
-import type { SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
+import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
+
+export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
@@ -552,27 +554,6 @@ export type PublicCloudAccountDto = Omit<
     awsOnboardingCommandFingerprint?: never;
     awsDeleteRequestedAt?: never;
   };
-
-export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
-export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';
-export type SyncProgressIssueMetadataValue = string | number | boolean | undefined;
-
-export interface SyncProgressIssue {
-  type: SyncProgressIssueType;
-  scope: SyncProgressIssueScope;
-  capabilityKey?: string;
-  capabilityDisplayName?: string;
-  capabilityDescription?: string;
-  requiredRoles?: string[];
-  message: string;
-  code?: string;
-  title?: string;
-  remediation?: string;
-  sourceSelected?: 'export' | 'query';
-  fallbackUsed?: boolean;
-  degraded?: boolean;
-  metadata?: Record<string, SyncProgressIssueMetadataValue>;
-}
 
 /** Subscription-specific compatibility alias for the shared progress-stage vocabulary. */
 export type SubscriptionSyncProgressStepStatus = SyncProgressStepStatus;

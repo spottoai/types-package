@@ -5,9 +5,26 @@ import {
   type AzureProviderSyncProgress,
   type ProviderSyncProgress,
   type ProviderSyncStageProgress,
+  type ProviderSyncSubStepProgress,
   type SubscriptionSyncProgressStepStatus,
   type SyncProgressStatus,
 } from '../index';
+
+const awsViewCheckpoint = {
+  id: 'account-summary',
+  label: 'Account summary',
+  status: 'completed',
+  attempts: 1,
+  lastUpdated: '2026-07-30T01:02:00.000Z',
+  completedAt: '2026-07-30T01:02:00.000Z',
+  issue: {
+    type: 'partialData',
+    scope: 'component',
+    code: 'partial-data',
+    message: 'Account summary completed with partial evidence.',
+    degraded: true,
+  },
+} satisfies ProviderSyncSubStepProgress;
 
 const awsStage = {
   id: 'discovery',
@@ -15,10 +32,13 @@ const awsStage = {
   order: 1,
   status: 'inProgress',
   statusLabel: 'Discovering AWS resources',
+  attempts: 1,
+  active: true,
   expectedWorkItemCount: 12,
   completedWorkItemCount: 7,
   startedAt: '2026-07-30T01:00:00.000Z',
   updatedAt: '2026-07-30T01:02:00.000Z',
+  subSteps: [awsViewCheckpoint],
 } satisfies ProviderSyncStageProgress;
 
 const awsSyncProgress = {
@@ -29,6 +49,7 @@ const awsSyncProgress = {
   runId: 'run-123',
   overallStatus: 'processing',
   statusLabel: 'Scanning AWS account',
+  hasIssues: true,
   currentStageId: 'discovery',
   requestedAt: '2026-07-30T00:59:00.000Z',
   startedAt: '2026-07-30T01:00:00.000Z',
@@ -39,6 +60,7 @@ const awsSyncProgress = {
     completedStages: 2,
     failedStages: 0,
     activeStages: 1,
+    issueStages: 1,
   },
   stages: [awsStage],
 } satisfies AwsProviderSyncProgress;

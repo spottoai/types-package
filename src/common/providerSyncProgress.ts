@@ -1,5 +1,5 @@
 import { ProviderName, ProviderScopeType } from './provider';
-import type { SyncProgressStatus, SyncProgressStepStatus } from './syncProgress';
+import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from './syncProgress';
 
 /** Sanitized failure information safe to return through a public API. */
 export interface ProviderSyncProgressFailure {
@@ -21,6 +21,19 @@ export interface ProviderSyncProgressForbiddenInternalFields {
   failureReason?: never;
 }
 
+/** Public checkpoint or nested work item owned by one provider sync stage. */
+export interface ProviderSyncSubStepProgress extends ProviderSyncProgressForbiddenInternalFields {
+  id: string;
+  label?: string;
+  status: SyncProgressSubStepStatus;
+  attempts?: number;
+  lastUpdated?: string;
+  completedAt?: string;
+  note?: string;
+  issue?: SyncProgressIssue;
+  failure?: ProviderSyncProgressFailure;
+}
+
 /** Public progress for one provider-owned stage. */
 export interface ProviderSyncStageProgress extends ProviderSyncProgressForbiddenInternalFields {
   id: string;
@@ -28,12 +41,17 @@ export interface ProviderSyncStageProgress extends ProviderSyncProgressForbidden
   order: number;
   status: SyncProgressStepStatus;
   statusLabel?: string;
+  attempts?: number;
+  active?: boolean;
+  note?: string;
   expectedWorkItemCount?: number;
   completedWorkItemCount?: number;
   startedAt?: string;
   updatedAt?: string;
   completedAt?: string;
+  issue?: SyncProgressIssue;
   failure?: ProviderSyncProgressFailure;
+  subSteps?: ProviderSyncSubStepProgress[];
 }
 
 /** Aggregate counts for the stages selected for one provider sync run. */
@@ -42,6 +60,7 @@ export interface ProviderSyncProgressSummary {
   completedStages: number;
   failedStages: number;
   activeStages: number;
+  issueStages?: number;
 }
 
 interface ProviderSyncProgressBase extends ProviderSyncProgressForbiddenInternalFields {
@@ -49,6 +68,7 @@ interface ProviderSyncProgressBase extends ProviderSyncProgressForbiddenInternal
   runId?: string;
   overallStatus: SyncProgressStatus;
   statusLabel: string;
+  hasIssues?: boolean;
   currentStageId?: string;
   requestedAt?: string;
   startedAt?: string;
