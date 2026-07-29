@@ -5,6 +5,7 @@ import type {
   GetRecommendationWorkflowItemsQuery,
   GetRecommendationWorkflowItemsResponse,
   PatchRecommendationWorkflowItemLaneRequest,
+  RecommendationWorkflowConcurrencyConflictResponse,
   RecommendationWorkflowItem,
   UpsertRecommendationWorkflowItemRequest,
   UpdateRecommendationWorkflowLaneResponse,
@@ -29,6 +30,7 @@ const allAffectedItem: RecommendationWorkflowItem = {
   companyId: 'comp-123',
   lane: 'prioritized',
   laneOrder: 1000,
+  swimLaneId: 'platform-team',
   selectionMode: 'all-affected',
   affectedResourceCount: 120,
   trackedResourceCount: 120,
@@ -48,6 +50,11 @@ const allAffectedItem: RecommendationWorkflowItem = {
   },
   createdAt: '2026-04-01T00:00:00.000Z',
   updatedAt: '2026-04-01T00:00:00.000Z',
+  concurrencyToken: 'etag:workflow-1',
+  systemTrackId: 'capacity-rightsizing',
+  origin: 'system-track',
+  sourceCardGranularity: 'recommendation',
+  sourceFingerprint: 'sha256:rightsizing',
 };
 
 const selectedSubsetItem: RecommendationWorkflowItem = {
@@ -95,12 +102,34 @@ const subscriptionWideItem: RecommendationWorkflowItem = {
   updatedAt: '2026-04-01T00:00:00.000Z',
 };
 
-const boardResponse: GetRecommendationWorkflowItemsResponse = [allAffectedItem, selectedSubsetItem, subscriptionWideItem];
+const blockedItem: RecommendationWorkflowItem = {
+  ...selectedSubsetItem,
+  lane: 'blocked',
+  blockedAt: '2026-04-02T00:00:00.000Z',
+  blockedBy: 'user-123',
+  blockedReason: 'Waiting for the customer contract renewal.',
+  reviewAt: '2026-05-01T00:00:00.000Z',
+  systemTrackId: 'backup-recovery',
+  origin: 'system-track',
+  sourceCardGranularity: 'resource',
+  sourceFingerprint: 'sha256:backup-resource',
+};
+
+const boardResponse: GetRecommendationWorkflowItemsResponse = [allAffectedItem, selectedSubsetItem, subscriptionWideItem, blockedItem];
 
 const patchLaneRequest: PatchRecommendationWorkflowItemLaneRequest = {
   lane: 'completed',
   laneOrder: 9999,
   updatedAt: '2026-04-01T00:00:00.000Z',
+  concurrencyToken: 'etag:workflow-1',
+};
+
+const blockLaneRequest: PatchRecommendationWorkflowItemLaneRequest = {
+  lane: 'blocked',
+  laneOrder: 9999,
+  blockedReason: 'Waiting for an approved maintenance window.',
+  reviewAt: '2026-05-01T00:00:00.000Z',
+  concurrencyToken: 'etag:workflow-2',
 };
 
 const upsertWorkflowItemRequest: UpsertRecommendationWorkflowItemRequest = {
@@ -110,8 +139,13 @@ const upsertWorkflowItemRequest: UpsertRecommendationWorkflowItemRequest = {
   companyId: 'comp-123',
   lane: 'prioritized',
   laneOrder: 1000,
+  swimLaneId: null,
   selectionMode: 'all-affected',
   affectedResourceCount: 120,
+  systemTrackId: 'capacity-rightsizing',
+  origin: 'system-track',
+  sourceCardGranularity: 'recommendation',
+  sourceFingerprint: 'sha256:rightsizing',
   snapshot: {
     title: 'Right-size underutilized VMs',
     category: 'Cost',
@@ -151,23 +185,34 @@ const laneResponse: UpdateRecommendationWorkflowLaneResponse = {
   item: allAffectedItem,
 };
 
+const concurrencyConflict: RecommendationWorkflowConcurrencyConflictResponse = {
+  success: false,
+  status: 412,
+  errorCode: 'recommendation-workflow-conflict',
+  message: 'The workflow item changed after it was loaded.',
+  currentItem: allAffectedItem,
+};
+
 const deleteWorkflowItemRequest: DeleteRecommendationWorkflowItemRequest = {
   providerName: ProviderName.Azure,
   companyId: 'comp-123',
   flowItemId: 'flow-sub-123-rec-123',
+  concurrencyToken: 'etag:workflow-1',
 };
 
 void boardQuery;
 void boardResponse;
 void patchLaneRequest;
+void blockLaneRequest;
 void upsertWorkflowItemRequest;
 void batchLaneUpdateRequest;
 void laneResponse;
+void concurrencyConflict;
 void deleteWorkflowItemRequest;
 
+// @ts-expect-error companyId is required.
 const invalidQueryMissingCompanyId: GetRecommendationWorkflowItemsQuery = {
   providerName: ProviderName.Azure,
-  // @ts-expect-error companyId is required.
   providerScopeIds: ['sub-123'],
 };
 
@@ -198,6 +243,36 @@ const invalidLanePatchType: PatchRecommendationWorkflowItemLaneRequest = {
   laneOrder: 100,
 };
 
+// @ts-expect-error blocked workflow responses require server-authored blocker metadata.
+const invalidBlockedItemWithoutMetadata: RecommendationWorkflowItem = {
+  ...selectedSubsetItem,
+  lane: 'blocked',
+};
+
+// @ts-expect-error active workflow lanes cannot retain blocker metadata.
+const invalidActiveItemWithBlocker: RecommendationWorkflowItem = {
+  ...allAffectedItem,
+  lane: 'todo',
+  blockedAt: '2026-04-02T00:00:00.000Z',
+  blockedBy: 'user-123',
+  blockedReason: 'Stale blocker',
+};
+
+// @ts-expect-error blocking mutations require a reason.
+const invalidBlockMutationWithoutReason: PatchRecommendationWorkflowItemLaneRequest = {
+  lane: 'blocked',
+  laneOrder: 100,
+};
+
+const invalidConcurrencyConflictStatus: RecommendationWorkflowConcurrencyConflictResponse = {
+  success: false,
+  // @ts-expect-error workflow concurrency conflicts use HTTP 409 or 412.
+  status: 400,
+  errorCode: 'recommendation-workflow-conflict',
+  message: 'Invalid',
+  currentItem: allAffectedItem,
+};
+
 const invalidBatchMissingUpdates: BatchUpdateRecommendationWorkflowLanesRequest = {
   providerName: ProviderName.Azure,
   companyId: 'comp-123',
@@ -205,6 +280,7 @@ const invalidBatchMissingUpdates: BatchUpdateRecommendationWorkflowLanesRequest 
   lane: 'todo',
 };
 
+// @ts-expect-error workflow upserts require a card snapshot.
 const invalidUpsertMissingSnapshot: UpsertRecommendationWorkflowItemRequest = {
   providerName: ProviderName.Azure,
   providerScopeId: 'sub-123',
@@ -214,7 +290,6 @@ const invalidUpsertMissingSnapshot: UpsertRecommendationWorkflowItemRequest = {
   laneOrder: 1000,
   selectionMode: 'subscription-wide',
   affectedResourceCount: 1,
-  // @ts-expect-error snapshot is required.
   trackedResourceCount: 1,
 };
 
@@ -223,5 +298,9 @@ void invalidSelectedSubsetWithoutIds;
 void invalidAllAffectedWithSelectedResources;
 void invalidSubscriptionWideWithSelectedResources;
 void invalidLanePatchType;
+void invalidBlockedItemWithoutMetadata;
+void invalidActiveItemWithBlocker;
+void invalidBlockMutationWithoutReason;
+void invalidConcurrencyConflictStatus;
 void invalidBatchMissingUpdates;
 void invalidUpsertMissingSnapshot;

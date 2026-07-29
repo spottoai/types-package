@@ -6,6 +6,7 @@ import type {
   RecommendationAuditQueryResponse,
   RecommendationAuditRowKind,
   RecommendationAuditTimelineEvent,
+  RecommendationWorkflowAuditDetails,
 } from './recommendationAudit';
 
 const resourceTargetQuery: GetRecommendationAuditQuery = {
@@ -126,12 +127,35 @@ const timelineItemWithImplementationFailedEventType: RecommendationAuditTimeline
   eventType: 'ImplementationFailed',
 };
 
+const workflowBlockedDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowBlocked',
+  flowItemId: 'flow-sub-123-rec-123',
+  blockedReason: 'Waiting for a maintenance window.',
+  reviewAt: '2026-04-01T00:00:00.000Z',
+};
+
+const timelineItemWithWorkflowBlockedEventType: RecommendationAuditTimelineEvent = {
+  ...timelineItem,
+  eventId: 'evt-6',
+  eventType: 'WorkflowBlocked',
+  eventDetails: JSON.stringify(workflowBlockedDetails),
+};
+
+const returnedToSuggestionsDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'ReturnedToSuggestions',
+  flowItemId: 'flow-sub-123-rec-123',
+  systemTrackId: 'resource-hygiene',
+};
+
 const response: RecommendationAuditQueryResponse = [
   timelineItem,
   timelineItemWithNullableDisplayName,
   timelineItemWithAddedEventType,
   timelineItemWithArchivedEventType,
   timelineItemWithImplementationFailedEventType,
+  timelineItemWithWorkflowBlockedEventType,
 ];
 
 void resourceTargetQuery;
@@ -145,6 +169,8 @@ void rowColumnsWithNullableDisplayName;
 void rowColumnsWithAddedEventType;
 void rowColumnsWithArchivedEventType;
 void timelineItemWithImplementationFailedEventType;
+void workflowBlockedDetails;
+void returnedToSuggestionsDetails;
 void response;
 
 // @ts-expect-error target view requires recommendationId.
@@ -220,6 +246,20 @@ const invalidRowColumnsDisplayName: RecommendationAuditEventRowColumns = {
   UserDisplayName: 123,
 };
 
+const invalidWorkflowAuditDetailsVersion: RecommendationWorkflowAuditDetails = {
+  // @ts-expect-error workflow detail schema version is fixed.
+  schemaVersion: 2,
+  eventType: 'WorkflowAssigned',
+  flowItemId: 'flow-sub-123-rec-123',
+};
+
+// @ts-expect-error workflow blocked details require a blocked reason.
+const invalidWorkflowBlockedDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowBlocked',
+  flowItemId: 'flow-sub-123-rec-123',
+};
+
 void invalidTargetWithoutRecommendationId;
 void invalidResourceTargetWithoutResourceId;
 void invalidFeedWithResourceId;
@@ -230,3 +270,5 @@ void invalidTrackViewType;
 void invalidEnvelopeAsCanonicalResponse;
 void invalidTimelineDisplayName;
 void invalidRowColumnsDisplayName;
+void invalidWorkflowAuditDetailsVersion;
+void invalidWorkflowBlockedDetails;

@@ -82,9 +82,30 @@ export interface Subscription {
   miscCost?: CostDetails;
 }
 
+export type ResourceTotalBasis = 'legacy-analyzed-v1' | 'canonical-visible-v1';
+
+export interface ResourceInventoryStats {
+  /** Counting contract used for resourcesTotal and canonicalResourceCount. */
+  basis: ResourceTotalBasis;
+  /** Unique resource IDs present in the discovered subscription inventory. */
+  discoveredResourceCount: number;
+  /** Unique customer-visible resource IDs after configured exclusions. */
+  canonicalResourceCount: number;
+  /** Unique resource IDs processed through primary provider files. */
+  analyzedResourceCount: number;
+  /** Discovered resource IDs intentionally excluded from customer-visible inventory. */
+  excludedResourceCount: number;
+}
+
 export interface SubscriptionStats {
-  /** total number of resources in the subscription */
+  /** Total unique customer-visible resources for resourcesTotalBasis. */
   resourcesTotal: number;
+  /** Versioned counting contract for resourcesTotal. Missing on legacy payloads. */
+  resourcesTotalBasis?: ResourceTotalBasis;
+  /** Legacy diagnostic count of unique resources processed through primary provider files. */
+  resourcesAnalyzedTotal?: number;
+  /** Resource inventory reconciliation diagnostics. */
+  resourceInventory?: ResourceInventoryStats;
   recommendations: RecommendationStats;
   recommendationsUnique: RecommendationStats;
   recommendationsCustom: RecommendationStats;
@@ -140,6 +161,10 @@ export interface SubscriptionHistoryItem {
   advisorScore?: number;
   advisorScores?: AdvisorScorePillarScores;
   resourcesTotal: number;
+  /** Versioned counting contract for resourcesTotal. Missing means legacy-analyzed-v1. */
+  resourcesTotalBasis?: ResourceTotalBasis;
+  /** Legacy diagnostic count retained across the canonical-visible migration. */
+  resourcesAnalyzedTotal?: number;
   recommendations: RecommendationStats;
   recommendationsUnique: RecommendationStats;
   recommendationsCustom: RecommendationStats;

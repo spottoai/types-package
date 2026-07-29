@@ -1,0 +1,32 @@
+import { ProviderName, RecommendationFocusModes, SystemTrackIds, type SystemTracksView } from '@spottoai/types-package';
+
+const view: SystemTracksView = {
+  schemaVersion: 1,
+  artifactGeneration: {
+    runId: 'run-123',
+    generatedAt: '2026-07-29T00:00:00.000Z',
+  },
+  generationId: 'run-123',
+  generatedAt: '2026-07-29T00:00:00.000Z',
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  subscriptionId: 'sub-123',
+  status: 'complete',
+  catalog: {
+    catalogVersion: 'pilot-v1',
+    defaultVisibleCandidateCount: 3,
+    maximumVisibleCandidateCount: 5,
+    candidateBufferLimit: 25,
+    tracks: [
+      {
+        trackId: SystemTrackIds.resourceHygiene,
+        displayName: 'Resource Hygiene',
+        focusModes: [RecommendationFocusModes.all, RecommendationFocusModes.finops],
+        defaultOrder: 10,
+      },
+    ],
+  },
+  tracks: [],
+};
+
+void view;

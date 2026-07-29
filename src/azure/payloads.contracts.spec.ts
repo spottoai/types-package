@@ -1,6 +1,7 @@
 import type { SubscriptionMessage } from './payloads';
 import type { Subscription } from './subscriptions';
 import type * as PackageContracts from '../index';
+import { POLICY_EXEMPTION_COMMAND_SCHEMA_VERSION } from '../index';
 import type {
   ActionExecutionRequestMessage,
   ActionExecutionSource,
@@ -30,6 +31,7 @@ import type {
   AzureDelegatedTrialExtensionResponse,
   AzureGdapSubscriptionMessage,
   CloudAccountTenantSyncRequest,
+  CreatePolicyExemptionRequestMessage,
   PublicCloudAccountDto,
   ProcessPayload,
   RequestMessage,
@@ -571,6 +573,64 @@ const scaleOutActionExecutionSource: ActionExecutionSource = {
   desiredOutcome: 'scale-out',
 };
 
+const createPolicyExemptionRequestMessage: CreatePolicyExemptionRequestMessage = {
+  entity: 'governance',
+  action: 'create-policy-exemption',
+  schemaVersion: POLICY_EXEMPTION_COMMAND_SCHEMA_VERSION,
+  providerName: 'azure',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  tenantId: 'tenant-1',
+  clientId: 'client-1',
+  subscriptionId: 'subscription-1',
+  eventId: 'policy-exemption-event-1',
+  byUserId: 'user-1',
+  requestId: 'policy-exemption-request-1',
+  targetScope: '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/storage1',
+  policyAssignmentId: '/subscriptions/subscription-1/providers/Microsoft.Authorization/policyAssignments/iso-27001',
+  policyDefinitionReferenceIds: ['storagePublicAccess'],
+  category: 'Waiver',
+  displayName: 'Temporary public access waiver',
+  description: 'Public access is accepted while the private endpoint migration completes.',
+  expiresOn: '2026-09-01T00:00:00.000Z',
+  metadata: {
+    ticketRef: 'SEC-123',
+    requestedBy: 'Platform team',
+    approvedBy: 'Security',
+  },
+};
+
+const { policyDefinitionReferenceIds: _removedPolicyDefinitionReferenceIds, ...policyExemptionWithoutReferenceIds } =
+  createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.policyDefinitionReferenceIds is required.
+const missingPolicyExemptionReferenceIds: CreatePolicyExemptionRequestMessage = policyExemptionWithoutReferenceIds;
+
+const { action: _removedPolicyExemptionAction, ...policyExemptionWithoutAction } = createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.action is required.
+const missingPolicyExemptionAction: CreatePolicyExemptionRequestMessage = policyExemptionWithoutAction;
+
+const { targetScope: _removedPolicyExemptionTarget, ...policyExemptionWithoutTarget } = createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.targetScope is required.
+const missingPolicyExemptionTarget: CreatePolicyExemptionRequestMessage = policyExemptionWithoutTarget;
+
+const { policyAssignmentId: _removedPolicyAssignmentId, ...policyExemptionWithoutAssignment } = createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.policyAssignmentId is required.
+const missingPolicyExemptionAssignment: CreatePolicyExemptionRequestMessage = policyExemptionWithoutAssignment;
+
+const { category: _removedPolicyExemptionCategory, ...policyExemptionWithoutCategory } = createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.category is required.
+const missingPolicyExemptionCategory: CreatePolicyExemptionRequestMessage = policyExemptionWithoutCategory;
+
+const { description: _removedPolicyExemptionDescription, ...policyExemptionWithoutDescription } = createPolicyExemptionRequestMessage;
+// @ts-expect-error CreatePolicyExemptionRequestMessage.description is required.
+const missingPolicyExemptionDescription: CreatePolicyExemptionRequestMessage = policyExemptionWithoutDescription;
+
+const invalidPolicyExemptionSchemaVersion: CreatePolicyExemptionRequestMessage = {
+  ...createPolicyExemptionRequestMessage,
+  // @ts-expect-error Policy exemption queue messages require the published schema version.
+  schemaVersion: '2.0.0',
+};
+
 void publicCloudAccount;
 void startRequest;
 void reconnectRequest;
@@ -596,3 +656,11 @@ void tracedRequestMessage;
 void missingActionDefinitionId;
 void missingResourceIds;
 void scaleOutActionExecutionSource;
+void createPolicyExemptionRequestMessage;
+void missingPolicyExemptionReferenceIds;
+void missingPolicyExemptionAction;
+void missingPolicyExemptionTarget;
+void missingPolicyExemptionAssignment;
+void missingPolicyExemptionCategory;
+void missingPolicyExemptionDescription;
+void invalidPolicyExemptionSchemaVersion;
