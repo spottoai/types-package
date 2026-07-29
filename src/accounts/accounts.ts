@@ -2,6 +2,7 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
 import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
+import type { SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
@@ -573,8 +574,10 @@ export interface SyncProgressIssue {
   metadata?: Record<string, SyncProgressIssueMetadataValue>;
 }
 
-export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
-export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';
+/** Subscription-specific compatibility alias for the shared progress-stage vocabulary. */
+export type SubscriptionSyncProgressStepStatus = SyncProgressStepStatus;
+/** Subscription-specific compatibility alias for the shared progress-substage vocabulary. */
+export type SubscriptionSyncProgressSubStepStatus = SyncProgressSubStepStatus;
 export type SubscriptionSyncProgressContextValue = string | number | boolean;
 
 export interface SubscriptionSyncProgressSubStep {
@@ -604,7 +607,7 @@ export interface SubscriptionSyncProgressStep {
 
 export interface SubscriptionSyncProgress {
   runId?: string;
-  overallStatus: 'idle' | 'processing' | 'completed' | 'error';
+  overallStatus: SyncProgressStatus;
   progressLabel: string;
   completedSteps: number;
   totalSteps: number;
