@@ -15,6 +15,7 @@
     "src/azure/licensing.contracts.spec.ts",
     "src/azure/resourceOptimization.contracts.spec.ts",
     "src/common/artifactGeneration.contracts.spec.ts",
+    "src/common/provider.contracts.spec.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
