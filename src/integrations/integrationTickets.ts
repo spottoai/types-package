@@ -1,7 +1,7 @@
 import { PaginationResult } from '../common';
 import { IntegrationProvider } from '../company';
 
-export type IntegrationTicketReferenceType = 'recommendation';
+export type IntegrationTicketReferenceType = 'recommendation' | 'work-item';
 
 export interface IntegrationTicketRecord {
   /** PartitionKey */
@@ -49,6 +49,18 @@ export interface IntegrationTicketStatus {
 }
 
 export type IntegrationTicketListResponse = PaginationResult<IntegrationTicketRecord>;
+
+export interface IntegrationTicketReferenceLookup {
+  referenceType: IntegrationTicketReferenceType;
+  referenceId: string;
+  subscriptionId?: string;
+}
+
+export interface IntegrationTicketReferenceLookupResponse {
+  results: IntegrationTicketRecord[];
+  unresolved: IntegrationTicketReferenceLookup[];
+  truncated: boolean;
+}
 
 export interface IntegrationTicketStatusRequestItem {
   provider: IntegrationProvider;

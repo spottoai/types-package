@@ -25,6 +25,12 @@ export interface PortalActivityLogSource {
 }
 
 export interface PortalActivityLogEntry {
+  /**
+   * Stable identity for the collapsed activity group within one subscription.
+   * Consumers must scope this value by subscription before using it as a
+   * cross-subscription entity or persistence key.
+   */
+  activityGroupId?: string;
   eventTimestamp: string;
   firstEventTimestamp: string;
   lastEventTimestamp: string;

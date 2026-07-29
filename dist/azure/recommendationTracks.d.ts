@@ -1,0 +1,177 @@
+import type { ProviderName } from '../common/provider';
+import type { AzurePortalArtifactGeneration, AzurePortalArtifactSchemaVersion, AzurePortalVersionedArtifact } from './portalArtifacts';
+export declare const SystemTrackIds: {
+    readonly resourceHygiene: "resource-hygiene";
+    readonly capacityRightsizing: "capacity-rightsizing";
+    readonly securityPosture: "security-posture";
+    readonly patchingLifecycle: "patching-lifecycle";
+    readonly commitmentsLicensing: "commitments-licensing";
+    readonly backupRecovery: "backup-recovery";
+    readonly perimeterExposure: "perimeter-exposure";
+    readonly identityPrivilege: "identity-privilege";
+    readonly governanceOwnership: "governance-ownership";
+    readonly spendExceptions: "spend-exceptions";
+};
+export type SystemTrackId = (typeof SystemTrackIds)[keyof typeof SystemTrackIds];
+export declare const RecommendationFocusModes: {
+    readonly all: "all";
+    readonly finops: "finops";
+    readonly securityGovernance: "securityGovernance";
+    readonly operationalHealth: "operationalHealth";
+    readonly optimizationDelivery: "optimizationDelivery";
+    readonly serviceDelivery: "serviceDelivery";
+};
+export type RecommendationFocusMode = (typeof RecommendationFocusModes)[keyof typeof RecommendationFocusModes];
+export declare const RecommendationTrackFacets: {
+    readonly orphaned: "orphaned";
+    readonly unattached: "unattached";
+    readonly idle: "idle";
+    readonly underutilized: "underutilized";
+    readonly unprotected: "unprotected";
+    readonly staleBackup: "stale-backup";
+    readonly expiring: "expiring";
+    readonly unpatched: "unpatched";
+    readonly unsupported: "unsupported";
+    readonly publicIngress: "public-ingress";
+    readonly overprivileged: "overprivileged";
+    readonly missingOwnership: "missing-ownership";
+    readonly missingTags: "missing-tags";
+    readonly costAnomaly: "cost-anomaly";
+};
+export type RecommendationTrackFacet = (typeof RecommendationTrackFacets)[keyof typeof RecommendationTrackFacets];
+export declare const SystemTrackCardGranularities: {
+    readonly recommendation: "recommendation";
+    readonly resource: "resource";
+};
+export type SystemTrackCardGranularity = (typeof SystemTrackCardGranularities)[keyof typeof SystemTrackCardGranularities];
+interface RecommendationSystemTrackEligibleClassification {
+    systemTrackEligible: true;
+    primaryTrackId: SystemTrackId;
+    trackFacets: RecommendationTrackFacet[];
+    cardGranularity: SystemTrackCardGranularity;
+    rankingStrategyVersion: string;
+    trackEvidence: string[];
+    reason?: never;
+}
+interface RecommendationSystemTrackIneligibleClassification {
+    systemTrackEligible: false;
+    reason?: string;
+    primaryTrackId?: never;
+    trackFacets?: never;
+    cardGranularity?: never;
+    rankingStrategyVersion?: never;
+    trackEvidence?: never;
+}
+export type RecommendationSystemTrackClassification = RecommendationSystemTrackEligibleClassification | RecommendationSystemTrackIneligibleClassification;
+export interface SystemTrackCatalogEntry {
+    trackId: SystemTrackId;
+    displayName: string;
+    focusModes: [RecommendationFocusMode, ...RecommendationFocusMode[]];
+    defaultOrder: number;
+    focusOrder?: Partial<Record<Exclude<RecommendationFocusMode, 'all'>, number>>;
+}
+export interface SystemTrackCatalog {
+    catalogVersion: string;
+    defaultVisibleCandidateCount: 3;
+    maximumVisibleCandidateCount: 5;
+    candidateBufferLimit: number;
+    tracks: [SystemTrackCatalogEntry, ...SystemTrackCatalogEntry[]];
+}
+export type SystemTrackMetricType = 'monthly-savings' | 'secure-score-uplift' | 'urgency-days' | 'affected-resource-count' | 'criticality' | 'final-score';
+export type SystemTrackMetricUnit = 'currency-per-month' | 'percentage-points' | 'days' | 'count' | 'score';
+interface SystemTrackMetricBase {
+    metricType: SystemTrackMetricType;
+    unit: SystemTrackMetricUnit;
+    currency?: string;
+    observedAt?: string;
+    provenance: string;
+}
+export interface AvailableSystemTrackMetric extends SystemTrackMetricBase {
+    availability: 'available';
+    value: number;
+    reason?: never;
+}
+export interface StaleSystemTrackMetric extends SystemTrackMetricBase {
+    availability: 'stale';
+    value: number;
+    observedAt: string;
+    reason: string;
+}
+export interface UnavailableSystemTrackMetric extends SystemTrackMetricBase {
+    availability: 'unavailable';
+    value?: never;
+    currency?: never;
+    reason: string;
+}
+export type SystemTrackMetric = AvailableSystemTrackMetric | StaleSystemTrackMetric | UnavailableSystemTrackMetric;
+export interface SystemTrackDisplayValue {
+    label: string;
+    value: string | number;
+    unit?: SystemTrackMetricUnit;
+    currency?: string;
+}
+interface SystemTrackCardSnapshotBase {
+    title: string;
+    displayValue?: SystemTrackDisplayValue;
+    deepLink: string;
+}
+export interface SystemTrackRecommendationCardSnapshot extends SystemTrackCardSnapshotBase {
+    affectedResourceCount: number;
+    resourceName?: never;
+    resourceType?: never;
+}
+export interface SystemTrackResourceCardSnapshot extends SystemTrackCardSnapshotBase {
+    resourceName: string;
+    resourceType: string;
+    affectedResourceCount?: never;
+}
+interface SystemTrackCandidateBase {
+    recommendationId: string;
+    rank: number;
+    rankReasonCodes: [string, ...string[]];
+    rankingStrategyVersion: string;
+    trackMetric: SystemTrackMetric;
+    sourceFingerprint: string;
+}
+export interface SystemTrackRecommendationCandidate extends SystemTrackCandidateBase {
+    cardType: 'recommendation';
+    resourceId?: never;
+    card: SystemTrackRecommendationCardSnapshot;
+}
+export interface SystemTrackResourceCandidate extends SystemTrackCandidateBase {
+    cardType: 'resource';
+    resourceId: string;
+    card: SystemTrackResourceCardSnapshot;
+}
+export type SystemTrackCandidate = SystemTrackRecommendationCandidate | SystemTrackResourceCandidate;
+export type SystemTrackEvaluationStatus = 'complete' | 'partial' | 'failed' | 'stale' | 'unevaluated';
+export type SystemTrackEvaluation = {
+    status: 'complete';
+    statusReason?: never;
+} | {
+    status: Exclude<SystemTrackEvaluationStatus, 'complete'>;
+    statusReason: string;
+};
+interface SystemTrackViewBase {
+    trackId: SystemTrackId;
+    focusModes: [RecommendationFocusMode, ...RecommendationFocusMode[]];
+    sourceEligibleOccurrenceCount: number;
+    materializedOccurrenceCount: number;
+    bufferExhausted: boolean;
+    candidates: SystemTrackCandidate[];
+}
+export type SystemTrackView = SystemTrackViewBase & SystemTrackEvaluation;
+interface SystemTracksViewBase extends AzurePortalVersionedArtifact {
+    schemaVersion: AzurePortalArtifactSchemaVersion;
+    artifactGeneration: AzurePortalArtifactGeneration;
+    generationId: string;
+    generatedAt: string;
+    providerName: ProviderName.Azure;
+    providerScopeId: string;
+    subscriptionId: string;
+    catalog: SystemTrackCatalog;
+    tracks: SystemTrackView[];
+}
+export type SystemTracksView = SystemTracksViewBase & SystemTrackEvaluation;
+export {};
+//# sourceMappingURL=recommendationTracks.d.ts.map

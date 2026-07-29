@@ -1,0 +1,1 @@
+{"version":3,"file":"serviceRetirementWorkManagement.d.ts","sourceRoot":"","sources":["../../src/azure/serviceRetirementWorkManagement.ts"],"names":[],"mappings":"AAAA,OAAO,KAAK,EAAE,sBAAsB,EAAE,MAAM,0BAA0B,CAAC;AACvE,OAAO,KAAK,EAAE,qBAAqB,EAAE,MAAM,kBAAkB,CAAC;AAE9D,MAAM,WAAW,iCAAiC;IAChD,KAAK,EAAE,sBAAsB,CAAC;IAC9B,QAAQ,CAAC,EAAE,qBAAqB,CAAC;CAClC"}

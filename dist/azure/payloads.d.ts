@@ -1,4 +1,5 @@
 import { Subscription, SubscriptionPolicies } from './subscriptions.js';
+import type { CreatePolicyExemptionRequest, PolicyExemptionCommandSchemaVersion } from './regulatoryCompliance.js';
 import type { AzureDelegatedAuthErrorCode, AzureDelegatedOAuthStatePhase, AzureDelegatedOnboardingStatus, AzureGuestAccessScanSchedulingMode, AzureGuestAccessStatus, AzureGuestAccessStatusReason, AzureCloudAccountAuthContext, CloudAccountAuthMode, CloudAccountTenantSyncSource, PublicCloudAccountDto } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
 export interface WorkflowTracingOptions {
@@ -67,6 +68,15 @@ export interface ActionExecutionRequestMessage extends RequestMessage {
     resourceIds: string[];
     byUserId?: string;
     source?: ActionExecutionSource;
+}
+export interface CreatePolicyExemptionRequestMessage extends RequestMessage, CreatePolicyExemptionRequest {
+    entity: 'governance';
+    action: 'create-policy-exemption';
+    schemaVersion: PolicyExemptionCommandSchemaVersion;
+    providerName: 'azure';
+    subscriptionId: string;
+    eventId: string;
+    byUserId: string;
 }
 export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
     entity: 'cloudaccount' | 'cloudaccounts';

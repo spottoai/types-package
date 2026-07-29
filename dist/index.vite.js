@@ -48,6 +48,7 @@ __exportStar(require("./azure/storage-inventory"), exports);
 __exportStar(require("./azure/governance"), exports);
 __exportStar(require("./azure/publicIpAddresses"), exports);
 __exportStar(require("./azure/dataProtection"), exports);
+__exportStar(require("./azure/workManagement"), exports);
 __exportStar(require("./accounts/index"), exports);
 __exportStar(require("./assessments/index"), exports);
 __exportStar(require("./users/index"), exports);

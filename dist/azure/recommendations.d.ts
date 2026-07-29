@@ -9,6 +9,7 @@ import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
 import type { GitHubShareOverrides } from '../integrations/github';
 import type { Tags } from '../tags';
 import type { AzurePortalVersionedArtifact } from './portalArtifacts';
+import type { RecommendationSystemTrackClassification } from './recommendationTracks';
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 export declare enum RecommendationCategory {
@@ -303,6 +304,8 @@ export interface Recommendation {
     finalScore?: number;
     /** UI display-only normalized score (0-100). */
     normalizedScore?: number;
+    /** Optional system-track classification emitted from the checked-in recommendation registry. */
+    systemTrackClassification?: RecommendationSystemTrackClassification;
     /** Cross-feature linkage IDs used for deep links and related views. */
     linkingIds?: RecommendationLinkingIds;
     /** Optional UI render payload consumed by recommendation-specific components. */

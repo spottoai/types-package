@@ -33,8 +33,34 @@ export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'non
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
-export type CommitmentsReservationUnit = 'hour' | '100-tib-month' | '1-pib-month' | '10-tib-month' | '100-tib-month';
-export type CommitmentsStorageAccessTier = 'hot' | 'cool' | 'archive' | 'premium' | 'transaction-optimized' | 'unknown';
+export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsInventoryStatus =
+  | 'active'
+  | 'expired'
+  | 'cancelled'
+  | 'failed'
+  | 'pending'
+  | 'split'
+  | 'merged'
+  | 'warning'
+  | 'no-benefit'
+  | 'payment-error'
+  | 'capacity-error'
+  | 'exchanged'
+  | 'restricted'
+  | 'unknown';
+export type CommitmentsReservationUnit =
+  | 'hour'
+  | '10-tib-month'
+  | '100-tib-month'
+  | '1-pib-month'
+  /** Compatibility value still emitted by the current storage-capacity producer. */
+  | '10TiB'
+  /** Compatibility value still emitted by the current storage-capacity producer. */
+  | '100TiB'
+  /** Compatibility value still emitted by the current storage-capacity producer. */
+  | '1PiB';
+export type CommitmentsStorageAccessTier = 'hot' | 'cool' | 'cold' | 'archive' | 'premium' | 'transaction-optimized' | 'unknown';
 export type CommitmentsStorageRedundancy = 'LRS' | 'ZRS' | 'GRS' | 'GZRS' | 'RA-GRS' | 'RA-GZRS' | 'unknown';
 export type CommitmentsStorageBillingModel =
   | 'blob-standard'
@@ -43,6 +69,10 @@ export type CommitmentsStorageBillingModel =
   | 'azure-files-payg'
   | 'azure-files-provisioned-v1'
   | 'azure-files-provisioned-v2'
+  /** Compatibility value still emitted by the current storage-capacity producer. */
+  | 'standard'
+  /** Compatibility value still emitted by the current storage-capacity producer. */
+  | 'premium'
   | 'unknown';
 
 export interface CommitmentsPlanningView {
@@ -105,9 +135,16 @@ export interface CommitmentsInventoryItem {
   sourceKind?: CommitmentsSourceKind;
   sourceId?: string;
   scope: BenefitScope;
+  appliedScopeType?: CommitmentsAppliedScopeType;
+  appliedScopeProperties?: {
+    subscriptionId?: string;
+    resourceGroupId?: string;
+    tenantId?: string;
+    managementGroupId?: string;
+  };
   type: string;
   displayName?: string;
-  status: 'active' | 'expired';
+  status: CommitmentsInventoryStatus;
   subscriptionId?: string;
   purchaseDate?: string;
   expiryDate?: string;
@@ -135,6 +172,10 @@ export interface CommitmentsInventoryItem {
   usedHours?: number;
   utilization?: IBenefitUtilization;
   coveragePercent?: number;
+  annualCommittedCost?: CommitmentsMoneyAmount;
+  optimizationImpact?: CommitmentsMoneyAmount;
+  doNotRenewAnnualImpact?: CommitmentsMoneyAmount;
+  breakCostEstimate?: CommitmentsBreakCostEstimate;
   riskLevel?: CommitmentsRiskLevel;
   confidence?: CommitmentsConfidenceLevel;
   linkedRecommendationIds?: string[];
@@ -148,6 +189,9 @@ export interface CommitmentsResourceCoverageItem {
   resourceName?: string;
   resourceType?: string;
   month?: string;
+  windowStart?: string;
+  windowEnd?: string;
+  currency?: string;
   benefitIds: string[];
   benefitNames: string[];
   basis?: BenefitCostBasis;
@@ -166,6 +210,7 @@ export interface CommitmentsResourceCoverageItem {
     currency?: string;
     source?: 'payg-cost' | 'amortized' | 'retail' | 'unknown';
   };
+  source?: CommitmentsSourceMetadata;
   benefitBreakdown?: IBenefitCoverageBreakdownEntry[];
 }
 
@@ -269,6 +314,26 @@ export interface CommitmentsMoneyAmount {
   amount: number;
   currency: string;
   source?: 'actual' | 'amortized' | 'retail' | 'negotiated' | 'payg-cost' | 'unknown';
+  windowStart?: string;
+  windowEnd?: string;
+  flags?: string[];
+}
+
+export interface CommitmentsBreakCostEstimate {
+  status: 'estimated' | 'unavailable';
+  netBreakCost?: number;
+  refundAmount?: number;
+  cancellationFee?: number;
+  currency?: string;
+  policySource: 'azure-policy' | 'billing-scope-policy' | 'not-collected' | 'unknown';
+  confidence: CommitmentsConfidenceLevel;
+  notes?: string;
+  refundLimitConsumed?: number;
+  refundLimitMax?: number;
+  refundLimitRemaining?: number;
+  projectedRefundLimitRemaining?: number;
+  refundLimitCurrency?: string;
+  policyErrors?: string[];
 }
 
 export interface CommitmentsResourceReference {
@@ -626,8 +691,12 @@ export interface CommitmentsObsoleteCandidate {
   impactEstimate?: {
     amount?: number;
     currency?: string;
+    currencySymbol?: string;
     source?: 'payg-cost' | 'amortized' | 'retail' | 'unknown';
     notes?: string;
+    windowStart?: string;
+    windowEnd?: string;
+    flags?: string[];
   };
   relatedBenefitIds?: string[];
 }
@@ -678,7 +747,10 @@ export interface CommitmentsTermStrategyScenario {
   projectedGrossSavings?: number;
   projectedBreakCost?: number;
   projectedNetSavings?: number;
+  /** Net savings normalized to a 12-month comparison period. */
+  annualizedProjectedNetSavings?: number;
   breakEvenMonth?: number;
   recommended?: boolean;
+  currency?: string;
   notes?: string;
 }

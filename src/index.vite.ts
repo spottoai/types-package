@@ -32,6 +32,7 @@ export * from './azure/storage-inventory';
 export * from './azure/governance';
 export * from './azure/publicIpAddresses';
 export * from './azure/dataProtection';
+export * from './azure/workManagement';
 export * from './accounts/index';
 export * from './assessments/index';
 export * from './users/index';

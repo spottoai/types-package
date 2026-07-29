@@ -1,4 +1,6 @@
 import type { ProviderName, ProviderScope } from '../common/provider';
+import type { SystemTrackId } from './recommendationTracks';
+import type { RecommendationWorkflowLane } from './recommendationWorkflow';
 export declare const RecommendationAuditRowKinds: {
     readonly resourceTarget: "resource-view:target";
     readonly subscriptionTarget: "scope-view:target";
@@ -54,7 +56,44 @@ export type SubscriptionProviderScopeFeedRecommendationAuditQuery = Recommendati
 };
 export type GetRecommendationAuditQueryCanonical = ResourceTargetRecommendationAuditQuery | SubscriptionTargetRecommendationAuditQuery | ResourceProviderScopeFeedRecommendationAuditQuery | SubscriptionProviderScopeFeedRecommendationAuditQuery;
 export type GetRecommendationAuditQuery = GetRecommendationAuditQueryCanonical;
-export type RecommendationAuditEventType = 'Viewed' | 'Added' | 'Archived' | 'CommentAdded' | 'CommentUpdated' | 'CommentDeleted' | 'CommentPinned' | 'CommentUnpinned' | 'Shared' | 'Dismissed' | 'Restored' | 'Prioritized' | 'Unprioritized' | 'Implementing' | 'Implemented' | 'ImplementationFailed';
+export declare const RecommendationWorkflowAuditEventTypes: {
+    readonly assigned: "WorkflowAssigned";
+    readonly laneChanged: "WorkflowLaneChanged";
+    readonly blocked: "WorkflowBlocked";
+    readonly unblocked: "WorkflowUnblocked";
+    readonly returnedToSuggestions: "ReturnedToSuggestions";
+};
+export type RecommendationWorkflowAuditEventType = (typeof RecommendationWorkflowAuditEventTypes)[keyof typeof RecommendationWorkflowAuditEventTypes];
+export type RecommendationAuditEventType = 'Viewed' | 'Added' | 'Archived' | 'CommentAdded' | 'CommentUpdated' | 'CommentDeleted' | 'CommentPinned' | 'CommentUnpinned' | 'Shared' | 'Dismissed' | 'Restored' | 'Prioritized' | 'Unprioritized' | 'Implementing' | 'Implemented' | 'ImplementationFailed' | RecommendationWorkflowAuditEventType;
+export declare const RECOMMENDATION_WORKFLOW_AUDIT_DETAILS_SCHEMA_VERSION: 1;
+interface RecommendationWorkflowAuditDetailsBase {
+    schemaVersion: typeof RECOMMENDATION_WORKFLOW_AUDIT_DETAILS_SCHEMA_VERSION;
+    flowItemId: string;
+}
+export interface RecommendationWorkflowAssignedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowAssigned';
+    fromSwimLaneId?: string;
+    toSwimLaneId?: string;
+}
+export interface RecommendationWorkflowLaneChangedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowLaneChanged';
+    fromLane: RecommendationWorkflowLane;
+    toLane: RecommendationWorkflowLane;
+}
+export interface RecommendationWorkflowBlockedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowBlocked';
+    blockedReason: string;
+    reviewAt?: string;
+}
+export interface RecommendationWorkflowUnblockedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowUnblocked';
+    toLane: RecommendationWorkflowLane;
+}
+export interface RecommendationReturnedToSuggestionsAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'ReturnedToSuggestions';
+    systemTrackId?: SystemTrackId;
+}
+export type RecommendationWorkflowAuditDetails = RecommendationWorkflowAssignedAuditDetails | RecommendationWorkflowLaneChangedAuditDetails | RecommendationWorkflowBlockedAuditDetails | RecommendationWorkflowUnblockedAuditDetails | RecommendationReturnedToSuggestionsAuditDetails;
 /** Flat recommendation audit row columns as persisted in `recommendationsevents`. */
 export interface RecommendationAuditEventRowColumns {
     CompanyId: string;
@@ -110,4 +149,5 @@ export interface RecommendationAuditTimelineEvent {
  * The service returns a raw event array.
  */
 export type RecommendationAuditQueryResponse = RecommendationAuditTimelineEvent[];
+export {};
 //# sourceMappingURL=recommendationAudit.d.ts.map

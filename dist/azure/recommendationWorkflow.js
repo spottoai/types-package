@@ -5,6 +5,7 @@ exports.RecommendationWorkflowLanes = {
     prioritized: 'prioritized',
     todo: 'todo',
     inProgress: 'in-progress',
+    blocked: 'blocked',
     completed: 'completed',
 };
 exports.RecommendationWorkflowSelectionModes = {

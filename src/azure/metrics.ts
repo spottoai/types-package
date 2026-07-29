@@ -167,6 +167,15 @@ export interface MetricConfigMetadata {
 
 export type MetricConfig = MetricConfigMetadata;
 
+export interface MetricAlertEvaluation {
+  /** Operational plots evaluate alert rules; trend-only plots are display-only. */
+  mode: 'operational' | 'trend-only';
+  /** Fixed backend observation window used for alert evaluation. */
+  windowDays?: number;
+  /** Native ISO-8601 cadence used for alert evaluation, such as PT5M. */
+  interval?: string;
+}
+
 export interface MetricPlot {
   /** e.g. "CPU and Memory Utilization" */
   title: string;
@@ -178,12 +187,15 @@ export interface MetricPlot {
   reasoning: string;
   yAxisTitle?: string;
   yAxisSuffix?: string;
+  alertEvaluation?: MetricAlertEvaluation;
   metrics: MetricPlotMetric[];
 }
 
 export interface MetricPlotMetric {
   /** e.g. CPU Utilization */
   name: string;
+  /** Collected metric group used to disambiguate repeated Azure metric names. */
+  sourceCollection?: string;
   /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
   description: string;
   /** e.g. "CPU Utilization is the percentage of CPU time used by the resource." */
@@ -199,6 +211,8 @@ export interface MetricPlotMetric {
 export interface MetricsDefinition {
   name: string;
   metricName: string;
+  /** Collected metric group used to disambiguate repeated Azure metric names. */
+  sourceCollection?: string;
   description: string;
   details: string;
   stats: MetricStats;
@@ -243,6 +257,7 @@ export interface MetricsDisplay {
   chartType: 'line' | 'area' | 'bar' | 'scatter';
   optimizationFocus: 'cost' | 'performance' | 'reliability' | 'efficiency';
   reasoning: string;
+  alertEvaluation?: MetricAlertEvaluation;
   legends?: MetricsDisplayLegend | MetricsDisplayLegend[];
   actualMetrics?: Record<string, string | string[]>;
   seriesTransforms?: Record<
