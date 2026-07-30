@@ -532,6 +532,26 @@ const invalidPublicCloudAccountGdapCredentialReferenceDto: PublicCloudAccountDto
   gdapCredentialReference: 'internal-gdap-credential-reference',
 };
 
+const invalidPublicCloudAccountPartnerBillingScopeDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-gdap-billing-account-123',
+  name: 'Public GDAP Azure Account',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  authMode: 'gdap',
+  createdAt: new Date('2026-07-30T00:00:00.000Z'),
+  updatedAt: new Date('2026-07-30T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose partner billing scope identifiers.
+  cspPartnerBillingScope: {
+    billingAccountId: 'billing-account-123',
+    customerId: 'customer-123',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/customers/customer-123',
+    validatedAt: '2026-07-30T00:00:00.000Z',
+  },
+};
+
 const cloudAccountWithTenantSyncState: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   id: 'tenant-client-id-789',
