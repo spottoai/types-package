@@ -24,6 +24,7 @@ export type AzureGdapCapabilityKey =
   | 'resourceInventory'
   | 'resourceGraph'
   | 'costRead'
+  | 'partnerBillingCostRead'
   | 'billingExportSetup'
   | 'monitoringRead'
   | 'graphInventory'
@@ -37,6 +38,14 @@ export interface AzureGdapCapabilityStatus {
   checkedAt?: string;
   requiredRoles?: string[];
   requiredAzureRoles?: string[];
+}
+
+/** Internal CSP partner billing scope used for customer-scope Cost Management queries. */
+export interface AzureCspPartnerBillingScope {
+  billingAccountId: string;
+  customerId: string;
+  scopePath: string;
+  validatedAt: string;
 }
 
 export interface AzureGdapRoleAssignment {
@@ -69,6 +78,8 @@ export interface AzureGdapCloudAccountMetadata {
   gdapScheduledEligible?: boolean;
   gdapScheduledEligibilityReason?: string;
   gdapCapabilities?: AzureGdapCapabilityStatus[];
+  /** Internal partner billing scope. Do not expose billing account/customer identifiers in public API DTOs. */
+  cspPartnerBillingScope?: AzureCspPartnerBillingScope;
 }
 
 export interface AzureCloudAccountAuthContext {
@@ -530,6 +541,8 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
   gdapScheduledEligible?: boolean;
   gdapScheduledEligibilityReason?: string;
   gdapCapabilities?: AzureGdapCapabilityStatus[];
+  /** Internal partner billing scope. Do not expose billing account/customer identifiers in public API DTOs. */
+  cspPartnerBillingScope?: AzureCspPartnerBillingScope;
   /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
   gdapCredentialReference?: string;
   /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
@@ -538,7 +551,13 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
 
 export type PublicCloudAccountDto = Omit<
   CloudAccount,
-  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'awsBillingExport'
+  | 'delegatedTokenCache'
+  | 'secret'
+  | 'writeSecret'
+  | 'billingExportLocator'
+  | 'gdapCredentialReference'
+  | 'cspPartnerBillingScope'
+  | 'awsBillingExport'
 > &
   AwsRequestForbiddenCredentialFields & {
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
