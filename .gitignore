@@ -95,3 +95,6 @@ jspm_packages/
 samples/
 
 specs/*
+
+# Local Superpowers planning artifacts
+/docs/superpowers/
