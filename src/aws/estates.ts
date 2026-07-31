@@ -7,8 +7,8 @@ export const AWS_ESTATES_MANIFEST_SCHEMA_VERSION = 1 as const;
 export const AWS_ESTATES_MANIFEST_PROVIDER = 'AWS' as const;
 
 export const AWS_ESTATE_KINDS = ['standalone', 'organization'] as const;
-export const AWS_ESTATE_ACCOUNT_SOURCES = ['manual', 'aws-organizations'] as const;
-export const AWS_ESTATE_ROLE_DEPLOYMENT_MODES = ['customer-managed', 'automatic'] as const;
+export const AWS_ESTATE_ACCOUNT_SOURCES = ['manual'] as const;
+export const AWS_ESTATE_ROLE_DEPLOYMENT_MODES = ['customer-managed'] as const;
 export const AWS_ESTATE_ACCOUNT_PURPOSES = ['resource-discovery', 'organization-discovery', 'billing-definition', 'billing-storage'] as const;
 
 /**
@@ -109,6 +109,8 @@ export interface AwsEstateDataExportsBillingExport<TDefinitionAccountId extends 
   type: 'DATA_EXPORTS';
   /** ARN returned by BCM Data Exports; its account is the definition role account. */
   exportArn: `arn:aws:bcm-data-exports:${string}:${TDefinitionAccountId}:export/${string}`;
+  /** Exact BCM Data Exports Export.Name used to scope the delivered S3 root. */
+  exportName: string;
   destination: AwsEstateBillingDestination;
   reportName?: never;
 }

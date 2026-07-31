@@ -54,6 +54,7 @@ const organizationBillingSource: AwsEstateBillingSource<ExampleCompanyId, Exampl
   export: {
     type: 'DATA_EXPORTS',
     exportArn: 'arn:aws:bcm-data-exports:us-east-1:111122223333:export/00000000-0000-4000-8000-000000000000',
+    exportName: 'example-data-export',
     destination: {
       bucketName: 'example-organization-data-exports',
       basePrefix: 'billing/data-exports',
@@ -194,6 +195,24 @@ const invalidStandaloneOrganization: AwsStandaloneEstate<'company-example-standa
   },
 };
 
+const invalidOrganizationAccountSource: AwsOrganizationEstate<ExampleCompanyId, ExampleEstateId, ExampleAccountId> = {
+  ...organizationEstate,
+  organization: {
+    ...organizationEstate.organization,
+    // @ts-expect-error AWS Organizations discovery is not implemented yet.
+    accountSource: 'aws-organizations',
+  },
+};
+
+const invalidOrganizationRoleDeployment: AwsOrganizationEstate<ExampleCompanyId, ExampleEstateId, ExampleAccountId> = {
+  ...organizationEstate,
+  organization: {
+    ...organizationEstate.organization,
+    // @ts-expect-error Automatic role deployment is not implemented yet.
+    roleDeploymentMode: 'automatic',
+  },
+};
+
 const invalidManifestExternalId: AwsEstatesManifest<ExampleCompanyId> = {
   ...organizationManifest,
   // @ts-expect-error External ID is setup-only and must never be persisted.
@@ -220,6 +239,8 @@ void invalidMembershipRoleAccount;
 void invalidDefinitionRoleAccount;
 void invalidDataExportArnAccount;
 void invalidStandaloneOrganization;
+void invalidOrganizationAccountSource;
+void invalidOrganizationRoleDeployment;
 void invalidManifestExternalId;
 void invalidMembershipAccessKey;
 void invalidBillingConnectionString;
