@@ -12,7 +12,7 @@ import type {
 import type { Recommendation } from '../azure/recommendations';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
 import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
-import type { AwsRequestForbiddenCredentialFields } from './requests';
+import type { AwsForbiddenCredentialFields } from './requests';
 
 export const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
 
@@ -33,7 +33,7 @@ export type AwsPublicArtifactSchemaVersion = typeof AWS_PUBLIC_ARTIFACT_SCHEMA_V
 export type AwsPublicArtifactType = (typeof AWS_PUBLIC_ARTIFACT_TYPES)[number];
 
 /** Public artifacts must not expose setup values or credential-store locators. */
-export type AwsPublicArtifactForbiddenCredentialFields = AwsRequestForbiddenCredentialFields & {
+export type AwsPublicArtifactForbiddenCredentialFields = AwsForbiddenCredentialFields & {
   externalId?: never;
   roleArn?: never;
   secretArn?: never;

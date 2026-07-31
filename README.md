@@ -50,6 +50,13 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+The root and `/aws` entry points export the secret-free `AwsEstatesManifest`,
+AWS estate/account/billing-source command union, and company trust-setup
+contracts. The API-owned desired-state document is stored as
+`companies/{companyId}/aws/aws-estates.json`; commands reference its opaque
+revision instead of copying role, billing-export, External ID, or credential
+configuration. Engine saga and persistence records remain engine-owned.
+
 The root and `/aws` entry points also export the lossless AWS plugin
 subscription/resource body contracts, deterministic logical-name builders, one
 complete active-set manifest, and dependency-free runtime validators. These

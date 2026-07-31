@@ -1,7 +1,7 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
-import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
-import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
+import type { AwsEstateAccountPurpose } from '../aws/estates';
+import type { AwsForbiddenCredentialFields } from '../aws/requests';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
@@ -435,18 +435,16 @@ export interface AzureGuestAccessCloudAccountFields {
 export interface AwsPublicCloudAccountFields {
   /** Canonical 12-digit AWS account identifier. */
   accountId?: string;
-  /** Legacy storage/response alias. Prefer accountId in new public responses. */
-  awsAccountId?: string;
+  /** AWS estate containing this connected account. */
+  awsEstateId?: string;
   /** Cross-account role ARN. This is role metadata, not a credential. */
   roleArn?: string;
+  /** Capabilities for which the connected role is used. */
+  awsRolePurposes?: AwsEstateAccountPurpose[];
   /** Sanitized machine-readable reason for the current lifecycle state. */
   statusReason?: string;
   /** Sanitized user-facing lifecycle detail. */
   statusMessage?: string;
-  /** Sanitized billing-export lifecycle state. Raw billing configuration is never public. */
-  billingStatus?: AwsCloudAccountBillingStatus;
-  billingStatusReason?: string;
-  billingStatusMessage?: string;
   /** Evidence that a provider sync produced usable artifacts, when available. */
   lastSuccessfulSyncAt?: string;
 }
@@ -472,11 +470,6 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
   updatedAt: Date;
   createdBy: string;
   status: string;
-  /** Internal AWS billing-export locator. It is JSON-serialized for Table Storage and omitted from public DTOs. */
-  awsBillingExport?: AwsBillingExportConfiguration;
-  /** Current admitted AWS engine request identity. */
-  currentRequestId?: string;
-  correlationId?: string;
   objectives?: SurveyResponse[];
   /** Preferred recommendation effort-estimate profile for this cloud account. */
   effortProfile?: EffortEstimateProfileName;
@@ -551,15 +544,9 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
 
 export type PublicCloudAccountDto = Omit<
   CloudAccount,
-  | 'delegatedTokenCache'
-  | 'secret'
-  | 'writeSecret'
-  | 'billingExportLocator'
-  | 'gdapCredentialReference'
-  | 'cspPartnerBillingScope'
-  | 'awsBillingExport'
+  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'
 > &
-  AwsRequestForbiddenCredentialFields & {
+  AwsForbiddenCredentialFields & {
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
