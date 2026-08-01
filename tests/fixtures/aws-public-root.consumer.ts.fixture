@@ -1,17 +1,19 @@
 import {
   ARTIFACT_GENERATION_SCHEMA_VERSION,
-  AWS_REQUEST_ACTIONS,
-  AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS,
-  AWS_REQUEST_PROVIDER,
-  AWS_REQUEST_SCHEMA_VERSION,
+  AWS_COMMAND_ACTIONS,
+  AWS_COMMAND_ENTITIES,
+  AWS_COMMAND_PROVIDER,
+  AWS_COMMAND_SCHEMA_VERSION,
+  AWS_ESTATES_MANIFEST_PROVIDER,
+  AWS_ESTATES_MANIFEST_SCHEMA_VERSION,
+  AWS_FORBIDDEN_CREDENTIAL_FIELDS,
   type ArtifactGenerationManifest,
-  type AwsCloudAccountSetupAcceptedResponse,
-  type AwsCloudAccountSetupPreparationRequest,
-  type AwsCloudAccountSetupPreparationResponse,
-  type AwsCloudAccountSetupRequest,
-  type AwsOnboardRequestMessageV1,
-  type AwsRequestActionV1,
-  type AwsRequestForbiddenCredentialField,
+  type AwsCommand,
+  type AwsCommandAction,
+  type AwsCommandEntity,
+  type AwsCompanyTrustSetupResponse,
+  type AwsEstatesManifest,
+  type AwsForbiddenCredentialField,
   type CostDateBasis,
   type DailyMetrics,
   type DecompositionTree,
@@ -46,10 +48,12 @@ import {
   type AwsPortalRelationshipArtifact,
   type AwsPortalResourceCollectionArtifact,
   type AwsPortalResourceCollectionDetailArtifact,
+  type AwsEstatesManifest as AwsSubpathEstatesManifest,
 } from '@spottoai/types-package/aws';
 
-const requestActions: readonly AwsRequestActionV1[] = AWS_REQUEST_ACTIONS;
-const forbiddenCredentialFields: readonly AwsRequestForbiddenCredentialField[] = AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS;
+const commandEntities: readonly AwsCommandEntity[] = AWS_COMMAND_ENTITIES;
+const commandActions: readonly AwsCommandAction[] = AWS_COMMAND_ACTIONS;
+const forbiddenCredentialFields: readonly AwsForbiddenCredentialField[] = AWS_FORBIDDEN_CREDENTIAL_FIELDS;
 const publicArtifactTypes = AWS_PUBLIC_ARTIFACT_TYPES;
 const pluginSchemaVersion = AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION;
 const pluginSubscriptionLogicalName = buildAwsPluginSubscriptionLogicalName('a'.repeat(64));
@@ -82,32 +86,23 @@ type PackedAwsPublicArtifacts =
   | AwsPluginSubscriptionArtifact
   | AwsPluginResourceArtifact;
 
-const setupRequest: AwsCloudAccountSetupRequest = {
-  provider: 'AWS',
-  companyId: 'company-123',
-  name: 'Production AWS',
-  authMode: 'crossAccountRole',
-  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
-};
-
-const setupPreparationRequest: AwsCloudAccountSetupPreparationRequest = {};
-
-const setupPreparationResponse: AwsCloudAccountSetupPreparationResponse = {
+const companyTrustSetup: AwsCompanyTrustSetupResponse = {
   provider: 'AWS',
   externalId: 'spotto-generated-external-id',
   createdAt: '2026-07-15T00:00:00.000Z',
   onboardingBundle: {
     schemaVersion: 1,
     roleName: 'SpottoReadOnlyRole',
-    trustedPrincipalArn: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod',
-    trustedPrincipalAccountId: '715809501612',
+    rolePurposes: ['resource-discovery', 'billing-definition', 'billing-storage'],
+    trustedPrincipalArn: 'arn:aws:iam::111122223333:role/ExampleSpottoPrincipal',
+    trustedPrincipalAccountId: '111122223333',
     trustPolicy: {
       Version: '2012-10-17',
       Statement: [
         {
           Sid: 'AllowSpottoCloudEngineAccess',
           Effect: 'Allow',
-          Principal: { AWS: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod' },
+          Principal: { AWS: 'arn:aws:iam::111122223333:role/ExampleSpottoPrincipal' },
           Action: 'sts:AssumeRole',
         },
       ],
@@ -129,37 +124,28 @@ const setupPreparationResponse: AwsCloudAccountSetupPreparationResponse = {
   },
 };
 
-const acceptedResponse: AwsCloudAccountSetupAcceptedResponse = {
-  provider: 'AWS',
-  cloudAccountId: 'cloud-account-123',
-  accountId: '123456789012',
+const acceptedAt = '2026-07-15T00:00:00.000Z';
+
+const estatesManifest: AwsEstatesManifest = {
+  schemaVersion: AWS_ESTATES_MANIFEST_SCHEMA_VERSION,
+  provider: AWS_ESTATES_MANIFEST_PROVIDER,
+  companyId: 'company-123',
+  updatedAt: '2026-07-31T00:00:00.000Z',
+  estates: [],
+};
+const estatesManifestFromAwsSubpath: AwsSubpathEstatesManifest = estatesManifest;
+
+const estateReconcileCommand: AwsCommand = {
+  schemaVersion: AWS_COMMAND_SCHEMA_VERSION,
+  provider: AWS_COMMAND_PROVIDER,
+  entity: 'estate',
+  action: 'reconcile',
+  companyId: 'company-123',
+  estateId: 'estate-123',
+  manifestRevision: 'etag-42',
   requestId: 'request-123',
   correlationId: 'correlation-123',
-  status: 'pending',
-  acceptedAt: '2026-07-15T00:00:00.000Z',
-};
-
-const onboardRequest: AwsOnboardRequestMessageV1 = {
-  schemaVersion: AWS_REQUEST_SCHEMA_VERSION,
-  provider: AWS_REQUEST_PROVIDER,
-  entity: 'cloudaccount',
-  action: 'onboard',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  awsAccountId: '123456789012',
-  roleArn: setupRequest.roleArn,
-  externalId: setupPreparationResponse.externalId,
-  requestId: acceptedResponse.requestId,
-  correlationId: acceptedResponse.correlationId,
-  requestedAt: acceptedResponse.acceptedAt,
-  billingExport: {
-    type: 'CUR',
-    reportName: 'customer-cur',
-    bucketName: 'customer-billing-export',
-    prefix: 'billing',
-    region: 'ap-southeast-2',
-    ownerAccountId: '123456789012',
-  },
+  requestedAt: acceptedAt,
 };
 
 const publicAwsAccount: PublicCloudAccountDto = {
@@ -170,10 +156,12 @@ const publicAwsAccount: PublicCloudAccountDto = {
   provider: 'AWS',
   authMode: 'crossAccountRole',
   accountId: '123456789012',
-  roleArn: setupRequest.roleArn,
+  awsEstateId: 'estate-123',
+  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
+  awsRolePurposes: ['resource-discovery', 'billing-definition', 'billing-storage'],
   status: 'pending',
-  createdAt: new Date(acceptedResponse.acceptedAt),
-  updatedAt: new Date(acceptedResponse.acceptedAt),
+  createdAt: new Date(acceptedAt),
+  updatedAt: new Date(acceptedAt),
   createdBy: 'user-123',
 };
 
@@ -228,7 +216,7 @@ const report: DecompositionTree = {
     type: 'calendar_day',
     basis: 'billing-calendar',
   },
-  lastUpdated: acceptedResponse.acceptedAt,
+  lastUpdated: acceptedAt,
   totalSpend: 1,
   currency: 'NZD',
   currencySymbol: '$',
@@ -240,7 +228,7 @@ const generationManifest = {
   accountId: '123456789012',
   artifactGeneration: {
     runId: 'portal-run-1',
-    generatedAt: acceptedResponse.acceptedAt,
+    generatedAt: acceptedAt,
   },
   status: 'completed',
   artifacts: [
@@ -259,7 +247,7 @@ const generationManifest = {
       source: 'ec2-instances',
       status: 'available',
       generationId: 'ec2-generation-1',
-      generatedAt: acceptedResponse.acceptedAt,
+      generatedAt: acceptedAt,
     },
   ],
   evidence: {
@@ -279,18 +267,18 @@ const publicAccountSummary = {
     accountId: '123456789012',
     displayName: 'Production AWS',
   },
-  timestamp: acceptedResponse.acceptedAt,
+  timestamp: acceptedAt,
 } satisfies AwsPortalAccountSummaryArtifact<'123456789012', 'portal-run-1'>;
 const packedAwsPublicArtifact: PackedAwsPublicArtifacts = publicAccountSummary;
 
 void [
-  setupRequest,
-  setupPreparationRequest,
-  setupPreparationResponse,
-  requestActions,
+  companyTrustSetup,
+  commandEntities,
+  commandActions,
   forbiddenCredentialFields,
-  acceptedResponse,
-  onboardRequest,
+  estatesManifest,
+  estatesManifestFromAwsSubpath,
+  estateReconcileCommand,
   publicAwsAccount,
   publicAwsAccountWithExternalId,
   publicAwsAccountWithResolvedCredentials,

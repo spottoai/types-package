@@ -1,101 +1,102 @@
-import type {
-  AwsCloudAccountSetupAcceptedResponse,
-  AwsCloudAccountSetupPreparationRequest,
-  AwsCloudAccountSetupPreparationResponse,
-  AwsCloudAccountSetupRequest,
-  AwsCloudAccountStatusResponse,
-  AwsCloudAccountEngineRequestStatusRecord,
-  AwsDeleteRequestMessageV1,
-  AwsOnboardRequestMessageV1,
-  AwsRefreshRequestMessageV1,
-  AwsRequestActionV1,
-  AwsRequestMessageV1,
+import {
+  AWS_COMMAND_ACTIONS,
+  AWS_COMMAND_ENTITIES,
+  AWS_COMMAND_PROVIDER,
+  AWS_COMMAND_SCHEMA_VERSION,
+  AWS_FORBIDDEN_CREDENTIAL_FIELDS,
+  type AwsAccountDeleteCommand,
+  type AwsAccountRefreshCommand,
+  type AwsBillingSourceRefreshCommand,
+  type AwsCommand,
+  type AwsCompanyTrustSetupResponse,
+  type AwsEstateDeleteCommand,
+  type AwsEstateReconcileCommand,
 } from '../index';
 
-const onboardMessage: AwsOnboardRequestMessageV1 = {
-  schemaVersion: 1,
-  provider: 'aws',
-  entity: 'cloudaccount',
-  action: 'onboard',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  awsAccountId: '123456789012',
-  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
-  externalId: 'external-id-123',
-  requestId: 'request-123',
-  correlationId: 'correlation-123',
-  requestedAt: '2026-07-15T00:00:00.000Z',
-  billingExport: {
-    type: 'DATA_EXPORTS',
-    exportArn: 'arn:aws:bcm-data-exports:::export:example/837fcfce-f85b-4600-b333-b38a12c3a927',
-    bucketName: 'spotto-billing-export',
-    prefix: 'data-exports/example',
-    region: 'ap-southeast-2',
-    ownerAccountId: '123456789012',
-  },
+// @ts-expect-error The abandoned single-account setup request is not exported.
+import type { AwsCloudAccountSetupRequest } from '../index';
+// @ts-expect-error The abandoned single-account status response is not exported.
+import type { AwsCloudAccountStatusResponse } from '../index';
+// @ts-expect-error Inline billing-export configuration moved into AwsEstatesManifest.
+import type { AwsBillingExportConfiguration } from '../index';
+// @ts-expect-error The old account-only queue contract is not exported.
+import type { AwsRequestMessageV1 } from '../index';
+// @ts-expect-error Alpha contracts do not retain version-suffixed aliases.
+import type { AwsCloudAccountOnboardingBundleV1 } from '../index';
+
+const estateReconcile: AwsEstateReconcileCommand = {
+  schemaVersion: AWS_COMMAND_SCHEMA_VERSION,
+  provider: AWS_COMMAND_PROVIDER,
+  entity: 'estate',
+  action: 'reconcile',
+  companyId: 'company-example',
+  estateId: 'estate-example',
+  manifestRevision: 'etag-42',
+  requestId: 'request-estate-reconcile',
+  correlationId: 'correlation-example',
+  requestedAt: '2026-07-31T00:00:00.000Z',
 };
 
-const refreshMessage: AwsRefreshRequestMessageV1 = {
-  schemaVersion: 1,
-  provider: 'aws',
-  entity: 'cloudaccount',
-  action: 'refresh',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  awsAccountId: '123456789012',
-  requestId: 'request-124',
-  correlationId: 'correlation-123',
-  requestedAt: '2026-07-15T00:01:00.000Z',
-};
-
-const deleteMessage: AwsDeleteRequestMessageV1 = {
-  schemaVersion: 1,
-  provider: 'aws',
-  entity: 'cloudaccount',
+const estateDelete: AwsEstateDeleteCommand = {
+  ...estateReconcile,
   action: 'delete',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  awsAccountId: '123456789012',
-  requestId: 'request-125',
-  correlationId: 'correlation-123',
-  requestedAt: '2026-07-15T00:02:00.000Z',
+  requestId: 'request-estate-delete',
 };
 
-const allMessages: AwsRequestMessageV1[] = [onboardMessage, refreshMessage, deleteMessage];
-const actions: AwsRequestActionV1[] = ['onboard', 'refresh', 'delete'];
-
-const setupRequest: AwsCloudAccountSetupRequest = {
-  provider: 'AWS',
-  companyId: 'company-123',
-  name: 'Production AWS',
-  authMode: 'crossAccountRole',
-  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
-  billingExport: {
-    type: 'CUR',
-    reportName: 'spotto-cur',
-    bucketName: 'spotto-billing-export',
-    prefix: 'cur/spotto-cur',
-    region: 'ap-southeast-2',
-    ownerAccountId: '123456789012',
-  },
+const accountRefresh: AwsAccountRefreshCommand = {
+  schemaVersion: 1,
+  provider: 'aws',
+  entity: 'account',
+  action: 'refresh',
+  companyId: 'company-example',
+  estateId: 'estate-example',
+  accountId: '123456789012',
+  cloudAccountId: 'cloud-account-example',
+  manifestRevision: 'etag-42',
+  requestId: 'request-account-refresh',
+  correlationId: 'correlation-example',
+  requestedAt: '2026-07-31T00:01:00.000Z',
 };
 
-const setupPreparationResponse: AwsCloudAccountSetupPreparationResponse = {
+const accountDelete: AwsAccountDeleteCommand = {
+  ...accountRefresh,
+  action: 'delete',
+  requestId: 'request-account-delete',
+};
+
+const billingSourceRefresh: AwsBillingSourceRefreshCommand = {
+  schemaVersion: 1,
+  provider: 'aws',
+  entity: 'billing-source',
+  action: 'refresh',
+  companyId: 'company-example',
+  estateId: 'estate-example',
+  billingSourceId: 'example-data-export',
+  manifestRevision: 'etag-42',
+  requestId: 'request-billing-refresh',
+  correlationId: 'correlation-example',
+  requestedAt: '2026-07-31T00:02:00.000Z',
+};
+
+const commands: AwsCommand[] = [estateReconcile, estateDelete, accountRefresh, accountDelete, billingSourceRefresh];
+
+const companyTrustSetup: AwsCompanyTrustSetupResponse = {
   provider: 'AWS',
-  externalId: 'external-id-123',
-  createdAt: '2026-07-15T00:00:00.000Z',
+  externalId: 'example-server-issued-external-id',
+  createdAt: '2026-07-31T00:00:00.000Z',
   onboardingBundle: {
     schemaVersion: 1,
     roleName: 'SpottoReadOnlyRole',
-    trustedPrincipalArn: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod',
-    trustedPrincipalAccountId: '715809501612',
+    rolePurposes: ['resource-discovery', 'organization-discovery', 'billing-definition', 'billing-storage'],
+    trustedPrincipalArn: 'arn:aws:iam::111122223333:role/ExampleSpottoPrincipal',
+    trustedPrincipalAccountId: '111122223333',
     trustPolicy: {
       Version: '2012-10-17',
       Statement: [
         {
           Sid: 'AllowSpottoCloudEngineAccess',
           Effect: 'Allow',
-          Principal: { AWS: 'arn:aws:iam::715809501612:user/spotto-cloud-engine-prod' },
+          Principal: { AWS: 'arn:aws:iam::111122223333:role/ExampleSpottoPrincipal' },
           Action: 'sts:AssumeRole',
         },
       ],
@@ -117,212 +118,67 @@ const setupPreparationResponse: AwsCloudAccountSetupPreparationResponse = {
   },
 };
 
-const setupPreparationRequest: AwsCloudAccountSetupPreparationRequest = {};
-
-const engineStatus: AwsCloudAccountEngineRequestStatusRecord = {
-  provider: 'aws',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  awsAccountId: '123456789012',
-  requestId: 'request-123',
-  correlationId: 'correlation-123',
-  action: 'onboard',
-  requestedAt: '2026-07-15T00:00:00.000Z',
-  state: 'completed',
-  attemptCount: 1,
-  outcome: 'onboarded',
-  ownershipGeneration: 1,
-  billingStatus: 'configured-pending-delivery',
-  lastSuccessfulSyncAt: '2026-07-15T00:04:59.000Z',
-  updatedAt: '2026-07-15T00:05:00.000Z',
-};
-
-const setupAcceptedResponse: AwsCloudAccountSetupAcceptedResponse = {
-  provider: 'AWS',
-  cloudAccountId: 'cloud-account-123',
-  accountId: '123456789012',
-  requestId: 'request-123',
-  correlationId: 'correlation-123',
-  status: 'pending',
-  acceptedAt: '2026-07-15T00:00:00.000Z',
-};
-
-const statusResponse: AwsCloudAccountStatusResponse = {
-  provider: 'AWS',
-  companyId: 'company-123',
-  cloudAccountId: 'cloud-account-123',
-  accountId: '123456789012',
-  name: 'Production AWS',
-  authMode: 'crossAccountRole',
-  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
-  status: 'active',
-  currentRequestId: 'request-123',
-  correlationId: 'correlation-123',
-  updatedAt: '2026-07-15T00:05:00.000Z',
-  lastSuccessfulSyncAt: '2026-07-15T00:05:00.000Z',
-};
-
-const setupRequestWithoutExternalId: AwsCloudAccountSetupRequest = {
-  ...setupRequest,
-};
-
-const { externalId: _externalId, ...onboardWithoutExternalId } = onboardMessage;
-// @ts-expect-error Onboarding requires the server-issued External ID.
-const invalidOnboardWithoutExternalId: AwsOnboardRequestMessageV1 = onboardWithoutExternalId;
-
-const invalidUppercaseProvider: AwsRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error New AWS wire contracts use the canonical lowercase provider value only.
+const invalidProvider: AwsCommand = {
+  ...accountRefresh,
+  // @ts-expect-error AWS command provider wire value is lowercase.
   provider: 'AWS',
 };
 
-const invalidSchemaVersion: AwsRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error Unsupported schema versions must be rejected by the v1 contract.
-  schemaVersion: 2,
+const invalidEstateAction: AwsEstateReconcileCommand = {
+  ...estateReconcile,
+  // @ts-expect-error Estate reconciliation cannot be relabelled as refresh.
+  action: 'refresh',
 };
 
-const invalidEntity: AwsRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error AWS request v1 is scoped to the cloud-account ingress entity.
-  entity: 'subscription',
+const invalidBillingEntity: AwsBillingSourceRefreshCommand = {
+  ...billingSourceRefresh,
+  // @ts-expect-error Billing-source refresh is not an account command.
+  entity: 'account',
 };
 
-const invalidAction: AwsRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error AWS request v1 supports only onboard, refresh, and delete.
-  action: 'create',
+const invalidCommandWithRole: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  // @ts-expect-error Commands resolve role metadata from aws-estates.json.
+  roleArn: 'arn:aws:iam::123456789012:role/ExampleReadOnlyRole',
 };
 
-const invalidOnboardWithoutRole: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error Onboarding requires the cross-account role ARN.
-  roleArn: undefined,
+const invalidCommandWithExternalId: AwsEstateReconcileCommand = {
+  ...estateReconcile,
+  // @ts-expect-error External ID is server-owned setup metadata, not a command field.
+  externalId: 'server-owned',
 };
 
-const invalidRefreshWithRole: AwsRefreshRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error Refresh resolves persisted onboarding state and must not carry role metadata.
-  roleArn: onboardMessage.roleArn,
+const invalidCommandWithBilling: AwsBillingSourceRefreshCommand = {
+  ...billingSourceRefresh,
+  // @ts-expect-error Commands resolve billing configuration from aws-estates.json.
+  billingExport: { type: 'CUR' },
 };
 
-const invalidDeleteWithExternalId: AwsDeleteRequestMessageV1 = {
-  ...deleteMessage,
-  // @ts-expect-error Delete must not carry sensitive onboarding setup metadata.
-  externalId: onboardMessage.externalId,
-};
-
-const invalidRefreshWithBilling: AwsRefreshRequestMessageV1 = {
-  ...refreshMessage,
-  // @ts-expect-error Refresh resolves persisted billing state and must not carry a billing locator.
-  billingExport: onboardMessage.billingExport,
-};
-
-const invalidDeleteWithBilling: AwsDeleteRequestMessageV1 = {
-  ...deleteMessage,
-  // @ts-expect-error Delete resolves persisted billing state and must not carry a billing locator.
-  billingExport: onboardMessage.billingExport,
-};
-
-const invalidOnboardWithAccessKey: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error AWS request messages must never carry raw access keys.
-  accessKeyId: 'AKIAEXAMPLE',
-};
-
-const invalidOnboardWithSecretAccessKey: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error AWS request messages must never carry raw secret access keys.
-  secretAccessKey: 'raw-secret',
-};
-
-const invalidOnboardWithSessionToken: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error AWS request messages must never carry session tokens.
-  sessionToken: 'raw-session-token',
-};
-
-const invalidOnboardWithCredentials: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error AWS request messages must never carry resolved credential objects.
+const invalidCommandWithCredentials: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  // @ts-expect-error Raw AWS credentials must never appear on commands.
   credentials: { accessKeyId: 'AKIAEXAMPLE', secretAccessKey: 'raw-secret' },
 };
 
-const invalidOnboardWithEncryptedSecret: AwsOnboardRequestMessageV1 = {
-  ...onboardMessage,
-  // @ts-expect-error AWS request messages must never carry API encryption output.
-  encryptedSecret: 'encrypted-secret',
-};
+const { manifestRevision: _manifestRevision, ...accountRefreshWithoutRevision } = accountRefresh;
+// @ts-expect-error Every command is bound to one exact desired-state revision.
+const invalidCommandWithoutRevision: AwsAccountRefreshCommand = accountRefreshWithoutRevision;
 
-const invalidSetupWithAccessKey: AwsCloudAccountSetupRequest = {
-  ...setupRequest,
-  // @ts-expect-error Preview setup accepts AssumeRole metadata, not customer access keys.
-  accessKeyId: 'AKIAEXAMPLE',
-};
+const commandEntities = AWS_COMMAND_ENTITIES;
+const commandActions = AWS_COMMAND_ACTIONS;
+const forbiddenCredentialFields = AWS_FORBIDDEN_CREDENTIAL_FIELDS;
 
-const invalidSetupWithExternalId: AwsCloudAccountSetupRequest = {
-  ...setupRequest,
-  // @ts-expect-error External ID is prepared by the API and cannot be overridden by the Portal request.
-  externalId: 'caller-controlled-external-id',
-};
-
-const invalidSetupWithAccountId: AwsCloudAccountSetupRequest = {
-  ...setupRequest,
-  // @ts-expect-error The API derives the AWS account ID from roleArn; setup requests must not submit it.
-  accountId: '123456789012',
-};
-
-const invalidPreparationWithExternalId: AwsCloudAccountSetupPreparationRequest = {
-  // @ts-expect-error Preparation is company-scoped and the API generates the External ID.
-  externalId: 'caller-controlled-external-id',
-};
-
-const invalidPreparationWithAccountId: AwsCloudAccountSetupPreparationRequest = {
-  // @ts-expect-error Preparation does not require or accept AWS account details.
-  accountId: '123456789012',
-};
-
-const invalidLowercaseSetupProvider: AwsCloudAccountSetupRequest = {
-  ...setupRequest,
-  // @ts-expect-error The existing Portal/API create edge uses uppercase AWS; only the queue envelope uses lowercase aws.
-  provider: 'aws',
-};
-
-const invalidPublicStatusWithExternalId: AwsCloudAccountStatusResponse = {
-  ...statusResponse,
-  // @ts-expect-error External ID is setup-only and must not appear in public status DTOs.
-  externalId: 'external-id-123',
-};
-
-void allMessages;
-void actions;
-void setupRequest;
-void setupRequestWithoutExternalId;
-void setupPreparationResponse;
-void setupPreparationRequest;
-void engineStatus;
-void _externalId;
-void invalidOnboardWithoutExternalId;
-void setupAcceptedResponse;
-void statusResponse;
-void invalidUppercaseProvider;
-void invalidSchemaVersion;
-void invalidEntity;
-void invalidAction;
-void invalidOnboardWithoutRole;
-void invalidRefreshWithRole;
-void invalidDeleteWithExternalId;
-void invalidRefreshWithBilling;
-void invalidDeleteWithBilling;
-void invalidOnboardWithAccessKey;
-void invalidOnboardWithSecretAccessKey;
-void invalidOnboardWithSessionToken;
-void invalidOnboardWithCredentials;
-void invalidOnboardWithEncryptedSecret;
-void invalidSetupWithAccessKey;
-void invalidSetupWithExternalId;
-void invalidSetupWithAccountId;
-void invalidPreparationWithExternalId;
-void invalidPreparationWithAccountId;
-void invalidLowercaseSetupProvider;
-void invalidPublicStatusWithExternalId;
+void commands;
+void companyTrustSetup;
+void invalidProvider;
+void invalidEstateAction;
+void invalidBillingEntity;
+void invalidCommandWithRole;
+void invalidCommandWithExternalId;
+void invalidCommandWithBilling;
+void invalidCommandWithCredentials;
+void invalidCommandWithoutRevision;
+void _manifestRevision;
+void commandEntities;
+void commandActions;
+void forbiddenCredentialFields;

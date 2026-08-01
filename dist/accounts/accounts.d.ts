@@ -2,6 +2,8 @@ import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
 import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
+import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
+export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
@@ -11,7 +13,7 @@ export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
 export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
 export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
 export type AzureGdapValidationStatus = 'notValidated' | 'ready' | 'degraded' | 'blocked' | 'expired' | 'reauthRequired';
-export type AzureGdapCapabilityKey = 'partnerAuthorization' | 'relationship' | 'accessAssignment' | 'appConsent' | 'subscriptionDiscovery' | 'resourceInventory' | 'resourceGraph' | 'costRead' | 'billingExportSetup' | 'monitoringRead' | 'graphInventory' | 'scheduledScan';
+export type AzureGdapCapabilityKey = 'partnerAuthorization' | 'relationship' | 'accessAssignment' | 'appConsent' | 'subscriptionDiscovery' | 'resourceInventory' | 'resourceGraph' | 'costRead' | 'partnerBillingCostRead' | 'billingExportSetup' | 'monitoringRead' | 'graphInventory' | 'scheduledScan';
 export type AzureGdapCapabilityStatusValue = 'ready' | 'degraded' | 'blocked' | 'unsupported' | 'notChecked';
 export interface AzureGdapCapabilityStatus {
     key: AzureGdapCapabilityKey;
@@ -20,6 +22,13 @@ export interface AzureGdapCapabilityStatus {
     checkedAt?: string;
     requiredRoles?: string[];
     requiredAzureRoles?: string[];
+}
+/** Internal CSP partner billing scope used for customer-scope Cost Management queries. */
+export interface AzureCspPartnerBillingScope {
+    billingAccountId: string;
+    customerId: string;
+    scopePath: string;
+    validatedAt: string;
 }
 export interface AzureGdapRoleAssignment {
     roleId?: string;
@@ -50,6 +59,8 @@ export interface AzureGdapCloudAccountMetadata {
     gdapScheduledEligible?: boolean;
     gdapScheduledEligibilityReason?: string;
     gdapCapabilities?: AzureGdapCapabilityStatus[];
+    /** Internal partner billing scope. Do not expose billing account/customer identifiers in public API DTOs. */
+    cspPartnerBillingScope?: AzureCspPartnerBillingScope;
 }
 export interface AzureCloudAccountAuthContext {
     authMode?: CloudAccountAuthMode;
@@ -381,12 +392,14 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
     gdapScheduledEligible?: boolean;
     gdapScheduledEligibilityReason?: string;
     gdapCapabilities?: AzureGdapCapabilityStatus[];
+    /** Internal partner billing scope. Do not expose billing account/customer identifiers in public API DTOs. */
+    cspPartnerBillingScope?: AzureCspPartnerBillingScope;
     /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
     gdapCredentialReference?: string;
     /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
     billingExportLocator?: string | CloudAccountBillingExportLocator;
 }
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'awsBillingExport'> & AwsRequestForbiddenCredentialFields & {
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope' | 'awsBillingExport'> & AwsRequestForbiddenCredentialFields & {
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
@@ -400,27 +413,10 @@ export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | '
     awsOnboardingCommandFingerprint?: never;
     awsDeleteRequestedAt?: never;
 };
-export type SyncProgressIssueType = 'capabilityMissing' | 'billingExport' | 'partialData';
-export type SyncProgressIssueScope = 'cloudAccount' | 'subscription' | 'component';
-export type SyncProgressIssueMetadataValue = string | number | boolean | undefined;
-export interface SyncProgressIssue {
-    type: SyncProgressIssueType;
-    scope: SyncProgressIssueScope;
-    capabilityKey?: string;
-    capabilityDisplayName?: string;
-    capabilityDescription?: string;
-    requiredRoles?: string[];
-    message: string;
-    code?: string;
-    title?: string;
-    remediation?: string;
-    sourceSelected?: 'export' | 'query';
-    fallbackUsed?: boolean;
-    degraded?: boolean;
-    metadata?: Record<string, SyncProgressIssueMetadataValue>;
-}
-export type SubscriptionSyncProgressStepStatus = 'idle' | 'pending' | 'queued' | 'inProgress' | 'completed' | 'error';
-export type SubscriptionSyncProgressSubStepStatus = SubscriptionSyncProgressStepStatus | 'skipped';
+/** Subscription-specific compatibility alias for the shared progress-stage vocabulary. */
+export type SubscriptionSyncProgressStepStatus = SyncProgressStepStatus;
+/** Subscription-specific compatibility alias for the shared progress-substage vocabulary. */
+export type SubscriptionSyncProgressSubStepStatus = SyncProgressSubStepStatus;
 export type SubscriptionSyncProgressContextValue = string | number | boolean;
 export interface SubscriptionSyncProgressSubStep {
     id: string;
@@ -447,7 +443,7 @@ export interface SubscriptionSyncProgressStep {
 }
 export interface SubscriptionSyncProgress {
     runId?: string;
-    overallStatus: 'idle' | 'processing' | 'completed' | 'error';
+    overallStatus: SyncProgressStatus;
     progressLabel: string;
     completedSteps: number;
     totalSteps: number;
@@ -512,5 +508,4 @@ export interface SubscriptionAccount extends SubscriptionInfoBase {
     /** Row Key */
     companyId: string;
 }
-export {};
 //# sourceMappingURL=accounts.d.ts.map

@@ -8,6 +8,7 @@
     "src/accounts/accounts.contracts.spec.ts",
     "src/ai/ai.contracts.spec.ts",
     "src/aws/aws.contracts.spec.ts",
+    "src/aws/estates.contracts.spec.ts",
     "src/aws/publicArtifacts.contracts.spec.ts",
     "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/aws/portalPublicArtifacts.contracts.spec.ts",

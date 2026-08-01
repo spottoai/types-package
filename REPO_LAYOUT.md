@@ -26,6 +26,9 @@ Folder `README.md` files are authoritative for local implementation details.
   runtime validation contracts. It also owns lossless resource/account current
   bodies, compact history bodies and references, AI sibling contracts, and
   their dependency-free rejection validators.
+  It also includes the secret-free AWS estates desired-state manifest,
+  estate/account/billing-source orchestration commands, and company trust
+  setup shapes. Engine persistence and saga types are intentionally excluded.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
 
 ## Specs and tooling

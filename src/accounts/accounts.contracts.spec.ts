@@ -319,7 +319,9 @@ const publicAwsCloudAccountDto: PublicCloudAccountDto = {
   provider: 'AWS',
   authMode: 'crossAccountRole',
   accountId: '123456789012',
-  roleArn: 'arn:aws:iam::123456789012:role/SpottoReadOnly',
+  awsEstateId: 'estate-example',
+  roleArn: 'arn:aws:iam::123456789012:role/ExampleReadOnlyRole',
+  awsRolePurposes: ['resource-discovery'],
   status: 'pending',
   statusMessage: 'AWS onboarding request accepted.',
   createdAt: new Date('2026-07-15T00:00:00.000Z'),
@@ -530,6 +532,26 @@ const invalidPublicCloudAccountGdapCredentialReferenceDto: PublicCloudAccountDto
   status: 'Active',
   // @ts-expect-error public cloud-account DTOs must not expose GDAP credential references.
   gdapCredentialReference: 'internal-gdap-credential-reference',
+};
+
+const invalidPublicCloudAccountPartnerBillingScopeDto: PublicCloudAccountDto = {
+  companyId: 'comp-123',
+  id: 'public-gdap-billing-account-123',
+  name: 'Public GDAP Azure Account',
+  companyName: 'Spotto',
+  provider: 'Azure',
+  authMode: 'gdap',
+  createdAt: new Date('2026-07-30T00:00:00.000Z'),
+  updatedAt: new Date('2026-07-30T00:00:00.000Z'),
+  createdBy: 'user-123',
+  status: 'Active',
+  // @ts-expect-error public cloud-account DTOs must not expose partner billing scope identifiers.
+  cspPartnerBillingScope: {
+    billingAccountId: 'billing-account-123',
+    customerId: 'customer-123',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/customers/customer-123',
+    validatedAt: '2026-07-30T00:00:00.000Z',
+  },
 };
 
 const cloudAccountWithTenantSyncState: CloudAccount = {
