@@ -155,6 +155,7 @@ export interface RegulatoryResourceEvaluation {
 export interface RegulatoryControlDetail extends RegulatoryControlSummary {
   description?: string;
   requirements?: string;
+  additionalContentUrl?: string;
   policies: RegulatoryPolicyEvaluationSummary[];
   resources: RegulatoryResourceEvaluation[];
 }

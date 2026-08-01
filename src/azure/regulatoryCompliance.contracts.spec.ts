@@ -238,6 +238,7 @@ const controlDetail: RegulatoryControlDetail = {
   ...controlSummary,
   description: 'Protect information in networks and supporting information processing facilities.',
   requirements: 'Network security mechanisms should be established and monitored.',
+  additionalContentUrl: 'https://learn.microsoft.com/azure/governance/policy/concepts/regulatory-compliance',
   policies: [policySummary],
   resources: [resourceEvaluation],
 };
