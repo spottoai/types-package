@@ -200,6 +200,33 @@ export interface RegulatoryResourceEvaluationPage {
   resources: RegulatoryResourceEvaluation[];
 }
 
+export const REGULATORY_COMPLIANCE_NOTE_TARGET_TYPES = ['assignment', 'control', 'policy'] as const;
+
+export type RegulatoryComplianceNoteTargetType = (typeof REGULATORY_COMPLIANCE_NOTE_TARGET_TYPES)[number];
+
+export interface RegulatoryComplianceNote {
+  noteId: string;
+  subscriptionId: string;
+  assignmentKey: string;
+  targetType: RegulatoryComplianceNoteTargetType;
+  targetKey: string;
+  targetLabel: string;
+  content: string;
+  createdAt: string;
+  createdByUserId: string;
+  createdByDisplayName?: string;
+}
+
+export interface RegulatoryComplianceNoteListResponse {
+  notes: RegulatoryComplianceNote[];
+}
+
+export interface CreateRegulatoryComplianceNoteRequest {
+  targetType: RegulatoryComplianceNoteTargetType;
+  targetKey: string;
+  content: string;
+}
+
 export type ComplianceExpectationScopeType = 'company' | 'cloudAccount' | 'subscription';
 export type ComplianceExpectationValue = 'expected' | 'notExpected';
 export type ComplianceExpectationSource = 'manual' | 'survey';

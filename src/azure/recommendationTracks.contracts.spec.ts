@@ -209,6 +209,30 @@ const invalidCandidateMetadata: SystemTrackCandidate = {
   },
 };
 
+const invalidMissingBusinessTitleCandidate: SystemTrackCandidate = {
+  ...resourceCandidate,
+  // @ts-expect-error generated cards require an explicit Business title.
+  card: {
+    title: 'Remove unattached disk',
+    technicalTitle: 'Remove unattached disk',
+    resourceName: 'disk-1',
+    resourceType: 'microsoft.compute/disks',
+    deepLink: '/recommendations/storage-disks_unattached?resourceId=disk-1',
+  },
+};
+
+const invalidMissingTechnicalTitleCandidate: SystemTrackCandidate = {
+  ...resourceCandidate,
+  // @ts-expect-error generated cards require an explicit Technical title.
+  card: {
+    title: 'Remove unattached disk',
+    businessTitle: 'Stop paying for unused disk storage',
+    resourceName: 'disk-1',
+    resourceType: 'microsoft.compute/disks',
+    deepLink: '/recommendations/storage-disks_unattached?resourceId=disk-1',
+  },
+};
+
 // @ts-expect-error degraded track evaluations require a status reason.
 const invalidFailedTrackView: SystemTracksView = {
   ...systemTracksView,
@@ -222,4 +246,6 @@ void invalidResourceCandidate;
 void invalidAvailableMetric;
 void invalidTrackId;
 void invalidCandidateMetadata;
+void invalidMissingBusinessTitleCandidate;
+void invalidMissingTechnicalTitleCandidate;
 void invalidFailedTrackView;

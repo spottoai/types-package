@@ -2,6 +2,7 @@ import type {
   AzurePolicyEvaluationState,
   ComplianceExpectationResponse,
   ComplianceExpectationRecord,
+  CreateRegulatoryComplianceNoteRequest,
   CreatePolicyExemptionQueuedResponse,
   CreatePolicyExemptionRequest,
   EffectiveComplianceExpectation,
@@ -10,6 +11,9 @@ import type {
   RegulatoryComplianceCoverage,
   RegulatoryComplianceCoverageSection,
   RegulatoryComplianceReport,
+  RegulatoryComplianceNote,
+  RegulatoryComplianceNoteListResponse,
+  RegulatoryComplianceNoteTargetType,
   RegulatoryComplianceView,
   RegulatoryComplianceWriteCapability,
   RegulatoryControlDetail,
@@ -385,6 +389,35 @@ const queuedResponse: CreatePolicyExemptionQueuedResponse = {
   state: 'queued',
 };
 
+const noteTargetType: RegulatoryComplianceNoteTargetType = 'policy';
+const regulatoryNote: RegulatoryComplianceNote = {
+  noteId: 'note-1',
+  subscriptionId,
+  assignmentKey,
+  targetType: noteTargetType,
+  targetKey: policyDefinitionReferenceId,
+  targetLabel: 'Storage accounts should prevent public access',
+  content: 'Confirm the migration owner and planned completion date.',
+  createdAt: generatedAt,
+  createdByUserId: 'user-1',
+  createdByDisplayName: 'Alex Example',
+};
+const regulatoryNoteList: RegulatoryComplianceNoteListResponse = { notes: [regulatoryNote] };
+const createRegulatoryNoteRequest: CreateRegulatoryComplianceNoteRequest = {
+  targetType: 'control',
+  targetKey: controlDetail.controlKey,
+  content: 'Validate the compensating control with the security team.',
+};
+
+// @ts-expect-error Azure Policy resources are not regulatory note targets in this iteration.
+const invalidRegulatoryNoteTarget: RegulatoryComplianceNoteTargetType = 'resource';
+
+const impersonatedRegulatoryNoteRequest: CreateRegulatoryComplianceNoteRequest = {
+  ...createRegulatoryNoteRequest,
+  // @ts-expect-error Actor identity is server-owned and cannot be supplied by a create request.
+  createdByUserId: 'another-user',
+};
+
 // @ts-expect-error Azure Policy has no normalized "passed" evaluation state.
 const invalidEvaluationState: AzurePolicyEvaluationState = 'passed';
 
@@ -415,6 +448,10 @@ void view;
 void upsertExpectationRequest;
 void expectationResponse;
 void queuedResponse;
+void regulatoryNoteList;
+void createRegulatoryNoteRequest;
+void invalidRegulatoryNoteTarget;
+void impersonatedRegulatoryNoteRequest;
 void invalidEvaluationState;
 void missingAssignmentKey;
 void missingReferenceIds;

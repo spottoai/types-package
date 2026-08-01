@@ -150,9 +150,9 @@ interface SystemTrackCardSnapshotBase {
   /** Backward-compatible default title for consumers that do not support view modes. */
   title: string;
   /** Customer-facing outcome label used in Business view. */
-  businessTitle?: string;
+  businessTitle: string;
   /** Implementation-oriented label used in Technical view. */
-  technicalTitle?: string;
+  technicalTitle: string;
   /** Source recommendation metadata used when materializing a durable workflow item. */
   category?: SystemTrackCardCategory;
   impact?: SystemTrackCardImpact;
