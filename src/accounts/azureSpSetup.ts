@@ -95,7 +95,9 @@ export type AzureSpPermissionKey =
   | 'billingExportActualBackfill'
   | 'billingExportAmortizedBackfill'
   | 'customWriteRoleDefinition'
-  | 'customWriteRoleAssignment';
+  | 'customWriteRoleAssignment'
+  | 'policyExemptionRoleDefinition'
+  | 'policyExemptionRoleAssignment';
 
 export type AzureSpOperationKind =
   | 'discoverApplication'

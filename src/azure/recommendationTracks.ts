@@ -140,8 +140,25 @@ export interface SystemTrackDisplayValue {
   currency?: string;
 }
 
+export type SystemTrackCardCategory = 'Cost' | 'Performance' | 'Security' | 'Compliance' | 'Reliability' | 'Operational Excellence';
+
+export type SystemTrackCardImpact = 'High' | 'Medium' | 'Low';
+
+export type SystemTrackCardEffort = 'High' | 'Medium' | 'Low';
+
 interface SystemTrackCardSnapshotBase {
+  /** Backward-compatible default title for consumers that do not support view modes. */
   title: string;
+  /** Customer-facing outcome label used in Business view. */
+  businessTitle?: string;
+  /** Implementation-oriented label used in Technical view. */
+  technicalTitle?: string;
+  /** Source recommendation metadata used when materializing a durable workflow item. */
+  category?: SystemTrackCardCategory;
+  impact?: SystemTrackCardImpact;
+  effort?: SystemTrackCardEffort;
+  /** Display Spotto Score projected from the canonical recommendation (0-100). */
+  spottoScore?: number;
   displayValue?: SystemTrackDisplayValue;
   deepLink: string;
 }

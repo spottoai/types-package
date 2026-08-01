@@ -17,6 +17,7 @@ import type {
   RegulatoryExemptionSummary,
   RegulatoryPolicyEvaluationSummary,
   RegulatoryResourceEvaluation,
+  RegulatoryResourceEvaluationPage,
   RegulatoryStandardCatalogEntry,
   RegulatoryStandardRecommendation,
   RegulatoryStandardSummary,
@@ -250,6 +251,18 @@ const assignmentDetail: RegulatoryComplianceAssignmentDetail = {
   sourceMetadata: report.sourceMetadata,
 };
 
+const resourceEvaluationPage: RegulatoryResourceEvaluationPage = {
+  generatedAt,
+  subscriptionId,
+  assignmentKey,
+  controlKey: controlDetail.controlKey,
+  page: 1,
+  pageSize: 25,
+  totalItems: 1,
+  totalPages: 1,
+  resources: [resourceEvaluation],
+};
+
 const expectationRecord: ComplianceExpectationRecord = {
   expectationId: 'azure|subscription|sub-1|iso-27001',
   companyId: 'company-1',
@@ -397,6 +410,7 @@ void directStandardSummary;
 void successfulEmptyReport;
 void explicitExpectationOverride;
 void assignmentDetail;
+void resourceEvaluationPage;
 void view;
 void upsertExpectationRequest;
 void expectationResponse;

@@ -70,6 +70,12 @@ const resourceCandidate: SystemTrackCandidate = {
   sourceFingerprint: 'sha256:resource-candidate',
   card: {
     title: 'Remove unattached disk',
+    businessTitle: 'Reduce waste from unattached disks',
+    technicalTitle: 'Remove unattached disk',
+    category: 'Cost',
+    impact: 'High',
+    effort: 'Low',
+    spottoScore: 84,
     resourceName: 'disk-1',
     resourceType: 'Microsoft.Compute/disks',
     displayValue: {
@@ -99,6 +105,11 @@ const recommendationCandidate: SystemTrackCandidate = {
   sourceFingerprint: 'sha256:recommendation-candidate',
   card: {
     title: 'Enable Defender protection',
+    businessTitle: 'Reduce security exposure with Defender',
+    technicalTitle: 'Enable Defender protection',
+    category: 'Security',
+    impact: 'High',
+    effort: 'Medium',
     affectedResourceCount: 18,
     deepLink: '/recommendations/security-enable-defender?subscriptionId=sub-123',
   },
@@ -189,6 +200,15 @@ const invalidTrackId: SystemTrackCatalog = {
   ],
 };
 
+const invalidCandidateMetadata: SystemTrackCandidate = {
+  ...resourceCandidate,
+  card: {
+    ...resourceCandidate.card,
+    // @ts-expect-error workflow metadata uses the shared display taxonomy.
+    impact: 'Critical',
+  },
+};
+
 // @ts-expect-error degraded track evaluations require a status reason.
 const invalidFailedTrackView: SystemTracksView = {
   ...systemTracksView,
@@ -201,4 +221,5 @@ void invalidRecommendationCandidate;
 void invalidResourceCandidate;
 void invalidAvailableMetric;
 void invalidTrackId;
+void invalidCandidateMetadata;
 void invalidFailedTrackView;

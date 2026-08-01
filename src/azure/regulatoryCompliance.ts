@@ -188,6 +188,18 @@ export interface RegulatoryComplianceAssignmentDetail {
   sourceMetadata: RegulatoryComplianceSourceMetadata;
 }
 
+export interface RegulatoryResourceEvaluationPage {
+  generatedAt: string;
+  subscriptionId: string;
+  assignmentKey: string;
+  controlKey: string;
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  resources: RegulatoryResourceEvaluation[];
+}
+
 export type ComplianceExpectationScopeType = 'company' | 'cloudAccount' | 'subscription';
 export type ComplianceExpectationValue = 'expected' | 'notExpected';
 export type ComplianceExpectationSource = 'manual' | 'survey';

@@ -7,6 +7,8 @@ export enum WritePermission {
   DismissRecommendations = 1 << 0, // 1
   /** Permission to enable storage inventory reports on storage accounts */
   StorageInventory = 1 << 1, // 2
+  /** Permission to create scoped Azure Policy exemptions */
+  PolicyExemptions = 1 << 2, // 4
 }
 
 /**
@@ -48,5 +50,13 @@ export const WRITE_PERMISSIONS_METADATA: WritePermissionMetadata[] = [
     requiredRoles: ['Storage Account Contributor'],
     documentationUrl: 'https://learn.microsoft.com/en-us/azure/storage/blobs/blob-inventory',
     scriptGeneratorUrl: '/scripts/storage-role',
+  },
+  {
+    id: WritePermission.PolicyExemptions,
+    displayName: 'Create Azure Policy Exemptions',
+    description: 'Allows Spotto to create narrowly scoped exemptions for selected Azure Policy initiative controls.',
+    requiredRoles: ['Custom role with Azure Policy exemption actions at the target and assignment scopes'],
+    documentationUrl: 'https://docs.spotto.ai/docs/portal/write-permissions/policy-exemptions',
+    scriptGeneratorUrl: '/scripts/policy-exemptions-role',
   },
 ];
