@@ -17,6 +17,7 @@ import type {
   RegulatoryComplianceView,
   RegulatoryComplianceWriteCapability,
   RegulatoryControlDetail,
+  RegulatoryControlMetadataResponse,
   RegulatoryControlSummary,
   RegulatoryExemptionSummary,
   RegulatoryPolicyEvaluationSummary,
@@ -129,12 +130,35 @@ const controlSummary: RegulatoryControlSummary = {
   displayName: 'Network security',
   domain: 'Technological controls',
   responsibility: 'customer',
-  policyMetadataId: '/providers/microsoft.authorization/policymetadata/a.8.20',
+  policyMetadataId: '/providers/Microsoft.PolicyInsights/policyMetadata/ISO_IEC_27001_2022_A.8.20',
   evaluationState: 'nonCompliant',
   counts: stateCounts,
   policyCount: 1,
   affectedResourceCount: 1,
   policyDefinitionReferenceIds: [policyDefinitionReferenceId],
+};
+
+const controlMetadata: RegulatoryControlMetadataResponse = {
+  policyMetadataId: controlSummary.policyMetadataId!,
+  name: 'ISO_IEC_27001_2022_A.8.20',
+  displayName: 'Network security',
+  domain: 'Technological controls',
+  responsibility: 'customer',
+  description: 'Networks and network devices should be secured, managed, and controlled.',
+  requirements: 'Define and operate controls that protect information in systems and applications.',
+  additionalContentUrl: 'https://www.iso.org/standard/27001',
+};
+
+const invalidControlMetadataResponsibility: RegulatoryControlMetadataResponse = {
+  ...controlMetadata,
+  // @ts-expect-error Metadata responsibility uses the normalized closed vocabulary.
+  responsibility: 'organisation',
+};
+
+const metadataWithInternalCachePath: RegulatoryControlMetadataResponse = {
+  ...controlMetadata,
+  // @ts-expect-error Internal cache locations are not part of the public metadata response.
+  cachePath: 'policies/initiatives/iso/controls/a.8.20.json.gz',
 };
 
 const standardSummary: RegulatoryStandardSummary = {
@@ -441,6 +465,9 @@ void portalFile;
 void assignmentDetailDirectory;
 void partialCoverage;
 void directStandardSummary;
+void controlMetadata;
+void invalidControlMetadataResponsibility;
+void metadataWithInternalCachePath;
 void successfulEmptyReport;
 void explicitExpectationOverride;
 void assignmentDetail;

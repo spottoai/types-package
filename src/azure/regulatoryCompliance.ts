@@ -63,6 +63,17 @@ export interface RegulatoryStandardCatalogEntry {
 
 export type RegulatoryControlResponsibility = 'customer' | 'microsoft' | 'shared' | 'unknown';
 
+export interface RegulatoryControlMetadataResponse {
+  policyMetadataId: string;
+  name: string;
+  displayName: string;
+  domain?: string;
+  responsibility: RegulatoryControlResponsibility;
+  description?: string;
+  requirements?: string;
+  additionalContentUrl?: string;
+}
+
 export interface RegulatoryControlSummary {
   controlKey: string;
   name: string;
