@@ -53,6 +53,33 @@ export const SystemTrackCardGranularities = {
 
 export type SystemTrackCardGranularity = (typeof SystemTrackCardGranularities)[keyof typeof SystemTrackCardGranularities];
 
+interface SystemTrackCandidateReferenceBase {
+  systemTrackId: SystemTrackId;
+  recommendationId: string;
+  sourceFingerprint: string;
+}
+
+/**
+ * Server-verifiable identity for a recommendation-granular sidecar candidate.
+ * Display, ranking, and provenance fields are deliberately excluded.
+ */
+export interface SystemTrackRecommendationCandidateReference extends SystemTrackCandidateReferenceBase {
+  granularity: 'recommendation';
+  resourceId?: never;
+}
+
+/**
+ * Server-verifiable identity for one resource-granular sidecar candidate.
+ * The API validates the canonical resource identity before merging it into a
+ * durable selected-subset workflow item.
+ */
+export interface SystemTrackResourceCandidateReference extends SystemTrackCandidateReferenceBase {
+  granularity: 'resource';
+  resourceId: string;
+}
+
+export type SystemTrackCandidateReference = SystemTrackRecommendationCandidateReference | SystemTrackResourceCandidateReference;
+
 interface RecommendationSystemTrackEligibleClassification {
   systemTrackEligible: true;
   primaryTrackId: SystemTrackId;

@@ -1,0 +1,50 @@
+import {
+  ProviderName,
+  type PatchRecommendationWorkflowItemLaneRequest,
+  type RecommendationWorkflowConcurrencyConflictResponse,
+  type RecommendationWorkflowItem,
+  type SystemTrackCandidateCreateRecommendationWorkflowItemRequest,
+} from '@spottoai/types-package';
+
+declare const item: RecommendationWorkflowItem;
+
+const lanePatch: PatchRecommendationWorkflowItemLaneRequest = {
+  lane: 'todo',
+  laneOrder: 2000,
+  concurrencyToken: item.concurrencyToken,
+};
+
+const candidateAcceptance: SystemTrackCandidateCreateRecommendationWorkflowItemRequest = {
+  operation: 'create',
+  origin: 'system-track',
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  companyId: 'comp-123',
+  candidate: {
+    systemTrackId: 'security-posture',
+    recommendationId: 'security-enable-defender',
+    sourceFingerprint: 'sha256:recommendation-candidate',
+    granularity: 'recommendation',
+  },
+  destination: {
+    lane: 'prioritized',
+    laneOrder: 1000,
+  },
+};
+
+const candidateAcceptanceIntoBlocked: SystemTrackCandidateCreateRecommendationWorkflowItemRequest = {
+  ...candidateAcceptance,
+  destination: {
+    lane: 'blocked',
+    laneOrder: 3000,
+    blockedReason: 'Waiting for an approved maintenance window.',
+    reviewAt: '2026-08-15T00:00:00.000Z',
+  },
+};
+
+const resolveConflict = (response: RecommendationWorkflowConcurrencyConflictResponse): RecommendationWorkflowItem => response.currentItem;
+
+void lanePatch;
+void candidateAcceptance;
+void candidateAcceptanceIntoBlocked;
+void resolveConflict;

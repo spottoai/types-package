@@ -1,6 +1,6 @@
 import type { ProviderName, ProviderScope } from '../common/provider';
 import type { SystemTrackId } from './recommendationTracks';
-import type { RecommendationWorkflowLane } from './recommendationWorkflow';
+import type { RecommendationWorkflowLane, RecommendationWorkflowNonBlockedLane } from './recommendationWorkflow';
 
 export const RecommendationAuditRowKinds = {
   resourceTarget: 'resource-view:target',
@@ -78,6 +78,8 @@ export const RecommendationWorkflowAuditEventTypes = {
   blocked: 'WorkflowBlocked',
   unblocked: 'WorkflowUnblocked',
   returnedToSuggestions: 'ReturnedToSuggestions',
+  repaired: 'WorkflowRepaired',
+  sourceChanged: 'WorkflowSourceChanged',
 } as const;
 
 export type RecommendationWorkflowAuditEventType = (typeof RecommendationWorkflowAuditEventTypes)[keyof typeof RecommendationWorkflowAuditEventTypes];
@@ -128,7 +130,7 @@ export interface RecommendationWorkflowBlockedAuditDetails extends Recommendatio
 
 export interface RecommendationWorkflowUnblockedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
   eventType: 'WorkflowUnblocked';
-  toLane: RecommendationWorkflowLane;
+  toLane: RecommendationWorkflowNonBlockedLane;
 }
 
 export interface RecommendationReturnedToSuggestionsAuditDetails extends RecommendationWorkflowAuditDetailsBase {
@@ -136,12 +138,28 @@ export interface RecommendationReturnedToSuggestionsAuditDetails extends Recomme
   systemTrackId?: SystemTrackId;
 }
 
+export interface RecommendationWorkflowRepairedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+  eventType: 'WorkflowRepaired';
+  repairId: string;
+  repairedSurfaces: ['workflow' | 'projection', ...('workflow' | 'projection')[]];
+}
+
+export interface RecommendationWorkflowSourceChangedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+  eventType: 'WorkflowSourceChanged';
+  systemTrackId: SystemTrackId;
+  previousSourceFingerprint: string;
+  sourceFingerprint: string;
+  sourceChangeKind: 'changed' | 'detected-again';
+}
+
 export type RecommendationWorkflowAuditDetails =
   | RecommendationWorkflowAssignedAuditDetails
   | RecommendationWorkflowLaneChangedAuditDetails
   | RecommendationWorkflowBlockedAuditDetails
   | RecommendationWorkflowUnblockedAuditDetails
-  | RecommendationReturnedToSuggestionsAuditDetails;
+  | RecommendationReturnedToSuggestionsAuditDetails
+  | RecommendationWorkflowRepairedAuditDetails
+  | RecommendationWorkflowSourceChangedAuditDetails;
 
 /** Flat recommendation audit row columns as persisted in `recommendationsevents`. */
 export interface RecommendationAuditEventRowColumns {

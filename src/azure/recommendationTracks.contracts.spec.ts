@@ -4,9 +4,25 @@ import type {
   RecommendationSystemTrackClassification,
   SystemTrackCatalog,
   SystemTrackCandidate,
+  SystemTrackCandidateReference,
   SystemTrackMetric,
   SystemTracksView,
 } from './recommendationTracks';
+
+const recommendationCandidateReference: SystemTrackCandidateReference = {
+  systemTrackId: 'security-posture',
+  recommendationId: 'security-enable-defender',
+  sourceFingerprint: 'sha256:recommendation-candidate',
+  granularity: 'recommendation',
+};
+
+const resourceCandidateReference: SystemTrackCandidateReference = {
+  systemTrackId: 'resource-hygiene',
+  recommendationId: 'compute-disks_orphaned',
+  sourceFingerprint: 'sha256:resource-candidate',
+  granularity: 'resource',
+  resourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1',
+};
 
 const catalog: SystemTrackCatalog = {
   catalogVersion: '2026-07-29.pilot-v1',
@@ -146,6 +162,8 @@ void eligibleClassification;
 void ineligibleClassification;
 void trackedRecommendation;
 void recommendationCandidate;
+void recommendationCandidateReference;
+void resourceCandidateReference;
 void systemTracksView;
 
 // @ts-expect-error eligible classifications require one primary track.
@@ -176,6 +194,23 @@ const invalidResourceCandidate: SystemTrackCandidate = {
   ...resourceCandidate,
   cardType: 'resource',
   resourceId: undefined,
+};
+
+// @ts-expect-error resource candidate references require one canonical resource identity.
+const invalidResourceCandidateReference: SystemTrackCandidateReference = {
+  systemTrackId: 'resource-hygiene',
+  recommendationId: 'compute-disks_orphaned',
+  sourceFingerprint: 'sha256:resource-candidate',
+  granularity: 'resource',
+};
+
+// @ts-expect-error recommendation candidate references cannot carry resource identity.
+const invalidRecommendationCandidateReference: SystemTrackCandidateReference = {
+  systemTrackId: 'security-posture',
+  recommendationId: 'security-enable-defender',
+  sourceFingerprint: 'sha256:recommendation-candidate',
+  granularity: 'recommendation',
+  resourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1',
 };
 
 // @ts-expect-error available metrics require a numeric value.
@@ -243,6 +278,8 @@ void invalidEligibleClassification;
 void invalidIneligibleClassification;
 void invalidRecommendationCandidate;
 void invalidResourceCandidate;
+void invalidResourceCandidateReference;
+void invalidRecommendationCandidateReference;
 void invalidAvailableMetric;
 void invalidTrackId;
 void invalidCandidateMetadata;

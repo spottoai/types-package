@@ -149,6 +149,24 @@ const returnedToSuggestionsDetails: RecommendationWorkflowAuditDetails = {
   systemTrackId: 'resource-hygiene',
 };
 
+const repairedDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowRepaired',
+  flowItemId: 'flow-sub-123-rec-123',
+  repairId: 'repair-123',
+  repairedSurfaces: ['workflow', 'projection'],
+};
+
+const sourceChangedDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowSourceChanged',
+  flowItemId: 'flow-sub-123-rec-123',
+  systemTrackId: 'resource-hygiene',
+  previousSourceFingerprint: 'sha256:before',
+  sourceFingerprint: 'sha256:after',
+  sourceChangeKind: 'changed',
+};
+
 const response: RecommendationAuditQueryResponse = [
   timelineItem,
   timelineItemWithNullableDisplayName,
@@ -171,6 +189,8 @@ void rowColumnsWithArchivedEventType;
 void timelineItemWithImplementationFailedEventType;
 void workflowBlockedDetails;
 void returnedToSuggestionsDetails;
+void repairedDetails;
+void sourceChangedDetails;
 void response;
 
 // @ts-expect-error target view requires recommendationId.
@@ -260,6 +280,33 @@ const invalidWorkflowBlockedDetails: RecommendationWorkflowAuditDetails = {
   flowItemId: 'flow-sub-123-rec-123',
 };
 
+const invalidWorkflowUnblockedDestination: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowUnblocked',
+  flowItemId: 'flow-sub-123-rec-123',
+  // @ts-expect-error unblock audit destinations cannot remain Blocked.
+  toLane: 'blocked',
+};
+
+const invalidWorkflowRepairDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowRepaired',
+  flowItemId: 'flow-sub-123-rec-123',
+  repairId: 'repair-123',
+  // @ts-expect-error applied repair audit details require at least one repaired surface.
+  repairedSurfaces: [],
+};
+
+// @ts-expect-error source-change audit details preserve the prior fingerprint.
+const invalidWorkflowSourceChangedDetails: RecommendationWorkflowAuditDetails = {
+  schemaVersion: 1,
+  eventType: 'WorkflowSourceChanged',
+  flowItemId: 'flow-sub-123-rec-123',
+  systemTrackId: 'resource-hygiene',
+  sourceFingerprint: 'sha256:after',
+  sourceChangeKind: 'changed',
+};
+
 void invalidTargetWithoutRecommendationId;
 void invalidResourceTargetWithoutResourceId;
 void invalidFeedWithResourceId;
@@ -272,3 +319,6 @@ void invalidTimelineDisplayName;
 void invalidRowColumnsDisplayName;
 void invalidWorkflowAuditDetailsVersion;
 void invalidWorkflowBlockedDetails;
+void invalidWorkflowUnblockedDestination;
+void invalidWorkflowRepairDetails;
+void invalidWorkflowSourceChangedDetails;

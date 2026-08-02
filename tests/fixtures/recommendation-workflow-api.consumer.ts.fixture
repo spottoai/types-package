@@ -1,0 +1,88 @@
+import {
+  ProviderName,
+  type RecommendationSystemTrackReconciliationRequest,
+  type RecommendationSystemTrackReconciliationResponse,
+  type RecommendationWorkflowConcurrencyConflictResponse,
+  type RecommendationWorkflowConcurrencyToken,
+  type RecommendationWorkflowItem,
+  type RecommendationWorkflowRepairRequest,
+  type RecommendationWorkflowRepairResponse,
+  type UpsertRecommendationWorkflowItemRequest,
+} from '@spottoai/types-package';
+
+const concurrencyToken = 'opaque:workflow-1' as RecommendationWorkflowConcurrencyToken;
+
+declare const currentItem: RecommendationWorkflowItem;
+
+const updateRequest: UpsertRecommendationWorkflowItemRequest = {
+  operation: 'update',
+  origin: 'system-track',
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  companyId: 'comp-123',
+  candidate: {
+    systemTrackId: 'resource-hygiene',
+    recommendationId: 'compute-disks_orphaned',
+    sourceFingerprint: 'sha256:resource-candidate',
+    granularity: 'resource',
+    resourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1',
+  },
+  destination: {
+    lane: 'prioritized',
+    laneOrder: 1000,
+  },
+  concurrencyToken,
+};
+
+const conflict: RecommendationWorkflowConcurrencyConflictResponse = {
+  success: false,
+  status: 409,
+  errorCode: 'recommendation-workflow-conflict',
+  message: 'The workflow item changed after it was loaded.',
+  currentItem,
+};
+
+const repairRequest: RecommendationWorkflowRepairRequest = {
+  mode: 'dry-run',
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  companyId: 'comp-123',
+  idempotencyKey: 'repair-123',
+};
+
+const repairResponse: RecommendationWorkflowRepairResponse = {
+  mode: 'dry-run',
+  processedCount: 10,
+  eligibleCount: 2,
+  wouldCreateCount: 2,
+  skippedCount: 0,
+  conflictedCount: 0,
+  failedCount: 0,
+  hasMore: false,
+};
+
+const reconciliationRequest: RecommendationSystemTrackReconciliationRequest = {
+  providerName: ProviderName.Azure,
+  providerScopeId: 'sub-123',
+  companyId: 'comp-123',
+  runId: 'run-123',
+  generatedAt: '2026-07-29T00:00:00.000Z',
+  correlationId: 'correlation-123',
+  idempotencyKey: 'reconcile-run-123-sub-123-page-1',
+};
+
+const reconciliationResponse: RecommendationSystemTrackReconciliationResponse = {
+  result: 'no-op',
+  processedCount: 10,
+  changedCount: 0,
+  skippedCount: 10,
+  conflictedCount: 0,
+  hasMore: false,
+};
+
+void updateRequest;
+void conflict;
+void repairRequest;
+void repairResponse;
+void reconciliationRequest;
+void reconciliationResponse;
