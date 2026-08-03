@@ -402,6 +402,32 @@ export interface RecommendationResourceAssociation {
   relationship?: ResourceRelationship;
 }
 
+export type RecommendationSavingsCalculationBasis = 'actual-billing' | 'projected-runtime' | 'target-pricing' | 'commitment-pricing';
+
+export interface ResourceRecommendationSavingsDetails {
+  headlineScenario: {
+    id: string;
+    label: string;
+    action: string;
+    monthlySavings: number;
+    targetMonthlyCost: number;
+  };
+  affectedCost: {
+    label: string;
+    currentMonthlyCost: number;
+    savingsPercentage: number;
+  };
+  resourceSpend?: {
+    last30Days: number;
+    savingsPercentage: number;
+  };
+  calculationBasis: {
+    type: RecommendationSavingsCalculationBasis;
+    windowStart?: string;
+    windowEnd?: string;
+  };
+}
+
 export interface RecommendationResource {
   id: string;
   name: string;
@@ -424,6 +450,8 @@ export interface RecommendationResource {
   spendAmortized: number;
   optimizationProfile?: ResourceSimpleOptimizationProfile;
   savings?: SavingsPotential;
+  /** Standalone saving for this recommendation on this resource. */
+  savingsDetails?: ResourceRecommendationSavingsDetails;
   /** Canonical resource ID that owns this resource savings amount for aggregation */
   savingsOwnerResourceId?: string;
   /** Resource IDs that may display this resource savings amount as context */
