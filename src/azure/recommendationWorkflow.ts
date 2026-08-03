@@ -76,8 +76,10 @@ export interface RecommendationWorkflowSnapshot {
 }
 
 /**
- * Canonical board-item identity:
+ * Canonical recommendation-granular board-item identity:
  * company + provider + providerScopeId + recommendationId.
+ *
+ * System-track resource items extend this identity with `resourceId`.
  */
 export interface RecommendationWorkflowIdentity extends ProviderScope {
   companyId: string;
@@ -166,6 +168,13 @@ interface RecommendationWorkflowSystemTrackRecommendationOrigin extends Recommen
 
 interface RecommendationWorkflowSystemTrackResourceOrigin extends RecommendationWorkflowSystemTrackOriginBase {
   sourceCardGranularity: 'resource';
+  /** Canonical resource identity that makes this workflow item independently movable. */
+  resourceId: string;
+}
+
+interface RecommendationWorkflowSingleResourceSelection {
+  selectionMode: 'selected-subset';
+  selectedResourceIds: [string];
 }
 
 export type RecommendationWorkflowManualItem = RecommendationWorkflowItemBase &
@@ -180,7 +189,7 @@ export type RecommendationWorkflowSystemTrackRecommendationItem = Recommendation
 
 export type RecommendationWorkflowSystemTrackResourceItem = RecommendationWorkflowItemBase &
   RecommendationWorkflowSystemTrackResourceOrigin &
-  RecommendationWorkflowSelectedSubsetSelection &
+  RecommendationWorkflowSingleResourceSelection &
   RecommendationWorkflowLaneState;
 
 export type RecommendationWorkflowItem =
