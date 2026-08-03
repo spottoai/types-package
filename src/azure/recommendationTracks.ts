@@ -70,8 +70,8 @@ export interface SystemTrackRecommendationCandidateReference extends SystemTrack
 
 /**
  * Server-verifiable identity for one resource-granular sidecar candidate.
- * The API validates the canonical resource identity before merging it into a
- * durable selected-subset workflow item.
+ * The API validates the canonical resource identity before materializing one
+ * independently movable durable workflow item for this exact resource.
  */
 export interface SystemTrackResourceCandidateReference extends SystemTrackCandidateReferenceBase {
   granularity: 'resource';

@@ -101,12 +101,23 @@ const systemResourceItem: RecommendationWorkflowItem = {
   ...manualItem,
   flowItemId: 'flow-sub-123-rec-resource',
   recommendationId: 'rec-resource',
+  resourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1',
+  selectedResourceIds: ['/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1'],
   origin: 'system-track',
   systemTrackId: 'backup-recovery',
   sourceCardGranularity: 'resource',
   sourceFingerprint: 'sha256:resource',
   sourceChangedAt: '2026-04-02T00:00:00.000Z',
   sourceChangeKind: 'changed',
+};
+
+// @ts-expect-error Resource-granular system-track items represent exactly one resource.
+const invalidMultiResourceSystemItem: RecommendationWorkflowItem = {
+  ...systemResourceItem,
+  selectedResourceIds: [
+    '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-1',
+    '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/disks/disk-2',
+  ],
 };
 
 const blockedItem: RecommendationWorkflowItem = {
