@@ -13,7 +13,9 @@ import type {
   AzureGdapDraftValidationResponse,
   AzureGdapEligibleAuthorizationProfilesResponse,
   AzureGdapPartnerAuthorizationStartResponse,
+  AzureGdapRelationshipLifecycle,
   AzureGdapStartPartnerAuthorizationRequest,
+  AzureGdapSubscriptionOption,
   AzureGdapValidationStatus,
   AzureDelegatedAuthErrorCode,
   AzureGuestAccessScanSchedulingMode,
@@ -238,6 +240,32 @@ const gdapPartnerAuthorizationStartResponse: AzureGdapPartnerAuthorizationStartR
   expiresAt: '2026-06-11T01:00:00.000Z',
 };
 
+const gdapRelationshipLifecycle: AzureGdapRelationshipLifecycle = {
+  relationshipId: 'relationship-123',
+  displayName: 'Customer GDAP relationship',
+  customerTenantId: 'customer-tenant-123',
+  status: 'active',
+  accessAssignmentId: 'assignment-123',
+  accessAssignmentStatus: 'active',
+  securityGroupId: 'security-group-123',
+  securityGroupDisplayName: 'Azure Managers',
+  roles: [
+    {
+      roleTemplateId: 'directory-readers-template-id',
+      displayName: 'Directory Readers',
+    },
+  ],
+  expiresAt: '2026-12-11T00:00:00.000Z',
+  autoExtendEnabled: false,
+};
+
+const gdapSubscriptionOption: AzureGdapSubscriptionOption = {
+  subscriptionId: 'subscription-a-123',
+  displayName: 'Company A Production',
+  tenantId: 'customer-tenant-123',
+  state: 'Enabled',
+};
+
 const gdapDraftValidationRequest: AzureGdapDraftValidationRequest = {
   gdapAuthorizationCompanyId: 'root-msp-123',
   gdapAuthorizationProfileId: 'gdapauth-profile-123',
@@ -254,7 +282,50 @@ const gdapDraftValidationResponse: AzureGdapDraftValidationResponse = {
   status: 'ready',
   profile: gdapAuthorizationProfileSummary,
   capabilities: [gdapCapabilityStatus],
+  customerTenantId: 'customer-tenant-123',
+  appConsentStatus: 'ready',
+  relationship: gdapRelationshipLifecycle,
+  subscriptions: [gdapSubscriptionOption],
+  validationReceipt: 'opaque-customer-scoped-validation-receipt',
+  validationExpiresAt: '2026-06-11T00:15:00.000Z',
   message: 'GDAP validation succeeded.',
+};
+
+const blockedGdapDraftValidationResponse: AzureGdapDraftValidationResponse = {
+  valid: false,
+  status: 'blocked',
+  profile: gdapAuthorizationProfileSummary,
+  capabilities: [
+    {
+      key: 'appConsent',
+      status: 'blocked',
+      reason: 'Customer-tenant application consent could not be verified.',
+    },
+  ],
+  customerTenantId: 'customer-tenant-123',
+  appConsentStatus: 'blocked',
+  relationship: gdapRelationshipLifecycle,
+  message: 'Customer application consent is required.',
+};
+
+const invalidGdapDraftValidationResponseWithCredentialReference: AzureGdapDraftValidationResponse = {
+  ...gdapDraftValidationResponse,
+  // @ts-expect-error validation responses must not expose internal credential references.
+  credentialReference: 'cloudaccounts/credentials/gdap/profile-token-cache.json',
+};
+
+const invalidGdapDraftValidationResponseWithRefreshToken: AzureGdapDraftValidationResponse = {
+  ...gdapDraftValidationResponse,
+  // @ts-expect-error validation responses must not expose delegated refresh tokens.
+  refreshToken: 'refresh-token',
+};
+
+// @ts-expect-error a successful validation must include subscriptions, relationship lifecycle, consent state, and an expiring receipt.
+const invalidReadyGdapDraftValidationResponseWithoutCreationProof: AzureGdapDraftValidationResponse = {
+  valid: true,
+  status: 'ready',
+  profile: gdapAuthorizationProfileSummary,
+  capabilities: [gdapCapabilityStatus],
 };
 
 const gdapCloudAccountStatusResponse: AzureGdapCloudAccountStatusResponse = {
@@ -270,6 +341,8 @@ const gdapCloudAccountStatusResponse: AzureGdapCloudAccountStatusResponse = {
   scheduledEligible: false,
   scheduledEligibilityReason: 'Manual validation required before scheduled scans are enabled.',
   capabilities: [gdapCapabilityStatus],
+  relationship: gdapRelationshipLifecycle,
+  subscriptions: [gdapSubscriptionOption],
 };
 
 const gdapCloudAccountCreateRequest: AzureGdapCloudAccountCreateRequest = {
@@ -283,6 +356,22 @@ const gdapCloudAccountCreateRequest: AzureGdapCloudAccountCreateRequest = {
   gdapRelationshipId: 'relationship-123',
   gdapAccessAssignmentId: 'assignment-123',
   gdapSecurityGroupId: 'security-group-123',
+  gdapAuthorizationCompanyId: 'root-msp-123',
+  gdapAuthorizationProfileId: 'gdapauth-profile-123',
+  subscriptionIds: ['subscription-a-123'],
+  validationReceipt: 'opaque-customer-scoped-validation-receipt',
+};
+
+// @ts-expect-error GDAP creation must explicitly select subscriptions and present the validation receipt.
+const invalidGdapCloudAccountCreateRequestWithoutSelection: AzureGdapCloudAccountCreateRequest = {
+  companyId: 'customer-company-123',
+  name: 'GDAP Azure Account',
+  provider: 'Azure',
+  authMode: 'gdap',
+  tenantId: 'customer-tenant-123',
+  gdapCustomerTenantId: 'customer-tenant-123',
+  gdapPartnerTenantId: 'partner-tenant-123',
+  gdapRelationshipId: 'relationship-123',
   gdapAuthorizationCompanyId: 'root-msp-123',
   gdapAuthorizationProfileId: 'gdapauth-profile-123',
 };
@@ -609,10 +698,17 @@ void gdapEligibleAuthorizationProfilesResponse;
 void gdapCreateAuthorizationProfileRequest;
 void gdapStartPartnerAuthorizationRequest;
 void gdapPartnerAuthorizationStartResponse;
+void gdapRelationshipLifecycle;
+void gdapSubscriptionOption;
 void gdapDraftValidationRequest;
 void gdapDraftValidationResponse;
+void blockedGdapDraftValidationResponse;
+void invalidGdapDraftValidationResponseWithCredentialReference;
+void invalidGdapDraftValidationResponseWithRefreshToken;
+void invalidReadyGdapDraftValidationResponseWithoutCreationProof;
 void gdapCloudAccountStatusResponse;
 void gdapCloudAccountCreateRequest;
+void invalidGdapCloudAccountCreateRequestWithoutSelection;
 void publicCloudAccountDto;
 void publicAwsCloudAccountDto;
 void invalidPublicAwsCloudAccountExternalIdDto;

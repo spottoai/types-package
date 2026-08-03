@@ -54,6 +54,29 @@ export interface AzureGdapRoleAssignment {
   displayName: string;
 }
 
+/** Non-secret lifecycle details for the customer-specific GDAP relationship used by a child cloud account. */
+export interface AzureGdapRelationshipLifecycle {
+  relationshipId: string;
+  customerTenantId: string;
+  status: AzureGdapRelationshipStatus;
+  displayName?: string;
+  accessAssignmentId?: string;
+  accessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+  securityGroupId?: string;
+  securityGroupDisplayName?: string;
+  roles?: AzureGdapRoleAssignment[];
+  expiresAt?: string;
+  autoExtendEnabled?: boolean;
+}
+
+/** Readable Azure subscription offered for explicit selection during child-company GDAP setup. */
+export interface AzureGdapSubscriptionOption {
+  subscriptionId: string;
+  displayName: string;
+  tenantId: string;
+  state?: string;
+}
+
 export interface AzureGdapCloudAccountMetadata {
   gdapAuthorizationCompanyId?: string;
   gdapAuthorizationProfileId?: string;
@@ -146,18 +169,41 @@ export interface AzureGdapDraftValidationRequest {
   gdapSecurityGroupId?: string;
 }
 
-export interface AzureGdapDraftValidationResponse {
-  valid: boolean;
+interface AzureGdapDraftValidationResponseBase {
   status: AzureGdapValidationStatus;
   profile?: AzureGdapAuthorizationProfileSummary;
   capabilities: AzureGdapCapabilityStatus[];
+  customerTenantId?: string;
+  appConsentStatus?: AzureGdapValidationStatus;
+  relationship?: AzureGdapRelationshipLifecycle;
   message?: string;
 }
+
+export interface AzureGdapReadyDraftValidationResponse extends AzureGdapDraftValidationResponseBase {
+  valid: true;
+  status: 'ready';
+  customerTenantId: string;
+  appConsentStatus: 'ready';
+  relationship: AzureGdapRelationshipLifecycle;
+  subscriptions: AzureGdapSubscriptionOption[];
+  /** Opaque, short-lived proof that the API must validate when creating the child cloud account. */
+  validationReceipt: string;
+  validationExpiresAt: string;
+}
+
+export interface AzureGdapUnreadyDraftValidationResponse extends AzureGdapDraftValidationResponseBase {
+  valid: false;
+  status: Exclude<AzureGdapValidationStatus, 'ready'>;
+  subscriptions?: AzureGdapSubscriptionOption[];
+}
+
+export type AzureGdapDraftValidationResponse = AzureGdapReadyDraftValidationResponse | AzureGdapUnreadyDraftValidationResponse;
 
 export interface AzureGdapCloudAccountStatusResponse {
   cloudAccountId: string;
   companyId: string;
   status: AzureGdapValidationStatus;
+  customerTenantId?: string;
   partnerAuthorizationStatus?: AzureGdapValidationStatus;
   appConsentStatus?: AzureGdapValidationStatus;
   lastValidatedAt?: string | Date;
@@ -167,6 +213,8 @@ export interface AzureGdapCloudAccountStatusResponse {
   scheduledEligible?: boolean;
   scheduledEligibilityReason?: string;
   capabilities?: AzureGdapCapabilityStatus[];
+  relationship?: AzureGdapRelationshipLifecycle;
+  subscriptions?: AzureGdapSubscriptionOption[];
 }
 
 export interface AzureGdapCloudAccountCreateRequest {
@@ -182,6 +230,9 @@ export interface AzureGdapCloudAccountCreateRequest {
   gdapSecurityGroupId?: string;
   gdapAuthorizationCompanyId: string;
   gdapAuthorizationProfileId: string;
+  subscriptionIds: string[];
+  /** Opaque proof returned by a successful customer-scoped GDAP draft validation. */
+  validationReceipt: string;
 }
 
 export interface BillingExportLocatorEntry {
