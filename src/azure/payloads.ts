@@ -11,6 +11,7 @@ import type {
   CloudAccountAuthMode,
   CloudAccountTenantSyncSource,
   PublicCloudAccountDto,
+  SubscriptionType,
 } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
 
@@ -36,6 +37,7 @@ export interface ProcessPayload {
   companyId?: string;
   cloudAccountId?: string;
   clientId?: string;
+  subscriptionType?: SubscriptionType;
   authMode?: CloudAccountAuthMode;
   customerTenantId?: string;
   authorityTenantId?: string;

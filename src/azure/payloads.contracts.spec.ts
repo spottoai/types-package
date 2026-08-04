@@ -69,7 +69,14 @@ const tracedProcessPayload: ProcessPayload = {
   subscriptionId: 'sub-123',
   tenantId: 'tenant-123',
   companyId: 'comp-123',
+  subscriptionType: 'Production',
   tracing,
+};
+
+const invalidProcessPayloadSubscriptionType: ProcessPayload = {
+  subscriptionId: 'sub-123',
+  // @ts-expect-error ProcessPayload subscriptionType uses the canonical subscription classification.
+  subscriptionType: 'Development',
 };
 
 const azureCloudAccountAuthContext: AzureCloudAccountAuthContext = {
@@ -149,6 +156,7 @@ const tenantSyncRequest: CloudAccountTenantSyncRequest = {
 void subscriptionMessage;
 void tracedSubscriptionMessage;
 void tracedProcessPayload;
+void invalidProcessPayloadSubscriptionType;
 void azureCloudAccountAuthContext;
 void gdapSubscriptionMessage;
 void invalidGdapSubscriptionMessageWithToken;
