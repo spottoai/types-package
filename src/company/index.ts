@@ -4,4 +4,3 @@ export * from './notification';
 export * from './survey';
 export * from './billingAccount';
 export * from './companyNotes';
-export * from './customProperties';

@@ -42,6 +42,7 @@ export * from './assessments';
 export * from './users';
 export * from './common';
 export * from './company';
+export * from './customProperties';
 export * from './scheduler';
 export * from './ai';
 export * from './events';

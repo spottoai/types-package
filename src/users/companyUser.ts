@@ -1,4 +1,5 @@
 import type { InviteType, OnboardingIntent } from './user';
+import type { CustomPropertyValues } from '../customProperties';
 
 export type CompanyUserAuthMode = 'cognito' | 'sso' | 'unknown';
 
@@ -24,4 +25,5 @@ export class CompanyUser {
   canConnectAzureTrial?: boolean;
   onboardingIntentCreatedAt?: Date | string;
   onboardingIntentExpiresAt?: Date | string;
+  customProperties?: CustomPropertyValues;
 }

@@ -1,7 +1,7 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
 import type { CompanyClassification } from './companyHierarchy';
-import type { CustomPropertyDefinition, CustomPropertyValues } from './customProperties';
+import type { CustomPropertyDefinition, CustomPropertyValues } from '../customProperties';
 import type { PortalDelegationScope } from '../features-and-permissions/access';
 
 export type CompanyLifecycle = 'standard' | 'trial';

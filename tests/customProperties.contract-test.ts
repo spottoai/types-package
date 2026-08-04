@@ -1,12 +1,23 @@
 import type {
   Company,
   CompanyCreate,
+  CompanyUser,
+  CheckboxCustomPropertyDefinitionInput,
+  CustomPropertyAudience,
   CustomPropertyDefinition,
   CustomPropertyDefinitionInput,
+  CustomPropertyEntityType,
   EffectiveCustomPropertyDefinition,
+  DropdownCustomPropertyDefinitionInput,
+  ResolvedCustomPropertyValues,
   ResolvedCustomProperties,
+  SaveCustomPropertyValuesRequest,
   SaveCustomPropertiesRequest,
+  User,
 } from '../src';
+
+const companyEntityType: CustomPropertyEntityType = 'company';
+const everyoneAudience: CustomPropertyAudience = 'everyone';
 
 const localDefinition = {
   id: '2ae62863-3792-4d22-b72a-ee3614b4ed75',
@@ -14,16 +25,45 @@ const localDefinition = {
   placeholder: 'Enter the CRM business ID',
   kind: 'text',
   required: true,
+  entityType: 'company',
+  audience: 'everyone',
 } satisfies CustomPropertyDefinition;
 
 const newDefinition = {
   label: 'CRM ID',
   kind: 'text',
   required: false,
+  entityType: 'user',
+  audience: 'childCompanies',
 } satisfies CustomPropertyDefinitionInput;
+
+const checkboxDefinition = {
+  label: 'Requires purchase order',
+  kind: 'checkbox',
+  required: false,
+  entityType: 'company',
+  audience: 'currentCompany',
+} satisfies CheckboxCustomPropertyDefinitionInput;
+
+const dropdownDefinition = {
+  label: 'Customer segment',
+  kind: 'dropdown',
+  options: ['Enterprise', 'Mid-market', 'Small business'],
+  required: true,
+  entityType: 'company',
+  audience: 'everyone',
+} satisfies DropdownCustomPropertyDefinitionInput;
 
 const effectiveDefinition = {
   ...localDefinition,
+  sourceCompanyId: 'parent-company',
+  sourceCompanyName: 'Parent Company',
+  inherited: true,
+} satisfies EffectiveCustomPropertyDefinition;
+
+const effectiveUserDefinition = {
+  id: '6b97679f-9c79-48a3-a4dc-287a44c76d4c',
+  ...newDefinition,
   sourceCompanyId: 'parent-company',
   sourceCompanyName: 'Parent Company',
   inherited: true,
@@ -46,6 +86,19 @@ const saveRequest = {
   values,
 } satisfies SaveCustomPropertiesRequest;
 
+const resolvedUserValues = {
+  entityType: 'user',
+  subjectId: 'user-123',
+  companyId: 'child-company',
+  effectiveDefinitions: [effectiveUserDefinition],
+  values: { [effectiveUserDefinition.id]: 'CRM-456' },
+  revision: 'user-row-etag-and-tree-etag',
+} satisfies ResolvedCustomPropertyValues;
+
+const saveUserValues = {
+  values,
+} satisfies SaveCustomPropertyValuesRequest;
+
 const storedCompany = {
   id: 'child-company',
   name: 'Child Company',
@@ -67,6 +120,95 @@ const invalidDefinitionKind: CustomPropertyDefinitionInput = {
   // @ts-expect-error Text is the only supported custom-property kind in v1.
   kind: 'select',
   required: false,
+  entityType: 'company',
+  audience: 'currentCompany',
 };
 
-void [localDefinition, newDefinition, effectiveDefinition, resolvedProperties, saveRequest, storedCompany, companyCreate, invalidDefinitionKind];
+// @ts-expect-error Dropdown definitions require an ordered options array.
+const dropdownWithoutOptions: CustomPropertyDefinitionInput = {
+  label: 'Invalid dropdown',
+  kind: 'dropdown',
+  required: false,
+  entityType: 'company',
+  audience: 'everyone',
+};
+
+const checkboxWithOptions = {
+  label: 'Invalid checkbox',
+  kind: 'checkbox',
+  // @ts-expect-error Checkbox definitions do not own dropdown options.
+  options: ['Yes', 'No'],
+  required: false,
+  entityType: 'company',
+  audience: 'everyone',
+} satisfies CustomPropertyDefinitionInput;
+
+const invalidEntityType: CustomPropertyDefinitionInput = {
+  label: 'Unsupported entity',
+  kind: 'text',
+  required: false,
+  // @ts-expect-error Only company and user subjects are supported.
+  entityType: 'resource',
+  audience: 'everyone',
+};
+
+const invalidAudience: CustomPropertyDefinitionInput = {
+  label: 'Unsupported audience',
+  kind: 'text',
+  required: false,
+  entityType: 'company',
+  // @ts-expect-error Audience must be relative to the owning company hierarchy.
+  audience: 'tenant',
+};
+
+const user = {
+  id: 'user-123',
+  companyId: 'child-company',
+  firstName: 'Ada',
+  lastName: 'Lovelace',
+  email: 'ada@example.com',
+  createdAt: '2026-08-04T00:00:00.000Z',
+  updatedAt: '2026-08-04T00:00:00.000Z',
+  role: 1,
+  isPendingInvite: false,
+  invitedBy: 'admin-123',
+  customProperties: values,
+} satisfies User;
+
+const companyUser = {
+  userId: 'user-123',
+  companyId: 'child-company',
+  email: 'ada@example.com',
+  firstName: 'Ada',
+  lastName: 'Lovelace',
+  role: 1,
+  isPendingInvite: false,
+  invitedBy: 'admin-123',
+  createdAt: new Date('2026-08-04T00:00:00.000Z'),
+  updatedAt: new Date('2026-08-04T00:00:00.000Z'),
+  customProperties: values,
+} satisfies CompanyUser;
+
+void [
+  companyEntityType,
+  everyoneAudience,
+  localDefinition,
+  newDefinition,
+  checkboxDefinition,
+  dropdownDefinition,
+  effectiveDefinition,
+  effectiveUserDefinition,
+  resolvedProperties,
+  saveRequest,
+  resolvedUserValues,
+  saveUserValues,
+  storedCompany,
+  companyCreate,
+  invalidDefinitionKind,
+  dropdownWithoutOptions,
+  checkboxWithOptions,
+  invalidEntityType,
+  invalidAudience,
+  user,
+  companyUser,
+];
