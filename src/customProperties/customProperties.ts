@@ -79,9 +79,9 @@ export interface ResolvedCustomProperties {
   revision: string;
 }
 
-export interface SaveCustomPropertiesRequest {
+/** Replaces the complete locally owned definition list without writing values. */
+export interface SaveCustomPropertyDefinitionsRequest {
   localDefinitions: CustomPropertyDefinitionInput[];
-  values: CustomPropertyValues;
 }
 
 /** Identifies the row that owns custom-property values and its hierarchy context. */
@@ -98,6 +98,14 @@ export interface ResolvedCustomPropertyValues extends CustomPropertySubject {
   revision: string;
 }
 
+/** Effective user-target schema for company-scoped invite and edit-user forms. */
+export interface ResolvedUserCustomPropertySchema {
+  companyId: string;
+  entityType: 'user';
+  effectiveDefinitions: EffectiveCustomPropertyDefinition[];
+}
+
+/** Replaces the selected subject's custom-property values without writing definitions. */
 export interface SaveCustomPropertyValuesRequest {
   values: CustomPropertyValues;
 }

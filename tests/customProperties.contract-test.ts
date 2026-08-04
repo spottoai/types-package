@@ -11,8 +11,9 @@ import type {
   DropdownCustomPropertyDefinitionInput,
   ResolvedCustomPropertyValues,
   ResolvedCustomProperties,
+  ResolvedUserCustomPropertySchema,
+  SaveCustomPropertyDefinitionsRequest,
   SaveCustomPropertyValuesRequest,
-  SaveCustomPropertiesRequest,
   User,
 } from '../src';
 
@@ -81,10 +82,13 @@ const resolvedProperties = {
   revision: 'opaque-revision',
 } satisfies ResolvedCustomProperties;
 
-const saveRequest = {
+const saveDefinitionsRequest = {
   localDefinitions: [localDefinition, newDefinition],
+} satisfies SaveCustomPropertyDefinitionsRequest;
+
+const saveCompanyValues = {
   values,
-} satisfies SaveCustomPropertiesRequest;
+} satisfies SaveCustomPropertyValuesRequest;
 
 const resolvedUserValues = {
   entityType: 'user',
@@ -98,6 +102,12 @@ const resolvedUserValues = {
 const saveUserValues = {
   values,
 } satisfies SaveCustomPropertyValuesRequest;
+
+const resolvedUserSchema = {
+  companyId: 'child-company',
+  entityType: 'user',
+  effectiveDefinitions: [effectiveUserDefinition],
+} satisfies ResolvedUserCustomPropertySchema;
 
 const storedCompany = {
   id: 'child-company',
@@ -117,7 +127,7 @@ const companyCreate = {
 
 const invalidDefinitionKind: CustomPropertyDefinitionInput = {
   label: 'Unsupported property',
-  // @ts-expect-error Text is the only supported custom-property kind in v1.
+  // @ts-expect-error Only text, checkbox, and dropdown kinds are supported in v1.
   kind: 'select',
   required: false,
   entityType: 'company',
@@ -199,9 +209,11 @@ void [
   effectiveDefinition,
   effectiveUserDefinition,
   resolvedProperties,
-  saveRequest,
+  saveDefinitionsRequest,
+  saveCompanyValues,
   resolvedUserValues,
   saveUserValues,
+  resolvedUserSchema,
   storedCompany,
   companyCreate,
   invalidDefinitionKind,
