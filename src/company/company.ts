@@ -1,6 +1,7 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
 import type { CompanyClassification } from './companyHierarchy';
+import type { CustomPropertyDefinition, CustomPropertyValues } from './customProperties';
 import type { PortalDelegationScope } from '../features-and-permissions/access';
 
 export type CompanyLifecycle = 'standard' | 'trial';
@@ -47,6 +48,8 @@ export interface Company {
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
+  customPropertyDefinitions?: CustomPropertyDefinition[];
+  customProperties?: CustomPropertyValues;
 }
 
 export interface CompanyCreate {
@@ -70,6 +73,7 @@ export interface CompanyCreate {
   azureDelegatedTrialStartedAt?: Date | string;
   azureDelegatedTrialUsedAt?: Date | string;
   azureDelegatedTrialExpiresAt?: Date | string;
+  customProperties?: CustomPropertyValues;
 }
 
 export interface UserCompany {
