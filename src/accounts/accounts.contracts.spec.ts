@@ -496,6 +496,7 @@ const subscriptionInfoBaseWithSyncFeatureOptOuts: SubscriptionInfoBase = {
   name: 'Production Subscription',
   cloudAccountId: 'tenant-client-id-123',
   cloudAccountName: 'Production Azure Tenant',
+  hostname: 'worker-host:1.0.0',
   syncFeatureOptOuts: ['activityMonitoring'],
 };
 

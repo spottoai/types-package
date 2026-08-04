@@ -674,6 +674,7 @@ export interface SubscriptionInfoBase {
   statusLabel?: string;
   error?: string;
   lastUpdated?: string;
+  hostname?: string;
   quotaId?: string;
   duration?: string;
   currency?: string;
