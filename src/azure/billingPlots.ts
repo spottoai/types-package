@@ -250,6 +250,8 @@ export interface BillingAnomaly {
 export interface BillingCostAnalysisMetadata {
   /** Azure subscription ID */
   subscriptionId: string;
+  /** Opaque billing generation that produced this analysis. */
+  billingGenerationId: string;
   /** Interactive chart data for cost analysis. */
   chartData: BillingChartData;
   /** Detected anomalies for the subscription */
