@@ -5,6 +5,8 @@ import { POLICY_EXEMPTION_COMMAND_SCHEMA_VERSION } from '../index';
 import type {
   ActionExecutionRequestMessage,
   ActionExecutionSource,
+  BillingReconciliationSubscriptionMessage,
+  BillingReconciliationWorkMetadata,
   AzureGuestAccessConfirmSubscriptionsRequest,
   AzureGuestAccessDeviceCodeResponse,
   AzureGuestAccessManualScanRequest,
@@ -31,6 +33,7 @@ import type {
   AzureDelegatedTrialExtensionResponse,
   AzureGdapSubscriptionMessage,
   CloudAccountTenantSyncRequest,
+  CloudAccountsBillingReconciliationRequestMessage,
   CreatePolicyExemptionRequestMessage,
   PublicCloudAccountDto,
   ProcessPayload,
@@ -554,6 +557,138 @@ const tracedRequestMessage: RequestMessage = {
   tracing,
 };
 
+const billingReconciliationWorkMetadata: BillingReconciliationWorkMetadata = {
+  schemaVersion: 1,
+  trigger: 'scheduled',
+  policyVersion: 'closed-month-v1',
+  requestedMonths: ['2026-05', '2026-04', '2026-03'],
+  continuationCursor: null,
+};
+
+const billingReconciliationRequestMessage: CloudAccountsBillingReconciliationRequestMessage = {
+  requestId: 'billing-reconciliation-request-1',
+  entity: 'cloudaccounts',
+  action: 'reconcile-billing',
+  companyId: '*',
+  cloudAccountId: '*',
+  tenantId: '*',
+  clientId: '*',
+  source: 'scheduled',
+  metadata: {
+    triggeredBy: 'billing-reconciliation-cron',
+  },
+};
+
+const baseBillingReconciliationRequestMessage: RequestMessage = billingReconciliationRequestMessage;
+
+const billingReconciliationSubscriptionMessage: BillingReconciliationSubscriptionMessage = {
+  requestId: billingReconciliationRequestMessage.requestId,
+  subscription,
+  companyId: 'comp-123',
+  cloudAccountId: 'cloud-account-123',
+  tenantId: 'tenant-123',
+  clientId: 'client-123',
+  refreshComponents: ['billing'],
+  metadata: {
+    billingReconciliation: billingReconciliationWorkMetadata,
+  },
+};
+
+const baseBillingReconciliationSubscriptionMessage: SubscriptionMessage = billingReconciliationSubscriptionMessage;
+
+const { requestId: _removedBillingReconciliationRequestId, ...billingReconciliationRequestWithoutRequestId } = billingReconciliationRequestMessage;
+// @ts-expect-error Billing reconciliation wildcard requests require a request identity.
+const missingBillingReconciliationRequestId: CloudAccountsBillingReconciliationRequestMessage = billingReconciliationRequestWithoutRequestId;
+
+const invalidBillingReconciliationEntity: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error Billing reconciliation wildcard requests target cloudaccounts.
+  entity: 'cloudaccount',
+};
+
+const invalidBillingReconciliationAction: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error Billing reconciliation wildcard requests use the reconcile-billing action.
+  action: 'refreshcomponents',
+};
+
+const invalidBillingReconciliationSource: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error The first shared reconciliation trigger is scheduled only.
+  source: 'manual',
+};
+
+const invalidBillingReconciliationCompanyWildcard: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error The global command must not be scoped to one company.
+  companyId: 'comp-123',
+};
+
+const invalidBillingReconciliationCloudAccountWildcard: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error The global command must not be scoped to one cloud account.
+  cloudAccountId: 'cloud-account-123',
+};
+
+const invalidBillingReconciliationTenantWildcard: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error The global command must not be scoped to one tenant.
+  tenantId: 'tenant-123',
+};
+
+const invalidBillingReconciliationClientWildcard: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  // @ts-expect-error The global command must not be scoped to one client.
+  clientId: 'client-123',
+};
+
+const { metadata: _removedBillingReconciliationTriggerMetadata, ...billingReconciliationRequestWithoutMetadata } =
+  billingReconciliationRequestMessage;
+// @ts-expect-error Billing reconciliation wildcard requests require trigger metadata.
+const missingBillingReconciliationTriggerMetadata: CloudAccountsBillingReconciliationRequestMessage = billingReconciliationRequestWithoutMetadata;
+
+const invalidBillingReconciliationTriggerMetadata: CloudAccountsBillingReconciliationRequestMessage = {
+  ...billingReconciliationRequestMessage,
+  metadata: {
+    // @ts-expect-error The shared trigger metadata identifies the reconciliation cron.
+    triggeredBy: 'component-refresh-cron',
+  },
+};
+
+// @ts-expect-error Reconciliation work requires the selected month list.
+const incompleteBillingReconciliationWorkMetadata: BillingReconciliationWorkMetadata = {
+  schemaVersion: 1,
+  trigger: 'scheduled',
+  policyVersion: 'closed-month-v1',
+};
+
+const { policyVersion: _removedBillingReconciliationPolicyVersion, ...billingReconciliationWorkWithoutPolicyVersion } =
+  billingReconciliationWorkMetadata;
+// @ts-expect-error Reconciliation work requires the policy version used to select months.
+const missingBillingReconciliationPolicyVersion: BillingReconciliationWorkMetadata = billingReconciliationWorkWithoutPolicyVersion;
+
+const invalidBillingReconciliationSchemaVersion: BillingReconciliationWorkMetadata = {
+  ...billingReconciliationWorkMetadata,
+  // @ts-expect-error Reconciliation work currently uses schema version 1.
+  schemaVersion: 2,
+};
+
+const invalidBillingReconciliationWorkTrigger: BillingReconciliationWorkMetadata = {
+  ...billingReconciliationWorkMetadata,
+  // @ts-expect-error The first reconciliation work trigger is scheduled only.
+  trigger: 'manual',
+};
+
+const invalidBillingReconciliationSubscriptionComponent: BillingReconciliationSubscriptionMessage = {
+  ...billingReconciliationSubscriptionMessage,
+  // @ts-expect-error Reconciliation subscription work is billing-only.
+  refreshComponents: ['activities'],
+};
+
+const { metadata: _removedBillingReconciliationWork, ...billingReconciliationSubscriptionWithoutMetadata } = billingReconciliationSubscriptionMessage;
+// @ts-expect-error Reconciliation subscription work requires its nested work metadata.
+const missingBillingReconciliationWork: BillingReconciliationSubscriptionMessage = billingReconciliationSubscriptionWithoutMetadata;
+
 // @ts-expect-error ActionExecutionRequestMessage.actionDefinitionId is required.
 const missingActionDefinitionId: ActionExecutionRequestMessage = {
   entity: 'actions',
@@ -661,6 +796,27 @@ void invalidPublicDelegatedDto;
 void actionExecutionRequestMessage;
 void baseRequestMessage;
 void tracedRequestMessage;
+void billingReconciliationWorkMetadata;
+void billingReconciliationRequestMessage;
+void baseBillingReconciliationRequestMessage;
+void billingReconciliationSubscriptionMessage;
+void baseBillingReconciliationSubscriptionMessage;
+void missingBillingReconciliationRequestId;
+void invalidBillingReconciliationEntity;
+void invalidBillingReconciliationAction;
+void invalidBillingReconciliationSource;
+void invalidBillingReconciliationCompanyWildcard;
+void invalidBillingReconciliationCloudAccountWildcard;
+void invalidBillingReconciliationTenantWildcard;
+void invalidBillingReconciliationClientWildcard;
+void missingBillingReconciliationTriggerMetadata;
+void invalidBillingReconciliationTriggerMetadata;
+void incompleteBillingReconciliationWorkMetadata;
+void missingBillingReconciliationPolicyVersion;
+void invalidBillingReconciliationSchemaVersion;
+void invalidBillingReconciliationWorkTrigger;
+void invalidBillingReconciliationSubscriptionComponent;
+void missingBillingReconciliationWork;
 void missingActionDefinitionId;
 void missingResourceIds;
 void scaleOutActionExecutionSource;
