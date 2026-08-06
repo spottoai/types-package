@@ -48,12 +48,6 @@ export type RecommendationWorkflowRepairContinuationToken = string & {
   readonly [recommendationWorkflowRepairContinuationTokenBrand]: 'RecommendationWorkflowRepairContinuationToken';
 };
 
-declare const recommendationSystemTrackReconciliationContinuationTokenBrand: unique symbol;
-
-export type RecommendationSystemTrackReconciliationContinuationToken = string & {
-  readonly [recommendationSystemTrackReconciliationContinuationTokenBrand]: 'RecommendationSystemTrackReconciliationContinuationToken';
-};
-
 export interface RecommendationWorkflowSavingsSnapshot {
   minAmount?: number;
   maxAmount?: number;
@@ -406,45 +400,3 @@ interface RecommendationWorkflowRepairContinuedPage {
 
 export type RecommendationWorkflowRepairResponse = (RecommendationWorkflowRepairDryRunResult | RecommendationWorkflowRepairApplyResult) &
   (RecommendationWorkflowRepairCompletePage | RecommendationWorkflowRepairContinuedPage);
-
-export const RECOMMENDATION_SYSTEM_TRACK_RECONCILIATION_PAGE_LIMIT = 250 as const;
-
-export interface RecommendationSystemTrackReconciliationRequest extends ProviderScope {
-  companyId: string;
-  runId: string;
-  generatedAt: string;
-  correlationId: string;
-  idempotencyKey: string;
-  continuationToken?: RecommendationSystemTrackReconciliationContinuationToken;
-}
-
-interface RecommendationSystemTrackReconciliationCounts {
-  processedCount: number;
-  changedCount: number;
-  skippedCount: number;
-  conflictedCount: number;
-}
-
-interface RecommendationSystemTrackReconciliationCompletePage {
-  hasMore: false;
-  continuationToken?: never;
-}
-
-interface RecommendationSystemTrackReconciliationContinuedPage {
-  hasMore: true;
-  continuationToken: RecommendationSystemTrackReconciliationContinuationToken;
-}
-
-type RecommendationSystemTrackActiveReconciliationResponse = RecommendationSystemTrackReconciliationCounts &
-  (RecommendationSystemTrackReconciliationCompletePage | RecommendationSystemTrackReconciliationContinuedPage) & {
-    result: 'changed' | 'no-op';
-  };
-
-type RecommendationSystemTrackStaleReconciliationResponse = RecommendationSystemTrackReconciliationCounts &
-  RecommendationSystemTrackReconciliationCompletePage & {
-    result: 'stale-run-no-op';
-  };
-
-export type RecommendationSystemTrackReconciliationResponse =
-  | RecommendationSystemTrackActiveReconciliationResponse
-  | RecommendationSystemTrackStaleReconciliationResponse;

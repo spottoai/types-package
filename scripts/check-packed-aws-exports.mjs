@@ -10,7 +10,6 @@ const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', '
 const recommendationTracksFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-tracks.consumer.ts.fixture');
 const recommendationWorkflowApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-api.consumer.ts.fixture');
 const recommendationWorkflowUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-ui.consumer.ts.fixture');
-const recommendationWorkflowCloudFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-cloud.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -61,7 +60,6 @@ try {
   await copyFile(recommendationTracksFixturePath, join(consumerRoot, 'recommendation-tracks.consumer.ts'));
   await copyFile(recommendationWorkflowApiFixturePath, join(consumerRoot, 'recommendation-workflow-api.consumer.ts'));
   await copyFile(recommendationWorkflowUiFixturePath, join(consumerRoot, 'recommendation-workflow-ui.consumer.ts'));
-  await copyFile(recommendationWorkflowCloudFixturePath, join(consumerRoot, 'recommendation-workflow-cloud.consumer.ts'));
 
   run(
     npmCommand,
@@ -85,7 +83,6 @@ try {
       'recommendation-tracks.consumer.ts',
       'recommendation-workflow-api.consumer.ts',
       'recommendation-workflow-ui.consumer.ts',
-      'recommendation-workflow-cloud.consumer.ts',
     ],
     consumerRoot
   );
@@ -107,7 +104,7 @@ try {
     consumerRoot
   );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS and API/UI/cloud recommendation workflow consumers verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS and API/UI recommendation workflow consumers verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

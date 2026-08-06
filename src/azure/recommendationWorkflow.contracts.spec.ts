@@ -7,9 +7,6 @@ import type {
   ManualCreateRecommendationWorkflowItemRequest,
   ManualUpdateRecommendationWorkflowItemRequest,
   PatchRecommendationWorkflowItemLaneRequest,
-  RecommendationSystemTrackReconciliationContinuationToken,
-  RecommendationSystemTrackReconciliationRequest,
-  RecommendationSystemTrackReconciliationResponse,
   RecommendationWorkflowConcurrencyConflictResponse,
   RecommendationWorkflowConcurrencyToken,
   RecommendationWorkflowItem,
@@ -25,7 +22,6 @@ import type {
 const workflowToken = 'opaque:workflow-1' as RecommendationWorkflowConcurrencyToken;
 const nextWorkflowToken = 'opaque:workflow-2' as RecommendationWorkflowConcurrencyToken;
 const repairContinuation = 'opaque:repair-page-2' as RecommendationWorkflowRepairContinuationToken;
-const reconciliationContinuation = 'opaque:reconciliation-page-2' as RecommendationSystemTrackReconciliationContinuationToken;
 
 const boardQuery: GetRecommendationWorkflowItemsQuery = {
   providerName: ProviderName.Azure,
@@ -316,44 +312,6 @@ const repairApplyResult: RecommendationWorkflowRepairResponse = {
   continuationToken: repairContinuation,
 };
 
-const reconciliationRequest: RecommendationSystemTrackReconciliationRequest = {
-  providerName: ProviderName.Azure,
-  providerScopeId: 'sub-123',
-  companyId: 'comp-123',
-  runId: 'run-123',
-  generatedAt: '2026-07-29T00:00:00.000Z',
-  correlationId: 'correlation-123',
-  idempotencyKey: 'reconcile-run-123-sub-123-page-1',
-};
-
-const changedReconciliationPage: RecommendationSystemTrackReconciliationResponse = {
-  result: 'changed',
-  processedCount: 250,
-  changedCount: 2,
-  skippedCount: 248,
-  conflictedCount: 0,
-  hasMore: true,
-  continuationToken: reconciliationContinuation,
-};
-
-const noOpReconciliationPage: RecommendationSystemTrackReconciliationResponse = {
-  result: 'no-op',
-  processedCount: 12,
-  changedCount: 0,
-  skippedCount: 12,
-  conflictedCount: 0,
-  hasMore: false,
-};
-
-const staleReconciliationPage: RecommendationSystemTrackReconciliationResponse = {
-  result: 'stale-run-no-op',
-  processedCount: 0,
-  changedCount: 0,
-  skippedCount: 0,
-  conflictedCount: 0,
-  hasMore: false,
-};
-
 void boardQuery;
 void boardResponse;
 void patchLaneRequest;
@@ -366,10 +324,6 @@ void deleteWorkflowItemRequest;
 void repairApplyRequest;
 void repairDryRunResult;
 void repairApplyResult;
-void reconciliationRequest;
-void changedReconciliationPage;
-void noOpReconciliationPage;
-void staleReconciliationPage;
 
 // @ts-expect-error companyId is required.
 const invalidQueryMissingCompanyId: GetRecommendationWorkflowItemsQuery = {
@@ -572,23 +526,6 @@ const invalidCompleteRepairResult: RecommendationWorkflowRepairResponse = {
   continuationToken: repairContinuation,
 };
 
-// @ts-expect-error continued recurrence results require a continuation token.
-const invalidContinuedReconciliationResult: RecommendationSystemTrackReconciliationResponse = {
-  result: 'changed',
-  processedCount: 250,
-  changedCount: 1,
-  skippedCount: 249,
-  conflictedCount: 0,
-  hasMore: true,
-};
-
-// @ts-expect-error stale-run no-op is always a terminal page.
-const invalidStaleReconciliationContinuation: RecommendationSystemTrackReconciliationResponse = {
-  ...staleReconciliationPage,
-  hasMore: true,
-  continuationToken: reconciliationContinuation,
-};
-
 void invalidQueryMissingCompanyId;
 void invalidTokenlessPatch;
 void invalidPlainStringTokenPatch;
@@ -615,5 +552,3 @@ void invalidConcurrencyConflictStatus;
 void invalidUnboundedRepair;
 void invalidRepairContinuation;
 void invalidCompleteRepairResult;
-void invalidContinuedReconciliationResult;
-void invalidStaleReconciliationContinuation;
