@@ -813,6 +813,23 @@ export interface CompletedViewManifestV2RequestedCounts {
   requestedResourceCount: number;
 }
 
+export type CompletedViewEconomicsDependency =
+  | {
+      generationId: string;
+      fingerprint?: string;
+      status?: never;
+    }
+  | {
+      status: 'unverified';
+      generationId?: never;
+      fingerprint?: never;
+    };
+
+export interface CompletedViewGenerationDependencies {
+  economics?: CompletedViewEconomicsDependency;
+  [dependency: string]: unknown;
+}
+
 export interface CompletedViewManifestV2Base extends CompletedViewManifestV2RequestedCounts {
   schemaVersion: 2;
   runId: string;
@@ -821,6 +838,8 @@ export interface CompletedViewManifestV2Base extends CompletedViewManifestV2Requ
   artifacts: string[];
   artifactGeneration: CompletedViewArtifactGeneration;
   costSavings?: CompletedViewCostSavingsManifest;
+  /** Source generations that readers can use to prevent cross-view mixing. */
+  dependencies?: CompletedViewGenerationDependencies;
 }
 
 export interface CompletedViewManifestV2ProgressCounts {

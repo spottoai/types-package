@@ -1,7 +1,7 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
-import type { AwsBillingExportConfiguration, AwsCloudAccountBillingStatus } from '../aws/cloudAccounts';
-import type { AwsRequestForbiddenCredentialFields } from '../aws/requests';
+import type { AwsEstateAccountPurpose } from '../aws/estates';
+import type { AwsForbiddenCredentialFields } from '../aws/requests';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
@@ -34,6 +34,27 @@ export interface AzureGdapRoleAssignment {
     roleId?: string;
     roleTemplateId?: string;
     displayName: string;
+}
+/** Non-secret lifecycle details for the customer-specific GDAP relationship used by a child cloud account. */
+export interface AzureGdapRelationshipLifecycle {
+    relationshipId: string;
+    customerTenantId: string;
+    status: AzureGdapRelationshipStatus;
+    displayName?: string;
+    accessAssignmentId?: string;
+    accessAssignmentStatus?: AzureGdapAccessAssignmentStatus;
+    securityGroupId?: string;
+    securityGroupDisplayName?: string;
+    roles?: AzureGdapRoleAssignment[];
+    expiresAt?: string;
+    autoExtendEnabled?: boolean;
+}
+/** Readable Azure subscription offered for explicit selection during child-company GDAP setup. */
+export interface AzureGdapSubscriptionOption {
+    subscriptionId: string;
+    displayName: string;
+    tenantId: string;
+    state?: string;
 }
 export interface AzureGdapCloudAccountMetadata {
     gdapAuthorizationCompanyId?: string;
@@ -118,17 +139,37 @@ export interface AzureGdapDraftValidationRequest {
     gdapAccessAssignmentId?: string;
     gdapSecurityGroupId?: string;
 }
-export interface AzureGdapDraftValidationResponse {
-    valid: boolean;
+interface AzureGdapDraftValidationResponseBase {
     status: AzureGdapValidationStatus;
     profile?: AzureGdapAuthorizationProfileSummary;
     capabilities: AzureGdapCapabilityStatus[];
+    customerTenantId?: string;
+    appConsentStatus?: AzureGdapValidationStatus;
+    relationship?: AzureGdapRelationshipLifecycle;
     message?: string;
 }
+export interface AzureGdapReadyDraftValidationResponse extends AzureGdapDraftValidationResponseBase {
+    valid: true;
+    status: 'ready';
+    customerTenantId: string;
+    appConsentStatus: 'ready';
+    relationship: AzureGdapRelationshipLifecycle;
+    subscriptions: AzureGdapSubscriptionOption[];
+    /** Opaque, short-lived proof that the API must validate when creating the child cloud account. */
+    validationReceipt: string;
+    validationExpiresAt: string;
+}
+export interface AzureGdapUnreadyDraftValidationResponse extends AzureGdapDraftValidationResponseBase {
+    valid: false;
+    status: Exclude<AzureGdapValidationStatus, 'ready'>;
+    subscriptions?: AzureGdapSubscriptionOption[];
+}
+export type AzureGdapDraftValidationResponse = AzureGdapReadyDraftValidationResponse | AzureGdapUnreadyDraftValidationResponse;
 export interface AzureGdapCloudAccountStatusResponse {
     cloudAccountId: string;
     companyId: string;
     status: AzureGdapValidationStatus;
+    customerTenantId?: string;
     partnerAuthorizationStatus?: AzureGdapValidationStatus;
     appConsentStatus?: AzureGdapValidationStatus;
     lastValidatedAt?: string | Date;
@@ -138,6 +179,8 @@ export interface AzureGdapCloudAccountStatusResponse {
     scheduledEligible?: boolean;
     scheduledEligibilityReason?: string;
     capabilities?: AzureGdapCapabilityStatus[];
+    relationship?: AzureGdapRelationshipLifecycle;
+    subscriptions?: AzureGdapSubscriptionOption[];
 }
 export interface AzureGdapCloudAccountCreateRequest {
     companyId: string;
@@ -152,6 +195,9 @@ export interface AzureGdapCloudAccountCreateRequest {
     gdapSecurityGroupId?: string;
     gdapAuthorizationCompanyId: string;
     gdapAuthorizationProfileId: string;
+    subscriptionIds: string[];
+    /** Opaque proof returned by a successful customer-scoped GDAP draft validation. */
+    validationReceipt: string;
 }
 export interface BillingExportLocatorEntry {
     scopeType: BillingExportLocatorScopeType;
@@ -287,18 +333,16 @@ export interface AzureGuestAccessCloudAccountFields {
 export interface AwsPublicCloudAccountFields {
     /** Canonical 12-digit AWS account identifier. */
     accountId?: string;
-    /** Legacy storage/response alias. Prefer accountId in new public responses. */
-    awsAccountId?: string;
+    /** AWS estate containing this connected account. */
+    awsEstateId?: string;
     /** Cross-account role ARN. This is role metadata, not a credential. */
     roleArn?: string;
+    /** Capabilities for which the connected role is used. */
+    awsRolePurposes?: AwsEstateAccountPurpose[];
     /** Sanitized machine-readable reason for the current lifecycle state. */
     statusReason?: string;
     /** Sanitized user-facing lifecycle detail. */
     statusMessage?: string;
-    /** Sanitized billing-export lifecycle state. Raw billing configuration is never public. */
-    billingStatus?: AwsCloudAccountBillingStatus;
-    billingStatusReason?: string;
-    billingStatusMessage?: string;
     /** Evidence that a provider sync produced usable artifacts, when available. */
     lastSuccessfulSyncAt?: string;
 }
@@ -323,11 +367,6 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
     updatedAt: Date;
     createdBy: string;
     status: string;
-    /** Internal AWS billing-export locator. It is JSON-serialized for Table Storage and omitted from public DTOs. */
-    awsBillingExport?: AwsBillingExportConfiguration;
-    /** Current admitted AWS engine request identity. */
-    currentRequestId?: string;
-    correlationId?: string;
     objectives?: SurveyResponse[];
     /** Preferred recommendation effort-estimate profile for this cloud account. */
     effortProfile?: EffortEstimateProfileName;
@@ -399,7 +438,7 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPub
     /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
     billingExportLocator?: string | CloudAccountBillingExportLocator;
 }
-export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope' | 'awsBillingExport'> & AwsRequestForbiddenCredentialFields & {
+export type PublicCloudAccountDto = Omit<CloudAccount, 'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'> & AwsForbiddenCredentialFields & {
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
@@ -471,6 +510,7 @@ export interface SubscriptionInfoBase {
     statusLabel?: string;
     error?: string;
     lastUpdated?: string;
+    hostname?: string;
     quotaId?: string;
     duration?: string;
     currency?: string;

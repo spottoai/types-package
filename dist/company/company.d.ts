@@ -1,8 +1,23 @@
 import { SurveyResponse } from './survey';
 import { NotificationSubscription } from './notification';
 import type { CompanyClassification } from './companyHierarchy';
+import type { CustomPropertyDefinition, CustomPropertyValues } from '../customProperties';
 import type { PortalDelegationScope } from '../features-and-permissions/access';
 export type CompanyLifecycle = 'standard' | 'trial';
+export type CompanyOnboardingStatus = 'in_progress' | 'completed' | 'dismissed';
+export type CompanyOnboardingStep = 'company' | 'invite_users' | 'cloud_account' | 'complete';
+export type CompanyCloudAccountIntent = 'connect_now' | 'delegated' | 'later';
+export interface CompanyOnboardingState {
+    status: CompanyOnboardingStatus;
+    currentStep: CompanyOnboardingStep;
+    cloudAccountIntent?: CompanyCloudAccountIntent;
+    updatedAt: string;
+}
+export interface UpdateCompanyOnboardingRequest {
+    status?: CompanyOnboardingStatus;
+    currentStep?: CompanyOnboardingStep;
+    cloudAccountIntent?: CompanyCloudAccountIntent;
+}
 export interface CompanyBusinessHoursPeriod {
     startDayOfWeek: number;
     startTimeLocal: string;
@@ -40,9 +55,13 @@ export interface Company {
     parentIntegrationSettings?: ParentIntegrationSettings[];
     companyLifecycle?: CompanyLifecycle;
     setupComplete?: boolean;
+    /** Tracks onboarding decisions only; cloud connectivity remains authoritative in cloud-account records. */
+    onboarding?: CompanyOnboardingState;
     azureDelegatedTrialStartedAt?: Date | string;
     azureDelegatedTrialUsedAt?: Date | string;
     azureDelegatedTrialExpiresAt?: Date | string;
+    customPropertyDefinitions?: CustomPropertyDefinition[];
+    customProperties?: CustomPropertyValues;
 }
 export interface CompanyCreate {
     name: string;
@@ -65,6 +84,7 @@ export interface CompanyCreate {
     azureDelegatedTrialStartedAt?: Date | string;
     azureDelegatedTrialUsedAt?: Date | string;
     azureDelegatedTrialExpiresAt?: Date | string;
+    customProperties?: CustomPropertyValues;
 }
 export interface UserCompany {
     email: string;

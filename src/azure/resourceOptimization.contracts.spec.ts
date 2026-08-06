@@ -68,7 +68,14 @@ const recommendationResource: RecommendationResource = {
   type: portalResource.type,
   spend: portalResource.spend,
   spendAmortized: portalResource.spendAmortized,
+  savingsBasis: 'billed',
   optimizationProfile: portalResource.optimizationProfile,
+};
+
+const recommendationResourceWithInvalidBasis: RecommendationResource = {
+  ...recommendationResource,
+  // @ts-expect-error Recommendation savings can only declare a billed or amortized basis.
+  savingsBasis: 'retail',
 };
 
 // @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
@@ -80,3 +87,4 @@ void recommendationResource.costEstimation;
 
 void pluginResource;
 void recommendationResource;
+void recommendationResourceWithInvalidBasis;
