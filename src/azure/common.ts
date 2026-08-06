@@ -23,9 +23,9 @@ export interface MonthSummaryEntry {
 export interface ResourceCostType {
   /** e.g. "Virtual Machines" */
   name: string;
-  /** e.g. 100 */
-  cost: number;
-  /** e.g. 100 */
+  /** Actual cost, when available (e.g. 100). */
+  cost?: number;
+  /** Amortized cost, when available (e.g. 100). */
   costAmortized?: number;
   /** Optional classification for non-usage cost shown in dashboards. */
   costKind?: 'usage' | 'commitment-purchase' | 'mixed';
