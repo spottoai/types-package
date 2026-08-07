@@ -13,6 +13,7 @@
     "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/aws/portalPublicArtifacts.contracts.spec.ts",
     "src/azure/financialCorrectness.contracts.spec.ts",
+    "src/azure/azureViewSet.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
     "src/azure/payloads.contracts.spec.ts",
     "src/azure/regulatoryCompliance.contracts.spec.ts",
