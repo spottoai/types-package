@@ -2,7 +2,7 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext, type RecommendationResource } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
@@ -786,4 +786,38 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base & ((CompletedV
     completedAt: string;
 }));
 export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
+export interface AzureViewSetSurfaceReference {
+    /** Immutable generation run ID declared by the surface completed manifest. */
+    runId: string;
+    /** Subscription-relative logical path to the immutable run-local manifest. */
+    manifestPath: string;
+    completedAt: string;
+}
+export interface CompletedAzureViewSetV1 {
+    schemaVersion: 1;
+    status: 'completed';
+    subscriptionId: string;
+    /** Correlates the exact portal and plugin results supplied by one orchestrator. */
+    publicationId: string;
+    portal: AzureViewSetSurfaceReference;
+    plugin: AzureViewSetSurfaceReference;
+    economics: {
+        generationId: string;
+        fingerprint: string;
+    };
+    completedAt: string;
+}
+export interface AzureRecommendationResourceEvidenceEntry {
+    recommendationId: string;
+    /** Full presentation evidence, retained even when no active aggregate entry exists. */
+    recommendation: Recommendation;
+    resources: RecommendationResource[];
+}
+export interface AzureRecommendationResourceEvidenceDocument {
+    schemaVersion: 1;
+    artifactGeneration: CompletedViewArtifactGeneration;
+    recommendations: AzureRecommendationResourceEvidenceEntry[];
+}
+/** Dependency-free rejection boundary for customer-readable cross-surface pointers. */
+export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
 //# sourceMappingURL=views.d.ts.map
