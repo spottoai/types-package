@@ -26,6 +26,8 @@ assert.equal(isCompletedAzureViewSetV1({ ...valid, status: 'in_progress' }), fal
 assert.equal(isCompletedAzureViewSetV1({ ...valid, schemaVersion: 2 }), false);
 assert.equal(isCompletedAzureViewSetV1({ ...valid, subscriptionId: '' }), false);
 assert.equal(isCompletedAzureViewSetV1({ ...valid, portal: { ...valid.portal, runId: '' } }), false);
+assert.equal(isCompletedAzureViewSetV1({ ...valid, completedAt: 'not-a-timestamp' }), false);
+assert.equal(isCompletedAzureViewSetV1({ ...valid, portal: { ...valid.portal, completedAt: '2026-08-07' } }), false);
 assert.equal(isCompletedAzureViewSetV1({ ...valid, portal: { ...valid.portal, manifestPath: 'https://storage/run.json' } }), false);
 assert.equal(isCompletedAzureViewSetV1({ ...valid, plugin: { ...valid.plugin, manifestPath: '../run.json' } }), false);
 assert.equal(isCompletedAzureViewSetV1({ ...valid, economics: { generationId: '', fingerprint: 'sha256:abc123' } }), false);

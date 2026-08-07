@@ -934,8 +934,13 @@ export interface AzureRecommendationResourceEvidenceEntry {
   recommendationId: string;
   /** Full presentation evidence, retained even when no active aggregate entry exists. */
   recommendation: Recommendation;
-  resources: RecommendationResource[];
+  resources: AzureRecommendationResourceEvidenceResource[];
 }
+
+/** Evidence preserves unavailable amortized spend as absent instead of fabricating actual cost. */
+export type AzureRecommendationResourceEvidenceResource = Omit<RecommendationResource, 'spendAmortized'> & {
+  spendAmortized?: number;
+};
 
 export interface AzureRecommendationResourceEvidenceDocument {
   schemaVersion: 1;
@@ -944,6 +949,12 @@ export interface AzureRecommendationResourceEvidenceDocument {
 }
 
 const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+
+const isCanonicalIsoTimestamp = (value: unknown): value is string => {
+  if (!isNonEmptyString(value)) return false;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -955,13 +966,13 @@ const isLogicalManifestPath = (value: unknown): value is string => {
 };
 
 const isViewSetSurfaceReference = (value: unknown): value is AzureViewSetSurfaceReference =>
-  isRecord(value) && isNonEmptyString(value.runId) && isLogicalManifestPath(value.manifestPath) && isNonEmptyString(value.completedAt);
+  isRecord(value) && isNonEmptyString(value.runId) && isLogicalManifestPath(value.manifestPath) && isCanonicalIsoTimestamp(value.completedAt);
 
 /** Dependency-free rejection boundary for customer-readable cross-surface pointers. */
 export const isCompletedAzureViewSetV1 = (value: unknown): value is CompletedAzureViewSetV1 => {
   if (!isRecord(value)) return false;
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
-  if (!isNonEmptyString(value.subscriptionId) || !isNonEmptyString(value.publicationId) || !isNonEmptyString(value.completedAt)) {
+  if (!isNonEmptyString(value.subscriptionId) || !isNonEmptyString(value.publicationId) || !isCanonicalIsoTimestamp(value.completedAt)) {
     return false;
   }
   if (!isViewSetSurfaceReference(value.portal) || !isViewSetSurfaceReference(value.plugin)) return false;

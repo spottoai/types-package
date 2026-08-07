@@ -811,8 +811,12 @@ export interface AzureRecommendationResourceEvidenceEntry {
     recommendationId: string;
     /** Full presentation evidence, retained even when no active aggregate entry exists. */
     recommendation: Recommendation;
-    resources: RecommendationResource[];
+    resources: AzureRecommendationResourceEvidenceResource[];
 }
+/** Evidence preserves unavailable amortized spend as absent instead of fabricating actual cost. */
+export type AzureRecommendationResourceEvidenceResource = Omit<RecommendationResource, 'spendAmortized'> & {
+    spendAmortized?: number;
+};
 export interface AzureRecommendationResourceEvidenceDocument {
     schemaVersion: 1;
     artifactGeneration: CompletedViewArtifactGeneration;
