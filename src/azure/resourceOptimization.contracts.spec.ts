@@ -1,3 +1,4 @@
+import { RecommendationCategory } from '../index.js';
 import type {
   AzureResourcePluginItemDetailed,
   AzureResourcePortalItem,
@@ -59,6 +60,35 @@ const pluginResource: AzureResourcePluginItemDetailed = {
   currency: 'NZD',
   currencySymbol: '$',
   timestamp: '2026-07-24T00:00:00.000Z',
+  savings: {
+    minAmount: 0,
+    minPercentage: 0,
+    maxAmount: 48.61,
+    maxPercentage: 100,
+  },
+  recommendations: [
+    {
+      id: 'compute-snapshots_old',
+      name: 'Aged Snapshots',
+      category: RecommendationCategory.Cost,
+      impact: 'Medium',
+      savingsDetails: {
+        headlineScenario: {
+          id: 'remove-resource',
+          label: 'Aged Snapshots',
+          action: 'Review retention requirements, then delete this snapshot if it is no longer required.',
+          monthlySavings: 48.61,
+          targetMonthlyCost: 0,
+        },
+        affectedCost: {
+          label: 'Projected monthly snapshot cost',
+          currentMonthlyCost: 48.61,
+          savingsPercentage: 100,
+        },
+        calculationBasis: { type: 'projected-monthly' },
+      },
+    },
+  ],
   optimizationProfile: profile,
 };
 

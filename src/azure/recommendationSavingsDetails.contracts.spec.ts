@@ -1,4 +1,5 @@
-import type { RecommendationResource, ResourceRecommendationSavingsDetails } from '../index.js';
+import { RecommendationCategory } from '../index.js';
+import type { RecommendationResource, ResourceRecommendationSavingsDetails, ResourceScopedRecommendation } from '../index.js';
 
 const savingsDetails: ResourceRecommendationSavingsDetails = {
   headlineScenario: {
@@ -41,6 +42,34 @@ const legacyResourceWithoutDetails: RecommendationResource = {
   spendAmortized: 100,
 };
 
+const projectedMonthlyDetails: ResourceRecommendationSavingsDetails = {
+  headlineScenario: {
+    id: 'remove-resource',
+    label: 'Aged Snapshots',
+    action: 'Review retention requirements, then delete this snapshot if it is no longer required.',
+    monthlySavings: 48.61,
+    targetMonthlyCost: 0,
+  },
+  affectedCost: {
+    label: 'Projected monthly snapshot cost',
+    currentMonthlyCost: 48.61,
+    savingsPercentage: 100,
+  },
+  calculationBasis: {
+    type: 'projected-monthly',
+    windowStart: '2026-07-20',
+    windowEnd: '2026-08-06',
+  },
+};
+
+const scopedRecommendation: ResourceScopedRecommendation = {
+  id: 'compute-snapshots_old',
+  name: 'Aged Snapshots',
+  category: RecommendationCategory.Cost,
+  impact: 'Medium',
+  savingsDetails: projectedMonthlyDetails,
+};
+
 const invalidCalculationBasis: ResourceRecommendationSavingsDetails = {
   ...savingsDetails,
   calculationBasis: {
@@ -64,3 +93,4 @@ void resourceWithDetails;
 void legacyResourceWithoutDetails;
 void invalidCalculationBasis;
 void missingHeadlineAction;
+void scopedRecommendation;
