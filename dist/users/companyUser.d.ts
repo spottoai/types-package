@@ -1,4 +1,5 @@
 import type { InviteType, OnboardingIntent } from './user';
+import type { CustomPropertyValues } from '../customProperties';
 export type CompanyUserAuthMode = 'cognito' | 'sso' | 'unknown';
 export declare class CompanyUser {
     id?: string;
@@ -22,5 +23,6 @@ export declare class CompanyUser {
     canConnectAzureTrial?: boolean;
     onboardingIntentCreatedAt?: Date | string;
     onboardingIntentExpiresAt?: Date | string;
+    customProperties?: CustomPropertyValues;
 }
 //# sourceMappingURL=companyUser.d.ts.map

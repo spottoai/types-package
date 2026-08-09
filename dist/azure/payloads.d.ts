@@ -1,6 +1,6 @@
 import { Subscription, SubscriptionPolicies } from './subscriptions.js';
 import type { CreatePolicyExemptionRequest, PolicyExemptionCommandSchemaVersion } from './regulatoryCompliance.js';
-import type { AzureDelegatedAuthErrorCode, AzureDelegatedOAuthStatePhase, AzureDelegatedOnboardingStatus, AzureGuestAccessScanSchedulingMode, AzureGuestAccessStatus, AzureGuestAccessStatusReason, AzureCloudAccountAuthContext, CloudAccountAuthMode, CloudAccountTenantSyncSource, PublicCloudAccountDto } from '../accounts/accounts.js';
+import type { AzureDelegatedAuthErrorCode, AzureDelegatedOAuthStatePhase, AzureDelegatedOnboardingStatus, AzureGuestAccessScanSchedulingMode, AzureGuestAccessStatus, AzureGuestAccessStatusReason, AzureCloudAccountAuthContext, CloudAccountAuthMode, CloudAccountTenantSyncSource, PublicCloudAccountDto, SubscriptionType } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
 export interface WorkflowTracingOptions {
     enabled: boolean;
@@ -21,6 +21,7 @@ export interface ProcessPayload {
     companyId?: string;
     cloudAccountId?: string;
     clientId?: string;
+    subscriptionType?: SubscriptionType;
     authMode?: CloudAccountAuthMode;
     customerTenantId?: string;
     authorityTenantId?: string;
@@ -50,6 +51,20 @@ export interface RequestMessage {
     correlationId?: string;
     eventId?: string;
     tracing?: WorkflowTracingOptions;
+}
+export interface CloudAccountsBillingReconciliationRequestMetadata {
+    triggeredBy: 'billing-reconciliation-cron';
+}
+export interface CloudAccountsBillingReconciliationRequestMessage extends RequestMessage {
+    requestId: string;
+    entity: 'cloudaccounts';
+    action: 'reconcile-billing';
+    companyId: '*';
+    cloudAccountId: '*';
+    tenantId: '*';
+    clientId: '*';
+    source: 'scheduled';
+    metadata: CloudAccountsBillingReconciliationRequestMetadata;
 }
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
 export interface ActionExecutionSource {
@@ -109,6 +124,21 @@ export interface SubscriptionMessage {
     eventId?: string;
     tracing?: WorkflowTracingOptions;
     metadata?: Record<string, unknown>;
+}
+export interface BillingReconciliationWorkMetadata {
+    schemaVersion: 1;
+    trigger: 'scheduled';
+    policyVersion: string;
+    /** Cloud-engine validates these values as unique eligible YYYY-MM months. */
+    requestedMonths: string[];
+    continuationCursor?: string | null;
+}
+export interface BillingReconciliationSubscriptionMessage extends SubscriptionMessage {
+    requestId?: string;
+    refreshComponents: ['billing'];
+    metadata: Record<string, unknown> & {
+        billingReconciliation: BillingReconciliationWorkMetadata;
+    };
 }
 export interface AzureGdapQueueAuthContext extends Omit<AzureCloudAccountAuthContext, 'authMode' | 'cloudAccountId' | 'customerTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference'> {
     authMode?: 'gdap';

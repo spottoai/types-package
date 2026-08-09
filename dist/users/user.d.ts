@@ -1,3 +1,4 @@
+import type { CustomPropertyValues } from '../customProperties';
 export type InviteType = 'standard' | 'trial';
 export type OnboardingIntent = 'azureDelegatedConnect';
 export interface InviteOnboardingIntent {
@@ -27,6 +28,7 @@ export interface User extends BaseUser {
     canConnectAzureTrial?: boolean;
     onboardingIntentCreatedAt?: Date | string;
     onboardingIntentExpiresAt?: Date | string;
+    customProperties?: CustomPropertyValues;
 }
 export interface UserProfile extends BaseUser {
     name?: string;

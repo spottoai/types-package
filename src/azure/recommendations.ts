@@ -2,7 +2,14 @@ import type { Comment, CommentScope, RecommendationHistory } from './recommendat
 import type { ProviderScope } from '../common/provider';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
-import type { CostSavingsAggregationPolicy, CostSavingsSummary, CurrencySavingsGroup, SavingsPotential, VmPricePerformanceInsights } from './views';
+import type {
+  CostSavingsAggregationPolicy,
+  CostSavingsSpendBasis,
+  CostSavingsSummary,
+  CurrencySavingsGroup,
+  SavingsPotential,
+  VmPricePerformanceInsights,
+} from './views';
 import type { HaloRoutingOverrides } from '../integrations/halo';
 import type { AutotaskShareOverrides } from '../integrations/autotask';
 import type { AzureDevOpsShareOverrides } from '../integrations/azureDevOps';
@@ -272,6 +279,8 @@ export interface Recommendation {
   currency?: string;
   potentialBenefits?: string;
   potentialMonthlySavings?: number;
+  /** Canonical savings projection attached by completed view producers. */
+  savings?: SavingsPotential;
   effort?: string;
   effortReason?: string;
   /** e.g. 10 hours */
@@ -448,6 +457,8 @@ export interface RecommendationResource {
   };
   spend: number;
   spendAmortized: number;
+  /** Spend basis used to calculate this recommendation resource's savings. */
+  savingsBasis?: CostSavingsSpendBasis;
   optimizationProfile?: ResourceSimpleOptimizationProfile;
   savings?: SavingsPotential;
   /** Standalone saving for this recommendation on this resource. */

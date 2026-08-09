@@ -41,6 +41,25 @@ export interface CompanySubscription extends SubscriptionInfoBase {
     /** Azure Subscription ID */
     id: string;
 }
+export interface SubscriptionScope {
+    companyId: string;
+    id: string;
+    name: string;
+    friendlyName?: string;
+    cloudAccountId: string;
+    cloudAccountName: string;
+    groupName?: string;
+    icon?: string;
+    subscriptionType?: SubscriptionType;
+    status?: string;
+    statusLabel?: string;
+    currency?: string;
+    currencySymbol?: string;
+    foundCurrency?: boolean;
+    ready?: boolean;
+    secureScore?: number;
+    totalCost?: number;
+}
 export interface SubscriptionSummary {
     companyId: string;
     tenantId: string;

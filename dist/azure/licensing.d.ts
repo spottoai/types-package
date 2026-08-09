@@ -351,12 +351,28 @@ export interface LicensingPlanningView {
     warnings?: string[];
     diagnostics?: LicensingDiagnostics;
 }
+export interface LicensingRecommendationResourceEstimate {
+    resourceId: string;
+    productFamily: LicensingProductFamily;
+    serviceModel?: LicensingServiceModel;
+    decision: LicensingDecision;
+    licenseRequirement?: LicensingLicenseRequirement;
+    azureLicenseCharge?: LicensingAzureLicenseCharge;
+    purchaseScenario?: LicensingPurchaseScenario;
+    historicalEvidence?: LicensingHistoricalEvidence;
+    actionProfile?: LicensingActionProfile;
+    outcome: LicensingEstimateOutcome;
+    confidence: LicensingConfidence;
+    reasonCodes: LicensingReasonCode[];
+}
 export interface LicensingRecommendationRenderData {
     kind: 'licensing-estimate';
     productFamily: LicensingProductFamily;
     serviceModel?: LicensingServiceModel;
     resourceIds: string[];
     licensingResourceIds?: string[];
+    /** Exact estimates for resource-detail consumers. Aggregate fields above remain the grouped recommendation totals. */
+    resourceEstimates?: LicensingRecommendationResourceEstimate[];
     decision: LicensingDecision;
     licenseRequirement?: LicensingLicenseRequirement;
     azureLicenseCharge?: LicensingAzureLicenseCharge;

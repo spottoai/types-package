@@ -45,6 +45,16 @@ export interface RegulatoryStandardCatalogEntry {
     documentationUrl?: string;
 }
 export type RegulatoryControlResponsibility = 'customer' | 'microsoft' | 'shared' | 'unknown';
+export interface RegulatoryControlMetadataResponse {
+    policyMetadataId: string;
+    name: string;
+    displayName: string;
+    domain?: string;
+    responsibility: RegulatoryControlResponsibility;
+    description?: string;
+    requirements?: string;
+    additionalContentUrl?: string;
+}
 export interface RegulatoryControlSummary {
     controlKey: string;
     name: string;
@@ -130,6 +140,7 @@ export interface RegulatoryResourceEvaluation {
 export interface RegulatoryControlDetail extends RegulatoryControlSummary {
     description?: string;
     requirements?: string;
+    additionalContentUrl?: string;
     policies: RegulatoryPolicyEvaluationSummary[];
     resources: RegulatoryResourceEvaluation[];
 }
@@ -158,6 +169,39 @@ export interface RegulatoryComplianceAssignmentDetail {
     controls: RegulatoryControlDetail[];
     exemptions: RegulatoryExemptionSummary[];
     sourceMetadata: RegulatoryComplianceSourceMetadata;
+}
+export interface RegulatoryResourceEvaluationPage {
+    generatedAt: string;
+    subscriptionId: string;
+    assignmentKey: string;
+    controlKey: string;
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    resources: RegulatoryResourceEvaluation[];
+}
+export declare const REGULATORY_COMPLIANCE_NOTE_TARGET_TYPES: readonly ["assignment", "control", "policy"];
+export type RegulatoryComplianceNoteTargetType = (typeof REGULATORY_COMPLIANCE_NOTE_TARGET_TYPES)[number];
+export interface RegulatoryComplianceNote {
+    noteId: string;
+    subscriptionId: string;
+    assignmentKey: string;
+    targetType: RegulatoryComplianceNoteTargetType;
+    targetKey: string;
+    targetLabel: string;
+    content: string;
+    createdAt: string;
+    createdByUserId: string;
+    createdByDisplayName?: string;
+}
+export interface RegulatoryComplianceNoteListResponse {
+    notes: RegulatoryComplianceNote[];
+}
+export interface CreateRegulatoryComplianceNoteRequest {
+    targetType: RegulatoryComplianceNoteTargetType;
+    targetKey: string;
+    content: string;
 }
 export type ComplianceExpectationScopeType = 'company' | 'cloudAccount' | 'subscription';
 export type ComplianceExpectationValue = 'expected' | 'notExpected';
