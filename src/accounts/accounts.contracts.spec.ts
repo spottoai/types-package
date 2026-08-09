@@ -506,6 +506,37 @@ const subscriptionAccountWithSyncFeatureOptOuts: SubscriptionAccount = {
   companyId: 'comp-123',
 };
 
+const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  azureSpSetupProvisioningStatus: 'partial',
+  azureSpSetupActiveSetupId: 'setup-123',
+  azureSpSetupActiveExecutionId: 'execution-123',
+  azureSpSetupReadinessVersion: 'readiness-7',
+  azureSpSetupActiveRepairSetupId: 'repair-setup-123',
+  azureSpSetupActiveRepairExecutionId: 'repair-execution-123',
+  azureSpSetupActiveRepairPhase: 'retrying',
+  azureSpSetupLastRepairResult: 'partial',
+  azureSpSetupLastRepairAttemptedAt: '2026-08-09T00:00:00.000Z',
+  azureSpSetupPermissionManifestVersion: 'azure-sp-setup-2026-08-09',
+  azureSpSetupLastResult: 'partial',
+  azureSpSetupLastAttemptedAt: '2026-08-09T00:00:00.000Z',
+  azureSpSetupSummaryJson: '{"schemaVersion":1}',
+};
+
+const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  azureSpSetupReaderReadiness: 'granted',
+  azureSpSetupReadinessSetupId: 'setup-123',
+  azureSpSetupReadinessExecutionId: 'execution-123',
+  azureSpSetupReadinessVerifiedAt: '2026-08-09T00:10:00.000Z',
+};
+
+const subscriptionNeedingAzureSpSetupRepair: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  azureSpSetupReaderReadiness: 'failed',
+  azureSpSetupReadinessErrorCode: 'subscription_reader_assignment_failed',
+};
+
 const companySubscriptionWithSyncFeatureOptOuts: CompanySubscription = {
   ...subscriptionInfoBaseWithSyncFeatureOptOuts,
   id: 'sub-123',
@@ -729,6 +760,9 @@ void invalidSubscriptionSyncFeatureOptOutsUpdateRequest;
 void invalidCloudAccountSyncFeatureOptOutsUpdateRequest;
 void subscriptionInfoBaseWithSyncFeatureOptOuts;
 void subscriptionAccountWithSyncFeatureOptOuts;
+void cloudAccountWithAzureSpSetupReadiness;
+void subscriptionWithAzureSpSetupReadiness;
+void subscriptionNeedingAzureSpSetupRepair;
 void companySubscriptionWithSyncFeatureOptOuts;
 void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;

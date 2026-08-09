@@ -10,6 +10,9 @@ const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', '
 const recommendationTracksFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-tracks.consumer.ts.fixture');
 const recommendationWorkflowApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-api.consumer.ts.fixture');
 const recommendationWorkflowUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-ui.consumer.ts.fixture');
+const azureSpSetupApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-api.consumer.ts.fixture');
+const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-cloud-engine.consumer.ts.fixture');
+const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -46,6 +49,7 @@ const run = (command, args, cwd, captureOutput = false) => {
 const tempRoot = await mkdtemp(join(tmpdir(), 'spotto-types-package-'));
 
 try {
+  run(npmCommand, ['run', 'build'], packageRoot);
   const packOutput = run(npmCommand, ['pack', '--ignore-scripts', '--json', '--pack-destination', tempRoot], packageRoot, true);
   const [packedArtifact] = JSON.parse(packOutput);
   if (!packedArtifact?.filename) {
@@ -60,6 +64,9 @@ try {
   await copyFile(recommendationTracksFixturePath, join(consumerRoot, 'recommendation-tracks.consumer.ts'));
   await copyFile(recommendationWorkflowApiFixturePath, join(consumerRoot, 'recommendation-workflow-api.consumer.ts'));
   await copyFile(recommendationWorkflowUiFixturePath, join(consumerRoot, 'recommendation-workflow-ui.consumer.ts'));
+  await copyFile(azureSpSetupApiFixturePath, join(consumerRoot, 'azure-sp-setup-api.consumer.ts'));
+  await copyFile(azureSpSetupCloudEngineFixturePath, join(consumerRoot, 'azure-sp-setup-cloud-engine.consumer.ts'));
+  await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
 
   run(
     npmCommand,
@@ -83,6 +90,9 @@ try {
       'recommendation-tracks.consumer.ts',
       'recommendation-workflow-api.consumer.ts',
       'recommendation-workflow-ui.consumer.ts',
+      'azure-sp-setup-api.consumer.ts',
+      'azure-sp-setup-cloud-engine.consumer.ts',
+      'azure-sp-setup-ui.consumer.ts',
     ],
     consumerRoot
   );
@@ -104,7 +114,7 @@ try {
     consumerRoot
   );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS and API/UI recommendation workflow consumers verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS plus API/cloud-engine/UI consumers verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
