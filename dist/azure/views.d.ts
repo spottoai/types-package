@@ -2,7 +2,7 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext, type RecommendationResource } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext, type RecommendationResource, type ResourceScopedRecommendation } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
@@ -176,6 +176,8 @@ export interface AzureResourcePluginItem {
     type: string;
     location: string;
     recommendations?: Recommendation[];
+    /** Canonical deduplicated savings for this resource. */
+    savings?: SavingsPotential;
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
@@ -224,7 +226,9 @@ export interface AzureResourcePluginItemDetailed {
     description?: string;
     /** Resource-specific product URL resolved by the artifact producer. */
     product?: string;
-    recommendations?: Recommendation[];
+    recommendations?: ResourceScopedRecommendation[];
+    /** Canonical deduplicated savings for this resource. */
+    savings?: SavingsPotential;
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
