@@ -1,5 +1,6 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
+import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
@@ -713,6 +714,8 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
   foundCurrency?: boolean;
   ready?: boolean;
   secureScore?: number;
+  /** Defender for Cloud evidence that distinguishes a genuine zero from unavailable or stale score data. */
+  secureScoreEvidence?: SecureScoreEvidence;
   advisorScore?: number;
   advisorScoreCost?: number;
   advisorScoreSecurity?: number;
