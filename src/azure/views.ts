@@ -2,7 +2,13 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
+import {
+  AzureRecommendationLite,
+  Recommendation,
+  RecommendationDecisionContext,
+  type RecommendationResource,
+  type ResourceScopedRecommendation,
+} from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
@@ -187,6 +193,8 @@ export interface AzureResourcePluginItem {
   type: string;
   location: string;
   recommendations?: Recommendation[];
+  /** Canonical deduplicated savings for this resource. */
+  savings?: SavingsPotential;
   /** Optional linked context explaining related recommendations for this resource. */
   recommendationDecisionContexts?: RecommendationDecisionContext[];
   cost?: CostSummaryDetails;
@@ -236,7 +244,9 @@ export interface AzureResourcePluginItemDetailed {
   description?: string;
   /** Resource-specific product URL resolved by the artifact producer. */
   product?: string;
-  recommendations?: Recommendation[];
+  recommendations?: ResourceScopedRecommendation[];
+  /** Canonical deduplicated savings for this resource. */
+  savings?: SavingsPotential;
   /** Optional linked context explaining related recommendations for this resource. */
   recommendationDecisionContexts?: RecommendationDecisionContext[];
   cost?: CostSummaryDetails;
@@ -906,3 +916,76 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base &
   );
 
 export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
+
+export interface AzureViewSetSurfaceReference {
+  /** Immutable generation run ID declared by the surface completed manifest. */
+  runId: string;
+  /** Subscription-relative logical path to the immutable run-local manifest. */
+  manifestPath: string;
+  completedAt: string;
+}
+
+export interface CompletedAzureViewSetV1 {
+  schemaVersion: 1;
+  status: 'completed';
+  subscriptionId: string;
+  /** Correlates the exact portal and plugin results supplied by one orchestrator. */
+  publicationId: string;
+  portal: AzureViewSetSurfaceReference;
+  plugin: AzureViewSetSurfaceReference;
+  economics: {
+    generationId: string;
+    fingerprint: string;
+  };
+  completedAt: string;
+}
+
+export interface AzureRecommendationResourceEvidenceEntry {
+  recommendationId: string;
+  /** Full presentation evidence, retained even when no active aggregate entry exists. */
+  recommendation: Recommendation;
+  resources: AzureRecommendationResourceEvidenceResource[];
+}
+
+/** Evidence preserves unavailable amortized spend as absent instead of fabricating actual cost. */
+export type AzureRecommendationResourceEvidenceResource = Omit<RecommendationResource, 'spendAmortized'> & {
+  spendAmortized?: number;
+};
+
+export interface AzureRecommendationResourceEvidenceDocument {
+  schemaVersion: 1;
+  artifactGeneration: CompletedViewArtifactGeneration;
+  recommendations: AzureRecommendationResourceEvidenceEntry[];
+}
+
+const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+
+const isCanonicalIsoTimestamp = (value: unknown): value is string => {
+  if (!isNonEmptyString(value)) return false;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isLogicalManifestPath = (value: unknown): value is string => {
+  if (!isNonEmptyString(value)) return false;
+  if (value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#') || value.includes('\\')) return false;
+  const segments = value.split('/');
+  return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
+};
+
+const isViewSetSurfaceReference = (value: unknown): value is AzureViewSetSurfaceReference =>
+  isRecord(value) && isNonEmptyString(value.runId) && isLogicalManifestPath(value.manifestPath) && isCanonicalIsoTimestamp(value.completedAt);
+
+/** Dependency-free rejection boundary for customer-readable cross-surface pointers. */
+export const isCompletedAzureViewSetV1 = (value: unknown): value is CompletedAzureViewSetV1 => {
+  if (!isRecord(value)) return false;
+  if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
+  if (!isNonEmptyString(value.subscriptionId) || !isNonEmptyString(value.publicationId) || !isCanonicalIsoTimestamp(value.completedAt)) {
+    return false;
+  }
+  if (!isViewSetSurfaceReference(value.portal) || !isViewSetSurfaceReference(value.plugin)) return false;
+  if (!isRecord(value.economics)) return false;
+  return isNonEmptyString(value.economics.generationId) && isNonEmptyString(value.economics.fingerprint);
+};

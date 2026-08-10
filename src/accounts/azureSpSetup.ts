@@ -5,7 +5,10 @@ export type AzureSpSetupPhase =
   | 'tenantSelectionRequired'
   | 'planning'
   | 'readyToExecute'
+  | 'dispatchPending'
+  | 'queued'
   | 'executing'
+  | 'retrying'
   | 'completed'
   | 'needsAdminAction'
   | 'failed'
@@ -28,6 +31,7 @@ export type AzureSpSetupErrorCode =
   | 'tenant_selection_required'
   | 'no_readable_subscription_selected'
   | 'subscription_reader_assignment_failed'
+  | 'management_group_authority_missing'
   | 'service_principal_validation_failed'
   | 'graph_admin_consent_failed'
   | 'billing_export_storage_failed'
@@ -38,10 +42,26 @@ export type AzureSpSetupErrorCode =
   | 'setup_expired'
   | 'setup_cancelled'
   | 'azure_propagation_pending'
+  | 'setup_dispatch_failed'
+  | 'setup_execution_stalled'
+  | 'setup_state_conflict'
+  | 'setup_retry_exhausted'
+  | 'target_cloud_account_conflict'
+  | 'target_cloud_account_identity_mismatch'
+  | 'reauthorization_required'
+  | 'cost_management_visibility_unavailable'
   | 'unknown';
 
 export type AzureSpPermissionRequirement = 'required' | 'recommended' | 'optional';
-export type AzureSpPermissionStatus = 'notStarted' | 'running' | 'succeeded' | 'failed' | 'skipped' | 'alreadyExists';
+export type AzureSpPermissionStatus =
+  | 'notStarted'
+  | 'running'
+  | 'retrying'
+  | 'succeeded'
+  | 'needsAdminAction'
+  | 'failed'
+  | 'skipped'
+  | 'alreadyExists';
 export type AzureSpPermissionCapabilityStatus = 'unknown' | 'likelyAllowed' | 'likelyMissing';
 export type AzureSpPermissionFailureBehavior = 'blockSetup' | 'completePartial' | 'warnOnly';
 export type AzureSpSetupPermissionCapabilityGroupKey =
@@ -126,9 +146,21 @@ export type AzureSpOperationResultStatus =
   | 'updated'
   | 'granted'
   | 'queued'
+  | 'retrying'
   | 'skipped'
   | 'unavailable'
+  | 'needsAdminAction'
   | 'failed';
+
+export type AzureSpSetupDispatchStatus = 'none' | 'dispatchPending' | 'queued' | 'continuationPending' | 'continuationQueued';
+
+export type AzureSpSetupExecutionOwner = 'apiLegacy' | 'cloudEngine';
+
+export type AzureSpSetupProvisioningStatus = 'credentialPending' | 'permissionsPending' | 'ready' | 'partial' | 'needsAdminAction' | 'cancelled';
+
+export type AzureSpSetupReaderReadiness = 'pending' | 'granted' | 'failed' | 'needsValidation';
+
+export type AzureSpSetupCapabilityReadinessStatus = 'pending' | 'granted' | 'partial' | 'failed' | 'needsAdminAction' | 'notSelected';
 
 export type AzureSpBillingExportMode = 'skip' | 'reuseExisting' | 'useExistingStorage' | 'createStorage';
 export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost';
@@ -232,6 +264,100 @@ export interface AzureSpSetupOperationResult {
   errorCode?: AzureSpSetupErrorCode;
   startedAt?: string;
   completedAt?: string;
+}
+
+export interface AzureSpSetupCapabilityReadiness {
+  capabilityGroupKey: AzureSpSetupPermissionCapabilityGroupKey;
+  status: AzureSpSetupCapabilityReadinessStatus;
+  selectedPermissionInstanceKeys: string[];
+  operationResults: AzureSpSetupOperationResult[];
+  verifiedAt?: string;
+  errorCode?: AzureSpSetupErrorCode;
+}
+
+export interface AzureSpSetupSubscriptionReadiness {
+  subscriptionId: string;
+  readerReadiness: AzureSpSetupReaderReadiness;
+  setupId?: string;
+  executionId?: string;
+  verifiedAt?: string;
+  errorCode?: AzureSpSetupErrorCode;
+  operationResults?: AzureSpSetupOperationResult[];
+}
+
+export interface AzureSpSetupAccountReadiness {
+  provisioningStatus: AzureSpSetupProvisioningStatus;
+  setupId?: string;
+  executionId?: string;
+  readinessVersion?: string;
+  permissionManifestVersion?: string;
+  result?: AzureSpSetupResult;
+  capabilityReadiness: Partial<Record<AzureSpSetupPermissionCapabilityGroupKey, AzureSpSetupCapabilityReadinessStatus>>;
+  subscriptionReadiness: AzureSpSetupSubscriptionReadiness[];
+  lastAttemptedAt?: string;
+  verifiedAt?: string;
+  errorCode?: AzureSpSetupErrorCode;
+}
+
+export interface AzureSpSetupCloudAccountSummaryV1 {
+  schemaVersion: 1;
+  setupId: string;
+  executionId: string;
+  mode: AzureSpSetupMode;
+  permissionManifestVersion: string;
+  result: AzureSpSetupResult;
+  startedAt: string;
+  completedAt?: string;
+  selectedSubscriptionIds: string[];
+  selectedPermissionInstanceKeys: string[];
+  operationResults: AzureSpSetupOperationResult[];
+  capabilityReadiness: Partial<Record<AzureSpSetupPermissionCapabilityGroupKey, AzureSpSetupCapabilityReadinessStatus>>;
+  subscriptionReadiness: AzureSpSetupSubscriptionReadiness[];
+}
+
+export interface AzureSpSetupExecutionRequestPriorOutcomeV1 {
+  permissionManifestVersion?: string;
+  result?: AzureSpSetupResult;
+  capabilityReadiness?: Partial<Record<AzureSpSetupPermissionCapabilityGroupKey, AzureSpSetupCapabilityReadinessStatus>>;
+  subscriptionReadiness?: AzureSpSetupSubscriptionReadiness[];
+}
+
+export interface AzureSpSetupExecutionRequestV1 {
+  schemaVersion: 1;
+  setupId: string;
+  executionId: string;
+  executionAttempt: number;
+  mode: AzureSpSetupMode;
+  companyId: string;
+  tenantId: string;
+  initiatedByUserId: string;
+  authorizationCorrelationId: string;
+  createdAt: string;
+  selectedSubscriptionIds: string[];
+  selectedPermissionInstanceKeys: string[];
+  billingExports?: AzureSpSetupExecuteRequest['billingExports'];
+  cloudAccountName?: string;
+  groupNames?: string[];
+  readBitmask?: number;
+  writeBitmask?: number;
+  targetCloudAccountId?: string;
+  targetAzureApplicationAppId?: string;
+  targetAzureApplicationObjectId?: string;
+  targetAzureServicePrincipalObjectId?: string;
+  targetReadinessVersion?: string;
+  targetSummaryBaselineVersion?: string;
+  selectedExistingSubscriptionIds?: string[];
+  selectedNewSubscriptionIds?: string[];
+  priorOutcomeBaseline?: AzureSpSetupExecutionRequestPriorOutcomeV1;
+  requestedRefreshComponents?: string[];
+  snapshotHash: string;
+}
+
+export interface AzureSpSetupTargetConflictDetails {
+  errorCode: 'target_cloud_account_conflict';
+  activeSetupId: string;
+  activeExecutionId?: string;
+  targetCloudAccountId: string;
 }
 
 export interface AzureSpSetupProgressStep {
@@ -389,6 +515,19 @@ export interface AzureSpSetupStatusResponse {
   executionId?: string;
   executionAttempt?: number;
   leaseExpiresAt?: string;
+  dispatchStatus?: AzureSpSetupDispatchStatus;
+  dispatchSequence?: number;
+  queuedAt?: string;
+  retryAfterAt?: string;
+  lastHeartbeatAt?: string;
+  executionOwner?: AzureSpSetupExecutionOwner;
+  cancellationRequestedAt?: string;
+  canCancel?: boolean;
+  canResume?: boolean;
+  canRepair?: boolean;
+  requiresReauthorization?: boolean;
+  accountReadiness?: AzureSpSetupAccountReadiness;
+  subscriptionReadiness?: AzureSpSetupSubscriptionReadiness[];
 }
 
 export interface AzureSpSetupSelectTenantRequest {

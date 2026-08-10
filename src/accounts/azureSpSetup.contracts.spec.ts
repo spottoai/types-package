@@ -4,12 +4,44 @@ import type {
   AzureSpPermissionManifestItem,
   AzureSpSetupPermissionSummary,
   AzureSpSetupExecuteRequest,
+  AzureSpSetupExecutionRequestV1,
+  AzureSpSetupCloudAccountSummaryV1,
   AzureSpSetupMode,
   AzureSpSetupOperationResult,
+  AzureSpSetupPhase,
   AzureSpSetupPlanResponse,
+  AzureSpSetupResult,
   AzureSpSetupStartRequest,
   AzureSpSetupStatusResponse,
 } from './azureSpSetup';
+import type { AzureSpSetupDurableStateV1 } from './azureSpSetupDurable';
+
+type AzureSpSetupForbiddenPublicKey =
+  | 'accessToken'
+  | 'refreshToken'
+  | 'tokenCache'
+  | 'encryptedMicrosoftTokenCache'
+  | 'clientSecret'
+  | 'generatedClientSecretEncrypted'
+  | 'codeVerifier'
+  | 'nonce'
+  | 'stateBlobPath'
+  | 'stateBlobETag'
+  | 'sasUrl';
+
+type DeepForbiddenPublicKeys<T> = T extends readonly (infer Item)[]
+  ? DeepForbiddenPublicKeys<Item>
+  : T extends object
+    ? {
+        [Key in keyof T]-?: Key extends AzureSpSetupForbiddenPublicKey ? Key : DeepForbiddenPublicKeys<T[Key]>;
+      }[keyof T]
+    : never;
+
+type AssertNoForbiddenPublicKey<T> = DeepForbiddenPublicKeys<T> extends never ? true : never;
+
+const statusHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupStatusResponse> = true;
+const summaryHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupCloudAccountSummaryV1> = true;
+const executionRequestHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupExecutionRequestV1> = true;
 
 const createModeStartRequest: AzureSpSetupStartRequest = {
   redirectAfter: '/company/comp-123/cloud-accounts',
@@ -358,7 +390,220 @@ const invalidPlanResponse: AzureSpSetupPlanResponse = {
   ],
 };
 
+const durableActivePhases: AzureSpSetupPhase[] = ['dispatchPending', 'queued', 'executing', 'retrying'];
+const durableTerminalPhases: AzureSpSetupPhase[] = ['completed', 'needsAdminAction', 'failed', 'cancelled', 'expired'];
+const durableTerminalResults: AzureSpSetupResult[] = ['complete', 'partial', 'needsAdminAction', 'failed', 'cancelled', 'expired'];
+
+// @ts-expect-error terminal results retain the existing vocabulary.
+const invalidTerminalResult: AzureSpSetupResult = 'succeeded';
+
+const independentReaderResults: AzureSpSetupOperationResult[] = [
+  {
+    operationKey: 'rootManagementGroupReader:tenant-123',
+    permissionKey: 'rootManagementGroupReader',
+    instanceKey: 'rootManagementGroupReader:/providers/Microsoft.Management/managementGroups/tenant-123',
+    operationKind: 'assignAzureRole',
+    idempotencyKey: 'tenant-123:sp-object-123:reader:root-management-group',
+    status: 'needsAdminAction',
+    errorCode: 'management_group_authority_missing',
+    safeMessage: 'Root management group Reader access requires another administrator.',
+  },
+  {
+    operationKey: 'subscriptionReader:sub-123',
+    permissionKey: 'subscriptionReader',
+    instanceKey: 'subscriptionReader:/subscriptions/sub-123',
+    operationKind: 'assignAzureRole',
+    idempotencyKey: 'tenant-123:sp-object-123:reader:sub-123',
+    status: 'granted',
+  },
+  {
+    operationKey: 'subscriptionReader:sub-456',
+    permissionKey: 'subscriptionReader',
+    instanceKey: 'subscriptionReader:/subscriptions/sub-456',
+    operationKind: 'assignAzureRole',
+    idempotencyKey: 'tenant-123:sp-object-123:reader:sub-456',
+    status: 'failed',
+    errorCode: 'subscription_reader_assignment_failed',
+  },
+];
+
+const invalidReaderResultWithFallbackScope: AzureSpSetupOperationResult = {
+  ...independentReaderResults[0],
+  // @ts-expect-error root and subscription Reader work is independent; no fallback scope is represented.
+  requestedScopeKind: 'managementGroup',
+};
+
+const repairExecutionRequest: AzureSpSetupExecutionRequestV1 = {
+  schemaVersion: 1,
+  setupId: 'setup-123',
+  executionId: 'execution-123',
+  executionAttempt: 1,
+  mode: 'grantAdditionalPermissions',
+  companyId: 'comp-123',
+  tenantId: 'tenant-123',
+  initiatedByUserId: 'user-123',
+  authorizationCorrelationId: 'authorization-123',
+  createdAt: '2026-08-09T00:00:00.000Z',
+  selectedSubscriptionIds: ['sub-123', 'sub-456'],
+  selectedPermissionInstanceKeys: [
+    'rootManagementGroupReader:/providers/Microsoft.Management/managementGroups/tenant-123',
+    'subscriptionReader:/subscriptions/sub-123',
+    'subscriptionReader:/subscriptions/sub-456',
+  ],
+  cloudAccountName: 'Production Azure',
+  targetCloudAccountId: 'client-id-123',
+  targetAzureApplicationAppId: 'client-id-123',
+  targetAzureApplicationObjectId: 'application-object-123',
+  targetAzureServicePrincipalObjectId: 'service-principal-object-123',
+  targetReadinessVersion: 'readiness-7',
+  targetSummaryBaselineVersion: 'summary-6',
+  selectedExistingSubscriptionIds: ['sub-123'],
+  selectedNewSubscriptionIds: ['sub-456'],
+  priorOutcomeBaseline: {
+    permissionManifestVersion: 'azure-sp-setup-2026-08-09',
+    result: 'partial',
+  },
+  requestedRefreshComponents: ['resourceInventory', 'billing'],
+  snapshotHash: 'sha256:canonical-non-secret-snapshot',
+};
+
+const invalidExecutionRequestWithToken: AzureSpSetupExecutionRequestV1 = {
+  ...repairExecutionRequest,
+  // @ts-expect-error immutable execution requests cannot contain Microsoft tokens.
+  accessToken: 'not-allowed',
+};
+
+const accountSummary: AzureSpSetupCloudAccountSummaryV1 = {
+  schemaVersion: 1,
+  setupId: 'setup-123',
+  executionId: 'execution-123',
+  mode: 'grantAdditionalPermissions',
+  permissionManifestVersion: 'azure-sp-setup-2026-08-09',
+  result: 'partial',
+  startedAt: '2026-08-09T00:00:00.000Z',
+  completedAt: '2026-08-09T00:10:00.000Z',
+  selectedSubscriptionIds: ['sub-123', 'sub-456'],
+  selectedPermissionInstanceKeys: repairExecutionRequest.selectedPermissionInstanceKeys,
+  operationResults: independentReaderResults,
+  capabilityReadiness: {
+    baselineResourceInventory: 'partial',
+  },
+  subscriptionReadiness: [
+    {
+      subscriptionId: 'sub-123',
+      readerReadiness: 'granted',
+      setupId: 'setup-123',
+      executionId: 'execution-123',
+      verifiedAt: '2026-08-09T00:09:00.000Z',
+    },
+    {
+      subscriptionId: 'sub-456',
+      readerReadiness: 'failed',
+      setupId: 'setup-123',
+      executionId: 'execution-123',
+      errorCode: 'subscription_reader_assignment_failed',
+    },
+  ],
+};
+
+const publicDurableStatus: AzureSpSetupStatusResponse = {
+  ...statusResponse,
+  phase: 'retrying',
+  dispatchStatus: 'continuationPending',
+  dispatchSequence: 1,
+  retryAfterAt: '2026-08-09T00:12:00.000Z',
+  lastHeartbeatAt: '2026-08-09T00:10:00.000Z',
+  executionOwner: 'cloudEngine',
+  cancellationRequestedAt: '2026-08-09T00:10:30.000Z',
+  canCancel: true,
+  canResume: false,
+  canRepair: true,
+  requiresReauthorization: false,
+  accountReadiness: {
+    provisioningStatus: 'partial',
+    setupId: 'setup-123',
+    executionId: 'execution-123',
+    readinessVersion: 'readiness-7',
+    permissionManifestVersion: 'azure-sp-setup-2026-08-09',
+    result: 'partial',
+    capabilityReadiness: accountSummary.capabilityReadiness,
+    subscriptionReadiness: accountSummary.subscriptionReadiness,
+  },
+  subscriptionReadiness: accountSummary.subscriptionReadiness,
+};
+
+const invalidPublicStatusWithEncryptedState: AzureSpSetupStatusResponse = {
+  ...publicDurableStatus,
+  // @ts-expect-error public status is an allowlist and cannot expose protected token state.
+  encryptedMicrosoftTokenCache: 'not-allowed',
+};
+
+const legacySetupState = {
+  setupId: 'legacy-setup-123',
+  mode: 'createCloudAccount' as const,
+  companyId: 'comp-123',
+  initiatedByUserId: 'user-123',
+  phase: 'readyToExecute' as const,
+  result: 'none' as const,
+  codeVerifier: 'legacy-code-verifier',
+  nonce: 'legacy-nonce',
+  permissionManifestVersion: 'azure-sp-setup-2026-05-11',
+  createdAt: '2026-08-08T00:00:00.000Z',
+  updatedAt: '2026-08-08T00:05:00.000Z',
+  expiresAt: '2026-08-08T01:00:00.000Z',
+};
+
+const migratedLegacySetupState: AzureSpSetupDurableStateV1 = {
+  ...legacySetupState,
+  schemaVersion: 1,
+  stateRevision: 0,
+};
+
+const protectedDurableSetupState: AzureSpSetupDurableStateV1 = {
+  ...migratedLegacySetupState,
+  phase: 'retrying',
+  executionId: 'execution-123',
+  executionAttempt: 1,
+  encryptedMicrosoftTokenCache: 'fake-encrypted-token-cache',
+  generatedClientSecretEncrypted: 'fake-encrypted-client-secret',
+  generatedClientSecretKeyId: 'azure-password-key-id',
+  executionRequest: repairExecutionRequest,
+  executionRequestHash: repairExecutionRequest.snapshotHash,
+  executionOwner: 'cloudEngine',
+  dispatchStatus: 'continuationPending',
+  dispatchSequence: 1,
+  dispatchMessageId: 'execution-123:1',
+  dispatchPendingAt: '2026-08-09T00:10:00.000Z',
+  dispatchAttemptCount: 1,
+  cancellationRequestedAt: '2026-08-09T00:10:30.000Z',
+  previousStateRevision: 0,
+  stateBlobETag: 'opaque-etag',
+  currentCheckpoint: 'permissions:subscriptionReader:sub-456',
+  retryCategory: 'propagation',
+  retryCount: 1,
+  retryAfterAt: '2026-08-09T00:12:00.000Z',
+  nextDispatchSequence: 2,
+  continuationMessageId: 'execution-123:2',
+  accountReadiness: publicDurableStatus.accountReadiness,
+  subscriptionReadiness: accountSummary.subscriptionReadiness,
+  targetClaimId: 'sha256:company-and-target-account',
+  targetClaimOwner: 'worker-123',
+  targetClaimExpiresAt: '2026-08-09T00:15:00.000Z',
+  targetedRefreshCheckpoints: [
+    {
+      subscriptionId: 'sub-123',
+      refreshKind: 'resourceInventory',
+      idempotencyKey: 'execution-123:repair:client-id-123:sub-123:resourceInventory',
+      status: 'pending',
+      pendingAt: '2026-08-09T00:10:00.000Z',
+    },
+  ],
+};
+
 void createModeStartRequest;
+void statusHasNoForbiddenPublicKeys;
+void summaryHasNoForbiddenPublicKeys;
+void executionRequestHasNoForbiddenPublicKeys;
 void permissionUpdateStartRequest;
 void setupMode;
 void invalidSetupMode;
@@ -374,3 +619,16 @@ void executeRequest;
 void selectedExistingStorageExecuteRequest;
 void createStorageExecuteRequest;
 void invalidPlanResponse;
+void durableActivePhases;
+void durableTerminalPhases;
+void durableTerminalResults;
+void invalidTerminalResult;
+void independentReaderResults;
+void invalidReaderResultWithFallbackScope;
+void repairExecutionRequest;
+void invalidExecutionRequestWithToken;
+void accountSummary;
+void publicDurableStatus;
+void invalidPublicStatusWithEncryptedState;
+void migratedLegacySetupState;
+void protectedDurableSetupState;

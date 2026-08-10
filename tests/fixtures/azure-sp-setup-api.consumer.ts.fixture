@@ -1,0 +1,16 @@
+import type {
+  AzureSpSetupDurableStateV1,
+  AzureSpSetupExecutionRequestMessage,
+  AzureSpSetupStatusResponse,
+  AzureSpSetupTargetConflictDetails,
+} from '@spottoai/types-package';
+
+declare const state: AzureSpSetupDurableStateV1;
+declare const message: AzureSpSetupExecutionRequestMessage;
+declare const status: AzureSpSetupStatusResponse;
+declare const conflict: AzureSpSetupTargetConflictDetails;
+
+void state;
+void message;
+void status;
+void conflict;

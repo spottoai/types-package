@@ -32,6 +32,8 @@ import type {
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
   AzureGdapSubscriptionMessage,
+  AzureSpSetupExecutionRequestMessage,
+  AzureSpSetupMaintenanceRequestMessage,
   CloudAccountTenantSyncRequest,
   CloudAccountsBillingReconciliationRequestMessage,
   CreatePolicyExemptionRequestMessage,
@@ -42,6 +44,125 @@ import type {
   SubscriptionSyncRequest,
   WorkflowTracingOptions,
 } from '../index';
+
+type AzureSpSetupForbiddenQueueKey =
+  | 'accessToken'
+  | 'refreshToken'
+  | 'tokenCache'
+  | 'encryptedMicrosoftTokenCache'
+  | 'clientSecret'
+  | 'generatedClientSecretEncrypted'
+  | 'credentialReference'
+  | 'permissionPlan'
+  | 'billingExportPlan'
+  | 'selectedSubscriptionIds'
+  | 'selectedPermissionInstanceKeys'
+  | 'readBitmask'
+  | 'writeBitmask'
+  | 'stateBlobPath'
+  | 'sasUrl'
+  | 'messageId';
+
+type DeepForbiddenQueueKeys<T> = T extends readonly (infer Item)[]
+  ? DeepForbiddenQueueKeys<Item>
+  : T extends object
+    ? {
+        [Key in keyof T]-?: Key extends AzureSpSetupForbiddenQueueKey ? Key : DeepForbiddenQueueKeys<T[Key]>;
+      }[keyof T]
+    : never;
+
+type AssertNoForbiddenQueueKey<T> = DeepForbiddenQueueKeys<T> extends never ? true : never;
+
+const azureSpSetupExecutionMessageHasNoForbiddenKeys: AssertNoForbiddenQueueKey<AzureSpSetupExecutionRequestMessage> = true;
+const azureSpSetupMaintenanceMessageHasNoForbiddenKeys: AssertNoForbiddenQueueKey<AzureSpSetupMaintenanceRequestMessage> = true;
+
+const azureSpSetupInitialExecutionMessage: AzureSpSetupExecutionRequestMessage = {
+  schemaVersion: 1,
+  entity: 'azure-sp-setup',
+  action: 'execute',
+  companyId: 'comp-123',
+  tenantId: 'tenant-123',
+  cloudAccountId: 'setup-123',
+  clientId: 'setup-123',
+  setupId: 'setup-123',
+  executionId: 'execution-123',
+  dispatchSequence: 0,
+  correlationId: 'correlation-123',
+  enqueuedAt: '2026-08-09T00:00:00.000Z',
+};
+
+const azureSpSetupContinuationMessage: AzureSpSetupExecutionRequestMessage = {
+  ...azureSpSetupInitialExecutionMessage,
+  dispatchSequence: 1,
+};
+
+const azureSpSetupMaintenanceMessage: AzureSpSetupMaintenanceRequestMessage = {
+  entity: 'azure-sp-setup',
+  action: 'maintain',
+  companyId: '*',
+  cloudAccountId: '*',
+  tenantId: '*',
+  clientId: '*',
+  correlationId: 'azure-sp-setup:maintain:2026-08-09T00:00:00.000Z:0',
+  metadata: {
+    schemaVersion: 1,
+    maintenanceKind: 'recover-and-cleanup',
+    cutoffUtc: '2026-08-08T23:55:00.000Z',
+    maxItems: 100,
+    scheduledWindowUtc: '2026-08-09T00:00:00.000Z',
+    batchNumber: 0,
+    maxBatches: 10,
+  },
+};
+
+const azureSpSetupRequestMessageCompatibility: RequestMessage = azureSpSetupInitialExecutionMessage;
+
+const { setupId: _removedAzureSpSetupId, ...azureSpSetupExecutionWithoutSetupId } = azureSpSetupInitialExecutionMessage;
+// @ts-expect-error execution messages require setup correlation.
+const invalidAzureSpSetupExecutionWithoutSetupId: AzureSpSetupExecutionRequestMessage = azureSpSetupExecutionWithoutSetupId;
+
+const { executionId: _removedAzureSpExecutionId, ...azureSpSetupExecutionWithoutExecutionId } = azureSpSetupInitialExecutionMessage;
+// @ts-expect-error execution messages require execution correlation.
+const invalidAzureSpSetupExecutionWithoutExecutionId: AzureSpSetupExecutionRequestMessage = azureSpSetupExecutionWithoutExecutionId;
+
+const invalidAzureSpSetupExecutionMessageWithToken: AzureSpSetupExecutionRequestMessage = {
+  ...azureSpSetupInitialExecutionMessage,
+  // @ts-expect-error setup queue messages must never carry tokens.
+  accessToken: 'not-allowed',
+};
+
+const invalidAzureSpSetupExecutionMessageWithMetadata: AzureSpSetupExecutionRequestMessage = {
+  ...azureSpSetupInitialExecutionMessage,
+  // @ts-expect-error execution messages cannot carry arbitrary metadata.
+  metadata: { selectedSubscriptionIds: ['sub-123'] },
+};
+
+const invalidAzureSpSetupExecutionMessageWithBrokerId: AzureSpSetupExecutionRequestMessage = {
+  ...azureSpSetupInitialExecutionMessage,
+  // @ts-expect-error Service Bus MessageId is a broker property, not a body field.
+  messageId: 'execution-123:0',
+};
+
+const invalidAzureSpSetupExecutionSchemaVersion: AzureSpSetupExecutionRequestMessage = {
+  ...azureSpSetupInitialExecutionMessage,
+  // @ts-expect-error execution messages require schema version 1.
+  schemaVersion: 2,
+};
+
+const invalidAzureSpSetupMaintenanceSentinel: AzureSpSetupMaintenanceRequestMessage = {
+  ...azureSpSetupMaintenanceMessage,
+  // @ts-expect-error maintenance messages use the existing system-wide wildcard identifiers.
+  companyId: 'comp-123',
+};
+
+const invalidAzureSpSetupMaintenanceSchemaVersion: AzureSpSetupMaintenanceRequestMessage = {
+  ...azureSpSetupMaintenanceMessage,
+  metadata: {
+    ...azureSpSetupMaintenanceMessage.metadata,
+    // @ts-expect-error maintenance metadata requires schema version 1.
+    schemaVersion: 2,
+  },
+};
 
 const subscription: Subscription = {
   companyId: 'comp-123',
@@ -828,3 +949,17 @@ void missingPolicyExemptionAssignment;
 void missingPolicyExemptionCategory;
 void missingPolicyExemptionDescription;
 void invalidPolicyExemptionSchemaVersion;
+void azureSpSetupExecutionMessageHasNoForbiddenKeys;
+void azureSpSetupMaintenanceMessageHasNoForbiddenKeys;
+void azureSpSetupInitialExecutionMessage;
+void azureSpSetupContinuationMessage;
+void azureSpSetupMaintenanceMessage;
+void azureSpSetupRequestMessageCompatibility;
+void invalidAzureSpSetupExecutionWithoutSetupId;
+void invalidAzureSpSetupExecutionWithoutExecutionId;
+void invalidAzureSpSetupExecutionMessageWithToken;
+void invalidAzureSpSetupExecutionMessageWithMetadata;
+void invalidAzureSpSetupExecutionMessageWithBrokerId;
+void invalidAzureSpSetupExecutionSchemaVersion;
+void invalidAzureSpSetupMaintenanceSentinel;
+void invalidAzureSpSetupMaintenanceSchemaVersion;

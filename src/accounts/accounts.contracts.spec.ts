@@ -33,7 +33,7 @@ import type {
   SubscriptionSyncFeatureOptOutsUpdateRequest,
 } from './accounts';
 import type { CloudAccountTenantSyncRequestMessage } from '../index';
-import type { CompanySubscription } from '../azure/subscriptions';
+import type { CompanySubscription, SecureScoreEvidence } from '../azure/subscriptions';
 import {
   AZURE_SYNC_FEATURE_METADATA,
   AZURE_SYNC_FEATURE_ORDER,
@@ -506,10 +506,62 @@ const subscriptionAccountWithSyncFeatureOptOuts: SubscriptionAccount = {
   companyId: 'comp-123',
 };
 
+const availableZeroSecureScoreEvidence: SecureScoreEvidence = {
+  status: 'available',
+  percentage: 0,
+  currentScore: 0,
+  maxScore: 100,
+  weight: 1,
+  observedAt: '2026-08-10T00:00:00.000Z',
+};
+
+const subscriptionAccountWithSecureScoreEvidence: SubscriptionAccount = {
+  ...subscriptionAccountWithSyncFeatureOptOuts,
+  secureScore: 0,
+  secureScoreEvidence: availableZeroSecureScoreEvidence,
+};
+
+const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
+  ...cloudAccountWithRecommendationEffortProfile,
+  azureSpSetupProvisioningStatus: 'partial',
+  azureSpSetupActiveSetupId: 'setup-123',
+  azureSpSetupActiveExecutionId: 'execution-123',
+  azureSpSetupReadinessVersion: 'readiness-7',
+  azureSpSetupActiveRepairSetupId: 'repair-setup-123',
+  azureSpSetupActiveRepairExecutionId: 'repair-execution-123',
+  azureSpSetupActiveRepairPhase: 'retrying',
+  azureSpSetupLastRepairResult: 'partial',
+  azureSpSetupLastRepairAttemptedAt: '2026-08-09T00:00:00.000Z',
+  azureSpSetupPermissionManifestVersion: 'azure-sp-setup-2026-08-09',
+  azureSpSetupLastResult: 'partial',
+  azureSpSetupLastAttemptedAt: '2026-08-09T00:00:00.000Z',
+  azureSpSetupSummaryJson: '{"schemaVersion":1}',
+};
+
+const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  azureSpSetupReaderReadiness: 'granted',
+  azureSpSetupReadinessSetupId: 'setup-123',
+  azureSpSetupReadinessExecutionId: 'execution-123',
+  azureSpSetupReadinessVerifiedAt: '2026-08-09T00:10:00.000Z',
+};
+
+const subscriptionNeedingAzureSpSetupRepair: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  azureSpSetupReaderReadiness: 'failed',
+  azureSpSetupReadinessErrorCode: 'subscription_reader_assignment_failed',
+};
+
 const companySubscriptionWithSyncFeatureOptOuts: CompanySubscription = {
   ...subscriptionInfoBaseWithSyncFeatureOptOuts,
   id: 'sub-123',
   companyId: 'comp-123',
+};
+
+const companySubscriptionWithSecureScoreEvidence: CompanySubscription = {
+  ...companySubscriptionWithSyncFeatureOptOuts,
+  secureScore: 0,
+  secureScoreEvidence: availableZeroSecureScoreEvidence,
 };
 
 const publicGdapCloudAccountDto: PublicCloudAccountDto = {
@@ -729,7 +781,12 @@ void invalidSubscriptionSyncFeatureOptOutsUpdateRequest;
 void invalidCloudAccountSyncFeatureOptOutsUpdateRequest;
 void subscriptionInfoBaseWithSyncFeatureOptOuts;
 void subscriptionAccountWithSyncFeatureOptOuts;
+void subscriptionAccountWithSecureScoreEvidence;
+void cloudAccountWithAzureSpSetupReadiness;
+void subscriptionWithAzureSpSetupReadiness;
+void subscriptionNeedingAzureSpSetupRepair;
 void companySubscriptionWithSyncFeatureOptOuts;
+void companySubscriptionWithSecureScoreEvidence;
 void publicGdapCloudAccountDto;
 void invalidPublicCloudAccountTokenCacheDto;
 void invalidPublicCloudAccountTokenRelayPayloadDto;

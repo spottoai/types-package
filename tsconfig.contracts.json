@@ -6,6 +6,7 @@
   },
   "include": [
     "src/accounts/accounts.contracts.spec.ts",
+    "src/accounts/azureSpSetup.contracts.spec.ts",
     "src/ai/ai.contracts.spec.ts",
     "src/aws/aws.contracts.spec.ts",
     "src/aws/estates.contracts.spec.ts",
@@ -13,6 +14,7 @@
     "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/aws/portalPublicArtifacts.contracts.spec.ts",
     "src/azure/financialCorrectness.contracts.spec.ts",
+    "src/azure/azureViewSet.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
     "src/azure/payloads.contracts.spec.ts",
     "src/azure/regulatoryCompliance.contracts.spec.ts",
