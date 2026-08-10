@@ -287,15 +287,83 @@ export interface MonthlyMetricsFile {
   metrics: AzureResourceMetrics[];
 }
 
+export const METRIC_COLLECTION_COVERAGE_SCHEMA_VERSION = 2 as const;
+export const MAX_METRIC_DIAGNOSTIC_GROUPS = 20;
+
+export type MetricCollectionCoverageStatus = 'collected' | 'partial' | 'no-series' | 'disabled' | 'unsupported' | 'unavailable';
+
+export type MetricCollectionOutcomeStatus = Exclude<MetricCollectionCoverageStatus, 'partial'>;
+
+export type MetricCollectionFailureCategory = 'permission' | 'transient' | 'provider' | 'configuration' | 'internal' | 'storage';
+
+/**
+ * Sanitized failure evidence suitable for persisted resource documents.
+ * Producers must allowlist errorCode values and must not include raw messages,
+ * URLs, request bodies, stack traces, tokens, or resource identifiers.
+ */
+export interface MetricCollectionFailure {
+  category: MetricCollectionFailureCategory;
+  statusCode?: number;
+  errorCode?: string;
+  retryable: boolean;
+}
+
+export interface MetricCollectionOutcome {
+  name: string;
+  status: MetricCollectionOutcomeStatus;
+  metricNames: string[];
+  lastAttemptedAt: string;
+  lastSuccessfulAt?: string;
+  failure?: MetricCollectionFailure;
+}
+
+/**
+ * Latest-attempt provenance for one rolling metrics document. The retained
+ * metric names may come from an earlier successful attempt.
+ */
+export interface MetricCollectionCoverageV2 {
+  schemaVersion: typeof METRIC_COLLECTION_COVERAGE_SCHEMA_VERSION;
+  status: MetricCollectionCoverageStatus;
+  lastAttemptedAt: string;
+  lastSuccessfulAt?: string;
+  availableMetricNames: string[];
+  collections: MetricCollectionOutcome[];
+}
+
+export interface MetricDiagnosticGroup {
+  resourceType: string;
+  collection: string;
+  category: MetricCollectionFailureCategory;
+  statusCode?: number;
+  errorCode?: string;
+  retryable: boolean;
+  count: number;
+}
+
+export interface MetricDiagnosticsSummary {
+  /** Producers cap this array at MAX_METRIC_DIAGNOSTIC_GROUPS. */
+  groups: MetricDiagnosticGroup[];
+  omittedGroupCount: number;
+}
+
 export interface AzureResourceMetrics {
   schemaVersion?: number;
   id: string;
   resourceId?: string;
   metrics: AzureMetricValue[];
   childMetrics?: AzureResourceMetrics[];
+  coverage?: MetricCollectionCoverageV2;
 }
 
-export type AzureResourceMetricsDocument = AzureResourceMetrics;
+/**
+ * Stored/read compatibility shape. Current writers emit id; older nested
+ * documents may identify the resource through resourceId instead.
+ */
+export type AzureResourceMetricsDocument = Omit<AzureResourceMetrics, 'id' | 'childMetrics'> & {
+  id?: string;
+  resourceId?: string;
+  childMetrics?: AzureResourceMetricsDocument[];
+};
 
 export interface AzureMetricValue {
   name: string;
