@@ -411,7 +411,12 @@ export interface RecommendationResourceAssociation {
   relationship?: ResourceRelationship;
 }
 
-export type RecommendationSavingsCalculationBasis = 'actual-billing' | 'projected-runtime' | 'target-pricing' | 'commitment-pricing';
+export type RecommendationSavingsCalculationBasis =
+  | 'actual-billing'
+  | 'projected-monthly'
+  | 'projected-runtime'
+  | 'target-pricing'
+  | 'commitment-pricing';
 
 export interface ResourceRecommendationSavingsDetails {
   headlineScenario: {
@@ -435,6 +440,11 @@ export interface ResourceRecommendationSavingsDetails {
     windowStart?: string;
     windowEnd?: string;
   };
+}
+
+/** A recommendation carrying a financial scenario scoped to one detailed resource artifact. */
+export interface ResourceScopedRecommendation extends Recommendation {
+  savingsDetails?: ResourceRecommendationSavingsDetails;
 }
 
 export interface RecommendationResource {
