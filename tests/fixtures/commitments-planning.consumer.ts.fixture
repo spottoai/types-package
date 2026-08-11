@@ -1,0 +1,72 @@
+import { ProviderName, type AwsCommitmentsPlanningView } from '@spottoai/types-package';
+
+const awsCommitmentsPlanningView = {
+  version: '2.0',
+  generatedAt: '2026-08-11T00:00:00.000Z',
+  providerScope: {
+    providerName: ProviderName.Aws,
+    providerScopeId: '123456789012',
+  },
+  utilizationSummary: { total: 0, withData: 0, byBenefitType: [] },
+  expirySummary: {
+    expired: 0,
+    expiring30d: 0,
+    expiring60d: 0,
+    expiring90d: 0,
+    expiring180d: 0,
+  },
+  inventory: [
+    {
+      id: 'ri-123',
+      benefitType: 'reservation',
+      commitmentFamily: 'compute-reservation',
+      sourceKind: 'aws-native',
+      scope: 'Single',
+      appliedScopeType: 'linked-account',
+      appliedScopeProperties: {
+        accountId: '123456789012',
+        region: 'us-east-1',
+        availabilityZone: 'us-east-1a',
+      },
+      type: 'ec2-reserved-instance',
+      status: 'active',
+      provider: ProviderName.Aws,
+      shape: {
+        provider: 'aws',
+        region: 'us-east-1',
+        availabilityZone: 'us-east-1a',
+        skuName: 'm7i.large',
+      },
+    },
+  ],
+  resourceCoverage: [],
+  obsoleteCandidates: [],
+  pricingContext: { source: 'recommendation-apis', currency: 'USD' },
+  termStrategy: [],
+  purchaseRecommendations: [
+    {
+      id: 'sp-rec-123',
+      groupKey: 'compute-savings-plan:us-east-1',
+      commitmentFamily: 'compute-savings-plan',
+      action: 'buy',
+      purchaseScope: 'linked-account',
+      appliedScopeProperties: {
+        accountId: '123456789012',
+        region: 'us-east-1',
+      },
+      targetShape: {
+        provider: 'aws',
+        commitmentFamily: 'compute-savings-plan',
+        region: 'us-east-1',
+      },
+      source: {
+        sourceKind: 'aws-native',
+        sourceId: 'sp-rec-123',
+      },
+      termMonths: 12,
+      quantity: 1,
+    },
+  ],
+} satisfies AwsCommitmentsPlanningView;
+
+void awsCommitmentsPlanningView;

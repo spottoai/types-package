@@ -13,6 +13,7 @@ const recommendationWorkflowUiFixturePath = join(packageRoot, 'tests', 'fixtures
 const azureSpSetupApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-api.consumer.ts.fixture');
 const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-cloud-engine.consumer.ts.fixture');
 const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
+const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -67,6 +68,7 @@ try {
   await copyFile(azureSpSetupApiFixturePath, join(consumerRoot, 'azure-sp-setup-api.consumer.ts'));
   await copyFile(azureSpSetupCloudEngineFixturePath, join(consumerRoot, 'azure-sp-setup-cloud-engine.consumer.ts'));
   await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
+  await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
 
   run(
     npmCommand,
@@ -93,6 +95,7 @@ try {
       'azure-sp-setup-api.consumer.ts',
       'azure-sp-setup-cloud-engine.consumer.ts',
       'azure-sp-setup-ui.consumer.ts',
+      'commitments-planning.consumer.ts',
     ],
     consumerRoot
   );

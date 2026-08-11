@@ -1,3 +1,4 @@
+import type { ProviderName, ProviderScope } from '../common/provider.js';
 import type {
   BenefitCostBasis,
   BenefitScope,
@@ -27,13 +28,40 @@ export type CommitmentsCommitmentFamily =
   | 'azure-openai-provisioned-throughput-reservation'
   | 'generic-reservation';
 
-export type CommitmentsSourceKind = 'azure-native' | 'spotto-derived' | 'fallback-heuristic' | 'manual' | 'unknown';
+export type CommitmentsSourceKind = 'azure-native' | 'aws-native' | 'spotto-derived' | 'fallback-heuristic' | 'manual' | 'unknown';
 export type CommitmentsConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none' | 'unknown';
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
-export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsAppliedScopeType =
+  | 'single-resource-group'
+  | 'single-subscription'
+  | 'linked-account'
+  | 'management-group'
+  | 'shared'
+  | 'unknown';
+export interface CommitmentsAppliedScopeProperties {
+  subscriptionId?: string;
+  resourceGroupId?: string;
+  tenantId?: string;
+  managementGroupId?: string;
+  accountId?: string;
+  region?: string;
+  availabilityZone?: string;
+}
+
+/** Public identity for an Azure commitments artifact. */
+export interface AzureCommitmentsPlanningProviderScope extends ProviderScope {
+  providerName: ProviderName.Azure;
+}
+
+/** Public identity for an AWS commitments artifact. */
+export interface AwsCommitmentsPlanningProviderScope extends ProviderScope {
+  providerName: ProviderName.Aws;
+}
+
+export type CommitmentsPlanningProviderScope = AzureCommitmentsPlanningProviderScope | AwsCommitmentsPlanningProviderScope;
 export type CommitmentsInventoryStatus =
   | 'active'
   | 'expired'
@@ -75,14 +103,16 @@ export type CommitmentsStorageBillingModel =
   | 'premium'
   | 'unknown';
 
-export interface CommitmentsPlanningView {
+export interface CommitmentsPlanningViewBase<
+  TInventoryItem extends CommitmentsInventoryItem = CommitmentsInventoryItem,
+  TPurchaseRecommendation extends CommitmentsPurchaseRecommendation = CommitmentsPurchaseRecommendation,
+> {
   version: CommitmentsPlanningVersion;
   generatedAt: string;
   month?: string;
-  subscription?: SubscriptionSummaryLite;
   utilizationSummary: CommitmentsUtilizationSummary;
   expirySummary: CommitmentsExpirySummary;
-  inventory: CommitmentsInventoryItem[];
+  inventory: TInventoryItem[];
   resourceCoverage: CommitmentsResourceCoverageItem[];
   obsoleteCandidates: CommitmentsObsoleteCandidate[];
   reallocationOpportunities?: CommitmentsReallocationOpportunity[];
@@ -91,7 +121,7 @@ export interface CommitmentsPlanningView {
   freshness?: CommitmentsFreshnessSummary;
   /** @deprecated Legacy read compatibility only. New artifacts should use purchaseRecommendations. */
   vendorRecommendations?: CommitmentsVendorRecommendation[];
-  purchaseRecommendations?: CommitmentsPurchaseRecommendation[];
+  purchaseRecommendations?: TPurchaseRecommendation[];
   diagnostics?: CommitmentsPlanningDiagnostics;
   coverage?: CommitmentsCoverageSummary[];
   renewals?: CommitmentsRenewalDecision[];
@@ -101,6 +131,26 @@ export interface CommitmentsPlanningView {
   retirementImpact?: CommitmentsRetirementImpactScenario[];
   phasedOptions?: CommitmentsPhasedOption[];
 }
+
+/** Legacy Azure wire shape retained unchanged while Azure producers migrate. */
+export interface LegacyCommitmentsPlanningView extends CommitmentsPlanningViewBase {
+  providerScope?: never;
+  subscription?: SubscriptionSummaryLite;
+}
+
+/** Provider-aware Azure wire shape. Route validation must compare both identities. */
+export interface AzureCommitmentsPlanningView extends CommitmentsPlanningViewBase {
+  providerScope: AzureCommitmentsPlanningProviderScope;
+  subscription: SubscriptionSummaryLite;
+}
+
+/** AWS wire shape with an account identity and AWS-specific inventory and recommendation evidence. */
+export interface AwsCommitmentsPlanningView extends CommitmentsPlanningViewBase<AwsCommitmentsInventoryItem, AwsCommitmentsPurchaseRecommendation> {
+  providerScope: AwsCommitmentsPlanningProviderScope;
+  subscription?: never;
+}
+
+export type CommitmentsPlanningView = LegacyCommitmentsPlanningView | AzureCommitmentsPlanningView | AwsCommitmentsPlanningView;
 
 export interface CommitmentsUtilizationSummary {
   total: number;
@@ -134,14 +184,11 @@ export interface CommitmentsInventoryItem {
   commitmentFamily?: CommitmentsCommitmentFamily;
   sourceKind?: CommitmentsSourceKind;
   sourceId?: string;
+  provider?: ProviderName;
+  shape?: CommitmentShape;
   scope: BenefitScope;
   appliedScopeType?: CommitmentsAppliedScopeType;
-  appliedScopeProperties?: {
-    subscriptionId?: string;
-    resourceGroupId?: string;
-    tenantId?: string;
-    managementGroupId?: string;
-  };
+  appliedScopeProperties?: CommitmentsAppliedScopeProperties;
   type: string;
   displayName?: string;
   status: CommitmentsInventoryStatus;
@@ -230,6 +277,7 @@ export interface CommitmentShape {
   normalizedSkuName?: string;
   location?: string;
   region?: string;
+  availabilityZone?: string;
   platform?: 'linux' | 'windows' | 'unknown';
   reservationProductName?: string;
   reservedResourceType?: string;
@@ -239,6 +287,10 @@ export interface CommitmentShape {
   unit?: CommitmentsReservationUnit | string;
   attributes?: Record<string, string | number | boolean | undefined>;
 }
+
+export type AwsCommitmentShape = Omit<CommitmentShape, 'provider'> & {
+  provider: 'aws';
+};
 
 export interface CommitmentEligibilityBlocker {
   code:
@@ -310,6 +362,10 @@ export interface CommitmentsSourceMetadata {
   notes?: string[];
 }
 
+export type AwsCommitmentsSourceMetadata = Omit<CommitmentsSourceMetadata, 'sourceKind'> & {
+  sourceKind: 'aws-native';
+};
+
 export interface CommitmentsMoneyAmount {
   amount: number;
   currency: string;
@@ -378,7 +434,13 @@ export interface CommitmentsVendorRecommendation {
   linkedCommitmentIds?: string[];
 }
 
-export type CommitmentsPurchaseRecommendationScope = 'single-resource-group' | 'single-subscription' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsPurchaseRecommendationScope =
+  | 'single-resource-group'
+  | 'single-subscription'
+  | 'linked-account'
+  | 'management-group'
+  | 'shared'
+  | 'unknown';
 
 export type CommitmentsPurchaseRecommendationCoverageState = 'uncovered' | 'partially-covered' | 'covered' | 'unknown';
 
@@ -453,12 +515,7 @@ export interface CommitmentsPurchaseRecommendation {
   quotePolicy?: CommitmentQuotePolicy;
   unlockFinancialLedger?: CommitmentUnlockFinancialLedger;
   purchaseScope?: CommitmentsPurchaseRecommendationScope;
-  appliedScopeProperties?: {
-    subscriptionId?: string;
-    resourceGroupId?: string;
-    tenantId?: string;
-    managementGroupId?: string;
-  };
+  appliedScopeProperties?: CommitmentsAppliedScopeProperties;
   source?: CommitmentsSourceMetadata;
   title?: string;
   description?: string;
@@ -483,6 +540,35 @@ export interface CommitmentsPurchaseRecommendation {
   linkedCommitmentIds?: string[];
   notes?: string[];
 }
+
+export interface AwsCommitmentsAppliedScopeProperties {
+  accountId: string;
+  region?: string;
+  availabilityZone?: string;
+}
+
+export type AwsCommitmentsInventoryItem = Omit<
+  CommitmentsInventoryItem,
+  'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId'
+> & {
+  sourceKind: 'aws-native';
+  provider: ProviderName.Aws;
+  shape?: AwsCommitmentShape;
+  subscriptionId?: never;
+  appliedScopeType: 'linked-account';
+  appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
+};
+
+export type AwsCommitmentsPurchaseRecommendation = Omit<
+  CommitmentsPurchaseRecommendation,
+  'source' | 'currentShape' | 'targetShape' | 'purchaseScope' | 'appliedScopeProperties'
+> & {
+  source: AwsCommitmentsSourceMetadata;
+  currentShape?: AwsCommitmentShape;
+  targetShape: AwsCommitmentShape;
+  purchaseScope: 'linked-account';
+  appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
+};
 
 export interface CommitmentsPlanningDiagnostics {
   purchaseRecommendations?: CommitmentsPurchaseRecommendationDiagnostics;

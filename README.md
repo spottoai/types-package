@@ -50,6 +50,12 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+The root entry point exports one provider-aware `CommitmentsPlanningView` for
+Azure and AWS. Existing Azure artifacts remain compatible through the legacy
+branch, while the AWS branch requires a minimal account identity, `aws-native`
+source evidence, linked-account scope metadata, and provider-specific inventory
+shapes without introducing an AWS-only planning DTO.
+
 The root and `/aws` entry points export the secret-free `AwsEstatesManifest`,
 AWS estate/account/billing-source command union, and company trust-setup
 contracts. The API-owned desired-state document is stored as
