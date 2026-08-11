@@ -1,5 +1,6 @@
 import {
   ProviderName,
+  ProviderScopeType,
   type AwsCommitmentsInventoryItem,
   type AwsCommitmentsPlanningView,
   type AwsCommitmentsPurchaseRecommendation,
@@ -7,7 +8,13 @@ import {
   type CommitmentsInventoryItem,
   type CommitmentsPlanningView,
   type CommitmentsPurchaseRecommendation,
+  type ProviderScopeRecord,
+  type ProviderScopedCommitmentsPlanningView,
 } from '../index';
+
+interface ExtendedLegacyCommitmentsPlanningView extends CommitmentsPlanningView {
+  consumerExtension?: string;
+}
 
 const baseView = {
   version: '2.0',
@@ -40,6 +47,14 @@ const legacyAzureView = {
     displayName: 'Azure Production',
   },
 } satisfies CommitmentsPlanningView;
+
+const extendedLegacyAzureView = {
+  ...legacyAzureView,
+  consumerExtension: 'consumer-owned',
+} satisfies ExtendedLegacyCommitmentsPlanningView;
+
+// @ts-expect-error New provider-aware producers cannot omit provider identity.
+const invalidProviderlessStrictView: ProviderScopedCommitmentsPlanningView = baseView;
 
 const providerAwareAzureView = {
   ...legacyAzureView,
@@ -138,9 +153,25 @@ const awsView = {
 
 const invalidAwsSubscriptionIdentity = {
   ...awsView,
-  subscription: legacyAzureView.subscription,
   // @ts-expect-error AWS artifacts cannot also carry legacy Azure subscription identity.
-} satisfies CommitmentsPlanningView;
+  subscription: legacyAzureView.subscription,
+} satisfies AwsCommitmentsPlanningView;
+
+const internalProviderScope = {
+  providerName: ProviderName.Aws,
+  providerScopeId: '123456789012',
+  companyId: 'company-123',
+  scopeType: ProviderScopeType.Account,
+  name: 'AWS Production',
+  cloudAccountId: 'cloud-account-123',
+  status: 'active',
+} satisfies ProviderScopeRecord;
+
+const invalidTypedPublicProviderScope = {
+  ...awsView,
+  // @ts-expect-error Internal provider-index records are not public artifact identities.
+  providerScope: internalProviderScope,
+} satisfies AwsCommitmentsPlanningView;
 
 const invalidPublicProviderScopeMetadata = {
   ...awsView,
@@ -181,6 +212,42 @@ const invalidAwsRecommendationShape = {
   },
 } satisfies AwsCommitmentsPurchaseRecommendation;
 
+const invalidAwsRecommendationEligibility = {
+  ...awsPurchaseRecommendation,
+  eligibility: {
+    status: 'available_now',
+    action: 'buy',
+    targetShape: {
+      // @ts-expect-error AWS recommendation eligibility cannot carry Azure shapes.
+      provider: 'azure',
+    },
+  },
+} satisfies AwsCommitmentsPurchaseRecommendation;
+
+const invalidAwsPricingQuote = {
+  ...awsPurchaseRecommendation,
+  // @ts-expect-error Azure reservation quote payloads are forbidden on AWS recommendations.
+  pricingQuote: {},
+} satisfies AwsCommitmentsPurchaseRecommendation;
+
+const invalidAwsStorageCapacity = {
+  ...awsView,
+  // @ts-expect-error Azure storage-capacity planning is forbidden on AWS views.
+  storageCapacity: {},
+} satisfies AwsCommitmentsPlanningView;
+
+const invalidAwsCredentialHealth = {
+  ...awsView,
+  // @ts-expect-error Internal Azure credential health is forbidden on AWS views.
+  credentialHealth: { credentialId: 'credential-123' },
+} satisfies AwsCommitmentsPlanningView;
+
+const invalidCommitmentFamily = {
+  ...awsInventoryItem,
+  // @ts-expect-error Commitment families use a closed provider-neutral vocabulary.
+  commitmentFamily: 'ec2-reserved-instance',
+} satisfies CommitmentsInventoryItem;
+
 const invalidSourceKind = {
   ...awsInventoryItem,
   // @ts-expect-error Commitment sources use a closed provider-aware vocabulary.
@@ -207,15 +274,23 @@ const invalidBenefitScope = {
 
 void [
   legacyAzureView,
+  extendedLegacyAzureView,
+  invalidProviderlessStrictView,
   providerAwareAzureView,
   invalidProviderAwareAzureIdentity,
   awsView,
   invalidAwsSubscriptionIdentity,
   invalidPublicProviderScopeMetadata,
+  invalidTypedPublicProviderScope,
   invalidAwsInventoryProvider,
   invalidLinkedAccountIdentity,
   invalidAwsRecommendationSource,
   invalidAwsRecommendationShape,
+  invalidAwsRecommendationEligibility,
+  invalidAwsPricingQuote,
+  invalidAwsStorageCapacity,
+  invalidAwsCredentialHealth,
+  invalidCommitmentFamily,
   invalidSourceKind,
   invalidAppliedScope,
   invalidPurchaseScope,

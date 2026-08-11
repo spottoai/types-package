@@ -54,11 +54,21 @@ export interface CommitmentsAppliedScopeProperties {
 /** Public identity for an Azure commitments artifact. */
 export interface AzureCommitmentsPlanningProviderScope extends ProviderScope {
   providerName: ProviderName.Azure;
+  companyId?: never;
+  scopeType?: never;
+  name?: never;
+  cloudAccountId?: never;
+  status?: never;
 }
 
 /** Public identity for an AWS commitments artifact. */
 export interface AwsCommitmentsPlanningProviderScope extends ProviderScope {
   providerName: ProviderName.Aws;
+  companyId?: never;
+  scopeType?: never;
+  name?: never;
+  cloudAccountId?: never;
+  status?: never;
 }
 
 export type CommitmentsPlanningProviderScope = AzureCommitmentsPlanningProviderScope | AwsCommitmentsPlanningProviderScope;
@@ -132,14 +142,24 @@ export interface CommitmentsPlanningViewBase<
   phasedOptions?: CommitmentsPhasedOption[];
 }
 
-/** Legacy Azure wire shape retained unchanged while Azure producers migrate. */
-export interface LegacyCommitmentsPlanningView extends CommitmentsPlanningViewBase {
-  providerScope?: never;
+/**
+ * Backward-compatible commitments view surface.
+ *
+ * New provider-aware producers and runtime validators should use
+ * ProviderScopedCommitmentsPlanningView instead.
+ */
+export interface CommitmentsPlanningView extends CommitmentsPlanningViewBase {
+  providerScope?: CommitmentsPlanningProviderScope;
   subscription?: SubscriptionSummaryLite;
 }
 
+/** Legacy Azure wire shape retained unchanged while Azure producers migrate. */
+export interface LegacyCommitmentsPlanningView extends CommitmentsPlanningView {
+  providerScope?: never;
+}
+
 /** Provider-aware Azure wire shape. Route validation must compare both identities. */
-export interface AzureCommitmentsPlanningView extends CommitmentsPlanningViewBase {
+export interface AzureCommitmentsPlanningView extends CommitmentsPlanningView {
   providerScope: AzureCommitmentsPlanningProviderScope;
   subscription: SubscriptionSummaryLite;
 }
@@ -148,9 +168,12 @@ export interface AzureCommitmentsPlanningView extends CommitmentsPlanningViewBas
 export interface AwsCommitmentsPlanningView extends CommitmentsPlanningViewBase<AwsCommitmentsInventoryItem, AwsCommitmentsPurchaseRecommendation> {
   providerScope: AwsCommitmentsPlanningProviderScope;
   subscription?: never;
+  credentialHealth?: never;
+  storageCapacity?: never;
 }
 
-export type CommitmentsPlanningView = LegacyCommitmentsPlanningView | AzureCommitmentsPlanningView | AwsCommitmentsPlanningView;
+/** Strict provider-aware contract for new producers and validation boundaries. */
+export type ProviderScopedCommitmentsPlanningView = AzureCommitmentsPlanningView | AwsCommitmentsPlanningView;
 
 export interface CommitmentsUtilizationSummary {
   total: number;
@@ -366,6 +389,17 @@ export type AwsCommitmentsSourceMetadata = Omit<CommitmentsSourceMetadata, 'sour
   sourceKind: 'aws-native';
 };
 
+export type AwsCommitmentEligibilityMetadata = Omit<
+  CommitmentEligibilityMetadata,
+  'currentShape' | 'targetShape' | 'quotePolicy' | 'unlockFinancialLedger' | 'source'
+> & {
+  currentShape?: AwsCommitmentShape;
+  targetShape?: AwsCommitmentShape;
+  quotePolicy?: never;
+  unlockFinancialLedger?: never;
+  source?: AwsCommitmentsSourceMetadata;
+};
+
 export interface CommitmentsMoneyAmount {
   amount: number;
   currency: string;
@@ -561,13 +595,25 @@ export type AwsCommitmentsInventoryItem = Omit<
 
 export type AwsCommitmentsPurchaseRecommendation = Omit<
   CommitmentsPurchaseRecommendation,
-  'source' | 'currentShape' | 'targetShape' | 'purchaseScope' | 'appliedScopeProperties'
+  | 'eligibility'
+  | 'source'
+  | 'currentShape'
+  | 'targetShape'
+  | 'quotePolicy'
+  | 'unlockFinancialLedger'
+  | 'purchaseScope'
+  | 'appliedScopeProperties'
+  | 'pricingQuote'
 > & {
+  eligibility?: AwsCommitmentEligibilityMetadata;
   source: AwsCommitmentsSourceMetadata;
   currentShape?: AwsCommitmentShape;
   targetShape: AwsCommitmentShape;
+  quotePolicy?: never;
+  unlockFinancialLedger?: never;
   purchaseScope: 'linked-account';
   appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
+  pricingQuote?: never;
 };
 
 export interface CommitmentsPlanningDiagnostics {
