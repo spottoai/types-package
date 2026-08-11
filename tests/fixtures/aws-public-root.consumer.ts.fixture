@@ -18,6 +18,7 @@ import {
   type DailyMetrics,
   type DecompositionTree,
   type PublicCloudAccountDto,
+  ProviderName,
   type ResourceCostPeriodMetadata,
   type ResourceSpend,
 } from '@spottoai/types-package';
@@ -25,6 +26,8 @@ import {
   AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
+  AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
   AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
   AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PUBLIC_ARTIFACT_TYPES,
@@ -36,6 +39,7 @@ import {
   validateAwsPortalAccountSummaryAiCostSummaryArtifact,
   validateAwsPortalAccountSummaryDetailArtifact,
   validateAwsPortalResourceCollectionDetailArtifact,
+  validateAwsPortalRelationshipArtifact,
   type AwsPluginGenerationManifest,
   type AwsPluginResourceDetailArtifact,
   type AwsPluginResourceArtifact,
@@ -46,9 +50,12 @@ import {
   type AwsPortalAccountSummaryDetailArtifact,
   type AwsPortalLifecycleArtifact,
   type AwsPortalRelationshipArtifact,
+  type AwsPortalPublicLogicalName,
   type AwsPortalResourceCollectionArtifact,
   type AwsPortalResourceCollectionDetailArtifact,
   type AwsEstatesManifest as AwsSubpathEstatesManifest,
+  type PublicRelationshipArtifact,
+  type PublicRelationshipProviderScope,
 } from '@spottoai/types-package/aws';
 
 const commandEntities: readonly AwsCommandEntity[] = AWS_COMMAND_ENTITIES;
@@ -68,16 +75,25 @@ const portalArtifactConstants = [
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
   AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
+  AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
+  AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
 ] as const;
+const relationshipLogicalName: AwsPortalPublicLogicalName = AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME;
 const portalArtifactValidators = [
   validateAwsPortalResourceCollectionDetailArtifact,
   validateAwsPortalAccountSummaryDetailArtifact,
   validateAwsPortalAccountSummaryAiCostSummaryArtifact,
+  validateAwsPortalRelationshipArtifact,
 ] as const;
 type PackedAwsPortalContracts =
   | AwsPortalResourceCollectionDetailArtifact
   | AwsPortalAccountSummaryDetailArtifact
-  | AwsPortalAccountSummaryAiCostSummaryArtifact;
+  | AwsPortalAccountSummaryAiCostSummaryArtifact
+  | AwsPortalRelationshipArtifact;
+const packedRelationshipScope: PublicRelationshipProviderScope = {
+  providerName: ProviderName.Aws,
+  providerScopeId: '123456789012',
+};
 type PackedAwsPublicArtifacts =
   | AwsPortalAccountSummaryArtifact
   | AwsPortalResourceCollectionArtifact
@@ -296,7 +312,10 @@ void [
   portalArtifactConstants,
   portalArtifactValidators,
   packedAwsPublicArtifact,
+  packedRelationshipScope,
+  relationshipLogicalName,
 ];
 
 void (undefined as unknown as PackedAwsPluginContracts);
 void (undefined as unknown as PackedAwsPortalContracts);
+void (undefined as unknown as PublicRelationshipArtifact);

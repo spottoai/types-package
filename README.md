@@ -70,6 +70,15 @@ validators bind exact account/scope/generation/sibling identity while rejecting
 undeclared, credential-bearing, physical-path, operational-marker, and lossy
 bodies.
 
+They also export the lossless relationship-schema-v2 AWS graph contract and
+validator. The graph is scoped by AWS account and Region, supports account,
+Region, resource, and synthetic nodes without Azure resource groups, and
+retains closed topology, aggregate family freshness, cost provenance,
+unresolved references, and honest truncation evidence.
+`PublicRelationshipArtifact` is the provider-aware Azure-or-AWS consumer union;
+the former reduced AWS declaration remains available under the explicit
+`AwsPortalRelationshipArtifactV1` migration name.
+
 ## Development
 
 ### Setup

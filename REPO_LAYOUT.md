@@ -25,7 +25,9 @@ Folder `README.md` files are authoritative for local implementation details.
   source-binding, logical-name, complete active-set, retirement, and shared
   runtime validation contracts. It also owns lossless resource/account current
   bodies, compact history bodies and references, AI sibling contracts, and
-  their dependency-free rejection validators.
+  their dependency-free rejection validators. AWS relationship graph DTOs,
+  topology constants, and their closed runtime validator live in the same
+  domain and are exported through both package entrypoints.
   It also includes the secret-free AWS estates desired-state manifest,
   estate/account/billing-source orchestration commands, and company trust
   setup shapes. Engine persistence and saga types are intentionally excluded.
