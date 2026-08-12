@@ -144,6 +144,17 @@ const isLogicalArtifactRef = (value: unknown): value is string => {
   return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
 };
 
+const isSubscriptionBoundResourceId = (value: unknown, subscriptionId: string): value is string => {
+  if (!isNonEmptyString(value)) return false;
+  const segments = value.split('/');
+  return (
+    segments.length >= 4 &&
+    segments[0] === '' &&
+    segments[1]?.toLowerCase() === 'subscriptions' &&
+    segments[2]?.toLowerCase() === subscriptionId.toLowerCase()
+  );
+};
+
 const isReasonCode = (value: unknown): value is CapabilityReasonCode => typeof value === 'string' && REASON_CODES.has(value);
 
 const isImmutableSourceGeneration = (value: unknown): value is ImmutableSourceGeneration => {
@@ -170,8 +181,7 @@ const isScopeBinding = (value: unknown, ownership: CapabilityPassport['ownership
   return (
     value.kind === 'resource' &&
     value.subscriptionId === ownership.subscriptionId &&
-    isNonEmptyString(value.normalizedResourceId) &&
-    value.normalizedResourceId.startsWith('/')
+    isSubscriptionBoundResourceId(value.normalizedResourceId, ownership.subscriptionId)
   );
 };
 
@@ -282,7 +292,14 @@ export const isCapabilityPassport = (value: unknown): value is CapabilityPasspor
   if (!isObservationSet(value.observations, value.ownership)) return false;
   if (!isRecord(value.producerVersions) || Object.keys(value.producerVersions).length === 0) return false;
   if (!Object.entries(value.producerVersions).every(([name, version]) => isNonEmptyString(name) && isNonEmptyString(version))) return false;
-  if (!Array.isArray(value.issues) || !value.issues.every(issue => isRecord(issue) && isReasonCode(issue.reasonCode))) return false;
+  if (
+    !Array.isArray(value.issues) ||
+    !value.issues.every(
+      issue => isRecord(issue) && isReasonCode(issue.reasonCode) && (issue.observationId === undefined || isNonEmptyString(issue.observationId))
+    )
+  ) {
+    return false;
+  }
 
   if (value.observations.mode === 'inline') {
     const observationIds = new Set(value.observations.items.map(item => item.observationId));

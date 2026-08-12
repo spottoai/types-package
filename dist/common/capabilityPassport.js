@@ -43,6 +43,15 @@ const isLogicalArtifactRef = (value) => {
     const segments = value.split('/');
     return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
 };
+const isSubscriptionBoundResourceId = (value, subscriptionId) => {
+    if (!isNonEmptyString(value))
+        return false;
+    const segments = value.split('/');
+    return (segments.length >= 4 &&
+        segments[0] === '' &&
+        segments[1]?.toLowerCase() === 'subscriptions' &&
+        segments[2]?.toLowerCase() === subscriptionId.toLowerCase());
+};
 const isReasonCode = (value) => typeof value === 'string' && REASON_CODES.has(value);
 const isImmutableSourceGeneration = (value) => {
     if (!isRecord(value))
@@ -70,8 +79,7 @@ const isScopeBinding = (value, ownership) => {
         return value.subscriptionId === ownership.subscriptionId;
     return (value.kind === 'resource' &&
         value.subscriptionId === ownership.subscriptionId &&
-        isNonEmptyString(value.normalizedResourceId) &&
-        value.normalizedResourceId.startsWith('/'));
+        isSubscriptionBoundResourceId(value.normalizedResourceId, ownership.subscriptionId));
 };
 const isAttempt = (value) => {
     if (!isRecord(value))
@@ -186,8 +194,7 @@ const isCapabilityPassport = (value) => {
         !AGREEMENT_TYPES.has(value.agreementObservation.type) ||
         typeof value.agreementObservation.source !== 'string' ||
         !AGREEMENT_SOURCES.has(value.agreementObservation.source) ||
-        (value.agreementObservation.sourceGeneration !== undefined &&
-            !isImmutableSourceGeneration(value.agreementObservation.sourceGeneration))) {
+        (value.agreementObservation.sourceGeneration !== undefined && !isImmutableSourceGeneration(value.agreementObservation.sourceGeneration))) {
         return false;
     }
     if (!isObservationSet(value.observations, value.ownership))
@@ -196,8 +203,10 @@ const isCapabilityPassport = (value) => {
         return false;
     if (!Object.entries(value.producerVersions).every(([name, version]) => isNonEmptyString(name) && isNonEmptyString(version)))
         return false;
-    if (!Array.isArray(value.issues) || !value.issues.every(issue => isRecord(issue) && isReasonCode(issue.reasonCode)))
+    if (!Array.isArray(value.issues) ||
+        !value.issues.every(issue => isRecord(issue) && isReasonCode(issue.reasonCode) && (issue.observationId === undefined || isNonEmptyString(issue.observationId)))) {
         return false;
+    }
     if (value.observations.mode === 'inline') {
         const observationIds = new Set(value.observations.items.map(item => item.observationId));
         if (!value.issues.every(issue => issue.observationId === undefined || (isNonEmptyString(issue.observationId) && observationIds.has(issue.observationId)))) {
