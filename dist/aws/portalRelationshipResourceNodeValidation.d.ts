@@ -1,0 +1,2 @@
+export declare function validateAwsPortalRelationshipResourceNode(data: Record<string, unknown>, accountId: string, regions: ReadonlySet<string>, field: string): void;
+//# sourceMappingURL=portalRelationshipResourceNodeValidation.d.ts.map

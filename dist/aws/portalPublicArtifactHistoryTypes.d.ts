@@ -28,6 +28,11 @@ export declare const AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS: {
         readonly required: readonly ["account-summary"];
         readonly optional: readonly [];
     };
+    readonly relationships: {
+        readonly logicalName: "relationships.json.gz";
+        readonly required: readonly [];
+        readonly optional: readonly [];
+    };
 };
 export interface AwsPortalHistoryBillingTotals {
     currency: string;
@@ -163,6 +168,6 @@ export type AwsPortalAccountSummaryAiCostSummaryArtifact<AccountId extends strin
     };
     entries: AwsPortalAccountSummaryAiCostSummaryEntry[];
 };
-export type AwsPortalLosslessPublicArtifact = import('./portalPublicArtifacts').AwsPortalResourceCollectionDetailArtifact | import('./portalPublicArtifacts').AwsPortalAccountSummaryDetailArtifact | AwsPortalResourceCollectionHistoryArtifact | AwsPortalAccountSummaryHistoryArtifact | AwsPortalAccountSummaryAiCostSummaryArtifact;
+export type AwsPortalLosslessPublicArtifact = import('./portalPublicArtifacts').AwsPortalResourceCollectionDetailArtifact | import('./portalPublicArtifacts').AwsPortalAccountSummaryDetailArtifact | import('./portalRelationshipPublicArtifacts').AwsPortalRelationshipArtifact | AwsPortalResourceCollectionHistoryArtifact | AwsPortalAccountSummaryHistoryArtifact | AwsPortalAccountSummaryAiCostSummaryArtifact;
 export {};
 //# sourceMappingURL=portalPublicArtifactHistoryTypes.d.ts.map
