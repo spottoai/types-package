@@ -58,6 +58,7 @@ __exportStar(require("./assessments"), exports);
 __exportStar(require("./users"), exports);
 __exportStar(require("./common"), exports);
 __exportStar(require("./company"), exports);
+__exportStar(require("./customProperties"), exports);
 __exportStar(require("./scheduler"), exports);
 __exportStar(require("./ai"), exports);
 __exportStar(require("./events"), exports);

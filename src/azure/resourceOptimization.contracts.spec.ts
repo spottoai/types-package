@@ -1,3 +1,4 @@
+import { RecommendationCategory } from '../index.js';
 import type {
   AzureResourcePluginItemDetailed,
   AzureResourcePortalItem,
@@ -59,6 +60,35 @@ const pluginResource: AzureResourcePluginItemDetailed = {
   currency: 'NZD',
   currencySymbol: '$',
   timestamp: '2026-07-24T00:00:00.000Z',
+  savings: {
+    minAmount: 0,
+    minPercentage: 0,
+    maxAmount: 48.61,
+    maxPercentage: 100,
+  },
+  recommendations: [
+    {
+      id: 'compute-snapshots_old',
+      name: 'Aged Snapshots',
+      category: RecommendationCategory.Cost,
+      impact: 'Medium',
+      savingsDetails: {
+        headlineScenario: {
+          id: 'remove-resource',
+          label: 'Aged Snapshots',
+          action: 'Review retention requirements, then delete this snapshot if it is no longer required.',
+          monthlySavings: 48.61,
+          targetMonthlyCost: 0,
+        },
+        affectedCost: {
+          label: 'Projected monthly snapshot cost',
+          currentMonthlyCost: 48.61,
+          savingsPercentage: 100,
+        },
+        calculationBasis: { type: 'projected-monthly' },
+      },
+    },
+  ],
   optimizationProfile: profile,
 };
 
@@ -68,7 +98,14 @@ const recommendationResource: RecommendationResource = {
   type: portalResource.type,
   spend: portalResource.spend,
   spendAmortized: portalResource.spendAmortized,
+  savingsBasis: 'billed',
   optimizationProfile: portalResource.optimizationProfile,
+};
+
+const recommendationResourceWithInvalidBasis: RecommendationResource = {
+  ...recommendationResource,
+  // @ts-expect-error Recommendation savings can only declare a billed or amortized basis.
+  savingsBasis: 'retail',
 };
 
 // @ts-expect-error Clean cut removes the optimization-shaped costEstimation property.
@@ -80,3 +117,4 @@ void recommendationResource.costEstimation;
 
 void pluginResource;
 void recommendationResource;
+void recommendationResourceWithInvalidBasis;

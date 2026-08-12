@@ -3,13 +3,13 @@ import type { RelationshipSnapshotCostOverlay, RelationshipSnapshotEdge, Relatio
 import type { Recommendation } from '../azure/recommendations';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
 import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
-import type { AwsRequestForbiddenCredentialFields } from './requests';
+import type { AwsForbiddenCredentialFields } from './requests';
 export declare const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION: 1;
 export declare const AWS_PUBLIC_ARTIFACT_TYPES: readonly ["resource-collection", "resource-collection-history", "account-summary", "account-summary-history", "account-summary-ai-cost-summary", "relationships", "lifecycle", "plugin-subscription", "plugin-resource"];
 export type AwsPublicArtifactSchemaVersion = typeof AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION;
 export type AwsPublicArtifactType = (typeof AWS_PUBLIC_ARTIFACT_TYPES)[number];
 /** Public artifacts must not expose setup values or credential-store locators. */
-export type AwsPublicArtifactForbiddenCredentialFields = AwsRequestForbiddenCredentialFields & {
+export type AwsPublicArtifactForbiddenCredentialFields = AwsForbiddenCredentialFields & {
     externalId?: never;
     roleArn?: never;
     secretArn?: never;

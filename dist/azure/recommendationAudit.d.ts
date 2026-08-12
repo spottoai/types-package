@@ -1,6 +1,6 @@
 import type { ProviderName, ProviderScope } from '../common/provider';
 import type { SystemTrackId } from './recommendationTracks';
-import type { RecommendationWorkflowLane } from './recommendationWorkflow';
+import type { RecommendationWorkflowLane, RecommendationWorkflowNonBlockedLane } from './recommendationWorkflow';
 export declare const RecommendationAuditRowKinds: {
     readonly resourceTarget: "resource-view:target";
     readonly subscriptionTarget: "scope-view:target";
@@ -62,6 +62,8 @@ export declare const RecommendationWorkflowAuditEventTypes: {
     readonly blocked: "WorkflowBlocked";
     readonly unblocked: "WorkflowUnblocked";
     readonly returnedToSuggestions: "ReturnedToSuggestions";
+    readonly repaired: "WorkflowRepaired";
+    readonly sourceChanged: "WorkflowSourceChanged";
 };
 export type RecommendationWorkflowAuditEventType = (typeof RecommendationWorkflowAuditEventTypes)[keyof typeof RecommendationWorkflowAuditEventTypes];
 export type RecommendationAuditEventType = 'Viewed' | 'Added' | 'Archived' | 'CommentAdded' | 'CommentUpdated' | 'CommentDeleted' | 'CommentPinned' | 'CommentUnpinned' | 'Shared' | 'Dismissed' | 'Restored' | 'Prioritized' | 'Unprioritized' | 'Implementing' | 'Implemented' | 'ImplementationFailed' | RecommendationWorkflowAuditEventType;
@@ -87,13 +89,25 @@ export interface RecommendationWorkflowBlockedAuditDetails extends Recommendatio
 }
 export interface RecommendationWorkflowUnblockedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
     eventType: 'WorkflowUnblocked';
-    toLane: RecommendationWorkflowLane;
+    toLane: RecommendationWorkflowNonBlockedLane;
 }
 export interface RecommendationReturnedToSuggestionsAuditDetails extends RecommendationWorkflowAuditDetailsBase {
     eventType: 'ReturnedToSuggestions';
     systemTrackId?: SystemTrackId;
 }
-export type RecommendationWorkflowAuditDetails = RecommendationWorkflowAssignedAuditDetails | RecommendationWorkflowLaneChangedAuditDetails | RecommendationWorkflowBlockedAuditDetails | RecommendationWorkflowUnblockedAuditDetails | RecommendationReturnedToSuggestionsAuditDetails;
+export interface RecommendationWorkflowRepairedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowRepaired';
+    repairId: string;
+    repairedSurfaces: ['workflow' | 'projection', ...('workflow' | 'projection')[]];
+}
+export interface RecommendationWorkflowSourceChangedAuditDetails extends RecommendationWorkflowAuditDetailsBase {
+    eventType: 'WorkflowSourceChanged';
+    systemTrackId: SystemTrackId;
+    previousSourceFingerprint: string;
+    sourceFingerprint: string;
+    sourceChangeKind: 'changed' | 'detected-again';
+}
+export type RecommendationWorkflowAuditDetails = RecommendationWorkflowAssignedAuditDetails | RecommendationWorkflowLaneChangedAuditDetails | RecommendationWorkflowBlockedAuditDetails | RecommendationWorkflowUnblockedAuditDetails | RecommendationReturnedToSuggestionsAuditDetails | RecommendationWorkflowRepairedAuditDetails | RecommendationWorkflowSourceChangedAuditDetails;
 /** Flat recommendation audit row columns as persisted in `recommendationsevents`. */
 export interface RecommendationAuditEventRowColumns {
     CompanyId: string;

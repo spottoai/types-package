@@ -35,6 +35,12 @@ const partialManifest: CompletedViewManifestV2 = {
   completedResourceCount: 9,
   failedResourceCount: 1,
   failedResourceIds: ['/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1'],
+  dependencies: {
+    economics: {
+      generationId: 'economics-run-1',
+      fingerprint: 'billing-fingerprint-1',
+    },
+  },
 };
 
 const nzdSavings: SavingsPotential = {

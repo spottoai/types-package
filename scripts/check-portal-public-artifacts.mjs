@@ -117,6 +117,20 @@ const resource = {
   coverage: {
     billing: {
       scope: billingEvidenceScope,
+      // The run-anchored rolling window the totals measure. `scope.billingPeriod`
+      // is only the anchor it was resolved from, so a window that reaches back
+      // into the preceding period has to be stated, not implied.
+      window: {
+        kind: 'last-30-days',
+        dayCount: 30,
+        startDateInclusive: '2026-06-26',
+        endDateExclusive: '2026-07-26',
+      },
+      contributingBillingPeriods: [
+        { start: '2026-06-01', end: '2026-06-30' },
+        { start: '2026-07-01', end: '2026-07-31' },
+      ],
+      windowCoverage: 'complete',
       freshness: { lastSuccessfulImportAt: generatedAt, hasSuccessfulImport: true },
       summary: billingSummary,
       totalsByCurrency: {
@@ -313,6 +327,7 @@ const accountBodyDescriptor = {
 };
 
 assert.deepEqual(AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS['account-summary-ai-cost-summary'].required, ['account-summary']);
+assert.equal(AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS.relationships.logicalName, 'relationships.json.gz');
 assert.deepEqual(validateAwsPortalResourceCollectionDetailArtifact(resource), resource);
 assert.deepEqual(validateAwsPortalAccountSummaryDetailArtifact(account), account);
 assert.deepEqual(validateAwsPortalResourceCollectionHistoryArtifact(resourceHistory), resourceHistory);
@@ -336,6 +351,19 @@ rejects(validateAwsPortalResourceCollectionDetailArtifact, crossRegion, /outside
 const pathBearing = clone(resource);
 pathBearing.coverage.billing.summary.sourcePath = '/private/blob.json';
 rejects(validateAwsPortalResourceCollectionDetailArtifact, pathBearing, /undeclared fields|not allowed in a public artifact/);
+
+const overclaimedWindow = clone(resource);
+overclaimedWindow.coverage.billing.contributingBillingPeriods = [{ start: '2026-07-01', end: '2026-07-31' }];
+rejects(validateAwsPortalResourceCollectionDetailArtifact, overclaimedWindow, /complete coverage its contributingBillingPeriods do not provide/);
+
+const futureWindow = clone(resource);
+futureWindow.coverage.billing.window.startDateInclusive = '2026-07-03';
+futureWindow.coverage.billing.window.endDateExclusive = '2026-08-02';
+rejects(validateAwsPortalResourceCollectionDetailArtifact, futureWindow, /must not run past the day after the artifact billing period/);
+
+const orphanedWindowCoverage = clone(resource);
+delete orphanedWindowCoverage.coverage.billing.window;
+rejects(validateAwsPortalResourceCollectionDetailArtifact, orphanedWindowCoverage, /requires artifact.coverage.billing.window/);
 
 const credential = clone(account);
 credential.account.summary.credentialReference = 'secret-store-key';

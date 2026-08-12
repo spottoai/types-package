@@ -19,6 +19,7 @@ import type {
 
 const companyEntityType: CustomPropertyEntityType = 'company';
 const everyoneAudience: CustomPropertyAudience = 'everyone';
+const directChildCompaniesAudience: CustomPropertyAudience = 'directChildCompanies';
 
 const localDefinition = {
   id: '2ae62863-3792-4d22-b72a-ee3614b4ed75',
@@ -202,6 +203,7 @@ const companyUser = {
 void [
   companyEntityType,
   everyoneAudience,
+  directChildCompaniesAudience,
   localDefinition,
   newDefinition,
   checkboxDefinition,

@@ -5,32 +5,11 @@ import { Recommendation, RecommendationStats, RecommendationSummary } from './re
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
+import type { SecureScoreEvidence } from './secureScore.js';
+
+export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 
 export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
-
-export type SecureScoreEvidenceStatus = 'available' | 'unavailable' | 'stale';
-
-/**
- * Provider evidence for one Defender for Cloud Secure Score observation.
- *
- * The legacy scalar score remains on SubscriptionProperties for compatibility.
- * Consumers should use this evidence to distinguish a genuine zero from missing
- * provider data and must not aggregate percentages when weight is unavailable.
- */
-export interface SecureScoreEvidence {
-  status: SecureScoreEvidenceStatus;
-  /** Provider-reported 0-100 percentage when available. */
-  percentage?: number;
-  /** Provider score points earned. */
-  currentScore?: number;
-  /** Provider score points available. */
-  maxScore?: number;
-  /** Provider aggregation weight for this subscription/scope, when supplied. */
-  weight?: number;
-  /** Healthy + unhealthy assessed resources, excluding not-applicable resources. */
-  assessedResourceCount?: number;
-  observedAt?: string;
-}
 
 export interface SubscriptionSummaryLite {
   companyId: string;

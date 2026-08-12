@@ -31,6 +31,7 @@ const FORBIDDEN_PUBLIC_KEYS = new Set<string>([
   'eTag',
   'retiredAt',
 ]);
+const NORMALIZED_FORBIDDEN_PUBLIC_KEYS = new Set(Array.from(FORBIDDEN_PUBLIC_KEYS, key => key.toLowerCase()));
 const FORBIDDEN_PUBLIC_KEY_PATTERN = /^(?:source|storage|blob|container)(?:path|uri|url|key)$|^s3(?:bucket|key|uri|url)$/i;
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -129,8 +130,7 @@ export function assertPublicJson(value: unknown, field: string): void {
 }
 
 function isForbiddenPublicKey(key: string): boolean {
-  const normalized = key.toLowerCase();
-  return Array.from(FORBIDDEN_PUBLIC_KEYS).some(forbidden => forbidden.toLowerCase() === normalized) || FORBIDDEN_PUBLIC_KEY_PATTERN.test(key);
+  return NORMALIZED_FORBIDDEN_PUBLIC_KEYS.has(key.toLowerCase()) || FORBIDDEN_PUBLIC_KEY_PATTERN.test(key);
 }
 
 export function assertRequiredKeys(value: Record<string, unknown>, required: readonly string[], field: string): void {

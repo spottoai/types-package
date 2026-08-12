@@ -6,7 +6,9 @@ export declare enum WritePermission {
     /** Permission to dismiss Azure Advisor recommendations */
     DismissRecommendations = 1,// 1
     /** Permission to enable storage inventory reports on storage accounts */
-    StorageInventory = 2
+    StorageInventory = 2,// 2
+    /** Permission to create scoped Azure Policy exemptions */
+    PolicyExemptions = 4
 }
 /**
  * Metadata for a write permission

@@ -70,6 +70,63 @@ export interface RequestMessage {
   tracing?: WorkflowTracingOptions;
 }
 
+type AzureSpSetupIdentifierOnlyRequestMessage = Pick<
+  RequestMessage,
+  'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'
+>;
+
+export interface AzureSpSetupExecutionRequestMessage extends AzureSpSetupIdentifierOnlyRequestMessage {
+  schemaVersion: 1;
+  entity: 'azure-sp-setup';
+  action: 'execute';
+  companyId: string;
+  tenantId: string;
+  cloudAccountId: string;
+  clientId: string;
+  setupId: string;
+  executionId: string;
+  dispatchSequence: number;
+  correlationId: string;
+  enqueuedAt: string;
+}
+
+export interface AzureSpSetupMaintenanceRequestMetadata {
+  schemaVersion: 1;
+  maintenanceKind: 'recover' | 'cleanup' | 'recover-and-cleanup';
+  cutoffUtc: string;
+  maxItems: number;
+  scheduledWindowUtc: string;
+  batchNumber: number;
+  maxBatches: number;
+}
+
+export interface AzureSpSetupMaintenanceRequestMessage extends AzureSpSetupIdentifierOnlyRequestMessage {
+  entity: 'azure-sp-setup';
+  action: 'maintain';
+  companyId: '*';
+  cloudAccountId: '*';
+  tenantId: '*';
+  clientId: '*';
+  correlationId: string;
+  metadata: AzureSpSetupMaintenanceRequestMetadata;
+}
+
+export interface CloudAccountsBillingReconciliationRequestMetadata {
+  triggeredBy: 'billing-reconciliation-cron';
+}
+
+export interface CloudAccountsBillingReconciliationRequestMessage extends RequestMessage {
+  requestId: string;
+  entity: 'cloudaccounts';
+  action: 'reconcile-billing';
+  companyId: '*';
+  cloudAccountId: '*';
+  tenantId: '*';
+  clientId: '*';
+  source: 'scheduled';
+  metadata: CloudAccountsBillingReconciliationRequestMetadata;
+}
+
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
 
 export interface ActionExecutionSource {
@@ -133,6 +190,23 @@ export interface SubscriptionMessage {
   eventId?: string;
   tracing?: WorkflowTracingOptions;
   metadata?: Record<string, unknown>;
+}
+
+export interface BillingReconciliationWorkMetadata {
+  schemaVersion: 1;
+  trigger: 'scheduled';
+  policyVersion: string;
+  /** Cloud-engine validates these values as unique eligible YYYY-MM months. */
+  requestedMonths: string[];
+  continuationCursor?: string | null;
+}
+
+export interface BillingReconciliationSubscriptionMessage extends SubscriptionMessage {
+  requestId?: string;
+  refreshComponents: ['billing'];
+  metadata: Record<string, unknown> & {
+    billingReconciliation: BillingReconciliationWorkMetadata;
+  };
 }
 
 export interface AzureGdapQueueAuthContext

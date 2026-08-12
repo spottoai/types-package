@@ -50,6 +50,12 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+The root entry point exports one provider-aware `CommitmentsPlanningView` for
+Azure and AWS. Existing Azure artifacts remain compatible through the legacy
+branch, while the AWS branch requires a minimal account identity, `aws-native`
+source evidence, linked-account scope metadata, and provider-specific inventory
+shapes without introducing an AWS-only planning DTO.
+
 The root and `/aws` entry points export the secret-free `AwsEstatesManifest`,
 AWS estate/account/billing-source command union, and company trust-setup
 contracts. The API-owned desired-state document is stored as
@@ -69,6 +75,15 @@ AI cost-summary contracts. Package-owned logical names and dependency-free
 validators bind exact account/scope/generation/sibling identity while rejecting
 undeclared, credential-bearing, physical-path, operational-marker, and lossy
 bodies.
+
+They also export the lossless relationship-schema-v2 AWS graph contract and
+validator. The graph is scoped by AWS account and Region, supports account,
+Region, resource, and synthetic nodes without Azure resource groups, and
+retains closed topology, aggregate family freshness, cost provenance,
+unresolved references, and honest truncation evidence.
+`PublicRelationshipArtifact` is the provider-aware Azure-or-AWS consumer union;
+the former reduced AWS declaration remains available under the explicit
+`AwsPortalRelationshipArtifactV1` migration name.
 
 ## Development
 

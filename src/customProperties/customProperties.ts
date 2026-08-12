@@ -3,7 +3,7 @@ export type CustomPropertyKind = 'text' | 'checkbox' | 'dropdown';
 export type CustomPropertyEntityType = 'company' | 'user';
 
 /** The company levels selected relative to the company that owns the definition. */
-export type CustomPropertyAudience = 'currentCompany' | 'childCompanies' | 'everyone';
+export type CustomPropertyAudience = 'currentCompany' | 'directChildCompanies' | 'childCompanies' | 'everyone';
 
 interface CustomPropertyDefinitionBase {
   id: string;
@@ -35,10 +35,7 @@ export interface DropdownCustomPropertyDefinition extends CustomPropertyDefiniti
   options: string[];
 }
 
-export type CustomPropertyDefinition =
-  | TextCustomPropertyDefinition
-  | CheckboxCustomPropertyDefinition
-  | DropdownCustomPropertyDefinition;
+export type CustomPropertyDefinition = TextCustomPropertyDefinition | CheckboxCustomPropertyDefinition | DropdownCustomPropertyDefinition;
 
 export interface TextCustomPropertyDefinitionInput extends CustomPropertyDefinitionInputBase {
   kind: 'text';

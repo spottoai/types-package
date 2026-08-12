@@ -2,7 +2,7 @@ import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
-import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext } from './recommendations.js';
+import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext, type RecommendationResource, type ResourceScopedRecommendation } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
 import { Tags } from '../tags/tags.js';
@@ -176,6 +176,8 @@ export interface AzureResourcePluginItem {
     type: string;
     location: string;
     recommendations?: Recommendation[];
+    /** Canonical deduplicated savings for this resource. */
+    savings?: SavingsPotential;
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
@@ -224,7 +226,9 @@ export interface AzureResourcePluginItemDetailed {
     description?: string;
     /** Resource-specific product URL resolved by the artifact producer. */
     product?: string;
-    recommendations?: Recommendation[];
+    recommendations?: ResourceScopedRecommendation[];
+    /** Canonical deduplicated savings for this resource. */
+    savings?: SavingsPotential;
     /** Optional linked context explaining related recommendations for this resource. */
     recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
@@ -710,6 +714,19 @@ export interface CompletedViewManifestV2RequestedCounts {
     requestedArtifactCount: number;
     requestedResourceCount: number;
 }
+export type CompletedViewEconomicsDependency = {
+    generationId: string;
+    fingerprint?: string;
+    status?: never;
+} | {
+    status: 'unverified';
+    generationId?: never;
+    fingerprint?: never;
+};
+export interface CompletedViewGenerationDependencies {
+    economics?: CompletedViewEconomicsDependency;
+    [dependency: string]: unknown;
+}
 export interface CompletedViewManifestV2Base extends CompletedViewManifestV2RequestedCounts {
     schemaVersion: 2;
     runId: string;
@@ -718,6 +735,8 @@ export interface CompletedViewManifestV2Base extends CompletedViewManifestV2Requ
     artifacts: string[];
     artifactGeneration: CompletedViewArtifactGeneration;
     costSavings?: CompletedViewCostSavingsManifest;
+    /** Source generations that readers can use to prevent cross-view mixing. */
+    dependencies?: CompletedViewGenerationDependencies;
 }
 export interface CompletedViewManifestV2ProgressCounts {
     completedArtifactCount: number;
@@ -771,4 +790,42 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base & ((CompletedV
     completedAt: string;
 }));
 export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
+export interface AzureViewSetSurfaceReference {
+    /** Immutable generation run ID declared by the surface completed manifest. */
+    runId: string;
+    /** Subscription-relative logical path to the immutable run-local manifest. */
+    manifestPath: string;
+    completedAt: string;
+}
+export interface CompletedAzureViewSetV1 {
+    schemaVersion: 1;
+    status: 'completed';
+    subscriptionId: string;
+    /** Correlates the exact portal and plugin results supplied by one orchestrator. */
+    publicationId: string;
+    portal: AzureViewSetSurfaceReference;
+    plugin: AzureViewSetSurfaceReference;
+    economics: {
+        generationId: string;
+        fingerprint: string;
+    };
+    completedAt: string;
+}
+export interface AzureRecommendationResourceEvidenceEntry {
+    recommendationId: string;
+    /** Full presentation evidence, retained even when no active aggregate entry exists. */
+    recommendation: Recommendation;
+    resources: AzureRecommendationResourceEvidenceResource[];
+}
+/** Evidence preserves unavailable amortized spend as absent instead of fabricating actual cost. */
+export type AzureRecommendationResourceEvidenceResource = Omit<RecommendationResource, 'spendAmortized'> & {
+    spendAmortized?: number;
+};
+export interface AzureRecommendationResourceEvidenceDocument {
+    schemaVersion: 1;
+    artifactGeneration: CompletedViewArtifactGeneration;
+    recommendations: AzureRecommendationResourceEvidenceEntry[];
+}
+/** Dependency-free rejection boundary for customer-readable cross-surface pointers. */
+export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
 //# sourceMappingURL=views.d.ts.map

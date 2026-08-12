@@ -11,6 +11,7 @@ import type {
   AwsPortalRecommendationTemplateProvenanceSource,
 } from './portalPublicArtifactNestedEvidence';
 import { sha256AwsPluginIdentity } from './pluginPublicArtifacts';
+import { AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME } from './portalRelationshipPublicArtifacts';
 
 export const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
 export const AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME = 'resources.json.gz' as const;
@@ -24,6 +25,7 @@ export type AwsPortalPublicLogicalName =
   | typeof AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME
   | typeof AWS_PORTAL_ACCOUNT_SUMMARY_LOGICAL_NAME
   | typeof AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME
+  | typeof AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME
   | AwsPortalResourceCollectionHistoryLogicalName
   | AwsPortalAccountSummaryHistoryLogicalName;
 
@@ -200,6 +202,29 @@ export interface AwsPortalBillingSummary {
   metadataMatchesRequestedBillingPeriod: boolean;
 }
 
+/**
+ * The rolling window a billing evidence block measures.
+ *
+ * AWS-only. `scope.billingPeriod` names the anchor period the window was
+ * resolved from; a run-anchored rolling 30 days routinely begins inside the
+ * preceding period, so the block states the window and the adjacent persisted
+ * periods that actually backed it rather than letting the anchor imply a
+ * single-period read it never made.
+ */
+export interface AwsPortalBillingWindow {
+  kind: 'last-30-days';
+  dayCount: 30;
+  startDateInclusive: string;
+  endDateExclusive: string;
+}
+
+/**
+ * `partial-billing-period-coverage` means the window is real but only the
+ * periods in `contributingBillingPeriods` backed it — an account whose
+ * preceding month was never imported, for instance.
+ */
+export type AwsPortalBillingWindowCoverage = 'complete' | 'partial-billing-period-coverage';
+
 export interface AwsPortalBillingCostAggregate {
   currency: string;
   expenseCount: number;
@@ -367,6 +392,9 @@ export interface AwsPortalResourceCollectionBody<AccountId extends string = stri
   coverage: {
     billing: {
       scope: AwsPortalBillingEvidenceScope<AccountId>;
+      window?: AwsPortalBillingWindow;
+      contributingBillingPeriods?: AwsPortalBillingPeriod[];
+      windowCoverage?: AwsPortalBillingWindowCoverage;
       freshness: AwsPortalBillingFreshness;
       summary: AwsPortalBillingSummary;
       totalsByCurrency: AwsPortalBillingGroupedResult<AwsPortalBillingCostAggregate>;
@@ -432,6 +460,9 @@ export interface AwsPortalAccountSummaryBodyV2<AccountId extends string = string
   };
   billing: {
     scope: AwsPortalBillingEvidenceScope<AccountId>;
+    window?: AwsPortalBillingWindow;
+    contributingBillingPeriods?: AwsPortalBillingPeriod[];
+    windowCoverage?: AwsPortalBillingWindowCoverage;
     freshness: AwsPortalBillingFreshness;
     summary: AwsPortalBillingSummary;
     totalsByCurrency: AwsPortalBillingGroupedResult<AwsPortalBillingCostAggregate>;

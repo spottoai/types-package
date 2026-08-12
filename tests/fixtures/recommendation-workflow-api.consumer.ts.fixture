@@ -1,7 +1,5 @@
 import {
   ProviderName,
-  type RecommendationSystemTrackReconciliationRequest,
-  type RecommendationSystemTrackReconciliationResponse,
   type RecommendationWorkflowConcurrencyConflictResponse,
   type RecommendationWorkflowConcurrencyToken,
   type RecommendationWorkflowItem,
@@ -61,28 +59,7 @@ const repairResponse: RecommendationWorkflowRepairResponse = {
   hasMore: false,
 };
 
-const reconciliationRequest: RecommendationSystemTrackReconciliationRequest = {
-  providerName: ProviderName.Azure,
-  providerScopeId: 'sub-123',
-  companyId: 'comp-123',
-  runId: 'run-123',
-  generatedAt: '2026-07-29T00:00:00.000Z',
-  correlationId: 'correlation-123',
-  idempotencyKey: 'reconcile-run-123-sub-123-page-1',
-};
-
-const reconciliationResponse: RecommendationSystemTrackReconciliationResponse = {
-  result: 'no-op',
-  processedCount: 10,
-  changedCount: 0,
-  skippedCount: 10,
-  conflictedCount: 0,
-  hasMore: false,
-};
-
 void updateRequest;
 void conflict;
 void repairRequest;
 void repairResponse;
-void reconciliationRequest;
-void reconciliationResponse;

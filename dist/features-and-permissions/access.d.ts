@@ -24,12 +24,14 @@ export interface PortalFeatureDefinition {
     systemAvailability: PortalSystemAvailability;
     defaultPresentationMode: PortalPresentationMode;
 }
+export type PortalFeatureSetOverrideAuthority = 'none' | 'portal_admin' | 'company_admin';
 export interface PortalFeatureSetDefinition {
     featureSetKey: string;
     displayName: string;
     description?: string;
     defaultAvailability: PortalSystemAvailability;
     customerManaged: boolean;
+    overrideAuthority?: PortalFeatureSetOverrideAuthority;
     rootCompanyOnly?: boolean;
     featureKeys: string[];
 }

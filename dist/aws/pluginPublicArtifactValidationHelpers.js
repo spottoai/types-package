@@ -23,7 +23,7 @@ exports.validateMetricWindow = validateMetricWindow;
 exports.validateTagRuleScope = validateTagRuleScope;
 const requests_1 = require("./requests");
 const FORBIDDEN_PUBLIC_KEYS = new Set([
-    ...requests_1.AWS_REQUEST_FORBIDDEN_CREDENTIAL_FIELDS,
+    ...requests_1.AWS_FORBIDDEN_CREDENTIAL_FIELDS,
     'externalId',
     'roleArn',
     'secretArn',
@@ -155,8 +155,7 @@ function assertPublicJson(value, field) {
 }
 function isForbiddenPublicKey(key) {
     const normalized = key.toLowerCase();
-    return (Array.from(FORBIDDEN_PUBLIC_KEYS).some(forbidden => forbidden.toLowerCase() === normalized) ||
-        FORBIDDEN_PUBLIC_KEY_PATTERN.test(key));
+    return Array.from(FORBIDDEN_PUBLIC_KEYS).some(forbidden => forbidden.toLowerCase() === normalized) || FORBIDDEN_PUBLIC_KEY_PATTERN.test(key);
 }
 function assertRequiredKeys(value, required, field) {
     const missing = required.filter(key => !(key in value));

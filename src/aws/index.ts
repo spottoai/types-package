@@ -1,9 +1,14 @@
 export * from './estates';
+export * from './commitmentsPlanningValidation';
 export * from './onboarding';
 export * from './pluginPublicArtifacts';
 export * from './pluginPublicArtifactEvidence';
 export * from './pluginPublicArtifactValidation';
 export * from './portalPublicArtifacts';
+export * from './portalRelationshipPublicArtifacts';
+export * from './portalRelationshipResourceNodeTypes';
+export * from './portalRelationshipPublicArtifactValidation';
+export type { PublicRelationshipArtifact, PublicRelationshipProviderScope } from '../common/relationships';
 export * from './portalPublicArtifactHistoryTypes';
 export * from './portalPublicArtifactNestedEvidence';
 export * from './portalPublicArtifactNestedEvidenceValidation';

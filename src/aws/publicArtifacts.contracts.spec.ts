@@ -1,5 +1,7 @@
 import {
   AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
+  AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
   RecommendationCategory,
   type AwsPluginResourceArtifact,
   type AwsPluginSubscriptionArtifact,
@@ -59,30 +61,69 @@ const resourceCollection = {
 
 const relationships = {
   schemaVersion: AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
+  portalSchemaVersion: 1,
+  relationshipSchemaVersion: AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
   provider: 'aws',
   accountId: account.accountId,
   artifactType: 'relationships',
   artifactGeneration,
   generatedAt: artifactGeneration.generatedAt,
-  currency: 'NZD',
-  currencySymbol: '$',
+  logicalName: AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
+  source: {
+    artifactType: 'relationship-graph',
+    artifactVersion: 1,
+    generatedAt: artifactGeneration.generatedAt,
+  },
+  scope: {
+    provider: 'aws',
+    accountId: account.accountId,
+    resourceRegions: ['ap-southeast-2'],
+  },
   nodes: [
     {
-      id: account.accountId,
+      id: `account|${account.accountId}`,
       kind: 'account',
       data: {
+        provider: 'aws',
         accountId: account.accountId,
-        name: account.displayName,
+        displayName: account.displayName,
+      },
+    },
+    {
+      id: `region|${account.accountId}|ap-southeast-2`,
+      kind: 'region',
+      data: {
+        provider: 'aws',
+        accountId: account.accountId,
+        resourceRegion: 'ap-southeast-2',
       },
     },
   ],
-  edges: [],
+  edges: [
+    {
+      id: 'region-to-account',
+      from: `region|${account.accountId}|ap-southeast-2`,
+      to: `account|${account.accountId}`,
+      kind: 'contains',
+      relationshipTypes: ['account-region'],
+      confidence: 'high',
+      evidence: [
+        {
+          method: 'request-scope',
+          sourceFamily: 'graph-scope',
+          field: 'resourceRegions',
+          matchedValue: 'ap-southeast-2',
+        },
+      ],
+    },
+  ],
   unresolved: [],
+  coverage: { families: [] },
   stats: {
-    totalNodes: 1,
-    totalEdges: 0,
+    totalNodes: 2,
+    totalEdges: 1,
     unresolvedCount: 0,
-    buildMs: 1,
+    truncated: false,
   },
 } satisfies AwsPortalRelationshipArtifact<'123456789012', 'portal-run-1'>;
 

@@ -1,5 +1,5 @@
 import type { LicensingPlanningView as ExportedLicensingPlanningView } from '../index';
-import type { LicensingPlanningView, LicensingPurchaseScenarioEconomics } from './licensing';
+import type { LicensingPlanningView, LicensingPurchaseScenarioEconomics, LicensingRecommendationResourceEstimate } from './licensing';
 
 const windowsOpportunity: LicensingPlanningView = {
   version: '1.0',
@@ -374,6 +374,21 @@ const invalidHistoricalMonthStatus: LicensingPlanningView = {
   ],
 };
 
+const recommendationResourceEstimate: LicensingRecommendationResourceEstimate = {
+  resourceId: windowsOpportunity.resources[0].resourceId,
+  productFamily: windowsOpportunity.resources[0].productFamily,
+  serviceModel: windowsOpportunity.resources[0].serviceModel,
+  decision: windowsOpportunity.resources[0].decision,
+  licenseRequirement: windowsOpportunity.resources[0].licenseRequirement,
+  azureLicenseCharge: windowsOpportunity.resources[0].economics.azureLicenseCharge,
+  purchaseScenario: windowsOpportunity.resources[0].economics.purchaseScenario,
+  historicalEvidence: windowsOpportunity.resources[0].historicalEvidence,
+  actionProfile: windowsOpportunity.resources[0].actionProfile,
+  outcome: windowsOpportunity.resources[0].economics.outcome,
+  confidence: windowsOpportunity.resources[0].evidence.confidence,
+  reasonCodes: windowsOpportunity.resources[0].reasonCodes,
+};
+
 void windowsOpportunity;
 void sqlUnavailable;
 void exportedContract;
@@ -381,3 +396,4 @@ void invalidVersion;
 void invalidBillingCadence;
 void invalidIncompleteScenarioEconomics;
 void invalidHistoricalMonthStatus;
+void recommendationResourceEstimate;
