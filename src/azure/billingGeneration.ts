@@ -35,6 +35,9 @@ export interface BillingGenerationState extends BillingGenerationRef {
 /** Latest-only queue contract consumed by the Azure billing analyzer. */
 export interface BillingAnalyzerRequest extends BillingGenerationRef {
   correlationId: string;
+  producerProfile: 'cloud-engine-billing-calendar';
+  producerSchemaVersion: 'v1';
+  requestedBasis: 'amortized';
   currencyCode: string;
   currencySymbol: string;
   detectDataGaps: boolean;

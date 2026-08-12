@@ -12,6 +12,9 @@ const analyzerRequest: BillingAnalyzerRequest = {
   subscriptionId: generationState.subscriptionId,
   billingGenerationId: generationState.billingGenerationId,
   correlationId: 'correlation-123',
+  producerProfile: 'cloud-engine-billing-calendar',
+  producerSchemaVersion: 'v1',
+  requestedBasis: 'amortized',
   currencyCode: 'NZD',
   currencySymbol: '$',
   detectDataGaps: true,
@@ -76,6 +79,23 @@ const stateWithoutGeneration: BillingGenerationState = {
 const requestWithoutGeneration: BillingAnalyzerRequest = {
   subscriptionId: 'subscription-123',
   correlationId: 'correlation-123',
+  producerProfile: 'cloud-engine-billing-calendar',
+  producerSchemaVersion: 'v1',
+  requestedBasis: 'amortized',
+  currencyCode: 'NZD',
+  currencySymbol: '$',
+  detectDataGaps: true,
+  companyId: 'company-123',
+  cloudAccountId: 'cloud-account-123',
+  tenantId: 'tenant-123',
+  clientId: 'client-123',
+};
+
+// @ts-expect-error analyzer requests must identify the supported producer profile.
+const requestWithoutProducerProfile: BillingAnalyzerRequest = {
+  subscriptionId: 'subscription-123',
+  billingGenerationId: 'generation-123',
+  correlationId: 'correlation-123',
   currencyCode: 'NZD',
   currencySymbol: '$',
   detectDataGaps: true,
@@ -111,6 +131,7 @@ const metadataWithoutGeneration: BillingCostAnalysisMetadata = {
 
 void stateWithoutGeneration;
 void requestWithoutGeneration;
+void requestWithoutProducerProfile;
 void outputWithoutGeneration;
 void outputWithInvalidStatus;
 void metadataWithoutGeneration;
