@@ -257,7 +257,7 @@ interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata 
     ownership: ArtifactOwnershipBinding<'azure'>;
     revision: ArtifactRevisionVector;
     inputManifestDigest: string;
-    outputManifestDigest: string;
+    outputBindingDigest: string;
 }
 export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base & ({
     artifactState: BillingCompletedCostAnalysisDocumentState;

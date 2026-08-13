@@ -17,6 +17,9 @@ const isNonNegativeInteger = (value) => Number.isSafeInteger(value) && Number(va
 const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
 const isStringIn = (value, values) => typeof value === 'string' && values.has(value);
 const hasUniqueValues = (values) => new Set(values).size === values.length;
+const publicationDecisionReferencesDigest = (value, digests) => isRecord(value) &&
+    Array.isArray(value.dependencies) &&
+    value.dependencies.some(dependency => isRecord(dependency) && typeof dependency.digest === 'string' && digests.has(dependency.digest));
 const isCanonicalIsoTimestamp = (value) => {
     if (!isNonEmptyString(value))
         return false;
@@ -177,7 +180,7 @@ const isBillingAnalyzerOutputManifestV2 = (value) => {
         value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId)) {
         return false;
     }
-    if (!isSha256(value.inputManifestDigest) || !isSha256(value.manifestDigest))
+    if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputBindingDigest) || !isSha256(value.manifestDigest))
         return false;
     if (!Array.isArray(value.artifacts) || value.artifacts.length === 0)
         return false;
@@ -186,6 +189,18 @@ const isBillingAnalyzerOutputManifestV2 = (value) => {
     }
     if (!hasUniqueValues(value.artifacts.map(artifact => artifact.path)) || !hasUniqueValues(value.artifacts.map(artifact => artifact.name)))
         return false;
+    const outputDerivedDigests = new Set([
+        value.inputManifestDigest,
+        value.outputBindingDigest,
+        value.manifestDigest,
+        ...value.artifacts.map(artifact => artifact.sha256),
+    ]);
+    if (value.outputBindingDigest === value.inputManifestDigest ||
+        value.outputBindingDigest === value.manifestDigest ||
+        value.artifacts.some(artifact => artifact.sha256 === value.outputBindingDigest || artifact.sha256 === value.manifestDigest) ||
+        publicationDecisionReferencesDigest(value.publicationDecision, new Set([...outputDerivedDigests].filter(digest => digest !== value.inputManifestDigest)))) {
+        return false;
+    }
     if (!value.artifacts.some(artifact => artifact.path === `${outputGenerationPrefix(value.subscriptionId, value.generationId)}metadata.json`)) {
         return false;
     }

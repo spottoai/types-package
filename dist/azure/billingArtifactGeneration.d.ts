@@ -76,6 +76,7 @@ export interface BillingAnalyzerRequestV2 {
 export interface BillingAnalyzerOutputManifestV2 extends BillingGenerationDocumentV2 {
     inputManifestPath: string;
     inputManifestDigest: string;
+    outputBindingDigest: string;
     artifacts: [BillingAnalyzerOutputArtifactDescriptor, ...BillingAnalyzerOutputArtifactDescriptor[]];
     publicationDecision: BillingCompletedArtifactPublicationDecision;
     manifestDigest: string;

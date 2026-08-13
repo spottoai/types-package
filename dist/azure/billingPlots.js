@@ -20,6 +20,7 @@ const isPositiveInteger = (value) => Number.isSafeInteger(value) && Number(value
 const isStringArray = (value) => Array.isArray(value) && value.every(isNonEmptyString);
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
+const publicationDecisionReferencesDigest = (value, digest) => isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
 const isTrend = (value) => isRecord(value) && isNonEmptyString(value.method) && isFiniteNumber(value.slope) && isFiniteNumber(value.intercept);
 const isDailyPoint = (value) => isRecord(value) &&
     isNonEmptyString(value.date) &&
@@ -157,6 +158,8 @@ const hasValidMetadataEvidenceState = (state, evidence, billingGenerationId, inp
 const isBillingCostAnalysisMetadataV2 = (value) => {
     if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value) || value.schemaVersion !== 2)
         return false;
+    if (Object.prototype.hasOwnProperty.call(value, 'outputManifestDigest'))
+        return false;
     if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId))
         return false;
     if (!(0, artifactEvidence_js_1.isArtifactOwnershipBinding)(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)
@@ -168,8 +171,12 @@ const isBillingCostAnalysisMetadataV2 = (value) => {
         return false;
     if (typeof value.inputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.inputManifestDigest))
         return false;
-    if (typeof value.outputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.outputManifestDigest))
+    if (typeof value.outputBindingDigest !== 'string' || !SHA256_PATTERN.test(value.outputBindingDigest))
         return false;
+    if (value.outputBindingDigest === value.inputManifestDigest ||
+        publicationDecisionReferencesDigest(value.artifactEvidence, value.outputBindingDigest)) {
+        return false;
+    }
     if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly))
         return false;
     if (!hasValidMetadataEvidenceState(value.artifactState, value.artifactEvidence, value.billingGenerationId, value.inputManifestDigest, value.chartData, value.anomalies)) {
