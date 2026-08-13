@@ -17,6 +17,11 @@ import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import {
+  allowedArtifactReferenceField,
+  containsForbiddenArtifactControlData,
+  type AllowedArtifactReferenceField,
+} from '../common/artifactControlData.js';
+import {
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
   isEnforceableArtifactOwnershipBinding,
@@ -1058,30 +1063,6 @@ export const isCompletedAzureViewSetV1 = (value: unknown): value is CompletedAzu
 
 const VIEW_CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const FORBIDDEN_CREDENTIAL_FIELDS = new Set([
-  'accountkey',
-  'accesskey',
-  'accesstoken',
-  'apikey',
-  'authorization',
-  'clientsecret',
-  'connectionstring',
-  'credential',
-  'credentials',
-  'password',
-  'refreshtoken',
-  'sastoken',
-  'secret',
-  'sharedaccesssignature',
-  'token',
-]);
-const PHYSICAL_REFERENCE_FIELD =
-  /^(?:path|url|uri|artifactpath|manifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
-
-interface AllowedViewReferenceField {
-  object: Record<string, unknown>;
-  key: string;
-}
 
 const hasControlCharacters = (value: string): boolean =>
   Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
@@ -1093,44 +1074,8 @@ const isPositiveSafeInteger = (value: unknown): value is number => Number.isSafe
 const isNonNegativeSafeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
 const isSha256 = (value: unknown): value is string => typeof value === 'string' && SHA256_PATTERN.test(value);
 
-const isPhysicalReferenceValue = (value: string): boolean =>
-  value.includes('://') ||
-  value.startsWith('/') ||
-  value.startsWith('\\\\') ||
-  /^[A-Za-z]:[\\/]/.test(value) ||
-  value.split(/[\\/]/).some(segment => segment === '.' || segment === '..');
-
-const normalizeControlFieldName = (key: string): string => key.replace(/[-_\s]/g, '').toLowerCase();
-
-const isSafeAzureResourceId = (key: string, value: unknown): value is string => {
-  if (key !== 'resourceId' || typeof value !== 'string' || hasControlCharacters(value) || value.includes('\\')) return false;
-  const segments = value.split('/');
-  return (
-    segments.length >= 3 &&
-    segments[0] === '' &&
-    segments[1].toLowerCase() === 'subscriptions' &&
-    segments.slice(2).every(segment => isStrictNonEmptyString(segment) && !/[?#%]/.test(segment) && segment !== '.' && segment !== '..')
-  );
-};
-
-const containsForbiddenViewControlData = (value: unknown, allowedReferenceFields: AllowedViewReferenceField[] = []): boolean => {
-  if (typeof value === 'string') return hasControlCharacters(value) || isPhysicalReferenceValue(value);
-  if (Array.isArray(value)) return value.some(child => containsForbiddenViewControlData(child, allowedReferenceFields));
-  if (!isRecord(value)) return false;
-  return Object.entries(value).some(([key, child]) => {
-    if (hasControlCharacters(key)) return true;
-    if (FORBIDDEN_CREDENTIAL_FIELDS.has(normalizeControlFieldName(key))) return true;
-    const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
-    if (PHYSICAL_REFERENCE_FIELD.test(key) && !referenceAllowed) return true;
-    if (isSafeAzureResourceId(key, child)) return false;
-    return containsForbiddenViewControlData(child, allowedReferenceFields);
-  });
-};
-
-const allowedViewReferenceField = (object: unknown, key: string): AllowedViewReferenceField[] => (isRecord(object) ? [{ object, key }] : []);
-
-const allowedViewArtifactPaths = (artifacts: unknown): AllowedViewReferenceField[] =>
-  Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedViewReferenceField(artifact, 'path')) : [];
+const allowedViewArtifactPaths = (artifacts: unknown): AllowedArtifactReferenceField[] =>
+  Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedArtifactReferenceField(artifact, 'path')) : [];
 
 const isSafePathSegment = (value: unknown): value is string =>
   isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
@@ -1186,7 +1131,7 @@ const hasRequiredViewDependencies = (decision: ArtifactPublicationDecision): boo
 
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export const isCompletedViewManifestV3 = (value: unknown): value is CompletedViewManifestV3 => {
-  if (!isRecord(value) || containsForbiddenViewControlData(value, allowedViewArtifactPaths(value.artifacts))) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedViewArtifactPaths(value.artifacts))) return false;
   if (value.schemaVersion !== 3 || value.status !== 'completed') return false;
   if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false)) return false;
   if (
@@ -1270,9 +1215,9 @@ const hasMatchingSurfaceDependency = (
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export const isCompletedAzureViewSetV2 = (value: unknown): value is CompletedAzureViewSetV2 => {
   const allowedReferences = isRecord(value)
-    ? [...allowedViewReferenceField(value.portal, 'manifestPath'), ...allowedViewReferenceField(value.plugin, 'manifestPath')]
+    ? [...allowedArtifactReferenceField(value.portal, 'manifestPath'), ...allowedArtifactReferenceField(value.plugin, 'manifestPath')]
     : [];
-  if (!isRecord(value) || containsForbiddenViewControlData(value, allowedReferences)) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedReferences)) return false;
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (
     !isSafePathSegment(value.subscriptionId) ||

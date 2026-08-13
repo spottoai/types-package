@@ -4,15 +4,24 @@
 
 import {
   isArtifactOwnershipBinding,
-  isArtifactPublicationDecision,
   type ArtifactOwnershipBinding,
-  type ArtifactPublicationDecision,
   type ArtifactRevisionVector,
   type BillingArtifactReadState,
 } from '../common/artifactEvidence.js';
 import { containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
 import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
-import { isBillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
+import {
+  isBillingCompletedArtifactPublicationDecision,
+  isBillingPartialArtifactPublicationDecision,
+  type BillingCompletedArtifactPublicationDecision,
+  type BillingPartialArtifactPublicationDecision,
+} from './billingArtifactEvidence.js';
+
+export type {
+  BillingArtifactPublicationDecision,
+  BillingCompletedArtifactPublicationDecision,
+  BillingPartialArtifactPublicationDecision,
+} from './billingArtifactEvidence.js';
 
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
@@ -281,17 +290,28 @@ export interface BillingCostAnalysisMetadata {
 }
 
 type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
+type BillingCompletedCostAnalysisDocumentState = Exclude<BillingCostAnalysisDocumentState, 'partial'>;
 
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
-export interface BillingCostAnalysisMetadataV2 extends BillingCostAnalysisMetadata {
+interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata {
   schemaVersion: 2;
   ownership: ArtifactOwnershipBinding<'azure'>;
   revision: ArtifactRevisionVector;
-  artifactState: BillingCostAnalysisDocumentState;
-  artifactEvidence: ArtifactPublicationDecision;
   inputManifestDigest: string;
   outputManifestDigest: string;
 }
+
+export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base &
+  (
+    | {
+        artifactState: BillingCompletedCostAnalysisDocumentState;
+        artifactEvidence: BillingCompletedArtifactPublicationDecision;
+      }
+    | {
+        artifactState: 'partial';
+        artifactEvidence: BillingPartialArtifactPublicationDecision;
+      }
+  );
 
 const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'fallback', 'complete-empty']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -441,16 +461,15 @@ const isAnomaly = (value: unknown): boolean => {
 
 const hasValidMetadataEvidenceState = (
   state: unknown,
-  evidence: ArtifactPublicationDecision,
+  evidence: unknown,
   billingGenerationId: string,
   inputManifestDigest: string,
   chartData: Record<string, unknown>,
   anomalies: unknown[]
 ): boolean => {
-  if (state === 'partial') return evidence.evidence === 'partial' && (evidence.publication === 'completed' || evidence.publication === 'partial');
-  if (evidence.publication !== 'completed') return false;
-  if (state !== 'complete-empty') return true;
+  if (state === 'partial') return isBillingPartialArtifactPublicationDecision(evidence, billingGenerationId, inputManifestDigest);
   if (!isBillingCompletedArtifactPublicationDecision(evidence, billingGenerationId, inputManifestDigest)) return false;
+  if (state !== 'complete-empty') return true;
   const billingHistory = evidence.dependencies.find(dependency => dependency.name === 'billing-history');
   const dataWindow = chartData.dataWindow;
   const views = chartData.views;
@@ -476,7 +495,6 @@ export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is Billin
     return false;
   }
   if (typeof value.artifactState !== 'string' || !BILLING_DOCUMENT_STATES.has(value.artifactState)) return false;
-  if (!isArtifactPublicationDecision(value.artifactEvidence)) return false;
   if (typeof value.inputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.inputManifestDigest)) return false;
   if (typeof value.outputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.outputManifestDigest)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;

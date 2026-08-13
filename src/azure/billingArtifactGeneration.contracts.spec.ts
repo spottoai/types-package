@@ -6,12 +6,15 @@ import {
   isBillingAnalyzerRequestV2,
   isBillingCostAnalysisMetadataV2,
   type ArtifactRevisionVector,
+  type ArtifactPublicationDecision,
   type BillingAnalysisCurrentPointerV1,
+  type BillingArtifactPublicationDecision,
   type BillingAnalyzerInputCurrentPointerV1,
   type BillingAnalyzerInputManifestV2,
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
   type BillingCostAnalysisMetadataV2,
+  type BillingPartialArtifactPublicationDecision,
 } from '../index';
 
 // @ts-expect-error Billing artifact basis is an implementation detail of the six Task 3 documents.
@@ -83,6 +86,61 @@ const publicationDecision = {
   claims: [costAnalysisClaim],
   issues: [],
 } satisfies BillingAnalyzerOutputManifestV2['publicationDecision'];
+
+const portalPluginPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'complete',
+  publication: 'completed',
+  dependencies: [
+    { ...billingHistoryDependency, name: 'portal', generationId: 'portal-run-42', digest: digestA },
+    { ...billingHistoryDependency, name: 'plugin', generationId: 'plugin-run-42', digest: digestB },
+  ],
+  claims: [
+    {
+      ...costAnalysisClaim,
+      claimId: 'coordinated-view-set',
+      sectionPaths: ['portal', 'plugin'],
+      requiredDependencies: ['portal', 'plugin'],
+    },
+  ],
+  issues: [],
+} satisfies ArtifactPublicationDecision;
+
+const partialBillingPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'partial',
+  publication: 'partial',
+  dependencies: [
+    billingHistoryDependency,
+    {
+      name: 'exchange-rates',
+      required: false,
+      support: 'supported',
+      applicability: 'applicable',
+      attempt: 'failed',
+      coverage: 'none',
+      emptyEvidence: 'not-observed',
+      freshness: 'unknown',
+      evidence: 'insufficient',
+      publication: 'suppressed',
+      reasonCode: 'exchange-rates-unavailable',
+    },
+  ],
+  claims: [
+    {
+      claimId: 'cost-analysis',
+      sectionPaths: ['chartData', 'anomalies'],
+      requiredDependencies: ['billing-history'],
+      evidence: 'partial',
+      publication: 'partial',
+      issues: [{ code: 'exchange-rates-unavailable', blocking: false, dependency: 'exchange-rates' }],
+    },
+  ],
+  issues: [{ code: 'exchange-rates-unavailable', blocking: false, dependency: 'exchange-rates' }],
+} satisfies BillingPartialArtifactPublicationDecision;
+
+const billingEvidence: BillingArtifactPublicationDecision = publicationDecision;
+const partialBillingEvidence: BillingPartialArtifactPublicationDecision = partialBillingPublicationDecision;
 
 const inputManifest = {
   schemaVersion: 2,
@@ -220,6 +278,12 @@ const costAnalysisMetadata = {
   currencySymbol: '$',
 } satisfies BillingCostAnalysisMetadataV2;
 
+const partialCostAnalysisMetadata = {
+  ...costAnalysisMetadata,
+  artifactState: 'partial',
+  artifactEvidence: partialBillingPublicationDecision,
+} satisfies BillingCostAnalysisMetadataV2;
+
 const additiveInputPointer = {
   ...inputPointer,
   futureTopLevelField: { producer: 'next-version' },
@@ -291,6 +355,7 @@ const validationResults: boolean[] = [
   isBillingAnalyzerOutputManifestV2(outputManifest),
   isBillingAnalysisCurrentPointerV1(analysisPointer),
   isBillingCostAnalysisMetadataV2(costAnalysisMetadata),
+  isBillingCostAnalysisMetadataV2(partialCostAnalysisMetadata),
 ];
 
 const runtimeSafetyResults: boolean[] = [
@@ -355,6 +420,52 @@ const wrongFirstRequiredBillingDependency: BillingAnalyzerOutputManifestV2['publ
   claims: [{ ...publicationDecision.claims[0], requiredDependencies: ['unrelated-history', 'billing-history'] }],
 };
 
+const currentMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+  ...costAnalysisMetadata,
+  // @ts-expect-error Successful billing metadata must reject portal/plugin publication evidence.
+  artifactEvidence: portalPluginPublicationDecision,
+};
+
+const staleMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+  ...costAnalysisMetadata,
+  artifactState: 'stale',
+  // @ts-expect-error Stale billing metadata still requires billing-bound completed evidence.
+  artifactEvidence: portalPluginPublicationDecision,
+};
+
+const fallbackMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+  ...costAnalysisMetadata,
+  artifactState: 'fallback',
+  // @ts-expect-error Fallback billing metadata still requires billing-bound completed evidence.
+  artifactEvidence: portalPluginPublicationDecision,
+};
+
+const completeEmptyMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+  ...costAnalysisMetadata,
+  artifactState: 'complete-empty',
+  // @ts-expect-error Complete-empty metadata requires billing-bound completed evidence.
+  artifactEvidence: portalPluginPublicationDecision,
+};
+
+const partialMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+  ...costAnalysisMetadata,
+  artifactState: 'partial',
+  // @ts-expect-error Partial metadata requires billing-history and cost-analysis tuple identities.
+  artifactEvidence: { ...portalPluginPublicationDecision, evidence: 'partial', publication: 'partial' },
+};
+
+const partialEvidenceWithWrongFirstDependency: BillingPartialArtifactPublicationDecision = {
+  ...partialBillingPublicationDecision,
+  // @ts-expect-error The authoritative tuple entry must be billing-history.
+  dependencies: [{ ...billingHistoryDependency, name: 'portal' }, billingHistoryDependency],
+};
+
+const partialEvidenceWithWrongFirstClaim: BillingPartialArtifactPublicationDecision = {
+  ...partialBillingPublicationDecision,
+  // @ts-expect-error The authoritative tuple entry must be cost-analysis.
+  claims: [{ ...partialBillingPublicationDecision.claims[0], claimId: 'coordinated-view-set' }, partialBillingPublicationDecision.claims[0]],
+};
+
 // @ts-expect-error Suppressed is an error/decision-path state, not successful metadata.
 const suppressedMetadata: BillingCostAnalysisMetadataV2 = { ...costAnalysisMetadata, artifactState: 'suppressed' };
 
@@ -371,5 +482,14 @@ void [
   billingDependencyWithoutIdentity,
   unrelatedFirstBillingClaim,
   wrongFirstRequiredBillingDependency,
+  billingEvidence,
+  partialBillingEvidence,
+  currentMetadataWithPortalEvidence,
+  staleMetadataWithPortalEvidence,
+  fallbackMetadataWithPortalEvidence,
+  completeEmptyMetadataWithPortalEvidence,
+  partialMetadataWithPortalEvidence,
+  partialEvidenceWithWrongFirstDependency,
+  partialEvidenceWithWrongFirstClaim,
   suppressedMetadata,
 ];

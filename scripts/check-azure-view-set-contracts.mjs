@@ -307,6 +307,9 @@ const viewManifestCases = [
   ['V3 control-character reference', { ...completedViewManifest, future: { filePath: 'safe/manifest\u0000.json' } }, false],
   ['V3 exact password field', { ...completedViewManifest, future: { password: 'secret-example' } }, false],
   ['V3 exact accessToken field', { ...completedViewManifest, future: { accessToken: 'token-example' } }, false],
+  ['V3 nested opaque S3 URI', { ...completedViewManifest, future: { nested: { location: 's3:bucket/key' } } }, false],
+  ['V3 nested single-slash file URI', { ...completedViewManifest, future: { nested: { location: 'file:/tmp/blob.json' } } }, false],
+  ['V3 nested percent-encoded slash', { ...completedViewManifest, future: { nested: { label: 'safe%2Fprivate' } } }, false],
 ];
 
 const viewSetCases = [
@@ -369,6 +372,9 @@ const viewSetCases = [
   ['V2 current-directory additive reference', { ...completedViewSet, future: { filePath: './manifest.json' } }, false],
   ['V2 exact clientSecret field', { ...completedViewSet, future: { clientSecret: 'secret-example' } }, false],
   ['V2 exact authorization field', { ...completedViewSet, future: { authorization: 'Bearer example' } }, false],
+  ['V2 nested opaque S3 URI', { ...completedViewSet, future: { nested: { location: 's3:bucket/key' } } }, false],
+  ['V2 nested single-slash file URI', { ...completedViewSet, future: { nested: { location: 'file:/tmp/blob.json' } } }, false],
+  ['V2 nested percent-encoded slash', { ...completedViewSet, future: { nested: { label: 'safe%2Fprivate' } } }, false],
 ];
 
 for (const [name, value, expected] of viewManifestCases) {

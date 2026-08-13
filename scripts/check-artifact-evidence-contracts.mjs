@@ -244,6 +244,56 @@ const publicationDecision = {
   ],
   issues: [],
 };
+const portalPluginPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'complete',
+  publication: 'completed',
+  dependencies: [
+    { ...publicationDecision.dependencies[0], name: 'portal', generationId: 'portal-run-42', digest: digestA },
+    { ...publicationDecision.dependencies[0], name: 'plugin', generationId: 'plugin-run-42', digest: digestB },
+  ],
+  claims: [
+    {
+      ...publicationDecision.claims[0],
+      claimId: 'coordinated-view-set',
+      sectionPaths: ['portal', 'plugin'],
+      requiredDependencies: ['portal', 'plugin'],
+    },
+  ],
+  issues: [],
+};
+const partialBillingPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'partial',
+  publication: 'partial',
+  dependencies: [
+    publicationDecision.dependencies[0],
+    {
+      name: 'exchange-rates',
+      required: false,
+      support: 'supported',
+      applicability: 'applicable',
+      attempt: 'failed',
+      coverage: 'none',
+      emptyEvidence: 'not-observed',
+      freshness: 'unknown',
+      evidence: 'insufficient',
+      publication: 'suppressed',
+      reasonCode: 'exchange-rates-unavailable',
+    },
+  ],
+  claims: [
+    {
+      claimId: 'cost-analysis',
+      sectionPaths: ['chartData', 'anomalies'],
+      requiredDependencies: ['billing-history'],
+      evidence: 'partial',
+      publication: 'partial',
+      issues: [{ code: 'exchange-rates-unavailable', blocking: false, dependency: 'exchange-rates' }],
+    },
+  ],
+  issues: [{ code: 'exchange-rates-unavailable', blocking: false, dependency: 'exchange-rates' }],
+};
 const inputManifest = {
   schemaVersion: 2,
   status: 'completed',
@@ -363,6 +413,11 @@ const costAnalysisMetadata = {
   anomalies: [],
   currencyCode: 'NZD',
   currencySymbol: '$',
+};
+const partialCostAnalysisMetadata = {
+  ...costAnalysisMetadata,
+  artifactState: 'partial',
+  artifactEvidence: partialBillingPublicationDecision,
 };
 
 const completeEmptyPublicationDecision = {
@@ -588,9 +643,134 @@ const billingValidatorCases = [
     false,
   ],
   ['metadata accepts its V2 fixture', isBillingCostAnalysisMetadataV2, costAnalysisMetadata, true],
+  ['partial metadata accepts billing-bound partial evidence', isBillingCostAnalysisMetadataV2, partialCostAnalysisMetadata, true],
   ['metadata accepts human-readable percentage text', isBillingCostAnalysisMetadataV2, percentageBearingMetadata, true],
   ['metadata rejects an unknown schema version', isBillingCostAnalysisMetadataV2, { ...costAnalysisMetadata, schemaVersion: 3 }, false],
   ['complete-empty metadata accepts exact billing-history proof', isBillingCostAnalysisMetadataV2, completeEmptyMetadata, true],
+  [
+    'current metadata rejects portal/plugin evidence',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, artifactEvidence: portalPluginPublicationDecision },
+    false,
+  ],
+  [
+    'stale metadata rejects portal/plugin evidence',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, artifactState: 'stale', artifactEvidence: portalPluginPublicationDecision },
+    false,
+  ],
+  [
+    'fallback metadata rejects portal/plugin evidence',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, artifactState: 'fallback', artifactEvidence: portalPluginPublicationDecision },
+    false,
+  ],
+  [
+    'partial metadata rejects portal/plugin evidence',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: { ...portalPluginPublicationDecision, evidence: 'partial', publication: 'partial' },
+    },
+    false,
+  ],
+  [
+    'complete-empty metadata rejects portal/plugin evidence',
+    isBillingCostAnalysisMetadataV2,
+    { ...completeEmptyMetadata, artifactEvidence: portalPluginPublicationDecision },
+    false,
+  ],
+  [
+    'current metadata rejects a billing-history generation mismatch',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...costAnalysisMetadata,
+      artifactEvidence: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], generationId: 'billing-generation-other' }],
+      },
+    },
+    false,
+  ],
+  [
+    'current metadata rejects a billing-history digest mismatch',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...costAnalysisMetadata,
+      artifactEvidence: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], digest: digestB }],
+      },
+    },
+    false,
+  ],
+  [
+    'partial metadata rejects a billing-history generation mismatch',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: {
+        ...partialBillingPublicationDecision,
+        dependencies: [
+          { ...partialBillingPublicationDecision.dependencies[0], generationId: 'billing-generation-other' },
+          partialBillingPublicationDecision.dependencies[1],
+        ],
+      },
+    },
+    false,
+  ],
+  [
+    'partial metadata rejects a billing-history digest mismatch',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: {
+        ...partialBillingPublicationDecision,
+        dependencies: [{ ...partialBillingPublicationDecision.dependencies[0], digest: digestB }, partialBillingPublicationDecision.dependencies[1]],
+      },
+    },
+    false,
+  ],
+  [
+    'partial metadata rejects a wrong first dependency identity',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: {
+        ...partialBillingPublicationDecision,
+        dependencies: [
+          { ...partialBillingPublicationDecision.dependencies[0], name: 'portal' },
+          partialBillingPublicationDecision.dependencies[0],
+          partialBillingPublicationDecision.dependencies[1],
+        ],
+      },
+    },
+    false,
+  ],
+  [
+    'partial metadata rejects a wrong first claim identity',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: {
+        ...partialBillingPublicationDecision,
+        claims: [{ ...partialBillingPublicationDecision.claims[0], claimId: 'coordinated-view-set' }, partialBillingPublicationDecision.claims[0]],
+      },
+    },
+    false,
+  ],
+  [
+    'partial metadata rejects a wrong first required dependency identity',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...partialCostAnalysisMetadata,
+      artifactEvidence: {
+        ...partialBillingPublicationDecision,
+        claims: [{ ...partialBillingPublicationDecision.claims[0], requiredDependencies: ['portal', 'billing-history'] }],
+      },
+    },
+    false,
+  ],
   [
     'complete-empty metadata rejects an unrelated optional empty dependency',
     isBillingCostAnalysisMetadataV2,
