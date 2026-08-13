@@ -1,0 +1,18 @@
+import {
+  validateAwsPortalRelationshipArtifact,
+  type AwsPortalRelationshipArtifact,
+} from '@spottoai/types-package/aws/relationships';
+import {
+  validateAwsCommitmentsPlanningViewIdentity,
+  type AwsCommitmentsPlanningView,
+} from '@spottoai/types-package/aws/commitments-planning';
+
+const commitmentsViewValidator: (value: unknown, expectedAccountId?: string) => asserts value is AwsCommitmentsPlanningView =
+  validateAwsCommitmentsPlanningViewIdentity;
+
+void [
+  validateAwsPortalRelationshipArtifact,
+  commitmentsViewValidator,
+];
+
+void (undefined as unknown as AwsPortalRelationshipArtifact);
