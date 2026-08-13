@@ -1,0 +1,115 @@
+{
+  "base": {
+    "schemaVersion": 1,
+    "passportId": "run/123:sub-123",
+    "generatedAt": "2026-08-13T00:02:00.000Z",
+    "runId": "run/123",
+    "ownership": {
+      "provider": "azure",
+      "tenantId": "tenant-1",
+      "companyId": "company-1",
+      "cloudAccountId": "cloud-account-1",
+      "accountId": "sub-123",
+      "subscriptionId": "sub-123"
+    },
+    "agreementObservation": {
+      "type": "unknown",
+      "source": "unknown"
+    },
+    "observations": {
+      "mode": "inline",
+      "totalCount": 1,
+      "items": [
+        {
+          "observationId": "billing",
+          "capability": "billing.history",
+          "scope": {
+            "kind": "subscription",
+            "provider": "azure",
+            "tenantId": "tenant-1",
+            "subscriptionId": "sub-123"
+          },
+          "attempt": {
+            "status": "attempted",
+            "startedAt": "2026-08-13T00:00:00.000Z",
+            "completedAt": "2026-08-13T00:01:00.000Z",
+            "outcome": "succeeded",
+            "reasonCodes": []
+          },
+          "providerSurfaceOutcome": "accepted",
+          "availability": "available",
+          "emptyEvidence": "unknown",
+          "freshness": {
+            "status": "current",
+            "observedAt": "2026-08-13T00:01:00.000Z"
+          }
+        }
+      ]
+    },
+    "producerVersions": {
+      "cloud-engine": "1.0.0"
+    },
+    "issues": []
+  },
+  "cases": [
+    {
+      "name": "base schema v1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "additive next field",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "additiveNextField",
+          "value": true
+        }
+      ]
+    },
+    {
+      "name": "non-string attempted outcome",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "observations.items.0.attempt.outcome",
+          "value": ["succeeded"]
+        }
+      ]
+    },
+    {
+      "name": "unknown schema version",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name": "non-canonical generated timestamp",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "generatedAt",
+          "value": "2026-08-13"
+        }
+      ]
+    },
+    {
+      "name": "cross-subscription resource evidence",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "observations.items.0.scope.kind",
+          "value": "resource"
+        },
+        {
+          "path": "observations.items.0.scope.normalizedResourceId",
+          "value": "/subscriptions/sub-other/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+        }
+      ]
+    }
+  ]
+}

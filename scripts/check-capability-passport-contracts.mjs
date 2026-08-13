@@ -1,5 +1,21 @@
 import assert from 'node:assert/strict';
 import { isCapabilityPassport } from '../dist/common/capabilityPassport.js';
+import contractCorpus from '../fixtures/capability-passport-contract-corpus.json' with { type: 'json' };
+
+const materializeCorpusCase = fixture => {
+  const document = structuredClone(contractCorpus.base);
+  for (const mutation of fixture.mutations) {
+    const segments = mutation.path.split('.');
+    let target = document;
+    for (const segment of segments.slice(0, -1)) target = target[segment];
+    target[segments.at(-1)] = structuredClone(mutation.value);
+  }
+  return document;
+};
+
+for (const fixture of contractCorpus.cases) {
+  assert.equal(isCapabilityPassport(materializeCorpusCase(fixture)), fixture.valid, `shared corpus: ${fixture.name}`);
+}
 
 const observation = {
   observationId: 'billing',
@@ -112,6 +128,17 @@ assert.equal(
   'rejects duplicate observation IDs'
 );
 assert.equal(isCapabilityPassport({ ...passport, generatedAt: '2026-08-13' }), false, 'rejects non-canonical timestamps');
+assert.equal(
+  isCapabilityPassport({
+    ...passport,
+    observations: {
+      ...passport.observations,
+      items: [{ ...observation, attempt: { ...observation.attempt, outcome: ['succeeded'] } }],
+    },
+  }),
+  false,
+  'rejects a non-string attempt outcome'
+);
 assert.equal(
   isCapabilityPassport({
     ...passport,
