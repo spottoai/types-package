@@ -43,6 +43,7 @@ export * from './accounts';
 export * from './assessments';
 export * from './users';
 export * from './common';
+export * from './common/artifactEvidence';
 export * from './company';
 export * from './customProperties';
 export * from './scheduler';
