@@ -191,6 +191,7 @@ Done when a V2 pointer cannot validate without enforceable ownership, completed 
 - Modify: `src/azure/views.ts`
 - Modify: `src/index.ts`
 - Modify: `tsconfig.contracts.json`
+- Modify: `scripts/check-azure-view-set-contracts.mjs`
 
 Steps:
 
@@ -199,7 +200,8 @@ Steps:
 3. Make both validators reject a `completed` claim with blocking required dependencies, unverified billing/economics evidence, mismatched ownership, missing artifact descriptors, or invalid revision state.
 4. Keep V2/V1 validators and exports unchanged for reader-first migration.
 5. Add compile assertions for `CompletedViewManifestV3`, `CompletedAzureViewSetV2`, and their validators.
-6. Run `npm run typecheck:contracts && npm run check:azure-view-set-contracts`; expected result: V1/V2 regression cases and new V3/V2 cases pass.
+6. Wire the new V3/V2 runtime matrix into `check:azure-view-set-contracts`; the contract spec must not remain a no-emit-only assertion file.
+7. Run `npm run typecheck:contracts && npm run check:azure-view-set-contracts`; expected result: legacy V1/V2 regression cases and new V3/V2 cases execute and pass.
 
 Done when enforced views have a new schema contract and no runtime-added `unknown` dependency is needed for migrated writers.
 
