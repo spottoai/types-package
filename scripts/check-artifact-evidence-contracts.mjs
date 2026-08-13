@@ -686,6 +686,12 @@ const billingControlDataCases = [
     false,
   ],
   [
+    'input manifest limits the publication identity exception to its root object and key',
+    isBillingAnalyzerInputManifestV2,
+    { ...inputManifest, future: { publicationKey: 's3:bucket/key' } },
+    false,
+  ],
+  [
     'request accepts harmless additive display metadata',
     isBillingAnalyzerRequestV2,
     { ...analyzerRequest, displayMetadata: harmlessAdditiveControlData },
