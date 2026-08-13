@@ -1057,8 +1057,23 @@ export const isCompletedAzureViewSetV1 = (value: unknown): value is CompletedAzu
 
 const VIEW_CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const FORBIDDEN_CREDENTIAL_FIELD =
-  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
+const FORBIDDEN_CREDENTIAL_FIELDS = new Set([
+  'accountkey',
+  'accesskey',
+  'accesstoken',
+  'apikey',
+  'authorization',
+  'clientsecret',
+  'connectionstring',
+  'credential',
+  'credentials',
+  'password',
+  'refreshtoken',
+  'sastoken',
+  'secret',
+  'sharedaccesssignature',
+  'token',
+]);
 const PHYSICAL_REFERENCE_FIELD =
   /^(?:path|url|uri|artifactpath|manifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
 
@@ -1078,7 +1093,24 @@ const isNonNegativeSafeInteger = (value: unknown): value is number => Number.isS
 const isSha256 = (value: unknown): value is string => typeof value === 'string' && SHA256_PATTERN.test(value);
 
 const isPhysicalReferenceValue = (value: string): boolean =>
-  value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
+  value.includes('://') ||
+  value.startsWith('/') ||
+  value.startsWith('\\\\') ||
+  /^[A-Za-z]:[\\/]/.test(value) ||
+  value.split(/[\\/]/).some(segment => segment === '.' || segment === '..');
+
+const normalizeControlFieldName = (key: string): string => key.replace(/[-_\s]/g, '').toLowerCase();
+
+const isSafeAzureResourceId = (key: string, value: unknown): value is string => {
+  if (key !== 'resourceId' || typeof value !== 'string' || hasControlCharacters(value) || value.includes('\\')) return false;
+  const segments = value.split('/');
+  return (
+    segments.length >= 3 &&
+    segments[0] === '' &&
+    segments[1].toLowerCase() === 'subscriptions' &&
+    segments.slice(2).every(segment => isStrictNonEmptyString(segment) && !/[?#%]/.test(segment) && segment !== '.' && segment !== '..')
+  );
+};
 
 const containsForbiddenViewControlData = (value: unknown, allowedReferenceFields: AllowedViewReferenceField[] = []): boolean => {
   if (typeof value === 'string') return hasControlCharacters(value) || isPhysicalReferenceValue(value);
@@ -1086,9 +1118,10 @@ const containsForbiddenViewControlData = (value: unknown, allowedReferenceFields
   if (!isRecord(value)) return false;
   return Object.entries(value).some(([key, child]) => {
     if (hasControlCharacters(key)) return true;
-    if (FORBIDDEN_CREDENTIAL_FIELD.test(key)) return true;
+    if (FORBIDDEN_CREDENTIAL_FIELDS.has(normalizeControlFieldName(key))) return true;
     const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
     if (PHYSICAL_REFERENCE_FIELD.test(key) && !referenceAllowed) return true;
+    if (isSafeAzureResourceId(key, child)) return false;
     return containsForbiddenViewControlData(child, allowedReferenceFields);
   });
 };

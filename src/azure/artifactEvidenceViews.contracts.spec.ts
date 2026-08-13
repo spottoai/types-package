@@ -278,10 +278,32 @@ const additiveViewManifest = {
   resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
 };
 
+const harmlessCredentialLikeViewManifest = {
+  ...completedViewManifest,
+  futureTopLevelField: { tokenCount: 2, authorizationStatus: 'granted' },
+};
+
+const physicalViewManifestReferences = [
+  { ...completedViewManifest, futureTopLevelField: { filePath: '/tmp/manifest.json' } },
+  { ...completedViewManifest, futureTopLevelField: { filePath: '../manifest.json' } },
+  { ...completedViewManifest, futureTopLevelField: { filePath: './manifest.json' } },
+];
+
 const additiveViewSet = {
   ...completedViewSet,
   futureTopLevelField: { producer: 'next-version' },
 };
+
+const harmlessCredentialLikeViewSet = {
+  ...completedViewSet,
+  futureTopLevelField: { tokenCount: 2, authorizationStatus: 'granted' },
+};
+
+const physicalViewSetReferences = [
+  { ...completedViewSet, futureTopLevelField: { filePath: '/tmp/manifest.json' } },
+  { ...completedViewSet, futureTopLevelField: { filePath: '../manifest.json' } },
+  { ...completedViewSet, futureTopLevelField: { filePath: './manifest.json' } },
+];
 
 const mismatchedSurfaceOwnership = {
   ...completedViewSet,
@@ -358,6 +380,7 @@ const viewValidationResults: boolean[] = [
   isCompletedViewManifestV3(optionalUnverifiedEconomics),
   isCompletedViewManifestV3(observeViewManifest),
   isCompletedViewManifestV3(additiveViewManifest),
+  isCompletedViewManifestV3(harmlessCredentialLikeViewManifest),
   !isCompletedViewManifestV3({ ...completedViewManifest, schemaVersion: 4 }),
   !isCompletedViewManifestV3({ ...completedViewManifest, artifacts: [] }),
   !isCompletedViewManifestV3({ ...completedViewManifest, requestedArtifactCount: 2 }),
@@ -371,11 +394,13 @@ const viewValidationResults: boolean[] = [
   !isCompletedViewManifestV3(invalidViewRevision),
   !isCompletedViewManifestV3(unsafeArtifactReference),
   !isCompletedViewManifestV3({ ...completedViewManifest, futureTopLevelField: { apiKey: 'key-example' } }),
+  ...physicalViewManifestReferences.map(value => !isCompletedViewManifestV3(value)),
 ];
 
 const viewSetValidationResults: boolean[] = [
   isCompletedAzureViewSetV2(completedViewSet),
   isCompletedAzureViewSetV2(additiveViewSet),
+  isCompletedAzureViewSetV2(harmlessCredentialLikeViewSet),
   !isCompletedAzureViewSetV2({ ...completedViewSet, schemaVersion: 3 }),
   !isCompletedAzureViewSetV2(mismatchedSurfaceOwnership),
   !isCompletedAzureViewSetV2(mismatchedSurfaceRevision),
@@ -387,6 +412,7 @@ const viewSetValidationResults: boolean[] = [
   !isCompletedAzureViewSetV2(unsafeManifestReference),
   !isCompletedAzureViewSetV2(credentialSmuggling),
   !isCompletedAzureViewSetV2(physicalReferenceSmuggling),
+  ...physicalViewSetReferences.map(value => !isCompletedAzureViewSetV2(value)),
 ];
 
 if (!viewValidationResults.every(result => result) || !viewSetValidationResults.every(result => result)) {
