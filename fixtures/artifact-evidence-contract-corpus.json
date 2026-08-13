@@ -1,0 +1,288 @@
+{
+  "corpusVersion": 1,
+  "fixtures": {
+    "currentPopulatedDecision": {
+      "processing": "succeeded",
+      "evidence": "complete",
+      "publication": "completed",
+      "dependencies": [
+        {
+          "name": "billing-history",
+          "required": true,
+          "support": "supported",
+          "applicability": "applicable",
+          "attempt": "succeeded",
+          "coverage": "complete",
+          "emptyEvidence": "populated",
+          "freshness": "current",
+          "evidence": "complete",
+          "publication": "completed",
+          "generationId": "billing-source-generation-42",
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "sourceRevision": 42,
+          "policyRevision": 7,
+          "observedRange": {
+            "fromInclusive": "2026-07-01T00:00:00.000Z",
+            "throughExclusive": "2026-08-01T00:00:00.000Z",
+            "dateBasis": "utc"
+          },
+          "completeThrough": "2026-08-01T00:00:00.000Z"
+        }
+      ],
+      "claims": [
+        {
+          "claimId": "cost-analysis",
+          "sectionPaths": ["chartData", "anomalies"],
+          "requiredDependencies": ["billing-history"],
+          "evidence": "complete",
+          "publication": "completed",
+          "issues": []
+        }
+      ],
+      "issues": []
+    },
+    "enforceableInputPointer": {
+      "schemaVersion": 1,
+      "status": "completed",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123",
+        "ownershipEpochRevision": 3
+      },
+      "revision": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "manifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "manifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "completedAt": "2026-08-13T00:02:00.000Z"
+    },
+    "legacyBillingCostAnalysisMetadataV1": {
+      "subscriptionId": "sub-123",
+      "billingGenerationId": "billing-generation-v1",
+      "chartData": {
+        "schemaVersion": 1,
+        "source": "aggregated",
+        "dataWindow": {
+          "startDate": 1782864000,
+          "endDate": 1785542400,
+          "pointCount": 0
+        },
+        "views": {},
+        "detectors": {
+          "threshold": 3,
+          "methods": []
+        }
+      },
+      "anomalies": [],
+      "currencyCode": "NZD",
+      "currencySymbol": "$"
+    }
+  },
+  "cases": [
+    {
+      "name": "current populated evidence publishes completed",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "proven complete-empty publishes completed",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": true,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/history/billing/proofs/billing-input-generation-42-empty.json"
+        }
+      ]
+    },
+    {
+      "name": "stale last-known-good remains explicitly publishable",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": true,
+      "mutations": [
+        { "path": "dependencies.0.freshness", "value": "stale" },
+        { "path": "dependencies.0.reasonCode", "value": "retained-last-known-good" }
+      ]
+    },
+    {
+      "name": "partial optional dependency does not block completed required claim",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": true,
+      "mutations": [
+        { "path": "evidence", "value": "partial" },
+        {
+          "path": "dependencies.1",
+          "value": {
+            "name": "cost-anomaly-explanation",
+            "required": false,
+            "support": "supported",
+            "applicability": "applicable",
+            "attempt": "succeeded",
+            "coverage": "partial",
+            "emptyEvidence": "populated",
+            "freshness": "current",
+            "evidence": "partial",
+            "publication": "partial",
+            "generationId": "anomaly-generation-9",
+            "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceRevision": 9,
+            "policyRevision": 7,
+            "reasonCode": "source-partial"
+          }
+        }
+      ]
+    },
+    {
+      "name": "legacy billing metadata v1 remains readable during migration",
+      "validator": "billingCostAnalysisMetadataCompatibility",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "additive unknown fields are accepted for a known version",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": true,
+      "mutations": [
+        { "path": "futureTopLevelField", "value": { "producer": "next-version" } },
+        { "path": "ownership.futureOwnershipField", "value": true }
+      ]
+    },
+    {
+      "name": "complete-empty without an empty proof is rejected",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 }
+      ]
+    },
+    {
+      "name": "failed attempt cannot publish completed",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [{ "path": "dependencies.0.attempt", "value": "failed" }]
+    },
+    {
+      "name": "enforceable pointer requires an ownership epoch",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "delete": true },
+        { "path": "revision.ownershipEpochRevision", "delete": true }
+      ]
+    },
+    {
+      "name": "zero source revision is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "revision.sourceRevision", "value": 0 }]
+    },
+    {
+      "name": "negative policy revision is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "revision.policyRevision", "value": -1 }]
+    },
+    {
+      "name": "unsafe physical manifest path is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "manifestPath", "value": "https://storage.example.invalid/container/manifest.json?sig=secret" }]
+    },
+    {
+      "name": "malformed sha-256 digest is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "manifestDigest", "value": "not-a-sha-256" }]
+    },
+    {
+      "name": "cross-subscription ownership is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "ownership.accountId", "value": "sub-other" }]
+    },
+    {
+      "name": "unknown pointer schema version is rejected",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [{ "path": "schemaVersion", "value": 2 }]
+    },
+    {
+      "name": "equal revisions with conflicting fixture digests are quarantined",
+      "validator": "artifactPromotionPrecondition",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "expectedRevisionComparison": "equal",
+      "mutations": [{ "path": "manifestDigest", "value": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" }]
+    }
+  ],
+  "revisionComparisons": [
+    {
+      "name": "missing ownership epoch is unenforceable",
+      "left": { "sourceRevision": 42, "policyRevision": 7 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 41, "policyRevision": 7 },
+      "expected": "unenforceable"
+    },
+    {
+      "name": "higher ownership epoch wins before source revision",
+      "left": { "ownershipEpochRevision": 4, "sourceRevision": 1, "policyRevision": 1 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 999, "policyRevision": 999 },
+      "expected": "newer-ownership"
+    },
+    {
+      "name": "lower ownership epoch loses before source revision",
+      "left": { "ownershipEpochRevision": 2, "sourceRevision": 999, "policyRevision": 999 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 1, "policyRevision": 1 },
+      "expected": "older-ownership"
+    },
+    {
+      "name": "both revision components higher is newer",
+      "left": { "ownershipEpochRevision": 3, "sourceRevision": 43, "policyRevision": 8 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "expected": "newer"
+    },
+    {
+      "name": "both revision components lower is older",
+      "left": { "ownershipEpochRevision": 3, "sourceRevision": 41, "policyRevision": 6 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "expected": "older"
+    },
+    {
+      "name": "opposed revision components are incomparable",
+      "left": { "ownershipEpochRevision": 3, "sourceRevision": 43, "policyRevision": 6 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "expected": "incomparable"
+    },
+    {
+      "name": "identical revision components are equal",
+      "left": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "expected": "equal"
+    }
+  ]
+}
