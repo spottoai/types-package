@@ -16,6 +16,15 @@ import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
+import {
+  isArtifactOwnershipBinding,
+  isArtifactPublicationDecision,
+  isEnforceableArtifactOwnershipBinding,
+  type ArtifactOwnershipBinding,
+  type ArtifactPublicationDecision,
+  type ArtifactRevisionVector,
+} from '../common/artifactEvidence.js';
+import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummary;
@@ -922,7 +931,29 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base &
         })
   );
 
-export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
+interface CompletedViewArtifactDescriptor extends ArtifactDescriptor {
+  path: string;
+}
+
+/** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
+export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
+  schemaVersion: 3;
+  status: 'completed';
+  runId: string;
+  subscriptionId: string;
+  artifacts: [CompletedViewArtifactDescriptor, ...CompletedViewArtifactDescriptor[]];
+  artifactGeneration: CompletedViewArtifactGeneration;
+  costSavings?: CompletedViewCostSavingsManifest;
+  failedArtifactCount: 0;
+  failedResourceCount: 0;
+  ownership: ArtifactOwnershipBinding<'azure'>;
+  revision: ArtifactRevisionVector;
+  compositeDependencyDigest: string;
+  publicationDecision: ArtifactPublicationDecision;
+  completedAt: string;
+}
+
+export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2 | CompletedViewManifestV3;
 
 export interface AzureViewSetSurfaceReference {
   /** Immutable generation run ID declared by the surface completed manifest. */
@@ -944,6 +975,33 @@ export interface CompletedAzureViewSetV1 {
     generationId: string;
     fingerprint: string;
   };
+  completedAt: string;
+}
+
+type CompletedArtifactPublicationDecision = Extract<ArtifactPublicationDecision, { publication: 'completed' }>;
+
+interface AzureViewSetV2SurfaceReference {
+  runId: string;
+  manifestPath: string;
+  manifestDigest: string;
+  ownership: ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number };
+  revision: ArtifactRevisionVector & { ownershipEpochRevision: number };
+  compositeDependencyDigest: string;
+  completedAt: string;
+}
+
+/** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
+export interface CompletedAzureViewSetV2 {
+  schemaVersion: 2;
+  status: 'completed';
+  subscriptionId: string;
+  publicationId: string;
+  ownership: ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number };
+  revision: ArtifactRevisionVector & { ownershipEpochRevision: number };
+  portal: AzureViewSetV2SurfaceReference;
+  plugin: AzureViewSetV2SurfaceReference;
+  compositeDependencyDigest: string;
+  publicationDecision: CompletedArtifactPublicationDecision;
   completedAt: string;
 }
 
@@ -995,4 +1053,229 @@ export const isCompletedAzureViewSetV1 = (value: unknown): value is CompletedAzu
   if (!isViewSetSurfaceReference(value.portal) || !isViewSetSurfaceReference(value.plugin)) return false;
   if (!isRecord(value.economics)) return false;
   return isNonEmptyString(value.economics.generationId) && isNonEmptyString(value.economics.fingerprint);
+};
+
+const VIEW_CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
+const SHA256_PATTERN = /^[a-f0-9]{64}$/;
+const FORBIDDEN_CREDENTIAL_FIELD =
+  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
+const PHYSICAL_REFERENCE_FIELD =
+  /^(?:path|url|uri|artifactpath|manifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
+
+interface AllowedViewReferenceField {
+  object: Record<string, unknown>;
+  key: string;
+}
+
+const hasControlCharacters = (value: string): boolean =>
+  Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
+
+const isStrictNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() === value && value.length > 0 && !hasControlCharacters(value);
+
+const isPositiveSafeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) > 0;
+const isNonNegativeSafeInteger = (value: unknown): value is number => Number.isSafeInteger(value) && Number(value) >= 0;
+const isSha256 = (value: unknown): value is string => typeof value === 'string' && SHA256_PATTERN.test(value);
+
+const isPhysicalReferenceValue = (value: string): boolean =>
+  value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
+
+const containsForbiddenViewControlData = (value: unknown, allowedReferenceFields: AllowedViewReferenceField[] = []): boolean => {
+  if (typeof value === 'string') return hasControlCharacters(value) || isPhysicalReferenceValue(value);
+  if (Array.isArray(value)) return value.some(child => containsForbiddenViewControlData(child, allowedReferenceFields));
+  if (!isRecord(value)) return false;
+  return Object.entries(value).some(([key, child]) => {
+    if (hasControlCharacters(key)) return true;
+    if (FORBIDDEN_CREDENTIAL_FIELD.test(key)) return true;
+    const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
+    if (PHYSICAL_REFERENCE_FIELD.test(key) && !referenceAllowed) return true;
+    return containsForbiddenViewControlData(child, allowedReferenceFields);
+  });
+};
+
+const allowedViewReferenceField = (object: unknown, key: string): AllowedViewReferenceField[] => (isRecord(object) ? [{ object, key }] : []);
+
+const allowedViewArtifactPaths = (artifacts: unknown): AllowedViewReferenceField[] =>
+  Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedViewReferenceField(artifact, 'path')) : [];
+
+const isSafePathSegment = (value: unknown): value is string =>
+  isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
+
+const isSafeLogicalPath = (value: unknown): value is string => {
+  if (!isStrictNonEmptyString(value) || value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#')) return false;
+  if (value.includes('\\') || value.includes('%')) return false;
+  const segments = value.split('/');
+  return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
+};
+
+const isStrictCanonicalIsoTimestamp = (value: unknown): value is string => {
+  if (!isStrictNonEmptyString(value)) return false;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
+};
+
+const isViewRevisionVector = (value: unknown): value is ArtifactRevisionVector =>
+  isRecord(value) &&
+  isPositiveSafeInteger(value.sourceRevision) &&
+  isPositiveSafeInteger(value.policyRevision) &&
+  (value.ownershipEpochRevision === undefined || isPositiveSafeInteger(value.ownershipEpochRevision));
+
+const isEnforceableAzureOwnershipBinding = (value: unknown): value is ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number } =>
+  isEnforceableArtifactOwnershipBinding(value) && value.provider === 'azure';
+
+const hasMatchingViewOwnership = (subscriptionId: unknown, ownership: unknown, revision: unknown, enforceable: boolean): boolean => {
+  if (!isSafePathSegment(subscriptionId) || !isViewRevisionVector(revision)) return false;
+  if (!isArtifactOwnershipBinding(ownership)) return false;
+  if (enforceable && !isEnforceableArtifactOwnershipBinding(ownership)) return false;
+  if (ownership.provider !== 'azure' || ownership.accountId !== subscriptionId) return false;
+  return ownership.ownershipEpochRevision === revision.ownershipEpochRevision;
+};
+
+const isViewArtifactDescriptor = (value: unknown, runId: string): value is CompletedViewArtifactDescriptor =>
+  isRecord(value) &&
+  isSafeLogicalPath(value.path) &&
+  value.path.startsWith(`runs/${runId}/`) &&
+  value.path.length > `runs/${runId}/`.length &&
+  isStrictNonEmptyString(value.name) &&
+  value.mediaType === 'application/json' &&
+  typeof value.contentEncoding === 'string' &&
+  VIEW_CONTENT_ENCODINGS.has(value.contentEncoding) &&
+  isNonNegativeSafeInteger(value.byteLength) &&
+  isSha256(value.sha256);
+
+const hasRequiredViewDependencies = (decision: ArtifactPublicationDecision): boolean => {
+  const dependencies = new Map(decision.dependencies.map(dependency => [dependency.name, dependency]));
+  const billing = dependencies.get('billing');
+  const economics = dependencies.get('economics');
+  if (!billing || !economics) return false;
+
+  for (const dependency of [billing, economics]) {
+    if (dependency.publication === 'completed' && (!isStrictNonEmptyString(dependency.generationId) || !isSha256(dependency.digest))) {
+      return false;
+    }
+  }
+
+  const completedDependencies = new Set(
+    decision.dependencies.filter(dependency => dependency.publication === 'completed').map(dependency => dependency.name)
+  );
+  return decision.claims.every(
+    claim => claim.publication !== 'completed' || claim.requiredDependencies.every(dependency => completedDependencies.has(dependency))
+  );
+};
+
+/** Validates an evidence-aware completed portal or plugin generation manifest. */
+export const isCompletedViewManifestV3 = (value: unknown): value is CompletedViewManifestV3 => {
+  if (!isRecord(value) || containsForbiddenViewControlData(value, allowedViewArtifactPaths(value.artifacts))) return false;
+  if (value.schemaVersion !== 3 || value.status !== 'completed') return false;
+  if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false)) return false;
+  if (
+    !isRecord(value.artifactGeneration) ||
+    value.artifactGeneration.runId !== value.runId ||
+    !isStrictCanonicalIsoTimestamp(value.artifactGeneration.generatedAt)
+  ) {
+    return false;
+  }
+  if (!Array.isArray(value.artifacts) || value.artifacts.length === 0) return false;
+  if (!value.artifacts.every(artifact => isViewArtifactDescriptor(artifact, value.runId as string))) return false;
+  if (
+    new Set(value.artifacts.map(artifact => artifact.path)).size !== value.artifacts.length ||
+    new Set(value.artifacts.map(artifact => artifact.name)).size !== value.artifacts.length
+  ) {
+    return false;
+  }
+  if (
+    !isPositiveSafeInteger(value.requestedArtifactCount) ||
+    value.requestedArtifactCount !== value.artifacts.length ||
+    !isNonNegativeSafeInteger(value.requestedResourceCount) ||
+    value.failedArtifactCount !== 0 ||
+    value.failedResourceCount !== 0 ||
+    !isSha256(value.compositeDependencyDigest) ||
+    !isStrictCanonicalIsoTimestamp(value.completedAt)
+  ) {
+    return false;
+  }
+  return isArtifactPublicationDecision(value.publicationDecision) && hasRequiredViewDependencies(value.publicationDecision);
+};
+
+const hasSameOwnership = (left: ArtifactOwnershipBinding<'azure'>, right: ArtifactOwnershipBinding<'azure'>): boolean =>
+  left.provider === right.provider &&
+  left.tenantId === right.tenantId &&
+  left.companyId === right.companyId &&
+  left.cloudAccountId === right.cloudAccountId &&
+  left.accountId === right.accountId &&
+  left.ownershipEpochRevision === right.ownershipEpochRevision;
+
+const hasSameRevision = (left: ArtifactRevisionVector, right: ArtifactRevisionVector): boolean =>
+  left.ownershipEpochRevision === right.ownershipEpochRevision &&
+  left.sourceRevision === right.sourceRevision &&
+  left.policyRevision === right.policyRevision;
+
+const isViewSetV2SurfaceReference = (
+  value: unknown,
+  surface: 'portal' | 'plugin',
+  subscriptionId: string,
+  ownership: ArtifactOwnershipBinding<'azure'>,
+  revision: ArtifactRevisionVector,
+  compositeDependencyDigest: string
+): value is AzureViewSetV2SurfaceReference => {
+  if (!isRecord(value) || !isSafePathSegment(value.runId)) return false;
+  const expectedManifestName = surface === 'portal' ? 'completed-view-manifest.json' : 'completed-plugin-generation.json';
+  if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !isSafeLogicalPath(value.manifestPath)) return false;
+  if (!isEnforceableAzureOwnershipBinding(value.ownership) || !isViewRevisionVector(value.revision)) return false;
+  if (!hasMatchingViewOwnership(subscriptionId, value.ownership, value.revision, true)) return false;
+  if (!hasSameOwnership(ownership, value.ownership) || !hasSameRevision(revision, value.revision)) return false;
+  return (
+    isSha256(value.manifestDigest) &&
+    value.compositeDependencyDigest === compositeDependencyDigest &&
+    isStrictCanonicalIsoTimestamp(value.completedAt)
+  );
+};
+
+const hasMatchingSurfaceDependency = (
+  decision: ArtifactPublicationDecision,
+  name: 'portal' | 'plugin',
+  surface: AzureViewSetV2SurfaceReference
+): boolean => {
+  const dependency = decision.dependencies.find(candidate => candidate.name === name);
+  return (
+    dependency !== undefined &&
+    dependency.required &&
+    dependency.publication === 'completed' &&
+    dependency.generationId === surface.runId &&
+    dependency.digest === surface.manifestDigest
+  );
+};
+
+/** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
+export const isCompletedAzureViewSetV2 = (value: unknown): value is CompletedAzureViewSetV2 => {
+  const allowedReferences = isRecord(value)
+    ? [...allowedViewReferenceField(value.portal, 'manifestPath'), ...allowedViewReferenceField(value.plugin, 'manifestPath')]
+    : [];
+  if (!isRecord(value) || containsForbiddenViewControlData(value, allowedReferences)) return false;
+  if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
+  if (
+    !isSafePathSegment(value.subscriptionId) ||
+    !isStrictNonEmptyString(value.publicationId) ||
+    !isEnforceableAzureOwnershipBinding(value.ownership) ||
+    !isViewRevisionVector(value.revision) ||
+    !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, true)
+  ) {
+    return false;
+  }
+  if (!isSha256(value.compositeDependencyDigest) || !isStrictCanonicalIsoTimestamp(value.completedAt)) return false;
+  if (
+    !isViewSetV2SurfaceReference(value.portal, 'portal', value.subscriptionId, value.ownership, value.revision, value.compositeDependencyDigest) ||
+    !isViewSetV2SurfaceReference(value.plugin, 'plugin', value.subscriptionId, value.ownership, value.revision, value.compositeDependencyDigest)
+  ) {
+    return false;
+  }
+  const laterSurfaceCompletedAt =
+    Date.parse(value.portal.completedAt) >= Date.parse(value.plugin.completedAt) ? value.portal.completedAt : value.plugin.completedAt;
+  if (value.completedAt !== laterSurfaceCompletedAt) return false;
+  return (
+    isArtifactPublicationDecision(value.publicationDecision) &&
+    value.publicationDecision.publication === 'completed' &&
+    hasMatchingSurfaceDependency(value.publicationDecision, 'portal', value.portal) &&
+    hasMatchingSurfaceDependency(value.publicationDecision, 'plugin', value.plugin)
+  );
 };
