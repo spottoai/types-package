@@ -181,6 +181,20 @@
       "mutations": [{ "path": "dependencies.0.attempt", "value": "failed" }]
     },
     {
+      "name": "required partial dependency blocks completed publication without claims",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "claims", "value": [] },
+        { "path": "dependencies.0.attempt", "value": "failed" },
+        { "path": "dependencies.0.coverage", "value": "partial" },
+        { "path": "dependencies.0.evidence", "value": "partial" },
+        { "path": "dependencies.0.publication", "value": "partial" },
+        { "path": "dependencies.0.reasonCode", "value": "source-partial" }
+      ]
+    },
+    {
       "name": "enforceable pointer requires an ownership epoch",
       "validator": "isBillingAnalyzerInputCurrentPointerV1",
       "fixture": "enforceableInputPointer",

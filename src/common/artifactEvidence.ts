@@ -52,6 +52,8 @@ interface ArtifactDecisionIssue {
   dependency?: string;
 }
 
+type ArtifactNonBlockingDecisionIssue = ArtifactDecisionIssue & { blocking: false };
+
 export interface ArtifactObservedRange {
   fromInclusive: string;
   throughExclusive: string;
@@ -123,15 +125,15 @@ export type ArtifactDependencyDescriptor =
   | ArtifactCompleteEmptyCompletedDependency
   | ArtifactUnpublishedDependency;
 
-interface ArtifactClaimDependencyDecisionBase {
+interface ArtifactClaimDependencyDecisionBase<Issue extends ArtifactDecisionIssue = ArtifactDecisionIssue> {
   claimId: string;
   sectionPaths: string[];
   requiredDependencies: string[];
-  issues: ArtifactDecisionIssue[];
+  issues: Issue[];
 }
 
 export type ArtifactClaimDependencyDecision =
-  | (ArtifactClaimDependencyDecisionBase & {
+  | (ArtifactClaimDependencyDecisionBase<ArtifactNonBlockingDecisionIssue> & {
       evidence: 'complete';
       publication: 'completed';
     })
@@ -140,15 +142,28 @@ export type ArtifactClaimDependencyDecision =
       publication: Exclude<ArtifactPublicationVerdict, 'completed'>;
     });
 
-interface ArtifactPublicationDecisionBase {
+type ArtifactCompletedDependency = Extract<ArtifactDependencyDescriptor, { publication: 'completed' }>;
+type ArtifactIncompleteDependency = Exclude<ArtifactDependencyDescriptor, ArtifactCompletedDependency>;
+type ArtifactCompletedDecisionDependency = ArtifactCompletedDependency | (ArtifactIncompleteDependency & { required: false });
+type ArtifactCompletedClaimDependencyDecision = Extract<ArtifactClaimDependencyDecision, { publication: 'completed' }>;
+
+interface ArtifactPublicationDecisionBase<
+  Dependency extends ArtifactDependencyDescriptor = ArtifactDependencyDescriptor,
+  Claim extends ArtifactClaimDependencyDecision = ArtifactClaimDependencyDecision,
+  Issue extends ArtifactDecisionIssue = ArtifactDecisionIssue,
+> {
   evidence: ArtifactEvidenceVerdict;
-  dependencies: ArtifactDependencyDescriptor[];
-  claims: ArtifactClaimDependencyDecision[];
-  issues: ArtifactDecisionIssue[];
+  dependencies: Dependency[];
+  claims: Claim[];
+  issues: Issue[];
 }
 
 export type ArtifactPublicationDecision =
-  | (ArtifactPublicationDecisionBase & {
+  | (ArtifactPublicationDecisionBase<
+      ArtifactCompletedDecisionDependency,
+      ArtifactCompletedClaimDependencyDecision,
+      ArtifactNonBlockingDecisionIssue
+    > & {
       processing: 'succeeded';
       evidence: 'complete' | 'partial';
       publication: 'completed';
@@ -317,6 +332,7 @@ export const isArtifactPublicationDecision = (value: unknown): value is Artifact
   return (
     value.processing === 'succeeded' &&
     (value.evidence === 'complete' || value.evidence === 'partial') &&
+    value.dependencies.every(dependency => !dependency.required || dependency.publication === 'completed') &&
     value.claims.every(
       claim => claim.publication === 'completed' && claim.requiredDependencies.every(dependency => completedDependencies.has(dependency))
     ) &&

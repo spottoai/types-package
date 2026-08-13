@@ -82,6 +82,27 @@ const publicationDecision = {
   issues: [],
 } satisfies ArtifactPublicationDecision;
 
+const optionalPartialDependency = {
+  ...dependency,
+  name: 'cost-anomaly-explanation',
+  required: false,
+  attempt: 'failed',
+  coverage: 'partial',
+  evidence: 'partial',
+  publication: 'partial',
+  reasonCode: 'source-partial',
+} satisfies ArtifactDependencyDescriptor;
+
+const requiredPartialDependency = {
+  ...optionalPartialDependency,
+  required: true,
+} satisfies ArtifactDependencyDescriptor;
+
+const completedWithOptionalPartialDependency = {
+  ...publicationDecision,
+  dependencies: [dependency, optionalPartialDependency],
+} satisfies ArtifactPublicationDecision;
+
 const readStates: BillingArtifactReadState[] = ['current', 'stale', 'partial', 'fallback', 'suppressed', 'unavailable', 'complete-empty'];
 
 const stateVocabulary: [
@@ -124,6 +145,31 @@ const insufficientCompletedClaim: ArtifactClaimDependencyDecision = {
   evidence: 'insufficient',
 };
 
+// @ts-expect-error A completed publication cannot carry an incomplete required dependency.
+const requiredPartialCompletedPublication: ArtifactPublicationDecision = {
+  ...publicationDecision,
+  claims: [],
+  dependencies: [requiredPartialDependency],
+};
+
+// @ts-expect-error Every claim in a completed publication must itself be completed.
+const incompleteClaimCompletedPublication: ArtifactPublicationDecision = {
+  ...publicationDecision,
+  claims: [{ ...claim, evidence: 'insufficient', publication: 'partial' }],
+};
+
+// @ts-expect-error Completed publication issues must be explicitly non-blocking.
+const blockingIssueCompletedPublication: ArtifactPublicationDecision = {
+  ...publicationDecision,
+  issues: [{ code: 'required-dependency-incomplete', blocking: true }],
+};
+
+const blockingClaimIssueCompletedPublication: ArtifactPublicationDecision = {
+  ...publicationDecision,
+  // @ts-expect-error Claims in a completed publication cannot carry blocking issues.
+  claims: [{ ...claim, issues: [{ code: 'required-dependency-incomplete', blocking: true }] }],
+};
+
 // @ts-expect-error The public billing read-state vocabulary is closed.
 const unknownReadState: BillingArtifactReadState = 'unknown';
 
@@ -135,11 +181,18 @@ void [
   dependency,
   claim,
   publicationDecision,
+  optionalPartialDependency,
+  requiredPartialDependency,
+  completedWithOptionalPartialDependency,
   readStates,
   stateVocabulary,
   comparison,
   failedCompletedPublication,
   unprovenCompleteEmpty,
   insufficientCompletedClaim,
+  requiredPartialCompletedPublication,
+  incompleteClaimCompletedPublication,
+  blockingIssueCompletedPublication,
+  blockingClaimIssueCompletedPublication,
   unknownReadState,
 ];
