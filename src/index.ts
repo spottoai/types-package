@@ -5,6 +5,7 @@ export * from './azure/activityLogs';
 export * from './azure/budgets';
 export * from './azure/billingGeneration';
 export * from './azure/billingArtifactGeneration';
+export * from './azure/billingArtifactCanonicalization';
 export * from './azure/billingPlots';
 export * from './azure/benefits';
 export * from './azure/commitmentsPlanning';

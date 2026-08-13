@@ -1,10 +1,15 @@
 import {
+  canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
+  canonicalizeBillingOutputBindingV1,
   isBillingAnalysisCurrentPointerV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
   isBillingCostAnalysisMetadataV2,
+  projectBillingOutputBindingV1FromManifest,
+  projectBillingOutputBindingV1FromMetadata,
   type ArtifactRevisionVector,
   type ArtifactPublicationDecision,
   type BillingAnalysisCurrentPointerV1,
@@ -14,6 +19,7 @@ import {
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
   type BillingCostAnalysisMetadataV2,
+  type BillingOutputBindingV1,
   type BillingPartialArtifactPublicationDecision,
 } from '../index';
 
@@ -31,6 +37,7 @@ import type { BillingCostAnalysisDocumentState } from '../index';
 const digestA = 'a'.repeat(64);
 const digestB = 'b'.repeat(64);
 const digestC = 'c'.repeat(64);
+const digestD = 'd'.repeat(64);
 const completedAt = '2026-08-13T00:05:00.000Z';
 const subscriptionId = 'sub-123';
 const generationId = 'billing-input-generation-42';
@@ -219,6 +226,7 @@ const outputManifest = {
   revision,
   inputManifestPath,
   inputManifestDigest: inputManifest.manifestDigest,
+  outputBindingDigest: digestD,
   artifacts: [
     {
       path: 'subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json',
@@ -258,7 +266,7 @@ const costAnalysisMetadata = {
   artifactState: 'current',
   artifactEvidence: publicationDecision,
   inputManifestDigest: inputManifest.manifestDigest,
-  outputManifestDigest: outputManifest.manifestDigest,
+  outputBindingDigest: outputManifest.outputBindingDigest,
   chartData: {
     schemaVersion: 1,
     source: 'aggregated',
@@ -277,6 +285,24 @@ const costAnalysisMetadata = {
   currencyCode: 'NZD',
   currencySymbol: '$',
 } satisfies BillingCostAnalysisMetadataV2;
+
+const manifestBinding = projectBillingOutputBindingV1FromManifest(outputManifest);
+const metadataBinding = projectBillingOutputBindingV1FromMetadata(costAnalysisMetadata);
+const binding = {
+  kind: 'billing-analysis-output',
+  schemaVersion: 1,
+  subscriptionId,
+  generationId,
+  ownership,
+  revision,
+  inputManifestDigest: inputManifest.manifestDigest,
+  publicationDecision,
+} satisfies BillingOutputBindingV1;
+const canonicalPreimages: string[] = [
+  canonicalizeBillingOutputBindingV1(binding),
+  canonicalizeBillingAnalyzerInputManifestV2ForDigest(inputManifest),
+  canonicalizeBillingAnalyzerOutputManifestV2ForDigest(outputManifest),
+];
 
 const partialCostAnalysisMetadata = {
   ...costAnalysisMetadata,
@@ -469,8 +495,15 @@ const partialEvidenceWithWrongFirstClaim: BillingPartialArtifactPublicationDecis
 // @ts-expect-error Suppressed is an error/decision-path state, not successful metadata.
 const suppressedMetadata: BillingCostAnalysisMetadataV2 = { ...costAnalysisMetadata, artifactState: 'suppressed' };
 
+const cyclicMetadataAlias = {
+  ...costAnalysisMetadata,
+  outputManifestDigest: outputManifest.manifestDigest,
+};
+runtimeSafetyResults.push(!isBillingCostAnalysisMetadataV2(cyclicMetadataAlias));
+
 void [
   validationResults,
+  canonicalPreimages,
   runtimeSafetyResults,
   unknownInputManifestVersion,
   unknownInputPointerVersion,
@@ -492,4 +525,5 @@ void [
   partialEvidenceWithWrongFirstDependency,
   partialEvidenceWithWrongFirstClaim,
   suppressedMetadata,
+  cyclicMetadataAlias,
 ];

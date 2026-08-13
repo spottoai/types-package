@@ -94,6 +94,7 @@ export interface BillingAnalyzerRequestV2 {
 export interface BillingAnalyzerOutputManifestV2 extends BillingGenerationDocumentV2 {
   inputManifestPath: string;
   inputManifestDigest: string;
+  outputBindingDigest: string;
   artifacts: [BillingAnalyzerOutputArtifactDescriptor, ...BillingAnalyzerOutputArtifactDescriptor[]];
   publicationDecision: BillingCompletedArtifactPublicationDecision;
   manifestDigest: string;
@@ -128,6 +129,10 @@ const isNonNegativeInteger = (value: unknown): value is number => Number.isSafeI
 const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
 const isStringIn = (value: unknown, values: Set<string>): value is string => typeof value === 'string' && values.has(value);
 const hasUniqueValues = (values: string[]): boolean => new Set(values).size === values.length;
+const publicationDecisionReferencesDigest = (value: unknown, digests: Set<string>): boolean =>
+  isRecord(value) &&
+  Array.isArray(value.dependencies) &&
+  value.dependencies.some(dependency => isRecord(dependency) && typeof dependency.digest === 'string' && digests.has(dependency.digest));
 
 const isCanonicalIsoTimestamp = (value: unknown): value is string => {
   if (!isNonEmptyString(value)) return false;
@@ -314,13 +319,30 @@ export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is Bill
   ) {
     return false;
   }
-  if (!isSha256(value.inputManifestDigest) || !isSha256(value.manifestDigest)) return false;
+  if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputBindingDigest) || !isSha256(value.manifestDigest)) return false;
   if (!Array.isArray(value.artifacts) || value.artifacts.length === 0) return false;
   if (!value.artifacts.every(artifact => isOutputArtifactDescriptor(artifact, value.subscriptionId as string, value.generationId as string))) {
     return false;
   }
   if (!hasUniqueValues(value.artifacts.map(artifact => artifact.path)) || !hasUniqueValues(value.artifacts.map(artifact => artifact.name)))
     return false;
+  const outputDerivedDigests = new Set<string>([
+    value.inputManifestDigest,
+    value.outputBindingDigest,
+    value.manifestDigest,
+    ...value.artifacts.map(artifact => artifact.sha256),
+  ]);
+  if (
+    value.outputBindingDigest === value.inputManifestDigest ||
+    value.outputBindingDigest === value.manifestDigest ||
+    value.artifacts.some(artifact => artifact.sha256 === value.outputBindingDigest || artifact.sha256 === value.manifestDigest) ||
+    publicationDecisionReferencesDigest(
+      value.publicationDecision,
+      new Set([...outputDerivedDigests].filter(digest => digest !== value.inputManifestDigest))
+    )
+  ) {
+    return false;
+  }
   if (
     !value.artifacts.some(
       artifact => artifact.path === `${outputGenerationPrefix(value.subscriptionId as string, value.generationId as string)}metadata.json`

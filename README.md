@@ -60,6 +60,22 @@ in both ownership and revision data. `npm run check:artifact-evidence-contracts`
 executes the canonical cross-runtime corpus, billing validator matrix, ownership
 checks, promotion preconditions, and every revision-comparison outcome.
 
+Billing output V2 uses an acyclic digest chain. Producers project the public
+`BillingOutputBindingV1`, canonicalize it with
+`canonicalizeBillingOutputBindingV1`, and SHA-256 that UTF-8 preimage to obtain
+`outputBindingDigest` (B). Exact stored metadata bytes containing B are hashed
+into the metadata descriptor; the canonical output manifest containing B and
+all descriptors is then hashed, excluding only its own top-level
+`manifestDigest`, to obtain D. `BillingAnalysisCurrentPointerV1` keeps D in
+`outputManifestDigest`. The package also exports canonical preimage helpers for
+both billing manifest versions; hashing remains a platform-boundary concern and
+the package has no Node crypto dependency.
+
+Canonical gzip artifacts require a fixed writer implementation/version,
+`mtime=0`, and fixed header/options. Descriptors hash the exact compressed bytes,
+not decompressed JSON. Readers must reject duplicate JSON keys before applying
+the structural validators or canonical digest checks.
+
 The root entry point exports one provider-aware `CommitmentsPlanningView` for
 Azure and AWS. Existing Azure artifacts remain compatible through the legacy
 branch, while the AWS branch requires a minimal account identity, `aws-native`

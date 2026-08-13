@@ -76,23 +76,9 @@ export interface ArtifactRevisionVector {
   policyRevision: number;
 }
 
-export type ArtifactRevisionComparison =
-  | 'newer'
-  | 'equal'
-  | 'older'
-  | 'incomparable'
-  | 'newer-ownership'
-  | 'older-ownership'
-  | 'unenforceable';
+export type ArtifactRevisionComparison = 'newer' | 'equal' | 'older' | 'incomparable' | 'newer-ownership' | 'older-ownership' | 'unenforceable';
 
-export type BillingArtifactReadState =
-  | 'current'
-  | 'stale'
-  | 'partial'
-  | 'fallback'
-  | 'suppressed'
-  | 'unavailable'
-  | 'complete-empty';
+export type BillingArtifactReadState = 'current' | 'stale' | 'partial' | 'fallback' | 'suppressed' | 'unavailable' | 'complete-empty';
 ```
 
 Billing V2 documents must use these public names:
@@ -103,6 +89,12 @@ Billing V2 documents must use these public names:
 - `BillingAnalyzerOutputManifestV2`
 - `BillingAnalysisCurrentPointerV1`
 - `BillingCostAnalysisMetadataV2`
+- `BillingOutputBindingV1`
+- `projectBillingOutputBindingV1FromManifest`
+- `projectBillingOutputBindingV1FromMetadata`
+- `canonicalizeBillingOutputBindingV1`
+- `canonicalizeBillingAnalyzerInputManifestV2ForDigest`
+- `canonicalizeBillingAnalyzerOutputManifestV2ForDigest`
 - `CompletedViewManifestV3`
 - `CompletedAzureViewSetV2`
 - `isBillingAnalyzerInputManifestV2`
@@ -116,6 +108,15 @@ Billing V2 documents must use these public names:
 - `compareArtifactRevisionVector`
 
 `BillingCostAnalysisMetadataV2` extends the existing metadata fields and requires `artifactState` plus `artifactEvidence`; its successful document branches are `current`, `stale`, `partial`, `fallback`, and proven `complete-empty`. `unavailable` and `suppressed` are shared presentation/read states carried by the standard typed error/decision path, not fabricated metadata documents. Legacy metadata stays valid only through the V1 branch of consumer compatibility code.
+
+Digest-cycle correction (accepted 2026-08-14): metadata V2 and output manifest
+V2 carry `outputBindingDigest` B, derived from the versioned stable
+identity/evidence projection. The exact metadata stored-byte digest is an output
+descriptor; output `manifestDigest` D is computed from the canonical manifest
+excluding only its own top-level digest; the current pointer retains D as
+`outputManifestDigest`. The old metadata V2 `outputManifestDigest` name is
+rejected rather than retained as an alias. Public canonicalization helpers
+return dependency-free UTF-8 preimages and never hash internally.
 
 ## Tasks
 

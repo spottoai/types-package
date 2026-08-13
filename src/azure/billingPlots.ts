@@ -298,7 +298,7 @@ interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata 
   ownership: ArtifactOwnershipBinding<'azure'>;
   revision: ArtifactRevisionVector;
   inputManifestDigest: string;
-  outputManifestDigest: string;
+  outputBindingDigest: string;
 }
 
 export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base &
@@ -328,6 +328,8 @@ const hasControlCharacters = (value: string): boolean =>
   Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
+const publicationDecisionReferencesDigest = (value: unknown, digest: string): boolean =>
+  isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
 
 const isTrend = (value: unknown): boolean =>
   isRecord(value) && isNonEmptyString(value.method) && isFiniteNumber(value.slope) && isFiniteNumber(value.intercept);
@@ -488,6 +490,7 @@ const hasValidMetadataEvidenceState = (
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is BillingCostAnalysisMetadataV2 => {
   if (!isRecord(value) || containsForbiddenArtifactControlData(value) || value.schemaVersion !== 2) return false;
+  if (Object.prototype.hasOwnProperty.call(value, 'outputManifestDigest')) return false;
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isArtifactOwnershipBinding(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)
     return false;
@@ -496,7 +499,13 @@ export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is Billin
   }
   if (typeof value.artifactState !== 'string' || !BILLING_DOCUMENT_STATES.has(value.artifactState)) return false;
   if (typeof value.inputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.inputManifestDigest)) return false;
-  if (typeof value.outputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.outputManifestDigest)) return false;
+  if (typeof value.outputBindingDigest !== 'string' || !SHA256_PATTERN.test(value.outputBindingDigest)) return false;
+  if (
+    value.outputBindingDigest === value.inputManifestDigest ||
+    publicationDecisionReferencesDigest(value.artifactEvidence, value.outputBindingDigest)
+  ) {
+    return false;
+  }
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
   if (
     !hasValidMetadataEvidenceState(

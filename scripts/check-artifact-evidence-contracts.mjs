@@ -3,6 +3,10 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import {
+  canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
+  canonicalizeBillingArtifactJson,
+  canonicalizeBillingOutputBindingV1,
   compareArtifactRevisionVector,
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
@@ -13,12 +17,14 @@ import {
   isBillingAnalyzerRequestV2,
   isBillingCostAnalysisMetadataV2,
   isEnforceableArtifactOwnershipBinding,
+  projectBillingOutputBindingV1FromManifest,
+  projectBillingOutputBindingV1FromMetadata,
 } from '../dist/index.js';
 
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-assert.equal(contractCorpus.corpusVersion, 2, 'portable corpus version must match the downstream parity contract');
+assert.equal(contractCorpus.corpusVersion, 3, 'portable corpus version must match the downstream parity contract');
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -158,6 +164,7 @@ const corpusValidators = {
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisMetadataV2,
 };
 
 const expectedCorpusValidatorNames = new Set([
@@ -169,6 +176,7 @@ const expectedCorpusValidatorNames = new Set([
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisMetadataV2',
 ]);
 const requiredPortableBillingValidatorNames = [
   'isBillingAnalysisCurrentPointerV1',
@@ -176,6 +184,7 @@ const requiredPortableBillingValidatorNames = [
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisMetadataV2',
 ];
 const corpusValidatorNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.validator));
 assert.deepEqual(corpusValidatorNames, expectedCorpusValidatorNames, 'portable corpus validator-name set must remain exact');
@@ -228,9 +237,188 @@ assert.deepEqual(
   'canonical corpus must execute every revision-comparison branch'
 );
 
+const sha256 = value => createHash('sha256').update(value).digest('hex');
+const utf8Hex = value => Buffer.from(value, 'utf8').toString('hex');
+const digestVectorResults = new Map();
+for (const vector of contractCorpus.digestVectors) {
+  const manifest = structuredClone(vector.outputManifest);
+  const metadata = structuredClone(vector.metadata);
+  const pointer = structuredClone(vector.pointer);
+  const manifestProjection = projectBillingOutputBindingV1FromManifest(manifest);
+  const metadataProjection = projectBillingOutputBindingV1FromMetadata(metadata);
+  const bindingCanonical = canonicalizeBillingOutputBindingV1(manifestProjection);
+  const inputCanonical = canonicalizeBillingAnalyzerInputManifestV2ForDigest(vector.inputManifest);
+  const metadataCanonical = canonicalizeBillingArtifactJson(metadata);
+  const outputCanonical = canonicalizeBillingAnalyzerOutputManifestV2ForDigest(manifest);
+  const result = {
+    bindingProjection: manifestProjection,
+    bindingCanonical,
+    bindingCanonicalUtf8Hex: utf8Hex(bindingCanonical),
+    outputBindingDigest: sha256(bindingCanonical),
+    inputManifestCanonical: inputCanonical,
+    inputManifestDigest: sha256(inputCanonical),
+    metadataCanonical,
+    metadataStoredByteDigest: sha256(metadataCanonical),
+    outputManifestCanonical: outputCanonical,
+    outputManifestDigest: sha256(outputCanonical),
+    pointerBindingValid: pointer.outputManifestDigest === sha256(outputCanonical),
+  };
+  assert.deepEqual(metadataProjection, manifestProjection, `${vector.name}: manifest and metadata projection`);
+  assert.deepEqual(result, vector.expected, `${vector.name}: exact portable digest vector`);
+  assert.equal(manifest.outputBindingDigest, result.outputBindingDigest, `${vector.name}: manifest B`);
+  assert.equal(metadata.outputBindingDigest, result.outputBindingDigest, `${vector.name}: metadata B`);
+  assert.equal(vector.inputManifest.manifestDigest, result.inputManifestDigest, `${vector.name}: input manifest digest`);
+  assert.equal(manifest.artifacts[0].sha256, result.metadataStoredByteDigest, `${vector.name}: exact metadata descriptor digest`);
+  assert.equal(manifest.manifestDigest, result.outputManifestDigest, `${vector.name}: output manifest digest`);
+  assert.equal(pointer.outputManifestDigest, result.outputManifestDigest, `${vector.name}: pointer D`);
+  assert.equal(isBillingAnalyzerInputManifestV2(vector.inputManifest), true, `${vector.name}: input manifest structure`);
+  assert.equal(isBillingAnalyzerOutputManifestV2(manifest), true, `${vector.name}: output manifest structure`);
+  assert.equal(isBillingCostAnalysisMetadataV2(metadata), true, `${vector.name}: metadata structure`);
+  digestVectorResults.set(vector.name, result);
+}
+const baselineDigestVector = digestVectorResults.get('current populated output');
+assert.ok(baselineDigestVector, 'canonical current populated digest vector is required');
+const validatesIntegratedDigestChain = vector => {
+  try {
+    const manifestProjection = projectBillingOutputBindingV1FromManifest(vector.outputManifest);
+    const metadataProjection = projectBillingOutputBindingV1FromMetadata(vector.metadata);
+    const bindingDigest = sha256(canonicalizeBillingOutputBindingV1(manifestProjection));
+    const metadataDigest = sha256(canonicalizeBillingArtifactJson(vector.metadata));
+    const manifestDigest = sha256(canonicalizeBillingAnalyzerOutputManifestV2ForDigest(vector.outputManifest));
+    const metadataDescriptor = vector.outputManifest.artifacts.find(artifact => artifact.name === 'metadata.json');
+    return (
+      isBillingAnalyzerOutputManifestV2(vector.outputManifest) &&
+      isBillingCostAnalysisMetadataV2(vector.metadata) &&
+      isBillingAnalysisCurrentPointerV1(vector.pointer) &&
+      JSON.stringify(manifestProjection) === JSON.stringify(metadataProjection) &&
+      vector.outputManifest.subscriptionId === vector.metadata.subscriptionId &&
+      vector.outputManifest.generationId === vector.metadata.billingGenerationId &&
+      vector.outputManifest.inputManifestDigest === vector.metadata.inputManifestDigest &&
+      vector.outputManifest.outputBindingDigest === bindingDigest &&
+      vector.metadata.outputBindingDigest === bindingDigest &&
+      metadataDescriptor?.sha256 === metadataDigest &&
+      vector.outputManifest.manifestDigest === manifestDigest &&
+      vector.pointer.outputManifestDigest === manifestDigest
+    );
+  } catch {
+    return false;
+  }
+};
+const baselineIntegratedVector = structuredClone(contractCorpus.digestVectors[0]);
+assert.equal(validatesIntegratedDigestChain(baselineIntegratedVector), true, 'baseline integrated digest chain is constructible');
+for (const vector of contractCorpus.digestMismatchVectors) {
+  const invalidIntegratedVector = structuredClone(baselineIntegratedVector);
+  assert.ok(['metadata', 'outputManifest', 'pointer'].includes(vector.document), `${vector.name}: known integrated document`);
+  applyMutation(invalidIntegratedVector[vector.document], vector.mutation);
+  assert.equal(validatesIntegratedDigestChain(invalidIntegratedVector), false, vector.name);
+}
+for (const vector of contractCorpus.digestVectors) {
+  if (vector.bindingExpectation === 'same-as-current') {
+    assert.equal(vector.expected.outputBindingDigest, baselineDigestVector.outputBindingDigest, `${vector.name}: non-binding mutation preserves B`);
+  } else if (vector.bindingExpectation === 'different-from-current') {
+    assert.notEqual(vector.expected.outputBindingDigest, baselineDigestVector.outputBindingDigest, `${vector.name}: binding mutation changes B`);
+  }
+}
+assert.notEqual(
+  digestVectorResults.get('stale reader state preserves binding').metadataStoredByteDigest,
+  baselineDigestVector.metadataStoredByteDigest,
+  'reader-derived artifactState preserves B but changes exact metadata bytes'
+);
+assert.notEqual(
+  digestVectorResults.get('chart payload preserves binding').metadataStoredByteDigest,
+  baselineDigestVector.metadataStoredByteDigest,
+  'chart payload preserves B but changes exact metadata bytes'
+);
+assert.notEqual(
+  digestVectorResults.get('anomaly payload preserves binding').metadataStoredByteDigest,
+  baselineDigestVector.metadataStoredByteDigest,
+  'anomaly payload preserves B but changes exact metadata bytes'
+);
+assert.notEqual(
+  digestVectorResults.get('descriptor mutation preserves binding and changes manifest digest').outputManifestDigest,
+  baselineDigestVector.outputManifestDigest,
+  'artifact descriptor mutation preserves B but changes manifest D'
+);
+assert.equal(
+  digestVectorResults.get('object key order preserves canonical digests').metadataStoredByteDigest,
+  baselineDigestVector.metadataStoredByteDigest,
+  'canonical metadata digest is object-key-order invariant'
+);
+assert.equal(
+  digestVectorResults.get('object key order preserves canonical digests').outputManifestDigest,
+  baselineDigestVector.outputManifestDigest,
+  'canonical manifest digest is object-key-order invariant'
+);
+for (const mutation of contractCorpus.bindingMutationVectors) {
+  const binding = structuredClone(contractCorpus.bindingBase);
+  applyMutation(binding, { path: mutation.path, value: mutation.value });
+  assert.notEqual(
+    sha256(canonicalizeBillingOutputBindingV1(binding)),
+    baselineDigestVector.outputBindingDigest,
+    `${mutation.name}: every projected field mutation changes B`
+  );
+}
+const additiveBindingSource = structuredClone(contractCorpus.bindingBase);
+additiveBindingSource.future = { ignored: true };
+additiveBindingSource.ownership.future = { ignored: true };
+additiveBindingSource.publicationDecision.future = { ignored: true };
+additiveBindingSource.publicationDecision.dependencies[0].future = { ignored: true };
+additiveBindingSource.publicationDecision.claims[0].future = { ignored: true };
+const additiveProjectionManifest = {
+  ...contractCorpus.digestVectors[0].outputManifest,
+  ownership: additiveBindingSource.ownership,
+  publicationDecision: additiveBindingSource.publicationDecision,
+  future: additiveBindingSource.future,
+};
+assert.equal(
+  sha256(canonicalizeBillingOutputBindingV1(projectBillingOutputBindingV1FromManifest(additiveProjectionManifest))),
+  baselineDigestVector.outputBindingDigest,
+  'binding v1 excludes additive unknown fields recursively'
+);
+const reversedClaimsManifest = structuredClone(contractCorpus.digestVectors[0].outputManifest);
+reversedClaimsManifest.publicationDecision.claims[0].sectionPaths.reverse();
+assert.notEqual(
+  sha256(canonicalizeBillingOutputBindingV1(projectBillingOutputBindingV1FromManifest(reversedClaimsManifest))),
+  baselineDigestVector.outputBindingDigest,
+  'binding v1 preserves declared array order'
+);
+const numericBinding = structuredClone(contractCorpus.bindingBase);
+numericBinding.revision.sourceRevision = Number.MAX_SAFE_INTEGER;
+assert.doesNotThrow(() => canonicalizeBillingOutputBindingV1(numericBinding), 'canonical binding accepts maximum safe integer');
+for (const rejected of [Number.MAX_SAFE_INTEGER + 1, Number.NaN, Number.POSITIVE_INFINITY, -0]) {
+  const invalid = structuredClone(contractCorpus.bindingBase);
+  invalid.revision.sourceRevision = rejected;
+  assert.throws(() => canonicalizeBillingOutputBindingV1(invalid), 'canonical binding rejects unsafe or non-JSON numbers');
+}
+const sparseBinding = structuredClone(contractCorpus.bindingBase);
+sparseBinding.publicationDecision.claims[0].sectionPaths = new Array(1);
+assert.throws(() => canonicalizeBillingOutputBindingV1(sparseBinding), 'canonical binding rejects sparse arrays');
+const arrayAccessorBinding = structuredClone(contractCorpus.bindingBase);
+let arrayAccessorInvoked = false;
+Object.defineProperty(arrayAccessorBinding.publicationDecision.claims[0].sectionPaths, '0', {
+  enumerable: true,
+  get: () => {
+    arrayAccessorInvoked = true;
+    return 'unsafe';
+  },
+});
+assert.throws(() => canonicalizeBillingOutputBindingV1(arrayAccessorBinding), 'canonical binding rejects array accessors');
+assert.equal(arrayAccessorInvoked, false, 'canonical binding never executes array accessors');
+const cyclicArtifact = {};
+cyclicArtifact.loop = cyclicArtifact;
+assert.throws(() => canonicalizeBillingArtifactJson(cyclicArtifact), 'canonical JSON rejects cycles');
+const accessorBinding = structuredClone(contractCorpus.bindingBase);
+Object.defineProperty(accessorBinding, 'subscriptionId', { enumerable: true, get: () => 'unsafe' });
+assert.throws(() => canonicalizeBillingOutputBindingV1(accessorBinding), 'canonical binding rejects accessors');
+const toJsonBinding = Object.assign(Object.create({ toJSON: () => ({ replaced: true }) }), contractCorpus.bindingBase);
+assert.throws(() => canonicalizeBillingOutputBindingV1(toJsonBinding), 'canonical binding rejects toJSON and custom prototypes');
+assert.equal(contractCorpus.gzipDeterminism.mtime, 0, 'portable gzip output fixes mtime to zero');
+assert.equal(contractCorpus.gzipDeterminism.hashesExactStoredBytes, true, 'gzip descriptors hash exact compressed bytes');
+
 const digestA = 'a'.repeat(64);
 const digestB = 'b'.repeat(64);
 const digestC = 'c'.repeat(64);
+const digestD = 'd'.repeat(64);
 const subscriptionId = 'sub-123';
 const generationId = 'billing-input-generation-42';
 
@@ -336,7 +524,7 @@ const costAnalysisMetadata = {
   artifactState: 'current',
   artifactEvidence: publicationDecision,
   inputManifestDigest: digestC,
-  outputManifestDigest: digestB,
+  outputBindingDigest: digestD,
   chartData: {
     schemaVersion: 1,
     source: 'aggregated',
@@ -707,6 +895,8 @@ process.stdout.write(
     `${mutationCount} mutations, ` +
     `${contractCorpus.revisionComparisons.length} revision comparisons, ${billingValidatorCases.length} billing checks, ` +
     `${billingControlDataCases.length} control-data checks, ${ownershipValidatorCases.length} ownership checks, ` +
-    `${mutationFailureCases.length} mutation fail-fast checks.\nPortable validator set: ${[...corpusValidatorNames].sort().join(', ')}\n` +
+    `${mutationFailureCases.length} mutation fail-fast checks, ${contractCorpus.digestVectors.length} digest vectors, ` +
+    `${contractCorpus.digestMismatchVectors.length} digest mismatch vectors.\n` +
+    `Portable validator set: ${[...corpusValidatorNames].sort().join(', ')}\n` +
     `Artifact evidence corpus SHA-256: ${corpusDigest}\n`
 );
