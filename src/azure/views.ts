@@ -24,6 +24,7 @@ import {
   type ArtifactPublicationDecision,
   type ArtifactRevisionVector,
 } from '../common/artifactEvidence.js';
+import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -1134,30 +1135,17 @@ const allowedViewArtifactPaths = (artifacts: unknown): AllowedViewReferenceField
 const isSafePathSegment = (value: unknown): value is string =>
   isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 
-const isSafeLogicalPath = (value: unknown): value is string => {
-  if (!isStrictNonEmptyString(value) || value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#')) return false;
-  if (value.includes('\\') || value.includes('%')) return false;
-  const segments = value.split('/');
-  return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
-};
-
 const isStrictCanonicalIsoTimestamp = (value: unknown): value is string => {
   if (!isStrictNonEmptyString(value)) return false;
   const timestamp = Date.parse(value);
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
 };
 
-const isViewRevisionVector = (value: unknown): value is ArtifactRevisionVector =>
-  isRecord(value) &&
-  isPositiveSafeInteger(value.sourceRevision) &&
-  isPositiveSafeInteger(value.policyRevision) &&
-  (value.ownershipEpochRevision === undefined || isPositiveSafeInteger(value.ownershipEpochRevision));
-
 const isEnforceableAzureOwnershipBinding = (value: unknown): value is ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number } =>
   isEnforceableArtifactOwnershipBinding(value) && value.provider === 'azure';
 
 const hasMatchingViewOwnership = (subscriptionId: unknown, ownership: unknown, revision: unknown, enforceable: boolean): boolean => {
-  if (!isSafePathSegment(subscriptionId) || !isViewRevisionVector(revision)) return false;
+  if (!isSafePathSegment(subscriptionId) || !isArtifactRevisionVector(revision)) return false;
   if (!isArtifactOwnershipBinding(ownership)) return false;
   if (enforceable && !isEnforceableArtifactOwnershipBinding(ownership)) return false;
   if (ownership.provider !== 'azure' || ownership.accountId !== subscriptionId) return false;
@@ -1166,7 +1154,7 @@ const hasMatchingViewOwnership = (subscriptionId: unknown, ownership: unknown, r
 
 const isViewArtifactDescriptor = (value: unknown, runId: string): value is CompletedViewArtifactDescriptor =>
   isRecord(value) &&
-  isSafeLogicalPath(value.path) &&
+  isStrictLogicalArtifactReference(value.path) &&
   value.path.startsWith(`runs/${runId}/`) &&
   value.path.length > `runs/${runId}/`.length &&
   isStrictNonEmptyString(value.name) &&
@@ -1253,8 +1241,8 @@ const isViewSetV2SurfaceReference = (
 ): value is AzureViewSetV2SurfaceReference => {
   if (!isRecord(value) || !isSafePathSegment(value.runId)) return false;
   const expectedManifestName = surface === 'portal' ? 'completed-view-manifest.json' : 'completed-plugin-generation.json';
-  if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !isSafeLogicalPath(value.manifestPath)) return false;
-  if (!isEnforceableAzureOwnershipBinding(value.ownership) || !isViewRevisionVector(value.revision)) return false;
+  if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !isStrictLogicalArtifactReference(value.manifestPath)) return false;
+  if (!isEnforceableAzureOwnershipBinding(value.ownership) || !isArtifactRevisionVector(value.revision)) return false;
   if (!hasMatchingViewOwnership(subscriptionId, value.ownership, value.revision, true)) return false;
   if (!hasSameOwnership(ownership, value.ownership) || !hasSameRevision(revision, value.revision)) return false;
   return (
@@ -1290,7 +1278,7 @@ export const isCompletedAzureViewSetV2 = (value: unknown): value is CompletedAzu
     !isSafePathSegment(value.subscriptionId) ||
     !isStrictNonEmptyString(value.publicationId) ||
     !isEnforceableAzureOwnershipBinding(value.ownership) ||
-    !isViewRevisionVector(value.revision) ||
+    !isArtifactRevisionVector(value.revision) ||
     !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, true)
   ) {
     return false;

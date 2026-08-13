@@ -1,4 +1,5 @@
 import type { ArtifactProvider } from './artifactGeneration.js';
+import { hasValidOptionalArtifactRevisionComponents, isStrictLogicalArtifactReference } from './artifactEvidenceValidation.js';
 
 export type ArtifactSupportVerdict = 'supported' | 'unsupported' | 'unknown';
 
@@ -208,13 +209,6 @@ const isCanonicalIsoTimestamp = (value: unknown): value is string => {
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
 };
 
-const isLogicalArtifactRef = (value: unknown): value is string => {
-  if (!isNonEmptyString(value) || value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#')) return false;
-  if (value.includes('\\')) return false;
-  const segments = value.split('/');
-  return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
-};
-
 const isArtifactDecisionIssue = (value: unknown): value is ArtifactDecisionIssue =>
   isRecord(value) &&
   isNonEmptyString(value.code) &&
@@ -252,8 +246,7 @@ const isArtifactDependencyDescriptor = (value: unknown): value is ArtifactDepend
   }
   if (value.generationId !== undefined && !isNonEmptyString(value.generationId)) return false;
   if (value.digest !== undefined && (typeof value.digest !== 'string' || !SHA256_PATTERN.test(value.digest))) return false;
-  if (value.sourceRevision !== undefined && !isPositiveInteger(value.sourceRevision)) return false;
-  if (value.policyRevision !== undefined && !isNonNegativeInteger(value.policyRevision)) return false;
+  if (!hasValidOptionalArtifactRevisionComponents(value)) return false;
   if (value.observedRange !== undefined && !isObservedRange(value.observedRange)) return false;
   if (value.completeThrough !== undefined && !isCanonicalIsoTimestamp(value.completeThrough)) return false;
   if (value.reasonCode !== undefined && !isNonEmptyString(value.reasonCode)) return false;
@@ -264,7 +257,7 @@ const isArtifactDependencyDescriptor = (value: unknown): value is ArtifactDepend
       value.attempt !== 'succeeded' ||
       value.coverage !== 'complete' ||
       value.acceptedRowCount !== 0 ||
-      !isLogicalArtifactRef(value.emptyProofRef)
+      !isStrictLogicalArtifactReference(value.emptyProofRef)
     ) {
       return false;
     }
@@ -354,7 +347,10 @@ export const isArtifactOwnershipBinding = (value: unknown): value is ArtifactOwn
 export const isEnforceableArtifactOwnershipBinding = (value: unknown): value is ArtifactOwnershipBinding & { ownershipEpochRevision: number } =>
   isArtifactOwnershipBinding(value) && value.ownershipEpochRevision !== undefined;
 
-/** Compares ownership first, then source and policy revisions component-wise. */
+/**
+ * Compares ownership first, then source and policy revisions component-wise.
+ * Callers must validate both vectors before comparison; this function deliberately compares the supplied values without adding a second validation policy.
+ */
 export const compareArtifactRevisionVector = (left: ArtifactRevisionVector, right: ArtifactRevisionVector): ArtifactRevisionComparison => {
   if (left.ownershipEpochRevision === undefined || right.ownershipEpochRevision === undefined) return 'unenforceable';
   if (left.ownershipEpochRevision > right.ownershipEpochRevision) return 'newer-ownership';

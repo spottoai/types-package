@@ -99,6 +99,14 @@ assert.deepEqual(
   mutationFailureCases.map(() => true),
   'mutation materialization must fail fast for malformed paths'
 );
+assert.equal(
+  compareArtifactRevisionVector(
+    { ownershipEpochRevision: 3, sourceRevision: 0, policyRevision: 7 },
+    { ownershipEpochRevision: 3, sourceRevision: 1, policyRevision: 7 }
+  ),
+  'older',
+  'the comparator compares supplied vectors; callers must validate positive revisions before comparison'
+);
 
 const hasLegacyBillingCostAnalysisMetadataShape = value => {
   if (
@@ -219,7 +227,7 @@ const publicationDecision = {
       evidence: 'complete',
       publication: 'completed',
       generationId,
-      digest: digestA,
+      digest: digestC,
       sourceRevision: 42,
       policyRevision: 7,
     },
@@ -357,6 +365,51 @@ const costAnalysisMetadata = {
   currencySymbol: '$',
 };
 
+const completeEmptyPublicationDecision = {
+  ...publicationDecision,
+  dependencies: [
+    {
+      ...publicationDecision.dependencies[0],
+      emptyEvidence: 'complete-empty',
+      acceptedRowCount: 0,
+      emptyProofRef: 'subscriptions/sub-123/history/billing/proofs/billing-input-generation-42-empty.json',
+    },
+  ],
+};
+const completeEmptyMetadata = {
+  ...costAnalysisMetadata,
+  artifactState: 'complete-empty',
+  artifactEvidence: completeEmptyPublicationDecision,
+};
+const populatedDailyView = {
+  aggregation: 'daily',
+  startDate: 1754006400,
+  endDate: 1756684800,
+  averageDailyCost: 10,
+  totalCost: 310,
+  points: [],
+};
+const validAnomaly = {
+  date: 1754006400,
+  summary: 'A valid populated anomaly',
+  confidence: 'high',
+  notes: [],
+  impact: {
+    cost: 10,
+    delta: 5,
+    monthToDateCost: 20,
+    baseline7Day: null,
+    baseline30Day: null,
+    percentChange: null,
+    previousDayCost: null,
+    previousDayDelta: null,
+    monthToDateBaseline: null,
+    monthToDateDelta: null,
+    monthToDatePercentChange: null,
+  },
+  drivers: [],
+};
+
 const withoutOwnershipEpoch = value => {
   const candidate = structuredClone(value);
   delete candidate.ownership.ownershipEpochRevision;
@@ -378,8 +431,75 @@ const billingValidatorCases = [
   ['output manifest accepts its V2 fixture', isBillingAnalyzerOutputManifestV2, outputManifest, true],
   ['output manifest accepts observe-only absent epoch', isBillingAnalyzerOutputManifestV2, withoutOwnershipEpoch(outputManifest), true],
   ['output manifest rejects missing metadata artifact', isBillingAnalyzerOutputManifestV2, { ...outputManifest, artifacts: [] }, false],
+  [
+    'output manifest rejects a completed decision without billing dependencies',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, publicationDecision: { ...publicationDecision, dependencies: [] } },
+    false,
+  ],
+  [
+    'output manifest rejects a completed decision without cost-analysis claims',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, publicationDecision: { ...publicationDecision, claims: [] } },
+    false,
+  ],
+  [
+    'output manifest rejects a billing-history generation mismatch',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], generationId: 'billing-generation-other' }],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects a billing-history digest mismatch',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], digest: digestA }],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects unrelated completed dependency and claim names',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], name: 'unrelated-history' }],
+        claims: [{ ...publicationDecision.claims[0], claimId: 'unrelated-analysis', requiredDependencies: ['unrelated-history'] }],
+      },
+    },
+    false,
+  ],
   ['analysis pointer accepts its V1 fixture', isBillingAnalysisCurrentPointerV1, analysisPointer, true],
   ['analysis pointer rejects absent promoted epoch', isBillingAnalysisCurrentPointerV1, withoutOwnershipEpoch(analysisPointer), false],
+  [
+    'analysis pointer rejects a policy-free completed decision',
+    isBillingAnalysisCurrentPointerV1,
+    { ...analysisPointer, publicationDecision: { ...publicationDecision, dependencies: [], claims: [] } },
+    false,
+  ],
+  [
+    'analysis pointer rejects a billing-history dependency without identity',
+    isBillingAnalysisCurrentPointerV1,
+    {
+      ...analysisPointer,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], generationId: undefined, digest: undefined }],
+      },
+    },
+    false,
+  ],
   [
     'analysis pointer rejects quarantined publication',
     isBillingAnalysisCurrentPointerV1,
@@ -391,6 +511,65 @@ const billingValidatorCases = [
   ],
   ['metadata accepts its V2 fixture', isBillingCostAnalysisMetadataV2, costAnalysisMetadata, true],
   ['metadata rejects an unknown schema version', isBillingCostAnalysisMetadataV2, { ...costAnalysisMetadata, schemaVersion: 3 }, false],
+  ['complete-empty metadata accepts exact billing-history proof', isBillingCostAnalysisMetadataV2, completeEmptyMetadata, true],
+  [
+    'complete-empty metadata rejects an unrelated optional empty dependency',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...costAnalysisMetadata,
+      artifactState: 'complete-empty',
+      artifactEvidence: {
+        ...publicationDecision,
+        dependencies: [
+          publicationDecision.dependencies[0],
+          {
+            ...publicationDecision.dependencies[0],
+            name: 'unrelated-history',
+            required: false,
+            generationId: 'unrelated-generation',
+            digest: digestB,
+            emptyEvidence: 'complete-empty',
+            acceptedRowCount: 0,
+            emptyProofRef: 'subscriptions/sub-123/history/billing/proofs/unrelated-empty.json',
+          },
+        ],
+      },
+    },
+    false,
+  ],
+  [
+    'complete-empty metadata rejects a billing-history generation mismatch',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...completeEmptyMetadata,
+      artifactEvidence: {
+        ...completeEmptyPublicationDecision,
+        dependencies: [{ ...completeEmptyPublicationDecision.dependencies[0], generationId: 'billing-generation-other' }],
+      },
+    },
+    false,
+  ],
+  [
+    'complete-empty metadata rejects a non-zero chart point count',
+    isBillingCostAnalysisMetadataV2,
+    {
+      ...completeEmptyMetadata,
+      chartData: { ...completeEmptyMetadata.chartData, dataWindow: { ...completeEmptyMetadata.chartData.dataWindow, pointCount: 1 } },
+    },
+    false,
+  ],
+  [
+    'complete-empty metadata rejects a populated chart view',
+    isBillingCostAnalysisMetadataV2,
+    { ...completeEmptyMetadata, chartData: { ...completeEmptyMetadata.chartData, views: { daily: populatedDailyView } } },
+    false,
+  ],
+  [
+    'complete-empty metadata rejects populated anomalies',
+    isBillingCostAnalysisMetadataV2,
+    { ...completeEmptyMetadata, anomalies: [validAnomaly] },
+    false,
+  ],
 ];
 
 for (const [name, validator, value, expected] of billingValidatorCases) assert.equal(validator(value), expected, name);
@@ -399,6 +578,9 @@ const harmlessAdditiveControlData = {
   future: {
     itemCount: 2,
     reviewStatus: 'accepted',
+    tokenCount: 3,
+    authorizationStatus: 'granted',
+    secretary: 'named-role',
     resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
   },
 };
@@ -515,6 +697,55 @@ const billingControlDataCases = [
   ],
 ];
 for (const [name, validator, value, expected] of billingControlDataCases) assert.equal(validator(value), expected, name);
+
+const billingControlDocuments = [
+  ['input manifest', isBillingAnalyzerInputManifestV2, inputManifest],
+  ['input pointer', isBillingAnalyzerInputCurrentPointerV1, inputPointer],
+  ['analyzer request', isBillingAnalyzerRequestV2, analyzerRequest],
+  ['output manifest', isBillingAnalyzerOutputManifestV2, outputManifest],
+  ['analysis pointer', isBillingAnalysisCurrentPointerV1, analysisPointer],
+  ['cost metadata', isBillingCostAnalysisMetadataV2, costAnalysisMetadata],
+];
+const forbiddenBillingControlData = [
+  ['filePath field', { filePath: 'safe/relative.json' }],
+  ['filesystemPath field', { filesystemPath: 'safe/relative.json' }],
+  ['path field', { path: 'safe/relative.json' }],
+  ['url field', { url: 'safe/relative.json' }],
+  ['uri field', { uri: 'safe/relative.json' }],
+  ['artifactPath field', { artifactPath: 'safe/relative.json' }],
+  ['URI value', { location: 'https://storage.example.invalid/container/blob.json' }],
+  ['protocol-relative value', { location: '//storage.example/container/blob.json' }],
+  ['UNC value', { location: '\\\\storage.example\\container\\blob.json' }],
+  ['Windows-drive value', { location: 'C:\\private\\blob.json' }],
+  ['POSIX absolute value', { location: '/tmp/blob.json' }],
+  ['parent-traversal value', { location: 'safe/../blob.json' }],
+  ['current-directory traversal value', { location: './blob.json' }],
+  ['percent-encoded value', { location: 'safe/%2e%2e/blob.json' }],
+  ['NUL value', { location: 'safe/blob\u0000.json' }],
+  ['newline value', { location: 'safe/blob\n.json' }],
+];
+for (const [documentName, validator, document] of billingControlDocuments) {
+  assert.equal(validator({ ...document, ...harmlessAdditiveControlData }), true, `${documentName} accepts exact harmless sensitive-name prefixes`);
+  for (const [caseName, controlData] of forbiddenBillingControlData) {
+    assert.equal(validator({ ...document, future: controlData }), false, `${documentName} rejects ${caseName}`);
+  }
+}
+
+const invalidRevisionBoundaries = [
+  ['zero source revision', { sourceRevision: 0 }],
+  ['negative source revision', { sourceRevision: -1 }],
+  ['zero policy revision', { policyRevision: 0 }],
+  ['negative policy revision', { policyRevision: -1 }],
+];
+for (const [documentName, validator, document] of billingControlDocuments) {
+  for (const [caseName, revisionMutation] of invalidRevisionBoundaries) {
+    assert.equal(
+      validator({ ...document, revision: { ...document.revision, ...revisionMutation } }),
+      false,
+      `${documentName} rejects ${caseName}`
+    );
+  }
+}
 
 const ownershipValidatorCases = [
   ['ownership accepts observe-only absent epoch', isArtifactOwnershipBinding, withoutOwnershipEpoch(inputManifest).ownership, true],

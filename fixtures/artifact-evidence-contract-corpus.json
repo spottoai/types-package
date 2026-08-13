@@ -174,11 +174,159 @@
       ]
     },
     {
+      "name": "complete-empty rejects percent-encoded traversal proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/%2e%2e/empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects NUL in proof reference",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty\u0000.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects newline in proof reference",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty\n.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects absolute URI proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "https://storage.example.invalid/proofs/empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects protocol-relative proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "//storage.example/proofs/empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects UNC proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "\\\\storage.example\\proofs\\empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects Windows-drive proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "C:\\proofs\\empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects POSIX absolute proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "/proofs/empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects dot-traversal proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/../empty.json" }
+      ]
+    },
+    {
+      "name": "complete-empty rejects query and fragment proof",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
+        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty.json?sig=value#fragment" }
+      ]
+    },
+    {
       "name": "failed attempt cannot publish completed",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [{ "path": "dependencies.0.attempt", "value": "failed" }]
+    },
+    {
+      "name": "dependency evidence rejects zero source revision",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [{ "path": "dependencies.0.sourceRevision", "value": 0 }]
+    },
+    {
+      "name": "dependency evidence rejects negative source revision",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [{ "path": "dependencies.0.sourceRevision", "value": -1 }]
+    },
+    {
+      "name": "dependency evidence rejects zero policy revision",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [{ "path": "dependencies.0.policyRevision", "value": 0 }]
+    },
+    {
+      "name": "dependency evidence rejects negative policy revision",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [{ "path": "dependencies.0.policyRevision", "value": -1 }]
+    },
+    {
+      "name": "dependency evidence rejects null optional revisions",
+      "validator": "isArtifactPublicationDecision",
+      "fixture": "currentPopulatedDecision",
+      "valid": false,
+      "mutations": [
+        { "path": "dependencies.0.sourceRevision", "value": null },
+        { "path": "dependencies.0.policyRevision", "value": null }
+      ]
     },
     {
       "name": "required partial dependency blocks completed publication without claims",

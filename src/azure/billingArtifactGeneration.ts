@@ -1,14 +1,19 @@
 import {
   isArtifactOwnershipBinding,
-  isArtifactPublicationDecision,
   isEnforceableArtifactOwnershipBinding,
   type ArtifactCoverageVerdict,
   type ArtifactOwnershipBinding,
-  type ArtifactPublicationDecision,
   type ArtifactRevisionVector,
 } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
+import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
+import {
+  allowedArtifactReferenceField,
+  containsForbiddenArtifactControlData,
+  type AllowedArtifactReferenceField,
+} from '../common/artifactControlData.js';
 import type { BillingAnalyzerMetadata } from './billingGeneration.js';
+import { isBillingCompletedArtifactPublicationDecision, type BillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
 
 type BillingArtifactBasis = 'actual' | 'amortized';
 
@@ -89,12 +94,10 @@ export interface BillingAnalyzerOutputManifestV2 extends BillingGenerationDocume
   inputManifestPath: string;
   inputManifestDigest: string;
   artifacts: [BillingAnalyzerOutputArtifactDescriptor, ...BillingAnalyzerOutputArtifactDescriptor[]];
-  publicationDecision: ArtifactPublicationDecision;
+  publicationDecision: BillingCompletedArtifactPublicationDecision;
   manifestDigest: string;
   completedAt: string;
 }
-
-type CompletedArtifactPublicationDecision = Extract<ArtifactPublicationDecision, { publication: 'completed' }>;
 
 export interface BillingAnalysisCurrentPointerV1 {
   schemaVersion: 1;
@@ -107,7 +110,7 @@ export interface BillingAnalysisCurrentPointerV1 {
   inputManifestDigest: string;
   outputManifestPath: string;
   outputManifestDigest: string;
-  publicationDecision: CompletedArtifactPublicationDecision;
+  publicationDecision: BillingCompletedArtifactPublicationDecision;
   completedAt: string;
 }
 
@@ -115,10 +118,6 @@ const BILLING_BASES = new Set<string>(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set<string>(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set<string>(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
-const FORBIDDEN_CREDENTIAL_FIELD =
-  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
-const PHYSICAL_REFERENCE_FIELD =
-  /^(?:path|url|uri|artifactpath|manifestpath|inputmanifestpath|outputmanifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -138,37 +137,8 @@ const isCanonicalIsoTimestamp = (value: unknown): value is string => {
 const hasControlCharacters = (value: string): boolean =>
   Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 
-interface AllowedReferenceField {
-  object: Record<string, unknown>;
-  key: string;
-}
-
-const isPhysicalReferenceValue = (value: string): boolean =>
-  value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
-
-const containsForbiddenControlData = (value: unknown, allowedReferenceFields: AllowedReferenceField[] = []): boolean => {
-  if (typeof value === 'string') return isPhysicalReferenceValue(value);
-  if (Array.isArray(value)) return value.some(child => containsForbiddenControlData(child, allowedReferenceFields));
-  if (!isRecord(value)) return false;
-  return Object.entries(value).some(([key, child]) => {
-    if (FORBIDDEN_CREDENTIAL_FIELD.test(key)) return true;
-    const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
-    if (PHYSICAL_REFERENCE_FIELD.test(key) && !referenceAllowed) return true;
-    return containsForbiddenControlData(child, allowedReferenceFields);
-  });
-};
-
-const allowedReferenceField = (object: unknown, key: string): AllowedReferenceField[] => (isRecord(object) ? [{ object, key }] : []);
-
-const allowedDescriptorPaths = (descriptors: unknown): AllowedReferenceField[] =>
-  Array.isArray(descriptors) ? descriptors.flatMap(descriptor => allowedReferenceField(descriptor, 'path')) : [];
-
-const isLogicalPath = (value: unknown): value is string => {
-  if (!isNonEmptyString(value) || value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#')) return false;
-  if (value.includes('\\') || value.includes('%') || hasControlCharacters(value)) return false;
-  const segments = value.split('/');
-  return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
-};
+const allowedDescriptorPaths = (descriptors: unknown): AllowedArtifactReferenceField[] =>
+  Array.isArray(descriptors) ? descriptors.flatMap(descriptor => allowedArtifactReferenceField(descriptor, 'path')) : [];
 
 const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
@@ -186,13 +156,7 @@ const outputManifestPath = (subscriptionId: string, generationId: string): strin
   `${outputGenerationPrefix(subscriptionId, generationId)}manifest.json`;
 
 const isGenerationPath = (value: unknown, prefix: string, forbiddenExactPath?: string): value is string =>
-  isLogicalPath(value) && value.startsWith(prefix) && value.length > prefix.length && value !== forbiddenExactPath;
-
-const isRevisionVector = (value: unknown): value is ArtifactRevisionVector =>
-  isRecord(value) &&
-  isPositiveInteger(value.sourceRevision) &&
-  isPositiveInteger(value.policyRevision) &&
-  (value.ownershipEpochRevision === undefined || isPositiveInteger(value.ownershipEpochRevision));
+  isStrictLogicalArtifactReference(value) && value.startsWith(prefix) && value.length > prefix.length && value !== forbiddenExactPath;
 
 const hasMatchingIdentity = (
   subscriptionId: unknown,
@@ -201,7 +165,12 @@ const hasMatchingIdentity = (
   revision: unknown,
   enforceable: boolean
 ): boolean => {
-  if (!isPathSegment(subscriptionId) || !isPathSegment(generationId) || !isArtifactOwnershipBinding(ownership) || !isRevisionVector(revision)) {
+  if (
+    !isPathSegment(subscriptionId) ||
+    !isPathSegment(generationId) ||
+    !isArtifactOwnershipBinding(ownership) ||
+    !isArtifactRevisionVector(revision)
+  ) {
     return false;
   }
   if (ownership.provider !== 'azure' || ownership.accountId !== subscriptionId) return false;
@@ -271,7 +240,7 @@ const isJsonMetadata = (value: unknown): value is BillingAnalyzerMetadata => {
 
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is BillingAnalyzerInputManifestV2 => {
-  if (!isRecord(value) || containsForbiddenControlData(value, allowedDescriptorPaths(value.inputs))) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedDescriptorPaths(value.inputs))) return false;
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
   if (!isNonEmptyString(value.publicationKey) || !isSha256(value.coveragePlanDigest) || !isSha256(value.manifestDigest)) return false;
@@ -291,11 +260,11 @@ export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is Billi
 
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is BillingAnalyzerInputCurrentPointerV1 => {
-  if (!isRecord(value) || containsForbiddenControlData(value, allowedReferenceField(value, 'manifestPath'))) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))) return false;
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
   return (
-    isLogicalPath(value.manifestPath) &&
+    isStrictLogicalArtifactReference(value.manifestPath) &&
     value.manifestPath === inputManifestPath(value.subscriptionId as string, value.generationId as string) &&
     isSha256(value.manifestDigest) &&
     isCanonicalIsoTimestamp(value.completedAt)
@@ -304,14 +273,14 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is
 
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnalyzerRequestV2 => {
-  if (!isRecord(value) || containsForbiddenControlData(value, allowedReferenceField(value, 'inputManifestPath'))) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
   if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce')) return false;
   const enforceable = value.publicationMode === 'enforce';
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, enforceable)) return false;
   if (![value.eventId, value.correlationId].every(isNonEmptyString) || !isSha256(value.messageId) || !isSha256(value.idempotencyKey)) return false;
   if (value.idempotencyKey !== value.messageId || !isCanonicalIsoTimestamp(value.occurredAt)) return false;
   if (
-    !isLogicalPath(value.inputManifestPath) ||
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
     value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
   ) {
     return false;
@@ -324,14 +293,17 @@ export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnal
 export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is BillingAnalyzerOutputManifestV2 => {
   if (
     !isRecord(value) ||
-    containsForbiddenControlData(value, [...allowedReferenceField(value, 'inputManifestPath'), ...allowedDescriptorPaths(value.artifacts)])
+    containsForbiddenArtifactControlData(value, [
+      ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+      ...allowedDescriptorPaths(value.artifacts),
+    ])
   ) {
     return false;
   }
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
   if (
-    !isLogicalPath(value.inputManifestPath) ||
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
     value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
   ) {
     return false;
@@ -350,35 +322,40 @@ export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is Bill
   ) {
     return false;
   }
-  return isArtifactPublicationDecision(value.publicationDecision) && isCanonicalIsoTimestamp(value.completedAt);
+  return (
+    isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId as string, value.inputManifestDigest as string) &&
+    isCanonicalIsoTimestamp(value.completedAt)
+  );
 };
 
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is BillingAnalysisCurrentPointerV1 => {
   if (
     !isRecord(value) ||
-    containsForbiddenControlData(value, [...allowedReferenceField(value, 'inputManifestPath'), ...allowedReferenceField(value, 'outputManifestPath')])
+    containsForbiddenArtifactControlData(value, [
+      ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+      ...allowedArtifactReferenceField(value, 'outputManifestPath'),
+    ])
   ) {
     return false;
   }
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
   if (
-    !isLogicalPath(value.inputManifestPath) ||
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
     value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
   ) {
     return false;
   }
   if (
-    !isLogicalPath(value.outputManifestPath) ||
+    !isStrictLogicalArtifactReference(value.outputManifestPath) ||
     value.outputManifestPath !== outputManifestPath(value.subscriptionId as string, value.generationId as string)
   ) {
     return false;
   }
   if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputManifestDigest)) return false;
   return (
-    isArtifactPublicationDecision(value.publicationDecision) &&
-    value.publicationDecision.publication === 'completed' &&
+    isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId as string, value.inputManifestDigest as string) &&
     isCanonicalIsoTimestamp(value.completedAt)
   );
 };

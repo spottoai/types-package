@@ -10,6 +10,9 @@ import {
   type ArtifactRevisionVector,
   type BillingArtifactReadState,
 } from '../common/artifactEvidence.js';
+import { containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
+import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
+import { isBillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
 
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
@@ -292,10 +295,6 @@ export interface BillingCostAnalysisMetadataV2 extends BillingCostAnalysisMetada
 
 const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'fallback', 'complete-empty']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const FORBIDDEN_CREDENTIAL_FIELD =
-  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
-const PHYSICAL_REFERENCE_FIELD =
-  /^(?:path|url|uri|artifactpath|manifestpath|inputmanifestpath|outputmanifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -309,15 +308,6 @@ const hasControlCharacters = (value: string): boolean =>
   Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
-
-const containsForbiddenMetadata = (value: unknown): boolean => {
-  if (typeof value === 'string') return value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
-  if (Array.isArray(value)) return value.some(containsForbiddenMetadata);
-  if (!isRecord(value)) return false;
-  return Object.entries(value).some(
-    ([key, child]) => FORBIDDEN_CREDENTIAL_FIELD.test(key) || PHYSICAL_REFERENCE_FIELD.test(key) || containsForbiddenMetadata(child)
-  );
-};
 
 const isTrend = (value: unknown): boolean =>
   isRecord(value) && isNonEmptyString(value.method) && isFiniteNumber(value.slope) && isFiniteNumber(value.intercept);
@@ -378,7 +368,7 @@ const isChartView = (value: unknown): boolean => {
   return false;
 };
 
-const isChartData = (value: unknown): boolean => {
+const isChartData = (value: unknown): value is Record<string, unknown> => {
   if (!isRecord(value) || !isPositiveInteger(value.schemaVersion) || !isNonEmptyString(value.source)) return false;
   if (
     !isRecord(value.dataWindow) ||
@@ -449,36 +439,59 @@ const isAnomaly = (value: unknown): boolean => {
   );
 };
 
-const hasValidMetadataEvidenceState = (state: unknown, evidence: ArtifactPublicationDecision): boolean => {
+const hasValidMetadataEvidenceState = (
+  state: unknown,
+  evidence: ArtifactPublicationDecision,
+  billingGenerationId: string,
+  inputManifestDigest: string,
+  chartData: Record<string, unknown>,
+  anomalies: unknown[]
+): boolean => {
   if (state === 'partial') return evidence.evidence === 'partial' && (evidence.publication === 'completed' || evidence.publication === 'partial');
   if (evidence.publication !== 'completed') return false;
   if (state !== 'complete-empty') return true;
-  return evidence.dependencies.some(
-    dependency => dependency.emptyEvidence === 'complete-empty' && dependency.acceptedRowCount === 0 && isNonEmptyString(dependency.emptyProofRef)
+  if (!isBillingCompletedArtifactPublicationDecision(evidence, billingGenerationId, inputManifestDigest)) return false;
+  const billingHistory = evidence.dependencies.find(dependency => dependency.name === 'billing-history');
+  const dataWindow = chartData.dataWindow;
+  const views = chartData.views;
+  return (
+    billingHistory?.emptyEvidence === 'complete-empty' &&
+    billingHistory.acceptedRowCount === 0 &&
+    isNonEmptyString(billingHistory.emptyProofRef) &&
+    isRecord(dataWindow) &&
+    dataWindow.pointCount === 0 &&
+    isRecord(views) &&
+    Object.values(views).every(view => view === undefined) &&
+    anomalies.length === 0
   );
 };
 
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is BillingCostAnalysisMetadataV2 => {
-  if (!isRecord(value) || containsForbiddenMetadata(value) || value.schemaVersion !== 2) return false;
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value) || value.schemaVersion !== 2) return false;
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isArtifactOwnershipBinding(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)
     return false;
-  if (
-    !isRecord(value.revision) ||
-    !isPositiveInteger(value.revision.sourceRevision) ||
-    !isPositiveInteger(value.revision.policyRevision) ||
-    (value.revision.ownershipEpochRevision !== undefined && !isPositiveInteger(value.revision.ownershipEpochRevision)) ||
-    value.ownership.ownershipEpochRevision !== value.revision.ownershipEpochRevision
-  ) {
+  if (!isArtifactRevisionVector(value.revision) || value.ownership.ownershipEpochRevision !== value.revision.ownershipEpochRevision) {
     return false;
   }
   if (typeof value.artifactState !== 'string' || !BILLING_DOCUMENT_STATES.has(value.artifactState)) return false;
   if (!isArtifactPublicationDecision(value.artifactEvidence)) return false;
-  if (!hasValidMetadataEvidenceState(value.artifactState, value.artifactEvidence)) return false;
   if (typeof value.inputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.inputManifestDigest)) return false;
   if (typeof value.outputManifestDigest !== 'string' || !SHA256_PATTERN.test(value.outputManifestDigest)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (
+    !hasValidMetadataEvidenceState(
+      value.artifactState,
+      value.artifactEvidence,
+      value.billingGenerationId,
+      value.inputManifestDigest,
+      value.chartData,
+      value.anomalies
+    )
+  ) {
+    return false;
+  }
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);

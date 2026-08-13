@@ -5,7 +5,6 @@ import {
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
   isBillingCostAnalysisMetadataV2,
-  type ArtifactPublicationDecision,
   type ArtifactRevisionVector,
   type BillingAnalysisCurrentPointerV1,
   type BillingAnalyzerInputCurrentPointerV1,
@@ -50,7 +49,7 @@ const revision = {
   policyRevision: 7,
 } satisfies ArtifactRevisionVector;
 
-const publicationDecision = {
+const publicationDecision: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
   processing: 'succeeded',
   evidence: 'complete',
   publication: 'completed',
@@ -67,7 +66,7 @@ const publicationDecision = {
       evidence: 'complete',
       publication: 'completed',
       generationId,
-      digest: digestA,
+      digest: digestC,
       sourceRevision: 42,
       policyRevision: 7,
     },
@@ -83,7 +82,7 @@ const publicationDecision = {
     },
   ],
   issues: [],
-} satisfies ArtifactPublicationDecision;
+};
 
 const inputManifest = {
   schemaVersion: 2,
@@ -326,6 +325,12 @@ const incompleteAnalysisPointer: BillingAnalysisCurrentPointerV1 = {
   publicationDecision: { ...publicationDecision, processing: 'failed', evidence: 'insufficient', publication: 'quarantined' },
 };
 
+const policyFreeOutputManifest: BillingAnalyzerOutputManifestV2 = {
+  ...outputManifest,
+  // @ts-expect-error Billing output manifests require a billing-history dependency and cost-analysis claim.
+  publicationDecision: { ...publicationDecision, dependencies: [], claims: [] },
+};
+
 // @ts-expect-error Suppressed is an error/decision-path state, not successful metadata.
 const suppressedMetadata: BillingCostAnalysisMetadataV2 = { ...costAnalysisMetadata, artifactState: 'suppressed' };
 
@@ -337,5 +342,6 @@ void [
   unknownRequestVersion,
   unknownOutputManifestVersion,
   incompleteAnalysisPointer,
+  policyFreeOutputManifest,
   suppressedMetadata,
 ];
