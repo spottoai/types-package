@@ -277,7 +277,7 @@ export interface BillingCostAnalysisMetadata {
   forecastPeriodEnd?: number;
 }
 
-export type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
+type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
 
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
 export interface BillingCostAnalysisMetadataV2 extends BillingCostAnalysisMetadata {
@@ -292,8 +292,10 @@ export interface BillingCostAnalysisMetadataV2 extends BillingCostAnalysisMetada
 
 const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'fallback', 'complete-empty']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const FORBIDDEN_METADATA_FIELD =
-  /credential|password|secret|token|connectionstring|accountkey|sharedaccesssignature|clientsecret|(?:storage|blob|container|physical|source)(?:path|url|uri|key)/i;
+const FORBIDDEN_CREDENTIAL_FIELD =
+  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
+const PHYSICAL_REFERENCE_FIELD =
+  /^(?:path|url|uri|artifactpath|manifestpath|inputmanifestpath|outputmanifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value: unknown): value is string => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -303,13 +305,18 @@ const isNullableFiniteNumber = (value: unknown): boolean => value === null || is
 const isNonNegativeInteger = (value: unknown): boolean => Number.isSafeInteger(value) && Number(value) >= 0;
 const isPositiveInteger = (value: unknown): boolean => Number.isSafeInteger(value) && Number(value) > 0;
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every(isNonEmptyString);
-const isPathSegment = (value: unknown): value is string => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
+const hasControlCharacters = (value: string): boolean =>
+  Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
+const isPathSegment = (value: unknown): value is string =>
+  isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 
 const containsForbiddenMetadata = (value: unknown): boolean => {
-  if (typeof value === 'string') return value.includes('://') || value.startsWith('//');
+  if (typeof value === 'string') return value.includes('://') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
   if (Array.isArray(value)) return value.some(containsForbiddenMetadata);
   if (!isRecord(value)) return false;
-  return Object.entries(value).some(([key, child]) => FORBIDDEN_METADATA_FIELD.test(key) || containsForbiddenMetadata(child));
+  return Object.entries(value).some(
+    ([key, child]) => FORBIDDEN_CREDENTIAL_FIELD.test(key) || PHYSICAL_REFERENCE_FIELD.test(key) || containsForbiddenMetadata(child)
+  );
 };
 
 const isTrend = (value: unknown): boolean =>

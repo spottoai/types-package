@@ -10,9 +10,9 @@ import {
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { BillingAnalyzerMetadata } from './billingGeneration.js';
 
-export type BillingArtifactBasis = 'actual' | 'amortized';
+type BillingArtifactBasis = 'actual' | 'amortized';
 
-export interface BillingAnalyzerRequestedPeriod {
+interface BillingAnalyzerRequestedPeriod {
   fromInclusive: string;
   throughExclusive: string;
   dateBasis: 'utc' | 'billing-calendar' | 'company-local';
@@ -20,7 +20,7 @@ export interface BillingAnalyzerRequestedPeriod {
   basis: BillingArtifactBasis;
 }
 
-export interface BillingAnalyzerInputObjectDescriptor {
+interface BillingAnalyzerInputObjectDescriptor {
   path: string;
   versionId?: string;
   etag: string;
@@ -32,7 +32,7 @@ export interface BillingAnalyzerInputObjectDescriptor {
   coverage: ArtifactCoverageVerdict;
 }
 
-export interface BillingAnalyzerOutputArtifactDescriptor extends ArtifactDescriptor {
+interface BillingAnalyzerOutputArtifactDescriptor extends ArtifactDescriptor {
   path: string;
 }
 
@@ -115,8 +115,10 @@ const BILLING_BASES = new Set<string>(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set<string>(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set<string>(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
-const FORBIDDEN_CONTROL_FIELD =
-  /credential|password|secret|token|connectionstring|accountkey|sharedaccesssignature|clientsecret|(?:storage|blob|container|physical|source)(?:path|url|uri|key)/i;
+const FORBIDDEN_CREDENTIAL_FIELD =
+  /credential|password|secret|token|connectionstring|accountkey|accesskey|apikey|authorization|sharedaccesssignature|clientsecret/i;
+const PHYSICAL_REFERENCE_FIELD =
+  /^(?:path|url|uri|artifactpath|manifestpath|inputmanifestpath|outputmanifestpath|storagepath|blobpath|containerpath|physicalpath|sourcepath|storageurl|bloburl|containerurl|physicalurl|sourceurl|storageuri|bloburi|containeruri|physicaluri|sourceuri)$/i;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -133,21 +135,42 @@ const isCanonicalIsoTimestamp = (value: unknown): value is string => {
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString() === value;
 };
 
-const containsForbiddenControlData = (value: unknown): boolean => {
-  if (typeof value === 'string') return value.includes('://') || value.startsWith('//');
-  if (Array.isArray(value)) return value.some(containsForbiddenControlData);
+const hasControlCharacters = (value: string): boolean =>
+  Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
+
+interface AllowedReferenceField {
+  object: Record<string, unknown>;
+  key: string;
+}
+
+const isPhysicalReferenceValue = (value: string): boolean => value.includes('://') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
+
+const containsForbiddenControlData = (value: unknown, allowedReferenceFields: AllowedReferenceField[] = []): boolean => {
+  if (typeof value === 'string') return isPhysicalReferenceValue(value);
+  if (Array.isArray(value)) return value.some(child => containsForbiddenControlData(child, allowedReferenceFields));
   if (!isRecord(value)) return false;
-  return Object.entries(value).some(([key, child]) => FORBIDDEN_CONTROL_FIELD.test(key) || containsForbiddenControlData(child));
+  return Object.entries(value).some(([key, child]) => {
+    if (FORBIDDEN_CREDENTIAL_FIELD.test(key)) return true;
+    const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
+    if (PHYSICAL_REFERENCE_FIELD.test(key) && !referenceAllowed) return true;
+    return containsForbiddenControlData(child, allowedReferenceFields);
+  });
 };
+
+const allowedReferenceField = (object: unknown, key: string): AllowedReferenceField[] => (isRecord(object) ? [{ object, key }] : []);
+
+const allowedDescriptorPaths = (descriptors: unknown): AllowedReferenceField[] =>
+  Array.isArray(descriptors) ? descriptors.flatMap(descriptor => allowedReferenceField(descriptor, 'path')) : [];
 
 const isLogicalPath = (value: unknown): value is string => {
   if (!isNonEmptyString(value) || value.startsWith('/') || value.includes('://') || value.includes('?') || value.includes('#')) return false;
-  if (value.includes('\\') || value.includes('%') || Array.from(value).some(character => character.charCodeAt(0) < 32)) return false;
+  if (value.includes('\\') || value.includes('%') || hasControlCharacters(value)) return false;
   const segments = value.split('/');
   return segments.length >= 2 && segments.every(segment => segment.length > 0 && segment !== '.' && segment !== '..');
 };
 
-const isPathSegment = (value: unknown): value is string => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
+const isPathSegment = (value: unknown): value is string =>
+  isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 
 const inputGenerationPrefix = (subscriptionId: string, generationId: string): string =>
   `subscriptions/${subscriptionId}/history/billing/analyzer-inputs/generations/${generationId}/`;
@@ -247,7 +270,7 @@ const isJsonMetadata = (value: unknown): value is BillingAnalyzerMetadata => {
 
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is BillingAnalyzerInputManifestV2 => {
-  if (!isRecord(value) || containsForbiddenControlData(value)) return false;
+  if (!isRecord(value) || containsForbiddenControlData(value, allowedDescriptorPaths(value.inputs))) return false;
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
   if (!isNonEmptyString(value.publicationKey) || !isSha256(value.coveragePlanDigest) || !isSha256(value.manifestDigest)) return false;
@@ -267,10 +290,11 @@ export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is Billi
 
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is BillingAnalyzerInputCurrentPointerV1 => {
-  if (!isRecord(value) || containsForbiddenControlData(value)) return false;
+  if (!isRecord(value) || containsForbiddenControlData(value, allowedReferenceField(value, 'manifestPath'))) return false;
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
   return (
+    isLogicalPath(value.manifestPath) &&
     value.manifestPath === inputManifestPath(value.subscriptionId as string, value.generationId as string) &&
     isSha256(value.manifestDigest) &&
     isCanonicalIsoTimestamp(value.completedAt)
@@ -279,23 +303,38 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is
 
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnalyzerRequestV2 => {
-  if (!isRecord(value) || containsForbiddenControlData(value)) return false;
+  if (!isRecord(value) || containsForbiddenControlData(value, allowedReferenceField(value, 'inputManifestPath'))) return false;
   if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce')) return false;
   const enforceable = value.publicationMode === 'enforce';
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, enforceable)) return false;
   if (![value.eventId, value.correlationId].every(isNonEmptyString) || !isSha256(value.messageId) || !isSha256(value.idempotencyKey)) return false;
   if (value.idempotencyKey !== value.messageId || !isCanonicalIsoTimestamp(value.occurredAt)) return false;
-  if (value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)) return false;
+  if (
+    !isLogicalPath(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
   if (!isSha256(value.inputManifestDigest)) return false;
   return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
 
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is BillingAnalyzerOutputManifestV2 => {
-  if (!isRecord(value) || containsForbiddenControlData(value)) return false;
+  if (
+    !isRecord(value) ||
+    containsForbiddenControlData(value, [...allowedReferenceField(value, 'inputManifestPath'), ...allowedDescriptorPaths(value.artifacts)])
+  ) {
+    return false;
+  }
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
-  if (value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)) return false;
+  if (
+    !isLogicalPath(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
   if (!isSha256(value.inputManifestDigest) || !isSha256(value.manifestDigest)) return false;
   if (!Array.isArray(value.artifacts) || value.artifacts.length === 0) return false;
   if (!value.artifacts.every(artifact => isOutputArtifactDescriptor(artifact, value.subscriptionId as string, value.generationId as string))) {
@@ -315,11 +354,26 @@ export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is Bill
 
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is BillingAnalysisCurrentPointerV1 => {
-  if (!isRecord(value) || containsForbiddenControlData(value)) return false;
+  if (
+    !isRecord(value) ||
+    containsForbiddenControlData(value, [...allowedReferenceField(value, 'inputManifestPath'), ...allowedReferenceField(value, 'outputManifestPath')])
+  ) {
+    return false;
+  }
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
-  if (value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)) return false;
-  if (value.outputManifestPath !== outputManifestPath(value.subscriptionId as string, value.generationId as string)) return false;
+  if (
+    !isLogicalPath(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
+  if (
+    !isLogicalPath(value.outputManifestPath) ||
+    value.outputManifestPath !== outputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
   if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputManifestDigest)) return false;
   return (
     isArtifactPublicationDecision(value.publicationDecision) &&

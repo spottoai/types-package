@@ -15,6 +15,17 @@ import {
   type BillingCostAnalysisMetadataV2,
 } from '../index';
 
+// @ts-expect-error Billing artifact basis is an implementation detail of the six Task 3 documents.
+import type { BillingArtifactBasis } from '../index';
+// @ts-expect-error Requested-period helpers are not part of the exact Task 3 root surface.
+import type { BillingAnalyzerRequestedPeriod } from '../index';
+// @ts-expect-error Input-object helpers are not part of the exact Task 3 root surface.
+import type { BillingAnalyzerInputObjectDescriptor } from '../index';
+// @ts-expect-error Output-artifact helpers are not part of the exact Task 3 root surface.
+import type { BillingAnalyzerOutputArtifactDescriptor } from '../index';
+// @ts-expect-error Metadata state helpers are not part of the exact Task 3 root surface.
+import type { BillingCostAnalysisDocumentState } from '../index';
+
 const digestA = 'a'.repeat(64);
 const digestB = 'b'.repeat(64);
 const digestC = 'c'.repeat(64);
@@ -216,6 +227,59 @@ const additiveInputPointer = {
   ownership: { ...inputPointer.ownership, futureOwnershipField: true },
 };
 
+const harmlessAdditiveRequest = {
+  ...analyzerRequest,
+  futureTopLevelField: { producer: 'next-version' },
+  displayMetadata: {
+    futureDisplayField: { enabled: true },
+    resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
+  },
+};
+
+const credentialBearingRequests = [
+  { ...analyzerRequest, displayMetadata: { accessKey: 'AKIA-example', artifactPath: '/tmp/billing.json' } },
+  { ...analyzerRequest, displayMetadata: { apiKey: 'api-key-example' } },
+  { ...analyzerRequest, displayMetadata: { authorization: 'Bearer example' } },
+  { ...analyzerRequest, displayMetadata: { path: '/tmp/billing.json' } },
+  { ...analyzerRequest, displayMetadata: { url: 'https://storage.example.invalid/billing.json' } },
+  { ...analyzerRequest, displayMetadata: { uri: 'file:///tmp/billing.json' } },
+];
+
+const controlCharacterInputPointer = {
+  ...inputPointer,
+  generationId: `${generationId}\nunsafe`,
+  manifestPath: inputPointer.manifestPath.replace(generationId, `${generationId}\nunsafe`),
+};
+
+const controlCharacterRequest = {
+  ...analyzerRequest,
+  subscriptionId: `${subscriptionId}\u0000unsafe`,
+  ownership: { ...analyzerRequest.ownership, accountId: `${subscriptionId}\u0000unsafe` },
+  inputManifestPath: analyzerRequest.inputManifestPath.replace(subscriptionId, `${subscriptionId}\u0000unsafe`),
+};
+
+const controlCharacterAnalysisPointer = {
+  ...analysisPointer,
+  generationId: `${generationId}\u001funsafe`,
+  inputManifestPath: analysisPointer.inputManifestPath.replace(generationId, `${generationId}\u001funsafe`),
+  outputManifestPath: analysisPointer.outputManifestPath.replace(generationId, `${generationId}\u001funsafe`),
+};
+
+const harmlessAdditiveMetadata = {
+  ...costAnalysisMetadata,
+  futureTopLevelField: { producer: 'next-version' },
+  resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
+};
+
+const credentialBearingMetadata = [
+  { ...costAnalysisMetadata, accessKey: 'AKIA-example', artifactPath: '/tmp/billing.json' },
+  { ...costAnalysisMetadata, apiKey: 'api-key-example' },
+  { ...costAnalysisMetadata, authorization: 'Bearer example' },
+  { ...costAnalysisMetadata, path: '/tmp/billing.json' },
+  { ...costAnalysisMetadata, url: 'https://storage.example.invalid/billing.json' },
+  { ...costAnalysisMetadata, uri: 'file:///tmp/billing.json' },
+];
+
 const validationResults: boolean[] = [
   isBillingAnalyzerInputManifestV2(inputManifest),
   isBillingAnalyzerInputCurrentPointerV1(inputPointer),
@@ -225,6 +289,20 @@ const validationResults: boolean[] = [
   isBillingAnalysisCurrentPointerV1(analysisPointer),
   isBillingCostAnalysisMetadataV2(costAnalysisMetadata),
 ];
+
+const runtimeSafetyResults: boolean[] = [
+  isBillingAnalyzerRequestV2(harmlessAdditiveRequest),
+  ...credentialBearingRequests.map(request => !isBillingAnalyzerRequestV2(request)),
+  !isBillingAnalyzerInputCurrentPointerV1(controlCharacterInputPointer),
+  !isBillingAnalyzerRequestV2(controlCharacterRequest),
+  !isBillingAnalysisCurrentPointerV1(controlCharacterAnalysisPointer),
+  isBillingCostAnalysisMetadataV2(harmlessAdditiveMetadata),
+  ...credentialBearingMetadata.map(metadata => !isBillingCostAnalysisMetadataV2(metadata)),
+];
+
+if (!runtimeSafetyResults.every(result => result)) {
+  throw new Error('Task 3 billing artifact runtime safety assertion failed.');
+}
 
 // @ts-expect-error V2 input manifests reject unknown schema versions.
 const unknownInputManifestVersion: BillingAnalyzerInputManifestV2 = { ...inputManifest, schemaVersion: 3 };
@@ -249,6 +327,7 @@ const suppressedMetadata: BillingCostAnalysisMetadataV2 = { ...costAnalysisMetad
 
 void [
   validationResults,
+  runtimeSafetyResults,
   unknownInputManifestVersion,
   unknownInputPointerVersion,
   unknownRequestVersion,
