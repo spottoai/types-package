@@ -240,6 +240,10 @@ assert.deepEqual(
 const sha256 = value => createHash('sha256').update(value).digest('hex');
 const utf8Hex = value => Buffer.from(value, 'utf8').toString('hex');
 const digestVectorResults = new Map();
+assert.ok(
+  contractCorpus.digestVectors.some(vector => vector.coverageClass === 'partial'),
+  'portable digest vectors must include a machine-readable partial evidence chain'
+);
 for (const vector of contractCorpus.digestVectors) {
   const manifest = structuredClone(vector.outputManifest);
   const metadata = structuredClone(vector.metadata);
@@ -271,9 +275,20 @@ for (const vector of contractCorpus.digestVectors) {
   assert.equal(manifest.artifacts[0].sha256, result.metadataStoredByteDigest, `${vector.name}: exact metadata descriptor digest`);
   assert.equal(manifest.manifestDigest, result.outputManifestDigest, `${vector.name}: output manifest digest`);
   assert.equal(pointer.outputManifestDigest, result.outputManifestDigest, `${vector.name}: pointer D`);
-  assert.equal(isBillingAnalyzerInputManifestV2(vector.inputManifest), true, `${vector.name}: input manifest structure`);
-  assert.equal(isBillingAnalyzerOutputManifestV2(manifest), true, `${vector.name}: output manifest structure`);
-  assert.equal(isBillingCostAnalysisMetadataV2(metadata), true, `${vector.name}: metadata structure`);
+  const expectedStructure = vector.structure ?? {
+    inputManifestValid: true,
+    outputManifestValid: true,
+    metadataValid: true,
+    pointerValid: true,
+  };
+  assert.equal(
+    isBillingAnalyzerInputManifestV2(vector.inputManifest),
+    expectedStructure.inputManifestValid,
+    `${vector.name}: input manifest structure`
+  );
+  assert.equal(isBillingAnalyzerOutputManifestV2(manifest), expectedStructure.outputManifestValid, `${vector.name}: output manifest structure`);
+  assert.equal(isBillingCostAnalysisMetadataV2(metadata), expectedStructure.metadataValid, `${vector.name}: metadata structure`);
+  assert.equal(isBillingAnalysisCurrentPointerV1(pointer), expectedStructure.pointerValid, `${vector.name}: pointer structure`);
   digestVectorResults.set(vector.name, result);
 }
 const baselineDigestVector = digestVectorResults.get('current populated output');

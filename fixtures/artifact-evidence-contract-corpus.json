@@ -7646,6 +7646,427 @@
         "outputManifestDigest": "ac679ab5b3a04c548f851e05ea441c42162c05707c7b50d89fd8b3abef34d9e9",
         "pointerBindingValid": true
       }
+    },
+    {
+      "name": "partial evidence remains unpromoted",
+      "coverageClass": "partial",
+      "bindingExpectation": "different-from-current",
+      "structure": {
+        "inputManifestValid": true,
+        "outputManifestValid": false,
+        "metadataValid": true,
+        "pointerValid": false
+      },
+      "inputManifest": {
+        "schemaVersion": 2,
+        "status": "completed",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "publicationKey": "billing-input:sub-123:source-run-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "ownershipEpochRevision": 3,
+          "sourceRevision": 42,
+          "policyRevision": 7
+        },
+        "coveragePlanDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "asOfUtc": "2026-08-13T00:00:00.000Z",
+        "stableCutoffUtc": "2026-08-12T00:00:00.000Z",
+        "requestedPeriods": [
+          {
+            "fromInclusive": "2026-07-01T00:00:00.000Z",
+            "throughExclusive": "2026-08-01T00:00:00.000Z",
+            "dateBasis": "utc",
+            "basis": "amortized"
+          }
+        ],
+        "inputs": [
+          {
+            "path": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz",
+            "versionId": "version-1",
+            "etag": "etag-1",
+            "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "byteCount": 512,
+            "rowCount": 31,
+            "basis": "amortized",
+            "currencyCode": "NZD",
+            "coverage": "complete"
+          }
+        ],
+        "manifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "completedAt": "2026-08-13T00:05:00.000Z"
+      },
+      "outputManifest": {
+        "schemaVersion": 2,
+        "status": "completed",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "ownershipEpochRevision": 3,
+          "sourceRevision": 42,
+          "policyRevision": 7
+        },
+        "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "artifacts": [
+          {
+            "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json",
+            "name": "metadata.json",
+            "mediaType": "application/json",
+            "contentEncoding": "identity",
+            "byteLength": 1924,
+            "sha256": "77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e"
+          }
+        ],
+        "publicationDecision": {
+          "processing": "succeeded",
+          "evidence": "partial",
+          "publication": "partial",
+          "dependencies": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "exchange-rates",
+              "required": false,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "failed",
+              "coverage": "none",
+              "emptyEvidence": "not-observed",
+              "freshness": "unknown",
+              "evidence": "insufficient",
+              "publication": "suppressed",
+              "reasonCode": "exchange-rates-unavailable"
+            }
+          ],
+          "claims": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "partial",
+              "publication": "partial",
+              "issues": [
+                {
+                  "code": "exchange-rates-unavailable",
+                  "blocking": false,
+                  "dependency": "exchange-rates"
+                }
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "exchange-rates-unavailable",
+              "blocking": false,
+              "dependency": "exchange-rates"
+            }
+          ]
+        },
+        "manifestDigest": "eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06",
+        "completedAt": "2026-08-13T00:05:00.000Z",
+        "outputBindingDigest": "82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63"
+      },
+      "metadata": {
+        "schemaVersion": 2,
+        "subscriptionId": "sub-123",
+        "billingGenerationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "ownershipEpochRevision": 3,
+          "sourceRevision": 42,
+          "policyRevision": 7
+        },
+        "artifactState": "partial",
+        "artifactEvidence": {
+          "processing": "succeeded",
+          "evidence": "partial",
+          "publication": "partial",
+          "dependencies": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "exchange-rates",
+              "required": false,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "failed",
+              "coverage": "none",
+              "emptyEvidence": "not-observed",
+              "freshness": "unknown",
+              "evidence": "insufficient",
+              "publication": "suppressed",
+              "reasonCode": "exchange-rates-unavailable"
+            }
+          ],
+          "claims": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "partial",
+              "publication": "partial",
+              "issues": [
+                {
+                  "code": "exchange-rates-unavailable",
+                  "blocking": false,
+                  "dependency": "exchange-rates"
+                }
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "exchange-rates-unavailable",
+              "blocking": false,
+              "dependency": "exchange-rates"
+            }
+          ]
+        },
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "outputBindingDigest": "82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63",
+        "chartData": {
+          "schemaVersion": 1,
+          "source": "aggregated",
+          "dataWindow": {
+            "startDate": 1754006400,
+            "endDate": 1756684800,
+            "pointCount": 0
+          },
+          "views": {},
+          "detectors": {
+            "threshold": 2,
+            "methods": []
+          }
+        },
+        "anomalies": [],
+        "currencyCode": "NZD",
+        "currencySymbol": "$"
+      },
+      "pointer": {
+        "schemaVersion": 1,
+        "status": "completed",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "ownershipEpochRevision": 3,
+          "sourceRevision": 42,
+          "policyRevision": 7
+        },
+        "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+        "outputManifestDigest": "eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06",
+        "publicationDecision": {
+          "processing": "succeeded",
+          "evidence": "partial",
+          "publication": "partial",
+          "dependencies": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "exchange-rates",
+              "required": false,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "failed",
+              "coverage": "none",
+              "emptyEvidence": "not-observed",
+              "freshness": "unknown",
+              "evidence": "insufficient",
+              "publication": "suppressed",
+              "reasonCode": "exchange-rates-unavailable"
+            }
+          ],
+          "claims": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "partial",
+              "publication": "partial",
+              "issues": [
+                {
+                  "code": "exchange-rates-unavailable",
+                  "blocking": false,
+                  "dependency": "exchange-rates"
+                }
+              ]
+            }
+          ],
+          "issues": [
+            {
+              "code": "exchange-rates-unavailable",
+              "blocking": false,
+              "dependency": "exchange-rates"
+            }
+          ]
+        },
+        "completedAt": "2026-08-13T00:05:00.000Z"
+      },
+      "expected": {
+        "bindingProjection": {
+          "kind": "billing-analysis-output",
+          "schemaVersion": 1,
+          "subscriptionId": "sub-123",
+          "generationId": "billing-input-generation-42",
+          "ownership": {
+            "provider": "azure",
+            "tenantId": "tenant-1",
+            "companyId": "company-1",
+            "cloudAccountId": "cloud-account-1",
+            "accountId": "sub-123",
+            "ownershipEpochRevision": 3
+          },
+          "revision": {
+            "sourceRevision": 42,
+            "policyRevision": 7,
+            "ownershipEpochRevision": 3
+          },
+          "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+          "publicationDecision": {
+            "processing": "succeeded",
+            "evidence": "partial",
+            "publication": "partial",
+            "dependencies": [
+              {
+                "name": "billing-history",
+                "required": true,
+                "support": "supported",
+                "applicability": "applicable",
+                "attempt": "succeeded",
+                "coverage": "complete",
+                "emptyEvidence": "populated",
+                "freshness": "current",
+                "evidence": "complete",
+                "publication": "completed",
+                "generationId": "billing-input-generation-42",
+                "digest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+                "sourceRevision": 42,
+                "policyRevision": 7
+              },
+              {
+                "name": "exchange-rates",
+                "required": false,
+                "support": "supported",
+                "applicability": "applicable",
+                "attempt": "failed",
+                "coverage": "none",
+                "emptyEvidence": "not-observed",
+                "freshness": "unknown",
+                "evidence": "insufficient",
+                "publication": "suppressed",
+                "reasonCode": "exchange-rates-unavailable"
+              }
+            ],
+            "claims": [
+              {
+                "claimId": "cost-analysis",
+                "sectionPaths": ["chartData", "anomalies"],
+                "requiredDependencies": ["billing-history"],
+                "evidence": "partial",
+                "publication": "partial",
+                "issues": [
+                  {
+                    "code": "exchange-rates-unavailable",
+                    "blocking": false,
+                    "dependency": "exchange-rates"
+                  }
+                ]
+              }
+            ],
+            "issues": [
+              {
+                "code": "exchange-rates-unavailable",
+                "blocking": false,
+                "dependency": "exchange-rates"
+              }
+            ]
+          }
+        },
+        "bindingCanonical": "{\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"kind\":\"billing-analysis-output\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"publicationDecision\":{\"claims\":[{\"claimId\":\"cost-analysis\",\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"publication\":\"partial\",\"requiredDependencies\":[\"billing-history\"],\"sectionPaths\":[\"chartData\",\"anomalies\"]}],\"dependencies\":[{\"applicability\":\"applicable\",\"attempt\":\"succeeded\",\"coverage\":\"complete\",\"digest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"emptyEvidence\":\"populated\",\"evidence\":\"complete\",\"freshness\":\"current\",\"generationId\":\"billing-input-generation-42\",\"name\":\"billing-history\",\"policyRevision\":7,\"publication\":\"completed\",\"required\":true,\"sourceRevision\":42,\"support\":\"supported\"},{\"applicability\":\"applicable\",\"attempt\":\"failed\",\"coverage\":\"none\",\"emptyEvidence\":\"not-observed\",\"evidence\":\"insufficient\",\"freshness\":\"unknown\",\"name\":\"exchange-rates\",\"publication\":\"suppressed\",\"reasonCode\":\"exchange-rates-unavailable\",\"required\":false,\"support\":\"supported\"}],\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"processing\":\"succeeded\",\"publication\":\"partial\"},\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
+        "bindingCanonicalUtf8Hex": "7b2267656e65726174696f6e4964223a2262696c6c696e672d696e7075742d67656e65726174696f6e2d3432222c22696e7075744d616e6966657374446967657374223a2239316464313264356533393165336236383235363639646236326166396233383735356633376439613664393763326531323764363935376239366334313261222c226b696e64223a2262696c6c696e672d616e616c797369732d6f7574707574222c226f776e657273686970223a7b226163636f756e744964223a227375622d313233222c22636c6f75644163636f756e744964223a22636c6f75642d6163636f756e742d31222c22636f6d70616e794964223a22636f6d70616e792d31222c226f776e65727368697045706f63685265766973696f6e223a332c2270726f7669646572223a22617a757265222c2274656e616e744964223a2274656e616e742d31227d2c227075626c69636174696f6e4465636973696f6e223a7b22636c61696d73223a5b7b22636c61696d4964223a22636f73742d616e616c79736973222c2265766964656e6365223a227061727469616c222c22697373756573223a5b7b22626c6f636b696e67223a66616c73652c22636f6465223a2265786368616e67652d72617465732d756e617661696c61626c65222c22646570656e64656e6379223a2265786368616e67652d7261746573227d5d2c227075626c69636174696f6e223a227061727469616c222c227265717569726564446570656e64656e63696573223a5b2262696c6c696e672d686973746f7279225d2c2273656374696f6e5061746873223a5b22636861727444617461222c22616e6f6d616c696573225d7d5d2c22646570656e64656e63696573223a5b7b226170706c69636162696c697479223a226170706c696361626c65222c22617474656d7074223a22737563636565646564222c22636f766572616765223a22636f6d706c657465222c22646967657374223a2239316464313264356533393165336236383235363639646236326166396233383735356633376439613664393763326531323764363935376239366334313261222c22656d70747945766964656e6365223a22706f70756c61746564222c2265766964656e6365223a22636f6d706c657465222c2266726573686e657373223a2263757272656e74222c2267656e65726174696f6e4964223a2262696c6c696e672d696e7075742d67656e65726174696f6e2d3432222c226e616d65223a2262696c6c696e672d686973746f7279222c22706f6c6963795265766973696f6e223a372c227075626c69636174696f6e223a22636f6d706c65746564222c227265717569726564223a747275652c22736f757263655265766973696f6e223a34322c22737570706f7274223a22737570706f72746564227d2c7b226170706c69636162696c697479223a226170706c696361626c65222c22617474656d7074223a226661696c6564222c22636f766572616765223a226e6f6e65222c22656d70747945766964656e6365223a226e6f742d6f62736572766564222c2265766964656e6365223a22696e73756666696369656e74222c2266726573686e657373223a22756e6b6e6f776e222c226e616d65223a2265786368616e67652d7261746573222c227075626c69636174696f6e223a2273757070726573736564222c22726561736f6e436f6465223a2265786368616e67652d72617465732d756e617661696c61626c65222c227265717569726564223a66616c73652c22737570706f7274223a22737570706f72746564227d5d2c2265766964656e6365223a227061727469616c222c22697373756573223a5b7b22626c6f636b696e67223a66616c73652c22636f6465223a2265786368616e67652d72617465732d756e617661696c61626c65222c22646570656e64656e6379223a2265786368616e67652d7261746573227d5d2c2270726f63657373696e67223a22737563636565646564222c227075626c69636174696f6e223a227061727469616c227d2c227265766973696f6e223a7b226f776e65727368697045706f63685265766973696f6e223a332c22706f6c6963795265766973696f6e223a372c22736f757263655265766973696f6e223a34327d2c22736368656d6156657273696f6e223a312c22737562736372697074696f6e4964223a227375622d313233227d",
+        "outputBindingDigest": "82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63",
+        "inputManifestCanonical": "{\"asOfUtc\":\"2026-08-13T00:00:00.000Z\",\"completedAt\":\"2026-08-13T00:05:00.000Z\",\"coveragePlanDigest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"generationId\":\"billing-input-generation-42\",\"inputs\":[{\"basis\":\"amortized\",\"byteCount\":512,\"coverage\":\"complete\",\"currencyCode\":\"NZD\",\"etag\":\"etag-1\",\"path\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz\",\"rowCount\":31,\"sha256\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"versionId\":\"version-1\"}],\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"publicationKey\":\"billing-input:sub-123:source-run-42\",\"requestedPeriods\":[{\"basis\":\"amortized\",\"dateBasis\":\"utc\",\"fromInclusive\":\"2026-07-01T00:00:00.000Z\",\"throughExclusive\":\"2026-08-01T00:00:00.000Z\"}],\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":2,\"stableCutoffUtc\":\"2026-08-12T00:00:00.000Z\",\"status\":\"completed\",\"subscriptionId\":\"sub-123\"}",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "metadataCanonical": "{\"anomalies\":[],\"artifactEvidence\":{\"claims\":[{\"claimId\":\"cost-analysis\",\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"publication\":\"partial\",\"requiredDependencies\":[\"billing-history\"],\"sectionPaths\":[\"chartData\",\"anomalies\"]}],\"dependencies\":[{\"applicability\":\"applicable\",\"attempt\":\"succeeded\",\"coverage\":\"complete\",\"digest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"emptyEvidence\":\"populated\",\"evidence\":\"complete\",\"freshness\":\"current\",\"generationId\":\"billing-input-generation-42\",\"name\":\"billing-history\",\"policyRevision\":7,\"publication\":\"completed\",\"required\":true,\"sourceRevision\":42,\"support\":\"supported\"},{\"applicability\":\"applicable\",\"attempt\":\"failed\",\"coverage\":\"none\",\"emptyEvidence\":\"not-observed\",\"evidence\":\"insufficient\",\"freshness\":\"unknown\",\"name\":\"exchange-rates\",\"publication\":\"suppressed\",\"reasonCode\":\"exchange-rates-unavailable\",\"required\":false,\"support\":\"supported\"}],\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"processing\":\"succeeded\",\"publication\":\"partial\"},\"artifactState\":\"partial\",\"billingGenerationId\":\"billing-input-generation-42\",\"chartData\":{\"dataWindow\":{\"endDate\":1756684800,\"pointCount\":0,\"startDate\":1754006400},\"detectors\":{\"methods\":[],\"threshold\":2},\"schemaVersion\":1,\"source\":\"aggregated\",\"views\":{}},\"currencyCode\":\"NZD\",\"currencySymbol\":\"$\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"outputBindingDigest\":\"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":2,\"subscriptionId\":\"sub-123\"}",
+        "metadataStoredByteDigest": "77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e",
+        "outputManifestCanonical": "{\"artifacts\":[{\"byteLength\":1924,\"contentEncoding\":\"identity\",\"mediaType\":\"application/json\",\"name\":\"metadata.json\",\"path\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json\",\"sha256\":\"77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e\"}],\"completedAt\":\"2026-08-13T00:05:00.000Z\",\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"outputBindingDigest\":\"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"publicationDecision\":{\"claims\":[{\"claimId\":\"cost-analysis\",\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"publication\":\"partial\",\"requiredDependencies\":[\"billing-history\"],\"sectionPaths\":[\"chartData\",\"anomalies\"]}],\"dependencies\":[{\"applicability\":\"applicable\",\"attempt\":\"succeeded\",\"coverage\":\"complete\",\"digest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"emptyEvidence\":\"populated\",\"evidence\":\"complete\",\"freshness\":\"current\",\"generationId\":\"billing-input-generation-42\",\"name\":\"billing-history\",\"policyRevision\":7,\"publication\":\"completed\",\"required\":true,\"sourceRevision\":42,\"support\":\"supported\"},{\"applicability\":\"applicable\",\"attempt\":\"failed\",\"coverage\":\"none\",\"emptyEvidence\":\"not-observed\",\"evidence\":\"insufficient\",\"freshness\":\"unknown\",\"name\":\"exchange-rates\",\"publication\":\"suppressed\",\"reasonCode\":\"exchange-rates-unavailable\",\"required\":false,\"support\":\"supported\"}],\"evidence\":\"partial\",\"issues\":[{\"blocking\":false,\"code\":\"exchange-rates-unavailable\",\"dependency\":\"exchange-rates\"}],\"processing\":\"succeeded\",\"publication\":\"partial\"},\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":2,\"status\":\"completed\",\"subscriptionId\":\"sub-123\"}",
+        "outputManifestDigest": "eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06",
+        "pointerBindingValid": true
+      }
     }
   ],
   "digestMismatchVectors": [
