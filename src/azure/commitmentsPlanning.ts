@@ -13,6 +13,7 @@ export type CommitmentsPlanningVersion = '1.0' | '2.0';
 export type CommitmentsCommitmentFamily =
   | 'compute-reservation'
   | 'compute-savings-plan'
+  | 'database-savings-plan'
   | 'app-service-reservation'
   | 'managed-disk-reservation'
   | 'blob-storage-reserved-capacity'
@@ -92,6 +93,7 @@ export interface CommitmentsPlanningView {
   /** @deprecated Legacy read compatibility only. New artifacts should use purchaseRecommendations. */
   vendorRecommendations?: CommitmentsVendorRecommendation[];
   purchaseRecommendations?: CommitmentsPurchaseRecommendation[];
+  savingsPlanDashboard?: CommitmentsSavingsPlanDashboard;
   diagnostics?: CommitmentsPlanningDiagnostics;
   coverage?: CommitmentsCoverageSummary[];
   renewals?: CommitmentsRenewalDecision[];
@@ -172,6 +174,9 @@ export interface CommitmentsInventoryItem {
   usedHours?: number;
   utilization?: IBenefitUtilization;
   coveragePercent?: number;
+  eligibilityStatus?: 'verified' | 'partial' | 'unknown';
+  unknownAttributionQuantity?: number;
+  unknownAttributionCost?: number;
   annualCommittedCost?: CommitmentsMoneyAmount;
   optimizationImpact?: CommitmentsMoneyAmount;
   doNotRenewAnnualImpact?: CommitmentsMoneyAmount;
@@ -247,8 +252,24 @@ export interface CommitmentEligibilityBlocker {
     | 'existing-coverage'
     | 'missing-usage-evidence'
     | 'missing-price-meter'
+    | 'missing-savings-plan-scope'
+    | 'missing-savings-plan-term'
+    | 'missing-hourly-commitment'
+    | 'missing-commitment-currency'
+    | 'missing-observation-hours'
+    | 'missing-source-recommendation-id'
+    | 'missing-billing-scope'
+    | 'missing-price-basis'
     | 'non-covered-charge'
     | 'unsupported-charge-category'
+    | 'unsupported-commitment-grain'
+    | 'unsupported-database-savings-plan-term'
+    | 'recent-equivalent-savings-plan'
+    | 'advisor-portal-lag'
+    | 'cross-scope-update-lag'
+    | 'ri-sp-overlap-cooling-period'
+    | 'duplicate-ri-sp-action'
+    | 'intentional-ri-sp-compare-option'
     | 'unsupported-reservation-family'
     | 'unknown';
   message: string;
@@ -393,6 +414,53 @@ export interface CommitmentsPurchaseRecommendationTermOption {
   estimatedTermCost?: CommitmentsMoneyAmount;
 }
 
+export type CommitmentsSavingsPlanOptionClass = 'starter' | 'recommended' | 'aggressive' | 'custom';
+
+export interface CommitmentsSavingsPlanRecommendationOption {
+  optionClass: CommitmentsSavingsPlanOptionClass;
+  commitmentAmount: CommitmentsMoneyAmount;
+  averageUtilizationPercentage?: number;
+  coveragePercentage?: number;
+  savingsPercentage?: number;
+  savingsAmount?: CommitmentsMoneyAmount;
+  estimatedAnnualSavings?: CommitmentsMoneyAmount;
+  estimatedTermSavings?: CommitmentsMoneyAmount;
+  benefitCost?: CommitmentsMoneyAmount;
+  overageCost?: CommitmentsMoneyAmount;
+  totalCost?: CommitmentsMoneyAmount;
+  wastageCost?: CommitmentsMoneyAmount;
+  breakevenState?: 'known' | 'insufficient-evidence' | 'not-applicable';
+}
+
+export interface CommitmentsSavingsPlanRecommendationDetails {
+  sourceRecommendationId?: string;
+  armSkuName?: 'Compute_Savings_Plan' | 'Database_Savings_Plan' | string;
+  commitmentAmount: CommitmentsMoneyAmount;
+  commitmentGrain: 'Hourly';
+  currencyCode: string;
+  lookBackPeriod?: 'Last7Days' | 'Last30Days' | 'Last60Days';
+  totalHours?: number;
+  observation?: {
+    lookBackPeriod?: 'Last7Days' | 'Last30Days' | 'Last60Days';
+    totalHours: number;
+    windowStart?: string;
+    windowEnd?: string;
+    benefitCost?: CommitmentsMoneyAmount;
+    costWithoutBenefit?: CommitmentsMoneyAmount;
+    overageCost?: CommitmentsMoneyAmount;
+    savingsAmount?: CommitmentsMoneyAmount;
+    totalCost?: CommitmentsMoneyAmount;
+    wastageCost?: CommitmentsMoneyAmount;
+  };
+  annualCommitmentCost: CommitmentsMoneyAmount;
+  estimatedTermSavings?: CommitmentsMoneyAmount;
+  priceBasis?: 'negotiated' | 'retail' | 'mixed' | 'unknown';
+  calculationVersion?: '3.0';
+  requestEligible?: boolean;
+  confidenceReasons?: string[];
+  options: CommitmentsSavingsPlanRecommendationOption[];
+}
+
 export interface CommitmentsReservationPurchaseQuote {
   generatedAt: string;
   status: 'quoted' | 'estimated' | 'unavailable';
@@ -453,6 +521,7 @@ export interface CommitmentsPurchaseRecommendation {
   quotePolicy?: CommitmentQuotePolicy;
   unlockFinancialLedger?: CommitmentUnlockFinancialLedger;
   purchaseScope?: CommitmentsPurchaseRecommendationScope;
+  billingScopeId?: string;
   appliedScopeProperties?: {
     subscriptionId?: string;
     resourceGroupId?: string;
@@ -477,6 +546,14 @@ export interface CommitmentsPurchaseRecommendation {
   estimatedTermSavings?: CommitmentsMoneyAmount;
   estimatedTermCost?: CommitmentsMoneyAmount;
   termOptions?: CommitmentsPurchaseRecommendationTermOption[];
+  providerObservation?: {
+    lookBackPeriod?: string;
+    totalHours?: number;
+    netSavings?: CommitmentsMoneyAmount;
+    costWithoutBenefit?: CommitmentsMoneyAmount;
+    totalScenarioCostWithBenefit?: CommitmentsMoneyAmount;
+  };
+  savingsPlanDetails?: CommitmentsSavingsPlanRecommendationDetails;
   pricingQuote?: CommitmentsReservationPurchaseQuote;
   impactedResources?: CommitmentsResourceReference[];
   sourceRecommendationIds?: string[];
@@ -484,8 +561,70 @@ export interface CommitmentsPurchaseRecommendation {
   notes?: string[];
 }
 
+export interface CommitmentsFieldQuality {
+  state: 'present' | 'missing' | 'partial' | 'unknown';
+  reason?: string;
+}
+
+export interface CommitmentsSavingsPlanDashboard {
+  summary: {
+    activeCount: number;
+    hourlyRunRate?: CommitmentsMoneyAmount;
+    annualizedCommitment?: CommitmentsMoneyAmount;
+    latestUtilizationPercent?: number;
+    latestCoveragePercent?: number;
+    eligibleUncoveredUsage?: CommitmentsMoneyAmount;
+    dataHealthStatus: CommitmentsFieldQuality['state'];
+    quality: Record<string, CommitmentsFieldQuality>;
+  };
+  coverageSplit?: Array<{
+    bucket: 'existing-covered' | 'eligible-on-demand' | 'ineligible' | 'proposed-covered' | 'unknown-attribution';
+    scenario: 'current' | 'proposed' | 'excluded';
+    cost?: CommitmentsMoneyAmount;
+    percentage?: number;
+    quality?: CommitmentsFieldQuality;
+  }>;
+  utilizationSplit?: {
+    utilized?: CommitmentsMoneyAmount;
+    unused?: CommitmentsMoneyAmount;
+    quality: CommitmentsFieldQuality;
+  };
+  optionComparison?: CommitmentsSavingsPlanRecommendationOption[];
+  blockers?: Array<{ code: string; message: string }>;
+  freshnessStates?: Array<{
+    code: string;
+    severity: 'info' | 'warning';
+    observedAt: string;
+    message: string;
+    ageHours?: number;
+    windowHours?: number;
+    lagDays?: number;
+  }>;
+}
+
 export interface CommitmentsPlanningDiagnostics {
   purchaseRecommendations?: CommitmentsPurchaseRecommendationDiagnostics;
+  recommendationMatrices?: {
+    reservationRecommendations?: CommitmentsRecommendationMatrixDiagnostics;
+    savingsPlanBenefitRecommendations?: CommitmentsRecommendationMatrixDiagnostics;
+  };
+  savingsPlans?: {
+    generatedAt?: string;
+    inputCounts: Record<string, number>;
+    outputCounts: { recommendations: number; blockers: number; options: number };
+    notes: string[];
+  };
+}
+
+export interface CommitmentsRecommendationMatrixDiagnostics {
+  generatedAt?: string;
+  partial: boolean;
+  cells: Array<{
+    request: Record<string, unknown>;
+    status: 'succeeded' | 'failed';
+    recordCount: number;
+    error?: string;
+  }>;
 }
 
 export interface CommitmentsPurchaseRecommendationDiagnostics {
@@ -735,8 +874,11 @@ export interface CommitmentsPricingContext {
 export interface CommitmentsPolicyInputs {
   earlyTerminationFeePercent?: number;
   rollingCancellationCap?: number;
-  exchangeAllowed: boolean;
+  exchangeAllowed?: boolean;
+  exchangeEligibility: 'allowed' | 'not-allowed' | 'unknown';
   policyVersion: string;
+  policyEffectiveDate?: string;
+  policySource?: string;
 }
 
 export interface CommitmentsTermStrategyScenario {
@@ -746,11 +888,13 @@ export interface CommitmentsTermStrategyScenario {
   policyInputs: CommitmentsPolicyInputs;
   projectedGrossSavings?: number;
   projectedBreakCost?: number;
+  observedNetSavings?: number;
   projectedNetSavings?: number;
   /** Net savings normalized to a 12-month comparison period. */
   annualizedProjectedNetSavings?: number;
   breakEvenMonth?: number;
   recommended?: boolean;
+  source?: 'reservation-recommendations' | 'benefit-recommendations';
   currency?: string;
   notes?: string;
 }

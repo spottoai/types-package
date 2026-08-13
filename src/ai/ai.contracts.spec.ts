@@ -5,6 +5,9 @@ import type {
   AIChatRunCompletedEvent,
   AIChatRunStartRequest,
   AIChatTerminalSnapshot,
+  AIChatToolCallEvent,
+  AIChatToolErrorEvent,
+  AIChatToolResultEvent,
 } from '../index';
 
 const run = {
@@ -73,10 +76,38 @@ const compatibilityDoneEvent: AIChatDoneEvent = {
   event: 'done',
 };
 
+const canonicalToolCallEvent: AIChatToolCallEvent = {
+  event: 'toolCall',
+  sequence: 1,
+  conversationId: 'conversation-1',
+  runId: 'run-1',
+  turnId: 'turn-1',
+  timestamp: run.updatedAt,
+  callId: 'call-1',
+  toolName: 'Preview Spotto tag rule',
+  canonicalToolName: 'preview_tag_rule_change',
+  arguments: {},
+};
+
+const canonicalToolResultEvent: AIChatToolResultEvent = {
+  ...canonicalToolCallEvent,
+  event: 'toolResult',
+  result: { ok: true, data: {} },
+};
+
+const canonicalToolErrorEvent: AIChatToolErrorEvent = {
+  ...canonicalToolCallEvent,
+  event: 'toolError',
+  error: { message: 'Tool failed' },
+};
+
 void canonicalEvent;
 void canonicalTerminalName;
 void pageStartRequest;
 void compatibilityDoneEvent;
+void canonicalToolCallEvent;
+void canonicalToolResultEvent;
+void canonicalToolErrorEvent;
 
 // @ts-expect-error canonical streams must not use the deprecated done terminal.
 const invalidCanonicalTerminalName: AIChatCanonicalStreamEventName = 'done';

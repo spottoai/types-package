@@ -1235,6 +1235,8 @@ export interface AIChatToolCallEvent extends AIChatStreamEventBase {
   event: 'toolCall';
   callId: string;
   toolName: string;
+  /** Stable registry name when toolName contains user-facing display text. */
+  canonicalToolName?: string;
   arguments: Record<string, unknown>;
 }
 
@@ -1242,6 +1244,8 @@ export interface AIChatToolResultEvent extends AIChatStreamEventBase {
   event: 'toolResult';
   callId: string;
   toolName: string;
+  /** Stable registry name when toolName contains user-facing display text. */
+  canonicalToolName?: string;
   result: AIChatToolExecutionResult;
 }
 
@@ -1249,6 +1253,8 @@ export interface AIChatToolErrorEvent extends AIChatStreamEventBase {
   event: 'toolError';
   callId: string;
   toolName: string;
+  /** Stable registry name when toolName contains user-facing display text. */
+  canonicalToolName?: string;
   error: AIChatToolExecutionError;
 }
 

@@ -95,3 +95,5 @@ jspm_packages/
 samples/
 
 specs/*
+!specs/portfolio/
+!specs/portfolio/msp-portfolio-operations-types.md

@@ -1,5 +1,5 @@
 import type { ProviderName, ProviderScope } from '../common/provider';
-import type { SystemTrackCardGranularity, SystemTrackId } from './recommendationTracks';
+import type { SystemTrackCandidateReference, SystemTrackId, SystemTrackRecommendationCandidateReference, SystemTrackResourceCandidateReference } from './recommendationTracks';
 export declare const RecommendationWorkflowLanes: {
     readonly prioritized: "prioritized";
     readonly todo: "todo";
@@ -18,6 +18,22 @@ export type RecommendationWorkflowSelectionMode = (typeof RecommendationWorkflow
 export type RecommendationWorkflowCategory = 'Cost' | 'Performance' | 'Security' | 'Compliance' | 'Reliability' | 'Operational Excellence';
 export type RecommendationWorkflowImpact = 'High' | 'Medium' | 'Low';
 export type RecommendationWorkflowEffort = 'High' | 'Medium' | 'Low';
+declare const recommendationWorkflowConcurrencyTokenBrand: unique symbol;
+/**
+ * Opaque compare-and-set token returned by the API after it validates that the
+ * underlying value is non-empty. Consumers must not parse or construct it.
+ */
+export type RecommendationWorkflowConcurrencyToken = string & {
+    readonly [recommendationWorkflowConcurrencyTokenBrand]: 'RecommendationWorkflowConcurrencyToken';
+};
+declare const recommendationWorkflowRepairContinuationTokenBrand: unique symbol;
+export type RecommendationWorkflowRepairContinuationToken = string & {
+    readonly [recommendationWorkflowRepairContinuationTokenBrand]: 'RecommendationWorkflowRepairContinuationToken';
+};
+declare const recommendationSystemTrackReconciliationContinuationTokenBrand: unique symbol;
+export type RecommendationSystemTrackReconciliationContinuationToken = string & {
+    readonly [recommendationSystemTrackReconciliationContinuationTokenBrand]: 'RecommendationSystemTrackReconciliationContinuationToken';
+};
 export interface RecommendationWorkflowSavingsSnapshot {
     minAmount?: number;
     maxAmount?: number;
@@ -48,14 +64,11 @@ export interface RecommendationWorkflowIdentity extends ProviderScope {
 interface RecommendationWorkflowItemBase extends RecommendationWorkflowIdentity {
     /** Stable workflow row identifier used by route params in update endpoints. */
     flowItemId: string;
-    /**
-     * Deprecated alias retained for compatibility with consumers that still map
-     * provider scope to subscription vocabulary.
-     */
+    /** Azure compatibility projection of providerScopeId. */
     subscriptionId?: string;
     /** Numeric order value within a lane. */
     laneOrder: number;
-    /** Optional user-defined horizontal swimlane. Absence means Unassigned or the originating system track. */
+    /** Optional user-defined horizontal swimlane. */
     swimLaneId?: string;
     /** Number of resources currently affected by the recommendation. */
     affectedResourceCount: number;
@@ -65,15 +78,8 @@ interface RecommendationWorkflowItemBase extends RecommendationWorkflowIdentity 
     createdAt: string;
     updatedAt: string;
     completedAt?: string;
-    /** Opaque compare-and-set token supplied by the API for guarded mutations. */
-    concurrencyToken?: string;
-    /** Originating system track for touched Spotto suggestions. */
-    systemTrackId?: SystemTrackId;
-    origin?: 'manual' | 'system-track';
-    sourceCardGranularity?: SystemTrackCardGranularity;
-    sourceFingerprint?: string;
-    sourceChangedAt?: string;
-    sourceChangeKind?: 'changed' | 'detected-again';
+    /** Current token required by every subsequent existing-row mutation. */
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
 }
 interface RecommendationWorkflowAllAffectedSelection {
     selectionMode: 'all-affected';
@@ -87,6 +93,7 @@ interface RecommendationWorkflowSubscriptionWideSelection {
     selectionMode: 'subscription-wide';
     selectedResourceIds?: never;
 }
+type RecommendationWorkflowSelection = RecommendationWorkflowAllAffectedSelection | RecommendationWorkflowSelectedSubsetSelection | RecommendationWorkflowSubscriptionWideSelection;
 export interface RecommendationWorkflowNonBlockedLaneState {
     lane: RecommendationWorkflowNonBlockedLane;
     blockedAt?: never;
@@ -102,10 +109,34 @@ export interface RecommendationWorkflowBlockedLaneState {
     reviewAt?: string;
 }
 export type RecommendationWorkflowLaneState = RecommendationWorkflowNonBlockedLaneState | RecommendationWorkflowBlockedLaneState;
-export type RecommendationWorkflowAllAffectedItem = RecommendationWorkflowItemBase & RecommendationWorkflowAllAffectedSelection & RecommendationWorkflowLaneState;
-export type RecommendationWorkflowSelectedSubsetItem = RecommendationWorkflowItemBase & RecommendationWorkflowSelectedSubsetSelection & RecommendationWorkflowLaneState;
-export type RecommendationWorkflowSubscriptionWideItem = RecommendationWorkflowItemBase & RecommendationWorkflowSubscriptionWideSelection & RecommendationWorkflowLaneState;
-export type RecommendationWorkflowItem = RecommendationWorkflowAllAffectedItem | RecommendationWorkflowSelectedSubsetItem | RecommendationWorkflowSubscriptionWideItem;
+interface RecommendationWorkflowManualOrigin {
+    origin: 'manual';
+    systemTrackId?: never;
+    sourceCardGranularity?: never;
+    sourceFingerprint?: never;
+    sourceChangedAt?: never;
+    sourceChangeKind?: never;
+}
+interface RecommendationWorkflowSystemTrackOriginBase {
+    origin: 'system-track';
+    systemTrackId: SystemTrackId;
+    sourceFingerprint: string;
+    sourceChangedAt?: string;
+    sourceChangeKind?: 'changed' | 'detected-again';
+}
+interface RecommendationWorkflowSystemTrackRecommendationOrigin extends RecommendationWorkflowSystemTrackOriginBase {
+    sourceCardGranularity: 'recommendation';
+}
+interface RecommendationWorkflowSystemTrackResourceOrigin extends RecommendationWorkflowSystemTrackOriginBase {
+    sourceCardGranularity: 'resource';
+}
+export type RecommendationWorkflowManualItem = RecommendationWorkflowItemBase & RecommendationWorkflowManualOrigin & RecommendationWorkflowSelection & RecommendationWorkflowLaneState;
+export type RecommendationWorkflowSystemTrackRecommendationItem = RecommendationWorkflowItemBase & RecommendationWorkflowSystemTrackRecommendationOrigin & (RecommendationWorkflowAllAffectedSelection | RecommendationWorkflowSubscriptionWideSelection) & RecommendationWorkflowLaneState;
+export type RecommendationWorkflowSystemTrackResourceItem = RecommendationWorkflowItemBase & RecommendationWorkflowSystemTrackResourceOrigin & RecommendationWorkflowSelectedSubsetSelection & RecommendationWorkflowLaneState;
+export type RecommendationWorkflowItem = RecommendationWorkflowManualItem | RecommendationWorkflowSystemTrackRecommendationItem | RecommendationWorkflowSystemTrackResourceItem;
+export type RecommendationWorkflowAllAffectedItem = RecommendationWorkflowItem & RecommendationWorkflowAllAffectedSelection;
+export type RecommendationWorkflowSelectedSubsetItem = RecommendationWorkflowItem & RecommendationWorkflowSelectedSubsetSelection;
+export type RecommendationWorkflowSubscriptionWideItem = RecommendationWorkflowItem & RecommendationWorkflowSubscriptionWideSelection;
 export interface GetRecommendationWorkflowItemsQuery {
     providerName: ProviderName;
     companyId: string;
@@ -124,41 +155,95 @@ export interface RecommendationWorkflowNonBlockedLaneMutation extends Recommenda
     lane: RecommendationWorkflowNonBlockedLane;
     blockedReason?: never;
     reviewAt?: never;
+    blockedAt?: never;
+    blockedBy?: never;
 }
 export interface RecommendationWorkflowBlockedLaneMutation extends RecommendationWorkflowLaneMutationBase {
     lane: 'blocked';
     blockedReason: string;
     reviewAt?: string;
+    blockedAt?: never;
+    blockedBy?: never;
 }
-export type UpdateRecommendationWorkflowLaneRequest = RecommendationWorkflowNonBlockedLaneMutation | RecommendationWorkflowBlockedLaneMutation;
-export type PatchRecommendationWorkflowItemLaneRequest = UpdateRecommendationWorkflowLaneRequest & {
-    updatedAt?: string;
+type RecommendationWorkflowLaneMutation = RecommendationWorkflowNonBlockedLaneMutation | RecommendationWorkflowBlockedLaneMutation;
+export type PatchRecommendationWorkflowItemLaneRequest = RecommendationWorkflowLaneMutation & {
     swimLaneId?: string | null;
-    concurrencyToken?: string;
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
 };
 export type RecommendationWorkflowLaneBatchUpdateItem = RecommendationWorkflowIdentity & PatchRecommendationWorkflowItemLaneRequest & {
-    flowItemId?: string;
+    flowItemId: string;
 };
-interface RecommendationWorkflowUpsertBase extends RecommendationWorkflowIdentity {
-    laneOrder: number;
+type RecommendationWorkflowManualMutationBase = RecommendationWorkflowIdentity & {
+    origin: 'manual';
     swimLaneId?: string | null;
     affectedResourceCount: number;
     trackedResourceCount?: number;
     snapshot: RecommendationWorkflowSnapshot;
-    systemTrackId?: SystemTrackId;
-    origin?: 'manual' | 'system-track';
-    sourceCardGranularity?: SystemTrackCardGranularity;
-    sourceFingerprint?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    concurrencyToken?: string;
+    systemTrackId?: never;
+    sourceCardGranularity?: never;
+    sourceFingerprint?: never;
+    sourceChangedAt?: never;
+    sourceChangeKind?: never;
+};
+type RecommendationWorkflowManualMutation = RecommendationWorkflowManualMutationBase & RecommendationWorkflowSelection & RecommendationWorkflowLaneMutation;
+export type ManualCreateRecommendationWorkflowItemRequest = RecommendationWorkflowManualMutation & {
+    operation: 'create';
+    concurrencyToken?: never;
+};
+export type ManualUpdateRecommendationWorkflowItemRequest = RecommendationWorkflowManualMutation & {
+    operation: 'update';
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
+};
+export type RecommendationWorkflowSystemTrackDestination = RecommendationWorkflowLaneMutation & {
+    swimLaneId?: string | null;
+};
+interface RecommendationWorkflowSystemTrackMutationBase extends ProviderScope {
+    companyId: string;
+    origin: 'system-track';
+    candidate: SystemTrackCandidateReference;
+    destination: RecommendationWorkflowSystemTrackDestination;
+    snapshot?: never;
+    affectedResourceCount?: never;
+    trackedResourceCount?: never;
+    selectionMode?: never;
+    selectedResourceIds?: never;
+    systemTrackId?: never;
+    sourceCardGranularity?: never;
+    sourceFingerprint?: never;
+    sourceChangedAt?: never;
+    sourceChangeKind?: never;
+    blockedReason?: never;
+    reviewAt?: never;
+    blockedAt?: never;
+    blockedBy?: never;
 }
-type RecommendationWorkflowSelectionMutation = RecommendationWorkflowAllAffectedSelection | RecommendationWorkflowSelectedSubsetSelection | RecommendationWorkflowSubscriptionWideSelection;
-export type UpsertRecommendationWorkflowItemRequest = RecommendationWorkflowUpsertBase & RecommendationWorkflowSelectionMutation & UpdateRecommendationWorkflowLaneRequest;
+export interface SystemTrackRecommendationCreateRecommendationWorkflowItemRequest extends RecommendationWorkflowSystemTrackMutationBase {
+    operation: 'create';
+    candidate: SystemTrackRecommendationCandidateReference;
+    concurrencyToken?: never;
+}
+export interface SystemTrackRecommendationUpdateRecommendationWorkflowItemRequest extends RecommendationWorkflowSystemTrackMutationBase {
+    operation: 'update';
+    candidate: SystemTrackRecommendationCandidateReference;
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
+}
+export interface SystemTrackResourceCreateRecommendationWorkflowItemRequest extends RecommendationWorkflowSystemTrackMutationBase {
+    operation: 'create';
+    candidate: SystemTrackResourceCandidateReference;
+    concurrencyToken?: never;
+}
+export interface SystemTrackResourceUpdateRecommendationWorkflowItemRequest extends RecommendationWorkflowSystemTrackMutationBase {
+    operation: 'update';
+    candidate: SystemTrackResourceCandidateReference;
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
+}
+export type SystemTrackCandidateCreateRecommendationWorkflowItemRequest = SystemTrackRecommendationCreateRecommendationWorkflowItemRequest | SystemTrackResourceCreateRecommendationWorkflowItemRequest;
+export type SystemTrackCandidateUpdateRecommendationWorkflowItemRequest = SystemTrackRecommendationUpdateRecommendationWorkflowItemRequest | SystemTrackResourceUpdateRecommendationWorkflowItemRequest;
+export type UpsertRecommendationWorkflowItemRequest = ManualCreateRecommendationWorkflowItemRequest | ManualUpdateRecommendationWorkflowItemRequest | SystemTrackCandidateCreateRecommendationWorkflowItemRequest | SystemTrackCandidateUpdateRecommendationWorkflowItemRequest;
 export interface BatchUpdateRecommendationWorkflowLanesRequest {
     providerName: ProviderName;
     companyId: string;
-    updates: RecommendationWorkflowLaneBatchUpdateItem[];
+    updates: [RecommendationWorkflowLaneBatchUpdateItem, ...RecommendationWorkflowLaneBatchUpdateItem[]];
 }
 export interface UpdateRecommendationWorkflowLaneResponse {
     success: true;
@@ -166,16 +251,80 @@ export interface UpdateRecommendationWorkflowLaneResponse {
 }
 export interface RecommendationWorkflowConcurrencyConflictResponse {
     success: false;
-    status: 409 | 412;
+    status: 409;
     errorCode: 'recommendation-workflow-conflict';
     message: string;
+    /** Included only after the API authorizes the caller for the workflow item. */
     currentItem: RecommendationWorkflowItem;
 }
 export interface DeleteRecommendationWorkflowItemRequest {
     providerName: ProviderName;
     companyId: string;
     flowItemId: string;
-    concurrencyToken?: string;
+    concurrencyToken: RecommendationWorkflowConcurrencyToken;
 }
+export declare const RECOMMENDATION_WORKFLOW_REPAIR_PAGE_LIMIT: 250;
+export interface RecommendationWorkflowRepairRequest extends ProviderScope {
+    mode: 'dry-run' | 'apply';
+    companyId: string;
+    idempotencyKey: string;
+    continuationToken?: RecommendationWorkflowRepairContinuationToken;
+}
+interface RecommendationWorkflowRepairResultBase {
+    processedCount: number;
+    eligibleCount: number;
+    skippedCount: number;
+    conflictedCount: number;
+    failedCount: number;
+}
+interface RecommendationWorkflowRepairDryRunResult extends RecommendationWorkflowRepairResultBase {
+    mode: 'dry-run';
+    wouldCreateCount: number;
+    createdCount?: never;
+}
+interface RecommendationWorkflowRepairApplyResult extends RecommendationWorkflowRepairResultBase {
+    mode: 'apply';
+    createdCount: number;
+    wouldCreateCount?: never;
+}
+interface RecommendationWorkflowRepairCompletePage {
+    hasMore: false;
+    continuationToken?: never;
+}
+interface RecommendationWorkflowRepairContinuedPage {
+    hasMore: true;
+    continuationToken: RecommendationWorkflowRepairContinuationToken;
+}
+export type RecommendationWorkflowRepairResponse = (RecommendationWorkflowRepairDryRunResult | RecommendationWorkflowRepairApplyResult) & (RecommendationWorkflowRepairCompletePage | RecommendationWorkflowRepairContinuedPage);
+export declare const RECOMMENDATION_SYSTEM_TRACK_RECONCILIATION_PAGE_LIMIT: 250;
+export interface RecommendationSystemTrackReconciliationRequest extends ProviderScope {
+    companyId: string;
+    runId: string;
+    generatedAt: string;
+    correlationId: string;
+    idempotencyKey: string;
+    continuationToken?: RecommendationSystemTrackReconciliationContinuationToken;
+}
+interface RecommendationSystemTrackReconciliationCounts {
+    processedCount: number;
+    changedCount: number;
+    skippedCount: number;
+    conflictedCount: number;
+}
+interface RecommendationSystemTrackReconciliationCompletePage {
+    hasMore: false;
+    continuationToken?: never;
+}
+interface RecommendationSystemTrackReconciliationContinuedPage {
+    hasMore: true;
+    continuationToken: RecommendationSystemTrackReconciliationContinuationToken;
+}
+type RecommendationSystemTrackActiveReconciliationResponse = RecommendationSystemTrackReconciliationCounts & (RecommendationSystemTrackReconciliationCompletePage | RecommendationSystemTrackReconciliationContinuedPage) & {
+    result: 'changed' | 'no-op';
+};
+type RecommendationSystemTrackStaleReconciliationResponse = RecommendationSystemTrackReconciliationCounts & RecommendationSystemTrackReconciliationCompletePage & {
+    result: 'stale-run-no-op';
+};
+export type RecommendationSystemTrackReconciliationResponse = RecommendationSystemTrackActiveReconciliationResponse | RecommendationSystemTrackStaleReconciliationResponse;
 export {};
 //# sourceMappingURL=recommendationWorkflow.d.ts.map

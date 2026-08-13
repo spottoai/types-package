@@ -44,6 +44,29 @@ export declare const SystemTrackCardGranularities: {
     readonly resource: "resource";
 };
 export type SystemTrackCardGranularity = (typeof SystemTrackCardGranularities)[keyof typeof SystemTrackCardGranularities];
+interface SystemTrackCandidateReferenceBase {
+    systemTrackId: SystemTrackId;
+    recommendationId: string;
+    sourceFingerprint: string;
+}
+/**
+ * Server-verifiable identity for a recommendation-granular sidecar candidate.
+ * Display, ranking, and provenance fields are deliberately excluded.
+ */
+export interface SystemTrackRecommendationCandidateReference extends SystemTrackCandidateReferenceBase {
+    granularity: 'recommendation';
+    resourceId?: never;
+}
+/**
+ * Server-verifiable identity for one resource-granular sidecar candidate.
+ * The API validates the canonical resource identity before merging it into a
+ * durable selected-subset workflow item.
+ */
+export interface SystemTrackResourceCandidateReference extends SystemTrackCandidateReferenceBase {
+    granularity: 'resource';
+    resourceId: string;
+}
+export type SystemTrackCandidateReference = SystemTrackRecommendationCandidateReference | SystemTrackResourceCandidateReference;
 interface RecommendationSystemTrackEligibleClassification {
     systemTrackEligible: true;
     primaryTrackId: SystemTrackId;
@@ -110,8 +133,22 @@ export interface SystemTrackDisplayValue {
     unit?: SystemTrackMetricUnit;
     currency?: string;
 }
+export type SystemTrackCardCategory = 'Cost' | 'Performance' | 'Security' | 'Compliance' | 'Reliability' | 'Operational Excellence';
+export type SystemTrackCardImpact = 'High' | 'Medium' | 'Low';
+export type SystemTrackCardEffort = 'High' | 'Medium' | 'Low';
 interface SystemTrackCardSnapshotBase {
+    /** Backward-compatible default title for consumers that do not support view modes. */
     title: string;
+    /** Customer-facing outcome label used in Business view. */
+    businessTitle: string;
+    /** Implementation-oriented label used in Technical view. */
+    technicalTitle: string;
+    /** Source recommendation metadata used when materializing a durable workflow item. */
+    category?: SystemTrackCardCategory;
+    impact?: SystemTrackCardImpact;
+    effort?: SystemTrackCardEffort;
+    /** Display Spotto Score projected from the canonical recommendation (0-100). */
+    spottoScore?: number;
     displayValue?: SystemTrackDisplayValue;
     deepLink: string;
 }

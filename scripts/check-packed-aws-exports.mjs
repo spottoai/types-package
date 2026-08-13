@@ -11,6 +11,7 @@ const recommendationTracksFixturePath = join(packageRoot, 'tests', 'fixtures', '
 const recommendationWorkflowApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-api.consumer.ts.fixture');
 const recommendationWorkflowUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-ui.consumer.ts.fixture');
 const recommendationWorkflowCloudFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-workflow-cloud.consumer.ts.fixture');
+const portfolioFixturePath = join(packageRoot, 'tests', 'fixtures', 'portfolio.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -62,6 +63,7 @@ try {
   await copyFile(recommendationWorkflowApiFixturePath, join(consumerRoot, 'recommendation-workflow-api.consumer.ts'));
   await copyFile(recommendationWorkflowUiFixturePath, join(consumerRoot, 'recommendation-workflow-ui.consumer.ts'));
   await copyFile(recommendationWorkflowCloudFixturePath, join(consumerRoot, 'recommendation-workflow-cloud.consumer.ts'));
+  await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
 
   run(
     npmCommand,
@@ -86,6 +88,7 @@ try {
       'recommendation-workflow-api.consumer.ts',
       'recommendation-workflow-ui.consumer.ts',
       'recommendation-workflow-cloud.consumer.ts',
+      'portfolio.consumer.ts',
     ],
     consumerRoot
   );
@@ -94,7 +97,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function') process.exit(1);",
+      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || root.PORTFOLIO_PROJECTION_SCHEMA_VERSION !== '2026-08-02' || !root.PORTFOLIO_PROJECTION_COMPATIBLE_SCHEMA_VERSIONS.includes(root.PORTFOLIO_PROJECTION_SCHEMA_VERSION) || root.PORTFOLIO_PROJECTION_DETAIL_TARGET_DECODED_BYTES !== 2 * 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_COMPRESSED_BYTES !== 8 * 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_DECODED_BYTES !== 32 * 1024 * 1024 || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function') process.exit(1);",
     ],
     consumerRoot
   );
@@ -102,12 +105,12 @@ try {
     process.execPath,
     [
       '-e',
-      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function') process.exit(1);",
+      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || root.PORTFOLIO_CLOUD_ACCOUNT_SUMMARY_SCHEMA_VERSION !== '2026-07-27' || root.PORTFOLIO_PROJECTION_DETAIL_TARGET_COMPRESSED_BYTES !== 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_REQUEST_DECODED_BYTES !== 24 * 1024 * 1024 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function') process.exit(1);",
     ],
     consumerRoot
   );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS and API/UI/cloud recommendation workflow consumers verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS, Portfolio, and API/UI/cloud recommendation workflow consumers verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

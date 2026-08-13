@@ -13,6 +13,8 @@ exports.RecommendationWorkflowAuditEventTypes = {
     blocked: 'WorkflowBlocked',
     unblocked: 'WorkflowUnblocked',
     returnedToSuggestions: 'ReturnedToSuggestions',
+    repaired: 'WorkflowRepaired',
+    sourceChanged: 'WorkflowSourceChanged',
 };
 exports.RECOMMENDATION_WORKFLOW_AUDIT_DETAILS_SCHEMA_VERSION = 1;
 //# sourceMappingURL=recommendationAudit.js.map

@@ -11,6 +11,8 @@ var WritePermission;
     WritePermission[WritePermission["DismissRecommendations"] = 1] = "DismissRecommendations";
     /** Permission to enable storage inventory reports on storage accounts */
     WritePermission[WritePermission["StorageInventory"] = 2] = "StorageInventory";
+    /** Permission to create scoped Azure Policy exemptions */
+    WritePermission[WritePermission["PolicyExemptions"] = 4] = "PolicyExemptions";
 })(WritePermission || (exports.WritePermission = WritePermission = {}));
 /**
  * Permission metadata array
@@ -32,6 +34,14 @@ exports.WRITE_PERMISSIONS_METADATA = [
         requiredRoles: ['Storage Account Contributor'],
         documentationUrl: 'https://learn.microsoft.com/en-us/azure/storage/blobs/blob-inventory',
         scriptGeneratorUrl: '/scripts/storage-role',
+    },
+    {
+        id: WritePermission.PolicyExemptions,
+        displayName: 'Create Azure Policy Exemptions',
+        description: 'Allows Spotto to create narrowly scoped exemptions for selected Azure Policy initiative controls.',
+        requiredRoles: ['Custom role with Azure Policy exemption actions at the target and assignment scopes'],
+        documentationUrl: 'https://docs.spotto.ai/docs/portal/write-permissions/policy-exemptions',
+        scriptGeneratorUrl: '/scripts/policy-exemptions-role',
     },
 ];
 //# sourceMappingURL=writePermissions.js.map
