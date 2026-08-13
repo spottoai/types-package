@@ -49,40 +49,40 @@ const revision = {
   policyRevision: 7,
 } satisfies ArtifactRevisionVector;
 
-const publicationDecision: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
+const billingHistoryDependency = {
+  name: 'billing-history',
+  required: true,
+  support: 'supported',
+  applicability: 'applicable',
+  attempt: 'succeeded',
+  coverage: 'complete',
+  emptyEvidence: 'populated',
+  freshness: 'current',
+  evidence: 'complete',
+  publication: 'completed',
+  generationId,
+  digest: digestC,
+  sourceRevision: 42,
+  policyRevision: 7,
+} satisfies BillingAnalyzerOutputManifestV2['publicationDecision']['dependencies'][number];
+
+const costAnalysisClaim = {
+  claimId: 'cost-analysis',
+  sectionPaths: ['chartData', 'anomalies'],
+  requiredDependencies: ['billing-history'],
+  evidence: 'complete',
+  publication: 'completed',
+  issues: [],
+} satisfies BillingAnalyzerOutputManifestV2['publicationDecision']['claims'][number];
+
+const publicationDecision = {
   processing: 'succeeded',
   evidence: 'complete',
   publication: 'completed',
-  dependencies: [
-    {
-      name: 'billing-history',
-      required: true,
-      support: 'supported',
-      applicability: 'applicable',
-      attempt: 'succeeded',
-      coverage: 'complete',
-      emptyEvidence: 'populated',
-      freshness: 'current',
-      evidence: 'complete',
-      publication: 'completed',
-      generationId,
-      digest: digestC,
-      sourceRevision: 42,
-      policyRevision: 7,
-    },
-  ],
-  claims: [
-    {
-      claimId: 'cost-analysis',
-      sectionPaths: ['chartData', 'anomalies'],
-      requiredDependencies: ['billing-history'],
-      evidence: 'complete',
-      publication: 'completed',
-      issues: [],
-    },
-  ],
+  dependencies: [billingHistoryDependency],
+  claims: [costAnalysisClaim],
   issues: [],
-};
+} satisfies BillingAnalyzerOutputManifestV2['publicationDecision'];
 
 const inputManifest = {
   schemaVersion: 2,
@@ -331,6 +331,30 @@ const policyFreeOutputManifest: BillingAnalyzerOutputManifestV2 = {
   publicationDecision: { ...publicationDecision, dependencies: [], claims: [] },
 };
 
+const unrelatedFirstBillingDependency: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
+  ...publicationDecision,
+  // @ts-expect-error The first billing authority dependency must be billing-history.
+  dependencies: [{ ...publicationDecision.dependencies[0], name: 'unrelated-history', required: false }, publicationDecision.dependencies[0]],
+};
+
+const billingDependencyWithoutIdentity: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
+  ...publicationDecision,
+  // @ts-expect-error The canonical billing-history dependency requires generation and digest identity.
+  dependencies: [{ ...publicationDecision.dependencies[0], generationId: undefined, digest: undefined }],
+};
+
+const unrelatedFirstBillingClaim: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
+  ...publicationDecision,
+  // @ts-expect-error The first billing authority claim must be cost-analysis.
+  claims: [{ ...publicationDecision.claims[0], claimId: 'unrelated-analysis' }, publicationDecision.claims[0]],
+};
+
+const wrongFirstRequiredBillingDependency: BillingAnalyzerOutputManifestV2['publicationDecision'] = {
+  ...publicationDecision,
+  // @ts-expect-error The cost-analysis claim must require billing-history first.
+  claims: [{ ...publicationDecision.claims[0], requiredDependencies: ['unrelated-history', 'billing-history'] }],
+};
+
 // @ts-expect-error Suppressed is an error/decision-path state, not successful metadata.
 const suppressedMetadata: BillingCostAnalysisMetadataV2 = { ...costAnalysisMetadata, artifactState: 'suppressed' };
 
@@ -343,5 +367,9 @@ void [
   unknownOutputManifestVersion,
   incompleteAnalysisPointer,
   policyFreeOutputManifest,
+  unrelatedFirstBillingDependency,
+  billingDependencyWithoutIdentity,
+  unrelatedFirstBillingClaim,
+  wrongFirstRequiredBillingDependency,
   suppressedMetadata,
 ];

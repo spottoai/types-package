@@ -6,10 +6,20 @@ import {
 } from '../common/artifactEvidence.js';
 
 type CompletedArtifactPublicationDecision = Extract<ArtifactPublicationDecision, { publication: 'completed' }>;
+type BillingHistoryCompletedArtifactDependency = Extract<ArtifactDependencyDescriptor, { publication: 'completed' }> & {
+  name: 'billing-history';
+  required: true;
+  generationId: string;
+  digest: string;
+};
+type CostAnalysisCompletedArtifactClaim = Extract<ArtifactClaimDependencyDecision, { publication: 'completed' }> & {
+  claimId: 'cost-analysis';
+  requiredDependencies: ['billing-history', ...string[]];
+};
 
 export type BillingCompletedArtifactPublicationDecision = CompletedArtifactPublicationDecision & {
-  dependencies: [ArtifactDependencyDescriptor, ...ArtifactDependencyDescriptor[]];
-  claims: [ArtifactClaimDependencyDecision, ...ArtifactClaimDependencyDecision[]];
+  dependencies: [BillingHistoryCompletedArtifactDependency, ...CompletedArtifactPublicationDecision['dependencies']];
+  claims: [CostAnalysisCompletedArtifactClaim, ...CompletedArtifactPublicationDecision['claims']];
 };
 
 /** Validates the exact completed billing dependency and claim bound to one input generation. */
@@ -20,18 +30,16 @@ export const isBillingCompletedArtifactPublicationDecision = (
 ): value is BillingCompletedArtifactPublicationDecision => {
   if (!isArtifactPublicationDecision(value) || value.publication !== 'completed') return false;
 
-  const billingDependencies = value.dependencies.filter(dependency => dependency.name === 'billing-history');
-  const costAnalysisClaims = value.claims.filter(claim => claim.claimId === 'cost-analysis');
-  if (billingDependencies.length !== 1 || costAnalysisClaims.length !== 1) return false;
-
-  const billingHistory = billingDependencies[0];
-  const costAnalysis = costAnalysisClaims[0];
+  const billingHistory = value.dependencies[0];
+  const costAnalysis = value.claims[0];
   return (
-    billingHistory.required &&
+    billingHistory?.name === 'billing-history' &&
+    billingHistory.required === true &&
     billingHistory.publication === 'completed' &&
     billingHistory.generationId === generationId &&
     billingHistory.digest === inputManifestDigest &&
+    costAnalysis?.claimId === 'cost-analysis' &&
     costAnalysis.publication === 'completed' &&
-    costAnalysis.requiredDependencies.includes('billing-history')
+    costAnalysis.requiredDependencies[0] === 'billing-history'
   );
 };

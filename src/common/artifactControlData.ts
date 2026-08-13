@@ -42,10 +42,13 @@ const PHYSICAL_REFERENCE_FIELDS = new Set([
   'uri',
   'url',
 ]);
+const PERCENT_ENCODED_BYTE_PATTERN = /%[0-9A-Fa-f]{2}/;
+const URI_SCHEME_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/;
 
 export interface AllowedArtifactReferenceField {
   object: Record<string, unknown>;
   key: string;
+  allowUriScheme?: boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -57,10 +60,10 @@ const normalizeFieldName = (key: string): string => key.replace(/[-_\s]/g, '').t
 
 const hasDotTraversal = (value: string): boolean => value.split(/[\\/]/).some(segment => segment === '.' || segment === '..');
 
-const isForbiddenReferenceValue = (value: string): boolean =>
+const isForbiddenReferenceValue = (value: string, allowUriScheme = false): boolean =>
   hasControlCharacters(value) ||
-  value.includes('%') ||
-  value.includes('://') ||
+  PERCENT_ENCODED_BYTE_PATTERN.test(value) ||
+  (!allowUriScheme && URI_SCHEME_PATTERN.test(value)) ||
   value.startsWith('/') ||
   value.startsWith('\\\\') ||
   /^[A-Za-z]:[\\/]/.test(value) ||
@@ -83,6 +86,10 @@ const isSafeAzureResourceId = (key: string, value: unknown): value is string => 
 export const allowedArtifactReferenceField = (object: unknown, key: string): AllowedArtifactReferenceField[] =>
   isRecord(object) ? [{ object, key }] : [];
 
+/** Marks a structurally validated identity field whose value is allowed by its owning schema. */
+export const allowedArtifactIdentityField = (object: unknown, key: string): AllowedArtifactReferenceField[] =>
+  isRecord(object) ? [{ object, key, allowUriScheme: true }] : [];
+
 /** Rejects exact normalized sensitive fields and physical-reference control data recursively. */
 export const containsForbiddenArtifactControlData = (value: unknown, allowedReferenceFields: AllowedArtifactReferenceField[] = []): boolean => {
   if (typeof value === 'string') return isForbiddenReferenceValue(value);
@@ -93,8 +100,9 @@ export const containsForbiddenArtifactControlData = (value: unknown, allowedRefe
     if (hasControlCharacters(key)) return true;
     const normalizedKey = normalizeFieldName(key);
     if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
-    const referenceAllowed = allowedReferenceFields.some(field => field.object === value && field.key === key);
-    if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !referenceAllowed) return true;
+    const allowedField = allowedReferenceFields.find(field => field.object === value && field.key === key);
+    if (allowedField?.allowUriScheme && typeof child === 'string') return isForbiddenReferenceValue(child, true);
+    if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
     if (isSafeAzureResourceId(key, child)) return false;
     return containsForbiddenArtifactControlData(child, allowedReferenceFields);
   });

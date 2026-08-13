@@ -8,6 +8,7 @@ import {
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import {
+  allowedArtifactIdentityField,
   allowedArtifactReferenceField,
   containsForbiddenArtifactControlData,
   type AllowedArtifactReferenceField,
@@ -240,7 +241,12 @@ const isJsonMetadata = (value: unknown): value is BillingAnalyzerMetadata => {
 
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is BillingAnalyzerInputManifestV2 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedDescriptorPaths(value.inputs))) return false;
+  if (
+    !isRecord(value) ||
+    containsForbiddenArtifactControlData(value, [...allowedArtifactIdentityField(value, 'publicationKey'), ...allowedDescriptorPaths(value.inputs)])
+  ) {
+    return false;
+  }
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
   if (!isNonEmptyString(value.publicationKey) || !isSha256(value.coveragePlanDigest) || !isSha256(value.manifestDigest)) return false;

@@ -409,6 +409,17 @@ const validAnomaly = {
   },
   drivers: [],
 };
+const percentageBearingMetadata = {
+  ...costAnalysisMetadata,
+  chartData: {
+    ...costAnalysisMetadata.chartData,
+    detectors: {
+      ...costAnalysisMetadata.chartData.detectors,
+      methods: [{ name: 'seasonal-detector', error: 'Variance remained below the 20% threshold', triggeredDates: [] }],
+    },
+  },
+  anomalies: [{ ...validAnomaly, summary: 'Daily cost increased by 20%', notes: ['The 20% change needs review'] }],
+};
 
 const withoutOwnershipEpoch = value => {
   const candidate = structuredClone(value);
@@ -422,6 +433,12 @@ const billingValidatorCases = [
   ['input manifest accepts its V2 fixture', isBillingAnalyzerInputManifestV2, inputManifest, true],
   ['input manifest accepts observe-only absent epoch', isBillingAnalyzerInputManifestV2, withoutOwnershipEpoch(inputManifest), true],
   ['input manifest rejects malformed digest', isBillingAnalyzerInputManifestV2, { ...inputManifest, manifestDigest: 'bad' }, false],
+  [
+    'input manifest rejects control characters inside its known publication identity',
+    isBillingAnalyzerInputManifestV2,
+    { ...inputManifest, publicationKey: 'billing-input:source\nunsafe' },
+    false,
+  ],
   ['input pointer accepts its V1 fixture', isBillingAnalyzerInputCurrentPointerV1, inputPointer, true],
   ['input pointer rejects absent promoted epoch', isBillingAnalyzerInputCurrentPointerV1, withoutOwnershipEpoch(inputPointer), false],
   ['request accepts enforce mode', isBillingAnalyzerRequestV2, analyzerRequest, true],
@@ -480,6 +497,67 @@ const billingValidatorCases = [
     },
     false,
   ],
+  [
+    'output manifest rejects billing-history outside canonical dependency index zero',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [{ ...publicationDecision.dependencies[0], name: 'unrelated-history', required: false }, publicationDecision.dependencies[0]],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects cost-analysis outside canonical claim index zero',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        claims: [{ ...publicationDecision.claims[0], claimId: 'unrelated-analysis' }, publicationDecision.claims[0]],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects billing-history outside canonical required-dependency index zero',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [publicationDecision.dependencies[0], { ...publicationDecision.dependencies[0], name: 'unrelated-history', required: false }],
+        claims: [{ ...publicationDecision.claims[0], requiredDependencies: ['unrelated-history', 'billing-history'] }],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects duplicate canonical billing dependencies',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        dependencies: [publicationDecision.dependencies[0], publicationDecision.dependencies[0]],
+      },
+    },
+    false,
+  ],
+  [
+    'output manifest rejects duplicate canonical billing claims',
+    isBillingAnalyzerOutputManifestV2,
+    {
+      ...outputManifest,
+      publicationDecision: {
+        ...publicationDecision,
+        claims: [publicationDecision.claims[0], publicationDecision.claims[0]],
+      },
+    },
+    false,
+  ],
   ['analysis pointer accepts its V1 fixture', isBillingAnalysisCurrentPointerV1, analysisPointer, true],
   ['analysis pointer rejects absent promoted epoch', isBillingAnalysisCurrentPointerV1, withoutOwnershipEpoch(analysisPointer), false],
   [
@@ -510,6 +588,7 @@ const billingValidatorCases = [
     false,
   ],
   ['metadata accepts its V2 fixture', isBillingCostAnalysisMetadataV2, costAnalysisMetadata, true],
+  ['metadata accepts human-readable percentage text', isBillingCostAnalysisMetadataV2, percentageBearingMetadata, true],
   ['metadata rejects an unknown schema version', isBillingCostAnalysisMetadataV2, { ...costAnalysisMetadata, schemaVersion: 3 }, false],
   ['complete-empty metadata accepts exact billing-history proof', isBillingCostAnalysisMetadataV2, completeEmptyMetadata, true],
   [
@@ -581,6 +660,8 @@ const harmlessAdditiveControlData = {
     tokenCount: 3,
     authorizationStatus: 'granted',
     secretary: 'named-role',
+    message: 'Cost review: accepted',
+    timestamp: '2026-08-13T00:05:00.000Z',
     resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
   },
 };
@@ -714,6 +795,8 @@ const forbiddenBillingControlData = [
   ['uri field', { uri: 'safe/relative.json' }],
   ['artifactPath field', { artifactPath: 'safe/relative.json' }],
   ['URI value', { location: 'https://storage.example.invalid/container/blob.json' }],
+  ['single-slash file URI value', { location: 'file:/tmp/blob.json' }],
+  ['opaque S3 URI value', { location: 's3:bucket/key' }],
   ['protocol-relative value', { location: '//storage.example/container/blob.json' }],
   ['UNC value', { location: '\\\\storage.example\\container\\blob.json' }],
   ['Windows-drive value', { location: 'C:\\private\\blob.json' }],
@@ -721,6 +804,8 @@ const forbiddenBillingControlData = [
   ['parent-traversal value', { location: 'safe/../blob.json' }],
   ['current-directory traversal value', { location: './blob.json' }],
   ['percent-encoded value', { location: 'safe/%2e%2e/blob.json' }],
+  ['percent-encoded slash value', { location: 'safe%2Fprivate.json' }],
+  ['percent-encoded backslash value', { location: 'safe%5cprivate.json' }],
   ['NUL value', { location: 'safe/blob\u0000.json' }],
   ['newline value', { location: 'safe/blob\n.json' }],
 ];
@@ -739,11 +824,7 @@ const invalidRevisionBoundaries = [
 ];
 for (const [documentName, validator, document] of billingControlDocuments) {
   for (const [caseName, revisionMutation] of invalidRevisionBoundaries) {
-    assert.equal(
-      validator({ ...document, revision: { ...document.revision, ...revisionMutation } }),
-      false,
-      `${documentName} rejects ${caseName}`
-    );
+    assert.equal(validator({ ...document, revision: { ...document.revision, ...revisionMutation } }), false, `${documentName} rejects ${caseName}`);
   }
 }
 
