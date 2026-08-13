@@ -18,6 +18,7 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
+assert.equal(contractCorpus.corpusVersion, 2, 'portable corpus version must match the downstream parity contract');
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -152,8 +153,43 @@ const satisfiesPromotionPrecondition = (current, candidate) => {
 
 const corpusValidators = {
   isArtifactPublicationDecision,
+  isBillingAnalysisCurrentPointerV1,
   isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputManifestV2,
+  isBillingAnalyzerOutputManifestV2,
+  isBillingAnalyzerRequestV2,
 };
+
+const expectedCorpusValidatorNames = new Set([
+  'artifactPromotionPrecondition',
+  'billingCostAnalysisMetadataCompatibility',
+  'isArtifactPublicationDecision',
+  'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputManifestV2',
+  'isBillingAnalyzerOutputManifestV2',
+  'isBillingAnalyzerRequestV2',
+]);
+const requiredPortableBillingValidatorNames = [
+  'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputManifestV2',
+  'isBillingAnalyzerOutputManifestV2',
+  'isBillingAnalyzerRequestV2',
+];
+const corpusValidatorNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.validator));
+assert.deepEqual(corpusValidatorNames, expectedCorpusValidatorNames, 'portable corpus validator-name set must remain exact');
+for (const validatorName of requiredPortableBillingValidatorNames) {
+  const portableCases = contractCorpus.cases.filter(corpusCase => corpusCase.validator === validatorName);
+  assert.ok(
+    portableCases.some(corpusCase => corpusCase.valid === true),
+    `${validatorName} requires a portable positive case`
+  );
+  assert.ok(
+    portableCases.some(corpusCase => corpusCase.valid === false),
+    `${validatorName} requires a portable negative case`
+  );
+}
 
 let mutationCount = 0;
 for (const corpusCase of contractCorpus.cases) {
@@ -195,11 +231,8 @@ assert.deepEqual(
 const digestA = 'a'.repeat(64);
 const digestB = 'b'.repeat(64);
 const digestC = 'c'.repeat(64);
-const completedAt = '2026-08-13T00:05:00.000Z';
 const subscriptionId = 'sub-123';
 const generationId = 'billing-input-generation-42';
-const inputManifestPath = 'subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json';
-const outputManifestPath = 'subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json';
 
 const ownership = {
   provider: 'azure',
@@ -294,105 +327,6 @@ const partialBillingPublicationDecision = {
   ],
   issues: [{ code: 'exchange-rates-unavailable', blocking: false, dependency: 'exchange-rates' }],
 };
-const inputManifest = {
-  schemaVersion: 2,
-  status: 'completed',
-  subscriptionId,
-  generationId,
-  publicationKey: 'billing-input:sub-123:source-run-42',
-  ownership,
-  revision,
-  coveragePlanDigest: digestA,
-  asOfUtc: '2026-08-13T00:00:00.000Z',
-  stableCutoffUtc: '2026-08-12T00:00:00.000Z',
-  requestedPeriods: [
-    {
-      fromInclusive: '2026-07-01T00:00:00.000Z',
-      throughExclusive: '2026-08-01T00:00:00.000Z',
-      dateBasis: 'utc',
-      basis: 'amortized',
-    },
-  ],
-  inputs: [
-    {
-      path: 'subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz',
-      versionId: 'version-1',
-      etag: 'etag-1',
-      sha256: digestB,
-      byteCount: 512,
-      rowCount: 31,
-      basis: 'amortized',
-      currencyCode: 'NZD',
-      coverage: 'complete',
-    },
-  ],
-  manifestDigest: digestC,
-  completedAt,
-};
-const inputPointer = {
-  schemaVersion: 1,
-  status: 'completed',
-  subscriptionId,
-  generationId,
-  ownership,
-  revision,
-  manifestPath: inputManifestPath,
-  manifestDigest: inputManifest.manifestDigest,
-  completedAt,
-};
-const analyzerRequest = {
-  schemaVersion: 2,
-  eventId: 'billing-analyzer-event-42',
-  messageId: digestA,
-  correlationId: 'correlation-42',
-  occurredAt: completedAt,
-  idempotencyKey: digestA,
-  publicationMode: 'enforce',
-  subscriptionId,
-  generationId,
-  ownership,
-  revision,
-  inputManifestPath,
-  inputManifestDigest: inputManifest.manifestDigest,
-  displayMetadata: { currencyCode: 'NZD', currencySymbol: '$' },
-};
-const outputManifest = {
-  schemaVersion: 2,
-  status: 'completed',
-  subscriptionId,
-  generationId,
-  ownership,
-  revision,
-  inputManifestPath,
-  inputManifestDigest: inputManifest.manifestDigest,
-  artifacts: [
-    {
-      path: 'subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json',
-      name: 'metadata.json',
-      mediaType: 'application/json',
-      contentEncoding: 'identity',
-      byteLength: 1024,
-      sha256: digestA,
-    },
-  ],
-  publicationDecision,
-  manifestDigest: digestB,
-  completedAt,
-};
-const analysisPointer = {
-  schemaVersion: 1,
-  status: 'completed',
-  subscriptionId,
-  generationId,
-  ownership,
-  revision,
-  inputManifestPath,
-  inputManifestDigest: inputManifest.manifestDigest,
-  outputManifestPath,
-  outputManifestDigest: outputManifest.manifestDigest,
-  publicationDecision,
-  completedAt,
-};
 const costAnalysisMetadata = {
   schemaVersion: 2,
   subscriptionId,
@@ -401,8 +335,8 @@ const costAnalysisMetadata = {
   revision,
   artifactState: 'current',
   artifactEvidence: publicationDecision,
-  inputManifestDigest: inputManifest.manifestDigest,
-  outputManifestDigest: outputManifest.manifestDigest,
+  inputManifestDigest: digestC,
+  outputManifestDigest: digestB,
   chartData: {
     schemaVersion: 1,
     source: 'aggregated',
@@ -483,165 +417,10 @@ const withoutOwnershipEpoch = value => {
   return candidate;
 };
 
-const observeRequest = withoutOwnershipEpoch({ ...analyzerRequest, publicationMode: 'observe' });
+// Cost-analysis metadata is not an analyzer transport/current-pointer contract. Its chart/anomaly
+// compatibility matrix remains runtime-local while the five analyzer boundary validators above
+// are executed exclusively from the portable corpus.
 const billingValidatorCases = [
-  ['input manifest accepts its V2 fixture', isBillingAnalyzerInputManifestV2, inputManifest, true],
-  ['input manifest accepts observe-only absent epoch', isBillingAnalyzerInputManifestV2, withoutOwnershipEpoch(inputManifest), true],
-  ['input manifest rejects malformed digest', isBillingAnalyzerInputManifestV2, { ...inputManifest, manifestDigest: 'bad' }, false],
-  [
-    'input manifest rejects control characters inside its known publication identity',
-    isBillingAnalyzerInputManifestV2,
-    { ...inputManifest, publicationKey: 'billing-input:source\nunsafe' },
-    false,
-  ],
-  ['input pointer accepts its V1 fixture', isBillingAnalyzerInputCurrentPointerV1, inputPointer, true],
-  ['input pointer rejects absent promoted epoch', isBillingAnalyzerInputCurrentPointerV1, withoutOwnershipEpoch(inputPointer), false],
-  ['request accepts enforce mode', isBillingAnalyzerRequestV2, analyzerRequest, true],
-  ['request accepts observe-only absent epoch', isBillingAnalyzerRequestV2, observeRequest, true],
-  ['request rejects enforce mode absent epoch', isBillingAnalyzerRequestV2, withoutOwnershipEpoch(analyzerRequest), false],
-  ['request rejects idempotency mismatch', isBillingAnalyzerRequestV2, { ...analyzerRequest, idempotencyKey: digestB }, false],
-  ['output manifest accepts its V2 fixture', isBillingAnalyzerOutputManifestV2, outputManifest, true],
-  ['output manifest accepts observe-only absent epoch', isBillingAnalyzerOutputManifestV2, withoutOwnershipEpoch(outputManifest), true],
-  ['output manifest rejects missing metadata artifact', isBillingAnalyzerOutputManifestV2, { ...outputManifest, artifacts: [] }, false],
-  [
-    'output manifest rejects a completed decision without billing dependencies',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, publicationDecision: { ...publicationDecision, dependencies: [] } },
-    false,
-  ],
-  [
-    'output manifest rejects a completed decision without cost-analysis claims',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, publicationDecision: { ...publicationDecision, claims: [] } },
-    false,
-  ],
-  [
-    'output manifest rejects a billing-history generation mismatch',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [{ ...publicationDecision.dependencies[0], generationId: 'billing-generation-other' }],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects a billing-history digest mismatch',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [{ ...publicationDecision.dependencies[0], digest: digestA }],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects unrelated completed dependency and claim names',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [{ ...publicationDecision.dependencies[0], name: 'unrelated-history' }],
-        claims: [{ ...publicationDecision.claims[0], claimId: 'unrelated-analysis', requiredDependencies: ['unrelated-history'] }],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects billing-history outside canonical dependency index zero',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [{ ...publicationDecision.dependencies[0], name: 'unrelated-history', required: false }, publicationDecision.dependencies[0]],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects cost-analysis outside canonical claim index zero',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        claims: [{ ...publicationDecision.claims[0], claimId: 'unrelated-analysis' }, publicationDecision.claims[0]],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects billing-history outside canonical required-dependency index zero',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [publicationDecision.dependencies[0], { ...publicationDecision.dependencies[0], name: 'unrelated-history', required: false }],
-        claims: [{ ...publicationDecision.claims[0], requiredDependencies: ['unrelated-history', 'billing-history'] }],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects duplicate canonical billing dependencies',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [publicationDecision.dependencies[0], publicationDecision.dependencies[0]],
-      },
-    },
-    false,
-  ],
-  [
-    'output manifest rejects duplicate canonical billing claims',
-    isBillingAnalyzerOutputManifestV2,
-    {
-      ...outputManifest,
-      publicationDecision: {
-        ...publicationDecision,
-        claims: [publicationDecision.claims[0], publicationDecision.claims[0]],
-      },
-    },
-    false,
-  ],
-  ['analysis pointer accepts its V1 fixture', isBillingAnalysisCurrentPointerV1, analysisPointer, true],
-  ['analysis pointer rejects absent promoted epoch', isBillingAnalysisCurrentPointerV1, withoutOwnershipEpoch(analysisPointer), false],
-  [
-    'analysis pointer rejects a policy-free completed decision',
-    isBillingAnalysisCurrentPointerV1,
-    { ...analysisPointer, publicationDecision: { ...publicationDecision, dependencies: [], claims: [] } },
-    false,
-  ],
-  [
-    'analysis pointer rejects a billing-history dependency without identity',
-    isBillingAnalysisCurrentPointerV1,
-    {
-      ...analysisPointer,
-      publicationDecision: {
-        ...publicationDecision,
-        dependencies: [{ ...publicationDecision.dependencies[0], generationId: undefined, digest: undefined }],
-      },
-    },
-    false,
-  ],
-  [
-    'analysis pointer rejects quarantined publication',
-    isBillingAnalysisCurrentPointerV1,
-    {
-      ...analysisPointer,
-      publicationDecision: { ...publicationDecision, processing: 'failed', evidence: 'insufficient', publication: 'quarantined' },
-    },
-    false,
-  ],
   ['metadata accepts its V2 fixture', isBillingCostAnalysisMetadataV2, costAnalysisMetadata, true],
   ['partial metadata accepts billing-bound partial evidence', isBillingCostAnalysisMetadataV2, partialCostAnalysisMetadata, true],
   ['metadata accepts human-readable percentage text', isBillingCostAnalysisMetadataV2, percentageBearingMetadata, true],
@@ -846,103 +625,6 @@ const harmlessAdditiveControlData = {
   },
 };
 const billingControlDataCases = [
-  ['input manifest accepts harmless additive fields', isBillingAnalyzerInputManifestV2, { ...inputManifest, ...harmlessAdditiveControlData }, true],
-  [
-    'input manifest rejects a nested exact credential key',
-    isBillingAnalyzerInputManifestV2,
-    { ...inputManifest, future: { settings: { clientSecret: 'secret-example' } } },
-    false,
-  ],
-  [
-    'input manifest rejects an additive physical reference field',
-    isBillingAnalyzerInputManifestV2,
-    { ...inputManifest, future: { artifactPath: 'private/container/input.json' } },
-    false,
-  ],
-  [
-    'input manifest rejects an additive physical reference value',
-    isBillingAnalyzerInputManifestV2,
-    { ...inputManifest, future: { location: 'https://storage.example.invalid/input.json' } },
-    false,
-  ],
-  [
-    'input manifest limits the publication identity exception to its root object and key',
-    isBillingAnalyzerInputManifestV2,
-    { ...inputManifest, future: { publicationKey: 's3:bucket/key' } },
-    false,
-  ],
-  [
-    'request accepts harmless additive display metadata',
-    isBillingAnalyzerRequestV2,
-    { ...analyzerRequest, displayMetadata: harmlessAdditiveControlData },
-    true,
-  ],
-  [
-    'request rejects a nested exact credential key',
-    isBillingAnalyzerRequestV2,
-    { ...analyzerRequest, displayMetadata: { future: { apiKey: 'secret-example' } } },
-    false,
-  ],
-  [
-    'request rejects a physical reference field',
-    isBillingAnalyzerRequestV2,
-    { ...analyzerRequest, displayMetadata: { future: { storageUrl: 'private/container/input.json' } } },
-    false,
-  ],
-  [
-    'request rejects a physical reference value',
-    isBillingAnalyzerRequestV2,
-    { ...analyzerRequest, displayMetadata: { future: { location: 'file:///tmp/input.json' } } },
-    false,
-  ],
-  [
-    'output manifest accepts harmless additive fields',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, ...harmlessAdditiveControlData },
-    true,
-  ],
-  [
-    'output manifest rejects a nested exact credential key',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, future: { settings: { password: 'secret-example' } } },
-    false,
-  ],
-  [
-    'output manifest rejects an additive physical reference field',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, future: { blobPath: 'private/container/output.json' } },
-    false,
-  ],
-  [
-    'output manifest rejects an additive physical reference value',
-    isBillingAnalyzerOutputManifestV2,
-    { ...outputManifest, future: { location: '//storage.example/container/output.json' } },
-    false,
-  ],
-  [
-    'analysis pointer accepts harmless additive fields',
-    isBillingAnalysisCurrentPointerV1,
-    { ...analysisPointer, ...harmlessAdditiveControlData },
-    true,
-  ],
-  [
-    'analysis pointer rejects a nested exact credential key',
-    isBillingAnalysisCurrentPointerV1,
-    { ...analysisPointer, future: { settings: { accessKey: 'secret-example' } } },
-    false,
-  ],
-  [
-    'analysis pointer rejects an additive physical reference field',
-    isBillingAnalysisCurrentPointerV1,
-    { ...analysisPointer, future: { containerUri: 'private/container/output.json' } },
-    false,
-  ],
-  [
-    'analysis pointer rejects an additive physical reference value',
-    isBillingAnalysisCurrentPointerV1,
-    { ...analysisPointer, future: { location: '\\\\storage.example\\container\\output.json' } },
-    false,
-  ],
   ['metadata accepts harmless additive fields', isBillingCostAnalysisMetadataV2, { ...costAnalysisMetadata, ...harmlessAdditiveControlData }, true],
   [
     'metadata rejects a nested exact credential key',
@@ -965,14 +647,7 @@ const billingControlDataCases = [
 ];
 for (const [name, validator, value, expected] of billingControlDataCases) assert.equal(validator(value), expected, name);
 
-const billingControlDocuments = [
-  ['input manifest', isBillingAnalyzerInputManifestV2, inputManifest],
-  ['input pointer', isBillingAnalyzerInputCurrentPointerV1, inputPointer],
-  ['analyzer request', isBillingAnalyzerRequestV2, analyzerRequest],
-  ['output manifest', isBillingAnalyzerOutputManifestV2, outputManifest],
-  ['analysis pointer', isBillingAnalysisCurrentPointerV1, analysisPointer],
-  ['cost metadata', isBillingCostAnalysisMetadataV2, costAnalysisMetadata],
-];
+const billingControlDocuments = [['cost metadata', isBillingCostAnalysisMetadataV2, costAnalysisMetadata]];
 const forbiddenBillingControlData = [
   ['filePath field', { filePath: 'safe/relative.json' }],
   ['filesystemPath field', { filesystemPath: 'safe/relative.json' }],
@@ -1015,16 +690,23 @@ for (const [documentName, validator, document] of billingControlDocuments) {
 }
 
 const ownershipValidatorCases = [
-  ['ownership accepts observe-only absent epoch', isArtifactOwnershipBinding, withoutOwnershipEpoch(inputManifest).ownership, true],
+  ['ownership accepts observe-only absent epoch', isArtifactOwnershipBinding, withoutOwnershipEpoch({ ownership, revision }).ownership, true],
   ['ownership rejects zero epoch', isArtifactOwnershipBinding, { ...ownership, ownershipEpochRevision: 0 }, false],
   ['enforceable ownership accepts positive epoch', isEnforceableArtifactOwnershipBinding, ownership, true],
-  ['enforceable ownership rejects absent epoch', isEnforceableArtifactOwnershipBinding, withoutOwnershipEpoch(inputManifest).ownership, false],
+  [
+    'enforceable ownership rejects absent epoch',
+    isEnforceableArtifactOwnershipBinding,
+    withoutOwnershipEpoch({ ownership, revision }).ownership,
+    false,
+  ],
 ];
 for (const [name, validator, value, expected] of ownershipValidatorCases) assert.equal(validator(value), expected, name);
 
 process.stdout.write(
-  `Artifact evidence contract checks passed: ${contractCorpus.cases.length} corpus cases, ${mutationCount} mutations, ` +
+  `Artifact evidence contract checks passed: corpus v${contractCorpus.corpusVersion}, ${contractCorpus.cases.length} corpus cases, ` +
+    `${mutationCount} mutations, ` +
     `${contractCorpus.revisionComparisons.length} revision comparisons, ${billingValidatorCases.length} billing checks, ` +
     `${billingControlDataCases.length} control-data checks, ${ownershipValidatorCases.length} ownership checks, ` +
-    `${mutationFailureCases.length} mutation fail-fast checks.\nArtifact evidence corpus SHA-256: ${corpusDigest}\n`
+    `${mutationFailureCases.length} mutation fail-fast checks.\nPortable validator set: ${[...corpusValidatorNames].sort().join(', ')}\n` +
+    `Artifact evidence corpus SHA-256: ${corpusDigest}\n`
 );

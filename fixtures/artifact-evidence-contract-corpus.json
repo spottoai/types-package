@@ -1,5 +1,5 @@
 {
-  "corpusVersion": 1,
+  "corpusVersion": 2,
   "fixtures": {
     "currentPopulatedDecision": {
       "processing": "succeeded",
@@ -60,8 +60,8 @@
         "policyRevision": 7
       },
       "manifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
-      "manifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      "completedAt": "2026-08-13T00:02:00.000Z"
+      "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "completedAt": "2026-08-13T00:05:00.000Z"
     },
     "legacyBillingCostAnalysisMetadataV1": {
       "subscriptionId": "sub-123",
@@ -83,6 +83,207 @@
       "anomalies": [],
       "currencyCode": "NZD",
       "currencySymbol": "$"
+    },
+    "billingAnalyzerInputManifestV2": {
+      "schemaVersion": 2,
+      "status": "completed",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "publicationKey": "billing-input:sub-123:source-run-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123",
+        "ownershipEpochRevision": 3
+      },
+      "revision": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "coveragePlanDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "asOfUtc": "2026-08-13T00:00:00.000Z",
+      "stableCutoffUtc": "2026-08-12T00:00:00.000Z",
+      "requestedPeriods": [
+        {
+          "fromInclusive": "2026-07-01T00:00:00.000Z",
+          "throughExclusive": "2026-08-01T00:00:00.000Z",
+          "dateBasis": "utc",
+          "basis": "amortized"
+        }
+      ],
+      "inputs": [
+        {
+          "path": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz",
+          "versionId": "version-1",
+          "etag": "etag-1",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "byteCount": 512,
+          "rowCount": 31,
+          "basis": "amortized",
+          "currencyCode": "NZD",
+          "coverage": "complete"
+        }
+      ],
+      "manifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "completedAt": "2026-08-13T00:05:00.000Z"
+    },
+    "billingAnalyzerRequestV2": {
+      "schemaVersion": 2,
+      "eventId": "billing-analyzer-event-42",
+      "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "correlationId": "correlation-42",
+      "occurredAt": "2026-08-13T00:05:00.000Z",
+      "idempotencyKey": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "publicationMode": "enforce",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123",
+        "ownershipEpochRevision": 3
+      },
+      "revision": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "inputManifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "displayMetadata": {
+        "currencyCode": "NZD",
+        "currencySymbol": "$"
+      }
+    },
+    "billingAnalyzerOutputManifestV2": {
+      "schemaVersion": 2,
+      "status": "completed",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123",
+        "ownershipEpochRevision": 3
+      },
+      "revision": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "inputManifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "artifacts": [
+        {
+          "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json",
+          "name": "metadata.json",
+          "mediaType": "application/json",
+          "contentEncoding": "identity",
+          "byteLength": 1024,
+          "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ],
+      "publicationDecision": {
+        "processing": "succeeded",
+        "evidence": "complete",
+        "publication": "completed",
+        "dependencies": [
+          {
+            "name": "billing-history",
+            "required": true,
+            "support": "supported",
+            "applicability": "applicable",
+            "attempt": "succeeded",
+            "coverage": "complete",
+            "emptyEvidence": "populated",
+            "freshness": "current",
+            "evidence": "complete",
+            "publication": "completed",
+            "generationId": "billing-input-generation-42",
+            "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceRevision": 42,
+            "policyRevision": 7
+          }
+        ],
+        "claims": [
+          {
+            "claimId": "cost-analysis",
+            "sectionPaths": ["chartData", "anomalies"],
+            "requiredDependencies": ["billing-history"],
+            "evidence": "complete",
+            "publication": "completed",
+            "issues": []
+          }
+        ],
+        "issues": []
+      },
+      "manifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "completedAt": "2026-08-13T00:05:00.000Z"
+    },
+    "billingAnalysisCurrentPointerV1": {
+      "schemaVersion": 1,
+      "status": "completed",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123",
+        "ownershipEpochRevision": 3
+      },
+      "revision": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "inputManifestDigest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+      "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "publicationDecision": {
+        "processing": "succeeded",
+        "evidence": "complete",
+        "publication": "completed",
+        "dependencies": [
+          {
+            "name": "billing-history",
+            "required": true,
+            "support": "supported",
+            "applicability": "applicable",
+            "attempt": "succeeded",
+            "coverage": "complete",
+            "emptyEvidence": "populated",
+            "freshness": "current",
+            "evidence": "complete",
+            "publication": "completed",
+            "generationId": "billing-input-generation-42",
+            "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            "sourceRevision": 42,
+            "policyRevision": 7
+          }
+        ],
+        "claims": [
+          {
+            "claimId": "cost-analysis",
+            "sectionPaths": ["chartData", "anomalies"],
+            "requiredDependencies": ["billing-history"],
+            "evidence": "complete",
+            "publication": "completed",
+            "issues": []
+          }
+        ],
+        "issues": []
+      },
+      "completedAt": "2026-08-13T00:05:00.000Z"
     }
   },
   "cases": [
@@ -99,8 +300,14 @@
       "fixture": "currentPopulatedDecision",
       "valid": true,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
         {
           "path": "dependencies.0.emptyProofRef",
           "value": "subscriptions/sub-123/history/billing/proofs/billing-input-generation-42-empty.json"
@@ -113,8 +320,14 @@
       "fixture": "currentPopulatedDecision",
       "valid": true,
       "mutations": [
-        { "path": "dependencies.0.freshness", "value": "stale" },
-        { "path": "dependencies.0.reasonCode", "value": "retained-last-known-good" }
+        {
+          "path": "dependencies.0.freshness",
+          "value": "stale"
+        },
+        {
+          "path": "dependencies.0.reasonCode",
+          "value": "retained-last-known-good"
+        }
       ]
     },
     {
@@ -123,7 +336,10 @@
       "fixture": "currentPopulatedDecision",
       "valid": true,
       "mutations": [
-        { "path": "evidence", "value": "partial" },
+        {
+          "path": "evidence",
+          "value": "partial"
+        },
         {
           "path": "dependencies.1",
           "value": {
@@ -154,23 +370,19 @@
       "mutations": []
     },
     {
-      "name": "additive unknown fields are accepted for a known version",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": true,
-      "mutations": [
-        { "path": "futureTopLevelField", "value": { "producer": "next-version" } },
-        { "path": "ownership.futureOwnershipField", "value": true }
-      ]
-    },
-    {
       "name": "complete-empty without an empty proof is rejected",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        }
       ]
     },
     {
@@ -179,9 +391,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/%2e%2e/empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/proofs/%2e%2e/empty.json"
+        }
       ]
     },
     {
@@ -190,9 +411,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty\u0000.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/proofs/empty\u0000.json"
+        }
       ]
     },
     {
@@ -201,9 +431,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty\n.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/proofs/empty\n.json"
+        }
       ]
     },
     {
@@ -212,9 +451,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "https://storage.example.invalid/proofs/empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "https://storage.example.invalid/proofs/empty.json"
+        }
       ]
     },
     {
@@ -223,9 +471,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "//storage.example/proofs/empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "//storage.example/proofs/empty.json"
+        }
       ]
     },
     {
@@ -234,9 +491,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "\\\\storage.example\\proofs\\empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "\\\\storage.example\\proofs\\empty.json"
+        }
       ]
     },
     {
@@ -245,9 +511,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "C:\\proofs\\empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "C:\\proofs\\empty.json"
+        }
       ]
     },
     {
@@ -256,9 +531,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "/proofs/empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "/proofs/empty.json"
+        }
       ]
     },
     {
@@ -267,9 +551,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/../empty.json" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/proofs/../empty.json"
+        }
       ]
     },
     {
@@ -278,9 +571,18 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.emptyEvidence", "value": "complete-empty" },
-        { "path": "dependencies.0.acceptedRowCount", "value": 0 },
-        { "path": "dependencies.0.emptyProofRef", "value": "subscriptions/sub-123/proofs/empty.json?sig=value#fragment" }
+        {
+          "path": "dependencies.0.emptyEvidence",
+          "value": "complete-empty"
+        },
+        {
+          "path": "dependencies.0.acceptedRowCount",
+          "value": 0
+        },
+        {
+          "path": "dependencies.0.emptyProofRef",
+          "value": "subscriptions/sub-123/proofs/empty.json?sig=value#fragment"
+        }
       ]
     },
     {
@@ -288,35 +590,60 @@
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
-      "mutations": [{ "path": "dependencies.0.attempt", "value": "failed" }]
+      "mutations": [
+        {
+          "path": "dependencies.0.attempt",
+          "value": "failed"
+        }
+      ]
     },
     {
       "name": "dependency evidence rejects zero source revision",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
-      "mutations": [{ "path": "dependencies.0.sourceRevision", "value": 0 }]
+      "mutations": [
+        {
+          "path": "dependencies.0.sourceRevision",
+          "value": 0
+        }
+      ]
     },
     {
       "name": "dependency evidence rejects negative source revision",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
-      "mutations": [{ "path": "dependencies.0.sourceRevision", "value": -1 }]
+      "mutations": [
+        {
+          "path": "dependencies.0.sourceRevision",
+          "value": -1
+        }
+      ]
     },
     {
       "name": "dependency evidence rejects zero policy revision",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
-      "mutations": [{ "path": "dependencies.0.policyRevision", "value": 0 }]
+      "mutations": [
+        {
+          "path": "dependencies.0.policyRevision",
+          "value": 0
+        }
+      ]
     },
     {
       "name": "dependency evidence rejects negative policy revision",
       "validator": "isArtifactPublicationDecision",
       "fixture": "currentPopulatedDecision",
       "valid": false,
-      "mutations": [{ "path": "dependencies.0.policyRevision", "value": -1 }]
+      "mutations": [
+        {
+          "path": "dependencies.0.policyRevision",
+          "value": -1
+        }
+      ]
     },
     {
       "name": "dependency evidence rejects null optional revisions",
@@ -324,8 +651,14 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "dependencies.0.sourceRevision", "value": null },
-        { "path": "dependencies.0.policyRevision", "value": null }
+        {
+          "path": "dependencies.0.sourceRevision",
+          "value": null
+        },
+        {
+          "path": "dependencies.0.policyRevision",
+          "value": null
+        }
       ]
     },
     {
@@ -334,65 +667,31 @@
       "fixture": "currentPopulatedDecision",
       "valid": false,
       "mutations": [
-        { "path": "claims", "value": [] },
-        { "path": "dependencies.0.attempt", "value": "failed" },
-        { "path": "dependencies.0.coverage", "value": "partial" },
-        { "path": "dependencies.0.evidence", "value": "partial" },
-        { "path": "dependencies.0.publication", "value": "partial" },
-        { "path": "dependencies.0.reasonCode", "value": "source-partial" }
+        {
+          "path": "claims",
+          "value": []
+        },
+        {
+          "path": "dependencies.0.attempt",
+          "value": "failed"
+        },
+        {
+          "path": "dependencies.0.coverage",
+          "value": "partial"
+        },
+        {
+          "path": "dependencies.0.evidence",
+          "value": "partial"
+        },
+        {
+          "path": "dependencies.0.publication",
+          "value": "partial"
+        },
+        {
+          "path": "dependencies.0.reasonCode",
+          "value": "source-partial"
+        }
       ]
-    },
-    {
-      "name": "enforceable pointer requires an ownership epoch",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [
-        { "path": "ownership.ownershipEpochRevision", "delete": true },
-        { "path": "revision.ownershipEpochRevision", "delete": true }
-      ]
-    },
-    {
-      "name": "zero source revision is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "revision.sourceRevision", "value": 0 }]
-    },
-    {
-      "name": "negative policy revision is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "revision.policyRevision", "value": -1 }]
-    },
-    {
-      "name": "unsafe physical manifest path is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "manifestPath", "value": "https://storage.example.invalid/container/manifest.json?sig=secret" }]
-    },
-    {
-      "name": "malformed sha-256 digest is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "manifestDigest", "value": "not-a-sha-256" }]
-    },
-    {
-      "name": "cross-subscription ownership is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "ownership.accountId", "value": "sub-other" }]
-    },
-    {
-      "name": "unknown pointer schema version is rejected",
-      "validator": "isBillingAnalyzerInputCurrentPointerV1",
-      "fixture": "enforceableInputPointer",
-      "valid": false,
-      "mutations": [{ "path": "schemaVersion", "value": 2 }]
     },
     {
       "name": "equal revisions with conflicting fixture digests are quarantined",
@@ -400,50 +699,3311 @@
       "fixture": "enforceableInputPointer",
       "valid": false,
       "expectedRevisionComparison": "equal",
-      "mutations": [{ "path": "manifestDigest", "value": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd" }]
+      "mutations": [
+        {
+          "path": "manifestDigest",
+          "value": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      ]
+    },
+    {
+      "name": "input manifest accepts its V2 fixture",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "input manifest accepts observe-only absent epoch",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "requestedPeriods",
+          "value": [
+            {
+              "fromInclusive": "2026-07-01T00:00:00.000Z",
+              "throughExclusive": "2026-08-01T00:00:00.000Z",
+              "dateBasis": "utc",
+              "basis": "amortized"
+            }
+          ]
+        },
+        {
+          "path": "inputs",
+          "value": [
+            {
+              "path": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz",
+              "versionId": "version-1",
+              "etag": "etag-1",
+              "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "byteCount": 512,
+              "rowCount": 31,
+              "basis": "amortized",
+              "currencyCode": "NZD",
+              "coverage": "complete"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects malformed digest",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "manifestDigest",
+          "value": "bad"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects control characters inside its known publication identity",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationKey",
+          "value": "billing-input:source\nunsafe"
+        }
+      ]
+    },
+    {
+      "name": "input pointer accepts its V1 fixture",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "input pointer rejects absent promoted epoch",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        }
+      ]
+    },
+    {
+      "name": "request accepts enforce mode",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "request accepts observe-only absent epoch",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "publicationMode",
+          "value": "observe"
+        },
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        }
+      ]
+    },
+    {
+      "name": "request rejects enforce mode absent epoch",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        }
+      ]
+    },
+    {
+      "name": "request rejects idempotency mismatch",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "idempotencyKey",
+          "value": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    },
+    {
+      "name": "output manifest accepts its V2 fixture",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "output manifest accepts observe-only absent epoch",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "artifacts",
+          "value": [
+            {
+              "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json",
+              "name": "metadata.json",
+              "mediaType": "application/json",
+              "contentEncoding": "identity",
+              "byteLength": 1024,
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.issues",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects missing metadata artifact",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects a completed decision without billing dependencies",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects a completed decision without cost-analysis claims",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.claims",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects a billing-history generation mismatch",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-generation-other",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects a billing-history digest mismatch",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects unrelated completed dependency and claim names",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "unrelated-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "unrelated-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["unrelated-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects billing-history outside canonical dependency index zero",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "unrelated-history",
+              "required": false,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects cost-analysis outside canonical claim index zero",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "unrelated-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            },
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects billing-history outside canonical required-dependency index zero",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "unrelated-history",
+              "required": false,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["unrelated-history", "billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects duplicate canonical billing dependencies",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            },
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects duplicate canonical billing claims",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            },
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer accepts its V1 fixture",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "analysis pointer rejects absent promoted epoch",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "ownership.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "revision.ownershipEpochRevision",
+          "delete": true
+        },
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "generationId": "billing-input-generation-42",
+              "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.claims",
+          "value": [
+            {
+              "claimId": "cost-analysis",
+              "sectionPaths": ["chartData", "anomalies"],
+              "requiredDependencies": ["billing-history"],
+              "evidence": "complete",
+              "publication": "completed",
+              "issues": []
+            }
+          ]
+        },
+        {
+          "path": "publicationDecision.issues",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects a policy-free completed decision",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": []
+        },
+        {
+          "path": "publicationDecision.claims",
+          "value": []
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects a billing-history dependency without identity",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.dependencies",
+          "value": [
+            {
+              "name": "billing-history",
+              "required": true,
+              "support": "supported",
+              "applicability": "applicable",
+              "attempt": "succeeded",
+              "coverage": "complete",
+              "emptyEvidence": "populated",
+              "freshness": "current",
+              "evidence": "complete",
+              "publication": "completed",
+              "sourceRevision": 42,
+              "policyRevision": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects quarantined publication",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "publicationDecision.processing",
+          "value": "failed"
+        },
+        {
+          "path": "publicationDecision.evidence",
+          "value": "insufficient"
+        },
+        {
+          "path": "publicationDecision.publication",
+          "value": "quarantined"
+        }
+      ]
+    },
+    {
+      "name": "input manifest accepts harmless additive fields",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects a nested exact credential key",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "settings": {
+              "clientSecret": "secret-example"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects an additive physical reference field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "private/container/input.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects an additive physical reference value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/input.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest limits the publication identity exception to its root object and key",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "publicationKey": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request accepts harmless additive display metadata",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "displayMetadata.currencyCode",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.currencySymbol",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request rejects a nested exact credential key",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "displayMetadata.currencyCode",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.currencySymbol",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.future",
+          "value": {
+            "apiKey": "secret-example"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request rejects a physical reference field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "displayMetadata.currencyCode",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.currencySymbol",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.future",
+          "value": {
+            "storageUrl": "private/container/input.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "request rejects a physical reference value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "displayMetadata.currencyCode",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.currencySymbol",
+          "delete": true
+        },
+        {
+          "path": "displayMetadata.future",
+          "value": {
+            "location": "file:///tmp/input.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest accepts harmless additive fields",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects a nested exact credential key",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "settings": {
+              "password": "secret-example"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects an additive physical reference field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "blobPath": "private/container/output.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects an additive physical reference value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/output.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer accepts harmless additive fields",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects a nested exact credential key",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "settings": {
+              "accessKey": "secret-example"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects an additive physical reference field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "containerUri": "private/container/output.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects an additive physical reference value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\output.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest accepts exact harmless sensitive-name prefixes",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects filePath field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filePath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects filesystemPath field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filesystemPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects path field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "path": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects url field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "url": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects uri field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "uri": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects artifactPath field",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects URI value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects single-slash file URI value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "file:/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects opaque S3 URI value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects protocol-relative value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects UNC value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects Windows-drive value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "C:\\private\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects POSIX absolute value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects parent-traversal value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/../blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects current-directory traversal value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "./blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects percent-encoded value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/%2e%2e/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects percent-encoded slash value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%2Fprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects percent-encoded backslash value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%5cprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects NUL value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects newline value",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\n.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer accepts exact harmless sensitive-name prefixes",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects filePath field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filePath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects filesystemPath field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filesystemPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects path field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "path": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects url field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "url": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects uri field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "uri": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects artifactPath field",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects URI value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects single-slash file URI value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "file:/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects opaque S3 URI value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects protocol-relative value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects UNC value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects Windows-drive value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "C:\\private\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects POSIX absolute value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects parent-traversal value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/../blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects current-directory traversal value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "./blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects percent-encoded value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/%2e%2e/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects percent-encoded slash value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%2Fprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects percent-encoded backslash value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%5cprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects NUL value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects newline value",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\n.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request accepts exact harmless sensitive-name prefixes",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects filePath field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filePath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects filesystemPath field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filesystemPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects path field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "path": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects url field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "url": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects uri field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "uri": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects artifactPath field",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects URI value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects single-slash file URI value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "file:/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects opaque S3 URI value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects protocol-relative value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects UNC value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects Windows-drive value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "C:\\private\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects POSIX absolute value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects parent-traversal value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/../blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects current-directory traversal value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "./blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects percent-encoded value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/%2e%2e/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects percent-encoded slash value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%2Fprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects percent-encoded backslash value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%5cprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects NUL value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects newline value",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\n.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest accepts exact harmless sensitive-name prefixes",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects filePath field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filePath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects filesystemPath field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filesystemPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects path field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "path": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects url field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "url": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects uri field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "uri": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects artifactPath field",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects URI value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects single-slash file URI value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "file:/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects opaque S3 URI value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects protocol-relative value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects UNC value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects Windows-drive value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "C:\\private\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects POSIX absolute value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects parent-traversal value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/../blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects current-directory traversal value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "./blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects percent-encoded value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/%2e%2e/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects percent-encoded slash value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%2Fprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects percent-encoded backslash value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%5cprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects NUL value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects newline value",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\n.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer accepts exact harmless sensitive-name prefixes",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "itemCount": 2,
+            "reviewStatus": "accepted",
+            "tokenCount": 3,
+            "authorizationStatus": "granted",
+            "secretary": "named-role",
+            "message": "Cost review: accepted",
+            "timestamp": "2026-08-13T00:05:00.000Z",
+            "resourceId": "/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects filePath field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filePath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects filesystemPath field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "filesystemPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects path field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "path": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects url field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "url": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects uri field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "uri": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects artifactPath field",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "artifactPath": "safe/relative.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects URI value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "https://storage.example.invalid/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects single-slash file URI value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "file:/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects opaque S3 URI value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "s3:bucket/key"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects protocol-relative value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "//storage.example/container/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects UNC value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "\\\\storage.example\\container\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects Windows-drive value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "C:\\private\\blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects POSIX absolute value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "/tmp/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects parent-traversal value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/../blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects current-directory traversal value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "./blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects percent-encoded value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/%2e%2e/blob.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects percent-encoded slash value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%2Fprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects percent-encoded backslash value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe%5cprivate.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects NUL value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects newline value",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "location": "safe/blob\n.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects zero source revision",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects negative source revision",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects zero policy revision",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects negative policy revision",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects zero source revision",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects negative source revision",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects zero policy revision",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects negative policy revision",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects zero source revision",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects negative source revision",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects zero policy revision",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "analyzer request rejects negative policy revision",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects zero source revision",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects negative source revision",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects zero policy revision",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects negative policy revision",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects zero source revision",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects negative source revision",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects zero policy revision",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects negative policy revision",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.policyRevision",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects unknown schema",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects non-canonical as-of timestamp",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "asOfUtc",
+          "value": "2026-08-13T00:05:00+00:00"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects cutoff after as-of",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "stableCutoffUtc",
+          "value": "2026-08-13T00:00:01.000Z"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects completion before as-of",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "completedAt",
+          "value": "2026-08-12T23:59:59.999Z"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects non-canonical period timestamp",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "requestedPeriods.0.fromInclusive",
+          "value": "2026-07-01T00:00:00Z"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects reversed requested period",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "requestedPeriods.0.throughExclusive",
+          "value": "2026-06-01T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects input outside generation path",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.path",
+          "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/other/months/month_2026-07.json.gz"
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects empty ETag",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.etag",
+          "value": ""
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects malformed input digest",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.sha256",
+          "value": "bad"
+        }
+      ]
+    },
+    {
+      "name": "input manifest accepts maximum safe byte and row counts",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "inputs.0.byteCount",
+          "value": 9007199254740991
+        },
+        {
+          "path": "inputs.0.rowCount",
+          "value": 9007199254740991
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects unsafe byte count",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.byteCount",
+          "value": 9007199254740992
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects unsafe row count",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.rowCount",
+          "value": 9007199254740992
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects negative row count",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputs.0.rowCount",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "input manifest rejects ownership and revision epoch mismatch",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.ownershipEpochRevision",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects unknown schema",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects non-canonical completion timestamp",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "completedAt",
+          "value": "2026-08-13T00:05:00+00:00"
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects wrong generation manifest identity",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "manifestPath",
+          "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/other/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "input pointer rejects nested credential",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "future",
+          "value": {
+            "settings": {
+              "clientSecret": "secret-example"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "request rejects unknown schema",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "name": "request rejects non-canonical occurrence timestamp",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "occurredAt",
+          "value": "2026-08-13T00:05:00+00:00"
+        }
+      ]
+    },
+    {
+      "name": "request rejects malformed message identity",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "messageId",
+          "value": "bad"
+        },
+        {
+          "path": "idempotencyKey",
+          "value": "bad"
+        }
+      ]
+    },
+    {
+      "name": "request rejects wrong input manifest path identity",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputManifestPath",
+          "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/other/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "request rejects malformed input manifest digest",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputManifestDigest",
+          "value": "bad"
+        }
+      ]
+    },
+    {
+      "name": "request accepts maximum safe revisions",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 9007199254740991
+        },
+        {
+          "path": "revision.policyRevision",
+          "value": 9007199254740991
+        }
+      ]
+    },
+    {
+      "name": "request rejects unsafe revision",
+      "validator": "isBillingAnalyzerRequestV2",
+      "fixture": "billingAnalyzerRequestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "revision.sourceRevision",
+          "value": 9007199254740992
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects unknown schema",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 3
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects non-canonical completion timestamp",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "completedAt",
+          "value": "2026-08-13T00:05:00+00:00"
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects wrong input manifest identity",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputManifestPath",
+          "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/other/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects artifact outside generation path",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts.0.path",
+          "value": "subscriptions/sub-123/billing/generations/other/metadata.json"
+        }
+      ]
+    },
+    {
+      "name": "output manifest accepts maximum safe artifact byte length",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "artifacts.0.byteLength",
+          "value": 9007199254740991
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects unsafe artifact byte length",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts.0.byteLength",
+          "value": 9007199254740992
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects malformed artifact digest",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts.0.sha256",
+          "value": "bad"
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects unknown schema",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "schemaVersion",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects non-canonical completion timestamp",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "completedAt",
+          "value": "2026-08-13T00:05:00+00:00"
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects wrong input manifest identity",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "inputManifestPath",
+          "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/other/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects wrong output manifest identity",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "outputManifestPath",
+          "value": "subscriptions/sub-123/billing/generations/other/manifest.json"
+        }
+      ]
+    },
+    {
+      "name": "analysis pointer rejects malformed output manifest digest",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "outputManifestDigest",
+          "value": "bad"
+        }
+      ]
     }
   ],
   "revisionComparisons": [
     {
       "name": "missing ownership epoch is unenforceable",
-      "left": { "sourceRevision": 42, "policyRevision": 7 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 41, "policyRevision": 7 },
+      "left": {
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 41,
+        "policyRevision": 7
+      },
       "expected": "unenforceable"
     },
     {
       "name": "higher ownership epoch wins before source revision",
-      "left": { "ownershipEpochRevision": 4, "sourceRevision": 1, "policyRevision": 1 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 999, "policyRevision": 999 },
+      "left": {
+        "ownershipEpochRevision": 4,
+        "sourceRevision": 1,
+        "policyRevision": 1
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 999,
+        "policyRevision": 999
+      },
       "expected": "newer-ownership"
     },
     {
       "name": "lower ownership epoch loses before source revision",
-      "left": { "ownershipEpochRevision": 2, "sourceRevision": 999, "policyRevision": 999 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 1, "policyRevision": 1 },
+      "left": {
+        "ownershipEpochRevision": 2,
+        "sourceRevision": 999,
+        "policyRevision": 999
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 1,
+        "policyRevision": 1
+      },
       "expected": "older-ownership"
     },
     {
       "name": "both revision components higher is newer",
-      "left": { "ownershipEpochRevision": 3, "sourceRevision": 43, "policyRevision": 8 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "left": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 43,
+        "policyRevision": 8
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
       "expected": "newer"
     },
     {
       "name": "both revision components lower is older",
-      "left": { "ownershipEpochRevision": 3, "sourceRevision": 41, "policyRevision": 6 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "left": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 41,
+        "policyRevision": 6
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
       "expected": "older"
     },
     {
       "name": "opposed revision components are incomparable",
-      "left": { "ownershipEpochRevision": 3, "sourceRevision": 43, "policyRevision": 6 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "left": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 43,
+        "policyRevision": 6
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
       "expected": "incomparable"
     },
     {
       "name": "identical revision components are equal",
-      "left": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
-      "right": { "ownershipEpochRevision": 3, "sourceRevision": 42, "policyRevision": 7 },
+      "left": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "right": {
+        "ownershipEpochRevision": 3,
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
       "expected": "equal"
     }
   ]
