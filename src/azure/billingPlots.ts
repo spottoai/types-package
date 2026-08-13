@@ -311,7 +311,7 @@ const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 
 const containsForbiddenMetadata = (value: unknown): boolean => {
-  if (typeof value === 'string') return value.includes('://') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
+  if (typeof value === 'string') return value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
   if (Array.isArray(value)) return value.some(containsForbiddenMetadata);
   if (!isRecord(value)) return false;
   return Object.entries(value).some(

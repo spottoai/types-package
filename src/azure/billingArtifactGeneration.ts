@@ -143,7 +143,8 @@ interface AllowedReferenceField {
   key: string;
 }
 
-const isPhysicalReferenceValue = (value: string): boolean => value.includes('://') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
+const isPhysicalReferenceValue = (value: string): boolean =>
+  value.includes('://') || value.startsWith('//') || value.startsWith('\\\\') || /^[A-Za-z]:[\\/]/.test(value);
 
 const containsForbiddenControlData = (value: unknown, allowedReferenceFields: AllowedReferenceField[] = []): boolean => {
   if (typeof value === 'string') return isPhysicalReferenceValue(value);

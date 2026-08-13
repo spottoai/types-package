@@ -243,6 +243,8 @@ const credentialBearingRequests = [
   { ...analyzerRequest, displayMetadata: { path: '/tmp/billing.json' } },
   { ...analyzerRequest, displayMetadata: { url: 'https://storage.example.invalid/billing.json' } },
   { ...analyzerRequest, displayMetadata: { uri: 'file:///tmp/billing.json' } },
+  { ...analyzerRequest, displayMetadata: { location: '//storage.example/container/blob.json' } },
+  { ...analyzerRequest, displayMetadata: { location: '\\\\storage.example\\container\\blob.json' } },
 ];
 
 const controlCharacterInputPointer = {
@@ -278,6 +280,8 @@ const credentialBearingMetadata = [
   { ...costAnalysisMetadata, path: '/tmp/billing.json' },
   { ...costAnalysisMetadata, url: 'https://storage.example.invalid/billing.json' },
   { ...costAnalysisMetadata, uri: 'file:///tmp/billing.json' },
+  { ...costAnalysisMetadata, location: '//storage.example/container/blob.json' },
+  { ...costAnalysisMetadata, location: '\\\\storage.example\\container\\blob.json' },
 ];
 
 const validationResults: boolean[] = [
