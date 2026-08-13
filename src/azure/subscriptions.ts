@@ -6,6 +6,7 @@ import { ResourceByLocation, ResourcesByType } from './resources.js';
 import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
+import type { CostComposition } from './costComposition.js';
 
 export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 
@@ -142,6 +143,7 @@ export interface SubscriptionStats {
     estimated_metrics_pricing: number;
     estimated_sku_pricing: number;
   };
+  spend30DaysComposition?: CostComposition;
 }
 
 export interface SubscriptionHistory {

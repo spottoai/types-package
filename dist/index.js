@@ -16,8 +16,10 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 /** Main entry point - export all interfaces from this package */
 __exportStar(require("./azure/common"), exports);
+__exportStar(require("./azure/costComposition"), exports);
 __exportStar(require("./azure/activityLogs"), exports);
 __exportStar(require("./azure/budgets"), exports);
+__exportStar(require("./azure/billingGeneration"), exports);
 __exportStar(require("./azure/billingPlots"), exports);
 __exportStar(require("./azure/benefits"), exports);
 __exportStar(require("./azure/commitmentsPlanning"), exports);

@@ -19,5 +19,6 @@ __exportStar(require("./capabilityPassport"), exports);
 __exportStar(require("./pagination"), exports);
 __exportStar(require("./provider"), exports);
 __exportStar(require("./providerSyncProgress"), exports);
+__exportStar(require("./relationships"), exports);
 __exportStar(require("./syncProgress"), exports);
 //# sourceMappingURL=index.js.map

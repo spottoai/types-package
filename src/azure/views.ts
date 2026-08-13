@@ -15,6 +15,7 @@ import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
+import type { CostComposition, EstimateLens } from './costComposition.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummary;
@@ -99,6 +100,7 @@ export interface AzureResourcePortalItem {
   billingActualThroughDate?: number;
   /** First day of estimation gap (typically billingActualThroughDate + 1) */
   estimationCutoffStartDate?: number;
+  composition?: CostComposition;
   /** Which savings basis should be shown for this resource */
   savingsBasis?: CostSavingsSpendBasis;
   /** Canonical resource ID that owns this savings amount for aggregation */
@@ -218,6 +220,7 @@ export interface AzureResourcePluginItem {
   billingActualThroughDate?: number;
   /** First day of estimation gap (typically billingActualThroughDate + 1) */
   estimationCutoffStartDate?: number;
+  composition?: CostComposition;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   benefitsCoverage?: BenefitCoverageSummary;
@@ -261,6 +264,7 @@ export interface AzureResourcePluginItemDetailed {
   costSourceDetail?: string;
   billingActualThroughDate?: number;
   estimationCutoffStartDate?: number;
+  composition?: CostComposition;
   metrics?: DisplayMetric[];
   activityLogs?: ActivityLog[];
   properties?: Record<string, string>;
@@ -760,6 +764,7 @@ export interface CostSavingsBillingBasis {
   billingLagDays: number;
   stableCutoffDate?: number;
   includesEstimatedRows: boolean;
+  selectedLens?: EstimateLens;
 }
 
 export interface CostSavingsSummaryBasis {

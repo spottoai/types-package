@@ -1,5 +1,6 @@
 import { Tags } from '../tags';
 import type { CostDateBasis } from './prices';
+import type { CostComposition } from './costComposition.js';
 export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
 export type BillingCadence = 'daily' | 'monthly' | 'unknown';
 /** Billing-source facts attached by the backend. This is not lifecycle evidence. */
@@ -60,6 +61,7 @@ export interface DecompositionTreeNode {
     resourceId?: string;
     chargeContext?: BillingChargeContext;
     resourceLifecycle?: ResourceLifecycleContext;
+    composition?: CostComposition;
 }
 export interface MeterDetail {
     /** "P1 v3 App" */
@@ -94,6 +96,7 @@ export interface DecompositionTree {
     currency: string;
     currencySymbol: string;
     version?: string;
+    composition?: CostComposition;
 }
 export interface EstimationTree extends DecompositionTree {
     dataSource: 'estimated' | 'blended' | 'actual' | 'metrics_pricing';

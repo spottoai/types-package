@@ -19,6 +19,7 @@ import type { AzurePortalVersionedArtifact } from './portalArtifacts';
 import type { RecommendationSystemTrackClassification } from './recommendationTracks';
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
+import type { CostComposition, EstimateLens } from './costComposition.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -259,6 +260,8 @@ export interface RecommendationDecisionContext {
   title?: string;
   explanation?: string;
   links: RecommendationDecisionLink[];
+  selectedLens?: EstimateLens;
+  costComposition?: CostComposition;
 }
 
 export interface Recommendation {

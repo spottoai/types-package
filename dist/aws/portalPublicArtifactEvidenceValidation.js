@@ -18,8 +18,13 @@ function validateAwsPortalBillingBlock(value, field, outerBilling, accountId, ac
         'comparison',
     ];
     const resourceFields = ['pricingReferenceEstimation', 'estimatedBillingAuthority'];
-    (0, portalPublicArtifactValidationCommon_1.assertExactKeys)(billing, ['scope', 'freshness', 'summary', 'totalsByCurrency', ...(accountBody ? accountFields : resourceFields)], field);
+    // AWS-only window evidence. Optional so artifacts published before the
+    // rolling resource window stay valid, but validated whenever present: a block
+    // that names one anchor period while its totals span three has to say so.
+    const windowFields = ['window', 'contributingBillingPeriods', 'windowCoverage'];
+    (0, portalPublicArtifactValidationCommon_1.assertExactKeys)(billing, ['scope', 'freshness', 'summary', 'totalsByCurrency', ...windowFields, ...(accountBody ? accountFields : resourceFields)], field);
     validateBillingEvidenceScope(billing.scope, outerBilling, accountId, `${field}.scope`);
+    validateBillingEvidenceWindow(billing, outerBilling, field);
     (0, portalPublicArtifactValidationCommon_1.validateFreshness)(billing.freshness, `${field}.freshness`, 'lastSuccessfulImportAt');
     validateBillingSummary(billing.summary, `${field}.summary`);
     validateBillingGroupedResult(billing.totalsByCurrency, `${field}.totalsByCurrency`);
@@ -87,6 +92,75 @@ function validateBillingEvidenceScope(value, outerBilling, accountId, field) {
     (0, portalPublicArtifactValidationCommon_1.assertValue)(scope.reportName, outerBilling.source === 'cur' ? outerBilling.reportName : outerBilling.exportName, `${field}.reportName`);
     if (JSON.stringify(scope.billingPeriod) !== JSON.stringify(outerBilling.billingPeriod))
         throw new Error(`${field}.billingPeriod must match artifact scope exactly.`);
+}
+/**
+ * Validates the rolling window a billing block measures, and binds it to the
+ * anchor period the artifact scope names.
+ *
+ * The window may start inside the preceding billing period — that is the whole
+ * point of a run-anchored rolling 30 days — but it must end no later than the
+ * day after the anchor period ends, and every period it claims contributed must
+ * form an adjacent chain that covers it, or the block must admit
+ * `partial-billing-period-coverage`.
+ */
+function validateBillingEvidenceWindow(billing, outerBilling, field) {
+    const hasWindow = billing.window !== undefined;
+    if (billing.contributingBillingPeriods !== undefined && !hasWindow)
+        throw new Error(`${field}.contributingBillingPeriods requires ${field}.window.`);
+    if (billing.windowCoverage !== undefined && !hasWindow)
+        throw new Error(`${field}.windowCoverage requires ${field}.window.`);
+    if (!hasWindow)
+        return;
+    const window = (0, portalPublicArtifactValidationCommon_1.asRecord)(billing.window, `${field}.window`);
+    (0, portalPublicArtifactValidationCommon_1.assertExactKeys)(window, ['kind', 'dayCount', 'startDateInclusive', 'endDateExclusive'], `${field}.window`);
+    (0, portalPublicArtifactValidationCommon_1.assertValue)(window.kind, 'last-30-days', `${field}.window.kind`);
+    (0, portalPublicArtifactValidationCommon_1.assertValue)(window.dayCount, 30, `${field}.window.dayCount`);
+    const startDateInclusive = utcDate(window.startDateInclusive, `${field}.window.startDateInclusive`);
+    const endDateExclusive = utcDate(window.endDateExclusive, `${field}.window.endDateExclusive`);
+    if (shiftUtcDate(endDateExclusive, -30) !== startDateInclusive)
+        throw new Error(`${field}.window must cover exactly 30 UTC days.`);
+    if (endDateExclusive > shiftUtcDate(outerBilling.billingPeriod.end, 1))
+        throw new Error(`${field}.window.endDateExclusive must not run past the day after the artifact billing period.`);
+    if (billing.contributingBillingPeriods === undefined)
+        return;
+    if (!Array.isArray(billing.contributingBillingPeriods))
+        throw new Error(`${field}.contributingBillingPeriods must be an array.`);
+    const periods = billing.contributingBillingPeriods.map((entry, index) => {
+        const itemField = `${field}.contributingBillingPeriods[${index}]`;
+        const period = (0, portalPublicArtifactValidationCommon_1.asRecord)(entry, itemField);
+        (0, portalPublicArtifactValidationCommon_1.assertExactKeys)(period, ['start', 'end'], itemField);
+        const start = utcDate(period.start, `${itemField}.start`);
+        const end = utcDate(period.end, `${itemField}.end`);
+        if (end < start)
+            throw new Error(`${itemField}.end must not precede ${itemField}.start.`);
+        return { start, end };
+    });
+    (0, portalPublicArtifactValidationCommon_1.assertUnique)(periods.map(period => `${period.start}|${period.end}`), `${field}.contributingBillingPeriods`);
+    if (periods.some((period, index) => index > 0 && period.start <= periods[index - 1].start))
+        throw new Error(`${field}.contributingBillingPeriods must be ordered by start date.`);
+    const anchor = `${outerBilling.billingPeriod.start}|${outerBilling.billingPeriod.end}`;
+    if (periods.length > 0 && !periods.some(period => `${period.start}|${period.end}` === anchor))
+        throw new Error(`${field}.contributingBillingPeriods must include the artifact billing period.`);
+    const complete = periods.length > 0 &&
+        periods[0].start <= startDateInclusive &&
+        periods[periods.length - 1].end >= shiftUtcDate(endDateExclusive, -1) &&
+        periods.every((period, index) => index === 0 || shiftUtcDate(periods[index - 1].end, 1) === period.start);
+    const coverage = billing.windowCoverage;
+    if (coverage !== undefined && coverage !== 'complete' && coverage !== 'partial-billing-period-coverage')
+        throw new Error(`${field}.windowCoverage must be complete or partial-billing-period-coverage.`);
+    if (coverage === 'complete' && !complete)
+        throw new Error(`${field}.windowCoverage claims complete coverage its contributingBillingPeriods do not provide.`);
+}
+function utcDate(value, field) {
+    const date = (0, portalPublicArtifactValidationCommon_1.requiredString)(value, field);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || new Date(`${date}T00:00:00.000Z`).toISOString().slice(0, 10) !== date)
+        throw new Error(`${field} must be a YYYY-MM-DD UTC date.`);
+    return date;
+}
+function shiftUtcDate(date, days) {
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    parsed.setUTCDate(parsed.getUTCDate() + days);
+    return parsed.toISOString().slice(0, 10);
 }
 function validateBillingSummary(value, field) {
     const summary = (0, portalPublicArtifactValidationCommon_1.asRecord)(value, field);

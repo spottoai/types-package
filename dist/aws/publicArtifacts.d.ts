@@ -1,5 +1,4 @@
 import type { ArtifactAccountBinding, ArtifactGeneration } from '../common/artifactGeneration';
-import type { RelationshipSnapshotCostOverlay, RelationshipSnapshotEdge, RelationshipSnapshotEdgeKind, RelationshipSnapshotEdgeEvidence, RelationshipSnapshotNodeData, RelationshipSnapshotNodeKind, RelationshipSnapshotStats, UnresolvedRelationshipReference } from '../azure/relationships';
 import type { Recommendation } from '../azure/recommendations';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
 import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
@@ -37,35 +36,7 @@ export type AwsPortalResourceCollectionArtifact<AccountId extends string = strin
     account: AwsPublicAccountReference<AccountId>;
     resources: AwsPortalResourceItem<AccountId>[];
 };
-export type AwsPortalRelationshipNodeKind = Exclude<RelationshipSnapshotNodeKind, 'subscription' | 'resourceGroup' | 'managementGroup'> | 'account' | 'region';
-export type AwsPortalRelationshipNodeData<AccountId extends string = string> = Omit<RelationshipSnapshotNodeData, 'resourceGroup' | 'properties'> & AwsPublicArtifactForbiddenCredentialFields & {
-    accountId: AccountId;
-    region?: string;
-    resourceGroup?: never;
-    properties?: never;
-};
-export interface AwsPortalRelationshipNode<AccountId extends string = string> {
-    id: string;
-    kind: AwsPortalRelationshipNodeKind;
-    data: AwsPortalRelationshipNodeData<AccountId>;
-    cost?: RelationshipSnapshotCostOverlay;
-}
-export type AwsPortalRelationshipEdgeKind = RelationshipSnapshotEdgeKind;
-export type AwsPortalRelationshipEdgeEvidence = RelationshipSnapshotEdgeEvidence;
-export type AwsPortalRelationshipEdge = RelationshipSnapshotEdge;
-export type AwsPortalRelationshipArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'relationships', AccountId, RunId> & Omit<RelationshipSnapshotShape, 'schemaVersion' | 'nodes'> & {
-    nodes: AwsPortalRelationshipNode<AccountId>[];
-};
-type RelationshipSnapshotShape = {
-    schemaVersion: 1;
-    generatedAt: string;
-    currency?: string;
-    currencySymbol?: string;
-    nodes: AwsPortalRelationshipNode[];
-    edges: AwsPortalRelationshipEdge[];
-    unresolved: UnresolvedRelationshipReference[];
-    stats: RelationshipSnapshotStats;
-};
+export type { AwsPortalRelationshipArtifact, AwsPortalRelationshipArtifactV1, AwsPortalRelationshipEdge, AwsPortalRelationshipEdgeEvidence, AwsPortalRelationshipEdgeKind, AwsPortalRelationshipNode, AwsPortalRelationshipNodeData, AwsPortalRelationshipNodeKind, AwsPortalRelationshipArtifactV2, AwsPortalRelationshipLegacyArtifact, AwsPortalRelationshipLegacyNode, AwsPortalRelationshipLegacyNodeData, } from './portalRelationshipPublicArtifacts';
 export type AwsPortalLifecycleResource<AccountId extends string = string> = ServiceRetirementPortalResource & ArtifactAccountBinding<'aws', AccountId> & AwsPublicArtifactForbiddenCredentialFields & {
     arn?: string;
     region?: string;
@@ -102,5 +73,4 @@ export type AwsPluginResourceArtifact<AccountId extends string = string, RunId e
     properties?: never;
     recommendations?: AwsPublicRecommendation[];
 };
-export {};
 //# sourceMappingURL=publicArtifacts.d.ts.map

@@ -8,6 +8,12 @@
     "*": {
       "aws": [
         "dist/aws/index.d.ts"
+      ],
+      "azure/recommendations": [
+        "dist/azure/recommendations.d.ts"
+      ],
+      "common/provider": [
+        "dist/common/provider.d.ts"
       ]
     }
   },
@@ -21,6 +27,16 @@
       "types": "./dist/aws/index.d.ts",
       "import": "./dist/aws/index.js",
       "require": "./dist/aws/index.js"
+    },
+    "./azure/recommendations": {
+      "types": "./dist/azure/recommendations.d.ts",
+      "import": "./dist/azure/recommendations.js",
+      "require": "./dist/azure/recommendations.js"
+    },
+    "./common/provider": {
+      "types": "./dist/common/provider.d.ts",
+      "import": "./dist/common/provider.js",
+      "require": "./dist/common/provider.js"
     }
   },
   "files": [

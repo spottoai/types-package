@@ -1,3 +1,4 @@
+import type { CostComposition } from './costComposition.js';
 export interface AzureLocation {
     /** e.g. "eastus" */
     name: string;
@@ -17,6 +18,7 @@ export interface MonthSummaryEntry {
     endDate?: string;
     /** Top resources by cost */
     resourceTypes: ResourceCostType[];
+    composition?: CostComposition;
 }
 export interface ResourceCostType {
     /** e.g. "Virtual Machines" */
@@ -50,6 +52,7 @@ export interface DailySummaryEntry {
     commitmentPurchaseCostAmortized?: number;
     /** Top resources by cost */
     resourceTypes: ResourceCostType[];
+    composition?: CostComposition;
 }
 export interface DailySummary {
     /** rolling last 30 days */

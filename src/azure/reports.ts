@@ -1,5 +1,6 @@
 import { Tags } from '../tags';
 import type { CostDateBasis } from './prices';
+import type { CostComposition } from './costComposition.js';
 
 export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
 
@@ -65,6 +66,7 @@ export interface DecompositionTreeNode {
   resourceId?: string;
   chargeContext?: BillingChargeContext;
   resourceLifecycle?: ResourceLifecycleContext;
+  composition?: CostComposition;
 }
 
 export interface MeterDetail {
@@ -101,6 +103,7 @@ export interface DecompositionTree {
   currency: string;
   currencySymbol: string;
   version?: string;
+  composition?: CostComposition;
 }
 
 // EstimationTree with DecompositionTree, adding estimation/blending related fields
