@@ -1,4 +1,5 @@
 import type { ArtifactProvider } from './artifactGeneration.js';
+import { type ArtifactEmptyEvidenceVerdict, type ArtifactFreshnessVerdict, type ArtifactOwnershipBinding } from './artifactEvidence.js';
 export declare const CAPABILITY_PASSPORT_SCHEMA_VERSION: 1;
 export type CapabilityPassportSchemaVersion = typeof CAPABILITY_PASSPORT_SCHEMA_VERSION;
 export declare const CAPABILITY_REASON_CODES: readonly ["not-requested", "permission-denied", "not-found", "throttled", "timeout", "pagination-incomplete", "source-partial", "source-empty", "source-unsupported", "retained-last-known-good", "currency-unresolved", "unknown"];
@@ -42,16 +43,16 @@ export type CapabilityAttempt = {
     reasonCodes: CapabilityReasonCode[];
 };
 export type CapabilityFreshness = {
-    status: 'current';
+    status: Extract<ArtifactFreshnessVerdict, 'current'>;
     observedAt: string;
     completeThrough?: string;
 } | {
-    status: 'stale';
+    status: Extract<ArtifactFreshnessVerdict, 'stale'>;
     observedAt: string;
     completeThrough?: string;
     maximumAge: string;
 } | {
-    status: 'unknown';
+    status: Extract<ArtifactFreshnessVerdict, 'unknown'>;
 };
 export interface CapabilityObservation<Provider extends ArtifactProvider = ArtifactProvider> {
     observationId: string;
@@ -60,7 +61,7 @@ export interface CapabilityObservation<Provider extends ArtifactProvider = Artif
     attempt: CapabilityAttempt;
     providerSurfaceOutcome: 'accepted' | 'authoritatively-unsupported' | 'unknown';
     availability: 'available' | 'partial' | 'missing' | 'unavailable' | 'unknown';
-    emptyEvidence: 'populated' | 'complete-empty' | 'not-observed' | 'unknown';
+    emptyEvidence: ArtifactEmptyEvidenceVerdict;
     freshness: CapabilityFreshness;
     sourceGeneration?: ImmutableSourceGeneration;
     coverageRef?: string;
@@ -92,14 +93,8 @@ export interface CapabilityPassport<Provider extends ArtifactProvider = Artifact
     passportId: string;
     generatedAt: string;
     runId: string;
-    ownership: {
-        provider: Provider;
-        tenantId: string;
-        companyId: string;
-        cloudAccountId: string;
-        accountId: string;
+    ownership: ArtifactOwnershipBinding<Provider> & {
         subscriptionId: string;
-        ownershipEpochRevision?: number;
     };
     agreementObservation: {
         type: CapabilityAgreementType;

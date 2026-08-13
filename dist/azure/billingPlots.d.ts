@@ -1,6 +1,9 @@
 /**
  * Billing cost analysis types for Azure cost visualization.
  */
+import { type ArtifactOwnershipBinding, type ArtifactRevisionVector, type BillingArtifactReadState } from '../common/artifactEvidence.js';
+import { type BillingCompletedArtifactPublicationDecision, type BillingPartialArtifactPublicationDecision } from './billingArtifactEvidence.js';
+export type { BillingArtifactPublicationDecision, BillingCompletedArtifactPublicationDecision, BillingPartialArtifactPublicationDecision, } from './billingArtifactEvidence.js';
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
 /** Supported billing chart aggregation categories. */
@@ -246,6 +249,25 @@ export interface BillingCostAnalysisMetadata {
     /** Forecast amount at the end of the current period. */
     forecastPeriodEnd?: number;
 }
+type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
+type BillingCompletedCostAnalysisDocumentState = Exclude<BillingCostAnalysisDocumentState, 'partial'>;
+/** Immutable billing metadata with an explicit evidence and read-state binding. */
+interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata {
+    schemaVersion: 2;
+    ownership: ArtifactOwnershipBinding<'azure'>;
+    revision: ArtifactRevisionVector;
+    inputManifestDigest: string;
+    outputManifestDigest: string;
+}
+export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base & ({
+    artifactState: BillingCompletedCostAnalysisDocumentState;
+    artifactEvidence: BillingCompletedArtifactPublicationDecision;
+} | {
+    artifactState: 'partial';
+    artifactEvidence: BillingPartialArtifactPublicationDecision;
+});
+/** Dependency-free validator for customer-readable V2 billing metadata. */
+export declare const isBillingCostAnalysisMetadataV2: (value: unknown) => value is BillingCostAnalysisMetadataV2;
 /** @deprecated Use BillingCostAnalysisMetadata. */
 export type BillingPlotsMetadata = BillingCostAnalysisMetadata;
 //# sourceMappingURL=billingPlots.d.ts.map

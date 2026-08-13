@@ -1,3 +1,4 @@
+import type { ArtifactEvidenceVerdict } from './artifactEvidence.js';
 export declare const ARTIFACT_GENERATION_SCHEMA_VERSION: 1;
 export type ArtifactGenerationSchemaVersion = typeof ARTIFACT_GENERATION_SCHEMA_VERSION;
 export type JsonPrimitive = string | number | boolean | null;
@@ -49,16 +50,17 @@ export interface ArtifactDescriptor {
     sha256: string;
 }
 export type ArtifactEvidenceIssueStatus = 'partial' | 'missing' | 'stale' | 'unavailable';
+type ArtifactManifestEvidenceVerdict = Extract<ArtifactEvidenceVerdict, 'complete' | 'partial'>;
 export interface ArtifactEvidenceIssue {
     source: string;
     status: ArtifactEvidenceIssueStatus;
     reason: string;
 }
 export type ArtifactManifestEvidence = {
-    status: 'complete';
+    status: Extract<ArtifactManifestEvidenceVerdict, 'complete'>;
     issues: [];
 } | {
-    status: 'partial';
+    status: Extract<ArtifactManifestEvidenceVerdict, 'partial'>;
     issues: [ArtifactEvidenceIssue, ...ArtifactEvidenceIssue[]];
 };
 type ArtifactGenerationManifestBase<Provider extends ArtifactProvider, AccountId extends string, RunId extends string> = ArtifactAccountBinding<Provider, AccountId> & {

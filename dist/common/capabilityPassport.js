@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isCapabilityPassport = exports.CAPABILITY_REASON_CODES = exports.CAPABILITY_PASSPORT_SCHEMA_VERSION = void 0;
+const artifactEvidence_js_1 = require("./artifactEvidence.js");
 exports.CAPABILITY_PASSPORT_SCHEMA_VERSION = 1;
 exports.CAPABILITY_REASON_CODES = [
     'not-requested',
@@ -17,7 +18,6 @@ exports.CAPABILITY_REASON_CODES = [
     'unknown',
 ];
 const REASON_CODES = new Set(exports.CAPABILITY_REASON_CODES);
-const PROVIDERS = new Set(['azure', 'aws']);
 const AGREEMENT_TYPES = new Set(['EA', 'MCA', 'CSP', 'PAYG-MOSP', 'sponsored-trial', 'unknown']);
 const AGREEMENT_SOURCES = new Set(['observed', 'configured', 'unknown']);
 const AVAILABILITY_VALUES = new Set(['available', 'partial', 'missing', 'unavailable', 'unknown']);
@@ -138,15 +138,7 @@ const isObservation = (value, ownership) => {
     }
     return true;
 };
-const isOwnership = (value) => isRecord(value) &&
-    typeof value.provider === 'string' &&
-    PROVIDERS.has(value.provider) &&
-    isNonEmptyString(value.tenantId) &&
-    isNonEmptyString(value.companyId) &&
-    isNonEmptyString(value.cloudAccountId) &&
-    isNonEmptyString(value.accountId) &&
-    isNonEmptyString(value.subscriptionId) &&
-    (value.ownershipEpochRevision === undefined || isPositiveInteger(value.ownershipEpochRevision));
+const isOwnership = (value) => (0, artifactEvidence_js_1.isArtifactOwnershipBinding)(value) && 'subscriptionId' in value && isNonEmptyString(value.subscriptionId);
 const isObservationSet = (value, ownership) => {
     if (!isRecord(value) || !isNonNegativeInteger(value.totalCount))
         return false;

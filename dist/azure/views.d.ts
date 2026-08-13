@@ -10,6 +10,8 @@ import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
+import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
+import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -796,7 +798,27 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base & ((CompletedV
     startedAt?: string;
     completedAt: string;
 }));
-export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2;
+interface CompletedViewArtifactDescriptor extends ArtifactDescriptor {
+    path: string;
+}
+/** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
+export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
+    schemaVersion: 3;
+    status: 'completed';
+    runId: string;
+    subscriptionId: string;
+    artifacts: [CompletedViewArtifactDescriptor, ...CompletedViewArtifactDescriptor[]];
+    artifactGeneration: CompletedViewArtifactGeneration;
+    costSavings?: CompletedViewCostSavingsManifest;
+    failedArtifactCount: 0;
+    failedResourceCount: 0;
+    ownership: ArtifactOwnershipBinding<'azure'>;
+    revision: ArtifactRevisionVector;
+    compositeDependencyDigest: string;
+    publicationDecision: ArtifactPublicationDecision;
+    completedAt: string;
+}
+export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2 | CompletedViewManifestV3;
 export interface AzureViewSetSurfaceReference {
     /** Immutable generation run ID declared by the surface completed manifest. */
     runId: string;
@@ -818,6 +840,40 @@ export interface CompletedAzureViewSetV1 {
     };
     completedAt: string;
 }
+type CompletedArtifactPublicationDecision = Extract<ArtifactPublicationDecision, {
+    publication: 'completed';
+}>;
+interface AzureViewSetV2SurfaceReference {
+    runId: string;
+    manifestPath: string;
+    manifestDigest: string;
+    ownership: ArtifactOwnershipBinding<'azure'> & {
+        ownershipEpochRevision: number;
+    };
+    revision: ArtifactRevisionVector & {
+        ownershipEpochRevision: number;
+    };
+    compositeDependencyDigest: string;
+    completedAt: string;
+}
+/** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
+export interface CompletedAzureViewSetV2 {
+    schemaVersion: 2;
+    status: 'completed';
+    subscriptionId: string;
+    publicationId: string;
+    ownership: ArtifactOwnershipBinding<'azure'> & {
+        ownershipEpochRevision: number;
+    };
+    revision: ArtifactRevisionVector & {
+        ownershipEpochRevision: number;
+    };
+    portal: AzureViewSetV2SurfaceReference;
+    plugin: AzureViewSetV2SurfaceReference;
+    compositeDependencyDigest: string;
+    publicationDecision: CompletedArtifactPublicationDecision;
+    completedAt: string;
+}
 export interface AzureRecommendationResourceEvidenceEntry {
     recommendationId: string;
     /** Full presentation evidence, retained even when no active aggregate entry exists. */
@@ -835,4 +891,9 @@ export interface AzureRecommendationResourceEvidenceDocument {
 }
 /** Dependency-free rejection boundary for customer-readable cross-surface pointers. */
 export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
+/** Validates an evidence-aware completed portal or plugin generation manifest. */
+export declare const isCompletedViewManifestV3: (value: unknown) => value is CompletedViewManifestV3;
+/** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
+export declare const isCompletedAzureViewSetV2: (value: unknown) => value is CompletedAzureViewSetV2;
+export {};
 //# sourceMappingURL=views.d.ts.map
