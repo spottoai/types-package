@@ -4,6 +4,7 @@ import { asRecord, assertAccount, assertExactKeys, assertValue } from './pluginP
 
 const FORBIDDEN_AWS_COMMITMENTS_KEYS = new Set([
   'billingScopeId',
+  'breakCostEstimate',
   'cloudAccountId',
   'companyId',
   'credentialHealth',
@@ -13,6 +14,7 @@ const FORBIDDEN_AWS_COMMITMENTS_KEYS = new Set([
   'quotePolicy',
   'resourceGroupId',
   'storageCapacity',
+  'storageDimensions',
   'subscription',
   'subscriptionId',
   'tenantId',

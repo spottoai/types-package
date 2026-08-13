@@ -28,6 +28,9 @@ Folder `README.md` files are authoritative for local implementation details.
   their dependency-free rejection validators. AWS relationship graph DTOs,
   topology constants, and their closed runtime validator live in the same
   domain and are exported through both package entrypoints.
+  The same domain owns the immutable AWS Commitments Planning Portal envelope,
+  package logical name/registry relationship, and exact-account allowlist
+  validator; materialization and storage paths remain engine-owned.
   It also includes the secret-free AWS estates desired-state manifest,
   estate/account/billing-source orchestration commands, and company trust
   setup shapes. Engine persistence and saga types are intentionally excluded.

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
   AWS_PORTAL_ACCOUNT_SUMMARY_LOGICAL_NAME,
+  AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
   AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS,
@@ -328,6 +329,11 @@ const accountBodyDescriptor = {
 
 assert.deepEqual(AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS['account-summary-ai-cost-summary'].required, ['account-summary']);
 assert.equal(AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS.relationships.logicalName, 'relationships.json.gz');
+assert.deepEqual(AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS['commitments-planning'], {
+  logicalName: AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
+  required: [],
+  optional: [],
+});
 assert.deepEqual(validateAwsPortalResourceCollectionDetailArtifact(resource), resource);
 assert.deepEqual(validateAwsPortalAccountSummaryDetailArtifact(account), account);
 assert.deepEqual(validateAwsPortalResourceCollectionHistoryArtifact(resourceHistory), resourceHistory);

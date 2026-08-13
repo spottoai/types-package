@@ -56,6 +56,12 @@ branch, while the AWS branch requires a minimal account identity, `aws-native`
 source evidence, linked-account scope metadata, and provider-specific inventory
 shapes without introducing an AWS-only planning DTO.
 
+The root and `/aws` entry points also own the immutable AWS Commitments Planning
+Portal envelope, `commitments-planning.json.gz` logical name, artifact registry
+relationship, and dependency-free allowlist validator. The validator binds the
+envelope, provider scope, nested applied scopes, and account-bearing ARNs while
+rejecting internal metadata, Azure-only fields, and undeclared public fields.
+
 The root and `/aws` entry points export the secret-free `AwsEstatesManifest`,
 AWS estate/account/billing-source command union, and company trust-setup
 contracts. The API-owned desired-state document is stored as
