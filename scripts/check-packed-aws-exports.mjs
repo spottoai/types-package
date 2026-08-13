@@ -14,6 +14,125 @@ const azureSpSetupApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure
 const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-cloud-engine.consumer.ts.fixture');
 const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
 const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
+const artifactEvidenceConsumerSource = `
+import {
+  compareArtifactRevisionVector,
+  isArtifactOwnershipBinding,
+  isArtifactPublicationDecision,
+  isBillingAnalysisCurrentPointerV1,
+  isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputManifestV2,
+  isBillingAnalyzerOutputManifestV2,
+  isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisMetadataV2,
+  isCompletedAzureViewSetV2,
+  isCompletedViewManifestV3,
+  isEnforceableArtifactOwnershipBinding,
+  type ArtifactApplicabilityVerdict,
+  type ArtifactAttemptOutcome,
+  type ArtifactClaimDependencyDecision,
+  type ArtifactCoverageVerdict,
+  type ArtifactDependencyDescriptor,
+  type ArtifactEmptyEvidenceVerdict,
+  type ArtifactEvidenceVerdict,
+  type ArtifactFreshnessVerdict,
+  type ArtifactObservedRange,
+  type ArtifactOwnershipBinding,
+  type ArtifactProcessingLifecycle,
+  type ArtifactPublicationDecision,
+  type ArtifactPublicationVerdict,
+  type ArtifactRevisionComparison,
+  type ArtifactRevisionVector,
+  type ArtifactSupportVerdict,
+  type BillingAnalysisCurrentPointerV1,
+  type BillingAnalyzerInputCurrentPointerV1,
+  type BillingAnalyzerInputManifestV2,
+  type BillingAnalyzerOutputManifestV2,
+  type BillingAnalyzerRequestV2,
+  type BillingArtifactReadState,
+  type BillingCostAnalysisMetadata,
+  type BillingCostAnalysisMetadataV2,
+  type CompletedAzureViewSetV2,
+  type CompletedViewManifestV3,
+} from '@spottoai/types-package';
+
+const runtimeExports = [
+  compareArtifactRevisionVector,
+  isArtifactOwnershipBinding,
+  isArtifactPublicationDecision,
+  isBillingAnalysisCurrentPointerV1,
+  isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputManifestV2,
+  isBillingAnalyzerOutputManifestV2,
+  isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisMetadataV2,
+  isCompletedAzureViewSetV2,
+  isCompletedViewManifestV3,
+  isEnforceableArtifactOwnershipBinding,
+];
+
+type Dev1036PublishedTypes = [
+  ArtifactApplicabilityVerdict,
+  ArtifactAttemptOutcome,
+  ArtifactClaimDependencyDecision,
+  ArtifactCoverageVerdict,
+  ArtifactDependencyDescriptor,
+  ArtifactEmptyEvidenceVerdict,
+  ArtifactEvidenceVerdict,
+  ArtifactFreshnessVerdict,
+  ArtifactObservedRange,
+  ArtifactOwnershipBinding,
+  ArtifactProcessingLifecycle,
+  ArtifactPublicationDecision,
+  ArtifactPublicationVerdict,
+  ArtifactRevisionComparison,
+  ArtifactRevisionVector,
+  ArtifactSupportVerdict,
+  BillingAnalysisCurrentPointerV1,
+  BillingAnalyzerInputCurrentPointerV1,
+  BillingAnalyzerInputManifestV2,
+  BillingAnalyzerOutputManifestV2,
+  BillingAnalyzerRequestV2,
+  BillingArtifactReadState,
+  BillingCostAnalysisMetadata,
+  BillingCostAnalysisMetadataV2,
+  CompletedAzureViewSetV2,
+  CompletedViewManifestV3,
+];
+
+const legacyBillingMetadata = {
+  subscriptionId: 'sub-123',
+  billingGenerationId: 'billing-generation-v1',
+  chartData: {
+    schemaVersion: 1,
+    source: 'aggregated',
+    dataWindow: { startDate: 1782864000, endDate: 1785542400, pointCount: 0 },
+    views: {},
+    detectors: { threshold: 3, methods: [] },
+  },
+  anomalies: [],
+  currencyCode: 'NZD',
+  currencySymbol: '$',
+} satisfies BillingCostAnalysisMetadata;
+
+void runtimeExports;
+void legacyBillingMetadata;
+void (null as unknown as Dev1036PublishedTypes);
+`;
+const dev1036RuntimeExportNames = [
+  'compareArtifactRevisionVector',
+  'isArtifactOwnershipBinding',
+  'isArtifactPublicationDecision',
+  'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputManifestV2',
+  'isBillingAnalyzerOutputManifestV2',
+  'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisMetadataV2',
+  'isCompletedAzureViewSetV2',
+  'isCompletedViewManifestV3',
+  'isEnforceableArtifactOwnershipBinding',
+];
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -69,6 +188,7 @@ try {
   await copyFile(azureSpSetupCloudEngineFixturePath, join(consumerRoot, 'azure-sp-setup-cloud-engine.consumer.ts'));
   await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
+  await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
 
   run(
     npmCommand,
@@ -96,6 +216,7 @@ try {
       'azure-sp-setup-cloud-engine.consumer.ts',
       'azure-sp-setup-ui.consumer.ts',
       'commitments-planning.consumer.ts',
+      'artifact-evidence.consumer.ts',
     ],
     consumerRoot
   );
@@ -104,7 +225,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION !== 2 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME !== 'relationships.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function' || typeof aws.validateAwsPortalRelationshipArtifact !== 'function' || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
+      `import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION !== 2 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME !== 'relationships.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function' || typeof aws.validateAwsPortalRelationshipArtifact !== 'function' || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
     ],
     consumerRoot
   );
@@ -112,7 +233,7 @@ try {
     process.execPath,
     [
       '-e',
-      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); const recommendations = require('@spottoai/types-package/azure/recommendations'); const provider = require('@spottoai/types-package/common/provider'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function' || typeof root.validateAwsPortalRelationshipArtifact !== 'function' || typeof root.validateAwsCommitmentsPlanningViewIdentity !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
+      `const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); const recommendations = require('@spottoai/types-package/azure/recommendations'); const provider = require('@spottoai/types-package/common/provider'); const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function' || typeof root.validateAwsPortalRelationshipArtifact !== 'function' || typeof root.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
     ],
     consumerRoot
   );
