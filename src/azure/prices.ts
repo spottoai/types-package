@@ -1,6 +1,7 @@
 import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
+import type { CostComposition } from './costComposition.js';
 
 export type ResourceCostSource = SpendDataSource;
 
@@ -163,6 +164,7 @@ export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
   items: ResourceCostSummary[];
   billingActualThroughDate?: number;
   estimationCutoffStartDate?: number;
+  composition?: CostComposition;
 };
 
 export interface ResourceCostSummary {
@@ -236,6 +238,7 @@ export interface ResourceCostSummary {
   /** Optional resource-level cutoff markers (when attached at item level) */
   billingActualThroughDate?: number;
   estimationCutoffStartDate?: number;
+  composition?: CostComposition;
   /** Unit normalization/debug metadata */
   quantityRaw?: number;
   unitOfMeasureRaw?: string;
