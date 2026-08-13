@@ -88,6 +88,8 @@ export interface AzureResourcePortalItem {
   spendEstimated?: number;
   /** Estimated portion of amortized spend over the last 30 days */
   spendAmortizedEstimated?: number;
+  /** Number of covered days in the fixed 30-day spend window */
+  coverageDays?: number;
   /** Source of spend value */
   spendSource?: SpendDataSource;
   /** Confidence for spend source attribution */

@@ -14,8 +14,9 @@
     "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/aws/portalPublicArtifacts.contracts.spec.ts",
     "src/aws/portalRelationshipPublicArtifacts.contracts.spec.ts",
-    "src/azure/financialCorrectness.contracts.spec.ts",
+    "src/azure/billingGeneration.contracts.spec.ts",
     "src/azure/costComposition.contracts.spec.ts",
+    "src/azure/financialCorrectness.contracts.spec.ts",
     "src/azure/commitmentsPlanning.contracts.spec.ts",
     "src/azure/azureViewSet.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
@@ -28,6 +29,7 @@
     "src/azure/resourceOptimization.contracts.spec.ts",
     "src/azure/workManagement.contracts.spec.ts",
     "src/common/artifactGeneration.contracts.spec.ts",
+    "src/common/capabilityPassport.contracts.spec.ts",
     "src/common/provider.contracts.spec.ts",
     "tests/**/*.ts"
   ],

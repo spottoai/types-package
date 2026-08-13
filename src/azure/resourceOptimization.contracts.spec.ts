@@ -33,6 +33,7 @@ const portalResource: AzureResourcePortalItem = {
   location: 'australiaeast',
   spend: 2504.38,
   spendAmortized: 2504.38,
+  coverageDays: 22,
   recommendations: [],
   customRecommendations: [],
   optimizationProfile: {
