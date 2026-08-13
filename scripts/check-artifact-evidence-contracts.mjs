@@ -21,6 +21,8 @@ const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
+const isArrayIndex = segment => /^(0|[1-9]\d*)$/.test(segment);
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 
 const resolveMutationParent = (document, path) => {
   const segments = path.split('.');
@@ -28,14 +30,29 @@ const resolveMutationParent = (document, path) => {
 
   let target = document;
   for (const [index, segment] of segments.slice(0, -1).entries()) {
-    assert.ok(isRecord(target) || Array.isArray(target), `mutation path is not traversable: ${path}`);
-    if (target[segment] === undefined) {
-      target[segment] = /^\d+$/.test(segments[index + 1]) ? [] : {};
+    if (Array.isArray(target)) {
+      assert.ok(isArrayIndex(segment), `mutation path requires an array index: ${path}`);
+      assert.ok(Number(segment) < target.length && hasOwn(target, segment), `mutation array index does not exist: ${path}`);
+    } else {
+      assert.ok(isRecord(target), `mutation path requires an object parent: ${path}`);
+      assert.ok(!isArrayIndex(segment), `mutation path requires an object property: ${path}`);
+      assert.ok(hasOwn(target, segment), `mutation parent does not exist: ${path}`);
     }
+
     target = target[segment];
+    const nextSegment = segments[index + 1];
+    assert.ok(isArrayIndex(nextSegment) ? Array.isArray(target) : isRecord(target), `mutation parent has the wrong container shape: ${path}`);
   }
-  assert.ok(isRecord(target) || Array.isArray(target), `mutation parent is not traversable: ${path}`);
-  return { parent: target, key: segments.at(-1) };
+
+  const key = segments.at(-1);
+  if (Array.isArray(target)) {
+    assert.ok(isArrayIndex(key), `mutation target requires an array index: ${path}`);
+    assert.ok(Number(key) <= target.length, `mutation array target is out of range: ${path}`);
+  } else {
+    assert.ok(isRecord(target), `mutation target requires an object parent: ${path}`);
+    assert.ok(!isArrayIndex(key), `mutation target requires an object property: ${path}`);
+  }
+  return { parent: target, key };
 };
 
 const applyMutation = (document, mutation) => {
@@ -46,7 +63,8 @@ const applyMutation = (document, mutation) => {
 
   const { parent, key } = resolveMutationParent(document, mutation.path);
   if (deletesValue) {
-    if (Array.isArray(parent) && /^\d+$/.test(key)) parent.splice(Number(key), 1);
+    assert.ok(hasOwn(parent, key), `mutation delete target does not exist: ${mutation.path}`);
+    if (Array.isArray(parent)) parent.splice(Number(key), 1);
     else delete parent[key];
     return;
   }
@@ -63,7 +81,26 @@ const materializeCorpusCase = corpusCase => {
   return { base: fixtureBefore, document };
 };
 
-const isLegacyBillingCostAnalysisMetadata = value => {
+const mutationFailureCases = [
+  ['typoed intermediate parent', { path: 'dependenciez.0.name', value: 'billing-history' }],
+  ['missing delete target', { path: 'dependencies.0.missingField', delete: true }],
+  ['out-of-range array index', { path: 'dependencies.99.name', value: 'billing-history' }],
+];
+const mutationFailureResults = mutationFailureCases.map(([, mutation]) => {
+  try {
+    applyMutation(structuredClone(contractCorpus.fixtures.currentPopulatedDecision), mutation);
+    return false;
+  } catch {
+    return true;
+  }
+});
+assert.deepEqual(
+  mutationFailureResults,
+  mutationFailureCases.map(() => true),
+  'mutation materialization must fail fast for malformed paths'
+);
+
+const hasLegacyBillingCostAnalysisMetadataShape = value => {
   if (
     !isRecord(value) ||
     value.schemaVersion !== undefined ||
@@ -118,7 +155,7 @@ for (const corpusCase of contractCorpus.cases) {
 
   if (corpusCase.validator === 'billingCostAnalysisMetadataCompatibility') {
     assert.equal(isBillingCostAnalysisMetadataV2(document), false, `${corpusCase.name}: legacy V1 must not be treated as V2`);
-    assert.equal(isLegacyBillingCostAnalysisMetadata(document), corpusCase.valid, corpusCase.name);
+    assert.equal(hasLegacyBillingCostAnalysisMetadataShape(document), corpusCase.valid, `${corpusCase.name}: structural compatibility`);
     continue;
   }
 
@@ -358,6 +395,127 @@ const billingValidatorCases = [
 
 for (const [name, validator, value, expected] of billingValidatorCases) assert.equal(validator(value), expected, name);
 
+const harmlessAdditiveControlData = {
+  future: {
+    itemCount: 2,
+    reviewStatus: 'accepted',
+    resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
+  },
+};
+const billingControlDataCases = [
+  ['input manifest accepts harmless additive fields', isBillingAnalyzerInputManifestV2, { ...inputManifest, ...harmlessAdditiveControlData }, true],
+  [
+    'input manifest rejects a nested exact credential key',
+    isBillingAnalyzerInputManifestV2,
+    { ...inputManifest, future: { settings: { clientSecret: 'secret-example' } } },
+    false,
+  ],
+  [
+    'input manifest rejects an additive physical reference field',
+    isBillingAnalyzerInputManifestV2,
+    { ...inputManifest, future: { artifactPath: 'private/container/input.json' } },
+    false,
+  ],
+  [
+    'input manifest rejects an additive physical reference value',
+    isBillingAnalyzerInputManifestV2,
+    { ...inputManifest, future: { location: 'https://storage.example.invalid/input.json' } },
+    false,
+  ],
+  [
+    'request accepts harmless additive display metadata',
+    isBillingAnalyzerRequestV2,
+    { ...analyzerRequest, displayMetadata: harmlessAdditiveControlData },
+    true,
+  ],
+  [
+    'request rejects a nested exact credential key',
+    isBillingAnalyzerRequestV2,
+    { ...analyzerRequest, displayMetadata: { future: { apiKey: 'secret-example' } } },
+    false,
+  ],
+  [
+    'request rejects a physical reference field',
+    isBillingAnalyzerRequestV2,
+    { ...analyzerRequest, displayMetadata: { future: { storageUrl: 'private/container/input.json' } } },
+    false,
+  ],
+  [
+    'request rejects a physical reference value',
+    isBillingAnalyzerRequestV2,
+    { ...analyzerRequest, displayMetadata: { future: { location: 'file:///tmp/input.json' } } },
+    false,
+  ],
+  [
+    'output manifest accepts harmless additive fields',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, ...harmlessAdditiveControlData },
+    true,
+  ],
+  [
+    'output manifest rejects a nested exact credential key',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, future: { settings: { password: 'secret-example' } } },
+    false,
+  ],
+  [
+    'output manifest rejects an additive physical reference field',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, future: { blobPath: 'private/container/output.json' } },
+    false,
+  ],
+  [
+    'output manifest rejects an additive physical reference value',
+    isBillingAnalyzerOutputManifestV2,
+    { ...outputManifest, future: { location: '//storage.example/container/output.json' } },
+    false,
+  ],
+  [
+    'analysis pointer accepts harmless additive fields',
+    isBillingAnalysisCurrentPointerV1,
+    { ...analysisPointer, ...harmlessAdditiveControlData },
+    true,
+  ],
+  [
+    'analysis pointer rejects a nested exact credential key',
+    isBillingAnalysisCurrentPointerV1,
+    { ...analysisPointer, future: { settings: { accessKey: 'secret-example' } } },
+    false,
+  ],
+  [
+    'analysis pointer rejects an additive physical reference field',
+    isBillingAnalysisCurrentPointerV1,
+    { ...analysisPointer, future: { containerUri: 'private/container/output.json' } },
+    false,
+  ],
+  [
+    'analysis pointer rejects an additive physical reference value',
+    isBillingAnalysisCurrentPointerV1,
+    { ...analysisPointer, future: { location: '\\\\storage.example\\container\\output.json' } },
+    false,
+  ],
+  ['metadata accepts harmless additive fields', isBillingCostAnalysisMetadataV2, { ...costAnalysisMetadata, ...harmlessAdditiveControlData }, true],
+  [
+    'metadata rejects a nested exact credential key',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, future: { settings: { authorization: 'Bearer secret-example' } } },
+    false,
+  ],
+  [
+    'metadata rejects an additive physical reference field',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, future: { sourcePath: 'private/container/metadata.json' } },
+    false,
+  ],
+  [
+    'metadata rejects an additive physical reference value',
+    isBillingCostAnalysisMetadataV2,
+    { ...costAnalysisMetadata, future: { location: 'C:\\private\\metadata.json' } },
+    false,
+  ],
+];
+for (const [name, validator, value, expected] of billingControlDataCases) assert.equal(validator(value), expected, name);
+
 const ownershipValidatorCases = [
   ['ownership accepts observe-only absent epoch', isArtifactOwnershipBinding, withoutOwnershipEpoch(inputManifest).ownership, true],
   ['ownership rejects zero epoch', isArtifactOwnershipBinding, { ...ownership, ownershipEpochRevision: 0 }, false],
@@ -369,5 +527,6 @@ for (const [name, validator, value, expected] of ownershipValidatorCases) assert
 process.stdout.write(
   `Artifact evidence contract checks passed: ${contractCorpus.cases.length} corpus cases, ${mutationCount} mutations, ` +
     `${contractCorpus.revisionComparisons.length} revision comparisons, ${billingValidatorCases.length} billing checks, ` +
-    `${ownershipValidatorCases.length} ownership checks.\nArtifact evidence corpus SHA-256: ${corpusDigest}\n`
+    `${billingControlDataCases.length} control-data checks, ${ownershipValidatorCases.length} ownership checks, ` +
+    `${mutationFailureCases.length} mutation fail-fast checks.\nArtifact evidence corpus SHA-256: ${corpusDigest}\n`
 );

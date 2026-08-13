@@ -1,4 +1,4 @@
-import { copyFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -14,6 +14,9 @@ const azureSpSetupApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure
 const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-cloud-engine.consumer.ts.fixture');
 const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
 const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
+const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
+const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
+const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
 const artifactEvidenceConsumerSource = `
 import {
   compareArtifactRevisionVector,
@@ -100,20 +103,7 @@ type Dev1036PublishedTypes = [
   CompletedViewManifestV3,
 ];
 
-const legacyBillingMetadata = {
-  subscriptionId: 'sub-123',
-  billingGenerationId: 'billing-generation-v1',
-  chartData: {
-    schemaVersion: 1,
-    source: 'aggregated',
-    dataWindow: { startDate: 1782864000, endDate: 1785542400, pointCount: 0 },
-    views: {},
-    detectors: { threshold: 3, methods: [] },
-  },
-  anomalies: [],
-  currencyCode: 'NZD',
-  currencySymbol: '$',
-} satisfies BillingCostAnalysisMetadata;
+const legacyBillingMetadata = ${legacyBillingMetadataLiteral} satisfies BillingCostAnalysisMetadata;
 
 void runtimeExports;
 void legacyBillingMetadata;
