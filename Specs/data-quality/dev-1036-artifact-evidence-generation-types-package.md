@@ -135,7 +135,7 @@ Steps:
 
 1. Add valid cases for current populated evidence, proven complete-empty, stale last-known-good, partial optional dependency, V1 compatibility, and additive unknown fields.
 2. Add invalid cases for complete-empty without proof, failed attempt published completed, missing epoch in enforceable pointer, zero/negative revision, unsafe path, malformed SHA-256, cross-subscription ownership, unknown version, and equal revisions with conflicting fixture digests.
-3. Add compile assertions for every public type name above and `@ts-expect-error` assertions for impossible discriminated-union combinations.
+3. Add compile assertions for the Task 2 common public surface (`ArtifactOwnershipBinding`, `ArtifactRevisionVector`, `ArtifactRevisionComparison`, `BillingArtifactReadState`, publication decisions, validators, and comparator) plus `@ts-expect-error` assertions for impossible discriminated-union combinations. Add billing document assertions in Task 3 and view-generation assertions in Task 4 so each task can complete its own RED-to-GREEN cycle.
 4. Run `npm run typecheck:contracts`; expected result before Task 2: failure because `artifactEvidence.ts` and validators do not exist.
 
 Done when the failing output names missing DEV-1036 contracts rather than unrelated package errors.
@@ -178,7 +178,8 @@ Steps:
 5. Define output manifest and current pointer so both bind the exact input/output digests, ownership, revisions, publication decision, and immutable manifest paths.
 6. Define `BillingCostAnalysisMetadataV2` with required `artifactState` and evidence details while leaving `BillingCostAnalysisMetadata` V1 source-compatible.
 7. Add strict validators for known fields and versions while allowing additive-next unknown object fields.
-8. Run `npm run typecheck:contracts && npm run build`; expected result: both V1 and V2 declarations compile.
+8. Add compile assertions for every Task 3 billing public type and validator listed under Interfaces.
+9. Run `npm run typecheck:contracts && npm run build`; expected result: both V1 and V2 declarations compile.
 
 Done when a V2 pointer cannot validate without enforceable ownership, completed publication, matching subscription/generation identities, canonical paths, revisions, and two valid digests.
 
@@ -197,7 +198,8 @@ Steps:
 2. Define `CompletedAzureViewSetV2` with portal/plugin V3 references, composite dependency digest, revision vector, and promoted publication decision.
 3. Make both validators reject a `completed` claim with blocking required dependencies, unverified billing/economics evidence, mismatched ownership, missing artifact descriptors, or invalid revision state.
 4. Keep V2/V1 validators and exports unchanged for reader-first migration.
-5. Run `npm run typecheck:contracts && npm run check:azure-view-set-contracts`; expected result: V1/V2 regression cases and new V3/V2 cases pass.
+5. Add compile assertions for `CompletedViewManifestV3`, `CompletedAzureViewSetV2`, and their validators.
+6. Run `npm run typecheck:contracts && npm run check:azure-view-set-contracts`; expected result: V1/V2 regression cases and new V3/V2 cases pass.
 
 Done when enforced views have a new schema contract and no runtime-added `unknown` dependency is needed for migrated writers.
 
