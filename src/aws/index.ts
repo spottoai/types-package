@@ -5,6 +5,8 @@ export * from './pluginPublicArtifacts';
 export * from './pluginPublicArtifactEvidence';
 export * from './pluginPublicArtifactValidation';
 export * from './portalPublicArtifacts';
+export * from './portalCommitmentsPlanningPublicArtifacts';
+export * from './portalCommitmentsPlanningPublicArtifactValidation';
 export * from './portalRelationshipPublicArtifacts';
 export * from './portalRelationshipResourceNodeTypes';
 export * from './portalRelationshipPublicArtifactValidation';

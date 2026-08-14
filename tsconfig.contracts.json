@@ -13,6 +13,7 @@
     "src/aws/publicArtifacts.contracts.spec.ts",
     "src/aws/pluginPublicArtifacts.contracts.spec.ts",
     "src/aws/portalPublicArtifacts.contracts.spec.ts",
+    "src/aws/portalCommitmentsPlanningPublicArtifacts.contracts.spec.ts",
     "src/aws/portalRelationshipPublicArtifacts.contracts.spec.ts",
     "src/azure/billingGeneration.contracts.spec.ts",
     "src/azure/billingArtifactGeneration.contracts.spec.ts",

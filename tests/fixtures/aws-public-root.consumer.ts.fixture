@@ -7,6 +7,7 @@ import {
   AWS_ESTATES_MANIFEST_PROVIDER,
   AWS_ESTATES_MANIFEST_SCHEMA_VERSION,
   AWS_FORBIDDEN_CREDENTIAL_FIELDS,
+  AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME as ROOT_AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
   type ArtifactGenerationManifest,
   type AwsCommand,
   type AwsCommandAction,
@@ -21,10 +22,13 @@ import {
   ProviderName,
   type ResourceCostPeriodMetadata,
   type ResourceSpend,
+  validateAwsPortalCommitmentsPlanningArtifact as validateRootAwsPortalCommitmentsPlanningArtifact,
+  type AwsPortalCommitmentsPlanningArtifact as RootAwsPortalCommitmentsPlanningArtifact,
 } from '@spottoai/types-package';
 import {
   AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
+  AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
   AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
@@ -38,6 +42,7 @@ import {
   validateAwsPluginSubscriptionDetailArtifact,
   validateAwsPortalAccountSummaryAiCostSummaryArtifact,
   validateAwsPortalAccountSummaryDetailArtifact,
+  validateAwsPortalCommitmentsPlanningArtifact,
   validateAwsPortalResourceCollectionDetailArtifact,
   validateAwsPortalRelationshipArtifact,
   type AwsPluginGenerationManifest,
@@ -48,6 +53,7 @@ import {
   type AwsPortalAccountSummaryArtifact,
   type AwsPortalAccountSummaryAiCostSummaryArtifact,
   type AwsPortalAccountSummaryDetailArtifact,
+  type AwsPortalCommitmentsPlanningArtifact,
   type AwsPortalLifecycleArtifact,
   type AwsPortalRelationshipArtifact,
   type AwsPortalPublicLogicalName,
@@ -72,23 +78,29 @@ const pluginValidators = [
   validateAwsPluginGenerationManifest,
 ] as const;
 const portalArtifactConstants = [
+  ROOT_AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME,
   AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
+  AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
   AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME,
   AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION,
 ] as const;
 const relationshipLogicalName: AwsPortalPublicLogicalName = AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME;
 const portalArtifactValidators = [
+  validateRootAwsPortalCommitmentsPlanningArtifact,
   validateAwsPortalResourceCollectionDetailArtifact,
   validateAwsPortalAccountSummaryDetailArtifact,
   validateAwsPortalAccountSummaryAiCostSummaryArtifact,
+  validateAwsPortalCommitmentsPlanningArtifact,
   validateAwsPortalRelationshipArtifact,
 ] as const;
 type PackedAwsPortalContracts =
+  | RootAwsPortalCommitmentsPlanningArtifact
   | AwsPortalResourceCollectionDetailArtifact
   | AwsPortalAccountSummaryDetailArtifact
   | AwsPortalAccountSummaryAiCostSummaryArtifact
+  | AwsPortalCommitmentsPlanningArtifact
   | AwsPortalRelationshipArtifact;
 const packedRelationshipScope: PublicRelationshipProviderScope = {
   providerName: ProviderName.Aws,
@@ -99,6 +111,7 @@ type PackedAwsPublicArtifacts =
   | AwsPortalResourceCollectionArtifact
   | AwsPortalRelationshipArtifact
   | AwsPortalLifecycleArtifact
+  | AwsPortalCommitmentsPlanningArtifact
   | AwsPluginSubscriptionArtifact
   | AwsPluginResourceArtifact;
 

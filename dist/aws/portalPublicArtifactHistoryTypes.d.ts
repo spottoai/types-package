@@ -28,6 +28,11 @@ export declare const AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS: {
         readonly required: readonly ["account-summary"];
         readonly optional: readonly [];
     };
+    readonly 'commitments-planning': {
+        readonly logicalName: "commitments-planning.json.gz";
+        readonly required: readonly [];
+        readonly optional: readonly [];
+    };
     readonly relationships: {
         readonly logicalName: "relationships.json.gz";
         readonly required: readonly [];

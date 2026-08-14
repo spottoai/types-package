@@ -236,6 +236,12 @@ const invalidAwsStorageCapacity = {
   storageCapacity: {},
 } satisfies AwsCommitmentsPlanningView;
 
+const invalidAwsBreakCost = {
+  ...awsInventoryItem,
+  // @ts-expect-error Azure refund/break-cost evidence is forbidden on AWS inventory.
+  breakCostEstimate: { status: 'estimated', policySource: 'azure-policy', confidence: 'high' },
+} satisfies AwsCommitmentsInventoryItem;
+
 const invalidAwsCredentialHealth = {
   ...awsView,
   // @ts-expect-error Internal Azure credential health is forbidden on AWS views.
@@ -289,6 +295,7 @@ void [
   invalidAwsRecommendationEligibility,
   invalidAwsPricingQuote,
   invalidAwsStorageCapacity,
+  invalidAwsBreakCost,
   invalidAwsCredentialHealth,
   invalidCommitmentFamily,
   invalidSourceKind,

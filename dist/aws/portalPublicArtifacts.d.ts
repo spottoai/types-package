@@ -2,6 +2,7 @@ import type { JsonObject, JsonValue } from '../common/artifactGeneration';
 import type { AwsPublicArtifactEnvelope } from './publicArtifacts';
 import type { AwsPortalAiAudience } from './portalPublicArtifactHistoryTypes';
 import type { AwsPortalBillingBenefitCoverage, AwsPortalBillingBenefitCoverageWarning, AwsPortalBillingCommitmentSpend, AwsPortalBillingCostView, AwsPortalRecommendationLatestActionExecution, AwsPortalRecommendationSavingsVerification, AwsPortalRecommendationTemplateProvenanceSource } from './portalPublicArtifactNestedEvidence';
+import { AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME } from './portalCommitmentsPlanningPublicArtifacts';
 import { AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME } from './portalRelationshipPublicArtifacts';
 export declare const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION: 1;
 export declare const AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME: "resources.json.gz";
@@ -10,7 +11,7 @@ export declare const AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME: "a
 export type AwsPortalHistorySha256 = string;
 export type AwsPortalResourceCollectionHistoryLogicalName = `resources-history--${string}.json.gz`;
 export type AwsPortalAccountSummaryHistoryLogicalName = `account-summary-history--${string}.json.gz`;
-export type AwsPortalPublicLogicalName = typeof AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME | typeof AWS_PORTAL_ACCOUNT_SUMMARY_LOGICAL_NAME | typeof AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME | typeof AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME | AwsPortalResourceCollectionHistoryLogicalName | AwsPortalAccountSummaryHistoryLogicalName;
+export type AwsPortalPublicLogicalName = typeof AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME | typeof AWS_PORTAL_ACCOUNT_SUMMARY_LOGICAL_NAME | typeof AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME | typeof AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME | typeof AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME | AwsPortalResourceCollectionHistoryLogicalName | AwsPortalAccountSummaryHistoryLogicalName;
 export declare function buildAwsPortalResourceCollectionHistoryLogicalName(identitySha256: AwsPortalHistorySha256): AwsPortalResourceCollectionHistoryLogicalName;
 export declare function buildAwsPortalAccountSummaryHistoryLogicalName(identitySha256: AwsPortalHistorySha256): AwsPortalAccountSummaryHistoryLogicalName;
 export interface AwsPortalBillingPeriod {

@@ -44,6 +44,11 @@ import { User } from '@spottoai/types-package';
 
 // Import AWS-only public artifact contracts
 import type { AwsPortalAccountSummaryArtifact, AwsPortalResourceCollectionArtifact } from '@spottoai/types-package/aws';
+
+// Import AWS relationship or commitments validators without loading the
+// compatibility-wide AWS barrel.
+import { validateAwsPortalRelationshipArtifact } from '@spottoai/types-package/aws/relationships';
+import { validateAwsCommitmentsPlanningViewIdentity } from '@spottoai/types-package/aws/commitments-planning';
 ```
 
 The root entry point also exports the provider-neutral artifact generation,
@@ -81,6 +86,18 @@ Azure and AWS. Existing Azure artifacts remain compatible through the legacy
 branch, while the AWS branch requires a minimal account identity, `aws-native`
 source evidence, linked-account scope metadata, and provider-specific inventory
 shapes without introducing an AWS-only planning DTO.
+
+The root and `/aws` entry points also own the immutable AWS Commitments Planning
+Portal envelope, `commitments-planning.json.gz` logical name, artifact registry
+relationship, and dependency-free allowlist validator. The validator binds the
+envelope, provider scope, nested applied scopes, and account-bearing ARNs while
+rejecting internal metadata, Azure-only fields, and undeclared public fields.
+
+The stable `/aws/relationships` and `/aws/commitments-planning` entry points
+expose those runtime contracts independently for browser consumers. The root
+and `/aws` barrels remain compatibility entry points and continue to export the
+same symbols. Package `import` conditions use tree-shakable native ESM while
+`require` conditions retain the CommonJS compatibility build.
 
 The root and `/aws` entry points export the secret-free `AwsEstatesManifest`,
 AWS estate/account/billing-source command union, and company trust-setup

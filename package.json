@@ -1,13 +1,20 @@
 {
   "name": "@spottoai/types-package",
-  "version": "1.0.2-beta.353",
+  "version": "1.0.2-beta.356",
   "description": "Shared TypeScript interfaces for SpottoAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "sideEffects": false,
   "typesVersions": {
     "*": {
       "aws": [
         "dist/aws/index.d.ts"
+      ],
+      "aws/relationships": [
+        "dist/aws/relationships.d.ts"
+      ],
+      "aws/commitments-planning": [
+        "dist/aws/commitments-planning.d.ts"
       ],
       "azure/recommendations": [
         "dist/azure/recommendations.d.ts"
@@ -20,22 +27,32 @@
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
+      "import": "./dist/esm/entries/root.js",
       "require": "./dist/index.js"
     },
     "./aws": {
       "types": "./dist/aws/index.d.ts",
-      "import": "./dist/aws/index.js",
+      "import": "./dist/esm/entries/aws.js",
       "require": "./dist/aws/index.js"
+    },
+    "./aws/relationships": {
+      "types": "./dist/aws/relationships.d.ts",
+      "import": "./dist/esm/entries/relationships.js",
+      "require": "./dist/aws/portalRelationshipPublicArtifactValidation.js"
+    },
+    "./aws/commitments-planning": {
+      "types": "./dist/aws/commitments-planning.d.ts",
+      "import": "./dist/esm/entries/commitments-planning.js",
+      "require": "./dist/aws/commitmentsPlanningValidation.js"
     },
     "./azure/recommendations": {
       "types": "./dist/azure/recommendations.d.ts",
-      "import": "./dist/azure/recommendations.js",
+      "import": "./dist/esm/entries/recommendations.js",
       "require": "./dist/azure/recommendations.js"
     },
     "./common/provider": {
       "types": "./dist/common/provider.d.ts",
-      "import": "./dist/common/provider.js",
+      "import": "./dist/esm/entries/provider.js",
       "require": "./dist/common/provider.js"
     }
   },
@@ -43,7 +60,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc && npm run typecheck:contracts",
+    "build": "tsc && tsc --project tsconfig.esm.json && node scripts/finalize-esm-build.mjs && npm run typecheck:contracts",
     "typecheck:contracts": "tsc --noEmit --project tsconfig.contracts.json",
     "dev": "tsc --watch",
     "clean": "rimraf dist",

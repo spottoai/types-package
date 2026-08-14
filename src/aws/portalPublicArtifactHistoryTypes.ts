@@ -14,6 +14,7 @@ import {
   type AwsPortalResourceCollectionScope,
 } from './portalPublicArtifacts';
 import type { AwsPortalAccountSummaryAiRecommendationPosture } from './portalPublicArtifactNestedEvidence';
+import { AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME } from './portalCommitmentsPlanningPublicArtifacts';
 import { AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME } from './portalRelationshipPublicArtifacts';
 
 export const AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS = {
@@ -40,6 +41,11 @@ export const AWS_PORTAL_PUBLIC_ARTIFACT_RELATIONSHIPS = {
   'account-summary-ai-cost-summary': {
     logicalName: AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME,
     required: ['account-summary'],
+    optional: [],
+  },
+  'commitments-planning': {
+    logicalName: AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
+    required: [],
     optional: [],
   },
   relationships: {

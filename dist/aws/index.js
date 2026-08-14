@@ -21,6 +21,8 @@ __exportStar(require("./pluginPublicArtifacts"), exports);
 __exportStar(require("./pluginPublicArtifactEvidence"), exports);
 __exportStar(require("./pluginPublicArtifactValidation"), exports);
 __exportStar(require("./portalPublicArtifacts"), exports);
+__exportStar(require("./portalCommitmentsPlanningPublicArtifacts"), exports);
+__exportStar(require("./portalCommitmentsPlanningPublicArtifactValidation"), exports);
 __exportStar(require("./portalRelationshipPublicArtifacts"), exports);
 __exportStar(require("./portalRelationshipResourceNodeTypes"), exports);
 __exportStar(require("./portalRelationshipPublicArtifactValidation"), exports);

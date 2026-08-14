@@ -11,6 +11,7 @@ import type {
   AwsPortalRecommendationTemplateProvenanceSource,
 } from './portalPublicArtifactNestedEvidence';
 import { sha256AwsPluginIdentity } from './pluginPublicArtifacts';
+import { AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME } from './portalCommitmentsPlanningPublicArtifacts';
 import { AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME } from './portalRelationshipPublicArtifacts';
 
 export const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
@@ -25,6 +26,7 @@ export type AwsPortalPublicLogicalName =
   | typeof AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME
   | typeof AWS_PORTAL_ACCOUNT_SUMMARY_LOGICAL_NAME
   | typeof AWS_PORTAL_ACCOUNT_SUMMARY_AI_COST_SUMMARY_LOGICAL_NAME
+  | typeof AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME
   | typeof AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME
   | AwsPortalResourceCollectionHistoryLogicalName
   | AwsPortalAccountSummaryHistoryLogicalName;

@@ -583,12 +583,14 @@ export interface AwsCommitmentsAppliedScopeProperties {
 
 export type AwsCommitmentsInventoryItem = Omit<
   CommitmentsInventoryItem,
-  'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId'
+  'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId' | 'breakCostEstimate' | 'storageDimensions'
 > & {
   sourceKind: 'aws-native';
   provider: ProviderName.Aws;
   shape?: AwsCommitmentShape;
   subscriptionId?: never;
+  breakCostEstimate?: never;
+  storageDimensions?: never;
   appliedScopeType: 'linked-account';
   appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
 };

@@ -12,6 +12,7 @@ export const AWS_PUBLIC_ARTIFACT_TYPES = [
   'account-summary',
   'account-summary-history',
   'account-summary-ai-cost-summary',
+  'commitments-planning',
   'relationships',
   'lifecycle',
   'plugin-subscription',

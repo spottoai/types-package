@@ -1,0 +1,14 @@
+export const GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-01.slim-v1';
+export const GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.graph-v1';
+export const GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-05-14.identity-access-v2';
+export const TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION = '2026-05-02.tenant-slim-v1';
+export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v1';
+export const GLOBAL_ADMIN_RAW_SCHEMA_VERSION = '2026-06-24.global-admin-raw-v1';
+export const PRIVILEGED_ROLE_SUMMARY_SCHEMA_VERSION = '2026-06-24.privileged-role-summary-v1';
+export const TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-06-24.tenant-governance-access-v1';
+export const GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz';
+export const GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz';
+export const GOVERNANCE_ACCESS_PORTAL_FILE = 'governance-access.json.gz';
+export const TENANT_GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz';
+export const TENANT_GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz';
+export const TENANT_GOVERNANCE_ACCESS_PORTAL_FILE = 'governance-access.json.gz';

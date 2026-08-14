@@ -5,6 +5,7 @@ const provider_js_1 = require("../common/provider.js");
 const pluginPublicArtifactValidationHelpers_js_1 = require("./pluginPublicArtifactValidationHelpers.js");
 const FORBIDDEN_AWS_COMMITMENTS_KEYS = new Set([
     'billingScopeId',
+    'breakCostEstimate',
     'cloudAccountId',
     'companyId',
     'credentialHealth',
@@ -14,6 +15,7 @@ const FORBIDDEN_AWS_COMMITMENTS_KEYS = new Set([
     'quotePolicy',
     'resourceGroupId',
     'storageCapacity',
+    'storageDimensions',
     'subscription',
     'subscriptionId',
     'tenantId',

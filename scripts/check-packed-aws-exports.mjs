@@ -14,6 +14,7 @@ const azureSpSetupApiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure
 const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-cloud-engine.consumer.ts.fixture');
 const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
 const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
+const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narrow-aws-runtime.consumer.ts.fixture');
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
@@ -224,6 +225,7 @@ try {
   await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
+  await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
 
   run(
     npmCommand,
@@ -252,6 +254,7 @@ try {
       'azure-sp-setup-ui.consumer.ts',
       'commitments-planning.consumer.ts',
       'artifact-evidence.consumer.ts',
+      'narrow-aws-runtime.consumer.ts',
     ],
     consumerRoot
   );
@@ -267,13 +270,30 @@ try {
   run(
     process.execPath,
     [
+      '--input-type=module',
+      '-e',
+      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import relationships from '@spottoai/types-package/aws/relationships'; import commitments from '@spottoai/types-package/aws/commitments-planning'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || root.AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME !== 'commitments-planning.json.gz' || typeof root.validateAwsPortalCommitmentsPlanningArtifact !== 'function' || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION !== 2 || aws.AWS_PORTAL_RELATIONSHIP_CONFIDENCE_SCORES.high !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('commitments-planning') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME !== 'relationships.json.gz' || aws.AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME !== 'commitments-planning.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function' || typeof aws.validateAwsPortalRelationshipArtifact !== 'function' || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof aws.validateAwsPortalCommitmentsPlanningArtifact !== 'function' || typeof relationships.validateAwsPortalRelationshipArtifact !== 'function' || typeof commitments.validateAwsCommitmentsPlanningViewIdentity !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
       '-e',
       `const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); const recommendations = require('@spottoai/types-package/azure/recommendations'); const provider = require('@spottoai/types-package/common/provider'); const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; const documents = ${digestRepairRuntimeDocuments}; const manifestBinding = root.projectBillingOutputBindingV1FromManifest(documents.outputManifest); const metadataBinding = root.projectBillingOutputBindingV1FromMetadata(documents.metadata); const bindingCanonical = root.canonicalizeBillingOutputBindingV1(manifestBinding); const metadataBindingCanonical = root.canonicalizeBillingOutputBindingV1(metadataBinding); const inputPreimage = root.canonicalizeBillingAnalyzerInputManifestV2ForDigest(documents.inputManifest); const outputPreimage = root.canonicalizeBillingAnalyzerOutputManifestV2ForDigest(documents.outputManifest); if (JSON.stringify(manifestBinding) !== JSON.stringify(metadataBinding) || bindingCanonical !== metadataBindingCanonical || !bindingCanonical.includes('"kind":"billing-analysis-output"') || inputPreimage.includes('"manifestDigest"') || outputPreimage.includes('"manifestDigest"') || !outputPreimage.includes('"outputBindingDigest"') || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function' || typeof root.validateAwsPortalRelationshipArtifact !== 'function' || typeof root.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
     ],
     consumerRoot
   );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const root = require('@spottoai/types-package'); const aws = require('@spottoai/types-package/aws'); const relationships = require('@spottoai/types-package/aws/relationships'); const commitments = require('@spottoai/types-package/aws/commitments-planning'); const recommendations = require('@spottoai/types-package/azure/recommendations'); const provider = require('@spottoai/types-package/common/provider'); if (root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_CONFIDENCE_SCORES.high !== 1 || typeof root.validateAwsPluginSubscriptionDetailArtifact !== 'function' || typeof aws.buildAwsPluginResourceLogicalName !== 'function' || typeof root.validateAwsPortalResourceCollectionDetailArtifact !== 'function' || typeof root.validateAwsPortalRelationshipArtifact !== 'function' || typeof root.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof relationships.validateAwsPortalRelationshipArtifact !== 'function' || typeof commitments.validateAwsCommitmentsPlanningViewIdentity !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
+    ],
+    consumerRoot
+  );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS plus API/cloud-engine/UI consumers verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/narrow runtime plus API/cloud-engine/UI consumers verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
