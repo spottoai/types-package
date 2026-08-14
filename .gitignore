@@ -95,6 +95,8 @@ jspm_packages/
 samples/
 
 specs/*
+!Specs/data-quality/
+!Specs/data-quality/dev-1036-artifact-evidence-generation-types-package.md
 !Specs/cost-savings/
 !Specs/cost-savings/resource-recommendation-savings-details/
 !Specs/cost-savings/resource-recommendation-savings-details/resource-recommendation-savings-details-types-package.md

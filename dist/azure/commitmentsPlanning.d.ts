@@ -1,14 +1,43 @@
+import type { ProviderName, ProviderScope } from '../common/provider.js';
 import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization, IBenefitWeightedUtilizationAggregate } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
 export type CommitmentsCommitmentFamily = 'compute-reservation' | 'compute-savings-plan' | 'app-service-reservation' | 'managed-disk-reservation' | 'blob-storage-reserved-capacity' | 'adls-reserved-capacity' | 'azure-files-reservation' | 'redis-reserved-capacity' | 'sql-reserved-capacity' | 'mysql-reserved-capacity' | 'postgresql-reserved-capacity' | 'mariadb-reserved-capacity' | 'cosmos-db-reserved-capacity' | 'azure-openai-provisioned-throughput-reservation' | 'generic-reservation';
-export type CommitmentsSourceKind = 'azure-native' | 'spotto-derived' | 'fallback-heuristic' | 'manual' | 'unknown';
+export type CommitmentsSourceKind = 'azure-native' | 'aws-native' | 'spotto-derived' | 'fallback-heuristic' | 'manual' | 'unknown';
 export type CommitmentsConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none' | 'unknown';
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
-export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'management-group' | 'shared' | 'unknown';
+export interface CommitmentsAppliedScopeProperties {
+    subscriptionId?: string;
+    resourceGroupId?: string;
+    tenantId?: string;
+    managementGroupId?: string;
+    accountId?: string;
+    region?: string;
+    availabilityZone?: string;
+}
+/** Public identity for an Azure commitments artifact. */
+export interface AzureCommitmentsPlanningProviderScope extends ProviderScope {
+    providerName: ProviderName.Azure;
+    companyId?: never;
+    scopeType?: never;
+    name?: never;
+    cloudAccountId?: never;
+    status?: never;
+}
+/** Public identity for an AWS commitments artifact. */
+export interface AwsCommitmentsPlanningProviderScope extends ProviderScope {
+    providerName: ProviderName.Aws;
+    companyId?: never;
+    scopeType?: never;
+    name?: never;
+    cloudAccountId?: never;
+    status?: never;
+}
+export type CommitmentsPlanningProviderScope = AzureCommitmentsPlanningProviderScope | AwsCommitmentsPlanningProviderScope;
 export type CommitmentsInventoryStatus = 'active' | 'expired' | 'cancelled' | 'failed' | 'pending' | 'split' | 'merged' | 'warning' | 'no-benefit' | 'payment-error' | 'capacity-error' | 'exchanged' | 'restricted' | 'unknown';
 export type CommitmentsReservationUnit = 'hour' | '10-tib-month' | '100-tib-month' | '1-pib-month'
 /** Compatibility value still emitted by the current storage-capacity producer. */
@@ -24,14 +53,13 @@ export type CommitmentsStorageBillingModel = 'blob-standard' | 'gpv2-standard' |
  | 'standard'
 /** Compatibility value still emitted by the current storage-capacity producer. */
  | 'premium' | 'unknown';
-export interface CommitmentsPlanningView {
+export interface CommitmentsPlanningViewBase<TInventoryItem extends CommitmentsInventoryItem = CommitmentsInventoryItem, TPurchaseRecommendation extends CommitmentsPurchaseRecommendation = CommitmentsPurchaseRecommendation> {
     version: CommitmentsPlanningVersion;
     generatedAt: string;
     month?: string;
-    subscription?: SubscriptionSummaryLite;
     utilizationSummary: CommitmentsUtilizationSummary;
     expirySummary: CommitmentsExpirySummary;
-    inventory: CommitmentsInventoryItem[];
+    inventory: TInventoryItem[];
     resourceCoverage: CommitmentsResourceCoverageItem[];
     obsoleteCandidates: CommitmentsObsoleteCandidate[];
     reallocationOpportunities?: CommitmentsReallocationOpportunity[];
@@ -40,7 +68,7 @@ export interface CommitmentsPlanningView {
     freshness?: CommitmentsFreshnessSummary;
     /** @deprecated Legacy read compatibility only. New artifacts should use purchaseRecommendations. */
     vendorRecommendations?: CommitmentsVendorRecommendation[];
-    purchaseRecommendations?: CommitmentsPurchaseRecommendation[];
+    purchaseRecommendations?: TPurchaseRecommendation[];
     diagnostics?: CommitmentsPlanningDiagnostics;
     coverage?: CommitmentsCoverageSummary[];
     renewals?: CommitmentsRenewalDecision[];
@@ -50,6 +78,34 @@ export interface CommitmentsPlanningView {
     retirementImpact?: CommitmentsRetirementImpactScenario[];
     phasedOptions?: CommitmentsPhasedOption[];
 }
+/**
+ * Backward-compatible commitments view surface.
+ *
+ * New provider-aware producers and runtime validators should use
+ * ProviderScopedCommitmentsPlanningView instead.
+ */
+export interface CommitmentsPlanningView extends CommitmentsPlanningViewBase {
+    providerScope?: CommitmentsPlanningProviderScope;
+    subscription?: SubscriptionSummaryLite;
+}
+/** Legacy Azure wire shape retained unchanged while Azure producers migrate. */
+export interface LegacyCommitmentsPlanningView extends CommitmentsPlanningView {
+    providerScope?: never;
+}
+/** Provider-aware Azure wire shape. Route validation must compare both identities. */
+export interface AzureCommitmentsPlanningView extends CommitmentsPlanningView {
+    providerScope: AzureCommitmentsPlanningProviderScope;
+    subscription: SubscriptionSummaryLite;
+}
+/** AWS wire shape with an account identity and AWS-specific inventory and recommendation evidence. */
+export interface AwsCommitmentsPlanningView extends CommitmentsPlanningViewBase<AwsCommitmentsInventoryItem, AwsCommitmentsPurchaseRecommendation> {
+    providerScope: AwsCommitmentsPlanningProviderScope;
+    subscription?: never;
+    credentialHealth?: never;
+    storageCapacity?: never;
+}
+/** Strict provider-aware contract for new producers and validation boundaries. */
+export type ProviderScopedCommitmentsPlanningView = AzureCommitmentsPlanningView | AwsCommitmentsPlanningView;
 export interface CommitmentsUtilizationSummary {
     total: number;
     withData: number;
@@ -80,14 +136,11 @@ export interface CommitmentsInventoryItem {
     commitmentFamily?: CommitmentsCommitmentFamily;
     sourceKind?: CommitmentsSourceKind;
     sourceId?: string;
+    provider?: ProviderName;
+    shape?: CommitmentShape;
     scope: BenefitScope;
     appliedScopeType?: CommitmentsAppliedScopeType;
-    appliedScopeProperties?: {
-        subscriptionId?: string;
-        resourceGroupId?: string;
-        tenantId?: string;
-        managementGroupId?: string;
-    };
+    appliedScopeProperties?: CommitmentsAppliedScopeProperties;
     type: string;
     displayName?: string;
     status: CommitmentsInventoryStatus;
@@ -170,6 +223,7 @@ export interface CommitmentShape {
     normalizedSkuName?: string;
     location?: string;
     region?: string;
+    availabilityZone?: string;
     platform?: 'linux' | 'windows' | 'unknown';
     reservationProductName?: string;
     reservedResourceType?: string;
@@ -179,6 +233,9 @@ export interface CommitmentShape {
     unit?: CommitmentsReservationUnit | string;
     attributes?: Record<string, string | number | boolean | undefined>;
 }
+export type AwsCommitmentShape = Omit<CommitmentShape, 'provider'> & {
+    provider: 'aws';
+};
 export interface CommitmentEligibilityBlocker {
     code: 'unsupported-current-shape' | 'dynamic-workload' | 'existing-coverage' | 'missing-usage-evidence' | 'missing-price-meter' | 'non-covered-charge' | 'unsupported-charge-category' | 'unsupported-reservation-family' | 'unknown';
     message: string;
@@ -233,6 +290,16 @@ export interface CommitmentsSourceMetadata {
     observedAt?: string;
     notes?: string[];
 }
+export type AwsCommitmentsSourceMetadata = Omit<CommitmentsSourceMetadata, 'sourceKind'> & {
+    sourceKind: 'aws-native';
+};
+export type AwsCommitmentEligibilityMetadata = Omit<CommitmentEligibilityMetadata, 'currentShape' | 'targetShape' | 'quotePolicy' | 'unlockFinancialLedger' | 'source'> & {
+    currentShape?: AwsCommitmentShape;
+    targetShape?: AwsCommitmentShape;
+    quotePolicy?: never;
+    unlockFinancialLedger?: never;
+    source?: AwsCommitmentsSourceMetadata;
+};
 export interface CommitmentsMoneyAmount {
     amount: number;
     currency: string;
@@ -295,7 +362,7 @@ export interface CommitmentsVendorRecommendation {
     impactedResources?: CommitmentsResourceReference[];
     linkedCommitmentIds?: string[];
 }
-export type CommitmentsPurchaseRecommendationScope = 'single-resource-group' | 'single-subscription' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsPurchaseRecommendationScope = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'management-group' | 'shared' | 'unknown';
 export type CommitmentsPurchaseRecommendationCoverageState = 'uncovered' | 'partially-covered' | 'covered' | 'unknown';
 export interface CommitmentsPurchaseRecommendationTermOption {
     termMonths: number;
@@ -366,12 +433,7 @@ export interface CommitmentsPurchaseRecommendation {
     quotePolicy?: CommitmentQuotePolicy;
     unlockFinancialLedger?: CommitmentUnlockFinancialLedger;
     purchaseScope?: CommitmentsPurchaseRecommendationScope;
-    appliedScopeProperties?: {
-        subscriptionId?: string;
-        resourceGroupId?: string;
-        tenantId?: string;
-        managementGroupId?: string;
-    };
+    appliedScopeProperties?: CommitmentsAppliedScopeProperties;
     source?: CommitmentsSourceMetadata;
     title?: string;
     description?: string;
@@ -396,6 +458,32 @@ export interface CommitmentsPurchaseRecommendation {
     linkedCommitmentIds?: string[];
     notes?: string[];
 }
+export interface AwsCommitmentsAppliedScopeProperties {
+    accountId: string;
+    region?: string;
+    availabilityZone?: string;
+}
+export type AwsCommitmentsInventoryItem = Omit<CommitmentsInventoryItem, 'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId' | 'breakCostEstimate' | 'storageDimensions'> & {
+    sourceKind: 'aws-native';
+    provider: ProviderName.Aws;
+    shape?: AwsCommitmentShape;
+    subscriptionId?: never;
+    breakCostEstimate?: never;
+    storageDimensions?: never;
+    appliedScopeType: 'linked-account';
+    appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
+};
+export type AwsCommitmentsPurchaseRecommendation = Omit<CommitmentsPurchaseRecommendation, 'eligibility' | 'source' | 'currentShape' | 'targetShape' | 'quotePolicy' | 'unlockFinancialLedger' | 'purchaseScope' | 'appliedScopeProperties' | 'pricingQuote'> & {
+    eligibility?: AwsCommitmentEligibilityMetadata;
+    source: AwsCommitmentsSourceMetadata;
+    currentShape?: AwsCommitmentShape;
+    targetShape: AwsCommitmentShape;
+    quotePolicy?: never;
+    unlockFinancialLedger?: never;
+    purchaseScope: 'linked-account';
+    appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
+    pricingQuote?: never;
+};
 export interface CommitmentsPlanningDiagnostics {
     purchaseRecommendations?: CommitmentsPurchaseRecommendationDiagnostics;
 }

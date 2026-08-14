@@ -52,6 +52,40 @@ export interface RequestMessage {
     eventId?: string;
     tracing?: WorkflowTracingOptions;
 }
+type AzureSpSetupIdentifierOnlyRequestMessage = Pick<RequestMessage, 'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'>;
+export interface AzureSpSetupExecutionRequestMessage extends AzureSpSetupIdentifierOnlyRequestMessage {
+    schemaVersion: 1;
+    entity: 'azure-sp-setup';
+    action: 'execute';
+    companyId: string;
+    tenantId: string;
+    cloudAccountId: string;
+    clientId: string;
+    setupId: string;
+    executionId: string;
+    dispatchSequence: number;
+    correlationId: string;
+    enqueuedAt: string;
+}
+export interface AzureSpSetupMaintenanceRequestMetadata {
+    schemaVersion: 1;
+    maintenanceKind: 'recover' | 'cleanup' | 'recover-and-cleanup';
+    cutoffUtc: string;
+    maxItems: number;
+    scheduledWindowUtc: string;
+    batchNumber: number;
+    maxBatches: number;
+}
+export interface AzureSpSetupMaintenanceRequestMessage extends AzureSpSetupIdentifierOnlyRequestMessage {
+    entity: 'azure-sp-setup';
+    action: 'maintain';
+    companyId: '*';
+    cloudAccountId: '*';
+    tenantId: '*';
+    clientId: '*';
+    correlationId: string;
+    metadata: AzureSpSetupMaintenanceRequestMetadata;
+}
 export interface CloudAccountsBillingReconciliationRequestMetadata {
     triggeredBy: 'billing-reconciliation-cron';
 }
@@ -373,4 +407,5 @@ export interface AzureDelegatedTrialExtensionResponse {
     companyLifecycle?: CompanyLifecycle;
     azureDelegatedTrialExpiresAt: Date | string;
 }
+export {};
 //# sourceMappingURL=payloads.d.ts.map

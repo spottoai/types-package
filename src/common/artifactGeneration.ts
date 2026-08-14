@@ -1,3 +1,5 @@
+import type { ArtifactEvidenceVerdict } from './artifactEvidence.js';
+
 export const ARTIFACT_GENERATION_SCHEMA_VERSION = 1 as const;
 
 export type ArtifactGenerationSchemaVersion = typeof ARTIFACT_GENERATION_SCHEMA_VERSION;
@@ -72,6 +74,8 @@ export interface ArtifactDescriptor {
 
 export type ArtifactEvidenceIssueStatus = 'partial' | 'missing' | 'stale' | 'unavailable';
 
+type ArtifactManifestEvidenceVerdict = Extract<ArtifactEvidenceVerdict, 'complete' | 'partial'>;
+
 export interface ArtifactEvidenceIssue {
   source: string;
   status: ArtifactEvidenceIssueStatus;
@@ -80,11 +84,11 @@ export interface ArtifactEvidenceIssue {
 
 export type ArtifactManifestEvidence =
   | {
-      status: 'complete';
+      status: Extract<ArtifactManifestEvidenceVerdict, 'complete'>;
       issues: [];
     }
   | {
-      status: 'partial';
+      status: Extract<ArtifactManifestEvidenceVerdict, 'partial'>;
       issues: [ArtifactEvidenceIssue, ...ArtifactEvidenceIssue[]];
     };
 

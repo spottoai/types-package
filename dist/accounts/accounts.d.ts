@@ -1,8 +1,10 @@
 import { SurveyResponse } from '../company';
 import type { EffortEstimateProfileName } from '../azure/recommendations';
+import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
+import type { AzureSpSetupErrorCode, AzureSpSetupPhase, AzureSpSetupProvisioningStatus, AzureSpSetupReaderReadiness, AzureSpSetupResult } from './azureSpSetup';
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
@@ -329,6 +331,28 @@ export interface AzureGuestAccessCloudAccountFields {
     /** Timestamp for the last completed guest access scan with usable results. */
     guestAccessLastSuccessfulScanAt?: Date | string;
 }
+export interface AzureSpSetupCloudAccountFields {
+    azureSpSetupProvisioningStatus?: AzureSpSetupProvisioningStatus;
+    azureSpSetupActiveSetupId?: string;
+    azureSpSetupActiveExecutionId?: string;
+    azureSpSetupReadinessVersion?: string;
+    azureSpSetupActiveRepairSetupId?: string;
+    azureSpSetupActiveRepairExecutionId?: string;
+    azureSpSetupActiveRepairPhase?: AzureSpSetupPhase;
+    azureSpSetupLastRepairResult?: AzureSpSetupResult;
+    azureSpSetupLastRepairAttemptedAt?: string;
+    azureSpSetupPermissionManifestVersion?: string;
+    azureSpSetupLastResult?: AzureSpSetupResult;
+    azureSpSetupLastAttemptedAt?: string;
+    azureSpSetupSummaryJson?: string;
+}
+export interface AzureSpSetupSubscriptionReadinessFields {
+    azureSpSetupReaderReadiness?: AzureSpSetupReaderReadiness;
+    azureSpSetupReadinessSetupId?: string;
+    azureSpSetupReadinessExecutionId?: string;
+    azureSpSetupReadinessVerifiedAt?: string;
+    azureSpSetupReadinessErrorCode?: AzureSpSetupErrorCode;
+}
 /** Secret-free AWS fields shared by generic cloud-account list and detail responses. */
 export interface AwsPublicCloudAccountFields {
     /** Canonical 12-digit AWS account identifier. */
@@ -346,7 +370,7 @@ export interface AwsPublicCloudAccountFields {
     /** Evidence that a provider sync produced usable artifacts, when available. */
     lastSuccessfulSyncAt?: string;
 }
-export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AwsPublicCloudAccountFields {
+export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AzureSpSetupCloudAccountFields, AwsPublicCloudAccountFields {
     /** Partition Key */
     companyId: string;
     /** Stable cloud-account row identifier. Provider account metadata is carried in provider-specific fields. */
@@ -495,7 +519,7 @@ export interface SubscriptionSyncProgress {
     lastUpdated: string;
     steps: SubscriptionSyncProgressStep[];
 }
-export interface SubscriptionInfoBase {
+export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields {
     name: string;
     friendlyName?: string;
     cloudAccountId: string;
@@ -518,6 +542,8 @@ export interface SubscriptionInfoBase {
     foundCurrency?: boolean;
     ready?: boolean;
     secureScore?: number;
+    /** Defender for Cloud evidence that distinguishes a genuine zero from unavailable or stale score data. */
+    secureScoreEvidence?: SecureScoreEvidence;
     advisorScore?: number;
     advisorScoreCost?: number;
     advisorScoreSecurity?: number;

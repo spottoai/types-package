@@ -53,6 +53,7 @@ const FORBIDDEN_PUBLIC_KEYS = new Set([
     'eTag',
     'retiredAt',
 ]);
+const NORMALIZED_FORBIDDEN_PUBLIC_KEYS = new Set(Array.from(FORBIDDEN_PUBLIC_KEYS, key => key.toLowerCase()));
 const FORBIDDEN_PUBLIC_KEY_PATTERN = /^(?:source|storage|blob|container)(?:path|uri|url|key)$|^s3(?:bucket|key|uri|url)$/i;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const ISO_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/;
@@ -154,8 +155,7 @@ function assertPublicJson(value, field) {
     }
 }
 function isForbiddenPublicKey(key) {
-    const normalized = key.toLowerCase();
-    return Array.from(FORBIDDEN_PUBLIC_KEYS).some(forbidden => forbidden.toLowerCase() === normalized) || FORBIDDEN_PUBLIC_KEY_PATTERN.test(key);
+    return NORMALIZED_FORBIDDEN_PUBLIC_KEYS.has(key.toLowerCase()) || FORBIDDEN_PUBLIC_KEY_PATTERN.test(key);
 }
 function assertRequiredKeys(value, required, field) {
     const missing = required.filter(key => !(key in value));

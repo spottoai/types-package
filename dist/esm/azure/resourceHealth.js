@@ -1,0 +1,12 @@
+export const RESOURCE_HEALTH_EVENTS_FILE_NAME = 'microsoft.resourcehealth-events.json';
+export const RESOURCE_HEALTH_EVENTS_IMPACTED_RESOURCES_FILE_NAME = 'microsoft.resourcehealth-events-impactedresources.json';
+export const RESOURCE_HEALTH_AVAILABILITY_STATUSES_FILE_NAME = 'microsoft.resourcehealth-availabilitystatuses.json';
+export const RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME = 'health-events.json';
+export const RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME = 'health-availability-statuses.json';
+export const RESOURCE_HEALTH_INDEX_FILE_NAME = 'history/resource-health/index.json';
+export const AZURE_RESOURCE_HEALTH_EVENTS_SOURCE = 'Microsoft.ResourceHealth/events';
+export const AZURE_RESOURCE_HEALTH_IMPACTED_RESOURCES_SOURCE = 'Microsoft.ResourceHealth/events/impactedResources';
+export const AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE = 'Microsoft.ResourceHealth/availabilityStatuses';
+export const RESOURCE_HEALTH_EVENTS_SOURCE = AZURE_RESOURCE_HEALTH_EVENTS_SOURCE;
+export const RESOURCE_HEALTH_EVENTS_IMPACTED_RESOURCES_SOURCE = AZURE_RESOURCE_HEALTH_IMPACTED_RESOURCES_SOURCE;
+export const RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE = AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE;

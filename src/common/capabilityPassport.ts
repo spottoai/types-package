@@ -1,4 +1,10 @@
 import type { ArtifactProvider } from './artifactGeneration.js';
+import {
+  isArtifactOwnershipBinding,
+  type ArtifactEmptyEvidenceVerdict,
+  type ArtifactFreshnessVerdict,
+  type ArtifactOwnershipBinding,
+} from './artifactEvidence.js';
 
 export const CAPABILITY_PASSPORT_SCHEMA_VERSION = 1 as const;
 
@@ -57,9 +63,9 @@ export type CapabilityAttempt =
     };
 
 export type CapabilityFreshness =
-  | { status: 'current'; observedAt: string; completeThrough?: string }
-  | { status: 'stale'; observedAt: string; completeThrough?: string; maximumAge: string }
-  | { status: 'unknown' };
+  | { status: Extract<ArtifactFreshnessVerdict, 'current'>; observedAt: string; completeThrough?: string }
+  | { status: Extract<ArtifactFreshnessVerdict, 'stale'>; observedAt: string; completeThrough?: string; maximumAge: string }
+  | { status: Extract<ArtifactFreshnessVerdict, 'unknown'> };
 
 export interface CapabilityObservation<Provider extends ArtifactProvider = ArtifactProvider> {
   observationId: string;
@@ -68,7 +74,7 @@ export interface CapabilityObservation<Provider extends ArtifactProvider = Artif
   attempt: CapabilityAttempt;
   providerSurfaceOutcome: 'accepted' | 'authoritatively-unsupported' | 'unknown';
   availability: 'available' | 'partial' | 'missing' | 'unavailable' | 'unknown';
-  emptyEvidence: 'populated' | 'complete-empty' | 'not-observed' | 'unknown';
+  emptyEvidence: ArtifactEmptyEvidenceVerdict;
   freshness: CapabilityFreshness;
   sourceGeneration?: ImmutableSourceGeneration;
   coverageRef?: string;
@@ -97,14 +103,8 @@ export interface CapabilityPassport<Provider extends ArtifactProvider = Artifact
   passportId: string;
   generatedAt: string;
   runId: string;
-  ownership: {
-    provider: Provider;
-    tenantId: string;
-    companyId: string;
-    cloudAccountId: string;
-    accountId: string;
+  ownership: ArtifactOwnershipBinding<Provider> & {
     subscriptionId: string;
-    ownershipEpochRevision?: number;
   };
   agreementObservation: {
     type: CapabilityAgreementType;
@@ -117,7 +117,6 @@ export interface CapabilityPassport<Provider extends ArtifactProvider = Artifact
 }
 
 const REASON_CODES = new Set<string>(CAPABILITY_REASON_CODES);
-const PROVIDERS = new Set<string>(['azure', 'aws']);
 const AGREEMENT_TYPES = new Set<string>(['EA', 'MCA', 'CSP', 'PAYG-MOSP', 'sponsored-trial', 'unknown']);
 const AGREEMENT_SOURCES = new Set<string>(['observed', 'configured', 'unknown']);
 const AVAILABILITY_VALUES = new Set<string>(['available', 'partial', 'missing', 'unavailable', 'unknown']);
@@ -227,15 +226,7 @@ const isObservation = (value: unknown, ownership: CapabilityPassport['ownership'
 };
 
 const isOwnership = (value: unknown): value is CapabilityPassport['ownership'] =>
-  isRecord(value) &&
-  typeof value.provider === 'string' &&
-  PROVIDERS.has(value.provider) &&
-  isNonEmptyString(value.tenantId) &&
-  isNonEmptyString(value.companyId) &&
-  isNonEmptyString(value.cloudAccountId) &&
-  isNonEmptyString(value.accountId) &&
-  isNonEmptyString(value.subscriptionId) &&
-  (value.ownershipEpochRevision === undefined || isPositiveInteger(value.ownershipEpochRevision));
+  isArtifactOwnershipBinding(value) && 'subscriptionId' in value && isNonEmptyString(value.subscriptionId);
 
 const isObservationSet = (value: unknown, ownership: CapabilityPassport['ownership']): value is CapabilityObservationSet => {
   if (!isRecord(value) || !isNonNegativeInteger(value.totalCount)) return false;
