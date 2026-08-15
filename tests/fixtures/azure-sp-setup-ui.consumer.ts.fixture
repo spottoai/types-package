@@ -1,5 +1,6 @@
 import type {
   AzureSpSetupAccountReadiness,
+  AzureSpSetupCancelResponse,
   AzureSpSetupPhase,
   AzureSpSetupStatusResponse,
   AzureSpSetupSubscriptionReadiness,
@@ -8,6 +9,7 @@ import type {
 } from '@spottoai/types-package';
 
 declare const phase: AzureSpSetupPhase;
+declare const cancellation: AzureSpSetupCancelResponse;
 declare const status: AzureSpSetupStatusResponse;
 declare const accountReadiness: AzureSpSetupAccountReadiness;
 declare const subscriptionReadiness: AzureSpSetupSubscriptionReadiness;
@@ -15,6 +17,7 @@ declare const cloudAccount: PublicCloudAccountDto;
 declare const subscription: SubscriptionInfoBase;
 
 void phase;
+void cancellation;
 void status;
 void accountReadiness;
 void subscriptionReadiness;

@@ -6,6 +6,7 @@ import type {
   AzureSpSetupExecuteRequest,
   AzureSpSetupExecutionRequestV1,
   AzureSpSetupCloudAccountSummaryV1,
+  AzureSpSetupCancelResponse,
   AzureSpSetupMode,
   AzureSpSetupOperationResult,
   AzureSpSetupPhase,
@@ -530,6 +531,19 @@ const publicDurableStatus: AzureSpSetupStatusResponse = {
     subscriptionReadiness: accountSummary.subscriptionReadiness,
   },
   subscriptionReadiness: accountSummary.subscriptionReadiness,
+};
+
+const activeCancellationResponse: AzureSpSetupCancelResponse = {
+  ...statusResponse,
+  phase: 'executing',
+  cancellationRequestedAt: '2026-08-09T00:10:30.000Z',
+  canCancel: false,
+};
+
+const settledCancellationResponse: AzureSpSetupCancelResponse = {
+  ...statusResponse,
+  phase: 'cancelled',
+  result: 'cancelled',
 };
 
 const invalidPublicStatusWithEncryptedState: AzureSpSetupStatusResponse = {

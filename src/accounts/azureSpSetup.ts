@@ -589,7 +589,5 @@ export interface AzureSpSetupExecuteSuccessResponse extends AzureSpSetupStatusRe
   resultCloudAccountId: string;
 }
 
-export interface AzureSpSetupCancelResponse extends AzureSpSetupStatusResponse {
-  phase: 'cancelled';
-  result: 'cancelled';
-}
+/** Status returned after cancellation is requested; active work settles asynchronously. */
+export type AzureSpSetupCancelResponse = AzureSpSetupStatusResponse;
