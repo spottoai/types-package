@@ -346,6 +346,7 @@ export interface AzureSpSetupExecutionRequestV1 {
   targetAzureServicePrincipalObjectId?: string;
   targetReadinessVersion?: string;
   targetSummaryBaselineVersion?: string;
+  targetCredentialBaselineHash?: string;
   selectedExistingSubscriptionIds?: string[];
   selectedNewSubscriptionIds?: string[];
   priorOutcomeBaseline?: AzureSpSetupExecutionRequestPriorOutcomeV1;

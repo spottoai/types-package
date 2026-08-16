@@ -1,6 +1,7 @@
 import type {
   AzureSpSetupAccountReadiness,
   AzureSpSetupCancelResponse,
+  AzureSpSetupCloudAccountSummaryV1,
   AzureSpSetupPhase,
   AzureSpSetupStatusResponse,
   AzureSpSetupSubscriptionReadiness,
@@ -11,6 +12,7 @@ import type {
 declare const phase: AzureSpSetupPhase;
 declare const cancellation: AzureSpSetupCancelResponse;
 declare const status: AzureSpSetupStatusResponse;
+declare const summary: AzureSpSetupCloudAccountSummaryV1;
 declare const accountReadiness: AzureSpSetupAccountReadiness;
 declare const subscriptionReadiness: AzureSpSetupSubscriptionReadiness;
 declare const cloudAccount: PublicCloudAccountDto;
@@ -19,6 +21,14 @@ declare const subscription: SubscriptionInfoBase;
 void phase;
 void cancellation;
 void status;
+// @ts-expect-error credential baselines are protected and absent from the public status DTO.
+void status.targetCredentialBaselineHash;
+// @ts-expect-error retry counters are protected and absent from the public status DTO.
+void status.retryAttemptsByOperation;
+// @ts-expect-error credential baselines are protected and absent from public account summaries.
+void summary.targetCredentialBaselineHash;
+// @ts-expect-error retry counters are protected and absent from public account summaries.
+void summary.retryAttemptsByOperation;
 void accountReadiness;
 void subscriptionReadiness;
 void cloudAccount;

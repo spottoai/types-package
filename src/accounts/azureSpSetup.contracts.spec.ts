@@ -40,9 +40,23 @@ type DeepForbiddenPublicKeys<T> = T extends readonly (infer Item)[]
 
 type AssertNoForbiddenPublicKey<T> = DeepForbiddenPublicKeys<T> extends never ? true : never;
 
+type AzureSpSetupProtectedDurableKey = 'retryAttemptsByOperation' | 'targetCredentialBaselineHash';
+
+type DeepProtectedDurableKeys<T> = T extends readonly (infer Item)[]
+  ? DeepProtectedDurableKeys<Item>
+  : T extends object
+    ? {
+        [Key in keyof T]-?: Key extends AzureSpSetupProtectedDurableKey ? Key : DeepProtectedDurableKeys<T[Key]>;
+      }[keyof T]
+    : never;
+
+type AssertNoProtectedDurableKey<T> = DeepProtectedDurableKeys<T> extends never ? true : never;
+
 const statusHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupStatusResponse> = true;
 const summaryHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupCloudAccountSummaryV1> = true;
 const executionRequestHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupExecutionRequestV1> = true;
+const statusHasNoProtectedDurableKeys: AssertNoProtectedDurableKey<AzureSpSetupStatusResponse> = true;
+const summaryHasNoProtectedDurableKeys: AssertNoProtectedDurableKey<AzureSpSetupCloudAccountSummaryV1> = true;
 
 const createModeStartRequest: AzureSpSetupStartRequest = {
   redirectAfter: '/company/comp-123/cloud-accounts',
@@ -458,6 +472,7 @@ const repairExecutionRequest: AzureSpSetupExecutionRequestV1 = {
   targetAzureServicePrincipalObjectId: 'service-principal-object-123',
   targetReadinessVersion: 'readiness-7',
   targetSummaryBaselineVersion: 'summary-6',
+  targetCredentialBaselineHash: 'sha256:stored-account-credential-baseline',
   selectedExistingSubscriptionIds: ['sub-123'],
   selectedNewSubscriptionIds: ['sub-456'],
   priorOutcomeBaseline: {
@@ -552,6 +567,30 @@ const invalidPublicStatusWithEncryptedState: AzureSpSetupStatusResponse = {
   encryptedMicrosoftTokenCache: 'not-allowed',
 };
 
+const invalidPublicStatusWithRetryAttempts: AzureSpSetupStatusResponse = {
+  ...publicDurableStatus,
+  // @ts-expect-error per-operation retry counters are protected durable state, not public status.
+  retryAttemptsByOperation: { 'readerValidation:sub-123': 2 },
+};
+
+const invalidPublicStatusWithCredentialBaseline: AzureSpSetupStatusResponse = {
+  ...publicDurableStatus,
+  // @ts-expect-error the credential baseline hash is protected durable state, not public status.
+  targetCredentialBaselineHash: 'sha256:stored-account-credential-baseline',
+};
+
+const invalidAccountSummaryWithRetryAttempts: AzureSpSetupCloudAccountSummaryV1 = {
+  ...accountSummary,
+  // @ts-expect-error per-operation retry counters are protected durable state, not a public account summary.
+  retryAttemptsByOperation: { 'readerValidation:sub-123': 2 },
+};
+
+const invalidAccountSummaryWithCredentialBaseline: AzureSpSetupCloudAccountSummaryV1 = {
+  ...accountSummary,
+  // @ts-expect-error the credential baseline hash is protected durable state, not a public account summary.
+  targetCredentialBaselineHash: 'sha256:stored-account-credential-baseline',
+};
+
 const legacySetupState = {
   setupId: 'legacy-setup-123',
   mode: 'createCloudAccount' as const,
@@ -595,6 +634,10 @@ const protectedDurableSetupState: AzureSpSetupDurableStateV1 = {
   currentCheckpoint: 'permissions:subscriptionReader:sub-456',
   retryCategory: 'propagation',
   retryCount: 1,
+  retryAttemptsByOperation: {
+    'credentialValidation:client-id-123': 2,
+    'readerValidation:sub-456': 1,
+  },
   retryAfterAt: '2026-08-09T00:12:00.000Z',
   nextDispatchSequence: 2,
   continuationMessageId: 'execution-123:2',
@@ -603,6 +646,7 @@ const protectedDurableSetupState: AzureSpSetupDurableStateV1 = {
   targetClaimId: 'sha256:company-and-target-account',
   targetClaimOwner: 'worker-123',
   targetClaimExpiresAt: '2026-08-09T00:15:00.000Z',
+  targetCredentialBaselineHash: repairExecutionRequest.targetCredentialBaselineHash,
   targetedRefreshCheckpoints: [
     {
       subscriptionId: 'sub-123',
@@ -618,6 +662,8 @@ void createModeStartRequest;
 void statusHasNoForbiddenPublicKeys;
 void summaryHasNoForbiddenPublicKeys;
 void executionRequestHasNoForbiddenPublicKeys;
+void statusHasNoProtectedDurableKeys;
+void summaryHasNoProtectedDurableKeys;
 void permissionUpdateStartRequest;
 void setupMode;
 void invalidSetupMode;
@@ -643,6 +689,12 @@ void repairExecutionRequest;
 void invalidExecutionRequestWithToken;
 void accountSummary;
 void publicDurableStatus;
+void activeCancellationResponse;
+void settledCancellationResponse;
 void invalidPublicStatusWithEncryptedState;
+void invalidPublicStatusWithRetryAttempts;
+void invalidPublicStatusWithCredentialBaseline;
+void invalidAccountSummaryWithRetryAttempts;
+void invalidAccountSummaryWithCredentialBaseline;
 void migratedLegacySetupState;
 void protectedDurableSetupState;
