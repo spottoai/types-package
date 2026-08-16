@@ -209,6 +209,26 @@ for (const validatorName of requiredPortableBillingValidatorNames) {
   );
 }
 
+for (const hybridCase of contractCorpus.hybridAuthorityCases) {
+  const observation = contractCorpus.fixtures[hybridCase.observationFixture];
+  const authority = contractCorpus.fixtures[hybridCase.authorityFixture];
+  assert.notEqual(observation, undefined, `${hybridCase.name}: observation fixture exists`);
+  assert.notEqual(authority, undefined, `${hybridCase.name}: authority fixture exists`);
+  const hybrid = { ...structuredClone(observation), ...structuredClone(authority) };
+  const validator = corpusValidators[hybridCase.validator];
+  assert.equal(typeof validator, 'function', `${hybridCase.name}: validator exists`);
+  assert.equal(validator(hybrid), false, hybridCase.name);
+}
+
+for (const discriminantCase of contractCorpus.diagnosticDiscriminantCases) {
+  const authority = contractCorpus.fixtures[discriminantCase.authorityFixture];
+  assert.notEqual(authority, undefined, `${discriminantCase.name}: authority fixture exists`);
+  const candidate = { ...structuredClone(authority), ...structuredClone(discriminantCase.fields) };
+  const validator = corpusValidators[discriminantCase.validator];
+  assert.equal(typeof validator, 'function', `${discriminantCase.name}: validator exists`);
+  assert.equal(validator(candidate), false, discriminantCase.name);
+}
+
 let mutationCount = 0;
 for (const corpusCase of contractCorpus.cases) {
   assert.ok(Array.isArray(corpusCase.mutations), `corpus case has no mutation list: ${corpusCase.name}`);

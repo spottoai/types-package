@@ -7,6 +7,7 @@ Define shared, cross-runtime contracts that make the newest observe-mode billing
 ## Invariants
 
 - Observation documents are diagnostic-only and must never validate as either enforceable current-pointer type.
+- Epoch-free promotion observations evaluate only as `unenforceable` / `not-enforceable`; epoch-bound observations cannot use that pair.
 - `latest-enqueued.json` orders candidates only by the Cloud-owned monotonic `sourceRevision`.
 - The observation pointer binds the exact immutable input manifest and queue message.
 - The analyzer promotion observation is immutable and binds the exact input and output manifests.

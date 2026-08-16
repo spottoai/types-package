@@ -68,6 +68,9 @@ const hasMatchingIdentity = (subscriptionId, generationId, ownership, revision, 
     return !enforceable || (0, artifactEvidence_js_1.isEnforceableArtifactOwnershipBinding)(ownership);
 };
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
+const hasDiagnosticObservationDiscriminant = (value) => value.authority === 'diagnostic-only' ||
+    (value.publicationMode === 'observe' &&
+        (value.documentType === 'billing-analyzer-input-observation-pointer' || value.documentType === 'billing-analysis-promotion-observation'));
 const isRequestedPeriod = (value) => {
     if (!isRecord(value) ||
         !isCanonicalIsoTimestamp(value.fromInclusive) ||
@@ -149,7 +152,9 @@ const isBillingAnalyzerInputManifestV2 = (value) => {
 exports.isBillingAnalyzerInputManifestV2 = isBillingAnalyzerInputManifestV2;
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
+    if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
+        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
         return false;
     if (value.schemaVersion !== 1 || value.status !== 'completed')
         return false;
@@ -252,6 +257,7 @@ exports.isBillingAnalyzerOutputManifestV2 = isBillingAnalyzerOutputManifestV2;
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 const isBillingAnalysisCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
         (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
@@ -310,7 +316,12 @@ const isBillingAnalysisPromotionObservationV1 = (value) => {
         !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)) {
         return false;
     }
-    return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
+    const hasOwnershipEpoch = value.ownership.ownershipEpochRevision !== undefined;
+    if (!hasOwnershipEpoch) {
+        return value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable';
+    }
+    return (value.evaluation.comparison !== 'unenforceable' &&
+        OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome);
 };
 exports.isBillingAnalysisPromotionObservationV1 = isBillingAnalysisPromotionObservationV1;
 //# sourceMappingURL=billingArtifactGeneration.js.map

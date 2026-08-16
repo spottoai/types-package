@@ -70,7 +70,11 @@ Observe-mode discovery uses `BillingAnalyzerInputObservationPointerV1` and
 `diagnostic-only`, may never substitute for a current authority pointer, and
 may omit an ownership epoch only when ownership and revision omit it together.
 The promotion observation has a stable exact-field canonicalizer that excludes
-its own `observationDigest` and ignores additive-next fields.
+its own `observationDigest` and ignores additive-next fields. An epoch-free
+promotion observation must report `unenforceable` / `not-enforceable`; a
+matching present epoch must not report that pair. Current-pointer validators
+explicitly reject these diagnostic discriminants while retaining unrelated
+additive-next fields.
 
 Billing output V2 uses an acyclic digest chain. Producers project the public
 `BillingOutputBindingV1`, canonicalize it with

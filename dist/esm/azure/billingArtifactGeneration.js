@@ -65,6 +65,9 @@ const hasMatchingIdentity = (subscriptionId, generationId, ownership, revision, 
     return !enforceable || isEnforceableArtifactOwnershipBinding(ownership);
 };
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
+const hasDiagnosticObservationDiscriminant = (value) => value.authority === 'diagnostic-only' ||
+    (value.publicationMode === 'observe' &&
+        (value.documentType === 'billing-analyzer-input-observation-pointer' || value.documentType === 'billing-analysis-promotion-observation'));
 const isRequestedPeriod = (value) => {
     if (!isRecord(value) ||
         !isCanonicalIsoTimestamp(value.fromInclusive) ||
@@ -145,7 +148,9 @@ export const isBillingAnalyzerInputManifestV2 = (value) => {
 };
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
-    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath')))
+    if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
+        containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath')))
         return false;
     if (value.schemaVersion !== 1 || value.status !== 'completed')
         return false;
@@ -244,6 +249,7 @@ export const isBillingAnalyzerOutputManifestV2 = (value) => {
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 export const isBillingAnalysisCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
         containsForbiddenArtifactControlData(value, [
             ...allowedArtifactReferenceField(value, 'inputManifestPath'),
             ...allowedArtifactReferenceField(value, 'outputManifestPath'),
@@ -301,5 +307,10 @@ export const isBillingAnalysisPromotionObservationV1 = (value) => {
         !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)) {
         return false;
     }
-    return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
+    const hasOwnershipEpoch = value.ownership.ownershipEpochRevision !== undefined;
+    if (!hasOwnershipEpoch) {
+        return value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable';
+    }
+    return (value.evaluation.comparison !== 'unenforceable' &&
+        OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome);
 };

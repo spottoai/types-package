@@ -250,6 +250,11 @@ const hasMatchingIdentity = (
 
 const isSha256 = (value: unknown): value is string => typeof value === 'string' && SHA256_PATTERN.test(value);
 
+const hasDiagnosticObservationDiscriminant = (value: Record<string, unknown>): boolean =>
+  value.authority === 'diagnostic-only' ||
+  (value.publicationMode === 'observe' &&
+    (value.documentType === 'billing-analyzer-input-observation-pointer' || value.documentType === 'billing-analysis-promotion-observation'));
+
 const isRequestedPeriod = (value: unknown): value is BillingAnalyzerRequestedPeriod => {
   if (
     !isRecord(value) ||
@@ -335,7 +340,12 @@ export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is Billi
 
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is BillingAnalyzerInputCurrentPointerV1 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))) return false;
+  if (
+    !isRecord(value) ||
+    hasDiagnosticObservationDiscriminant(value) ||
+    containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))
+  )
+    return false;
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
   return (
@@ -447,6 +457,7 @@ export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is Bill
 export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is BillingAnalysisCurrentPointerV1 => {
   if (
     !isRecord(value) ||
+    hasDiagnosticObservationDiscriminant(value) ||
     containsForbiddenArtifactControlData(value, [
       ...allowedArtifactReferenceField(value, 'inputManifestPath'),
       ...allowedArtifactReferenceField(value, 'outputManifestPath'),
@@ -516,5 +527,12 @@ export const isBillingAnalysisPromotionObservationV1 = (value: unknown): value i
   ) {
     return false;
   }
-  return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
+  const hasOwnershipEpoch = (value.ownership as ArtifactOwnershipBinding<'azure'>).ownershipEpochRevision !== undefined;
+  if (!hasOwnershipEpoch) {
+    return value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable';
+  }
+  return (
+    value.evaluation.comparison !== 'unenforceable' &&
+    OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome
+  );
 };

@@ -139,6 +139,12 @@ Additive fields do not change the preimage. Both observation documents require
 `authority: 'diagnostic-only'` and `publicationMode: 'observe'`; neither can be
 returned as customer data, used for fallback, or validated/promoted as
 `BillingAnalyzerInputCurrentPointerV1` or `BillingAnalysisCurrentPointerV1`.
+An observation whose ownership/revision epoch is absent must evaluate only as
+`unenforceable` / `not-enforceable`; when the matching positive epoch is
+present, that pair is invalid. Both current-pointer validators reject
+`authority: 'diagnostic-only'` and either known observation `documentType`
+paired with `publicationMode: 'observe'`, even if every current-pointer field
+has been added. Other additive-next fields remain accepted.
 
 ## Tasks
 

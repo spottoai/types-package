@@ -309,8 +309,8 @@ const promotionObservation = {
   outputManifestPath,
   outputManifestDigest: outputManifest.manifestDigest,
   evaluation: {
-    comparison: 'newer',
-    projectedOutcome: 'would-promote',
+    comparison: 'unenforceable',
+    projectedOutcome: 'not-enforceable',
   },
   observationDigest: digestD,
   observedAt: completedAt,

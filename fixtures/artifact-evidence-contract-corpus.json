@@ -114,8 +114,8 @@
       "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
       "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "evaluation": {
-        "comparison": "newer",
-        "projectedOutcome": "would-promote"
+        "comparison": "unenforceable",
+        "projectedOutcome": "not-enforceable"
       },
       "observationDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
       "observedAt": "2026-08-13T00:06:00.000Z"
@@ -836,6 +836,38 @@
       "mutations": [{ "path": "evaluation.futureField", "value": true }]
     },
     {
+      "name": "promotion observation without an epoch rejects an enforceable projection",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "evaluation.comparison", "value": "newer" },
+        { "path": "evaluation.projectedOutcome", "value": "would-promote" }
+      ]
+    },
+    {
+      "name": "promotion observation with a matching epoch rejects unenforceable",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 }
+      ]
+    },
+    {
+      "name": "promotion observation with a matching epoch accepts a newer projection",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "newer" },
+        { "path": "evaluation.projectedOutcome", "value": "would-promote" }
+      ]
+    },
+    {
       "name": "promotion observation rejects an unknown version",
       "validator": "isBillingAnalysisPromotionObservationV1",
       "fixture": "billingAnalysisPromotionObservationV1",
@@ -892,6 +924,13 @@
       "mutations": []
     },
     {
+      "name": "input current pointer still allows unrelated additive fields",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "enforceableInputPointer",
+      "valid": true,
+      "mutations": [{ "path": "futureField", "value": { "producer": "next" } }]
+    },
+    {
       "name": "input observation cannot validate as analysis authority",
       "validator": "isBillingAnalysisCurrentPointerV1",
       "fixture": "billingAnalyzerInputObservationPointerV1",
@@ -911,6 +950,13 @@
       "fixture": "billingAnalysisPromotionObservationV1",
       "valid": false,
       "mutations": []
+    },
+    {
+      "name": "analysis current pointer still allows unrelated additive fields",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisCurrentPointerV1",
+      "valid": true,
+      "mutations": [{ "path": "futureField", "value": { "producer": "next" } }]
     },
     {
       "name": "complete-empty without an empty proof is rejected",
@@ -8582,14 +8628,14 @@
         "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
         "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
         "evaluation": {
-          "comparison": "newer",
-          "projectedOutcome": "would-promote"
+          "comparison": "unenforceable",
+          "projectedOutcome": "not-enforceable"
         },
         "observationDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
         "observedAt": "2026-08-13T00:06:00.000Z"
       },
-      "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"newer\",\"projectedOutcome\":\"would-promote\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
-      "expectedDigest": "e143316284603f9c7373a0c436b58c93b08d5595bcff3593b195e601535c242e"
+      "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"unenforceable\",\"projectedOutcome\":\"not-enforceable\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
+      "expectedDigest": "0a3f5e9247177177406ddadb6f5e9ed9f3df8ba4c3aec36c00c4cf3c788a86a1"
     }
   ],
   "observationBindingMutationVectors": [
@@ -8626,6 +8672,58 @@
     { "name": "comparison", "path": "evaluation.comparison", "value": "older" },
     { "name": "projected outcome", "path": "evaluation.projectedOutcome", "value": "would-be-superseded" },
     { "name": "observed timestamp", "path": "observedAt", "value": "2026-08-13T00:07:00.000Z" }
+  ],
+  "hybridAuthorityCases": [
+    {
+      "name": "diagnostic input observation cannot become input authority after authority fields are added",
+      "observationFixture": "billingAnalyzerInputObservationPointerV1",
+      "authorityFixture": "enforceableInputPointer",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1"
+    },
+    {
+      "name": "diagnostic promotion observation cannot become analysis authority after authority fields are added",
+      "observationFixture": "billingAnalysisPromotionObservationV1",
+      "authorityFixture": "billingAnalysisCurrentPointerV1",
+      "validator": "isBillingAnalysisCurrentPointerV1"
+    }
+  ],
+  "diagnosticDiscriminantCases": [
+    {
+      "name": "input current pointer rejects diagnostic-only authority",
+      "authorityFixture": "enforceableInputPointer",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fields": { "authority": "diagnostic-only" }
+    },
+    {
+      "name": "input current pointer rejects input observation discriminants",
+      "authorityFixture": "enforceableInputPointer",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fields": { "documentType": "billing-analyzer-input-observation-pointer", "publicationMode": "observe" }
+    },
+    {
+      "name": "input current pointer rejects promotion observation discriminants",
+      "authorityFixture": "enforceableInputPointer",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fields": { "documentType": "billing-analysis-promotion-observation", "publicationMode": "observe" }
+    },
+    {
+      "name": "analysis current pointer rejects diagnostic-only authority",
+      "authorityFixture": "billingAnalysisCurrentPointerV1",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fields": { "authority": "diagnostic-only" }
+    },
+    {
+      "name": "analysis current pointer rejects input observation discriminants",
+      "authorityFixture": "billingAnalysisCurrentPointerV1",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fields": { "documentType": "billing-analyzer-input-observation-pointer", "publicationMode": "observe" }
+    },
+    {
+      "name": "analysis current pointer rejects promotion observation discriminants",
+      "authorityFixture": "billingAnalysisCurrentPointerV1",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fields": { "documentType": "billing-analysis-promotion-observation", "publicationMode": "observe" }
+    }
   ],
   "gzipDeterminism": {
     "mtime": 0,
