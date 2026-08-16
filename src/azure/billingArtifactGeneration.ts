@@ -3,6 +3,7 @@ import {
   isEnforceableArtifactOwnershipBinding,
   type ArtifactCoverageVerdict,
   type ArtifactOwnershipBinding,
+  type ArtifactRevisionComparison,
   type ArtifactRevisionVector,
 } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
@@ -91,6 +92,24 @@ export interface BillingAnalyzerRequestV2 {
   displayMetadata?: BillingAnalyzerMetadata;
 }
 
+/** Diagnostic-only discovery pointer for the latest successfully enqueued observe input. */
+export interface BillingAnalyzerInputObservationPointerV1 {
+  schemaVersion: 1;
+  documentType: 'billing-analyzer-input-observation-pointer';
+  authority: 'diagnostic-only';
+  publicationMode: 'observe';
+  inputState: 'enqueued';
+  subscriptionId: string;
+  generationId: string;
+  ownership: ArtifactOwnershipBinding<'azure'>;
+  revision: ArtifactRevisionVector;
+  inputManifestPath: string;
+  inputManifestDigest: string;
+  messageId: string;
+  correlationId: string;
+  enqueuedAt: string;
+}
+
 export interface BillingAnalyzerOutputManifestV2 extends BillingGenerationDocumentV2 {
   inputManifestPath: string;
   inputManifestDigest: string;
@@ -116,10 +135,55 @@ export interface BillingAnalysisCurrentPointerV1 {
   completedAt: string;
 }
 
+/** Immutable diagnostic record of what observe mode would have done at promotion time. */
+export interface BillingAnalysisPromotionObservationV1 {
+  schemaVersion: 1;
+  documentType: 'billing-analysis-promotion-observation';
+  authority: 'diagnostic-only';
+  publicationMode: 'observe';
+  processingState: 'succeeded';
+  subscriptionId: string;
+  generationId: string;
+  ownership: ArtifactOwnershipBinding<'azure'>;
+  revision: ArtifactRevisionVector;
+  messageId: string;
+  correlationId: string;
+  inputManifestPath: string;
+  inputManifestDigest: string;
+  outputManifestPath: string;
+  outputManifestDigest: string;
+  evaluation: {
+    comparison: ArtifactRevisionComparison | 'authority-absent';
+    projectedOutcome: 'would-promote' | 'would-be-idempotent' | 'would-be-superseded' | 'would-quarantine' | 'not-enforceable';
+  };
+  observationDigest: string;
+  observedAt: string;
+}
+
 const BILLING_BASES = new Set<string>(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set<string>(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set<string>(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set<string>(['identity', 'gzip']);
+const OBSERVATION_COMPARISONS = new Set<string>([
+  'authority-absent',
+  'newer',
+  'equal',
+  'older',
+  'incomparable',
+  'newer-ownership',
+  'older-ownership',
+  'unenforceable',
+]);
+const OBSERVATION_PROJECTED_OUTCOMES = new Map<string, string>([
+  ['authority-absent', 'would-promote'],
+  ['newer', 'would-promote'],
+  ['newer-ownership', 'would-promote'],
+  ['equal', 'would-be-idempotent'],
+  ['older', 'would-be-superseded'],
+  ['older-ownership', 'would-be-superseded'],
+  ['incomparable', 'would-quarantine'],
+  ['unenforceable', 'not-enforceable'],
+]);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -300,6 +364,29 @@ export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnal
   return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
 
+/** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
+export const isBillingAnalyzerInputObservationPointerV1 = (value: unknown): value is BillingAnalyzerInputObservationPointerV1 => {
+  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
+  if (
+    value.schemaVersion !== 1 ||
+    value.documentType !== 'billing-analyzer-input-observation-pointer' ||
+    value.authority !== 'diagnostic-only' ||
+    value.publicationMode !== 'observe' ||
+    value.inputState !== 'enqueued'
+  ) {
+    return false;
+  }
+  if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
+  return (
+    isStrictLogicalArtifactReference(value.inputManifestPath) &&
+    value.inputManifestPath === inputManifestPath(value.subscriptionId as string, value.generationId as string) &&
+    isSha256(value.inputManifestDigest) &&
+    isSha256(value.messageId) &&
+    isNonEmptyString(value.correlationId) &&
+    isCanonicalIsoTimestamp(value.enqueuedAt)
+  );
+};
+
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is BillingAnalyzerOutputManifestV2 => {
   if (
@@ -386,4 +473,48 @@ export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is Bill
     isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId as string, value.inputManifestDigest as string) &&
     isCanonicalIsoTimestamp(value.completedAt)
   );
+};
+
+/** Validates an immutable diagnostic-only promotion evaluation. */
+export const isBillingAnalysisPromotionObservationV1 = (value: unknown): value is BillingAnalysisPromotionObservationV1 => {
+  if (
+    !isRecord(value) ||
+    containsForbiddenArtifactControlData(value, [
+      ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+      ...allowedArtifactReferenceField(value, 'outputManifestPath'),
+    ])
+  ) {
+    return false;
+  }
+  if (
+    value.schemaVersion !== 1 ||
+    value.documentType !== 'billing-analysis-promotion-observation' ||
+    value.authority !== 'diagnostic-only' ||
+    value.publicationMode !== 'observe' ||
+    value.processingState !== 'succeeded'
+  ) {
+    return false;
+  }
+  if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false)) return false;
+  if (
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string) ||
+    !isStrictLogicalArtifactReference(value.outputManifestPath) ||
+    value.outputManifestPath !== outputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
+  if (
+    !isSha256(value.inputManifestDigest) ||
+    !isSha256(value.outputManifestDigest) ||
+    !isSha256(value.observationDigest) ||
+    !isSha256(value.messageId) ||
+    !isNonEmptyString(value.correlationId) ||
+    !isCanonicalIsoTimestamp(value.observedAt) ||
+    !isRecord(value.evaluation) ||
+    !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)
+  ) {
+    return false;
+  }
+  return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
 };

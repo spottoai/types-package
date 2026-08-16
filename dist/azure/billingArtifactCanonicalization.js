@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.canonicalizeBillingArtifactJson = exports.canonicalizeBillingAnalyzerOutputManifestV2ForDigest = exports.canonicalizeBillingAnalyzerInputManifestV2ForDigest = exports.canonicalizeBillingOutputBindingV1 = exports.projectBillingOutputBindingV1FromMetadata = exports.projectBillingOutputBindingV1FromManifest = void 0;
+exports.canonicalizeBillingArtifactJson = exports.canonicalizeBillingAnalysisPromotionObservationV1ForDigest = exports.canonicalizeBillingAnalyzerOutputManifestV2ForDigest = exports.canonicalizeBillingAnalyzerInputManifestV2ForDigest = exports.canonicalizeBillingOutputBindingV1 = exports.projectBillingOutputBindingV1FromMetadata = exports.projectBillingOutputBindingV1FromManifest = void 0;
+const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const requirePlainRecord = (value, name) => {
@@ -161,6 +162,45 @@ const projectPublicationDecision = (value) => {
         issues: issues.map(projectIssue),
     };
 };
+const projectPromotionEvaluation = (value) => {
+    const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
+    return {
+        comparison: readDataProperty(source, 'comparison'),
+        projectedOutcome: readDataProperty(source, 'projectedOutcome'),
+    };
+};
+const projectPromotionObservation = (value) => {
+    const source = requirePlainRecord(value, 'Billing promotion observation');
+    const observationDigest = readDataProperty(source, 'observationDigest');
+    if (typeof observationDigest !== 'string')
+        throw new TypeError('Billing promotion observation requires an observationDigest string.');
+    const projected = {
+        schemaVersion: readDataProperty(source, 'schemaVersion'),
+        documentType: readDataProperty(source, 'documentType'),
+        authority: readDataProperty(source, 'authority'),
+        publicationMode: readDataProperty(source, 'publicationMode'),
+        processingState: readDataProperty(source, 'processingState'),
+        subscriptionId: readDataProperty(source, 'subscriptionId'),
+        generationId: readDataProperty(source, 'generationId'),
+        ownership: projectOwnership(readDataProperty(source, 'ownership')),
+        revision: projectRevision(readDataProperty(source, 'revision')),
+        messageId: readDataProperty(source, 'messageId'),
+        correlationId: readDataProperty(source, 'correlationId'),
+        inputManifestPath: readDataProperty(source, 'inputManifestPath'),
+        inputManifestDigest: readDataProperty(source, 'inputManifestDigest'),
+        outputManifestPath: readDataProperty(source, 'outputManifestPath'),
+        outputManifestDigest: readDataProperty(source, 'outputManifestDigest'),
+        evaluation: projectPromotionEvaluation(readDataProperty(source, 'evaluation')),
+        observedAt: readDataProperty(source, 'observedAt'),
+    };
+    if ((0, artifactControlData_js_1.containsForbiddenArtifactControlData)(projected, [
+        ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(projected, 'inputManifestPath'),
+        ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(projected, 'outputManifestPath'),
+    ])) {
+        throw new TypeError('Billing promotion observation contains forbidden control data.');
+    }
+    return projected;
+};
 const projectBinding = (subscriptionId, generationId, ownership, revision, inputManifestDigest, publicationDecision) => ({
     kind: 'billing-analysis-output',
     schemaVersion: 1,
@@ -285,6 +325,9 @@ exports.canonicalizeBillingAnalyzerInputManifestV2ForDigest = canonicalizeBillin
 /** Returns the canonical output-manifest digest preimage, excluding only top-level manifestDigest. */
 const canonicalizeBillingAnalyzerOutputManifestV2ForDigest = (manifest) => canonicalizeJson(withoutManifestDigest(manifest));
 exports.canonicalizeBillingAnalyzerOutputManifestV2ForDigest = canonicalizeBillingAnalyzerOutputManifestV2ForDigest;
+/** Returns the exact promotion-observation digest preimage, excluding observationDigest and additive fields. */
+const canonicalizeBillingAnalysisPromotionObservationV1ForDigest = (observation) => canonicalizeJson(projectPromotionObservation(observation));
+exports.canonicalizeBillingAnalysisPromotionObservationV1ForDigest = canonicalizeBillingAnalysisPromotionObservationV1ForDigest;
 /** Returns the RFC 8785/JCS-compatible canonical JSON string for a validated JSON value. */
 const canonicalizeBillingArtifactJson = (value) => canonicalizeJson(value);
 exports.canonicalizeBillingArtifactJson = canonicalizeBillingArtifactJson;

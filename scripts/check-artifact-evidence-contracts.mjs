@@ -4,6 +4,7 @@ import { readFile } from 'node:fs/promises';
 
 import {
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingArtifactJson,
   canonicalizeBillingOutputBindingV1,
@@ -11,6 +12,8 @@ import {
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
+  isBillingAnalyzerInputObservationPointerV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
@@ -24,7 +27,7 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-assert.equal(contractCorpus.corpusVersion, 3, 'portable corpus version must match the downstream parity contract');
+assert.equal(contractCorpus.corpusVersion, 4, 'portable corpus version must match the downstream parity contract');
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -160,7 +163,9 @@ const satisfiesPromotionPrecondition = (current, candidate) => {
 const corpusValidators = {
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputObservationPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
@@ -172,7 +177,9 @@ const expectedCorpusValidatorNames = new Set([
   'billingCostAnalysisMetadataCompatibility',
   'isArtifactPublicationDecision',
   'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputObservationPointerV1',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
@@ -180,7 +187,9 @@ const expectedCorpusValidatorNames = new Set([
 ]);
 const requiredPortableBillingValidatorNames = [
   'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputObservationPointerV1',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
@@ -293,6 +302,85 @@ for (const vector of contractCorpus.digestVectors) {
 }
 const baselineDigestVector = digestVectorResults.get('current populated output');
 assert.ok(baselineDigestVector, 'canonical current populated digest vector is required');
+
+for (const vector of contractCorpus.observationDigestVectors) {
+  const observation = structuredClone(vector.observation);
+  const canonical = canonicalizeBillingAnalysisPromotionObservationV1ForDigest(observation);
+  assert.equal(canonical, vector.expectedCanonical, `${vector.name}: canonical preimage`);
+  assert.equal(sha256(canonical), vector.expectedDigest, `${vector.name}: canonical digest`);
+  assert.equal(canonical.includes('"observationDigest"'), false, `${vector.name}: digest field excluded`);
+  assert.equal(isBillingAnalysisPromotionObservationV1(observation), true, `${vector.name}: structurally valid`);
+
+  const reordered = Object.fromEntries(Object.entries(observation).reverse());
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(reordered), canonical, `${vector.name}: top-level key order ignored`);
+
+  const additive = structuredClone(observation);
+  additive.future = { ignored: true };
+  additive.ownership.future = { ignored: true };
+  additive.evaluation.future = { ignored: true };
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(additive), canonical, `${vector.name}: additive fields ignored`);
+
+  const additiveAccessor = structuredClone(observation);
+  let additiveAccessorInvoked = false;
+  Object.defineProperty(additiveAccessor, 'future', {
+    enumerable: true,
+    get: () => {
+      additiveAccessorInvoked = true;
+      return 'ignored';
+    },
+  });
+  assert.equal(
+    canonicalizeBillingAnalysisPromotionObservationV1ForDigest(additiveAccessor),
+    canonical,
+    `${vector.name}: additive accessors do not affect the exact-field projection`
+  );
+  assert.equal(additiveAccessorInvoked, false, `${vector.name}: additive accessor never invoked`);
+
+  const changedDigest = structuredClone(observation);
+  changedDigest.observationDigest = 'c'.repeat(64);
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changedDigest), canonical, `${vector.name}: observation digest excluded`);
+
+  for (const mutation of contractCorpus.observationBindingMutationVectors) {
+    const changed = structuredClone(observation);
+    applyMutation(changed, mutation);
+    assert.notEqual(
+      canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changed),
+      canonical,
+      `${vector.name}: ${mutation.name} changes the preimage`
+    );
+  }
+
+  const controlData = structuredClone(observation);
+  controlData.correlationId = 'correlation\u0000unsafe';
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(controlData), `${vector.name}: declared control data rejected`);
+
+  const accessor = structuredClone(observation);
+  let accessorInvoked = false;
+  Object.defineProperty(accessor, 'subscriptionId', {
+    enumerable: true,
+    get: () => {
+      accessorInvoked = true;
+      return 'unsafe';
+    },
+  });
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(accessor), `${vector.name}: accessor rejected`);
+  assert.equal(accessorInvoked, false, `${vector.name}: accessor never invoked`);
+
+  const nestedAccessor = structuredClone(observation);
+  let nestedAccessorInvoked = false;
+  Object.defineProperty(nestedAccessor.evaluation, 'comparison', {
+    enumerable: true,
+    get: () => {
+      nestedAccessorInvoked = true;
+      return 'unsafe';
+    },
+  });
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(nestedAccessor), `${vector.name}: nested accessor rejected`);
+  assert.equal(nestedAccessorInvoked, false, `${vector.name}: nested accessor never invoked`);
+
+  const customPrototype = Object.assign(Object.create({ future: true }), observation);
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(customPrototype), `${vector.name}: custom prototype rejected`);
+}
 const validatesIntegratedDigestChain = vector => {
   try {
     const manifestProjection = projectBillingOutputBindingV1FromManifest(vector.outputManifest);

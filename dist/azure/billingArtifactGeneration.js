@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = void 0;
+exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = void 0;
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
@@ -9,6 +9,26 @@ const BILLING_BASES = new Set(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set(['identity', 'gzip']);
+const OBSERVATION_COMPARISONS = new Set([
+    'authority-absent',
+    'newer',
+    'equal',
+    'older',
+    'incomparable',
+    'newer-ownership',
+    'older-ownership',
+    'unenforceable',
+]);
+const OBSERVATION_PROJECTED_OUTCOMES = new Map([
+    ['authority-absent', 'would-promote'],
+    ['newer', 'would-promote'],
+    ['newer-ownership', 'would-promote'],
+    ['equal', 'would-be-idempotent'],
+    ['older', 'would-be-superseded'],
+    ['older-ownership', 'would-be-superseded'],
+    ['incomparable', 'would-quarantine'],
+    ['unenforceable', 'not-enforceable'],
+]);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -163,6 +183,27 @@ const isBillingAnalyzerRequestV2 = (value) => {
     return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
 exports.isBillingAnalyzerRequestV2 = isBillingAnalyzerRequestV2;
+/** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
+const isBillingAnalyzerInputObservationPointerV1 = (value) => {
+    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
+        return false;
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analyzer-input-observation-pointer' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.inputState !== 'enqueued') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    return ((0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) &&
+        value.inputManifestPath === inputManifestPath(value.subscriptionId, value.generationId) &&
+        isSha256(value.inputManifestDigest) &&
+        isSha256(value.messageId) &&
+        isNonEmptyString(value.correlationId) &&
+        isCanonicalIsoTimestamp(value.enqueuedAt));
+};
+exports.isBillingAnalyzerInputObservationPointerV1 = isBillingAnalyzerInputObservationPointerV1;
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 const isBillingAnalyzerOutputManifestV2 = (value) => {
     if (!isRecord(value) ||
@@ -235,4 +276,41 @@ const isBillingAnalysisCurrentPointerV1 = (value) => {
         isCanonicalIsoTimestamp(value.completedAt));
 };
 exports.isBillingAnalysisCurrentPointerV1 = isBillingAnalysisCurrentPointerV1;
+/** Validates an immutable diagnostic-only promotion evaluation. */
+const isBillingAnalysisPromotionObservationV1 = (value) => {
+    if (!isRecord(value) ||
+        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
+        ])) {
+        return false;
+    }
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analysis-promotion-observation' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.processingState !== 'succeeded') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) ||
+        value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId) ||
+        !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.outputManifestPath) ||
+        value.outputManifestPath !== outputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!isSha256(value.inputManifestDigest) ||
+        !isSha256(value.outputManifestDigest) ||
+        !isSha256(value.observationDigest) ||
+        !isSha256(value.messageId) ||
+        !isNonEmptyString(value.correlationId) ||
+        !isCanonicalIsoTimestamp(value.observedAt) ||
+        !isRecord(value.evaluation) ||
+        !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)) {
+        return false;
+    }
+    return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
+};
+exports.isBillingAnalysisPromotionObservationV1 = isBillingAnalysisPromotionObservationV1;
 //# sourceMappingURL=billingArtifactGeneration.js.map

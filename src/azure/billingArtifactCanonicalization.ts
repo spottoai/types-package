@@ -1,6 +1,11 @@
 import type { ArtifactOwnershipBinding, ArtifactRevisionVector } from '../common/artifactEvidence.js';
+import { allowedArtifactReferenceField, containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
 import { type BillingArtifactPublicationDecision } from './billingArtifactEvidence.js';
-import type { BillingAnalyzerInputManifestV2, BillingAnalyzerOutputManifestV2 } from './billingArtifactGeneration.js';
+import type {
+  BillingAnalysisPromotionObservationV1,
+  BillingAnalyzerInputManifestV2,
+  BillingAnalyzerOutputManifestV2,
+} from './billingArtifactGeneration.js';
 import type { BillingCostAnalysisMetadataV2 } from './billingPlots.js';
 
 /** Stable identity/evidence projection shared by billing output manifests and metadata. */
@@ -185,6 +190,48 @@ const projectPublicationDecision = (value: unknown): BillingArtifactPublicationD
   } as unknown as BillingArtifactPublicationDecision;
 };
 
+const projectPromotionEvaluation = (value: unknown): Record<string, unknown> => {
+  const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
+  return {
+    comparison: readDataProperty(source, 'comparison'),
+    projectedOutcome: readDataProperty(source, 'projectedOutcome'),
+  };
+};
+
+const projectPromotionObservation = (value: unknown): Record<string, unknown> => {
+  const source = requirePlainRecord(value, 'Billing promotion observation');
+  const observationDigest = readDataProperty(source, 'observationDigest');
+  if (typeof observationDigest !== 'string') throw new TypeError('Billing promotion observation requires an observationDigest string.');
+  const projected: Record<string, unknown> = {
+    schemaVersion: readDataProperty(source, 'schemaVersion'),
+    documentType: readDataProperty(source, 'documentType'),
+    authority: readDataProperty(source, 'authority'),
+    publicationMode: readDataProperty(source, 'publicationMode'),
+    processingState: readDataProperty(source, 'processingState'),
+    subscriptionId: readDataProperty(source, 'subscriptionId'),
+    generationId: readDataProperty(source, 'generationId'),
+    ownership: projectOwnership(readDataProperty(source, 'ownership')),
+    revision: projectRevision(readDataProperty(source, 'revision')),
+    messageId: readDataProperty(source, 'messageId'),
+    correlationId: readDataProperty(source, 'correlationId'),
+    inputManifestPath: readDataProperty(source, 'inputManifestPath'),
+    inputManifestDigest: readDataProperty(source, 'inputManifestDigest'),
+    outputManifestPath: readDataProperty(source, 'outputManifestPath'),
+    outputManifestDigest: readDataProperty(source, 'outputManifestDigest'),
+    evaluation: projectPromotionEvaluation(readDataProperty(source, 'evaluation')),
+    observedAt: readDataProperty(source, 'observedAt'),
+  };
+  if (
+    containsForbiddenArtifactControlData(projected, [
+      ...allowedArtifactReferenceField(projected, 'inputManifestPath'),
+      ...allowedArtifactReferenceField(projected, 'outputManifestPath'),
+    ])
+  ) {
+    throw new TypeError('Billing promotion observation contains forbidden control data.');
+  }
+  return projected;
+};
+
 const projectBinding = (
   subscriptionId: unknown,
   generationId: unknown,
@@ -335,6 +382,10 @@ export const canonicalizeBillingAnalyzerInputManifestV2ForDigest = (manifest: Bi
 /** Returns the canonical output-manifest digest preimage, excluding only top-level manifestDigest. */
 export const canonicalizeBillingAnalyzerOutputManifestV2ForDigest = (manifest: BillingAnalyzerOutputManifestV2): string =>
   canonicalizeJson(withoutManifestDigest(manifest));
+
+/** Returns the exact promotion-observation digest preimage, excluding observationDigest and additive fields. */
+export const canonicalizeBillingAnalysisPromotionObservationV1ForDigest = (observation: BillingAnalysisPromotionObservationV1): string =>
+  canonicalizeJson(projectPromotionObservation(observation));
 
 /** Returns the RFC 8785/JCS-compatible canonical JSON string for a validated JSON value. */
 export const canonicalizeBillingArtifactJson = (value: unknown): string => canonicalizeJson(value);

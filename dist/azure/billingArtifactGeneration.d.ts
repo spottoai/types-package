@@ -1,4 +1,4 @@
-import { type ArtifactCoverageVerdict, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
+import { type ArtifactCoverageVerdict, type ArtifactOwnershipBinding, type ArtifactRevisionComparison, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { BillingAnalyzerMetadata } from './billingGeneration.js';
 import { type BillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
@@ -73,6 +73,23 @@ export interface BillingAnalyzerRequestV2 {
     inputManifestDigest: string;
     displayMetadata?: BillingAnalyzerMetadata;
 }
+/** Diagnostic-only discovery pointer for the latest successfully enqueued observe input. */
+export interface BillingAnalyzerInputObservationPointerV1 {
+    schemaVersion: 1;
+    documentType: 'billing-analyzer-input-observation-pointer';
+    authority: 'diagnostic-only';
+    publicationMode: 'observe';
+    inputState: 'enqueued';
+    subscriptionId: string;
+    generationId: string;
+    ownership: ArtifactOwnershipBinding<'azure'>;
+    revision: ArtifactRevisionVector;
+    inputManifestPath: string;
+    inputManifestDigest: string;
+    messageId: string;
+    correlationId: string;
+    enqueuedAt: string;
+}
 export interface BillingAnalyzerOutputManifestV2 extends BillingGenerationDocumentV2 {
     inputManifestPath: string;
     inputManifestDigest: string;
@@ -100,15 +117,43 @@ export interface BillingAnalysisCurrentPointerV1 {
     publicationDecision: BillingCompletedArtifactPublicationDecision;
     completedAt: string;
 }
+/** Immutable diagnostic record of what observe mode would have done at promotion time. */
+export interface BillingAnalysisPromotionObservationV1 {
+    schemaVersion: 1;
+    documentType: 'billing-analysis-promotion-observation';
+    authority: 'diagnostic-only';
+    publicationMode: 'observe';
+    processingState: 'succeeded';
+    subscriptionId: string;
+    generationId: string;
+    ownership: ArtifactOwnershipBinding<'azure'>;
+    revision: ArtifactRevisionVector;
+    messageId: string;
+    correlationId: string;
+    inputManifestPath: string;
+    inputManifestDigest: string;
+    outputManifestPath: string;
+    outputManifestDigest: string;
+    evaluation: {
+        comparison: ArtifactRevisionComparison | 'authority-absent';
+        projectedOutcome: 'would-promote' | 'would-be-idempotent' | 'would-be-superseded' | 'would-quarantine' | 'not-enforceable';
+    };
+    observationDigest: string;
+    observedAt: string;
+}
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export declare const isBillingAnalyzerInputManifestV2: (value: unknown) => value is BillingAnalyzerInputManifestV2;
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export declare const isBillingAnalyzerInputCurrentPointerV1: (value: unknown) => value is BillingAnalyzerInputCurrentPointerV1;
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export declare const isBillingAnalyzerRequestV2: (value: unknown) => value is BillingAnalyzerRequestV2;
+/** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
+export declare const isBillingAnalyzerInputObservationPointerV1: (value: unknown) => value is BillingAnalyzerInputObservationPointerV1;
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export declare const isBillingAnalyzerOutputManifestV2: (value: unknown) => value is BillingAnalyzerOutputManifestV2;
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 export declare const isBillingAnalysisCurrentPointerV1: (value: unknown) => value is BillingAnalysisCurrentPointerV1;
+/** Validates an immutable diagnostic-only promotion evaluation. */
+export declare const isBillingAnalysisPromotionObservationV1: (value: unknown) => value is BillingAnalysisPromotionObservationV1;
 export {};
 //# sourceMappingURL=billingArtifactGeneration.d.ts.map

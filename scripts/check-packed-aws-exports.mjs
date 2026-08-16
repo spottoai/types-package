@@ -18,18 +18,22 @@ const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narr
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
+const promotionObservationLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.billingAnalysisPromotionObservationV1, null, 2);
 const digestRepairRuntimeDocuments =
   '{"outputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"inputManifestPath":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json","inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","artifacts":[{"path":"subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json","name":"metadata.json","mediaType":"application/json","contentEncoding":"identity","byteLength":1924,"sha256":"77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e"}],"publicationDecision":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"manifestDigest":"eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06","completedAt":"2026-08-13T00:05:00.000Z","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63"},"metadata":{"schemaVersion":2,"subscriptionId":"sub-123","billingGenerationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"artifactState":"partial","artifactEvidence":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63","chartData":{"schemaVersion":1,"source":"aggregated","dataWindow":{"startDate":1754006400,"endDate":1756684800,"pointCount":0},"views":{},"detectors":{"threshold":2,"methods":[]}},"anomalies":[],"currencyCode":"NZD","currencySymbol":"$"},"inputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","publicationKey":"billing-input:sub-123:source-run-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"coveragePlanDigest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","asOfUtc":"2026-08-13T00:00:00.000Z","stableCutoffUtc":"2026-08-12T00:00:00.000Z","requestedPeriods":[{"fromInclusive":"2026-07-01T00:00:00.000Z","throughExclusive":"2026-08-01T00:00:00.000Z","dateBasis":"utc","basis":"amortized"}],"inputs":[{"path":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz","versionId":"version-1","etag":"etag-1","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","byteCount":512,"rowCount":31,"basis":"amortized","currencyCode":"NZD","coverage":"complete"}],"manifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","completedAt":"2026-08-13T00:05:00.000Z"}}';
 const artifactEvidenceConsumerSource = `
 import {
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingOutputBindingV1,
   compareArtifactRevisionVector,
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputObservationPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
@@ -56,7 +60,9 @@ import {
   type ArtifactRevisionVector,
   type ArtifactSupportVerdict,
   type BillingAnalysisCurrentPointerV1,
+  type BillingAnalysisPromotionObservationV1,
   type BillingAnalyzerInputCurrentPointerV1,
+  type BillingAnalyzerInputObservationPointerV1,
   type BillingAnalyzerInputManifestV2,
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
@@ -70,13 +76,16 @@ import {
 
 const runtimeExports = [
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingOutputBindingV1,
   compareArtifactRevisionVector,
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputObservationPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
@@ -106,7 +115,9 @@ type Dev1036PublishedTypes = [
   ArtifactRevisionVector,
   ArtifactSupportVerdict,
   BillingAnalysisCurrentPointerV1,
+  BillingAnalysisPromotionObservationV1,
   BillingAnalyzerInputCurrentPointerV1,
+  BillingAnalyzerInputObservationPointerV1,
   BillingAnalyzerInputManifestV2,
   BillingAnalyzerOutputManifestV2,
   BillingAnalyzerRequestV2,
@@ -119,6 +130,7 @@ type Dev1036PublishedTypes = [
 ];
 
 const legacyBillingMetadata = ${legacyBillingMetadataLiteral} satisfies BillingCostAnalysisMetadata;
+const promotionObservation = ${promotionObservationLiteral} satisfies BillingAnalysisPromotionObservationV1;
 const digestRepairDocuments = ${digestRepairRuntimeDocuments} as unknown as {
   outputManifest: BillingAnalyzerOutputManifestV2;
   metadata: BillingCostAnalysisMetadataV2;
@@ -131,11 +143,19 @@ const packedCanonicalPreimages: string[] = [
   canonicalizeBillingOutputBindingV1(metadataBinding),
   canonicalizeBillingAnalyzerInputManifestV2ForDigest(digestRepairDocuments.inputManifest),
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest(digestRepairDocuments.outputManifest),
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest(promotionObservation),
+];
+const observationRuntimeChecks: boolean[] = [
+  isBillingAnalysisPromotionObservationV1(promotionObservation),
+  !isBillingAnalysisCurrentPointerV1(promotionObservation),
+  !isBillingAnalyzerInputCurrentPointerV1(promotionObservation),
+  isBillingAnalyzerInputObservationPointerV1(${JSON.stringify(artifactEvidenceCorpus.fixtures.billingAnalyzerInputObservationPointerV1)}),
 ];
 
 void runtimeExports;
 void legacyBillingMetadata;
 void packedCanonicalPreimages;
+void observationRuntimeChecks;
 void (null as unknown as Dev1036PublishedTypes);
 `;
 const dev1036RuntimeExportNames = [
@@ -143,7 +163,9 @@ const dev1036RuntimeExportNames = [
   'isArtifactOwnershipBinding',
   'isArtifactPublicationDecision',
   'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputObservationPointerV1',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
@@ -156,6 +178,7 @@ const dev1036RuntimeExportNames = [
   'canonicalizeBillingOutputBindingV1',
   'canonicalizeBillingAnalyzerInputManifestV2ForDigest',
   'canonicalizeBillingAnalyzerOutputManifestV2ForDigest',
+  'canonicalizeBillingAnalysisPromotionObservationV1ForDigest',
 ];
 const requiredDigestRepairRuntimeExports = [
   'projectBillingOutputBindingV1FromManifest',
@@ -163,6 +186,7 @@ const requiredDigestRepairRuntimeExports = [
   'canonicalizeBillingOutputBindingV1',
   'canonicalizeBillingAnalyzerInputManifestV2ForDigest',
   'canonicalizeBillingAnalyzerOutputManifestV2ForDigest',
+  'canonicalizeBillingAnalysisPromotionObservationV1ForDigest',
 ];
 for (const exportName of requiredDigestRepairRuntimeExports) {
   if (!dev1036RuntimeExportNames.includes(exportName)) {

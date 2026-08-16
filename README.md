@@ -65,6 +65,13 @@ in both ownership and revision data. `npm run check:artifact-evidence-contracts`
 executes the canonical cross-runtime corpus, billing validator matrix, ownership
 checks, promotion preconditions, and every revision-comparison outcome.
 
+Observe-mode discovery uses `BillingAnalyzerInputObservationPointerV1` and
+`BillingAnalysisPromotionObservationV1`. Both are explicitly
+`diagnostic-only`, may never substitute for a current authority pointer, and
+may omit an ownership epoch only when ownership and revision omit it together.
+The promotion observation has a stable exact-field canonicalizer that excludes
+its own `observationDigest` and ignores additive-next fields.
+
 Billing output V2 uses an acyclic digest chain. Producers project the public
 `BillingOutputBindingV1`, canonicalize it with
 `canonicalizeBillingOutputBindingV1`, and SHA-256 that UTF-8 preimage to obtain

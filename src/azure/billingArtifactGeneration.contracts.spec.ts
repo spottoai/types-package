@@ -1,8 +1,11 @@
 import {
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingOutputBindingV1,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
+  isBillingAnalyzerInputObservationPointerV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
@@ -13,9 +16,11 @@ import {
   type ArtifactRevisionVector,
   type ArtifactPublicationDecision,
   type BillingAnalysisCurrentPointerV1,
+  type BillingAnalysisPromotionObservationV1,
   type BillingArtifactPublicationDecision,
   type BillingAnalyzerInputCurrentPointerV1,
   type BillingAnalyzerInputManifestV2,
+  type BillingAnalyzerInputObservationPointerV1,
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
   type BillingCostAnalysisMetadataV2,
@@ -55,6 +60,19 @@ const ownership = {
 
 const revision = {
   ownershipEpochRevision: 3,
+  sourceRevision: 42,
+  policyRevision: 7,
+} satisfies ArtifactRevisionVector;
+
+const observeOwnership = {
+  provider: 'azure',
+  tenantId: 'tenant-1',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  accountId: subscriptionId,
+} as const;
+
+const observeRevision = {
   sourceRevision: 42,
   policyRevision: 7,
 } satisfies ArtifactRevisionVector;
@@ -217,6 +235,23 @@ const analyzerRequest = {
   },
 } satisfies BillingAnalyzerRequestV2;
 
+const inputObservationPointer = {
+  schemaVersion: 1,
+  documentType: 'billing-analyzer-input-observation-pointer',
+  authority: 'diagnostic-only',
+  publicationMode: 'observe',
+  inputState: 'enqueued',
+  subscriptionId,
+  generationId,
+  ownership: observeOwnership,
+  revision: observeRevision,
+  inputManifestPath,
+  inputManifestDigest: inputManifest.manifestDigest,
+  messageId: analyzerRequest.messageId,
+  correlationId: analyzerRequest.correlationId,
+  enqueuedAt: completedAt,
+} satisfies BillingAnalyzerInputObservationPointerV1;
+
 const outputManifest = {
   schemaVersion: 2,
   status: 'completed',
@@ -256,6 +291,30 @@ const analysisPointer = {
   publicationDecision,
   completedAt,
 } satisfies BillingAnalysisCurrentPointerV1;
+
+const promotionObservation = {
+  schemaVersion: 1,
+  documentType: 'billing-analysis-promotion-observation',
+  authority: 'diagnostic-only',
+  publicationMode: 'observe',
+  processingState: 'succeeded',
+  subscriptionId,
+  generationId,
+  ownership: observeOwnership,
+  revision: observeRevision,
+  messageId: analyzerRequest.messageId,
+  correlationId: analyzerRequest.correlationId,
+  inputManifestPath,
+  inputManifestDigest: inputManifest.manifestDigest,
+  outputManifestPath,
+  outputManifestDigest: outputManifest.manifestDigest,
+  evaluation: {
+    comparison: 'newer',
+    projectedOutcome: 'would-promote',
+  },
+  observationDigest: digestD,
+  observedAt: completedAt,
+} satisfies BillingAnalysisPromotionObservationV1;
 
 const costAnalysisMetadata = {
   schemaVersion: 2,
@@ -302,6 +361,7 @@ const canonicalPreimages: string[] = [
   canonicalizeBillingOutputBindingV1(binding),
   canonicalizeBillingAnalyzerInputManifestV2ForDigest(inputManifest),
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest(outputManifest),
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest(promotionObservation),
 ];
 
 const partialCostAnalysisMetadata = {
@@ -382,6 +442,12 @@ const validationResults: boolean[] = [
   isBillingAnalysisCurrentPointerV1(analysisPointer),
   isBillingCostAnalysisMetadataV2(costAnalysisMetadata),
   isBillingCostAnalysisMetadataV2(partialCostAnalysisMetadata),
+  isBillingAnalyzerInputObservationPointerV1(inputObservationPointer),
+  isBillingAnalysisPromotionObservationV1(promotionObservation),
+  !isBillingAnalyzerInputCurrentPointerV1(inputObservationPointer),
+  !isBillingAnalysisCurrentPointerV1(inputObservationPointer),
+  !isBillingAnalyzerInputCurrentPointerV1(promotionObservation),
+  !isBillingAnalysisCurrentPointerV1(promotionObservation),
 ];
 
 const runtimeSafetyResults: boolean[] = [
@@ -406,6 +472,12 @@ const unknownInputPointerVersion: BillingAnalyzerInputCurrentPointerV1 = { ...in
 
 // @ts-expect-error V2 analyzer requests use schema version 2.
 const unknownRequestVersion: BillingAnalyzerRequestV2 = { ...analyzerRequest, schemaVersion: 1 };
+
+// @ts-expect-error Observation pointers use schema version 1.
+const unknownInputObservationVersion: BillingAnalyzerInputObservationPointerV1 = { ...inputObservationPointer, schemaVersion: 2 };
+
+// @ts-expect-error Promotion observations use schema version 1.
+const unknownPromotionObservationVersion: BillingAnalysisPromotionObservationV1 = { ...promotionObservation, schemaVersion: 2 };
 
 // @ts-expect-error V2 output manifests reject unknown schema versions.
 const unknownOutputManifestVersion: BillingAnalyzerOutputManifestV2 = { ...outputManifest, schemaVersion: 3 };
@@ -508,6 +580,8 @@ void [
   unknownInputManifestVersion,
   unknownInputPointerVersion,
   unknownRequestVersion,
+  unknownInputObservationVersion,
+  unknownPromotionObservationVersion,
   unknownOutputManifestVersion,
   incompleteAnalysisPointer,
   policyFreeOutputManifest,

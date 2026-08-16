@@ -13,7 +13,7 @@
 - Status: approved — implementation in progress
 - Approved: Yes — Jay Ji, 2026-08-13 (subagent-driven execution)
 - Iterations: 1
-- Last updated: 2026-08-13
+- Last updated: 2026-08-17
 - Repo: `types-package`
 - Domain: `data-quality`
 - Parent spec: `cloud-engine/Specs/data-quality/data-quality-06-artifact-completeness-and-idempotency.md`
@@ -117,6 +117,28 @@ excluding only its own top-level digest; the current pointer retains D as
 `outputManifestDigest`. The old metadata V2 `outputManifestDigest` name is
 rejected rather than retained as an alias. Public canonicalization helpers
 return dependency-free UTF-8 preimages and never hash internally.
+
+Diagnostic observation amendment (accepted 2026-08-17): observe mode uses two
+explicitly non-authoritative documents instead of either current-pointer type.
+`BillingAnalyzerInputObservationPointerV1` binds the newest successfully
+enqueued queue message to its exact immutable input manifest and is discovered
+at
+`subscriptions/{subscriptionId}/history/billing/analyzer-inputs/latest-enqueued.json`.
+Cloud may replace that diagnostic pointer only by a bounded ETag CAS whose
+candidate has a greater Cloud-owned `sourceRevision`; ownership or policy
+revision never orders observation candidates. The pointer may omit the
+ownership epoch, but a present epoch must match the revision vector.
+
+`BillingAnalysisPromotionObservationV1` is immutable at
+`subscriptions/{subscriptionId}/billing/generations/{generationId}/promotion-observation.json`.
+It binds the input manifest, queue message, output manifest, revision and the
+projected promotion outcome. Its `observationDigest` is SHA-256 over
+`canonicalizeBillingAnalysisPromotionObservationV1ForDigest`, which selects
+only the declared version-1 fields and excludes `observationDigest` itself.
+Additive fields do not change the preimage. Both observation documents require
+`authority: 'diagnostic-only'` and `publicationMode: 'observe'`; neither can be
+returned as customer data, used for fallback, or validated/promoted as
+`BillingAnalyzerInputCurrentPointerV1` or `BillingAnalysisCurrentPointerV1`.
 
 ## Tasks
 

@@ -1,5 +1,5 @@
 {
-  "corpusVersion": 3,
+  "corpusVersion": 4,
   "fixtures": {
     "currentPopulatedDecision": {
       "processing": "succeeded",
@@ -62,6 +62,63 @@
       "manifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
       "manifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
       "completedAt": "2026-08-13T00:05:00.000Z"
+    },
+    "billingAnalyzerInputObservationPointerV1": {
+      "schemaVersion": 1,
+      "documentType": "billing-analyzer-input-observation-pointer",
+      "authority": "diagnostic-only",
+      "publicationMode": "observe",
+      "inputState": "enqueued",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123"
+      },
+      "revision": {
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+      "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "correlationId": "correlation-42",
+      "enqueuedAt": "2026-08-13T00:05:00.000Z"
+    },
+    "billingAnalysisPromotionObservationV1": {
+      "schemaVersion": 1,
+      "documentType": "billing-analysis-promotion-observation",
+      "authority": "diagnostic-only",
+      "publicationMode": "observe",
+      "processingState": "succeeded",
+      "subscriptionId": "sub-123",
+      "generationId": "billing-input-generation-42",
+      "ownership": {
+        "provider": "azure",
+        "tenantId": "tenant-1",
+        "companyId": "company-1",
+        "cloudAccountId": "cloud-account-1",
+        "accountId": "sub-123"
+      },
+      "revision": {
+        "sourceRevision": 42,
+        "policyRevision": 7
+      },
+      "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "correlationId": "correlation-42",
+      "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+      "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+      "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+      "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "evaluation": {
+        "comparison": "newer",
+        "projectedOutcome": "would-promote"
+      },
+      "observationDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "observedAt": "2026-08-13T00:06:00.000Z"
     },
     "legacyBillingCostAnalysisMetadataV1": {
       "subscriptionId": "sub-123",
@@ -699,6 +756,160 @@
       "validator": "billingCostAnalysisMetadataCompatibility",
       "fixture": "legacyBillingCostAnalysisMetadataV1",
       "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "observe input pointer is valid without an ownership epoch",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "observe input pointer allows additive fields",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": true,
+      "mutations": [{ "path": "futureField", "value": { "producer": "next" } }]
+    },
+    {
+      "name": "observe input pointer rejects an unknown version",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "schemaVersion", "value": 2 }]
+    },
+    {
+      "name": "observe input pointer rejects control characters",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "correlationId", "value": "correlation\u0000unsafe" }]
+    },
+    {
+      "name": "observe input pointer rejects a non-generation manifest path",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "inputManifestPath", "value": "subscriptions/sub-123/history/billing/analyzer-inputs/latest-enqueued.json" }]
+    },
+    {
+      "name": "observe input pointer rejects a malformed digest",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "inputManifestDigest", "value": "not-a-digest" }]
+    },
+    {
+      "name": "observe input pointer rejects a non-canonical timestamp",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "enqueuedAt", "value": "2026-08-13T00:05:00Z" }]
+    },
+    {
+      "name": "observe input pointer rejects cross-subscription ownership",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "ownership.accountId", "value": "sub-other" }]
+    },
+    {
+      "name": "observe input pointer rejects an inconsistent present epoch",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "ownership.ownershipEpochRevision", "value": 3 }]
+    },
+    {
+      "name": "promotion observation is valid without an ownership epoch",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "promotion observation allows additive fields",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": [{ "path": "evaluation.futureField", "value": true }]
+    },
+    {
+      "name": "promotion observation rejects an unknown version",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "schemaVersion", "value": 2 }]
+    },
+    {
+      "name": "promotion observation rejects control characters",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "correlationId", "value": "correlation\nunsafe" }]
+    },
+    {
+      "name": "promotion observation rejects a non-generation output path",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "outputManifestPath", "value": "subscriptions/sub-123/billing/current-analysis.json" }]
+    },
+    {
+      "name": "promotion observation rejects a malformed digest",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "observationDigest", "value": "not-a-digest" }]
+    },
+    {
+      "name": "promotion observation rejects a non-canonical timestamp",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "observedAt", "value": "2026-08-13T00:06:00Z" }]
+    },
+    {
+      "name": "promotion observation rejects cross-subscription ownership",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "ownership.accountId", "value": "sub-other" }]
+    },
+    {
+      "name": "promotion observation rejects an inconsistent present epoch",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "revision.ownershipEpochRevision", "value": 3 }]
+    },
+    {
+      "name": "input observation cannot validate as input authority",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "input observation cannot validate as analysis authority",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "promotion observation cannot validate as input authority",
+      "validator": "isBillingAnalyzerInputCurrentPointerV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "promotion observation cannot validate as analysis authority",
+      "validator": "isBillingAnalysisCurrentPointerV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
       "mutations": []
     },
     {
@@ -8342,6 +8553,80 @@
       "issues": []
     }
   },
+  "observationDigestVectors": [
+    {
+      "name": "observe promotion binding",
+      "observation": {
+        "schemaVersion": 1,
+        "documentType": "billing-analysis-promotion-observation",
+        "authority": "diagnostic-only",
+        "publicationMode": "observe",
+        "processingState": "succeeded",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123"
+        },
+        "revision": {
+          "sourceRevision": 42,
+          "policyRevision": 7
+        },
+        "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "correlationId": "correlation-42",
+        "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+        "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "evaluation": {
+          "comparison": "newer",
+          "projectedOutcome": "would-promote"
+        },
+        "observationDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "observedAt": "2026-08-13T00:06:00.000Z"
+      },
+      "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"newer\",\"projectedOutcome\":\"would-promote\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
+      "expectedDigest": "e143316284603f9c7373a0c436b58c93b08d5595bcff3593b195e601535c242e"
+    }
+  ],
+  "observationBindingMutationVectors": [
+    { "name": "schema version", "path": "schemaVersion", "value": 2 },
+    { "name": "document type", "path": "documentType", "value": "other" },
+    { "name": "authority", "path": "authority", "value": "other" },
+    { "name": "publication mode", "path": "publicationMode", "value": "enforce" },
+    { "name": "processing state", "path": "processingState", "value": "failed" },
+    { "name": "subscription identity", "path": "subscriptionId", "value": "sub-other" },
+    { "name": "generation identity", "path": "generationId", "value": "billing-input-generation-43" },
+    { "name": "ownership provider", "path": "ownership.provider", "value": "aws" },
+    { "name": "ownership tenant", "path": "ownership.tenantId", "value": "tenant-2" },
+    { "name": "ownership company", "path": "ownership.companyId", "value": "company-2" },
+    { "name": "ownership cloud account", "path": "ownership.cloudAccountId", "value": "cloud-account-2" },
+    { "name": "ownership account", "path": "ownership.accountId", "value": "sub-other" },
+    { "name": "ownership epoch", "path": "ownership.ownershipEpochRevision", "value": 3 },
+    { "name": "revision source", "path": "revision.sourceRevision", "value": 43 },
+    { "name": "revision policy", "path": "revision.policyRevision", "value": 8 },
+    { "name": "revision epoch", "path": "revision.ownershipEpochRevision", "value": 3 },
+    { "name": "message identity", "path": "messageId", "value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" },
+    { "name": "correlation identity", "path": "correlationId", "value": "correlation-43" },
+    {
+      "name": "input path",
+      "path": "inputManifestPath",
+      "value": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-43/manifest.json"
+    },
+    { "name": "input digest", "path": "inputManifestDigest", "value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" },
+    {
+      "name": "output path",
+      "path": "outputManifestPath",
+      "value": "subscriptions/sub-123/billing/generations/billing-input-generation-43/manifest.json"
+    },
+    { "name": "output digest", "path": "outputManifestDigest", "value": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" },
+    { "name": "comparison", "path": "evaluation.comparison", "value": "older" },
+    { "name": "projected outcome", "path": "evaluation.projectedOutcome", "value": "would-be-superseded" },
+    { "name": "observed timestamp", "path": "observedAt", "value": "2026-08-13T00:07:00.000Z" }
+  ],
   "gzipDeterminism": {
     "mtime": 0,
     "headerAndOptionsFixed": true,

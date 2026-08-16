@@ -6,6 +6,26 @@ const BILLING_BASES = new Set(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set(['identity', 'gzip']);
+const OBSERVATION_COMPARISONS = new Set([
+    'authority-absent',
+    'newer',
+    'equal',
+    'older',
+    'incomparable',
+    'newer-ownership',
+    'older-ownership',
+    'unenforceable',
+]);
+const OBSERVATION_PROJECTED_OUTCOMES = new Map([
+    ['authority-absent', 'would-promote'],
+    ['newer', 'would-promote'],
+    ['newer-ownership', 'would-promote'],
+    ['equal', 'would-be-idempotent'],
+    ['older', 'would-be-superseded'],
+    ['older-ownership', 'would-be-superseded'],
+    ['incomparable', 'would-quarantine'],
+    ['unenforceable', 'not-enforceable'],
+]);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -157,6 +177,26 @@ export const isBillingAnalyzerRequestV2 = (value) => {
         return false;
     return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
+/** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
+export const isBillingAnalyzerInputObservationPointerV1 = (value) => {
+    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath')))
+        return false;
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analyzer-input-observation-pointer' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.inputState !== 'enqueued') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    return (isStrictLogicalArtifactReference(value.inputManifestPath) &&
+        value.inputManifestPath === inputManifestPath(value.subscriptionId, value.generationId) &&
+        isSha256(value.inputManifestDigest) &&
+        isSha256(value.messageId) &&
+        isNonEmptyString(value.correlationId) &&
+        isCanonicalIsoTimestamp(value.enqueuedAt));
+};
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export const isBillingAnalyzerOutputManifestV2 = (value) => {
     if (!isRecord(value) ||
@@ -226,4 +266,40 @@ export const isBillingAnalysisCurrentPointerV1 = (value) => {
         return false;
     return (isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId, value.inputManifestDigest) &&
         isCanonicalIsoTimestamp(value.completedAt));
+};
+/** Validates an immutable diagnostic-only promotion evaluation. */
+export const isBillingAnalysisPromotionObservationV1 = (value) => {
+    if (!isRecord(value) ||
+        containsForbiddenArtifactControlData(value, [
+            ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+            ...allowedArtifactReferenceField(value, 'outputManifestPath'),
+        ])) {
+        return false;
+    }
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analysis-promotion-observation' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.processingState !== 'succeeded') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    if (!isStrictLogicalArtifactReference(value.inputManifestPath) ||
+        value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId) ||
+        !isStrictLogicalArtifactReference(value.outputManifestPath) ||
+        value.outputManifestPath !== outputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!isSha256(value.inputManifestDigest) ||
+        !isSha256(value.outputManifestDigest) ||
+        !isSha256(value.observationDigest) ||
+        !isSha256(value.messageId) ||
+        !isNonEmptyString(value.correlationId) ||
+        !isCanonicalIsoTimestamp(value.observedAt) ||
+        !isRecord(value.evaluation) ||
+        !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)) {
+        return false;
+    }
+    return OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome;
 };

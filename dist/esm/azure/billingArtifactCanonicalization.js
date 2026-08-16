@@ -1,3 +1,4 @@
+import { allowedArtifactReferenceField, containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
 const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const requirePlainRecord = (value, name) => {
@@ -158,6 +159,45 @@ const projectPublicationDecision = (value) => {
         issues: issues.map(projectIssue),
     };
 };
+const projectPromotionEvaluation = (value) => {
+    const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
+    return {
+        comparison: readDataProperty(source, 'comparison'),
+        projectedOutcome: readDataProperty(source, 'projectedOutcome'),
+    };
+};
+const projectPromotionObservation = (value) => {
+    const source = requirePlainRecord(value, 'Billing promotion observation');
+    const observationDigest = readDataProperty(source, 'observationDigest');
+    if (typeof observationDigest !== 'string')
+        throw new TypeError('Billing promotion observation requires an observationDigest string.');
+    const projected = {
+        schemaVersion: readDataProperty(source, 'schemaVersion'),
+        documentType: readDataProperty(source, 'documentType'),
+        authority: readDataProperty(source, 'authority'),
+        publicationMode: readDataProperty(source, 'publicationMode'),
+        processingState: readDataProperty(source, 'processingState'),
+        subscriptionId: readDataProperty(source, 'subscriptionId'),
+        generationId: readDataProperty(source, 'generationId'),
+        ownership: projectOwnership(readDataProperty(source, 'ownership')),
+        revision: projectRevision(readDataProperty(source, 'revision')),
+        messageId: readDataProperty(source, 'messageId'),
+        correlationId: readDataProperty(source, 'correlationId'),
+        inputManifestPath: readDataProperty(source, 'inputManifestPath'),
+        inputManifestDigest: readDataProperty(source, 'inputManifestDigest'),
+        outputManifestPath: readDataProperty(source, 'outputManifestPath'),
+        outputManifestDigest: readDataProperty(source, 'outputManifestDigest'),
+        evaluation: projectPromotionEvaluation(readDataProperty(source, 'evaluation')),
+        observedAt: readDataProperty(source, 'observedAt'),
+    };
+    if (containsForbiddenArtifactControlData(projected, [
+        ...allowedArtifactReferenceField(projected, 'inputManifestPath'),
+        ...allowedArtifactReferenceField(projected, 'outputManifestPath'),
+    ])) {
+        throw new TypeError('Billing promotion observation contains forbidden control data.');
+    }
+    return projected;
+};
 const projectBinding = (subscriptionId, generationId, ownership, revision, inputManifestDigest, publicationDecision) => ({
     kind: 'billing-analysis-output',
     schemaVersion: 1,
@@ -277,5 +317,7 @@ export const canonicalizeBillingOutputBindingV1 = (binding) => {
 export const canonicalizeBillingAnalyzerInputManifestV2ForDigest = (manifest) => canonicalizeJson(withoutManifestDigest(manifest));
 /** Returns the canonical output-manifest digest preimage, excluding only top-level manifestDigest. */
 export const canonicalizeBillingAnalyzerOutputManifestV2ForDigest = (manifest) => canonicalizeJson(withoutManifestDigest(manifest));
+/** Returns the exact promotion-observation digest preimage, excluding observationDigest and additive fields. */
+export const canonicalizeBillingAnalysisPromotionObservationV1ForDigest = (observation) => canonicalizeJson(projectPromotionObservation(observation));
 /** Returns the RFC 8785/JCS-compatible canonical JSON string for a validated JSON value. */
 export const canonicalizeBillingArtifactJson = (value) => canonicalizeJson(value);
