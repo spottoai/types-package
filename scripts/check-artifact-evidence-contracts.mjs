@@ -3,6 +3,9 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import {
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
   canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
@@ -14,11 +17,16 @@ import {
   isBillingAnalysisCurrentPointerV1,
   isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   isEnforceableArtifactOwnershipBinding,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
@@ -27,9 +35,9 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-const EXPECTED_CORPUS_SHA256 = '9fb71c0f6eba3e734f671c4b7bc63253b7f0535274e4fb29e6be545b8ed2445b';
-const EXPECTED_CORPUS_CASE_COUNT = 324;
-const EXPECTED_CORPUS_MUTATION_COUNT = 412;
+const EXPECTED_CORPUS_SHA256 = '1e1a96ae329816dc60ea8d2b949f9c953aff674a488ab974a045072eb85d0e34';
+const EXPECTED_CORPUS_CASE_COUNT = 346;
+const EXPECTED_CORPUS_MUTATION_COUNT = 431;
 const EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT = 3;
 const REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES = [
   'observe promotion binding',
@@ -48,8 +56,22 @@ const REQUIRED_DIGEST_RELATION_CASE_NAMES = [
   'promotion observation rejects quarantine without a different digest relation',
   'promotion observation rejects an unknown output digest relation',
 ];
+const REQUIRED_V6_CASE_NAMES = [
+  'diagnostic discovery path accepts exact latest-enqueued location',
+  'diagnostic discovery path rejects traversal subscription segment',
+  'input manifest accepts exact stored object byte limit',
+  'input manifest rejects stored object byte limit plus one',
+  'output manifest accepts exact metadata stored byte limit',
+  'output manifest rejects metadata stored byte limit plus one',
+  'output manifest accepts exact plot stored byte limit',
+  'output manifest rejects plot stored byte limit plus one',
+  'legacy fallback response accepts explicit legacy transition',
+  'legacy fallback response rejects V2 spread leakage',
+  'verified read response accepts current evidence',
+  'verified read response rejects partial metadata',
+];
 
-assert.equal(contractCorpus.corpusVersion, 5, 'portable corpus version must match the downstream parity contract');
+assert.equal(contractCorpus.corpusVersion, 6, 'portable corpus version must match the downstream parity contract');
 assert.equal(corpusDigest, EXPECTED_CORPUS_SHA256, 'portable corpus exact bytes must remain pinned');
 assert.equal(contractCorpus.cases.length, EXPECTED_CORPUS_CASE_COUNT, 'portable corpus case count must remain pinned');
 assert.equal(
@@ -61,6 +83,28 @@ const corpusCaseNames = new Set(contractCorpus.cases.map(corpusCase => corpusCas
 assert.equal(corpusCaseNames.size, contractCorpus.cases.length, 'portable corpus case names must be unique');
 for (const requiredCaseName of REQUIRED_DIGEST_RELATION_CASE_NAMES) {
   assert.ok(corpusCaseNames.has(requiredCaseName), `required digest-relation corpus case is missing: ${requiredCaseName}`);
+}
+for (const requiredCaseName of REQUIRED_V6_CASE_NAMES) {
+  assert.ok(corpusCaseNames.has(requiredCaseName), `required v6 corpus case is missing: ${requiredCaseName}`);
+}
+assert.deepEqual(contractCorpus.objectLimitsV1, BILLING_ARTIFACT_OBJECT_LIMITS_V1, 'portable object limits must exactly match the root V1 export');
+assert.equal(
+  contractCorpus.diagnosticDiscoveryV1.relativeSuffix,
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  'portable diagnostic discovery suffix must exactly match the root export'
+);
+assert.equal(
+  buildBillingAnalyzerInputObservationPointerPath(contractCorpus.diagnosticDiscoveryV1.subscriptionId),
+  contractCorpus.diagnosticDiscoveryV1.absolutePath,
+  'portable diagnostic discovery path must match the safe root builder'
+);
+assert.equal(
+  isBillingAnalyzerInputObservationPointerPath(contractCorpus.diagnosticDiscoveryV1.absolutePath),
+  true,
+  'portable diagnostic discovery path must pass the root validator'
+);
+for (const authorityNegativeCaseName of contractCorpus.diagnosticDiscoveryV1.authorityNegativeCaseNames) {
+  assert.ok(corpusCaseNames.has(authorityNegativeCaseName), `diagnostic authority-negative case is missing: ${authorityNegativeCaseName}`);
 }
 const observationDigestVectorNames = new Set(contractCorpus.observationDigestVectors.map(vector => vector.name));
 assert.equal(
@@ -161,37 +205,6 @@ assert.equal(
   'the comparator compares supplied vectors; callers must validate positive revisions before comparison'
 );
 
-const hasLegacyBillingCostAnalysisMetadataShape = value => {
-  if (
-    !isRecord(value) ||
-    value.schemaVersion !== undefined ||
-    !isNonEmptyString(value.subscriptionId) ||
-    !isNonEmptyString(value.billingGenerationId) ||
-    !isRecord(value.chartData) ||
-    !Array.isArray(value.anomalies) ||
-    !isNonEmptyString(value.currencyCode) ||
-    !isNonEmptyString(value.currencySymbol)
-  ) {
-    return false;
-  }
-
-  const { chartData } = value;
-  return (
-    Number.isSafeInteger(chartData.schemaVersion) &&
-    chartData.schemaVersion > 0 &&
-    isNonEmptyString(chartData.source) &&
-    isRecord(chartData.dataWindow) &&
-    Number.isFinite(chartData.dataWindow.startDate) &&
-    Number.isFinite(chartData.dataWindow.endDate) &&
-    Number.isSafeInteger(chartData.dataWindow.pointCount) &&
-    chartData.dataWindow.pointCount >= 0 &&
-    isRecord(chartData.views) &&
-    isRecord(chartData.detectors) &&
-    Number.isFinite(chartData.detectors.threshold) &&
-    Array.isArray(chartData.detectors.methods)
-  );
-};
-
 const satisfiesPromotionPrecondition = (current, candidate) => {
   const comparison = compareArtifactRevisionVector(candidate.revision, current.revision);
   if (comparison === 'newer' || comparison === 'newer-ownership') return true;
@@ -209,10 +222,15 @@ const corpusValidators = {
   isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
 };
 
 const expectedCorpusValidatorNames = new Set([
@@ -223,20 +241,30 @@ const expectedCorpusValidatorNames = new Set([
   'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
   'isBillingAnalyzerInputObservationPointerV1',
+  'isBillingAnalyzerInputObservationPointerPath',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisBusinessPayloadV1',
+  'isBillingCostAnalysisLegacyFallbackResponse',
   'isBillingCostAnalysisMetadataV2',
+  'isBillingCostAnalysisReadResponse',
+  'isBillingCostAnalysisVerifiedReadResponse',
 ]);
 const requiredPortableBillingValidatorNames = [
   'isBillingAnalysisCurrentPointerV1',
   'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
   'isBillingAnalyzerInputObservationPointerV1',
+  'isBillingAnalyzerInputObservationPointerPath',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisBusinessPayloadV1',
+  'isBillingCostAnalysisLegacyFallbackResponse',
   'isBillingCostAnalysisMetadataV2',
+  'isBillingCostAnalysisReadResponse',
+  'isBillingCostAnalysisVerifiedReadResponse',
 ];
 const corpusValidatorNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.validator));
 assert.deepEqual(corpusValidatorNames, expectedCorpusValidatorNames, 'portable corpus validator-name set must remain exact');
@@ -280,7 +308,7 @@ for (const corpusCase of contractCorpus.cases) {
 
   if (corpusCase.validator === 'billingCostAnalysisMetadataCompatibility') {
     assert.equal(isBillingCostAnalysisMetadataV2(document), false, `${corpusCase.name}: legacy V1 must not be treated as V2`);
-    assert.equal(hasLegacyBillingCostAnalysisMetadataShape(document), corpusCase.valid, `${corpusCase.name}: structural compatibility`);
+    assert.equal(isBillingCostAnalysisBusinessPayloadV1(document), corpusCase.valid, `${corpusCase.name}: strict V1 business compatibility`);
     continue;
   }
 

@@ -76,6 +76,14 @@ matching present epoch must not report that pair. Current-pointer validators
 explicitly reject these diagnostic discriminants while retaining unrelated
 additive-next fields.
 
+Portable billing contract corpus v6 pins the shared stored/decoded object
+limits, safe `latest-enqueued.json` diagnostic discovery path, explicit legacy
+fallback versus evidence-verified read responses, and exact metadata/plot
+descriptor boundaries. The corpus contains 346 cases and 431 mutations at
+SHA-256 `1e1a96ae329816dc60ea8d2b949f9c953aff674a488ab974a045072eb85d0e34`;
+its three promotion-observation digest vectors remain byte-for-byte compatible
+with v5.
+
 For an epoch-bound promotion observation, `evaluation.outputDigestRelation` is
 an optional V1 compatibility extension. Equal revisions may omit it only for
 the legacy `would-be-idempotent` shape; `same` also requires

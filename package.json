@@ -76,7 +76,7 @@
     "check:capability-passport-contracts": "node scripts/check-capability-passport-contracts.mjs",
     "check:commitments-planning": "node scripts/check-commitments-planning.mjs",
     "prepublishOnly": "npm run clean && npm run build && npm test",
-    "test": "npm run build && npm run check:artifact-evidence-contracts && npm run check:aws-examples && npm run check:plugin-public-artifacts && npm run check:portal-public-artifacts && npm run check:relationship-public-artifacts && npm run check:azure-view-set-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:packed-exports",
+    "test": "npm run build && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:aws-examples && npm run check:plugin-public-artifacts && npm run check:portal-public-artifacts && npm run check:relationship-public-artifacts && npm run check:azure-view-set-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:packed-exports",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",

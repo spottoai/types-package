@@ -1,5 +1,28 @@
 {
-  "corpusVersion": 5,
+  "corpusVersion": 6,
+  "objectLimitsV1": {
+    "pointerStoredBytes": 65536,
+    "observationStoredBytes": 65536,
+    "manifestStoredBytes": 1048576,
+    "metadataStoredBytes": 4194304,
+    "metadataDecodedBytes": 16777216,
+    "plotStoredBytes": 33554432,
+    "plotDecodedBytes": 134217728,
+    "inputObjectStoredBytes": 33554432,
+    "inputObjectDecodedBytes": 134217728,
+    "maxInputObjects": 12
+  },
+  "diagnosticDiscoveryV1": {
+    "relativeSuffix": "history/billing/analyzer-inputs/latest-enqueued.json",
+    "subscriptionId": "sub-123",
+    "absolutePath": "subscriptions/sub-123/history/billing/analyzer-inputs/latest-enqueued.json",
+    "authorityNegativeCaseNames": [
+      "input observation cannot validate as input authority",
+      "input observation cannot validate as analysis authority",
+      "promotion observation cannot validate as input authority",
+      "promotion observation cannot validate as analysis authority"
+    ]
+  },
   "fixtures": {
     "currentPopulatedDecision": {
       "processing": "succeeded",
@@ -673,7 +696,9 @@
       "anomalies": [],
       "currencyCode": "NZD",
       "currencySymbol": "$"
-    }
+    },
+    "billingAnalyzerInputObservationPointerPathV1": "subscriptions/sub-123/history/billing/analyzer-inputs/latest-enqueued.json",
+    "unsafeBillingAnalyzerInputObservationPointerPathV1": "subscriptions/../history/billing/analyzer-inputs/latest-enqueued.json"
   },
   "cases": [
     {
@@ -4267,10 +4292,10 @@
       ]
     },
     {
-      "name": "input manifest accepts maximum safe byte and row counts",
+      "name": "input manifest rejects byte count above V1 object limit with maximum safe row count",
       "validator": "isBillingAnalyzerInputManifestV2",
       "fixture": "billingAnalyzerInputManifestV2",
-      "valid": true,
+      "valid": false,
       "mutations": [
         {
           "path": "inputs.0.byteCount",
@@ -4523,10 +4548,10 @@
       ]
     },
     {
-      "name": "output manifest accepts maximum safe artifact byte length",
+      "name": "output manifest rejects artifact byte length above V1 object limit",
       "validator": "isBillingAnalyzerOutputManifestV2",
       "fixture": "billingAnalyzerOutputManifestV2",
-      "valid": true,
+      "valid": false,
       "mutations": [
         {
           "path": "artifacts.0.byteLength",
@@ -4645,10 +4670,10 @@
       ]
     },
     {
-      "name": "metadata accepts fallback reader state",
+      "name": "metadata rejects fallback reader state",
       "validator": "isBillingCostAnalysisMetadataV2",
       "fixture": "billingCostAnalysisMetadataV2",
-      "valid": true,
+      "valid": false,
       "mutations": [
         {
           "path": "artifactState",
@@ -5365,6 +5390,211 @@
           "path": "future",
           "value": {
             "location": "safe/blob\u0000.json"
+          }
+        }
+      ]
+    },
+    {
+      "name": "diagnostic discovery path accepts exact latest-enqueued location",
+      "validator": "isBillingAnalyzerInputObservationPointerPath",
+      "fixture": "billingAnalyzerInputObservationPointerPathV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "diagnostic discovery path rejects traversal subscription segment",
+      "validator": "isBillingAnalyzerInputObservationPointerPath",
+      "fixture": "unsafeBillingAnalyzerInputObservationPointerPathV1",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "legacy business payload accepts complete V1 fixture",
+      "validator": "isBillingCostAnalysisBusinessPayloadV1",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "legacy business payload rejects V2 schema leakage",
+      "validator": "isBillingCostAnalysisBusinessPayloadV1",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": false,
+      "mutations": [{ "path": "schemaVersion", "value": 2 }]
+    },
+    {
+      "name": "legacy fallback response accepts explicit legacy transition",
+      "validator": "isBillingCostAnalysisLegacyFallbackResponse",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": true,
+      "mutations": [
+        { "path": "artifactState", "value": "fallback" },
+        { "path": "artifactSource", "value": "legacy-transition" }
+      ]
+    },
+    {
+      "name": "legacy fallback response rejects wrong source",
+      "validator": "isBillingCostAnalysisLegacyFallbackResponse",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": false,
+      "mutations": [
+        { "path": "artifactState", "value": "fallback" },
+        { "path": "artifactSource", "value": "analyzer-v2" }
+      ]
+    },
+    {
+      "name": "legacy fallback response rejects V2 spread leakage",
+      "validator": "isBillingCostAnalysisLegacyFallbackResponse",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": false,
+      "mutations": [
+        { "path": "artifactState", "value": "fallback" },
+        { "path": "artifactSource", "value": "legacy-transition" }
+      ]
+    },
+    {
+      "name": "verified read response accepts current evidence",
+      "validator": "isBillingCostAnalysisVerifiedReadResponse",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "verified read response accepts stale evidence",
+      "validator": "isBillingCostAnalysisVerifiedReadResponse",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": true,
+      "mutations": [{ "path": "artifactState", "value": "stale" }]
+    },
+    {
+      "name": "verified read response accepts proved complete-empty",
+      "validator": "isBillingCostAnalysisVerifiedReadResponse",
+      "fixture": "billingCostAnalysisMetadataCompleteEmptyV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "verified read response rejects partial metadata",
+      "validator": "isBillingCostAnalysisVerifiedReadResponse",
+      "fixture": "billingCostAnalysisMetadataPartialV2",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "read response accepts verified evidence",
+      "validator": "isBillingCostAnalysisReadResponse",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": true,
+      "mutations": []
+    },
+    {
+      "name": "read response accepts explicit legacy fallback",
+      "validator": "isBillingCostAnalysisReadResponse",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": true,
+      "mutations": [
+        { "path": "artifactState", "value": "fallback" },
+        { "path": "artifactSource", "value": "legacy-transition" }
+      ]
+    },
+    {
+      "name": "read response rejects partial metadata",
+      "validator": "isBillingCostAnalysisReadResponse",
+      "fixture": "billingCostAnalysisMetadataPartialV2",
+      "valid": false,
+      "mutations": []
+    },
+    {
+      "name": "read response rejects V2-shaped fallback",
+      "validator": "isBillingCostAnalysisReadResponse",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": false,
+      "mutations": [
+        { "path": "artifactState", "value": "fallback" },
+        { "path": "artifactSource", "value": "legacy-transition" }
+      ]
+    },
+    {
+      "name": "input manifest accepts exact stored object byte limit",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": true,
+      "mutations": [{ "path": "inputs.0.byteCount", "value": 33554432 }]
+    },
+    {
+      "name": "input manifest rejects stored object byte limit plus one",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [{ "path": "inputs.0.byteCount", "value": 33554433 }]
+    },
+    {
+      "name": "output manifest accepts exact metadata stored byte limit",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [{ "path": "artifacts.0.byteLength", "value": 4194304 }]
+    },
+    {
+      "name": "output manifest rejects metadata stored byte limit plus one",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [{ "path": "artifacts.0.byteLength", "value": 4194305 }]
+    },
+    {
+      "name": "output manifest accepts exact plot stored byte limit",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": true,
+      "mutations": [
+        {
+          "path": "artifacts.1",
+          "value": {
+            "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/plots/daily.json.gz",
+            "name": "daily.json.gz",
+            "mediaType": "application/json",
+            "contentEncoding": "gzip",
+            "byteLength": 33554432,
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects plot stored byte limit plus one",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts.1",
+          "value": {
+            "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/plots/daily.json.gz",
+            "name": "daily.json.gz",
+            "mediaType": "application/json",
+            "contentEncoding": "gzip",
+            "byteLength": 33554433,
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        }
+      ]
+    },
+    {
+      "name": "output manifest rejects plot outside exact descriptor path",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [
+        {
+          "path": "artifacts.1",
+          "value": {
+            "path": "subscriptions/sub-123/billing/generations/billing-input-generation-42/daily.json.gz",
+            "name": "daily.json.gz",
+            "mediaType": "application/json",
+            "contentEncoding": "gzip",
+            "byteLength": 33554432,
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
           }
         }
       ]

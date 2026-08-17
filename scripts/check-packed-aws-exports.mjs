@@ -18,6 +18,67 @@ const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narr
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
+const legacyBillingFallbackDocument = {
+  ...artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1,
+  artifactState: 'fallback',
+  artifactSource: 'legacy-transition',
+};
+const packedBillingV6DocumentsLiteral = JSON.stringify({
+  limits: artifactEvidenceCorpus.objectLimitsV1,
+  diagnosticDiscovery: artifactEvidenceCorpus.diagnosticDiscoveryV1,
+  observation: artifactEvidenceCorpus.fixtures.billingAnalyzerInputObservationPointerV1,
+  inputManifest: artifactEvidenceCorpus.fixtures.billingAnalyzerInputManifestV2,
+  outputManifest: artifactEvidenceCorpus.fixtures.billingAnalyzerOutputManifestV2,
+  legacyBusiness: artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1,
+  legacyFallback: legacyBillingFallbackDocument,
+  current: artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataV2,
+  partial: artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataPartialV2,
+  completeEmpty: artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataCompleteEmptyV2,
+});
+const packedBillingV6ProbeSource = `
+const billingV6 = ${packedBillingV6DocumentsLiteral};
+if (JSON.stringify(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) !== JSON.stringify(billingV6.limits) ||
+    !Object.isFrozen(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) ||
+    root.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH !== billingV6.diagnosticDiscovery.relativeSuffix ||
+    root.buildBillingAnalyzerInputObservationPointerPath(billingV6.diagnosticDiscovery.subscriptionId) !== billingV6.diagnosticDiscovery.absolutePath ||
+    !root.isBillingAnalyzerInputObservationPointerPath(billingV6.diagnosticDiscovery.absolutePath) ||
+    root.isBillingAnalyzerInputObservationPointerPath('subscriptions/../history/billing/analyzer-inputs/latest-enqueued.json') ||
+    !root.isBillingCostAnalysisBusinessPayloadV1(billingV6.legacyBusiness) ||
+    !root.isBillingCostAnalysisLegacyFallbackResponse(billingV6.legacyFallback) ||
+    !root.isBillingCostAnalysisVerifiedReadResponse(billingV6.current) ||
+    !root.isBillingCostAnalysisVerifiedReadResponse(billingV6.completeEmpty) ||
+    root.isBillingCostAnalysisVerifiedReadResponse(billingV6.partial) ||
+    !root.isBillingCostAnalysisReadResponse(billingV6.current) ||
+    !root.isBillingCostAnalysisReadResponse(billingV6.legacyFallback) ||
+    root.isBillingCostAnalysisReadResponse(billingV6.partial) ||
+    root.isBillingCostAnalysisMetadataV2({ ...billingV6.current, artifactState: 'fallback' }) ||
+    root.isBillingAnalyzerInputCurrentPointerV1(billingV6.observation) ||
+    root.isBillingAnalysisCurrentPointerV1(billingV6.observation)) {
+  throw new Error('Packed billing v6 export/response/discovery probe failed');
+}
+const exactInput = structuredClone(billingV6.inputManifest);
+exactInput.inputs[0].byteCount = billingV6.limits.inputObjectStoredBytes;
+const oversizedInput = structuredClone(exactInput);
+oversizedInput.inputs[0].byteCount += 1;
+const exactOutput = structuredClone(billingV6.outputManifest);
+exactOutput.artifacts[0].byteLength = billingV6.limits.metadataStoredBytes;
+exactOutput.artifacts.push({
+  path: 'subscriptions/sub-123/billing/generations/billing-input-generation-42/plots/daily.json.gz',
+  name: 'daily.json.gz',
+  mediaType: 'application/json',
+  contentEncoding: 'gzip',
+  byteLength: billingV6.limits.plotStoredBytes,
+  sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+});
+const oversizedOutput = structuredClone(exactOutput);
+oversizedOutput.artifacts[1].byteLength += 1;
+if (!root.isBillingAnalyzerInputManifestV2(exactInput) ||
+    root.isBillingAnalyzerInputManifestV2(oversizedInput) ||
+    !root.isBillingAnalyzerOutputManifestV2(exactOutput) ||
+    root.isBillingAnalyzerOutputManifestV2(oversizedOutput)) {
+  throw new Error('Packed billing v6 stored-object boundary probe failed');
+}
+`;
 const promotionObservationLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.billingAnalysisPromotionObservationV1, null, 2);
 const digestRelationPromotionObservationLiteral = JSON.stringify(
   artifactEvidenceCorpus.observationDigestVectors.find(vector => vector.name === 'equal revision and different output digest').observation,
@@ -34,6 +95,9 @@ const digestRepairRuntimeDocuments =
   '{"outputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"inputManifestPath":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json","inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","artifacts":[{"path":"subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json","name":"metadata.json","mediaType":"application/json","contentEncoding":"identity","byteLength":1924,"sha256":"77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e"}],"publicationDecision":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"manifestDigest":"eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06","completedAt":"2026-08-13T00:05:00.000Z","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63"},"metadata":{"schemaVersion":2,"subscriptionId":"sub-123","billingGenerationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"artifactState":"partial","artifactEvidence":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63","chartData":{"schemaVersion":1,"source":"aggregated","dataWindow":{"startDate":1754006400,"endDate":1756684800,"pointCount":0},"views":{},"detectors":{"threshold":2,"methods":[]}},"anomalies":[],"currencyCode":"NZD","currencySymbol":"$"},"inputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","publicationKey":"billing-input:sub-123:source-run-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"coveragePlanDigest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","asOfUtc":"2026-08-13T00:00:00.000Z","stableCutoffUtc":"2026-08-12T00:00:00.000Z","requestedPeriods":[{"fromInclusive":"2026-07-01T00:00:00.000Z","throughExclusive":"2026-08-01T00:00:00.000Z","dateBasis":"utc","basis":"amortized"}],"inputs":[{"path":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz","versionId":"version-1","etag":"etag-1","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","byteCount":512,"rowCount":31,"basis":"amortized","currencyCode":"NZD","coverage":"complete"}],"manifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","completedAt":"2026-08-13T00:05:00.000Z"}}';
 const artifactEvidenceConsumerSource = `
 import {
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
   canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
@@ -45,10 +109,15 @@ import {
   isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
   isEnforceableArtifactOwnershipBinding,
@@ -79,13 +148,19 @@ import {
   type BillingAnalyzerRequestV2,
   type BillingArtifactReadState,
   type BillingCostAnalysisMetadata,
+  type BillingCostAnalysisLegacyFallbackResponse,
   type BillingCostAnalysisMetadataV2,
+  type BillingCostAnalysisReadResponse,
+  type BillingCostAnalysisVerifiedReadResponse,
   type BillingOutputBindingV1,
   type CompletedAzureViewSetV2,
   type CompletedViewManifestV3,
 } from '@spottoai/types-package';
 
 const runtimeExports = [
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
   canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
@@ -97,10 +172,15 @@ const runtimeExports = [
   isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
   isEnforceableArtifactOwnershipBinding,
@@ -134,13 +214,19 @@ type Dev1036PublishedTypes = [
   BillingAnalyzerRequestV2,
   BillingArtifactReadState,
   BillingCostAnalysisMetadata,
+  BillingCostAnalysisLegacyFallbackResponse,
   BillingCostAnalysisMetadataV2,
+  BillingCostAnalysisReadResponse,
+  BillingCostAnalysisVerifiedReadResponse,
   BillingOutputBindingV1,
   CompletedAzureViewSetV2,
   CompletedViewManifestV3,
 ];
 
 const legacyBillingMetadata = ${legacyBillingMetadataLiteral} satisfies BillingCostAnalysisMetadata;
+const legacyBillingFallback = ${JSON.stringify(legacyBillingFallbackDocument, null, 2)} satisfies BillingCostAnalysisLegacyFallbackResponse;
+const verifiedBillingRead = ${JSON.stringify(artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataV2, null, 2)} satisfies BillingCostAnalysisVerifiedReadResponse;
+const billingReadResponses: BillingCostAnalysisReadResponse[] = [legacyBillingFallback, verifiedBillingRead];
 const promotionObservation = ${promotionObservationLiteral} satisfies BillingAnalysisPromotionObservationV1;
 const digestRelationPromotionObservation = ${digestRelationPromotionObservationLiteral} satisfies BillingAnalysisPromotionObservationV1;
 const digestRepairDocuments = ${digestRepairRuntimeDocuments} as unknown as {
@@ -171,11 +257,13 @@ const observationRuntimeChecks: boolean[] = [
 
 void runtimeExports;
 void legacyBillingMetadata;
+void billingReadResponses;
 void packedCanonicalPreimages;
 void observationRuntimeChecks;
 void (null as unknown as Dev1036PublishedTypes);
 `;
 const dev1036RuntimeExportNames = [
+  'buildBillingAnalyzerInputObservationPointerPath',
   'compareArtifactRevisionVector',
   'isArtifactOwnershipBinding',
   'isArtifactPublicationDecision',
@@ -183,10 +271,15 @@ const dev1036RuntimeExportNames = [
   'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
   'isBillingAnalyzerInputObservationPointerV1',
+  'isBillingAnalyzerInputObservationPointerPath',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisBusinessPayloadV1',
+  'isBillingCostAnalysisLegacyFallbackResponse',
   'isBillingCostAnalysisMetadataV2',
+  'isBillingCostAnalysisReadResponse',
+  'isBillingCostAnalysisVerifiedReadResponse',
   'isCompletedAzureViewSetV2',
   'isCompletedViewManifestV3',
   'isEnforceableArtifactOwnershipBinding',
@@ -308,6 +401,8 @@ try {
     ],
     consumerRoot
   );
+  run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV6ProbeSource}`], consumerRoot);
+  run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV6ProbeSource}`], consumerRoot);
   run(
     process.execPath,
     [
