@@ -76,11 +76,12 @@ matching present epoch must not report that pair. Current-pointer validators
 explicitly reject these diagnostic discriminants while retaining unrelated
 additive-next fields.
 
-Portable billing contract corpus v6 pins the shared stored/decoded object
-limits, safe `latest-enqueued.json` diagnostic discovery path, explicit legacy
-fallback versus evidence-verified read responses, and exact metadata/plot
-descriptor boundaries. The corpus contains 346 cases and 431 mutations at
-SHA-256 `1e1a96ae329816dc60ea8d2b949f9c953aff674a488ab974a045072eb85d0e34`;
+Portable billing contract corpus v7 pins the shared stored/decoded object
+limits, safe `latest-enqueued.json` diagnostic discovery path, strict V1/V2/
+legacy-fallback response authority, prototype-key rejection, bounded iterative
+control-data traversal, and exact metadata/plot descriptor boundaries. The
+corpus contains 351 cases and 436 mutations at SHA-256
+`508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a`;
 its three promotion-observation digest vectors remain byte-for-byte compatible
 with v5.
 

@@ -10,9 +10,9 @@
 
 ## Metadata
 
-- Status: approved — implementation in progress
+- Status: approved — Types implementation complete; cross-repo corpus v7 pin rollout pending
 - Approved: Yes — Jay Ji, 2026-08-13 (subagent-driven execution)
-- Iterations: 1
+- Iterations: 2
 - Last updated: 2026-08-17
 - Repo: `types-package`
 - Domain: `data-quality`
@@ -89,6 +89,9 @@ Billing V2 documents must use these public names:
 - `BillingAnalyzerOutputManifestV2`
 - `BillingAnalysisCurrentPointerV1`
 - `BillingCostAnalysisMetadataV2`
+- `BillingCostAnalysisLegacyFallbackResponse`
+- `BillingCostAnalysisVerifiedReadResponse`
+- `BillingCostAnalysisReadResponse`
 - `BillingOutputBindingV1`
 - `projectBillingOutputBindingV1FromManifest`
 - `projectBillingOutputBindingV1FromMetadata`
@@ -103,11 +106,28 @@ Billing V2 documents must use these public names:
 - `isBillingAnalyzerOutputManifestV2`
 - `isBillingAnalysisCurrentPointerV1`
 - `isBillingCostAnalysisMetadataV2`
+- `isBillingCostAnalysisBusinessPayloadV1`
+- `isBillingCostAnalysisLegacyFallbackResponse`
+- `isBillingCostAnalysisVerifiedReadResponse`
+- `isBillingCostAnalysisReadResponse`
 - `isCompletedViewManifestV3`
 - `isCompletedAzureViewSetV2`
 - `compareArtifactRevisionVector`
 
-`BillingCostAnalysisMetadataV2` extends the existing metadata fields and requires `artifactState` plus `artifactEvidence`; its successful document branches are `current`, `stale`, `partial`, `fallback`, and proven `complete-empty`. `unavailable` and `suppressed` are shared presentation/read states carried by the standard typed error/decision path, not fabricated metadata documents. Legacy metadata stays valid only through the V1 branch of consumer compatibility code.
+`BillingCostAnalysisMetadataV2` extends the existing metadata fields and requires
+`artifactState` plus `artifactEvidence`; its internal document branches are
+`current`, `stale`, `partial`, and proven `complete-empty`. It never carries
+`artifactSource`. `BillingCostAnalysisVerifiedReadResponse` narrows that V2
+contract to `current`, `stale`, and proven `complete-empty`, so partial output
+cannot cross the verified customer-read boundary. Legacy fallback is a separate
+`BillingCostAnalysisLegacyFallbackResponse`: it requires a structurally valid
+V1 business payload plus exactly `artifactState: 'fallback'` and
+`artifactSource: 'legacy-transition'`, while rejecting V2/evidence/control
+leakage. The successful read union contains only those verified V2 and explicit
+legacy-fallback branches. A pure V1 business payload carries neither response
+discriminant. `unavailable` and `suppressed` remain shared presentation/read
+states carried by the standard typed error/decision path, not fabricated
+metadata documents.
 
 Digest-cycle correction (accepted 2026-08-14): metadata V2 and output manifest
 V2 carry `outputBindingDigest` B, derived from the versioned stable
@@ -155,6 +175,20 @@ non-equal comparison and for the epoch-free `unenforceable` shape. Unknown
 relations and incoherent outcomes are invalid. The exact-field canonicalizer
 includes `outputDigestRelation` only when present, so new observations bind it
 to `observationDigest` while legacy preimages and digests remain unchanged.
+
+Validator boundary amendment (accepted 2026-08-17): the portable artifact
+evidence corpus is version 7, with 351 cases, 436 mutations, and canonical
+SHA-256 `508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a`.
+V7 pins the response-authority split above and requires every shared artifact
+control-data boundary to reject normalized `__proto__`, `prototype`, and
+`constructor` keys. Recursive control-data and analyzer display-metadata
+validation use iterative O(n) traversal, reject cyclic container references
+while preserving already-scanned shared DAG references, and fail closed above
+100,000 visited object/array nodes. A 5,000-level harmless nesting fixture
+proves the validators return normally instead of overflowing the JavaScript
+call stack. The billing business performance gate counts observable
+schema-field reads for 1,000 versus 8,000 chart points; it does not use
+wall-clock timing and therefore remains deterministic under CPU or GC load.
 
 ## Tasks
 
@@ -272,13 +306,13 @@ Done when the published artifact contains the V2 contracts/validators, all packa
 
 ## Definition of Done
 
-- [ ] Contract tests cover happy, error, and boundary cases.
-- [ ] `npm test`, lint, formatting, and dry-run package checks pass.
-- [ ] Existing V1 declarations and Capability Passport fixtures remain valid.
+- [x] Contract tests cover happy, error, and boundary cases.
+- [x] `npm test`, lint, reviewed-file formatting, and dry-run package checks pass.
+- [x] Existing V1 declarations and Capability Passport fixtures remain valid.
 - [ ] Python mirror corpus digest is recorded in the analyzer plan/implementation.
-- [ ] Security review confirms paths are logical, secrets are forbidden, and ownership mismatch is rejected.
-- [ ] Runtime dev validation: N/A — this repo performs no I/O.
-- [ ] Swagger, UI docs, MCP, and demo data: N/A — shared contract package only.
+- [x] Security review confirms paths are logical, secrets are forbidden, and ownership mismatch is rejected.
+- [x] Runtime dev validation: N/A — this repo performs no I/O.
+- [x] Swagger, UI docs, MCP, and demo data: N/A — shared contract package only.
 
 ## Risks and Mitigations
 

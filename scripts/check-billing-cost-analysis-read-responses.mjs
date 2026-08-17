@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { performance } from 'node:perf_hooks';
 
 import {
   isBillingCostAnalysisBusinessPayloadV1,
@@ -164,6 +163,18 @@ assert.equal(
   false,
   'strict V1 business validator rejects additive physical control data'
 );
+for (const leakedResponseControl of [
+  { artifactState: 'current' },
+  { artifactState: 'partial' },
+  { artifactSource: 'analyzer-v2' },
+  { artifactState: 'fallback', artifactSource: 'legacy-transition' },
+]) {
+  assert.equal(
+    isBillingCostAnalysisBusinessPayloadV1({ ...legacyBusinessPayload, ...leakedResponseControl }),
+    false,
+    'strict V1 business validator rejects response-authority controls'
+  );
+}
 assert.equal(
   isBillingCostAnalysisBusinessPayloadV1(proseBearingLegacyBusinessPayload),
   true,
@@ -274,6 +285,21 @@ assert.equal(
   false,
   'V2 metadata rejects fallback after the explicit response split'
 );
+assert.equal(
+  isBillingCostAnalysisMetadataV2({ ...currentV2, artifactSource: 'legacy-transition' }),
+  false,
+  'V2 metadata rejects the legacy fallback source discriminant'
+);
+assert.equal(
+  isBillingCostAnalysisVerifiedReadResponse({ ...currentV2, artifactSource: 'legacy-transition' }),
+  false,
+  'verified V2 response rejects the legacy fallback source discriminant'
+);
+assert.equal(
+  isBillingCostAnalysisReadResponse({ ...currentV2, artifactSource: 'legacy-transition' }),
+  false,
+  'read-response union rejects a V2 and legacy-source hybrid'
+);
 assert.equal(isBillingCostAnalysisVerifiedReadResponse(legacyFallback), false, 'verified response does not accept legacy fallback');
 
 const schemaOwnedIdentityV2 = structuredClone(currentV2);
@@ -343,7 +369,20 @@ assert.equal(
   'read union allows URI-shaped and digest-shaped values in schema-owned identity and evidence fields'
 );
 
-const buildLargeLegacyBusinessPayload = pointCount => {
+const instrumentPropertyReads = (value, reads) => {
+  const instrumented = {};
+  for (const [key, propertyValue] of Object.entries(value)) {
+    Object.defineProperty(instrumented, key, {
+      enumerable: true,
+      get: () => {
+        reads.count += 1;
+        return propertyValue;
+      },
+    });
+  }
+  return instrumented;
+};
+const buildLargeLegacyBusinessPayload = (pointCount, reads) => {
   const payload = structuredClone(legacyBusinessPayload);
   payload.chartData.views = {
     daily: {
@@ -352,39 +391,36 @@ const buildLargeLegacyBusinessPayload = pointCount => {
       endDate: 1_785_542_400,
       averageDailyCost: 10,
       totalCost: pointCount * 10,
-      points: Array.from({ length: pointCount }, (_, index) => ({
-        date: `2026-07-${String((index % 28) + 1).padStart(2, '0')}`,
-        timestamp: 1_782_864_000 + index,
-        cost: 10,
-        isAnomaly: false,
-        anomalyVotes: 0,
-        anomalyMethods: ['detector:seasonal'],
-      })),
+      points: Array.from({ length: pointCount }, (_, index) =>
+        instrumentPropertyReads(
+          {
+            date: `2026-07-${String((index % 28) + 1).padStart(2, '0')}`,
+            timestamp: 1_782_864_000 + index,
+            cost: 10,
+            isAnomaly: false,
+            anomalyVotes: 0,
+            anomalyMethods: ['detector:seasonal'],
+          },
+          reads
+        )
+      ),
     },
   };
   return payload;
 };
-const measureValidation = payload => {
-  const startedAt = performance.now();
-  assert.equal(isBillingCostAnalysisBusinessPayloadV1(payload), true, 'large legacy business payload remains valid');
-  return performance.now() - startedAt;
-};
-const smallPayload = buildLargeLegacyBusinessPayload(1_000);
-const largePayload = buildLargeLegacyBusinessPayload(8_000);
-measureValidation(smallPayload);
-measureValidation(largePayload);
-measureValidation(smallPayload);
-measureValidation(largePayload);
-const smallDurations = [];
-const largeDurations = [];
-for (let sample = 0; sample < 7; sample += 1) {
-  smallDurations.push(measureValidation(smallPayload));
-  largeDurations.push(measureValidation(largePayload));
-}
-const median = durations => durations.sort((left, right) => left - right)[Math.floor(durations.length / 2)];
-const smallMedian = median(smallDurations);
-const largeMedian = median(largeDurations);
+const smallReads = { count: 0 };
+const largeReads = { count: 0 };
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1(buildLargeLegacyBusinessPayload(1_000, smallReads)),
+  true,
+  'large legacy business payload remains valid'
+);
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1(buildLargeLegacyBusinessPayload(8_000, largeReads)),
+  true,
+  '8x legacy business payload remains valid'
+);
 assert.ok(
-  largeMedian <= smallMedian * 16,
-  `billing business validation must remain near-linear for 8x payload growth (${smallMedian.toFixed(1)}ms -> ${largeMedian.toFixed(1)}ms)`
+  largeReads.count <= smallReads.count * 8 && largeReads.count >= smallReads.count * 7,
+  `billing business validation must keep property reads linear for 8x payload growth (${smallReads.count} -> ${largeReads.count})`
 );

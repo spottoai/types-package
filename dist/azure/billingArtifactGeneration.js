@@ -136,16 +136,50 @@ const isOutputArtifactDescriptor = (value, subscriptionId, generationId) => {
 const isJsonMetadata = (value) => {
     if (!isRecord(value))
         return false;
-    const visit = (candidate) => {
-        if (candidate === null || typeof candidate === 'string' || typeof candidate === 'boolean')
-            return true;
-        if (isFiniteNumber(candidate))
-            return true;
-        if (Array.isArray(candidate))
-            return candidate.every(visit);
-        return isRecord(candidate) && Object.getPrototypeOf(candidate) === Object.prototype && Object.values(candidate).every(visit);
-    };
-    return visit(value);
+    const pending = [{ kind: 'visit', value }];
+    const activeContainers = new WeakSet();
+    const completedContainers = new WeakSet();
+    let visitedNodeCount = 0;
+    while (pending.length > 0) {
+        const candidate = pending.pop();
+        if (candidate.kind === 'leave') {
+            activeContainers.delete(candidate.container);
+            completedContainers.add(candidate.container);
+            continue;
+        }
+        if (candidate.value === null || typeof candidate.value === 'string' || typeof candidate.value === 'boolean' || isFiniteNumber(candidate.value)) {
+            continue;
+        }
+        if (Array.isArray(candidate.value)) {
+            visitedNodeCount += 1;
+            if (visitedNodeCount > artifactControlData_js_1.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES)
+                return false;
+            if (activeContainers.has(candidate.value))
+                return false;
+            if (completedContainers.has(candidate.value))
+                continue;
+            activeContainers.add(candidate.value);
+            pending.push({ kind: 'leave', container: candidate.value });
+            for (let index = candidate.value.length - 1; index >= 0; index -= 1) {
+                pending.push({ kind: 'visit', value: candidate.value[index] });
+            }
+            continue;
+        }
+        if (!isRecord(candidate.value) || Object.getPrototypeOf(candidate.value) !== Object.prototype)
+            return false;
+        visitedNodeCount += 1;
+        if (visitedNodeCount > artifactControlData_js_1.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES)
+            return false;
+        if (activeContainers.has(candidate.value))
+            return false;
+        if (completedContainers.has(candidate.value))
+            continue;
+        activeContainers.add(candidate.value);
+        pending.push({ kind: 'leave', container: candidate.value });
+        for (const child of Object.values(candidate.value))
+            pending.push({ kind: 'visit', value: child });
+    }
+    return true;
 };
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 const isBillingAnalyzerInputManifestV2 = (value) => {

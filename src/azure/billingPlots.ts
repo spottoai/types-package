@@ -432,7 +432,12 @@ const isPathSegment = (value: unknown): value is string =>
 const publicationDecisionReferencesDigest = (value: unknown, digest: string): boolean =>
   isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
 
-const allowedBillingCostAnalysisFields = (value: Record<string, unknown>): AllowedArtifactReferenceField[] => {
+type BillingCostAnalysisValidationBranch = 'business-v1' | 'metadata-v2' | 'legacy-fallback';
+
+const allowedBillingCostAnalysisFields = (
+  value: Record<string, unknown>,
+  validationBranch: BillingCostAnalysisValidationBranch
+): AllowedArtifactReferenceField[] => {
   const fields: AllowedArtifactReferenceField[] = [];
   const allowText = (object: unknown, ...keys: string[]): void => {
     if (!isRecord(object)) return;
@@ -452,7 +457,9 @@ const allowedBillingCostAnalysisFields = (value: Record<string, unknown>): Allow
   };
 
   allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
-  allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactState', 'artifactSource', 'artifactEvidence');
+  allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
+  if (validationBranch !== 'business-v1') allowControl(value, 'artifactState');
+  if (validationBranch === 'legacy-fallback') allowControl(value, 'artifactSource');
   allowDigest(value, 'inputManifestDigest');
   allowDigest(value, 'outputBindingDigest');
   if (isRecord(value.ownership)) {
@@ -542,8 +549,11 @@ const allowedBillingCostAnalysisFields = (value: Record<string, unknown>): Allow
   return fields;
 };
 
-const containsForbiddenBillingCostAnalysisControlData = (value: Record<string, unknown>): boolean =>
-  containsForbiddenArtifactControlData(value, allowedBillingCostAnalysisFields(value), {
+const containsForbiddenBillingCostAnalysisControlData = (
+  value: Record<string, unknown>,
+  validationBranch: BillingCostAnalysisValidationBranch
+): boolean =>
+  containsForbiddenArtifactControlData(value, allowedBillingCostAnalysisFields(value, validationBranch), {
     rejectDigestLikeValues: true,
     requireSafeAzureResourceIds: true,
     forbiddenControlFields: BILLING_FORBIDDEN_CONTROL_FIELDS,
@@ -715,16 +725,21 @@ const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
 
-/** Dependency-free validator for the complete legacy V1 business payload. */
-export const isBillingCostAnalysisBusinessPayloadV1 = (value: unknown): value is BillingCostAnalysisMetadata =>
-  isRecord(value) &&
-  !containsForbiddenBillingCostAnalysisControlData(value) &&
+const isBillingCostAnalysisBusinessPayloadForBranch = (
+  value: Record<string, unknown>,
+  validationBranch: 'business-v1' | 'legacy-fallback'
+): boolean =>
+  !containsForbiddenBillingCostAnalysisControlData(value, validationBranch) &&
   !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
   hasValidBillingCostAnalysisBusinessFields(value);
 
+/** Dependency-free validator for the complete legacy V1 business payload. */
+export const isBillingCostAnalysisBusinessPayloadV1 = (value: unknown): value is BillingCostAnalysisMetadata =>
+  isRecord(value) && isBillingCostAnalysisBusinessPayloadForBranch(value, 'business-v1');
+
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is BillingCostAnalysisMetadataV2 => {
-  if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value) || value.schemaVersion !== 2) return false;
+  if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value, 'metadata-v2') || value.schemaVersion !== 2) return false;
   if (hasOwn(value, 'outputManifestDigest')) return false;
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isArtifactOwnershipBinding(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)
@@ -762,8 +777,7 @@ export const isBillingCostAnalysisLegacyFallbackResponse = (value: unknown): val
   isRecord(value) &&
   value.artifactState === 'fallback' &&
   value.artifactSource === 'legacy-transition' &&
-  !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
-  isBillingCostAnalysisBusinessPayloadV1(value);
+  isBillingCostAnalysisBusinessPayloadForBranch(value, 'legacy-fallback');
 
 /** Dependency-free validator for an evidence-verified endpoint response. */
 export const isBillingCostAnalysisVerifiedReadResponse = (value: unknown): value is BillingCostAnalysisVerifiedReadResponse =>

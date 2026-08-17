@@ -15,6 +15,7 @@ const FORBIDDEN_SENSITIVE_FIELDS = new Set([
   'sharedaccesssignature',
   'token',
 ]);
+const FORBIDDEN_PROTOTYPE_FIELDS = new Set(['proto', 'prototype', 'constructor']);
 
 const PHYSICAL_REFERENCE_FIELDS = new Set([
   'artifactpath',
@@ -45,6 +46,7 @@ const PHYSICAL_REFERENCE_FIELDS = new Set([
 const PERCENT_ENCODED_BYTE_PATTERN = /%[0-9A-Fa-f]{2}/;
 const URI_SCHEME_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/;
 const SHA256_PATTERN = /^[0-9A-Fa-f]{64}$/;
+export const ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES = 100_000;
 
 export interface AllowedArtifactReferenceField {
   object: Record<string, unknown>;
@@ -129,34 +131,93 @@ const containsForbiddenArtifactControlDataWithIndex = (
   allowedReferenceFields: AllowedArtifactFieldIndex,
   options: IArtifactControlDataScanOptions
 ): boolean => {
-  if (typeof value === 'string') return isForbiddenReferenceValue(value, false, false, options.rejectDigestLikeValues);
-  if (Array.isArray(value)) return value.some(child => containsForbiddenArtifactControlDataWithIndex(child, allowedReferenceFields, options));
-  if (!isRecord(value)) return false;
+  type PendingValue =
+    | {
+        kind: 'visit';
+        value: unknown;
+        allowedStringArrayField?: AllowedArtifactReferenceField;
+      }
+    | {
+        kind: 'leave';
+        container: object;
+        scanPolicyRank: number;
+      };
+  const pending: PendingValue[] = [{ kind: 'visit', value }];
+  const activeContainers = new WeakSet<object>();
+  const completedScanPolicyRanks = new WeakMap<object, number>();
+  let visitedNodeCount = 0;
 
-  return Object.entries(value).some(([key, child]) => {
-    if (hasControlCharacters(key)) return true;
-    const normalizedKey = normalizeFieldName(key);
-    if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
-    const allowedField = allowedReferenceFields.get(value)?.get(key);
-    if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField) return true;
-    if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') return !isSafeAzureResourceId(key, child);
-    if (allowedField && typeof child === 'string' && (allowedField.allowUriScheme || allowedField.allowDigestLike)) {
-      return isForbiddenReferenceValue(child, allowedField.allowUriScheme, allowedField.allowDigestLike, options.rejectDigestLikeValues);
+  while (pending.length > 0) {
+    const candidate = pending.pop() as PendingValue;
+    if (candidate.kind === 'leave') {
+      activeContainers.delete(candidate.container);
+      const completedRank = completedScanPolicyRanks.get(candidate.container);
+      if (completedRank === undefined || candidate.scanPolicyRank < completedRank) {
+        completedScanPolicyRanks.set(candidate.container, candidate.scanPolicyRank);
+      }
+      continue;
     }
-    if (allowedField?.allowUriSchemeInStringArray && Array.isArray(child)) {
-      return child.some(item =>
-        typeof item === 'string'
-          ? isForbiddenReferenceValue(item, true, allowedField.allowDigestLike, options.rejectDigestLikeValues)
-          : containsForbiddenArtifactControlDataWithIndex(item, allowedReferenceFields, options)
-      );
+    if (typeof candidate.value === 'string') {
+      if (isForbiddenReferenceValue(candidate.value, false, false, options.rejectDigestLikeValues)) return true;
+      continue;
     }
-    if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
-    if (isSafeAzureResourceId(key, child)) return false;
-    return containsForbiddenArtifactControlDataWithIndex(child, allowedReferenceFields, options);
-  });
+    if (Array.isArray(candidate.value)) {
+      visitedNodeCount += 1;
+      if (visitedNodeCount > ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) return true;
+      if (activeContainers.has(candidate.value)) return true;
+      const scanPolicyRank = candidate.allowedStringArrayField ? (candidate.allowedStringArrayField.allowDigestLike ? 2 : 1) : 0;
+      const completedRank = completedScanPolicyRanks.get(candidate.value);
+      if (completedRank !== undefined && completedRank <= scanPolicyRank) continue;
+      activeContainers.add(candidate.value);
+      pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank });
+      for (let index = candidate.value.length - 1; index >= 0; index -= 1) {
+        const child = candidate.value[index];
+        if (candidate.allowedStringArrayField && typeof child === 'string') {
+          if (isForbiddenReferenceValue(child, true, candidate.allowedStringArrayField.allowDigestLike, options.rejectDigestLikeValues)) {
+            return true;
+          }
+        } else {
+          pending.push({ kind: 'visit', value: child });
+        }
+      }
+      continue;
+    }
+    if (!isRecord(candidate.value)) continue;
+    visitedNodeCount += 1;
+    if (visitedNodeCount > ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) return true;
+    if (activeContainers.has(candidate.value)) return true;
+    if (completedScanPolicyRanks.has(candidate.value)) continue;
+    activeContainers.add(candidate.value);
+    pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank: 0 });
+
+    for (const [key, child] of Object.entries(candidate.value)) {
+      if (hasControlCharacters(key)) return true;
+      const normalizedKey = normalizeFieldName(key);
+      if (FORBIDDEN_PROTOTYPE_FIELDS.has(normalizedKey)) return true;
+      if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
+      const allowedField = allowedReferenceFields.get(candidate.value)?.get(key);
+      if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField) return true;
+      if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') {
+        if (!isSafeAzureResourceId(key, child)) return true;
+        continue;
+      }
+      if (allowedField && typeof child === 'string' && (allowedField.allowUriScheme || allowedField.allowDigestLike)) {
+        if (isForbiddenReferenceValue(child, allowedField.allowUriScheme, allowedField.allowDigestLike, options.rejectDigestLikeValues)) return true;
+        continue;
+      }
+      if (allowedField?.allowUriSchemeInStringArray && Array.isArray(child)) {
+        pending.push({ kind: 'visit', value: child, allowedStringArrayField: allowedField });
+        continue;
+      }
+      if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
+      if (isSafeAzureResourceId(key, child)) continue;
+      pending.push({ kind: 'visit', value: child });
+    }
+  }
+  return false;
 };
 
-/** Rejects exact normalized sensitive fields and physical-reference control data recursively. */
+/** Rejects normalized sensitive fields and physical-reference control data with bounded traversal. */
 export const containsForbiddenArtifactControlData = (
   value: unknown,
   allowedReferenceFields: AllowedArtifactReferenceField[] = [],

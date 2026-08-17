@@ -35,9 +35,9 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-const EXPECTED_CORPUS_SHA256 = '1e1a96ae329816dc60ea8d2b949f9c953aff674a488ab974a045072eb85d0e34';
-const EXPECTED_CORPUS_CASE_COUNT = 346;
-const EXPECTED_CORPUS_MUTATION_COUNT = 431;
+const EXPECTED_CORPUS_SHA256 = '508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a';
+const EXPECTED_CORPUS_CASE_COUNT = 351;
+const EXPECTED_CORPUS_MUTATION_COUNT = 436;
 const EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT = 3;
 const REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES = [
   'observe promotion binding',
@@ -56,7 +56,7 @@ const REQUIRED_DIGEST_RELATION_CASE_NAMES = [
   'promotion observation rejects quarantine without a different digest relation',
   'promotion observation rejects an unknown output digest relation',
 ];
-const REQUIRED_V6_CASE_NAMES = [
+const REQUIRED_V7_CASE_NAMES = [
   'diagnostic discovery path accepts exact latest-enqueued location',
   'diagnostic discovery path rejects traversal subscription segment',
   'input manifest accepts exact stored object byte limit',
@@ -69,9 +69,14 @@ const REQUIRED_V6_CASE_NAMES = [
   'legacy fallback response rejects V2 spread leakage',
   'verified read response accepts current evidence',
   'verified read response rejects partial metadata',
+  'legacy business payload rejects V2 response state leakage',
+  'V2 metadata rejects legacy response source leakage',
+  'observe input pointer rejects nested __proto__ key',
+  'input manifest rejects nested prototype key',
+  'output manifest rejects nested constructor key',
 ];
 
-assert.equal(contractCorpus.corpusVersion, 6, 'portable corpus version must match the downstream parity contract');
+assert.equal(contractCorpus.corpusVersion, 7, 'portable corpus version must match the downstream parity contract');
 assert.equal(corpusDigest, EXPECTED_CORPUS_SHA256, 'portable corpus exact bytes must remain pinned');
 assert.equal(contractCorpus.cases.length, EXPECTED_CORPUS_CASE_COUNT, 'portable corpus case count must remain pinned');
 assert.equal(
@@ -84,8 +89,8 @@ assert.equal(corpusCaseNames.size, contractCorpus.cases.length, 'portable corpus
 for (const requiredCaseName of REQUIRED_DIGEST_RELATION_CASE_NAMES) {
   assert.ok(corpusCaseNames.has(requiredCaseName), `required digest-relation corpus case is missing: ${requiredCaseName}`);
 }
-for (const requiredCaseName of REQUIRED_V6_CASE_NAMES) {
-  assert.ok(corpusCaseNames.has(requiredCaseName), `required v6 corpus case is missing: ${requiredCaseName}`);
+for (const requiredCaseName of REQUIRED_V7_CASE_NAMES) {
+  assert.ok(corpusCaseNames.has(requiredCaseName), `required v7 corpus case is missing: ${requiredCaseName}`);
 }
 assert.deepEqual(contractCorpus.objectLimitsV1, BILLING_ARTIFACT_OBJECT_LIMITS_V1, 'portable object limits must exactly match the root V1 export');
 assert.equal(
@@ -325,6 +330,65 @@ for (const corpusCase of contractCorpus.cases) {
   assert.equal(validator(document), corpusCase.valid, corpusCase.name);
 }
 assert.equal(mutationCount, EXPECTED_CORPUS_MUTATION_COUNT, 'portable corpus mutation count must remain pinned');
+
+const buildDeepControlData = depth => {
+  let value = { label: 'safe-leaf' };
+  for (let level = 0; level < depth; level += 1) value = { next: value };
+  return value;
+};
+const deepLegacyBusinessPayload = {
+  ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+  future: buildDeepControlData(contractCorpus.controlDataTraversalV1.deepNestingDepth),
+};
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1(deepLegacyBusinessPayload),
+  true,
+  'control-data scan accepts harmless deep nesting without overflowing the call stack'
+);
+const cyclicControlData = { label: 'safe-cycle' };
+cyclicControlData.self = cyclicControlData;
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1({
+    ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+    future: cyclicControlData,
+  }),
+  false,
+  'control-data scan rejects repeated references without overflowing the call stack'
+);
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1({
+    ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+    future: Array.from({ length: contractCorpus.controlDataTraversalV1.maxVisitedNodes + 1 }, () => ({})),
+  }),
+  false,
+  'control-data scan rejects documents above the deterministic node limit'
+);
+
+const deepAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+deepAnalyzerRequest.displayMetadata = buildDeepControlData(contractCorpus.controlDataTraversalV1.deepNestingDepth);
+assert.equal(isBillingAnalyzerRequestV2(deepAnalyzerRequest), true, 'display metadata accepts harmless deep JSON without overflowing the call stack');
+const prototypeControlDocuments = [
+  ['input observation', isBillingAnalyzerInputObservationPointerV1, contractCorpus.fixtures.billingAnalyzerInputObservationPointerV1],
+  ['input manifest', isBillingAnalyzerInputManifestV2, contractCorpus.fixtures.billingAnalyzerInputManifestV2],
+  ['analyzer request', isBillingAnalyzerRequestV2, contractCorpus.fixtures.billingAnalyzerRequestV2],
+  ['output manifest', isBillingAnalyzerOutputManifestV2, contractCorpus.fixtures.billingAnalyzerOutputManifestV2],
+  ['V1 business payload', isBillingCostAnalysisBusinessPayloadV1, contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1],
+  ['V2 metadata', isBillingCostAnalysisMetadataV2, contractCorpus.fixtures.billingCostAnalysisMetadataV2],
+];
+for (const [documentName, validator, document] of prototypeControlDocuments) {
+  for (const forbiddenKey of contractCorpus.controlDataTraversalV1.forbiddenPrototypeKeys) {
+    const future = JSON.parse(`{"${forbiddenKey}":{"polluted":true}}`);
+    assert.equal(validator({ ...structuredClone(document), future }), false, `${documentName} rejects ${forbiddenKey} control data`);
+  }
+}
+const sharedSectionPaths = ['https://sections.example.invalid/cost-analysis'];
+const metadataWithSharedArray = structuredClone(contractCorpus.fixtures.billingCostAnalysisMetadataV2);
+metadataWithSharedArray.artifactEvidence.claims[0].sectionPaths = sharedSectionPaths;
+assert.equal(
+  isBillingCostAnalysisMetadataV2({ future: sharedSectionPaths, ...metadataWithSharedArray }),
+  false,
+  'a shared array scanned in a schema-owned text field is rescanned under a stricter unknown-field policy'
+);
 
 const comparisonOutcomes = new Set();
 for (const comparisonCase of contractCorpus.revisionComparisons) {

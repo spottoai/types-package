@@ -23,7 +23,7 @@ const legacyBillingFallbackDocument = {
   artifactState: 'fallback',
   artifactSource: 'legacy-transition',
 };
-const packedBillingV6DocumentsLiteral = JSON.stringify({
+const packedBillingV7DocumentsLiteral = JSON.stringify({
   limits: artifactEvidenceCorpus.objectLimitsV1,
   diagnosticDiscovery: artifactEvidenceCorpus.diagnosticDiscoveryV1,
   observation: artifactEvidenceCorpus.fixtures.billingAnalyzerInputObservationPointerV1,
@@ -35,39 +35,43 @@ const packedBillingV6DocumentsLiteral = JSON.stringify({
   partial: artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataPartialV2,
   completeEmpty: artifactEvidenceCorpus.fixtures.billingCostAnalysisMetadataCompleteEmptyV2,
 });
-const packedBillingV6ProbeSource = `
-const billingV6 = ${packedBillingV6DocumentsLiteral};
-if (JSON.stringify(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) !== JSON.stringify(billingV6.limits) ||
+const packedBillingV7ProbeSource = `
+const billingV7 = ${packedBillingV7DocumentsLiteral};
+const prototypeBearingBusiness = { ...billingV7.legacyBusiness, future: JSON.parse('{"__proto__":{"polluted":true}}') };
+if (JSON.stringify(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) !== JSON.stringify(billingV7.limits) ||
     !Object.isFrozen(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) ||
-    root.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH !== billingV6.diagnosticDiscovery.relativeSuffix ||
-    root.buildBillingAnalyzerInputObservationPointerPath(billingV6.diagnosticDiscovery.subscriptionId) !== billingV6.diagnosticDiscovery.absolutePath ||
-    !root.isBillingAnalyzerInputObservationPointerPath(billingV6.diagnosticDiscovery.absolutePath) ||
+    root.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH !== billingV7.diagnosticDiscovery.relativeSuffix ||
+    root.buildBillingAnalyzerInputObservationPointerPath(billingV7.diagnosticDiscovery.subscriptionId) !== billingV7.diagnosticDiscovery.absolutePath ||
+    !root.isBillingAnalyzerInputObservationPointerPath(billingV7.diagnosticDiscovery.absolutePath) ||
     root.isBillingAnalyzerInputObservationPointerPath('subscriptions/../history/billing/analyzer-inputs/latest-enqueued.json') ||
-    !root.isBillingCostAnalysisBusinessPayloadV1(billingV6.legacyBusiness) ||
-    !root.isBillingCostAnalysisLegacyFallbackResponse(billingV6.legacyFallback) ||
-    !root.isBillingCostAnalysisVerifiedReadResponse(billingV6.current) ||
-    !root.isBillingCostAnalysisVerifiedReadResponse(billingV6.completeEmpty) ||
-    root.isBillingCostAnalysisVerifiedReadResponse(billingV6.partial) ||
-    !root.isBillingCostAnalysisReadResponse(billingV6.current) ||
-    !root.isBillingCostAnalysisReadResponse(billingV6.legacyFallback) ||
-    root.isBillingCostAnalysisReadResponse(billingV6.partial) ||
-    root.isBillingCostAnalysisMetadataV2({ ...billingV6.current, artifactState: 'fallback' }) ||
-    root.isBillingAnalyzerInputCurrentPointerV1(billingV6.observation) ||
-    root.isBillingAnalysisCurrentPointerV1(billingV6.observation)) {
-  throw new Error('Packed billing v6 export/response/discovery probe failed');
+    !root.isBillingCostAnalysisBusinessPayloadV1(billingV7.legacyBusiness) ||
+    root.isBillingCostAnalysisBusinessPayloadV1({ ...billingV7.legacyBusiness, artifactState: 'current' }) ||
+    root.isBillingCostAnalysisBusinessPayloadV1(prototypeBearingBusiness) ||
+    !root.isBillingCostAnalysisLegacyFallbackResponse(billingV7.legacyFallback) ||
+    !root.isBillingCostAnalysisVerifiedReadResponse(billingV7.current) ||
+    !root.isBillingCostAnalysisVerifiedReadResponse(billingV7.completeEmpty) ||
+    root.isBillingCostAnalysisVerifiedReadResponse(billingV7.partial) ||
+    !root.isBillingCostAnalysisReadResponse(billingV7.current) ||
+    !root.isBillingCostAnalysisReadResponse(billingV7.legacyFallback) ||
+    root.isBillingCostAnalysisReadResponse(billingV7.partial) ||
+    root.isBillingCostAnalysisMetadataV2({ ...billingV7.current, artifactState: 'fallback' }) ||
+    root.isBillingCostAnalysisMetadataV2({ ...billingV7.current, artifactSource: 'legacy-transition' }) ||
+    root.isBillingAnalyzerInputCurrentPointerV1(billingV7.observation) ||
+    root.isBillingAnalysisCurrentPointerV1(billingV7.observation)) {
+  throw new Error('Packed billing v7 export/response/discovery probe failed');
 }
-const exactInput = structuredClone(billingV6.inputManifest);
-exactInput.inputs[0].byteCount = billingV6.limits.inputObjectStoredBytes;
+const exactInput = structuredClone(billingV7.inputManifest);
+exactInput.inputs[0].byteCount = billingV7.limits.inputObjectStoredBytes;
 const oversizedInput = structuredClone(exactInput);
 oversizedInput.inputs[0].byteCount += 1;
-const exactOutput = structuredClone(billingV6.outputManifest);
-exactOutput.artifacts[0].byteLength = billingV6.limits.metadataStoredBytes;
+const exactOutput = structuredClone(billingV7.outputManifest);
+exactOutput.artifacts[0].byteLength = billingV7.limits.metadataStoredBytes;
 exactOutput.artifacts.push({
   path: 'subscriptions/sub-123/billing/generations/billing-input-generation-42/plots/daily.json.gz',
   name: 'daily.json.gz',
   mediaType: 'application/json',
   contentEncoding: 'gzip',
-  byteLength: billingV6.limits.plotStoredBytes,
+  byteLength: billingV7.limits.plotStoredBytes,
   sha256: 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
 });
 const oversizedOutput = structuredClone(exactOutput);
@@ -76,7 +80,7 @@ if (!root.isBillingAnalyzerInputManifestV2(exactInput) ||
     root.isBillingAnalyzerInputManifestV2(oversizedInput) ||
     !root.isBillingAnalyzerOutputManifestV2(exactOutput) ||
     root.isBillingAnalyzerOutputManifestV2(oversizedOutput)) {
-  throw new Error('Packed billing v6 stored-object boundary probe failed');
+  throw new Error('Packed billing v7 stored-object boundary probe failed');
 }
 `;
 const promotionObservationLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.billingAnalysisPromotionObservationV1, null, 2);
@@ -401,8 +405,8 @@ try {
     ],
     consumerRoot
   );
-  run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV6ProbeSource}`], consumerRoot);
-  run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV6ProbeSource}`], consumerRoot);
+  run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
+  run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV7ProbeSource}`], consumerRoot);
   run(
     process.execPath,
     [

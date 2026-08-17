@@ -1,5 +1,5 @@
 {
-  "corpusVersion": 6,
+  "corpusVersion": 7,
   "objectLimitsV1": {
     "pointerStoredBytes": 65536,
     "observationStoredBytes": 65536,
@@ -11,6 +11,13 @@
     "inputObjectStoredBytes": 33554432,
     "inputObjectDecodedBytes": 134217728,
     "maxInputObjects": 12
+  },
+  "controlDataTraversalV1": {
+    "maxVisitedNodes": 100000,
+    "deepNestingDepth": 5000,
+    "forbiddenPrototypeKeys": ["__proto__", "prototype", "constructor"],
+    "rejectCycles": true,
+    "preserveSharedReferences": true
   },
   "diagnosticDiscoveryV1": {
     "relativeSuffix": "history/billing/analyzer-inputs/latest-enqueued.json",
@@ -5421,6 +5428,41 @@
       "fixture": "legacyBillingCostAnalysisMetadataV1",
       "valid": false,
       "mutations": [{ "path": "schemaVersion", "value": 2 }]
+    },
+    {
+      "name": "legacy business payload rejects V2 response state leakage",
+      "validator": "isBillingCostAnalysisBusinessPayloadV1",
+      "fixture": "legacyBillingCostAnalysisMetadataV1",
+      "valid": false,
+      "mutations": [{ "path": "artifactState", "value": "current" }]
+    },
+    {
+      "name": "V2 metadata rejects legacy response source leakage",
+      "validator": "isBillingCostAnalysisMetadataV2",
+      "fixture": "billingCostAnalysisMetadataV2",
+      "valid": false,
+      "mutations": [{ "path": "artifactSource", "value": "legacy-transition" }]
+    },
+    {
+      "name": "observe input pointer rejects nested __proto__ key",
+      "validator": "isBillingAnalyzerInputObservationPointerV1",
+      "fixture": "billingAnalyzerInputObservationPointerV1",
+      "valid": false,
+      "mutations": [{ "path": "future", "value": { "__proto__": { "polluted": true } } }]
+    },
+    {
+      "name": "input manifest rejects nested prototype key",
+      "validator": "isBillingAnalyzerInputManifestV2",
+      "fixture": "billingAnalyzerInputManifestV2",
+      "valid": false,
+      "mutations": [{ "path": "future", "value": { "prototype": { "polluted": true } } }]
+    },
+    {
+      "name": "output manifest rejects nested constructor key",
+      "validator": "isBillingAnalyzerOutputManifestV2",
+      "fixture": "billingAnalyzerOutputManifestV2",
+      "valid": false,
+      "mutations": [{ "path": "future", "value": { "constructor": { "polluted": true } } }]
     },
     {
       "name": "legacy fallback response accepts explicit legacy transition",

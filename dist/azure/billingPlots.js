@@ -104,7 +104,7 @@ const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 const publicationDecisionReferencesDigest = (value, digest) => isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
-const allowedBillingCostAnalysisFields = (value) => {
+const allowedBillingCostAnalysisFields = (value, validationBranch) => {
     const fields = [];
     const allowText = (object, ...keys) => {
         if (!isRecord(object))
@@ -128,7 +128,11 @@ const allowedBillingCostAnalysisFields = (value) => {
             fields.push({ object, key, allowDigestLike: true, allowControlField: true });
     };
     allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
-    allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactState', 'artifactSource', 'artifactEvidence');
+    allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
+    if (validationBranch !== 'business-v1')
+        allowControl(value, 'artifactState');
+    if (validationBranch === 'legacy-fallback')
+        allowControl(value, 'artifactSource');
     allowDigest(value, 'inputManifestDigest');
     allowDigest(value, 'outputBindingDigest');
     if (isRecord(value.ownership)) {
@@ -212,7 +216,7 @@ const allowedBillingCostAnalysisFields = (value) => {
     }
     return fields;
 };
-const containsForbiddenBillingCostAnalysisControlData = (value) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedBillingCostAnalysisFields(value), {
+const containsForbiddenBillingCostAnalysisControlData = (value, validationBranch) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedBillingCostAnalysisFields(value, validationBranch), {
     rejectDigestLikeValues: true,
     requireSafeAzureResourceIds: true,
     forbiddenControlFields: BILLING_FORBIDDEN_CONTROL_FIELDS,
@@ -365,15 +369,15 @@ const hasValidBillingCostAnalysisBusinessFields = (value) => {
         return false;
     return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
-/** Dependency-free validator for the complete legacy V1 business payload. */
-const isBillingCostAnalysisBusinessPayloadV1 = (value) => isRecord(value) &&
-    !containsForbiddenBillingCostAnalysisControlData(value) &&
+const isBillingCostAnalysisBusinessPayloadForBranch = (value, validationBranch) => !containsForbiddenBillingCostAnalysisControlData(value, validationBranch) &&
     !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
     hasValidBillingCostAnalysisBusinessFields(value);
+/** Dependency-free validator for the complete legacy V1 business payload. */
+const isBillingCostAnalysisBusinessPayloadV1 = (value) => isRecord(value) && isBillingCostAnalysisBusinessPayloadForBranch(value, 'business-v1');
 exports.isBillingCostAnalysisBusinessPayloadV1 = isBillingCostAnalysisBusinessPayloadV1;
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 const isBillingCostAnalysisMetadataV2 = (value) => {
-    if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value) || value.schemaVersion !== 2)
+    if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value, 'metadata-v2') || value.schemaVersion !== 2)
         return false;
     if (hasOwn(value, 'outputManifestDigest'))
         return false;
@@ -406,8 +410,7 @@ exports.isBillingCostAnalysisMetadataV2 = isBillingCostAnalysisMetadataV2;
 const isBillingCostAnalysisLegacyFallbackResponse = (value) => isRecord(value) &&
     value.artifactState === 'fallback' &&
     value.artifactSource === 'legacy-transition' &&
-    !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
-    (0, exports.isBillingCostAnalysisBusinessPayloadV1)(value);
+    isBillingCostAnalysisBusinessPayloadForBranch(value, 'legacy-fallback');
 exports.isBillingCostAnalysisLegacyFallbackResponse = isBillingCostAnalysisLegacyFallbackResponse;
 /** Dependency-free validator for an evidence-verified endpoint response. */
 const isBillingCostAnalysisVerifiedReadResponse = (value) => (0, exports.isBillingCostAnalysisMetadataV2)(value) && BILLING_VERIFIED_READ_STATES.has(value.artifactState);
