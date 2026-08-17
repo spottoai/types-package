@@ -56,4 +56,5 @@ export * from './integrations';
 export * from './identity';
 export * from './features-and-permissions';
 export * from './tags';
+export * from './portfolio';
 //# sourceMappingURL=index.d.ts.map

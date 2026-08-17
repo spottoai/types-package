@@ -72,4 +72,5 @@ __exportStar(require("./integrations"), exports);
 __exportStar(require("./identity"), exports);
 __exportStar(require("./features-and-permissions"), exports);
 __exportStar(require("./tags"), exports);
+__exportStar(require("./portfolio"), exports);
 //# sourceMappingURL=index.js.map

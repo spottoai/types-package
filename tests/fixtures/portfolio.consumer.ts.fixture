@@ -1,0 +1,19 @@
+import {
+  PORTFOLIO_PROJECTION_COMPATIBLE_SCHEMA_VERSIONS,
+  PORTFOLIO_PROJECTION_SCHEMA_VERSION,
+  type PortfolioDataCoverage,
+  type PortfolioOverviewResponse,
+  type PortfolioProjectionManifest,
+} from '@spottoai/types-package';
+
+const coverage: PortfolioDataCoverage | undefined = undefined;
+const overview: PortfolioOverviewResponse | undefined = undefined;
+const manifest: PortfolioProjectionManifest | undefined = undefined;
+
+if (!PORTFOLIO_PROJECTION_COMPATIBLE_SCHEMA_VERSIONS.includes(PORTFOLIO_PROJECTION_SCHEMA_VERSION)) {
+  throw new Error('Current Portfolio schema must be included in the compatibility window.');
+}
+
+void coverage;
+void overview;
+void manifest;

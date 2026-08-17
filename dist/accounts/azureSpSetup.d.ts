@@ -181,6 +181,7 @@ export interface AzureSpSetupExecutionRequestV1 {
     targetAzureServicePrincipalObjectId?: string;
     targetReadinessVersion?: string;
     targetSummaryBaselineVersion?: string;
+    targetCredentialBaselineHash?: string;
     selectedExistingSubscriptionIds?: string[];
     selectedNewSubscriptionIds?: string[];
     priorOutcomeBaseline?: AzureSpSetupExecutionRequestPriorOutcomeV1;
@@ -395,8 +396,6 @@ export interface AzureSpSetupExecuteSuccessResponse extends AzureSpSetupStatusRe
     result: 'complete' | 'partial';
     resultCloudAccountId: string;
 }
-export interface AzureSpSetupCancelResponse extends AzureSpSetupStatusResponse {
-    phase: 'cancelled';
-    result: 'cancelled';
-}
+/** Status returned after cancellation is requested; active work settles asynchronously. */
+export type AzureSpSetupCancelResponse = AzureSpSetupStatusResponse;
 //# sourceMappingURL=azureSpSetup.d.ts.map

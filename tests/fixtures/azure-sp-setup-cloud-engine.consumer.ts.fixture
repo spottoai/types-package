@@ -1,16 +1,21 @@
 import type {
   AzureSpSetupDurableStateV1,
+  AzureSpSetupExecutionRequestV1,
   AzureSpSetupExecutionRequestMessage,
   AzureSpSetupMaintenanceRequestMessage,
   AzureSpSetupOperationResult,
 } from '@spottoai/types-package';
 
 declare const state: AzureSpSetupDurableStateV1;
+declare const executionRequest: AzureSpSetupExecutionRequestV1;
 declare const executionMessage: AzureSpSetupExecutionRequestMessage;
 declare const maintenanceMessage: AzureSpSetupMaintenanceRequestMessage;
 declare const operationResult: AzureSpSetupOperationResult;
 
 void state;
+void executionRequest.targetCredentialBaselineHash;
+void state.targetCredentialBaselineHash;
+void state.retryAttemptsByOperation;
 void executionMessage;
 void maintenanceMessage;
 void operationResult;
