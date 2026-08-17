@@ -721,6 +721,31 @@ assert.equal(arrayAccessorInvoked, false, 'canonical binding never executes arra
 const cyclicArtifact = {};
 cyclicArtifact.loop = cyclicArtifact;
 assert.throws(() => canonicalizeBillingArtifactJson(cyclicArtifact), 'canonical JSON rejects cycles');
+const sharedCanonicalArtifact = { value: 1 };
+assert.equal(
+  canonicalizeBillingArtifactJson({ first: sharedCanonicalArtifact, second: sharedCanonicalArtifact }),
+  '{"first":{"value":1},"second":{"value":1}}',
+  'canonical JSON serializes completed shared aliases at each reference'
+);
+let deeplyNestedCanonicalArtifact = 0;
+for (let level = 0; level < 5_000; level += 1) deeplyNestedCanonicalArtifact = [deeplyNestedCanonicalArtifact];
+assert.equal(
+  canonicalizeBillingArtifactJson(deeplyNestedCanonicalArtifact),
+  '['.repeat(5_000) + '0' + ']'.repeat(5_000),
+  'canonical JSON is stack-safe at depth 5000 with Analyzer-exact bytes'
+);
+const maximumContainerVisitArtifact = Array.from({ length: 99_999 }, () => []);
+assert.equal(
+  canonicalizeBillingArtifactJson(maximumContainerVisitArtifact).length,
+  299_998,
+  'canonical JSON accepts exactly 100000 container visits'
+);
+maximumContainerVisitArtifact.push([]);
+assert.throws(
+  () => canonicalizeBillingArtifactJson(maximumContainerVisitArtifact),
+  /100000-container limit/,
+  'canonical JSON rejects the 100001st container visit'
+);
 const accessorBinding = structuredClone(contractCorpus.bindingBase);
 Object.defineProperty(accessorBinding, 'subscriptionId', { enumerable: true, get: () => 'unsafe' });
 assert.throws(() => canonicalizeBillingOutputBindingV1(accessorBinding), 'canonical binding rejects accessors');

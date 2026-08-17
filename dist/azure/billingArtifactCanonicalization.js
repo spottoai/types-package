@@ -227,68 +227,103 @@ const projectBillingOutputBindingV1FromMetadata = (metadata) => {
 exports.projectBillingOutputBindingV1FromMetadata = projectBillingOutputBindingV1FromMetadata;
 const canonicalizeJson = (value) => {
     const active = new Set();
-    const serialize = (candidate) => {
-        if (candidate === null || typeof candidate === 'boolean')
-            return JSON.stringify(candidate);
+    const fragments = [];
+    const pending = [{ kind: 'value', value }];
+    let visitedContainerCount = 0;
+    while (pending.length > 0) {
+        const frame = pending.pop();
+        if (frame === undefined)
+            break;
+        if (frame.kind === 'fragment') {
+            fragments.push(frame.value);
+            continue;
+        }
+        if (frame.kind === 'leave') {
+            active.delete(frame.value);
+            continue;
+        }
+        const candidate = frame.value;
+        if (candidate === null || typeof candidate === 'boolean') {
+            fragments.push(JSON.stringify(candidate));
+            continue;
+        }
         if (typeof candidate === 'string') {
             if (hasUnpairedSurrogate(candidate))
                 throw new TypeError('Canonical JSON rejects invalid Unicode surrogate data.');
-            return JSON.stringify(candidate);
+            fragments.push(JSON.stringify(candidate));
+            continue;
         }
         if (typeof candidate === 'number') {
             if (!Number.isFinite(candidate) || Object.is(candidate, -0) || (Number.isInteger(candidate) && !Number.isSafeInteger(candidate))) {
                 throw new TypeError('Canonical JSON requires finite, safe, non-negative-zero numbers.');
             }
-            return JSON.stringify(candidate);
+            fragments.push(JSON.stringify(candidate));
+            continue;
         }
         if (typeof candidate !== 'object' || candidate === undefined)
             throw new TypeError('Canonical JSON rejects non-JSON values.');
+        visitedContainerCount += 1;
+        if (visitedContainerCount > artifactControlData_js_1.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) {
+            throw new TypeError('Canonical JSON exceeds its 100000-container limit.');
+        }
         if (active.has(candidate))
             throw new TypeError('Canonical JSON rejects cyclic values.');
         active.add(candidate);
-        try {
-            if (Array.isArray(candidate)) {
-                if (Object.getPrototypeOf(candidate) !== Array.prototype)
-                    throw new TypeError('Canonical JSON requires plain arrays.');
-                const ownKeys = Reflect.ownKeys(candidate);
-                if (ownKeys.some(key => typeof key === 'symbol') ||
-                    ownKeys.some(key => typeof key === 'string' && key !== 'length' && !/^(0|[1-9]\d*)$/.test(key))) {
-                    throw new TypeError('Canonical JSON arrays cannot contain custom properties.');
-                }
-                const values = [];
-                for (let index = 0; index < candidate.length; index += 1) {
-                    if (!hasOwn(candidate, index))
-                        throw new TypeError('Canonical JSON rejects sparse arrays.');
-                    const descriptor = Object.getOwnPropertyDescriptor(candidate, String(index));
-                    if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
-                        throw new TypeError('Canonical JSON array entries must be enumerable JSON values.');
-                    }
-                    values.push(serialize(descriptor.value));
-                }
-                return `[${values.join(',')}]`;
+        pending.push({ kind: 'leave', value: candidate });
+        if (Array.isArray(candidate)) {
+            if (Object.getPrototypeOf(candidate) !== Array.prototype)
+                throw new TypeError('Canonical JSON requires plain arrays.');
+            const ownKeys = Reflect.ownKeys(candidate);
+            if (ownKeys.some(key => typeof key === 'symbol') ||
+                ownKeys.some(key => typeof key === 'string' && key !== 'length' && !/^(0|[1-9]\d*)$/.test(key))) {
+                throw new TypeError('Canonical JSON arrays cannot contain custom properties.');
             }
-            const prototype = Object.getPrototypeOf(candidate);
-            if (prototype !== Object.prototype && prototype !== null)
-                throw new TypeError('Canonical JSON requires plain objects.');
-            if (Object.getOwnPropertySymbols(candidate).length > 0)
-                throw new TypeError('Canonical JSON rejects symbol properties.');
-            const entries = [];
-            for (const key of Object.getOwnPropertyNames(candidate).sort()) {
-                if (hasUnpairedSurrogate(key))
-                    throw new TypeError('Canonical JSON rejects invalid Unicode property names.');
-                const descriptor = Object.getOwnPropertyDescriptor(candidate, key);
+            const values = [];
+            for (let index = 0; index < candidate.length; index += 1) {
+                if (!hasOwn(candidate, index))
+                    throw new TypeError('Canonical JSON rejects sparse arrays.');
+                const descriptor = Object.getOwnPropertyDescriptor(candidate, String(index));
                 if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
-                    throw new TypeError('Canonical JSON object fields must be enumerable JSON values.');
+                    throw new TypeError('Canonical JSON array entries must be enumerable JSON values.');
                 }
-                entries.push(`${JSON.stringify(key)}:${serialize(descriptor.value)}`);
+                values.push(descriptor.value);
             }
-            return `{${entries.join(',')}}`;
+            fragments.push('[');
+            pending.push({ kind: 'fragment', value: ']' });
+            for (let index = values.length - 1; index >= 0; index -= 1) {
+                pending.push({ kind: 'value', value: values[index] });
+                if (index > 0)
+                    pending.push({ kind: 'fragment', value: ',' });
+            }
+            continue;
         }
-        finally {
-            active.delete(candidate);
+        const prototype = Object.getPrototypeOf(candidate);
+        if (prototype !== Object.prototype && prototype !== null)
+            throw new TypeError('Canonical JSON requires plain objects.');
+        if (Object.getOwnPropertySymbols(candidate).length > 0)
+            throw new TypeError('Canonical JSON rejects symbol properties.');
+        const entries = [];
+        for (const key of Object.getOwnPropertyNames(candidate).sort()) {
+            if (hasUnpairedSurrogate(key))
+                throw new TypeError('Canonical JSON rejects invalid Unicode property names.');
+            const descriptor = Object.getOwnPropertyDescriptor(candidate, key);
+            if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
+                throw new TypeError('Canonical JSON object fields must be enumerable JSON values.');
+            }
+            entries.push({ key, value: descriptor.value });
         }
-    };
-    return serialize(value);
+        fragments.push('{');
+        pending.push({ kind: 'fragment', value: '}' });
+        for (let index = entries.length - 1; index >= 0; index -= 1) {
+            const entry = entries[index];
+            pending.push({ kind: 'value', value: entry.value });
+            pending.push({
+                kind: 'fragment',
+                value: `${index > 0 ? ',' : ''}${JSON.stringify(entry.key)}:`,
+            });
+        }
+    }
+    return fragments.join('');
 };
 const withoutManifestDigest = (manifest) => {
     const prototype = Object.getPrototypeOf(manifest);
