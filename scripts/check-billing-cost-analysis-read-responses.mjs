@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
+import { performance } from 'node:perf_hooks';
 
 import {
   isBillingCostAnalysisBusinessPayloadV1,
@@ -179,6 +180,11 @@ for (const [name, maliciousAdditive] of [
   ['credential field', { authorization: 'Bearer secret-example' }],
   ['physical URI value', { location: 'https://storage.example.invalid/private/metadata.json' }],
   ['URI-shaped business-like field in an unknown subtree', { source: 'source:additive' }],
+  ['raw digest value under an unknown key', { fingerprint: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }],
+  ['nested manifest digest control field', { manifestDigest: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }],
+  ['nested sha256 control field', { sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }],
+  ['undefined nested evidence control field', { manifestDigest: undefined }],
+  ['non-Azure resource identity', { resourceId: 'vm-1' }],
 ]) {
   const maliciousBusinessPayload = { ...legacyBusinessPayload, future: maliciousAdditive };
   const maliciousFallback = { ...legacyFallback, future: maliciousAdditive };
@@ -265,3 +271,42 @@ assert.equal(
   'V2 metadata rejects fallback after the explicit response split'
 );
 assert.equal(isBillingCostAnalysisVerifiedReadResponse(legacyFallback), false, 'verified response does not accept legacy fallback');
+
+const buildLargeLegacyBusinessPayload = pointCount => {
+  const payload = structuredClone(legacyBusinessPayload);
+  payload.chartData.views = {
+    daily: {
+      aggregation: 'daily',
+      startDate: 1_782_864_000,
+      endDate: 1_785_542_400,
+      averageDailyCost: 10,
+      totalCost: pointCount * 10,
+      points: Array.from({ length: pointCount }, (_, index) => ({
+        date: `2026-07-${String((index % 28) + 1).padStart(2, '0')}`,
+        timestamp: 1_782_864_000 + index,
+        cost: 10,
+        isAnomaly: false,
+        anomalyVotes: 0,
+        anomalyMethods: ['detector:seasonal'],
+      })),
+    },
+  };
+  return payload;
+};
+const measureValidation = payload => {
+  const startedAt = performance.now();
+  assert.equal(isBillingCostAnalysisBusinessPayloadV1(payload), true, 'large legacy business payload remains valid');
+  return performance.now() - startedAt;
+};
+const smallPayload = buildLargeLegacyBusinessPayload(1_000);
+const largePayload = buildLargeLegacyBusinessPayload(8_000);
+measureValidation(smallPayload);
+const smallDurations = [measureValidation(smallPayload), measureValidation(smallPayload), measureValidation(smallPayload)].sort(
+  (left, right) => left - right
+);
+const smallMedian = smallDurations[1];
+const largeDuration = measureValidation(largePayload);
+assert.ok(
+  largeDuration <= smallMedian * 16,
+  `billing business validation must remain near-linear for 8x payload growth (${smallMedian.toFixed(1)}ms -> ${largeDuration.toFixed(1)}ms)`
+);

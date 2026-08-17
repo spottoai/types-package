@@ -3,11 +3,19 @@ export interface AllowedArtifactReferenceField {
     key: string;
     allowUriScheme?: boolean;
     allowUriSchemeInStringArray?: boolean;
+    allowDigestLike?: boolean;
+    allowControlField?: boolean;
+}
+interface IArtifactControlDataScanOptions {
+    rejectDigestLikeValues?: boolean;
+    requireSafeAzureResourceIds?: boolean;
+    forbiddenControlFields?: ReadonlySet<string>;
 }
 /** Marks a structurally validated schema field whose logical reference name is allowed. */
 export declare const allowedArtifactReferenceField: (object: unknown, key: string) => AllowedArtifactReferenceField[];
 /** Marks a structurally validated identity field whose value is allowed by its owning schema. */
 export declare const allowedArtifactIdentityField: (object: unknown, key: string) => AllowedArtifactReferenceField[];
 /** Rejects exact normalized sensitive fields and physical-reference control data recursively. */
-export declare const containsForbiddenArtifactControlData: (value: unknown, allowedReferenceFields?: AllowedArtifactReferenceField[]) => boolean;
+export declare const containsForbiddenArtifactControlData: (value: unknown, allowedReferenceFields?: AllowedArtifactReferenceField[], options?: IArtifactControlDataScanOptions) => boolean;
+export {};
 //# sourceMappingURL=artifactControlData.d.ts.map

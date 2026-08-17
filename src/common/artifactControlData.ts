@@ -44,12 +44,21 @@ const PHYSICAL_REFERENCE_FIELDS = new Set([
 ]);
 const PERCENT_ENCODED_BYTE_PATTERN = /%[0-9A-Fa-f]{2}/;
 const URI_SCHEME_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/;
+const SHA256_PATTERN = /^[0-9A-Fa-f]{64}$/;
 
 export interface AllowedArtifactReferenceField {
   object: Record<string, unknown>;
   key: string;
   allowUriScheme?: boolean;
   allowUriSchemeInStringArray?: boolean;
+  allowDigestLike?: boolean;
+  allowControlField?: boolean;
+}
+
+interface IArtifactControlDataScanOptions {
+  rejectDigestLikeValues?: boolean;
+  requireSafeAzureResourceIds?: boolean;
+  forbiddenControlFields?: ReadonlySet<string>;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -61,10 +70,11 @@ const normalizeFieldName = (key: string): string => key.replace(/[-_\s]/g, '').t
 
 const hasDotTraversal = (value: string): boolean => value.split(/[\\/]/).some(segment => segment === '.' || segment === '..');
 
-const isForbiddenReferenceValue = (value: string, allowUriScheme = false): boolean =>
+const isForbiddenReferenceValue = (value: string, allowUriScheme = false, allowDigestLike = false, rejectDigestLikeValues = false): boolean =>
   hasControlCharacters(value) ||
   PERCENT_ENCODED_BYTE_PATTERN.test(value) ||
   (!allowUriScheme && URI_SCHEME_PATTERN.test(value)) ||
+  (rejectDigestLikeValues && !allowDigestLike && SHA256_PATTERN.test(value)) ||
   value.startsWith('/') ||
   value.startsWith('\\\\') ||
   /^[A-Za-z]:[\\/]/.test(value) ||
@@ -91,25 +101,64 @@ export const allowedArtifactReferenceField = (object: unknown, key: string): All
 export const allowedArtifactIdentityField = (object: unknown, key: string): AllowedArtifactReferenceField[] =>
   isRecord(object) ? [{ object, key, allowUriScheme: true }] : [];
 
-/** Rejects exact normalized sensitive fields and physical-reference control data recursively. */
-export const containsForbiddenArtifactControlData = (value: unknown, allowedReferenceFields: AllowedArtifactReferenceField[] = []): boolean => {
-  if (typeof value === 'string') return isForbiddenReferenceValue(value);
-  if (Array.isArray(value)) return value.some(child => containsForbiddenArtifactControlData(child, allowedReferenceFields));
+type AllowedArtifactFieldIndex = WeakMap<Record<string, unknown>, Map<string, AllowedArtifactReferenceField>>;
+
+const indexAllowedArtifactFields = (allowedReferenceFields: AllowedArtifactReferenceField[]): AllowedArtifactFieldIndex => {
+  const index: AllowedArtifactFieldIndex = new WeakMap();
+  for (const field of allowedReferenceFields) {
+    let objectFields = index.get(field.object);
+    if (!objectFields) {
+      objectFields = new Map();
+      index.set(field.object, objectFields);
+    }
+    const existing = objectFields.get(field.key);
+    objectFields.set(field.key, {
+      object: field.object,
+      key: field.key,
+      allowUriScheme: existing?.allowUriScheme || field.allowUriScheme,
+      allowUriSchemeInStringArray: existing?.allowUriSchemeInStringArray || field.allowUriSchemeInStringArray,
+      allowDigestLike: existing?.allowDigestLike || field.allowDigestLike,
+      allowControlField: existing?.allowControlField || field.allowControlField,
+    });
+  }
+  return index;
+};
+
+const containsForbiddenArtifactControlDataWithIndex = (
+  value: unknown,
+  allowedReferenceFields: AllowedArtifactFieldIndex,
+  options: IArtifactControlDataScanOptions
+): boolean => {
+  if (typeof value === 'string') return isForbiddenReferenceValue(value, false, false, options.rejectDigestLikeValues);
+  if (Array.isArray(value)) return value.some(child => containsForbiddenArtifactControlDataWithIndex(child, allowedReferenceFields, options));
   if (!isRecord(value)) return false;
 
   return Object.entries(value).some(([key, child]) => {
     if (hasControlCharacters(key)) return true;
     const normalizedKey = normalizeFieldName(key);
     if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
-    const allowedField = allowedReferenceFields.find(field => field.object === value && field.key === key);
-    if (allowedField?.allowUriScheme && typeof child === 'string') return isForbiddenReferenceValue(child, true);
+    const allowedField = allowedReferenceFields.get(value)?.get(key);
+    if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField) return true;
+    if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') return !isSafeAzureResourceId(key, child);
+    if (allowedField && typeof child === 'string' && (allowedField.allowUriScheme || allowedField.allowDigestLike)) {
+      return isForbiddenReferenceValue(child, allowedField.allowUriScheme, allowedField.allowDigestLike, options.rejectDigestLikeValues);
+    }
     if (allowedField?.allowUriSchemeInStringArray && Array.isArray(child)) {
       return child.some(item =>
-        typeof item === 'string' ? isForbiddenReferenceValue(item, true) : containsForbiddenArtifactControlData(item, allowedReferenceFields)
+        typeof item === 'string'
+          ? isForbiddenReferenceValue(item, true, allowedField.allowDigestLike, options.rejectDigestLikeValues)
+          : containsForbiddenArtifactControlDataWithIndex(item, allowedReferenceFields, options)
       );
     }
     if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
     if (isSafeAzureResourceId(key, child)) return false;
-    return containsForbiddenArtifactControlData(child, allowedReferenceFields);
+    return containsForbiddenArtifactControlDataWithIndex(child, allowedReferenceFields, options);
   });
 };
+
+/** Rejects exact normalized sensitive fields and physical-reference control data recursively. */
+export const containsForbiddenArtifactControlData = (
+  value: unknown,
+  allowedReferenceFields: AllowedArtifactReferenceField[] = [],
+  options: IArtifactControlDataScanOptions = {}
+): boolean => containsForbiddenArtifactControlDataWithIndex(value, indexAllowedArtifactFields(allowedReferenceFields), options);
