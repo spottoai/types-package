@@ -27,7 +27,50 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
+const EXPECTED_CORPUS_SHA256 = '9fb71c0f6eba3e734f671c4b7bc63253b7f0535274e4fb29e6be545b8ed2445b';
+const EXPECTED_CORPUS_CASE_COUNT = 324;
+const EXPECTED_CORPUS_MUTATION_COUNT = 412;
+const EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT = 3;
+const REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES = [
+  'observe promotion binding',
+  'equal revision and same output digest',
+  'equal revision and different output digest',
+];
+const REQUIRED_DIGEST_RELATION_CASE_NAMES = [
+  'promotion observation without an ownership epoch rejects a digest relation',
+  'promotion observation keeps legacy equal idempotency without a digest relation',
+  'promotion observation accepts equal output digests as idempotent',
+  'promotion observation quarantines equal revisions with different output digests',
+  'promotion observation rejects same output digests projected to quarantine',
+  'promotion observation rejects different output digests projected as idempotent',
+  'promotion observation rejects digest relation on a newer revision',
+  'promotion observation rejects digest relation on an incomparable revision',
+  'promotion observation rejects quarantine without a different digest relation',
+  'promotion observation rejects an unknown output digest relation',
+];
+
 assert.equal(contractCorpus.corpusVersion, 5, 'portable corpus version must match the downstream parity contract');
+assert.equal(corpusDigest, EXPECTED_CORPUS_SHA256, 'portable corpus exact bytes must remain pinned');
+assert.equal(contractCorpus.cases.length, EXPECTED_CORPUS_CASE_COUNT, 'portable corpus case count must remain pinned');
+assert.equal(
+  contractCorpus.observationDigestVectors.length,
+  EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT,
+  'portable observation digest vector count must remain pinned'
+);
+const corpusCaseNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.name));
+assert.equal(corpusCaseNames.size, contractCorpus.cases.length, 'portable corpus case names must be unique');
+for (const requiredCaseName of REQUIRED_DIGEST_RELATION_CASE_NAMES) {
+  assert.ok(corpusCaseNames.has(requiredCaseName), `required digest-relation corpus case is missing: ${requiredCaseName}`);
+}
+const observationDigestVectorNames = new Set(contractCorpus.observationDigestVectors.map(vector => vector.name));
+assert.equal(
+  observationDigestVectorNames.size,
+  contractCorpus.observationDigestVectors.length,
+  'portable observation digest vector names must be unique'
+);
+for (const requiredVectorName of REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES) {
+  assert.ok(observationDigestVectorNames.has(requiredVectorName), `required observation digest vector is missing: ${requiredVectorName}`);
+}
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -253,6 +296,7 @@ for (const corpusCase of contractCorpus.cases) {
   assert.equal(typeof validator, 'function', `unknown corpus validator: ${corpusCase.validator}`);
   assert.equal(validator(document), corpusCase.valid, corpusCase.name);
 }
+assert.equal(mutationCount, EXPECTED_CORPUS_MUTATION_COUNT, 'portable corpus mutation count must remain pinned');
 
 const comparisonOutcomes = new Set();
 for (const comparisonCase of contractCorpus.revisionComparisons) {
