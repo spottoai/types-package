@@ -65,6 +65,7 @@
     "dev": "tsc --watch",
     "clean": "rimraf dist",
     "check:artifact-evidence-contracts": "node scripts/check-artifact-evidence-contracts.mjs",
+    "check:billing-artifact-object-boundaries": "node scripts/check-billing-artifact-object-boundaries.mjs",
     "check:packed-exports": "node scripts/check-packed-aws-exports.mjs",
     "check:aws-examples": "node scripts/check-aws-example-identifiers.mjs",
     "check:plugin-public-artifacts": "node scripts/check-plugin-public-artifacts.mjs",

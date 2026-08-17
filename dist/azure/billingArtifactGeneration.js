@@ -1,10 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = void 0;
+exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = exports.isBillingAnalyzerInputObservationPointerPath = exports.buildBillingAnalyzerInputObservationPointerPath = exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = void 0;
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const billingArtifactEvidence_js_1 = require("./billingArtifactEvidence.js");
+const billingArtifactLimits_js_1 = require("./billingArtifactLimits.js");
+/** Stable diagnostic-only suffix for the latest successfully enqueued observe input. */
+exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = 'history/billing/analyzer-inputs/latest-enqueued.json';
 const BILLING_BASES = new Set(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set(['utc', 'billing-calendar', 'company-local']);
@@ -49,6 +52,21 @@ const isCanonicalIsoTimestamp = (value) => {
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const allowedDescriptorPaths = (descriptors) => Array.isArray(descriptors) ? descriptors.flatMap(descriptor => (0, artifactControlData_js_1.allowedArtifactReferenceField)(descriptor, 'path')) : [];
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
+/** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
+const buildBillingAnalyzerInputObservationPointerPath = (subscriptionId) => {
+    if (!isPathSegment(subscriptionId))
+        throw new TypeError('subscriptionId must be a safe path segment');
+    return `subscriptions/${subscriptionId}/${exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH}`;
+};
+exports.buildBillingAnalyzerInputObservationPointerPath = buildBillingAnalyzerInputObservationPointerPath;
+/** Validates the exact diagnostic-only latest-enqueued observation logical path. */
+const isBillingAnalyzerInputObservationPointerPath = (value) => {
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value))
+        return false;
+    const match = /^subscriptions\/([^/]+)\/history\/billing\/analyzer-inputs\/latest-enqueued\.json$/.exec(value);
+    return match !== null && isPathSegment(match[1]);
+};
+exports.isBillingAnalyzerInputObservationPointerPath = isBillingAnalyzerInputObservationPointerPath;
 const inputGenerationPrefix = (subscriptionId, generationId) => `subscriptions/${subscriptionId}/history/billing/analyzer-inputs/generations/${generationId}/`;
 const inputManifestPath = (subscriptionId, generationId) => `${inputGenerationPrefix(subscriptionId, generationId)}manifest.json`;
 const outputGenerationPrefix = (subscriptionId, generationId) => `subscriptions/${subscriptionId}/billing/generations/${generationId}/`;
@@ -91,6 +109,7 @@ const isInputObjectDescriptor = (value, subscriptionId, generationId) => {
         isNonEmptyString(value.etag) &&
         isSha256(value.sha256) &&
         isPositiveInteger(value.byteCount) &&
+        value.byteCount <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.inputObjectStoredBytes &&
         isNonNegativeInteger(value.rowCount) &&
         isStringIn(value.basis, BILLING_BASES) &&
         (value.currencyCode === undefined || isNonEmptyString(value.currencyCode)) &&
@@ -100,12 +119,19 @@ const isOutputArtifactDescriptor = (value, subscriptionId, generationId) => {
     if (!isRecord(value))
         return false;
     const prefix = outputGenerationPrefix(subscriptionId, generationId);
-    return (isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) &&
-        isNonEmptyString(value.name) &&
-        value.mediaType === 'application/json' &&
-        isStringIn(value.contentEncoding, CONTENT_ENCODINGS) &&
-        isNonNegativeInteger(value.byteLength) &&
-        isSha256(value.sha256));
+    if (!isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) ||
+        !isPathSegment(value.name) ||
+        !((value.name === 'metadata.json' &&
+            value.path === `${prefix}metadata.json` &&
+            isNonNegativeInteger(value.byteLength) &&
+            value.byteLength <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.metadataStoredBytes) ||
+            (value.name !== 'metadata.json' &&
+                value.path === `${prefix}plots/${value.name}` &&
+                isNonNegativeInteger(value.byteLength) &&
+                value.byteLength <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.plotStoredBytes))) {
+        return false;
+    }
+    return value.mediaType === 'application/json' && isStringIn(value.contentEncoding, CONTENT_ENCODINGS) && isSha256(value.sha256);
 };
 const isJsonMetadata = (value) => {
     if (!isRecord(value))
@@ -143,7 +169,7 @@ const isBillingAnalyzerInputManifestV2 = (value) => {
     const periodKeys = value.requestedPeriods.map(period => `${period.fromInclusive}\n${period.throughExclusive}\n${period.dateBasis}\n${period.timeZone ?? ''}\n${period.basis}`);
     if (!hasUniqueValues(periodKeys))
         return false;
-    if (!Array.isArray(value.inputs) || value.inputs.length === 0)
+    if (!Array.isArray(value.inputs) || value.inputs.length === 0 || value.inputs.length > billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.maxInputObjects)
         return false;
     if (!value.inputs.every(input => isInputObjectDescriptor(input, value.subscriptionId, value.generationId)))
         return false;
@@ -247,9 +273,8 @@ const isBillingAnalyzerOutputManifestV2 = (value) => {
         publicationDecisionReferencesDigest(value.publicationDecision, new Set([...outputDerivedDigests].filter(digest => digest !== value.inputManifestDigest)))) {
         return false;
     }
-    if (!value.artifacts.some(artifact => artifact.path === `${outputGenerationPrefix(value.subscriptionId, value.generationId)}metadata.json`)) {
+    if (value.artifacts.filter(artifact => artifact.name === 'metadata.json').length !== 1)
         return false;
-    }
     return ((0, billingArtifactEvidence_js_1.isBillingCompletedArtifactPublicationDecision)(value.publicationDecision, value.generationId, value.inputManifestDigest) &&
         isCanonicalIsoTimestamp(value.completedAt));
 };

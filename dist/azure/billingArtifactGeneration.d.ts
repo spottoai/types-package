@@ -2,6 +2,8 @@ import { type ArtifactCoverageVerdict, type ArtifactOwnershipBinding, type Artif
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { BillingAnalyzerMetadata } from './billingGeneration.js';
 import { type BillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
+/** Stable diagnostic-only suffix for the latest successfully enqueued observe input. */
+export declare const BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH: "history/billing/analyzer-inputs/latest-enqueued.json";
 type BillingArtifactBasis = 'actual' | 'amortized';
 interface BillingAnalyzerRequestedPeriod {
     fromInclusive: string;
@@ -142,6 +144,10 @@ export interface BillingAnalysisPromotionObservationV1 {
     observationDigest: string;
     observedAt: string;
 }
+/** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
+export declare const buildBillingAnalyzerInputObservationPointerPath: (subscriptionId: string) => string;
+/** Validates the exact diagnostic-only latest-enqueued observation logical path. */
+export declare const isBillingAnalyzerInputObservationPointerPath: (value: unknown) => value is string;
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export declare const isBillingAnalyzerInputManifestV2: (value: unknown) => value is BillingAnalyzerInputManifestV2;
 /** Validates the enforceable current pointer for one published analyzer input generation. */

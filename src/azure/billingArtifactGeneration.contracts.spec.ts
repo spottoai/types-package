@@ -1,4 +1,7 @@
 import {
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
   canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
@@ -6,6 +9,7 @@ import {
   isBillingAnalysisCurrentPointerV1,
   isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
@@ -252,6 +256,14 @@ const inputObservationPointer = {
   enqueuedAt: completedAt,
 } satisfies BillingAnalyzerInputObservationPointerV1;
 
+const inputObservationPointerWithSelfDigest: BillingAnalyzerInputObservationPointerV1 = {
+  ...inputObservationPointer,
+  // @ts-expect-error Diagnostic discovery pointers do not carry a self digest.
+  observationDigest: digestD,
+};
+
+const inputObservationPointerPath = buildBillingAnalyzerInputObservationPointerPath(subscriptionId);
+
 const outputManifest = {
   schemaVersion: 2,
   status: 'completed',
@@ -475,6 +487,12 @@ const validationResults: boolean[] = [
 ];
 
 const runtimeSafetyResults: boolean[] = [
+  Object.isFrozen(BILLING_ARTIFACT_OBJECT_LIMITS_V1),
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH === 'history/billing/analyzer-inputs/latest-enqueued.json',
+  inputObservationPointerPath === 'subscriptions/sub-123/history/billing/analyzer-inputs/latest-enqueued.json',
+  isBillingAnalyzerInputObservationPointerPath(inputObservationPointerPath),
+  !isBillingAnalyzerInputObservationPointerPath('subscriptions/sub-123/history/billing/analyzer-inputs/current.json'),
+  !isBillingAnalyzerInputObservationPointerPath('subscriptions/../history/billing/analyzer-inputs/latest-enqueued.json'),
   isBillingAnalyzerRequestV2(harmlessAdditiveRequest),
   ...credentialBearingRequests.map(request => !isBillingAnalyzerRequestV2(request)),
   !isBillingAnalyzerInputCurrentPointerV1(controlCharacterInputPointer),
@@ -605,6 +623,7 @@ void [
   unknownInputPointerVersion,
   unknownRequestVersion,
   unknownInputObservationVersion,
+  inputObservationPointerWithSelfDigest,
   unknownPromotionObservationVersion,
   unknownOutputManifestVersion,
   incompleteAnalysisPointer,

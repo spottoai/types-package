@@ -16,6 +16,10 @@ import {
 } from '../common/artifactControlData.js';
 import type { BillingAnalyzerMetadata } from './billingGeneration.js';
 import { isBillingCompletedArtifactPublicationDecision, type BillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
+import { BILLING_ARTIFACT_OBJECT_LIMITS_V1 } from './billingArtifactLimits.js';
+
+/** Stable diagnostic-only suffix for the latest successfully enqueued observe input. */
+export const BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = 'history/billing/analyzer-inputs/latest-enqueued.json' as const;
 
 type BillingArtifactBasis = 'actual' | 'amortized';
 
@@ -214,6 +218,19 @@ const allowedDescriptorPaths = (descriptors: unknown): AllowedArtifactReferenceF
 const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 
+/** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
+export const buildBillingAnalyzerInputObservationPointerPath = (subscriptionId: string): string => {
+  if (!isPathSegment(subscriptionId)) throw new TypeError('subscriptionId must be a safe path segment');
+  return `subscriptions/${subscriptionId}/${BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH}`;
+};
+
+/** Validates the exact diagnostic-only latest-enqueued observation logical path. */
+export const isBillingAnalyzerInputObservationPointerPath = (value: unknown): value is string => {
+  if (!isStrictLogicalArtifactReference(value)) return false;
+  const match = /^subscriptions\/([^/]+)\/history\/billing\/analyzer-inputs\/latest-enqueued\.json$/.exec(value);
+  return match !== null && isPathSegment(match[1]);
+};
+
 const inputGenerationPrefix = (subscriptionId: string, generationId: string): string =>
   `subscriptions/${subscriptionId}/history/billing/analyzer-inputs/generations/${generationId}/`;
 
@@ -279,6 +296,7 @@ const isInputObjectDescriptor = (value: unknown, subscriptionId: string, generat
     isNonEmptyString(value.etag) &&
     isSha256(value.sha256) &&
     isPositiveInteger(value.byteCount) &&
+    value.byteCount <= BILLING_ARTIFACT_OBJECT_LIMITS_V1.inputObjectStoredBytes &&
     isNonNegativeInteger(value.rowCount) &&
     isStringIn(value.basis, BILLING_BASES) &&
     (value.currencyCode === undefined || isNonEmptyString(value.currencyCode)) &&
@@ -293,14 +311,23 @@ const isOutputArtifactDescriptor = (
 ): value is BillingAnalyzerOutputArtifactDescriptor => {
   if (!isRecord(value)) return false;
   const prefix = outputGenerationPrefix(subscriptionId, generationId);
-  return (
-    isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) &&
-    isNonEmptyString(value.name) &&
-    value.mediaType === 'application/json' &&
-    isStringIn(value.contentEncoding, CONTENT_ENCODINGS) &&
-    isNonNegativeInteger(value.byteLength) &&
-    isSha256(value.sha256)
-  );
+  if (
+    !isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) ||
+    !isPathSegment(value.name) ||
+    !(
+      (value.name === 'metadata.json' &&
+        value.path === `${prefix}metadata.json` &&
+        isNonNegativeInteger(value.byteLength) &&
+        value.byteLength <= BILLING_ARTIFACT_OBJECT_LIMITS_V1.metadataStoredBytes) ||
+      (value.name !== 'metadata.json' &&
+        value.path === `${prefix}plots/${value.name}` &&
+        isNonNegativeInteger(value.byteLength) &&
+        value.byteLength <= BILLING_ARTIFACT_OBJECT_LIMITS_V1.plotStoredBytes)
+    )
+  ) {
+    return false;
+  }
+  return value.mediaType === 'application/json' && isStringIn(value.contentEncoding, CONTENT_ENCODINGS) && isSha256(value.sha256);
 };
 
 const isJsonMetadata = (value: unknown): value is BillingAnalyzerMetadata => {
@@ -334,7 +361,8 @@ export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is Billi
     period => `${period.fromInclusive}\n${period.throughExclusive}\n${period.dateBasis}\n${period.timeZone ?? ''}\n${period.basis}`
   );
   if (!hasUniqueValues(periodKeys)) return false;
-  if (!Array.isArray(value.inputs) || value.inputs.length === 0) return false;
+  if (!Array.isArray(value.inputs) || value.inputs.length === 0 || value.inputs.length > BILLING_ARTIFACT_OBJECT_LIMITS_V1.maxInputObjects)
+    return false;
   if (!value.inputs.every(input => isInputObjectDescriptor(input, value.subscriptionId as string, value.generationId as string))) return false;
   return hasUniqueValues(value.inputs.map(input => input.path));
 };
@@ -441,13 +469,7 @@ export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is Bill
   ) {
     return false;
   }
-  if (
-    !value.artifacts.some(
-      artifact => artifact.path === `${outputGenerationPrefix(value.subscriptionId as string, value.generationId as string)}metadata.json`
-    )
-  ) {
-    return false;
-  }
+  if (value.artifacts.filter(artifact => artifact.name === 'metadata.json').length !== 1) return false;
   return (
     isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId as string, value.inputManifestDigest as string) &&
     isCanonicalIsoTimestamp(value.completedAt)
