@@ -146,6 +146,16 @@ present, that pair is invalid. Both current-pointer validators reject
 paired with `publicationMode: 'observe'`, even if every current-pointer field
 has been added. Other additive-next fields remain accepted.
 
+Promotion observation digest-relation amendment (accepted 2026-08-17):
+`evaluation.outputDigestRelation?: 'same' | 'different'` is an additive V1
+extension. For `comparison: 'equal'`, omission preserves the legacy
+`would-be-idempotent` shape, `same` requires `would-be-idempotent`, and
+`different` requires `would-quarantine`. The relation is forbidden for every
+non-equal comparison and for the epoch-free `unenforceable` shape. Unknown
+relations and incoherent outcomes are invalid. The exact-field canonicalizer
+includes `outputDigestRelation` only when present, so new observations bind it
+to `observationDigest` while legacy preimages and digests remain unchanged.
+
 ## Tasks
 
 ### Task 1: Lock the shared state and revision behavior with RED fixtures

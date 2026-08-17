@@ -1,5 +1,5 @@
 {
-  "corpusVersion": 4,
+  "corpusVersion": 5,
   "fixtures": {
     "currentPopulatedDecision": {
       "processing": "succeeded",
@@ -829,6 +829,13 @@
       "mutations": []
     },
     {
+      "name": "promotion observation without an ownership epoch rejects a digest relation",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [{ "path": "evaluation.outputDigestRelation", "value": "same" }]
+    },
+    {
       "name": "promotion observation allows additive fields",
       "validator": "isBillingAnalysisPromotionObservationV1",
       "fixture": "billingAnalysisPromotionObservationV1",
@@ -865,6 +872,121 @@
         { "path": "revision.ownershipEpochRevision", "value": 3 },
         { "path": "evaluation.comparison", "value": "newer" },
         { "path": "evaluation.projectedOutcome", "value": "would-promote" }
+      ]
+    },
+    {
+      "name": "promotion observation keeps legacy equal idempotency without a digest relation",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-be-idempotent" }
+      ]
+    },
+    {
+      "name": "promotion observation accepts equal output digests as idempotent",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-be-idempotent" },
+        { "path": "evaluation.outputDigestRelation", "value": "same" }
+      ]
+    },
+    {
+      "name": "promotion observation quarantines equal revisions with different output digests",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": true,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-quarantine" },
+        { "path": "evaluation.outputDigestRelation", "value": "different" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects same output digests projected to quarantine",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-quarantine" },
+        { "path": "evaluation.outputDigestRelation", "value": "same" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects different output digests projected as idempotent",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-be-idempotent" },
+        { "path": "evaluation.outputDigestRelation", "value": "different" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects digest relation on a newer revision",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "newer" },
+        { "path": "evaluation.projectedOutcome", "value": "would-promote" },
+        { "path": "evaluation.outputDigestRelation", "value": "same" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects digest relation on an incomparable revision",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "incomparable" },
+        { "path": "evaluation.projectedOutcome", "value": "would-quarantine" },
+        { "path": "evaluation.outputDigestRelation", "value": "different" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects quarantine without a different digest relation",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-quarantine" }
+      ]
+    },
+    {
+      "name": "promotion observation rejects an unknown output digest relation",
+      "validator": "isBillingAnalysisPromotionObservationV1",
+      "fixture": "billingAnalysisPromotionObservationV1",
+      "valid": false,
+      "mutations": [
+        { "path": "ownership.ownershipEpochRevision", "value": 3 },
+        { "path": "revision.ownershipEpochRevision", "value": 3 },
+        { "path": "evaluation.comparison", "value": "equal" },
+        { "path": "evaluation.projectedOutcome", "value": "would-be-idempotent" },
+        { "path": "evaluation.outputDigestRelation", "value": "unknown" }
       ]
     },
     {
@@ -8631,11 +8753,91 @@
           "comparison": "unenforceable",
           "projectedOutcome": "not-enforceable"
         },
-        "observationDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "observationDigest": "0a3f5e9247177177406ddadb6f5e9ed9f3df8ba4c3aec36c00c4cf3c788a86a1",
         "observedAt": "2026-08-13T00:06:00.000Z"
       },
       "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"unenforceable\",\"projectedOutcome\":\"not-enforceable\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
       "expectedDigest": "0a3f5e9247177177406ddadb6f5e9ed9f3df8ba4c3aec36c00c4cf3c788a86a1"
+    },
+    {
+      "name": "equal revision and same output digest",
+      "observation": {
+        "schemaVersion": 1,
+        "documentType": "billing-analysis-promotion-observation",
+        "authority": "diagnostic-only",
+        "publicationMode": "observe",
+        "processingState": "succeeded",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "sourceRevision": 42,
+          "policyRevision": 7,
+          "ownershipEpochRevision": 3
+        },
+        "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "correlationId": "correlation-42",
+        "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+        "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "evaluation": {
+          "comparison": "equal",
+          "projectedOutcome": "would-be-idempotent",
+          "outputDigestRelation": "same"
+        },
+        "observationDigest": "50e8a2752c6e099daa7c8a6fd0b46578a4c6d1b78756506bdd26be2934258f2b",
+        "observedAt": "2026-08-13T00:06:00.000Z"
+      },
+      "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"equal\",\"outputDigestRelation\":\"same\",\"projectedOutcome\":\"would-be-idempotent\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
+      "expectedDigest": "50e8a2752c6e099daa7c8a6fd0b46578a4c6d1b78756506bdd26be2934258f2b"
+    },
+    {
+      "name": "equal revision and different output digest",
+      "observation": {
+        "schemaVersion": 1,
+        "documentType": "billing-analysis-promotion-observation",
+        "authority": "diagnostic-only",
+        "publicationMode": "observe",
+        "processingState": "succeeded",
+        "subscriptionId": "sub-123",
+        "generationId": "billing-input-generation-42",
+        "ownership": {
+          "provider": "azure",
+          "tenantId": "tenant-1",
+          "companyId": "company-1",
+          "cloudAccountId": "cloud-account-1",
+          "accountId": "sub-123",
+          "ownershipEpochRevision": 3
+        },
+        "revision": {
+          "sourceRevision": 42,
+          "policyRevision": 7,
+          "ownershipEpochRevision": 3
+        },
+        "messageId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "correlationId": "correlation-42",
+        "inputManifestPath": "subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json",
+        "inputManifestDigest": "91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a",
+        "outputManifestPath": "subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json",
+        "outputManifestDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "evaluation": {
+          "comparison": "equal",
+          "projectedOutcome": "would-quarantine",
+          "outputDigestRelation": "different"
+        },
+        "observationDigest": "49328d86aab6d2a031fe9ced208b3075a99f6881c6dfbed06b5d65252a214e04",
+        "observedAt": "2026-08-13T00:06:00.000Z"
+      },
+      "expectedCanonical": "{\"authority\":\"diagnostic-only\",\"correlationId\":\"correlation-42\",\"documentType\":\"billing-analysis-promotion-observation\",\"evaluation\":{\"comparison\":\"equal\",\"outputDigestRelation\":\"different\",\"projectedOutcome\":\"would-quarantine\"},\"generationId\":\"billing-input-generation-42\",\"inputManifestDigest\":\"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a\",\"inputManifestPath\":\"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json\",\"messageId\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"observedAt\":\"2026-08-13T00:06:00.000Z\",\"outputManifestDigest\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"outputManifestPath\":\"subscriptions/sub-123/billing/generations/billing-input-generation-42/manifest.json\",\"ownership\":{\"accountId\":\"sub-123\",\"cloudAccountId\":\"cloud-account-1\",\"companyId\":\"company-1\",\"ownershipEpochRevision\":3,\"provider\":\"azure\",\"tenantId\":\"tenant-1\"},\"processingState\":\"succeeded\",\"publicationMode\":\"observe\",\"revision\":{\"ownershipEpochRevision\":3,\"policyRevision\":7,\"sourceRevision\":42},\"schemaVersion\":1,\"subscriptionId\":\"sub-123\"}",
+      "expectedDigest": "49328d86aab6d2a031fe9ced208b3075a99f6881c6dfbed06b5d65252a214e04"
     }
   ],
   "observationBindingMutationVectors": [

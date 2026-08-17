@@ -316,6 +316,28 @@ const promotionObservation = {
   observedAt: completedAt,
 } satisfies BillingAnalysisPromotionObservationV1;
 
+const equalSamePromotionObservation = {
+  ...promotionObservation,
+  ownership,
+  revision,
+  evaluation: {
+    comparison: 'equal',
+    projectedOutcome: 'would-be-idempotent',
+    outputDigestRelation: 'same',
+  },
+} satisfies BillingAnalysisPromotionObservationV1;
+
+const equalDifferentPromotionObservation = {
+  ...promotionObservation,
+  ownership,
+  revision,
+  evaluation: {
+    comparison: 'equal',
+    projectedOutcome: 'would-quarantine',
+    outputDigestRelation: 'different',
+  },
+} satisfies BillingAnalysisPromotionObservationV1;
+
 const costAnalysisMetadata = {
   schemaVersion: 2,
   subscriptionId,
@@ -444,6 +466,8 @@ const validationResults: boolean[] = [
   isBillingCostAnalysisMetadataV2(partialCostAnalysisMetadata),
   isBillingAnalyzerInputObservationPointerV1(inputObservationPointer),
   isBillingAnalysisPromotionObservationV1(promotionObservation),
+  isBillingAnalysisPromotionObservationV1(equalSamePromotionObservation),
+  isBillingAnalysisPromotionObservationV1(equalDifferentPromotionObservation),
   !isBillingAnalyzerInputCurrentPointerV1(inputObservationPointer),
   !isBillingAnalysisCurrentPointerV1(inputObservationPointer),
   !isBillingAnalyzerInputCurrentPointerV1(promotionObservation),

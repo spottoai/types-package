@@ -155,6 +155,7 @@ export interface BillingAnalysisPromotionObservationV1 {
   evaluation: {
     comparison: ArtifactRevisionComparison | 'authority-absent';
     projectedOutcome: 'would-promote' | 'would-be-idempotent' | 'would-be-superseded' | 'would-quarantine' | 'not-enforceable';
+    outputDigestRelation?: 'same' | 'different';
   };
   observationDigest: string;
   observedAt: string;
@@ -528,10 +529,20 @@ export const isBillingAnalysisPromotionObservationV1 = (value: unknown): value i
     return false;
   }
   const hasOwnershipEpoch = (value.ownership as ArtifactOwnershipBinding<'azure'>).ownershipEpochRevision !== undefined;
+  const outputDigestRelation = value.evaluation.outputDigestRelation;
+  if (outputDigestRelation !== undefined && outputDigestRelation !== 'same' && outputDigestRelation !== 'different') return false;
   if (!hasOwnershipEpoch) {
-    return value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable';
+    return (
+      outputDigestRelation === undefined && value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable'
+    );
+  }
+  if (value.evaluation.comparison === 'equal') {
+    return outputDigestRelation === 'different'
+      ? value.evaluation.projectedOutcome === 'would-quarantine'
+      : value.evaluation.projectedOutcome === 'would-be-idempotent';
   }
   return (
+    outputDigestRelation === undefined &&
     value.evaluation.comparison !== 'unenforceable' &&
     OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome
   );

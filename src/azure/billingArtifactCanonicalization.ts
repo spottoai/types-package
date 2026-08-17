@@ -192,10 +192,12 @@ const projectPublicationDecision = (value: unknown): BillingArtifactPublicationD
 
 const projectPromotionEvaluation = (value: unknown): Record<string, unknown> => {
   const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
-  return {
+  const projected: Record<string, unknown> = {
     comparison: readDataProperty(source, 'comparison'),
     projectedOutcome: readDataProperty(source, 'projectedOutcome'),
   };
+  selectOptional(source, projected, 'outputDigestRelation');
+  return projected;
 };
 
 const projectPromotionObservation = (value: unknown): Record<string, unknown> => {

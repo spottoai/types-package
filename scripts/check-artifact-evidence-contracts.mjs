@@ -27,7 +27,7 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-assert.equal(contractCorpus.corpusVersion, 4, 'portable corpus version must match the downstream parity contract');
+assert.equal(contractCorpus.corpusVersion, 5, 'portable corpus version must match the downstream parity contract');
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -328,6 +328,7 @@ for (const vector of contractCorpus.observationDigestVectors) {
   const canonical = canonicalizeBillingAnalysisPromotionObservationV1ForDigest(observation);
   assert.equal(canonical, vector.expectedCanonical, `${vector.name}: canonical preimage`);
   assert.equal(sha256(canonical), vector.expectedDigest, `${vector.name}: canonical digest`);
+  assert.equal(observation.observationDigest, vector.expectedDigest, `${vector.name}: stored digest binds the canonical preimage`);
   assert.equal(canonical.includes('"observationDigest"'), false, `${vector.name}: digest field excluded`);
   assert.equal(isBillingAnalysisPromotionObservationV1(observation), true, `${vector.name}: structurally valid`);
 
@@ -360,9 +361,22 @@ for (const vector of contractCorpus.observationDigestVectors) {
   changedDigest.observationDigest = 'c'.repeat(64);
   assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changedDigest), canonical, `${vector.name}: observation digest excluded`);
 
+  if (observation.evaluation.outputDigestRelation !== undefined) {
+    const changedRelation = structuredClone(observation);
+    changedRelation.evaluation.outputDigestRelation = observation.evaluation.outputDigestRelation === 'same' ? 'different' : 'same';
+    const changedRelationCanonical = canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changedRelation);
+    assert.notEqual(changedRelationCanonical, canonical, `${vector.name}: changed output digest relation changes the preimage`);
+    assert.notEqual(
+      sha256(changedRelationCanonical),
+      changedRelation.observationDigest,
+      `${vector.name}: changed output digest relation invalidates the stored digest`
+    );
+  }
+
   for (const mutation of contractCorpus.observationBindingMutationVectors) {
     const changed = structuredClone(observation);
     applyMutation(changed, mutation);
+    if (JSON.stringify(changed) === JSON.stringify(observation)) continue;
     assert.notEqual(
       canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changed),
       canonical,
@@ -1019,7 +1033,8 @@ process.stdout.write(
     `${contractCorpus.revisionComparisons.length} revision comparisons, ${billingValidatorCases.length} billing checks, ` +
     `${billingControlDataCases.length} control-data checks, ${ownershipValidatorCases.length} ownership checks, ` +
     `${mutationFailureCases.length} mutation fail-fast checks, ${contractCorpus.digestVectors.length} digest vectors, ` +
-    `${contractCorpus.digestMismatchVectors.length} digest mismatch vectors.\n` +
+    `${contractCorpus.digestMismatchVectors.length} digest mismatch vectors, ` +
+    `${contractCorpus.observationDigestVectors.length} observation digest vectors.\n` +
     `Portable validator set: ${[...corpusValidatorNames].sort().join(', ')}\n` +
     `Artifact evidence corpus SHA-256: ${corpusDigest}\n`
 );

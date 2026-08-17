@@ -76,6 +76,14 @@ matching present epoch must not report that pair. Current-pointer validators
 explicitly reject these diagnostic discriminants while retaining unrelated
 additive-next fields.
 
+For an epoch-bound promotion observation, `evaluation.outputDigestRelation` is
+an optional V1 compatibility extension. Equal revisions may omit it only for
+the legacy `would-be-idempotent` shape; `same` also requires
+`would-be-idempotent`, while `different` requires `would-quarantine`. Every
+non-equal comparison forbids the relation. When present, the relation is part
+of the canonical observation preimage and therefore bound by
+`observationDigest`; legacy observations retain their original preimage.
+
 Billing output V2 uses an acyclic digest chain. Producers project the public
 `BillingOutputBindingV1`, canonicalize it with
 `canonicalizeBillingOutputBindingV1`, and SHA-256 that UTF-8 preimage to obtain

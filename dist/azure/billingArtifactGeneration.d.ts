@@ -137,6 +137,7 @@ export interface BillingAnalysisPromotionObservationV1 {
     evaluation: {
         comparison: ArtifactRevisionComparison | 'authority-absent';
         projectedOutcome: 'would-promote' | 'would-be-idempotent' | 'would-be-superseded' | 'would-quarantine' | 'not-enforceable';
+        outputDigestRelation?: 'same' | 'different';
     };
     observationDigest: string;
     observedAt: string;

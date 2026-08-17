@@ -164,10 +164,12 @@ const projectPublicationDecision = (value) => {
 };
 const projectPromotionEvaluation = (value) => {
     const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
-    return {
+    const projected = {
         comparison: readDataProperty(source, 'comparison'),
         projectedOutcome: readDataProperty(source, 'projectedOutcome'),
     };
+    selectOptional(source, projected, 'outputDigestRelation');
+    return projected;
 };
 const projectPromotionObservation = (value) => {
     const source = requirePlainRecord(value, 'Billing promotion observation');

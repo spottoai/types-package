@@ -317,10 +317,19 @@ const isBillingAnalysisPromotionObservationV1 = (value) => {
         return false;
     }
     const hasOwnershipEpoch = value.ownership.ownershipEpochRevision !== undefined;
+    const outputDigestRelation = value.evaluation.outputDigestRelation;
+    if (outputDigestRelation !== undefined && outputDigestRelation !== 'same' && outputDigestRelation !== 'different')
+        return false;
     if (!hasOwnershipEpoch) {
-        return value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable';
+        return (outputDigestRelation === undefined && value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable');
     }
-    return (value.evaluation.comparison !== 'unenforceable' &&
+    if (value.evaluation.comparison === 'equal') {
+        return outputDigestRelation === 'different'
+            ? value.evaluation.projectedOutcome === 'would-quarantine'
+            : value.evaluation.projectedOutcome === 'would-be-idempotent';
+    }
+    return (outputDigestRelation === undefined &&
+        value.evaluation.comparison !== 'unenforceable' &&
         OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome);
 };
 exports.isBillingAnalysisPromotionObservationV1 = isBillingAnalysisPromotionObservationV1;
