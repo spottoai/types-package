@@ -2,12 +2,7 @@
  * Billing cost analysis types for Azure cost visualization.
  */
 
-import {
-  isArtifactOwnershipBinding,
-  type ArtifactOwnershipBinding,
-  type ArtifactRevisionVector,
-  type BillingArtifactReadState,
-} from '../common/artifactEvidence.js';
+import { isArtifactOwnershipBinding, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
 import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
 import {
@@ -289,8 +284,7 @@ export interface BillingCostAnalysisMetadata {
   forecastPeriodEnd?: number;
 }
 
-type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
-type BillingCompletedCostAnalysisDocumentState = Exclude<BillingCostAnalysisDocumentState, 'partial'>;
+type BillingCompletedCostAnalysisDocumentState = 'current' | 'stale' | 'complete-empty';
 
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
 interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata {
@@ -313,7 +307,43 @@ export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base &
       }
   );
 
-const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'fallback', 'complete-empty']);
+type BillingCostAnalysisLegacyForbiddenFields = {
+  schemaVersion?: never;
+  ownership?: never;
+  revision?: never;
+  inputManifestDigest?: never;
+  outputBindingDigest?: never;
+  outputManifestDigest?: never;
+  artifactEvidence?: never;
+};
+
+/** Explicit transition response for a validated legacy V1 business payload. */
+export type BillingCostAnalysisLegacyFallbackResponse = BillingCostAnalysisMetadata &
+  BillingCostAnalysisLegacyForbiddenFields & {
+    artifactState: 'fallback';
+    artifactSource: 'legacy-transition';
+  };
+
+/** Evidence-verified endpoint response; partial metadata is never returned as verified. */
+export type BillingCostAnalysisVerifiedReadResponse = BillingCostAnalysisMetadataV2Base & {
+  artifactState: BillingCompletedCostAnalysisDocumentState;
+  artifactEvidence: BillingCompletedArtifactPublicationDecision;
+};
+
+/** Successful billing cost-analysis endpoint response. */
+export type BillingCostAnalysisReadResponse = BillingCostAnalysisVerifiedReadResponse | BillingCostAnalysisLegacyFallbackResponse;
+
+const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'complete-empty']);
+const BILLING_VERIFIED_READ_STATES = new Set<string>(['current', 'stale', 'complete-empty']);
+const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
+  'schemaVersion',
+  'ownership',
+  'revision',
+  'inputManifestDigest',
+  'outputBindingDigest',
+  'outputManifestDigest',
+  'artifactEvidence',
+] as const;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -324,6 +354,7 @@ const isNullableFiniteNumber = (value: unknown): boolean => value === null || is
 const isNonNegativeInteger = (value: unknown): boolean => Number.isSafeInteger(value) && Number(value) >= 0;
 const isPositiveInteger = (value: unknown): boolean => Number.isSafeInteger(value) && Number(value) > 0;
 const isStringArray = (value: unknown): value is string[] => Array.isArray(value) && value.every(isNonEmptyString);
+const hasOwn = (value: Record<string, unknown>, key: string): boolean => Object.prototype.hasOwnProperty.call(value, key);
 const hasControlCharacters = (value: string): boolean =>
   Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value: unknown): value is string =>
@@ -466,13 +497,15 @@ const hasValidMetadataEvidenceState = (
   evidence: unknown,
   billingGenerationId: string,
   inputManifestDigest: string,
-  chartData: Record<string, unknown>,
-  anomalies: unknown[]
+  chartData: unknown,
+  anomalies: unknown
 ): boolean => {
   if (state === 'partial') return isBillingPartialArtifactPublicationDecision(evidence, billingGenerationId, inputManifestDigest);
   if (!isBillingCompletedArtifactPublicationDecision(evidence, billingGenerationId, inputManifestDigest)) return false;
   if (state !== 'complete-empty') return true;
+  if (!Array.isArray(anomalies)) return false;
   const billingHistory = evidence.dependencies.find(dependency => dependency.name === 'billing-history');
+  if (!isRecord(chartData)) return false;
   const dataWindow = chartData.dataWindow;
   const views = chartData.views;
   return (
@@ -487,10 +520,25 @@ const hasValidMetadataEvidenceState = (
   );
 };
 
+const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown>): boolean => {
+  if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
+  if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
+  if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
+  return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+
+/** Dependency-free validator for the complete legacy V1 business payload. */
+export const isBillingCostAnalysisBusinessPayloadV1 = (value: unknown): value is BillingCostAnalysisMetadata =>
+  isRecord(value) &&
+  !containsForbiddenArtifactControlData(value) &&
+  !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
+  hasValidBillingCostAnalysisBusinessFields(value);
+
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is BillingCostAnalysisMetadataV2 => {
   if (!isRecord(value) || containsForbiddenArtifactControlData(value) || value.schemaVersion !== 2) return false;
-  if (Object.prototype.hasOwnProperty.call(value, 'outputManifestDigest')) return false;
+  if (hasOwn(value, 'outputManifestDigest')) return false;
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isArtifactOwnershipBinding(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)
     return false;
@@ -506,7 +554,7 @@ export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is Billin
   ) {
     return false;
   }
-  if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (!hasValidBillingCostAnalysisBusinessFields(value)) return false;
   if (
     !hasValidMetadataEvidenceState(
       value.artifactState,
@@ -519,10 +567,24 @@ export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is Billin
   ) {
     return false;
   }
-  if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
-  if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
-  return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+  return true;
 };
+
+/** Dependency-free validator for an explicit legacy-transition fallback response. */
+export const isBillingCostAnalysisLegacyFallbackResponse = (value: unknown): value is BillingCostAnalysisLegacyFallbackResponse =>
+  isRecord(value) &&
+  value.artifactState === 'fallback' &&
+  value.artifactSource === 'legacy-transition' &&
+  !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
+  isBillingCostAnalysisBusinessPayloadV1(value);
+
+/** Dependency-free validator for an evidence-verified endpoint response. */
+export const isBillingCostAnalysisVerifiedReadResponse = (value: unknown): value is BillingCostAnalysisVerifiedReadResponse =>
+  isBillingCostAnalysisMetadataV2(value) && BILLING_VERIFIED_READ_STATES.has(value.artifactState);
+
+/** Dependency-free validator for the successful billing read-response union. */
+export const isBillingCostAnalysisReadResponse = (value: unknown): value is BillingCostAnalysisReadResponse =>
+  isBillingCostAnalysisVerifiedReadResponse(value) || isBillingCostAnalysisLegacyFallbackResponse(value);
 
 /** @deprecated Use BillingCostAnalysisMetadata. */
 export type BillingPlotsMetadata = BillingCostAnalysisMetadata;

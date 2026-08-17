@@ -1,7 +1,7 @@
 /**
  * Billing cost analysis types for Azure cost visualization.
  */
-import { type ArtifactOwnershipBinding, type ArtifactRevisionVector, type BillingArtifactReadState } from '../common/artifactEvidence.js';
+import { type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { type BillingCompletedArtifactPublicationDecision, type BillingPartialArtifactPublicationDecision } from './billingArtifactEvidence.js';
 export type { BillingArtifactPublicationDecision, BillingCompletedArtifactPublicationDecision, BillingPartialArtifactPublicationDecision, } from './billingArtifactEvidence.js';
 /** Named cost chart windows emitted by the Azure billing analyzer. */
@@ -249,8 +249,7 @@ export interface BillingCostAnalysisMetadata {
     /** Forecast amount at the end of the current period. */
     forecastPeriodEnd?: number;
 }
-type BillingCostAnalysisDocumentState = Exclude<BillingArtifactReadState, 'suppressed' | 'unavailable'>;
-type BillingCompletedCostAnalysisDocumentState = Exclude<BillingCostAnalysisDocumentState, 'partial'>;
+type BillingCompletedCostAnalysisDocumentState = 'current' | 'stale' | 'complete-empty';
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
 interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata {
     schemaVersion: 2;
@@ -266,8 +265,37 @@ export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base & 
     artifactState: 'partial';
     artifactEvidence: BillingPartialArtifactPublicationDecision;
 });
+type BillingCostAnalysisLegacyForbiddenFields = {
+    schemaVersion?: never;
+    ownership?: never;
+    revision?: never;
+    inputManifestDigest?: never;
+    outputBindingDigest?: never;
+    outputManifestDigest?: never;
+    artifactEvidence?: never;
+};
+/** Explicit transition response for a validated legacy V1 business payload. */
+export type BillingCostAnalysisLegacyFallbackResponse = BillingCostAnalysisMetadata & BillingCostAnalysisLegacyForbiddenFields & {
+    artifactState: 'fallback';
+    artifactSource: 'legacy-transition';
+};
+/** Evidence-verified endpoint response; partial metadata is never returned as verified. */
+export type BillingCostAnalysisVerifiedReadResponse = BillingCostAnalysisMetadataV2Base & {
+    artifactState: BillingCompletedCostAnalysisDocumentState;
+    artifactEvidence: BillingCompletedArtifactPublicationDecision;
+};
+/** Successful billing cost-analysis endpoint response. */
+export type BillingCostAnalysisReadResponse = BillingCostAnalysisVerifiedReadResponse | BillingCostAnalysisLegacyFallbackResponse;
+/** Dependency-free validator for the complete legacy V1 business payload. */
+export declare const isBillingCostAnalysisBusinessPayloadV1: (value: unknown) => value is BillingCostAnalysisMetadata;
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export declare const isBillingCostAnalysisMetadataV2: (value: unknown) => value is BillingCostAnalysisMetadataV2;
+/** Dependency-free validator for an explicit legacy-transition fallback response. */
+export declare const isBillingCostAnalysisLegacyFallbackResponse: (value: unknown) => value is BillingCostAnalysisLegacyFallbackResponse;
+/** Dependency-free validator for an evidence-verified endpoint response. */
+export declare const isBillingCostAnalysisVerifiedReadResponse: (value: unknown) => value is BillingCostAnalysisVerifiedReadResponse;
+/** Dependency-free validator for the successful billing read-response union. */
+export declare const isBillingCostAnalysisReadResponse: (value: unknown) => value is BillingCostAnalysisReadResponse;
 /** @deprecated Use BillingCostAnalysisMetadata. */
 export type BillingPlotsMetadata = BillingCostAnalysisMetadata;
 //# sourceMappingURL=billingPlots.d.ts.map

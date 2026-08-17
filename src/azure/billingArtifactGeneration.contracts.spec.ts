@@ -14,7 +14,11 @@ import {
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
   type ArtifactRevisionVector,
@@ -28,6 +32,9 @@ import {
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
   type BillingCostAnalysisMetadataV2,
+  type BillingCostAnalysisLegacyFallbackResponse,
+  type BillingCostAnalysisReadResponse,
+  type BillingCostAnalysisVerifiedReadResponse,
   type BillingOutputBindingV1,
   type BillingPartialArtifactPublicationDecision,
 } from '../index';
@@ -404,6 +411,20 @@ const partialCostAnalysisMetadata = {
   artifactEvidence: partialBillingPublicationDecision,
 } satisfies BillingCostAnalysisMetadataV2;
 
+const legacyFallbackResponse = {
+  subscriptionId: costAnalysisMetadata.subscriptionId,
+  billingGenerationId: costAnalysisMetadata.billingGenerationId,
+  chartData: costAnalysisMetadata.chartData,
+  anomalies: costAnalysisMetadata.anomalies,
+  currencyCode: costAnalysisMetadata.currencyCode,
+  currencySymbol: costAnalysisMetadata.currencySymbol,
+  artifactState: 'fallback',
+  artifactSource: 'legacy-transition',
+} satisfies BillingCostAnalysisLegacyFallbackResponse;
+
+const verifiedReadResponse = costAnalysisMetadata satisfies BillingCostAnalysisVerifiedReadResponse;
+const legacyReadResponse = legacyFallbackResponse satisfies BillingCostAnalysisReadResponse;
+
 const additiveInputPointer = {
   ...inputPointer,
   futureTopLevelField: { producer: 'next-version' },
@@ -476,6 +497,11 @@ const validationResults: boolean[] = [
   isBillingAnalysisCurrentPointerV1(analysisPointer),
   isBillingCostAnalysisMetadataV2(costAnalysisMetadata),
   isBillingCostAnalysisMetadataV2(partialCostAnalysisMetadata),
+  isBillingCostAnalysisBusinessPayloadV1(legacyFallbackResponse),
+  isBillingCostAnalysisLegacyFallbackResponse(legacyFallbackResponse),
+  isBillingCostAnalysisVerifiedReadResponse(verifiedReadResponse),
+  isBillingCostAnalysisReadResponse(verifiedReadResponse),
+  isBillingCostAnalysisReadResponse(legacyReadResponse),
   isBillingAnalyzerInputObservationPointerV1(inputObservationPointer),
   isBillingAnalysisPromotionObservationV1(promotionObservation),
   isBillingAnalysisPromotionObservationV1(equalSamePromotionObservation),
@@ -573,11 +599,22 @@ const staleMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
   artifactEvidence: portalPluginPublicationDecision,
 };
 
-const fallbackMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+const fallbackMetadataV2: BillingCostAnalysisMetadataV2 = {
   ...costAnalysisMetadata,
+  // @ts-expect-error V2 metadata never represents a legacy-transition fallback response.
   artifactState: 'fallback',
-  // @ts-expect-error Fallback billing metadata still requires billing-bound completed evidence.
-  artifactEvidence: portalPluginPublicationDecision,
+};
+
+const partialVerifiedReadResponse: BillingCostAnalysisVerifiedReadResponse = {
+  ...partialCostAnalysisMetadata,
+  // @ts-expect-error Partial V2 metadata remains internal and is not a verified endpoint response.
+  artifactState: 'partial',
+};
+
+const fallbackWithV2Leakage: BillingCostAnalysisLegacyFallbackResponse = {
+  ...legacyFallbackResponse,
+  // @ts-expect-error Legacy fallback responses must not expose V2 schema controls.
+  schemaVersion: 2,
 };
 
 const completeEmptyMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
@@ -636,7 +673,9 @@ void [
   partialBillingEvidence,
   currentMetadataWithPortalEvidence,
   staleMetadataWithPortalEvidence,
-  fallbackMetadataWithPortalEvidence,
+  fallbackMetadataV2,
+  partialVerifiedReadResponse,
+  fallbackWithV2Leakage,
   completeEmptyMetadataWithPortalEvidence,
   partialMetadataWithPortalEvidence,
   partialEvidenceWithWrongFirstDependency,

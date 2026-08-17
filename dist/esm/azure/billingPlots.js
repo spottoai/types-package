@@ -1,11 +1,21 @@
 /**
  * Billing cost analysis types for Azure cost visualization.
  */
-import { isArtifactOwnershipBinding, } from '../common/artifactEvidence.js';
+import { isArtifactOwnershipBinding } from '../common/artifactEvidence.js';
 import { containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
 import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
 import { isBillingCompletedArtifactPublicationDecision, isBillingPartialArtifactPublicationDecision, } from './billingArtifactEvidence.js';
-const BILLING_DOCUMENT_STATES = new Set(['current', 'stale', 'partial', 'fallback', 'complete-empty']);
+const BILLING_DOCUMENT_STATES = new Set(['current', 'stale', 'partial', 'complete-empty']);
+const BILLING_VERIFIED_READ_STATES = new Set(['current', 'stale', 'complete-empty']);
+const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
+    'schemaVersion',
+    'ownership',
+    'revision',
+    'inputManifestDigest',
+    'outputBindingDigest',
+    'outputManifestDigest',
+    'artifactEvidence',
+];
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -15,6 +25,7 @@ const isNullableFiniteNumber = (value) => value === null || isFiniteNumber(value
 const isNonNegativeInteger = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
 const isPositiveInteger = (value) => Number.isSafeInteger(value) && Number(value) > 0;
 const isStringArray = (value) => Array.isArray(value) && value.every(isNonEmptyString);
+const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 const publicationDecisionReferencesDigest = (value, digest) => isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
@@ -139,7 +150,11 @@ const hasValidMetadataEvidenceState = (state, evidence, billingGenerationId, inp
         return false;
     if (state !== 'complete-empty')
         return true;
+    if (!Array.isArray(anomalies))
+        return false;
     const billingHistory = evidence.dependencies.find(dependency => dependency.name === 'billing-history');
+    if (!isRecord(chartData))
+        return false;
     const dataWindow = chartData.dataWindow;
     const views = chartData.views;
     return (billingHistory?.emptyEvidence === 'complete-empty' &&
@@ -151,11 +166,27 @@ const hasValidMetadataEvidenceState = (state, evidence, billingGenerationId, inp
         Object.values(views).every(view => view === undefined) &&
         anomalies.length === 0);
 };
+const hasValidBillingCostAnalysisBusinessFields = (value) => {
+    if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId))
+        return false;
+    if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly))
+        return false;
+    if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol))
+        return false;
+    if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod))
+        return false;
+    return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+/** Dependency-free validator for the complete legacy V1 business payload. */
+export const isBillingCostAnalysisBusinessPayloadV1 = (value) => isRecord(value) &&
+    !containsForbiddenArtifactControlData(value) &&
+    !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
+    hasValidBillingCostAnalysisBusinessFields(value);
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value) => {
     if (!isRecord(value) || containsForbiddenArtifactControlData(value) || value.schemaVersion !== 2)
         return false;
-    if (Object.prototype.hasOwnProperty.call(value, 'outputManifestDigest'))
+    if (hasOwn(value, 'outputManifestDigest'))
         return false;
     if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId))
         return false;
@@ -174,14 +205,20 @@ export const isBillingCostAnalysisMetadataV2 = (value) => {
         publicationDecisionReferencesDigest(value.artifactEvidence, value.outputBindingDigest)) {
         return false;
     }
-    if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly))
+    if (!hasValidBillingCostAnalysisBusinessFields(value))
         return false;
     if (!hasValidMetadataEvidenceState(value.artifactState, value.artifactEvidence, value.billingGenerationId, value.inputManifestDigest, value.chartData, value.anomalies)) {
         return false;
     }
-    if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol))
-        return false;
-    if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod))
-        return false;
-    return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+    return true;
 };
+/** Dependency-free validator for an explicit legacy-transition fallback response. */
+export const isBillingCostAnalysisLegacyFallbackResponse = (value) => isRecord(value) &&
+    value.artifactState === 'fallback' &&
+    value.artifactSource === 'legacy-transition' &&
+    !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
+    isBillingCostAnalysisBusinessPayloadV1(value);
+/** Dependency-free validator for an evidence-verified endpoint response. */
+export const isBillingCostAnalysisVerifiedReadResponse = (value) => isBillingCostAnalysisMetadataV2(value) && BILLING_VERIFIED_READ_STATES.has(value.artifactState);
+/** Dependency-free validator for the successful billing read-response union. */
+export const isBillingCostAnalysisReadResponse = (value) => isBillingCostAnalysisVerifiedReadResponse(value) || isBillingCostAnalysisLegacyFallbackResponse(value);
