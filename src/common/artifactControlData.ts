@@ -105,6 +105,10 @@ export const allowedArtifactReferenceField = (object: unknown, key: string): All
 export const allowedArtifactIdentityField = (object: unknown, key: string): AllowedArtifactReferenceField[] =>
   isRecord(object) ? [{ object, key, allowUriScheme: true }] : [];
 
+/** Marks an exact schema edge whose descendants may use object-indexed field allowances. */
+export const allowedArtifactTraversalField = (object: unknown, key: string): AllowedArtifactReferenceField[] =>
+  isRecord(object) ? [{ object, key, allowChildArtifactFields: true }] : [];
+
 type AllowedArtifactFieldIndex = WeakMap<Record<string, unknown>, Map<string, AllowedArtifactReferenceField>>;
 
 const indexAllowedArtifactFields = (allowedReferenceFields: AllowedArtifactReferenceField[]): AllowedArtifactFieldIndex => {

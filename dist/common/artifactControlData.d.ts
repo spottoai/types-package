@@ -18,6 +18,8 @@ interface IArtifactControlDataScanOptions {
 export declare const allowedArtifactReferenceField: (object: unknown, key: string) => AllowedArtifactReferenceField[];
 /** Marks a structurally validated identity field whose value is allowed by its owning schema. */
 export declare const allowedArtifactIdentityField: (object: unknown, key: string) => AllowedArtifactReferenceField[];
+/** Marks an exact schema edge whose descendants may use object-indexed field allowances. */
+export declare const allowedArtifactTraversalField: (object: unknown, key: string) => AllowedArtifactReferenceField[];
 /** Rejects normalized sensitive fields and physical-reference control data with bounded traversal. */
 export declare const containsForbiddenArtifactControlData: (value: unknown, allowedReferenceFields?: AllowedArtifactReferenceField[], options?: IArtifactControlDataScanOptions) => boolean;
 export {};

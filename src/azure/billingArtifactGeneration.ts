@@ -12,6 +12,7 @@ import {
   ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES,
   allowedArtifactIdentityField,
   allowedArtifactReferenceField,
+  allowedArtifactTraversalField,
   containsForbiddenArtifactControlData,
   type AllowedArtifactReferenceField,
 } from '../common/artifactControlData.js';
@@ -216,6 +217,11 @@ const hasControlCharacters = (value: string): boolean =>
 const allowedDescriptorPaths = (descriptors: unknown): AllowedArtifactReferenceField[] =>
   Array.isArray(descriptors) ? descriptors.flatMap(descriptor => allowedArtifactReferenceField(descriptor, 'path')) : [];
 
+const containsForbiddenBillingArtifactControlData = (value: unknown, allowedReferenceFields: AllowedArtifactReferenceField[] = []): boolean =>
+  containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+  });
+
 const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 
@@ -376,7 +382,11 @@ const isJsonMetadata = (value: unknown): value is BillingAnalyzerMetadata => {
 export const isBillingAnalyzerInputManifestV2 = (value: unknown): value is BillingAnalyzerInputManifestV2 => {
   if (
     !isRecord(value) ||
-    containsForbiddenArtifactControlData(value, [...allowedArtifactIdentityField(value, 'publicationKey'), ...allowedDescriptorPaths(value.inputs)])
+    containsForbiddenBillingArtifactControlData(value, [
+      ...allowedArtifactIdentityField(value, 'publicationKey'),
+      ...allowedArtifactTraversalField(value, 'inputs'),
+      ...allowedDescriptorPaths(value.inputs),
+    ])
   ) {
     return false;
   }
@@ -403,7 +413,7 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is
   if (
     !isRecord(value) ||
     hasDiagnosticObservationDiscriminant(value) ||
-    containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))
+    containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))
   )
     return false;
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
@@ -418,7 +428,7 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is
 
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnalyzerRequestV2 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
+  if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
   if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce')) return false;
   const enforceable = value.publicationMode === 'enforce';
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, enforceable)) return false;
@@ -436,7 +446,7 @@ export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnal
 
 /** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
 export const isBillingAnalyzerInputObservationPointerV1 = (value: unknown): value is BillingAnalyzerInputObservationPointerV1 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
+  if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
   if (
     value.schemaVersion !== 1 ||
     value.documentType !== 'billing-analyzer-input-observation-pointer' ||
@@ -461,8 +471,9 @@ export const isBillingAnalyzerInputObservationPointerV1 = (value: unknown): valu
 export const isBillingAnalyzerOutputManifestV2 = (value: unknown): value is BillingAnalyzerOutputManifestV2 => {
   if (
     !isRecord(value) ||
-    containsForbiddenArtifactControlData(value, [
+    containsForbiddenBillingArtifactControlData(value, [
       ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+      ...allowedArtifactTraversalField(value, 'artifacts'),
       ...allowedDescriptorPaths(value.artifacts),
     ])
   ) {
@@ -512,7 +523,7 @@ export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is Bill
   if (
     !isRecord(value) ||
     hasDiagnosticObservationDiscriminant(value) ||
-    containsForbiddenArtifactControlData(value, [
+    containsForbiddenBillingArtifactControlData(value, [
       ...allowedArtifactReferenceField(value, 'inputManifestPath'),
       ...allowedArtifactReferenceField(value, 'outputManifestPath'),
     ])
@@ -544,7 +555,7 @@ export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is Bill
 export const isBillingAnalysisPromotionObservationV1 = (value: unknown): value is BillingAnalysisPromotionObservationV1 => {
   if (
     !isRecord(value) ||
-    containsForbiddenArtifactControlData(value, [
+    containsForbiddenBillingArtifactControlData(value, [
       ...allowedArtifactReferenceField(value, 'inputManifestPath'),
       ...allowedArtifactReferenceField(value, 'outputManifestPath'),
     ])

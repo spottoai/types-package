@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.containsForbiddenArtifactControlData = exports.allowedArtifactIdentityField = exports.allowedArtifactReferenceField = exports.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES = void 0;
+exports.containsForbiddenArtifactControlData = exports.allowedArtifactTraversalField = exports.allowedArtifactIdentityField = exports.allowedArtifactReferenceField = exports.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES = void 0;
 const FORBIDDEN_SENSITIVE_FIELDS = new Set([
     'accountkey',
     'accesskey',
@@ -78,6 +78,9 @@ exports.allowedArtifactReferenceField = allowedArtifactReferenceField;
 /** Marks a structurally validated identity field whose value is allowed by its owning schema. */
 const allowedArtifactIdentityField = (object, key) => isRecord(object) ? [{ object, key, allowUriScheme: true }] : [];
 exports.allowedArtifactIdentityField = allowedArtifactIdentityField;
+/** Marks an exact schema edge whose descendants may use object-indexed field allowances. */
+const allowedArtifactTraversalField = (object, key) => isRecord(object) ? [{ object, key, allowChildArtifactFields: true }] : [];
+exports.allowedArtifactTraversalField = allowedArtifactTraversalField;
 const indexAllowedArtifactFields = (allowedReferenceFields) => {
     const index = new WeakMap();
     for (const field of allowedReferenceFields) {

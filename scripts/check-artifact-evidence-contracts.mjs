@@ -402,6 +402,20 @@ assert.equal(
   'shared-record validation remains consistent with its decoded JSON shape'
 );
 
+for (const [documentName, validator, fixtureName, descriptorKey] of [
+  ['input manifest', isBillingAnalyzerInputManifestV2, 'billingAnalyzerInputManifestV2', 'inputs'],
+  ['output manifest', isBillingAnalyzerOutputManifestV2, 'billingAnalyzerOutputManifestV2', 'artifacts'],
+]) {
+  const documentWithSharedDescriptor = structuredClone(contractCorpus.fixtures[fixtureName]);
+  documentWithSharedDescriptor.future = documentWithSharedDescriptor[descriptorKey][0];
+  assert.equal(validator(documentWithSharedDescriptor), false, `${documentName} rejects a descriptor alias under an unknown field`);
+  assert.equal(
+    validator(JSON.parse(JSON.stringify(documentWithSharedDescriptor))),
+    false,
+    `${documentName} alias rejection remains consistent with its decoded JSON shape`
+  );
+}
+
 const cyclicDisplayMetadata = { label: 'safe-cycle' };
 cyclicDisplayMetadata.self = cyclicDisplayMetadata;
 const cyclicAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);

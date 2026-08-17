@@ -73,6 +73,8 @@ const isSafeAzureResourceId = (key, value) => {
 export const allowedArtifactReferenceField = (object, key) => isRecord(object) ? [{ object, key }] : [];
 /** Marks a structurally validated identity field whose value is allowed by its owning schema. */
 export const allowedArtifactIdentityField = (object, key) => isRecord(object) ? [{ object, key, allowUriScheme: true }] : [];
+/** Marks an exact schema edge whose descendants may use object-indexed field allowances. */
+export const allowedArtifactTraversalField = (object, key) => isRecord(object) ? [{ object, key, allowChildArtifactFields: true }] : [];
 const indexAllowedArtifactFields = (allowedReferenceFields) => {
     const index = new WeakMap();
     for (const field of allowedReferenceFields) {

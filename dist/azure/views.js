@@ -45,6 +45,9 @@ const isPositiveSafeInteger = (value) => Number.isSafeInteger(value) && Number(v
 const isNonNegativeSafeInteger = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
 const allowedViewArtifactPaths = (artifacts) => Array.isArray(artifacts) ? artifacts.flatMap(artifact => (0, artifactControlData_js_1.allowedArtifactReferenceField)(artifact, 'path')) : [];
+const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = []) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+});
 const isSafePathSegment = (value) => isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 const isStrictCanonicalIsoTimestamp = (value) => {
     if (!isStrictNonEmptyString(value))
@@ -90,7 +93,11 @@ const hasRequiredViewDependencies = (decision) => {
 };
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 const isCompletedViewManifestV3 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedViewArtifactPaths(value.artifacts)))
+    if (!isRecord(value) ||
+        containsForbiddenViewArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
+            ...allowedViewArtifactPaths(value.artifacts),
+        ]))
         return false;
     if (value.schemaVersion !== 3 || value.status !== 'completed')
         return false;
@@ -157,9 +164,14 @@ const hasMatchingSurfaceDependency = (decision, name, surface) => {
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 const isCompletedAzureViewSetV2 = (value) => {
     const allowedReferences = isRecord(value)
-        ? [...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.portal, 'manifestPath'), ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.plugin, 'manifestPath')]
+        ? [
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'portal'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'plugin'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.portal, 'manifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.plugin, 'manifestPath'),
+        ]
         : [];
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferences))
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences))
         return false;
     if (value.schemaVersion !== 2 || value.status !== 'completed')
         return false;

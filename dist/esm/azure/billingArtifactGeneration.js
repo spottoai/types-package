@@ -1,6 +1,6 @@
 import { isArtifactOwnershipBinding, isEnforceableArtifactOwnershipBinding, } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
-import { ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES, allowedArtifactIdentityField, allowedArtifactReferenceField, containsForbiddenArtifactControlData, } from '../common/artifactControlData.js';
+import { ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES, allowedArtifactIdentityField, allowedArtifactReferenceField, allowedArtifactTraversalField, containsForbiddenArtifactControlData, } from '../common/artifactControlData.js';
 import { isBillingCompletedArtifactPublicationDecision } from './billingArtifactEvidence.js';
 import { BILLING_ARTIFACT_OBJECT_LIMITS_V1 } from './billingArtifactLimits.js';
 /** Stable diagnostic-only suffix for the latest successfully enqueued observe input. */
@@ -48,6 +48,9 @@ const isCanonicalIsoTimestamp = (value) => {
 };
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const allowedDescriptorPaths = (descriptors) => Array.isArray(descriptors) ? descriptors.flatMap(descriptor => allowedArtifactReferenceField(descriptor, 'path')) : [];
+const containsForbiddenBillingArtifactControlData = (value, allowedReferenceFields = []) => containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+});
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 /** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
 export const buildBillingAnalyzerInputObservationPointerPath = (subscriptionId) => {
@@ -179,7 +182,11 @@ const isJsonMetadata = (value) => {
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 export const isBillingAnalyzerInputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        containsForbiddenArtifactControlData(value, [...allowedArtifactIdentityField(value, 'publicationKey'), ...allowedDescriptorPaths(value.inputs)])) {
+        containsForbiddenBillingArtifactControlData(value, [
+            ...allowedArtifactIdentityField(value, 'publicationKey'),
+            ...allowedArtifactTraversalField(value, 'inputs'),
+            ...allowedDescriptorPaths(value.inputs),
+        ])) {
         return false;
     }
     if (value.schemaVersion !== 2 || value.status !== 'completed')
@@ -208,7 +215,7 @@ export const isBillingAnalyzerInputManifestV2 = (value) => {
 export const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
         hasDiagnosticObservationDiscriminant(value) ||
-        containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath')))
+        containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath')))
         return false;
     if (value.schemaVersion !== 1 || value.status !== 'completed')
         return false;
@@ -221,7 +228,7 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
 };
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export const isBillingAnalyzerRequestV2 = (value) => {
-    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath')))
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath')))
         return false;
     if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce'))
         return false;
@@ -242,7 +249,7 @@ export const isBillingAnalyzerRequestV2 = (value) => {
 };
 /** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
 export const isBillingAnalyzerInputObservationPointerV1 = (value) => {
-    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath')))
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath')))
         return false;
     if (value.schemaVersion !== 1 ||
         value.documentType !== 'billing-analyzer-input-observation-pointer' ||
@@ -263,8 +270,9 @@ export const isBillingAnalyzerInputObservationPointerV1 = (value) => {
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export const isBillingAnalyzerOutputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        containsForbiddenArtifactControlData(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+            ...allowedArtifactTraversalField(value, 'artifacts'),
             ...allowedDescriptorPaths(value.artifacts),
         ])) {
         return false;
@@ -307,7 +315,7 @@ export const isBillingAnalyzerOutputManifestV2 = (value) => {
 export const isBillingAnalysisCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
         hasDiagnosticObservationDiscriminant(value) ||
-        containsForbiddenArtifactControlData(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...allowedArtifactReferenceField(value, 'inputManifestPath'),
             ...allowedArtifactReferenceField(value, 'outputManifestPath'),
         ])) {
@@ -333,7 +341,7 @@ export const isBillingAnalysisCurrentPointerV1 = (value) => {
 /** Validates an immutable diagnostic-only promotion evaluation. */
 export const isBillingAnalysisPromotionObservationV1 = (value) => {
     if (!isRecord(value) ||
-        containsForbiddenArtifactControlData(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...allowedArtifactReferenceField(value, 'inputManifestPath'),
             ...allowedArtifactReferenceField(value, 'outputManifestPath'),
         ])) {

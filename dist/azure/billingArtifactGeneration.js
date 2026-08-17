@@ -51,6 +51,9 @@ const isCanonicalIsoTimestamp = (value) => {
 };
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const allowedDescriptorPaths = (descriptors) => Array.isArray(descriptors) ? descriptors.flatMap(descriptor => (0, artifactControlData_js_1.allowedArtifactReferenceField)(descriptor, 'path')) : [];
+const containsForbiddenBillingArtifactControlData = (value, allowedReferenceFields = []) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+});
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 /** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
 const buildBillingAnalyzerInputObservationPointerPath = (subscriptionId) => {
@@ -184,7 +187,11 @@ const isJsonMetadata = (value) => {
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 const isBillingAnalyzerInputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'publicationKey'), ...allowedDescriptorPaths(value.inputs)])) {
+        containsForbiddenBillingArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'publicationKey'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'inputs'),
+            ...allowedDescriptorPaths(value.inputs),
+        ])) {
         return false;
     }
     if (value.schemaVersion !== 2 || value.status !== 'completed')
@@ -214,7 +221,7 @@ exports.isBillingAnalyzerInputManifestV2 = isBillingAnalyzerInputManifestV2;
 const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
         hasDiagnosticObservationDiscriminant(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
+        containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
         return false;
     if (value.schemaVersion !== 1 || value.status !== 'completed')
         return false;
@@ -228,7 +235,7 @@ const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
 exports.isBillingAnalyzerInputCurrentPointerV1 = isBillingAnalyzerInputCurrentPointerV1;
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 const isBillingAnalyzerRequestV2 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
         return false;
     if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce'))
         return false;
@@ -250,7 +257,7 @@ const isBillingAnalyzerRequestV2 = (value) => {
 exports.isBillingAnalyzerRequestV2 = isBillingAnalyzerRequestV2;
 /** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
 const isBillingAnalyzerInputObservationPointerV1 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
         return false;
     if (value.schemaVersion !== 1 ||
         value.documentType !== 'billing-analyzer-input-observation-pointer' ||
@@ -272,8 +279,9 @@ exports.isBillingAnalyzerInputObservationPointerV1 = isBillingAnalyzerInputObser
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 const isBillingAnalyzerOutputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
             ...allowedDescriptorPaths(value.artifacts),
         ])) {
         return false;
@@ -317,7 +325,7 @@ exports.isBillingAnalyzerOutputManifestV2 = isBillingAnalyzerOutputManifestV2;
 const isBillingAnalysisCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
         hasDiagnosticObservationDiscriminant(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
         ])) {
@@ -344,7 +352,7 @@ exports.isBillingAnalysisCurrentPointerV1 = isBillingAnalysisCurrentPointerV1;
 /** Validates an immutable diagnostic-only promotion evaluation. */
 const isBillingAnalysisPromotionObservationV1 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
         ])) {
