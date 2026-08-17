@@ -389,6 +389,33 @@ assert.equal(
   false,
   'a shared array scanned in a schema-owned text field is rescanned under a stricter unknown-field policy'
 );
+const metadataWithSharedRecord = structuredClone(contractCorpus.fixtures.billingCostAnalysisMetadataV2);
+metadataWithSharedRecord.future = metadataWithSharedRecord.artifactEvidence.claims[0];
+assert.equal(
+  isBillingCostAnalysisMetadataV2(metadataWithSharedRecord),
+  false,
+  'a shared record scanned in a schema-owned field is rescanned under a stricter unknown-field policy'
+);
+assert.equal(
+  isBillingCostAnalysisMetadataV2(metadataWithSharedRecord),
+  isBillingCostAnalysisMetadataV2(JSON.parse(JSON.stringify(metadataWithSharedRecord))),
+  'shared-record validation remains consistent with its decoded JSON shape'
+);
+
+const cyclicDisplayMetadata = { label: 'safe-cycle' };
+cyclicDisplayMetadata.self = cyclicDisplayMetadata;
+const cyclicAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+cyclicAnalyzerRequest.displayMetadata = cyclicDisplayMetadata;
+assert.equal(isBillingAnalyzerRequestV2(cyclicAnalyzerRequest), false, 'display metadata rejects cyclic containers');
+const sharedDisplayMetadata = { label: 'safe-shared' };
+const sharedAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+sharedAnalyzerRequest.displayMetadata = { first: sharedDisplayMetadata, second: sharedDisplayMetadata };
+assert.equal(isBillingAnalyzerRequestV2(sharedAnalyzerRequest), true, 'display metadata preserves already-scanned shared DAG containers');
+const oversizedAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+oversizedAnalyzerRequest.displayMetadata = {
+  values: Array.from({ length: contractCorpus.controlDataTraversalV1.maxVisitedNodes }, () => ({})),
+};
+assert.equal(isBillingAnalyzerRequestV2(oversizedAnalyzerRequest), false, 'display metadata rejects documents above the deterministic node limit');
 
 const comparisonOutcomes = new Set();
 for (const comparisonCase of contractCorpus.revisionComparisons) {

@@ -6,11 +6,13 @@ export interface AllowedArtifactReferenceField {
     allowUriSchemeInStringArray?: boolean;
     allowDigestLike?: boolean;
     allowControlField?: boolean;
+    allowChildArtifactFields?: boolean;
 }
 interface IArtifactControlDataScanOptions {
     rejectDigestLikeValues?: boolean;
     requireSafeAzureResourceIds?: boolean;
     forbiddenControlFields?: ReadonlySet<string>;
+    requireAllowedFieldTraversalContext?: boolean;
 }
 /** Marks a structurally validated schema field whose logical reference name is allowed. */
 export declare const allowedArtifactReferenceField: (object: unknown, key: string) => AllowedArtifactReferenceField[];

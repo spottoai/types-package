@@ -455,9 +455,14 @@ const allowedBillingCostAnalysisFields = (
   const allowDigest = (object: unknown, key: string): void => {
     if (isRecord(object)) fields.push({ object, key, allowDigestLike: true, allowControlField: true });
   };
+  const allowChildren = (object: unknown, ...keys: string[]): void => {
+    if (!isRecord(object)) return;
+    for (const key of keys) fields.push({ object, key, allowChildArtifactFields: true });
+  };
 
   allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
   allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
+  allowChildren(value, 'ownership', 'revision', 'artifactEvidence', 'chartData', 'anomalies');
   if (validationBranch !== 'business-v1') allowControl(value, 'artifactState');
   if (validationBranch === 'legacy-fallback') allowControl(value, 'artifactSource');
   allowDigest(value, 'inputManifestDigest');
@@ -470,6 +475,7 @@ const allowedBillingCostAnalysisFields = (
   if (isRecord(value.artifactEvidence)) {
     const evidence = value.artifactEvidence;
     allowControl(evidence, 'processing', 'evidence', 'publication', 'dependencies', 'claims', 'issues');
+    allowChildren(evidence, 'dependencies', 'claims', 'issues');
     if (Array.isArray(evidence.dependencies)) {
       for (const dependency of evidence.dependencies) {
         allowControl(
@@ -490,7 +496,10 @@ const allowedBillingCostAnalysisFields = (
         );
         allowText(dependency, 'name', 'reasonCode', 'generationId');
         allowDigest(dependency, 'digest');
-        if (isRecord(dependency) && isRecord(dependency.observedRange)) allowText(dependency.observedRange, 'timeZone');
+        if (isRecord(dependency) && isRecord(dependency.observedRange)) {
+          allowChildren(dependency, 'observedRange');
+          allowText(dependency.observedRange, 'timeZone');
+        }
       }
     }
     if (Array.isArray(evidence.claims)) {
@@ -500,6 +509,7 @@ const allowedBillingCostAnalysisFields = (
         allowTextArray(claim, 'sectionPaths');
         allowTextArray(claim, 'requiredDependencies');
         if (!isRecord(claim) || !Array.isArray(claim.issues)) continue;
+        allowChildren(claim, 'issues');
         for (const issue of claim.issues) {
           allowControl(issue, 'blocking');
           allowText(issue, 'code', 'dependency');
@@ -516,10 +526,13 @@ const allowedBillingCostAnalysisFields = (
   if (isRecord(value.chartData)) {
     allowControl(value.chartData, 'schemaVersion');
     allowText(value.chartData, 'source');
+    allowChildren(value.chartData, 'dataWindow', 'views', 'detectors');
     if (isRecord(value.chartData.views)) {
-      for (const view of Object.values(value.chartData.views)) {
+      for (const [viewKey, view] of Object.entries(value.chartData.views)) {
+        allowChildren(value.chartData.views, viewKey);
         allowText(view, 'aggregation', 'forecastMethod');
         if (!isRecord(view)) continue;
+        allowChildren(view, 'trend', 'points', 'actualPoints', 'forecastPoints', 'fittedPoints');
         allowText(view.trend, 'method');
         for (const pointsKey of ['points', 'actualPoints', 'forecastPoints', 'fittedPoints']) {
           const points = view[pointsKey];
@@ -532,6 +545,7 @@ const allowedBillingCostAnalysisFields = (
       }
     }
     if (isRecord(value.chartData.detectors) && Array.isArray(value.chartData.detectors.methods)) {
+      allowChildren(value.chartData.detectors, 'methods');
       for (const method of value.chartData.detectors.methods) allowText(method, 'name', 'status', 'error');
     }
   }
@@ -540,9 +554,11 @@ const allowedBillingCostAnalysisFields = (
     allowText(anomaly, 'summary', 'confidence');
     allowTextArray(anomaly, 'notes');
     if (!isRecord(anomaly) || !Array.isArray(anomaly.drivers)) continue;
+    allowChildren(anomaly, 'impact', 'drivers');
     for (const driver of anomaly.drivers) {
       allowText(driver, 'type', 'name', 'summary');
       if (!isRecord(driver) || !Array.isArray(driver.resources)) continue;
+      allowChildren(driver, 'resources');
       for (const resource of driver.resources) allowText(resource, 'name', 'resourceScope', 'summary');
     }
   }
@@ -557,6 +573,7 @@ const containsForbiddenBillingCostAnalysisControlData = (
     rejectDigestLikeValues: true,
     requireSafeAzureResourceIds: true,
     forbiddenControlFields: BILLING_FORBIDDEN_CONTROL_FIELDS,
+    requireAllowedFieldTraversalContext: true,
   });
 
 const isTrend = (value: unknown): boolean =>

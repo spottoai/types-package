@@ -55,12 +55,14 @@ export interface AllowedArtifactReferenceField {
   allowUriSchemeInStringArray?: boolean;
   allowDigestLike?: boolean;
   allowControlField?: boolean;
+  allowChildArtifactFields?: boolean;
 }
 
 interface IArtifactControlDataScanOptions {
   rejectDigestLikeValues?: boolean;
   requireSafeAzureResourceIds?: boolean;
   forbiddenControlFields?: ReadonlySet<string>;
+  requireAllowedFieldTraversalContext?: boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -121,6 +123,7 @@ const indexAllowedArtifactFields = (allowedReferenceFields: AllowedArtifactRefer
       allowUriSchemeInStringArray: existing?.allowUriSchemeInStringArray || field.allowUriSchemeInStringArray,
       allowDigestLike: existing?.allowDigestLike || field.allowDigestLike,
       allowControlField: existing?.allowControlField || field.allowControlField,
+      allowChildArtifactFields: existing?.allowChildArtifactFields || field.allowChildArtifactFields,
     });
   }
   return index;
@@ -136,25 +139,32 @@ const containsForbiddenArtifactControlDataWithIndex = (
         kind: 'visit';
         value: unknown;
         allowedStringArrayField?: AllowedArtifactReferenceField;
+        allowIndexedFields?: boolean;
       }
     | {
         kind: 'leave';
         container: object;
-        scanPolicyRank: number;
+        scanPolicy: number;
       };
-  const pending: PendingValue[] = [{ kind: 'visit', value }];
+  const pending: PendingValue[] = [{ kind: 'visit', value, allowIndexedFields: true }];
   const activeContainers = new WeakSet<object>();
-  const completedScanPolicyRanks = new WeakMap<object, number>();
+  const completedScanPolicies = new WeakMap<object, number[]>();
   let visitedNodeCount = 0;
+
+  const hasCompletedStricterScan = (container: object, scanPolicy: number): boolean =>
+    completedScanPolicies.get(container)?.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy) ?? false;
+
+  const completeScan = (container: object, scanPolicy: number): void => {
+    const completedPolicies = completedScanPolicies.get(container) ?? [];
+    if (completedPolicies.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy)) return;
+    completedScanPolicies.set(container, [...completedPolicies.filter(completedPolicy => (scanPolicy & completedPolicy) !== scanPolicy), scanPolicy]);
+  };
 
   while (pending.length > 0) {
     const candidate = pending.pop() as PendingValue;
     if (candidate.kind === 'leave') {
       activeContainers.delete(candidate.container);
-      const completedRank = completedScanPolicyRanks.get(candidate.container);
-      if (completedRank === undefined || candidate.scanPolicyRank < completedRank) {
-        completedScanPolicyRanks.set(candidate.container, candidate.scanPolicyRank);
-      }
+      completeScan(candidate.container, candidate.scanPolicy);
       continue;
     }
     if (typeof candidate.value === 'string') {
@@ -165,11 +175,13 @@ const containsForbiddenArtifactControlDataWithIndex = (
       visitedNodeCount += 1;
       if (visitedNodeCount > ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) return true;
       if (activeContainers.has(candidate.value)) return true;
-      const scanPolicyRank = candidate.allowedStringArrayField ? (candidate.allowedStringArrayField.allowDigestLike ? 2 : 1) : 0;
-      const completedRank = completedScanPolicyRanks.get(candidate.value);
-      if (completedRank !== undefined && completedRank <= scanPolicyRank) continue;
+      const scanPolicy =
+        (candidate.allowIndexedFields ? 1 : 0) |
+        (candidate.allowedStringArrayField ? 2 : 0) |
+        (candidate.allowedStringArrayField?.allowDigestLike ? 4 : 0);
+      if (hasCompletedStricterScan(candidate.value, scanPolicy)) continue;
       activeContainers.add(candidate.value);
-      pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank });
+      pending.push({ kind: 'leave', container: candidate.value, scanPolicy });
       for (let index = candidate.value.length - 1; index >= 0; index -= 1) {
         const child = candidate.value[index];
         if (candidate.allowedStringArrayField && typeof child === 'string') {
@@ -177,7 +189,7 @@ const containsForbiddenArtifactControlDataWithIndex = (
             return true;
           }
         } else {
-          pending.push({ kind: 'visit', value: child });
+          pending.push({ kind: 'visit', value: child, allowIndexedFields: candidate.allowIndexedFields });
         }
       }
       continue;
@@ -186,16 +198,17 @@ const containsForbiddenArtifactControlDataWithIndex = (
     visitedNodeCount += 1;
     if (visitedNodeCount > ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) return true;
     if (activeContainers.has(candidate.value)) return true;
-    if (completedScanPolicyRanks.has(candidate.value)) continue;
+    const scanPolicy = candidate.allowIndexedFields ? 1 : 0;
+    if (hasCompletedStricterScan(candidate.value, scanPolicy)) continue;
     activeContainers.add(candidate.value);
-    pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank: 0 });
+    pending.push({ kind: 'leave', container: candidate.value, scanPolicy });
 
     for (const [key, child] of Object.entries(candidate.value)) {
       if (hasControlCharacters(key)) return true;
       const normalizedKey = normalizeFieldName(key);
       if (FORBIDDEN_PROTOTYPE_FIELDS.has(normalizedKey)) return true;
       if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
-      const allowedField = allowedReferenceFields.get(candidate.value)?.get(key);
+      const allowedField = candidate.allowIndexedFields ? allowedReferenceFields.get(candidate.value)?.get(key) : undefined;
       if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField) return true;
       if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') {
         if (!isSafeAzureResourceId(key, child)) return true;
@@ -211,7 +224,12 @@ const containsForbiddenArtifactControlDataWithIndex = (
       }
       if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
       if (isSafeAzureResourceId(key, child)) continue;
-      pending.push({ kind: 'visit', value: child });
+      pending.push({
+        kind: 'visit',
+        value: child,
+        allowIndexedFields:
+          !options.requireAllowedFieldTraversalContext || Boolean(candidate.allowIndexedFields && allowedField?.allowChildArtifactFields),
+      });
     }
   }
   return false;

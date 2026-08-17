@@ -94,23 +94,28 @@ const indexAllowedArtifactFields = (allowedReferenceFields) => {
             allowUriSchemeInStringArray: existing?.allowUriSchemeInStringArray || field.allowUriSchemeInStringArray,
             allowDigestLike: existing?.allowDigestLike || field.allowDigestLike,
             allowControlField: existing?.allowControlField || field.allowControlField,
+            allowChildArtifactFields: existing?.allowChildArtifactFields || field.allowChildArtifactFields,
         });
     }
     return index;
 };
 const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFields, options) => {
-    const pending = [{ kind: 'visit', value }];
+    const pending = [{ kind: 'visit', value, allowIndexedFields: true }];
     const activeContainers = new WeakSet();
-    const completedScanPolicyRanks = new WeakMap();
+    const completedScanPolicies = new WeakMap();
     let visitedNodeCount = 0;
+    const hasCompletedStricterScan = (container, scanPolicy) => completedScanPolicies.get(container)?.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy) ?? false;
+    const completeScan = (container, scanPolicy) => {
+        const completedPolicies = completedScanPolicies.get(container) ?? [];
+        if (completedPolicies.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy))
+            return;
+        completedScanPolicies.set(container, [...completedPolicies.filter(completedPolicy => (scanPolicy & completedPolicy) !== scanPolicy), scanPolicy]);
+    };
     while (pending.length > 0) {
         const candidate = pending.pop();
         if (candidate.kind === 'leave') {
             activeContainers.delete(candidate.container);
-            const completedRank = completedScanPolicyRanks.get(candidate.container);
-            if (completedRank === undefined || candidate.scanPolicyRank < completedRank) {
-                completedScanPolicyRanks.set(candidate.container, candidate.scanPolicyRank);
-            }
+            completeScan(candidate.container, candidate.scanPolicy);
             continue;
         }
         if (typeof candidate.value === 'string') {
@@ -124,12 +129,13 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                 return true;
             if (activeContainers.has(candidate.value))
                 return true;
-            const scanPolicyRank = candidate.allowedStringArrayField ? (candidate.allowedStringArrayField.allowDigestLike ? 2 : 1) : 0;
-            const completedRank = completedScanPolicyRanks.get(candidate.value);
-            if (completedRank !== undefined && completedRank <= scanPolicyRank)
+            const scanPolicy = (candidate.allowIndexedFields ? 1 : 0) |
+                (candidate.allowedStringArrayField ? 2 : 0) |
+                (candidate.allowedStringArrayField?.allowDigestLike ? 4 : 0);
+            if (hasCompletedStricterScan(candidate.value, scanPolicy))
                 continue;
             activeContainers.add(candidate.value);
-            pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank });
+            pending.push({ kind: 'leave', container: candidate.value, scanPolicy });
             for (let index = candidate.value.length - 1; index >= 0; index -= 1) {
                 const child = candidate.value[index];
                 if (candidate.allowedStringArrayField && typeof child === 'string') {
@@ -138,7 +144,7 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                     }
                 }
                 else {
-                    pending.push({ kind: 'visit', value: child });
+                    pending.push({ kind: 'visit', value: child, allowIndexedFields: candidate.allowIndexedFields });
                 }
             }
             continue;
@@ -150,10 +156,11 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
             return true;
         if (activeContainers.has(candidate.value))
             return true;
-        if (completedScanPolicyRanks.has(candidate.value))
+        const scanPolicy = candidate.allowIndexedFields ? 1 : 0;
+        if (hasCompletedStricterScan(candidate.value, scanPolicy))
             continue;
         activeContainers.add(candidate.value);
-        pending.push({ kind: 'leave', container: candidate.value, scanPolicyRank: 0 });
+        pending.push({ kind: 'leave', container: candidate.value, scanPolicy });
         for (const [key, child] of Object.entries(candidate.value)) {
             if (hasControlCharacters(key))
                 return true;
@@ -162,7 +169,7 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                 return true;
             if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey))
                 return true;
-            const allowedField = allowedReferenceFields.get(candidate.value)?.get(key);
+            const allowedField = candidate.allowIndexedFields ? allowedReferenceFields.get(candidate.value)?.get(key) : undefined;
             if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField)
                 return true;
             if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') {
@@ -183,7 +190,11 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                 return true;
             if (isSafeAzureResourceId(key, child))
                 continue;
-            pending.push({ kind: 'visit', value: child });
+            pending.push({
+                kind: 'visit',
+                value: child,
+                allowIndexedFields: !options.requireAllowedFieldTraversalContext || Boolean(candidate.allowIndexedFields && allowedField?.allowChildArtifactFields),
+            });
         }
     }
     return false;
