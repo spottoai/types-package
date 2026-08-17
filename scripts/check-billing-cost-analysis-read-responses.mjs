@@ -188,9 +188,13 @@ for (const [name, maliciousAdditive] of [
 ]) {
   const maliciousBusinessPayload = { ...legacyBusinessPayload, future: maliciousAdditive };
   const maliciousFallback = { ...legacyFallback, future: maliciousAdditive };
+  const maliciousV2 = { ...currentV2, future: maliciousAdditive };
   assert.equal(isBillingCostAnalysisBusinessPayloadV1(maliciousBusinessPayload), false, `strict V1 business validator rejects ${name}`);
   assert.equal(isBillingCostAnalysisLegacyFallbackResponse(maliciousFallback), false, `legacy fallback rejects ${name}`);
   assert.equal(isBillingCostAnalysisReadResponse(maliciousFallback), false, `read union rejects ${name}`);
+  assert.equal(isBillingCostAnalysisMetadataV2(maliciousV2), false, `V2 metadata rejects ${name}`);
+  assert.equal(isBillingCostAnalysisVerifiedReadResponse(maliciousV2), false, `verified response rejects ${name}`);
+  assert.equal(isBillingCostAnalysisReadResponse(maliciousV2), false, `read union rejects V2 ${name}`);
 }
 
 assert.equal(
@@ -272,6 +276,73 @@ assert.equal(
 );
 assert.equal(isBillingCostAnalysisVerifiedReadResponse(legacyFallback), false, 'verified response does not accept legacy fallback');
 
+const schemaOwnedIdentityV2 = structuredClone(currentV2);
+schemaOwnedIdentityV2.subscriptionId = 'tenant:sub-123';
+schemaOwnedIdentityV2.billingGenerationId = 'c'.repeat(64);
+schemaOwnedIdentityV2.ownership.tenantId = 'https://identity.example.invalid/tenant';
+schemaOwnedIdentityV2.ownership.companyId = 'd'.repeat(64);
+schemaOwnedIdentityV2.ownership.cloudAccountId = 'urn:cloud-account:primary';
+schemaOwnedIdentityV2.ownership.accountId = schemaOwnedIdentityV2.subscriptionId;
+schemaOwnedIdentityV2.artifactEvidence.dependencies[0].generationId = schemaOwnedIdentityV2.billingGenerationId;
+schemaOwnedIdentityV2.artifactEvidence.dependencies.push(
+  {
+    name: 'dependency:auxiliary',
+    required: false,
+    support: 'supported',
+    applicability: 'applicable',
+    attempt: 'succeeded',
+    coverage: 'complete',
+    emptyEvidence: 'populated',
+    freshness: 'current',
+    evidence: 'complete',
+    publication: 'completed',
+    generationId: 'https://generation.example.invalid/auxiliary',
+    reasonCode: 'e'.repeat(64),
+  },
+  {
+    name: 'dependency:complete-empty',
+    required: false,
+    support: 'supported',
+    applicability: 'applicable',
+    attempt: 'succeeded',
+    coverage: 'complete',
+    emptyEvidence: 'complete-empty',
+    freshness: 'current',
+    evidence: 'complete',
+    publication: 'completed',
+    acceptedRowCount: 0,
+    emptyProofRef: 'proofs/complete-empty.json',
+  }
+);
+schemaOwnedIdentityV2.artifactEvidence.claims.push({
+  claimId: 'claim:auxiliary',
+  sectionPaths: ['https://sections.example.invalid/auxiliary', 'f'.repeat(64)],
+  requiredDependencies: ['dependency:auxiliary'],
+  evidence: 'complete',
+  publication: 'completed',
+  issues: [{ code: 'claim:advisory', blocking: false, dependency: 'dependency:auxiliary' }],
+});
+schemaOwnedIdentityV2.artifactEvidence.issues.push({
+  code: 'a'.repeat(64),
+  blocking: false,
+  dependency: 'https://dependency.example.invalid/advisory',
+});
+assert.equal(
+  isBillingCostAnalysisMetadataV2(schemaOwnedIdentityV2),
+  true,
+  'V2 metadata allows URI-shaped and digest-shaped values in schema-owned identity and evidence fields'
+);
+assert.equal(
+  isBillingCostAnalysisVerifiedReadResponse(schemaOwnedIdentityV2),
+  true,
+  'verified response allows URI-shaped and digest-shaped values in schema-owned identity and evidence fields'
+);
+assert.equal(
+  isBillingCostAnalysisReadResponse(schemaOwnedIdentityV2),
+  true,
+  'read union allows URI-shaped and digest-shaped values in schema-owned identity and evidence fields'
+);
+
 const buildLargeLegacyBusinessPayload = pointCount => {
   const payload = structuredClone(legacyBusinessPayload);
   payload.chartData.views = {
@@ -301,12 +372,19 @@ const measureValidation = payload => {
 const smallPayload = buildLargeLegacyBusinessPayload(1_000);
 const largePayload = buildLargeLegacyBusinessPayload(8_000);
 measureValidation(smallPayload);
-const smallDurations = [measureValidation(smallPayload), measureValidation(smallPayload), measureValidation(smallPayload)].sort(
-  (left, right) => left - right
-);
-const smallMedian = smallDurations[1];
-const largeDuration = measureValidation(largePayload);
+measureValidation(largePayload);
+measureValidation(smallPayload);
+measureValidation(largePayload);
+const smallDurations = [];
+const largeDurations = [];
+for (let sample = 0; sample < 7; sample += 1) {
+  smallDurations.push(measureValidation(smallPayload));
+  largeDurations.push(measureValidation(largePayload));
+}
+const median = durations => durations.sort((left, right) => left - right)[Math.floor(durations.length / 2)];
+const smallMedian = median(smallDurations);
+const largeMedian = median(largeDurations);
 assert.ok(
-  largeDuration <= smallMedian * 16,
-  `billing business validation must remain near-linear for 8x payload growth (${smallMedian.toFixed(1)}ms -> ${largeDuration.toFixed(1)}ms)`
+  largeMedian <= smallMedian * 16,
+  `billing business validation must remain near-linear for 8x payload growth (${smallMedian.toFixed(1)}ms -> ${largeMedian.toFixed(1)}ms)`
 );

@@ -132,7 +132,8 @@ const allowedBillingCostAnalysisFields = (value) => {
     allowDigest(value, 'inputManifestDigest');
     allowDigest(value, 'outputBindingDigest');
     if (isRecord(value.ownership)) {
-        allowControl(value.ownership, 'provider', 'tenantId', 'companyId', 'cloudAccountId', 'accountId', 'ownershipEpochRevision');
+        allowControl(value.ownership, 'provider', 'ownershipEpochRevision');
+        allowText(value.ownership, 'tenantId', 'companyId', 'cloudAccountId', 'accountId');
     }
     if (isRecord(value.revision))
         allowControl(value.revision, 'ownershipEpochRevision', 'sourceRevision', 'policyRevision');
@@ -141,22 +142,32 @@ const allowedBillingCostAnalysisFields = (value) => {
         allowControl(evidence, 'processing', 'evidence', 'publication', 'dependencies', 'claims', 'issues');
         if (Array.isArray(evidence.dependencies)) {
             for (const dependency of evidence.dependencies) {
-                allowControl(dependency, 'name', 'required', 'support', 'applicability', 'attempt', 'coverage', 'emptyEvidence', 'freshness', 'evidence', 'publication', 'reasonCode', 'generationId', 'sourceRevision', 'policyRevision', 'acceptedRowCount', 'emptyProofRef');
+                allowControl(dependency, 'required', 'support', 'applicability', 'attempt', 'coverage', 'emptyEvidence', 'freshness', 'evidence', 'publication', 'sourceRevision', 'policyRevision', 'acceptedRowCount', 'emptyProofRef');
+                allowText(dependency, 'name', 'reasonCode', 'generationId');
                 allowDigest(dependency, 'digest');
+                if (isRecord(dependency) && isRecord(dependency.observedRange))
+                    allowText(dependency.observedRange, 'timeZone');
             }
         }
         if (Array.isArray(evidence.claims)) {
             for (const claim of evidence.claims) {
-                allowControl(claim, 'claimId', 'sectionPaths', 'requiredDependencies', 'evidence', 'publication', 'issues');
+                allowControl(claim, 'evidence', 'publication', 'issues');
+                allowText(claim, 'claimId');
+                allowTextArray(claim, 'sectionPaths');
+                allowTextArray(claim, 'requiredDependencies');
                 if (!isRecord(claim) || !Array.isArray(claim.issues))
                     continue;
-                for (const issue of claim.issues)
-                    allowControl(issue, 'code', 'blocking', 'dependency');
+                for (const issue of claim.issues) {
+                    allowControl(issue, 'blocking');
+                    allowText(issue, 'code', 'dependency');
+                }
             }
         }
         if (Array.isArray(evidence.issues)) {
-            for (const issue of evidence.issues)
-                allowControl(issue, 'code', 'blocking', 'dependency');
+            for (const issue of evidence.issues) {
+                allowControl(issue, 'blocking');
+                allowText(issue, 'code', 'dependency');
+            }
         }
     }
     if (isRecord(value.chartData)) {
