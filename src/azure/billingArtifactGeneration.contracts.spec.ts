@@ -617,6 +617,10 @@ const fallbackWithV2Leakage: BillingCostAnalysisLegacyFallbackResponse = {
   schemaVersion: 2,
 };
 
+const fallbackWithManifestDigestLeakageCandidate = { ...legacyFallbackResponse, manifestDigest: digestA };
+// @ts-expect-error Legacy fallback responses must not expose manifest evidence controls through structural assignment.
+const fallbackWithManifestDigestLeakage: BillingCostAnalysisLegacyFallbackResponse = fallbackWithManifestDigestLeakageCandidate;
+
 const completeEmptyMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
   ...costAnalysisMetadata,
   artifactState: 'complete-empty',
@@ -676,6 +680,7 @@ void [
   fallbackMetadataV2,
   partialVerifiedReadResponse,
   fallbackWithV2Leakage,
+  fallbackWithManifestDigestLeakage,
   completeEmptyMetadataWithPortalEvidence,
   partialMetadataWithPortalEvidence,
   partialEvidenceWithWrongFirstDependency,

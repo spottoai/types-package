@@ -2,6 +2,7 @@ export interface AllowedArtifactReferenceField {
     object: Record<string, unknown>;
     key: string;
     allowUriScheme?: boolean;
+    allowUriSchemeInStringArray?: boolean;
 }
 /** Marks a structurally validated schema field whose logical reference name is allowed. */
 export declare const allowedArtifactReferenceField: (object: unknown, key: string) => AllowedArtifactReferenceField[];

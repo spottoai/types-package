@@ -265,14 +265,9 @@ export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base & 
     artifactState: 'partial';
     artifactEvidence: BillingPartialArtifactPublicationDecision;
 });
+declare const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS: readonly ["schemaVersion", "ownership", "revision", "authority", "documentType", "publicationMode", "status", "generationId", "inputManifestDigest", "outputBindingDigest", "outputManifestDigest", "manifestDigest", "observationDigest", "sha256", "artifactEvidence", "publicationDecision", "artifacts", "manifestPath", "inputManifestPath", "outputManifestPath", "byteLength", "byteCount", "rowCount", "contentEncoding", "mediaType", "etag", "versionId", "publicationKey", "coveragePlanDigest", "messageId", "eventId", "correlationId", "idempotencyKey", "inputState", "processingState", "evaluation", "dependencies", "claims", "issues", "completedAt", "observedAt", "enqueuedAt"];
 type BillingCostAnalysisLegacyForbiddenFields = {
-    schemaVersion?: never;
-    ownership?: never;
-    revision?: never;
-    inputManifestDigest?: never;
-    outputBindingDigest?: never;
-    outputManifestDigest?: never;
-    artifactEvidence?: never;
+    [Field in (typeof LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS)[number]]?: never;
 };
 /** Explicit transition response for a validated legacy V1 business payload. */
 export type BillingCostAnalysisLegacyFallbackResponse = BillingCostAnalysisMetadata & BillingCostAnalysisLegacyForbiddenFields & {

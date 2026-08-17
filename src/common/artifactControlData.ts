@@ -49,6 +49,7 @@ export interface AllowedArtifactReferenceField {
   object: Record<string, unknown>;
   key: string;
   allowUriScheme?: boolean;
+  allowUriSchemeInStringArray?: boolean;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -102,6 +103,11 @@ export const containsForbiddenArtifactControlData = (value: unknown, allowedRefe
     if (FORBIDDEN_SENSITIVE_FIELDS.has(normalizedKey)) return true;
     const allowedField = allowedReferenceFields.find(field => field.object === value && field.key === key);
     if (allowedField?.allowUriScheme && typeof child === 'string') return isForbiddenReferenceValue(child, true);
+    if (allowedField?.allowUriSchemeInStringArray && Array.isArray(child)) {
+      return child.some(item =>
+        typeof item === 'string' ? isForbiddenReferenceValue(item, true) : containsForbiddenArtifactControlData(item, allowedReferenceFields)
+      );
+    }
     if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField) return true;
     if (isSafeAzureResourceId(key, child)) return false;
     return containsForbiddenArtifactControlData(child, allowedReferenceFields);

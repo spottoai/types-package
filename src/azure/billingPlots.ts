@@ -3,7 +3,7 @@
  */
 
 import { isArtifactOwnershipBinding, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
-import { containsForbiddenArtifactControlData } from '../common/artifactControlData.js';
+import { containsForbiddenArtifactControlData, type AllowedArtifactReferenceField } from '../common/artifactControlData.js';
 import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
 import {
   isBillingCompletedArtifactPublicationDecision,
@@ -307,14 +307,53 @@ export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base &
       }
   );
 
+const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
+  'schemaVersion',
+  'ownership',
+  'revision',
+  'authority',
+  'documentType',
+  'publicationMode',
+  'status',
+  'generationId',
+  'inputManifestDigest',
+  'outputBindingDigest',
+  'outputManifestDigest',
+  'manifestDigest',
+  'observationDigest',
+  'sha256',
+  'artifactEvidence',
+  'publicationDecision',
+  'artifacts',
+  'manifestPath',
+  'inputManifestPath',
+  'outputManifestPath',
+  'byteLength',
+  'byteCount',
+  'rowCount',
+  'contentEncoding',
+  'mediaType',
+  'etag',
+  'versionId',
+  'publicationKey',
+  'coveragePlanDigest',
+  'messageId',
+  'eventId',
+  'correlationId',
+  'idempotencyKey',
+  'inputState',
+  'processingState',
+  'evaluation',
+  'dependencies',
+  'claims',
+  'issues',
+  'completedAt',
+  'observedAt',
+  'enqueuedAt',
+] as const;
+
 type BillingCostAnalysisLegacyForbiddenFields = {
-  schemaVersion?: never;
-  ownership?: never;
-  revision?: never;
-  inputManifestDigest?: never;
-  outputBindingDigest?: never;
-  outputManifestDigest?: never;
-  artifactEvidence?: never;
+  [Field in (typeof LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS)[number]]?: never;
 };
 
 /** Explicit transition response for a validated legacy V1 business payload. */
@@ -335,15 +374,6 @@ export type BillingCostAnalysisReadResponse = BillingCostAnalysisVerifiedReadRes
 
 const BILLING_DOCUMENT_STATES = new Set<string>(['current', 'stale', 'partial', 'complete-empty']);
 const BILLING_VERIFIED_READ_STATES = new Set<string>(['current', 'stale', 'complete-empty']);
-const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
-  'schemaVersion',
-  'ownership',
-  'revision',
-  'inputManifestDigest',
-  'outputBindingDigest',
-  'outputManifestDigest',
-  'artifactEvidence',
-] as const;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -361,6 +391,37 @@ const isPathSegment = (value: unknown): value is string =>
   isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 const publicationDecisionReferencesDigest = (value: unknown, digest: string): boolean =>
   isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
+
+const allowedBillingBusinessTextFields = (value: Record<string, unknown>): AllowedArtifactReferenceField[] => {
+  const fields: AllowedArtifactReferenceField[] = [];
+  const allowText = (object: unknown, ...keys: string[]): void => {
+    if (!isRecord(object)) return;
+    for (const key of keys) fields.push({ object, key, allowUriScheme: true });
+  };
+  const allowTextArray = (object: unknown, key: string): void => {
+    if (isRecord(object)) fields.push({ object, key, allowUriSchemeInStringArray: true });
+  };
+
+  allowText(value, 'forecastMethod');
+  if (isRecord(value.chartData) && isRecord(value.chartData.detectors) && Array.isArray(value.chartData.detectors.methods)) {
+    for (const method of value.chartData.detectors.methods) allowText(method, 'name', 'status', 'error');
+  }
+  if (!Array.isArray(value.anomalies)) return fields;
+  for (const anomaly of value.anomalies) {
+    allowText(anomaly, 'summary', 'confidence');
+    allowTextArray(anomaly, 'notes');
+    if (!isRecord(anomaly) || !Array.isArray(anomaly.drivers)) continue;
+    for (const driver of anomaly.drivers) {
+      allowText(driver, 'type', 'name', 'summary');
+      if (!isRecord(driver) || !Array.isArray(driver.resources)) continue;
+      for (const resource of driver.resources) allowText(resource, 'name', 'resourceScope', 'summary');
+    }
+  }
+  return fields;
+};
+
+const containsForbiddenBillingCostAnalysisControlData = (value: Record<string, unknown>): boolean =>
+  containsForbiddenArtifactControlData(value, allowedBillingBusinessTextFields(value));
 
 const isTrend = (value: unknown): boolean =>
   isRecord(value) && isNonEmptyString(value.method) && isFiniteNumber(value.slope) && isFiniteNumber(value.intercept);
@@ -531,13 +592,13 @@ const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown
 /** Dependency-free validator for the complete legacy V1 business payload. */
 export const isBillingCostAnalysisBusinessPayloadV1 = (value: unknown): value is BillingCostAnalysisMetadata =>
   isRecord(value) &&
-  !containsForbiddenArtifactControlData(value) &&
+  !containsForbiddenBillingCostAnalysisControlData(value) &&
   !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
   hasValidBillingCostAnalysisBusinessFields(value);
 
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is BillingCostAnalysisMetadataV2 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value) || value.schemaVersion !== 2) return false;
+  if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value) || value.schemaVersion !== 2) return false;
   if (hasOwn(value, 'outputManifestDigest')) return false;
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isArtifactOwnershipBinding(value.ownership) || value.ownership.provider !== 'azure' || value.ownership.accountId !== value.subscriptionId)

@@ -24,6 +24,76 @@ const legacyFallback = {
   artifactState: 'fallback',
   artifactSource: 'legacy-transition',
 };
+const proseBearingLegacyBusinessPayload = {
+  ...legacyBusinessPayload,
+  forecastMethod: 'forecast:linear-v2',
+  chartData: {
+    ...legacyBusinessPayload.chartData,
+    detectors: {
+      ...legacyBusinessPayload.chartData.detectors,
+      methods: [
+        {
+          name: 'detector:seasonal',
+          status: 'status:ready',
+          error: 'Alert: historical variance exceeded https://example.invalid/policy',
+          triggeredDates: [],
+        },
+      ],
+    },
+  },
+  anomalies: [
+    {
+      date: 1_782_864_000,
+      summary: 'Alert: cost increased; see https://example.invalid/runbook',
+      confidence: 'urn:confidence:high',
+      notes: ['Investigation: compare service:baseline', 'Reference: https://example.invalid/anomaly'],
+      impact: {
+        cost: 10,
+        delta: 5,
+        baseline7Day: null,
+        baseline30Day: null,
+        percentChange: null,
+        previousDayCost: null,
+        previousDayDelta: null,
+        monthToDateCost: 20,
+        monthToDateBaseline: null,
+        monthToDateDelta: null,
+        monthToDatePercentChange: null,
+      },
+      drivers: [
+        {
+          type: 'service:azure',
+          name: 'Compute: Premium',
+          summary: 'Driver: usage moved to https://example.invalid/tier',
+          cost: 10,
+          delta: 5,
+          baseline: null,
+          percentChange: null,
+          shareOfImpactPercent: 100,
+          isNew: false,
+          resources: [
+            {
+              name: 'vm:primary',
+              resourceScope: 'scope:subscription',
+              resourceId: '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Compute/virtualMachines/vm-1',
+              cost: 10,
+              baseline: null,
+              delta: 5,
+              percentChange: null,
+              isNew: false,
+              summary: 'Resource: investigate https://example.invalid/resource',
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+const proseBearingLegacyFallback = {
+  ...proseBearingLegacyBusinessPayload,
+  artifactState: 'fallback',
+  artifactSource: 'legacy-transition',
+};
 
 assert.equal(isBillingCostAnalysisBusinessPayloadV1(legacyBusinessPayload), true, 'strict V1 business validator accepts the complete legacy payload');
 assert.equal(
@@ -46,6 +116,28 @@ assert.equal(
   false,
   'strict V1 business validator rejects additive physical control data'
 );
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1(proseBearingLegacyBusinessPayload),
+  true,
+  'strict V1 business validator allows URI-shaped prose in schema-owned business text fields'
+);
+assert.equal(
+  isBillingCostAnalysisLegacyFallbackResponse(proseBearingLegacyFallback),
+  true,
+  'legacy fallback allows URI-shaped prose in schema-owned business text fields'
+);
+assert.equal(isBillingCostAnalysisReadResponse(proseBearingLegacyFallback), true, 'read union allows a prose-bearing legacy fallback');
+for (const [name, maliciousAdditive] of [
+  ['physical reference field', { sourcePath: 'private/metadata.json' }],
+  ['credential field', { authorization: 'Bearer secret-example' }],
+  ['physical URI value', { location: 'https://storage.example.invalid/private/metadata.json' }],
+]) {
+  const maliciousBusinessPayload = { ...legacyBusinessPayload, future: maliciousAdditive };
+  const maliciousFallback = { ...legacyFallback, future: maliciousAdditive };
+  assert.equal(isBillingCostAnalysisBusinessPayloadV1(maliciousBusinessPayload), false, `strict V1 business validator rejects ${name}`);
+  assert.equal(isBillingCostAnalysisLegacyFallbackResponse(maliciousFallback), false, `legacy fallback rejects ${name}`);
+  assert.equal(isBillingCostAnalysisReadResponse(maliciousFallback), false, `read union rejects ${name}`);
+}
 
 assert.equal(
   isBillingCostAnalysisLegacyFallbackResponse(legacyFallback),
@@ -84,6 +176,25 @@ for (const field of forbiddenLegacyOwnFields) {
     false,
     `legacy fallback rejects leaked own property even when undefined: ${field}`
   );
+}
+const expandedForbiddenLegacyOwnFields = {
+  manifestDigest: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  sha256: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  publicationDecision: { processing: 'succeeded', evidence: 'complete', publication: 'completed', dependencies: [], claims: [], issues: [] },
+  artifacts: [{ name: 'metadata.json', byteLength: 128, mediaType: 'application/json', contentEncoding: 'identity' }],
+  byteLength: 128,
+  contentEncoding: 'gzip',
+  mediaType: 'application/json',
+  etag: 'etag-1',
+  versionId: 'version-1',
+  manifestPath: 'subscriptions/sub-123/billing/generations/generation-1/manifest.json',
+};
+for (const [field, realisticValue] of Object.entries(expandedForbiddenLegacyOwnFields)) {
+  for (const value of [realisticValue, undefined]) {
+    const leakedFallback = { ...legacyFallback, [field]: value };
+    assert.equal(isBillingCostAnalysisLegacyFallbackResponse(leakedFallback), false, `legacy fallback rejects own control field: ${field}`);
+    assert.equal(isBillingCostAnalysisReadResponse(leakedFallback), false, `read union rejects own control field: ${field}`);
+  }
 }
 assert.equal(
   isBillingCostAnalysisLegacyFallbackResponse({ ...currentV2, artifactState: 'fallback', artifactSource: 'legacy-transition' }),

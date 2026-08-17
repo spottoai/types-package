@@ -8,17 +8,52 @@ const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const billingArtifactEvidence_js_1 = require("./billingArtifactEvidence.js");
-const BILLING_DOCUMENT_STATES = new Set(['current', 'stale', 'partial', 'complete-empty']);
-const BILLING_VERIFIED_READ_STATES = new Set(['current', 'stale', 'complete-empty']);
 const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
     'schemaVersion',
     'ownership',
     'revision',
+    'authority',
+    'documentType',
+    'publicationMode',
+    'status',
+    'generationId',
     'inputManifestDigest',
     'outputBindingDigest',
     'outputManifestDigest',
+    'manifestDigest',
+    'observationDigest',
+    'sha256',
     'artifactEvidence',
+    'publicationDecision',
+    'artifacts',
+    'manifestPath',
+    'inputManifestPath',
+    'outputManifestPath',
+    'byteLength',
+    'byteCount',
+    'rowCount',
+    'contentEncoding',
+    'mediaType',
+    'etag',
+    'versionId',
+    'publicationKey',
+    'coveragePlanDigest',
+    'messageId',
+    'eventId',
+    'correlationId',
+    'idempotencyKey',
+    'inputState',
+    'processingState',
+    'evaluation',
+    'dependencies',
+    'claims',
+    'issues',
+    'completedAt',
+    'observedAt',
+    'enqueuedAt',
 ];
+const BILLING_DOCUMENT_STATES = new Set(['current', 'stale', 'partial', 'complete-empty']);
+const BILLING_VERIFIED_READ_STATES = new Set(['current', 'stale', 'complete-empty']);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -32,6 +67,41 @@ const hasOwn = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
 const publicationDecisionReferencesDigest = (value, digest) => isRecord(value) && Array.isArray(value.dependencies) && value.dependencies.some(dependency => isRecord(dependency) && dependency.digest === digest);
+const allowedBillingBusinessTextFields = (value) => {
+    const fields = [];
+    const allowText = (object, ...keys) => {
+        if (!isRecord(object))
+            return;
+        for (const key of keys)
+            fields.push({ object, key, allowUriScheme: true });
+    };
+    const allowTextArray = (object, key) => {
+        if (isRecord(object))
+            fields.push({ object, key, allowUriSchemeInStringArray: true });
+    };
+    allowText(value, 'forecastMethod');
+    if (isRecord(value.chartData) && isRecord(value.chartData.detectors) && Array.isArray(value.chartData.detectors.methods)) {
+        for (const method of value.chartData.detectors.methods)
+            allowText(method, 'name', 'status', 'error');
+    }
+    if (!Array.isArray(value.anomalies))
+        return fields;
+    for (const anomaly of value.anomalies) {
+        allowText(anomaly, 'summary', 'confidence');
+        allowTextArray(anomaly, 'notes');
+        if (!isRecord(anomaly) || !Array.isArray(anomaly.drivers))
+            continue;
+        for (const driver of anomaly.drivers) {
+            allowText(driver, 'type', 'name', 'summary');
+            if (!isRecord(driver) || !Array.isArray(driver.resources))
+                continue;
+            for (const resource of driver.resources)
+                allowText(resource, 'name', 'resourceScope', 'summary');
+        }
+    }
+    return fields;
+};
+const containsForbiddenBillingCostAnalysisControlData = (value) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedBillingBusinessTextFields(value));
 const isTrend = (value) => isRecord(value) && isNonEmptyString(value.method) && isFiniteNumber(value.slope) && isFiniteNumber(value.intercept);
 const isDailyPoint = (value) => isRecord(value) &&
     isNonEmptyString(value.date) &&
@@ -182,13 +252,13 @@ const hasValidBillingCostAnalysisBusinessFields = (value) => {
 };
 /** Dependency-free validator for the complete legacy V1 business payload. */
 const isBillingCostAnalysisBusinessPayloadV1 = (value) => isRecord(value) &&
-    !(0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value) &&
+    !containsForbiddenBillingCostAnalysisControlData(value) &&
     !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
     hasValidBillingCostAnalysisBusinessFields(value);
 exports.isBillingCostAnalysisBusinessPayloadV1 = isBillingCostAnalysisBusinessPayloadV1;
 /** Dependency-free validator for customer-readable V2 billing metadata. */
 const isBillingCostAnalysisMetadataV2 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value) || value.schemaVersion !== 2)
+    if (!isRecord(value) || containsForbiddenBillingCostAnalysisControlData(value) || value.schemaVersion !== 2)
         return false;
     if (hasOwn(value, 'outputManifestDigest'))
         return false;

@@ -86,6 +86,9 @@ export const containsForbiddenArtifactControlData = (value, allowedReferenceFiel
         const allowedField = allowedReferenceFields.find(field => field.object === value && field.key === key);
         if (allowedField?.allowUriScheme && typeof child === 'string')
             return isForbiddenReferenceValue(child, true);
+        if (allowedField?.allowUriSchemeInStringArray && Array.isArray(child)) {
+            return child.some(item => typeof item === 'string' ? isForbiddenReferenceValue(item, true) : containsForbiddenArtifactControlData(item, allowedReferenceFields));
+        }
         if (PHYSICAL_REFERENCE_FIELDS.has(normalizedKey) && !allowedField)
             return true;
         if (isSafeAzureResourceId(key, child))
