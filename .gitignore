@@ -100,3 +100,5 @@ specs/*
 !Specs/cost-savings/
 !Specs/cost-savings/resource-recommendation-savings-details/
 !Specs/cost-savings/resource-recommendation-savings-details/resource-recommendation-savings-details-types-package.md
+!Specs/portfolio/
+!Specs/portfolio/*.md

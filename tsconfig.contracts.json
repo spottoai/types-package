@@ -35,6 +35,7 @@
     "src/common/artifactEvidence.contracts.spec.ts",
     "src/common/capabilityPassport.contracts.spec.ts",
     "src/common/provider.contracts.spec.ts",
+    "src/portfolio/portfolioProjections.contracts.spec.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]

@@ -169,6 +169,7 @@ for (const exportName of requiredDigestRepairRuntimeExports) {
     throw new Error(`packed DEV-1036 gate must execute digest-repair root export: ${exportName}`);
   }
 }
+const portfolioFixturePath = join(packageRoot, 'tests', 'fixtures', 'portfolio.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -226,6 +227,7 @@ try {
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
+  await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
 
   run(
     npmCommand,
@@ -255,6 +257,7 @@ try {
       'commitments-planning.consumer.ts',
       'artifact-evidence.consumer.ts',
       'narrow-aws-runtime.consumer.ts',
+      'portfolio.consumer.ts',
     ],
     consumerRoot
   );
@@ -293,7 +296,25 @@ try {
     consumerRoot
   );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/narrow runtime plus API/cloud-engine/UI consumers verified.\n');
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import root from '@spottoai/types-package'; if (root.PORTFOLIO_PROJECTION_SCHEMA_VERSION !== '2026-08-02' || !root.PORTFOLIO_PROJECTION_COMPATIBLE_SCHEMA_VERSIONS.includes(root.PORTFOLIO_PROJECTION_SCHEMA_VERSION) || root.PORTFOLIO_PROJECTION_DETAIL_TARGET_DECODED_BYTES !== 2 * 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_COMPRESSED_BYTES !== 8 * 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_DECODED_BYTES !== 32 * 1024 * 1024) process.exit(1);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const root = require('@spottoai/types-package'); if (root.PORTFOLIO_CLOUD_ACCOUNT_SUMMARY_SCHEMA_VERSION !== '2026-08-13' || root.PORTFOLIO_PROJECTION_DETAIL_TARGET_COMPRESSED_BYTES !== 1024 * 1024 || root.PORTFOLIO_PROJECTION_MAX_REQUEST_DECODED_BYTES !== 24 * 1024 * 1024) process.exit(1);",
+    ],
+    consumerRoot
+  );
+
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow runtime plus API/cloud-engine/UI consumers verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

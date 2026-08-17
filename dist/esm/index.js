@@ -55,3 +55,4 @@ export * from './integrations/index.js';
 export * from './identity/index.js';
 export * from './features-and-permissions/index.js';
 export * from './tags/index.js';
+export * from './portfolio/index.js';

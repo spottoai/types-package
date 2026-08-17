@@ -42,6 +42,8 @@ export interface AzureSpSetupDurableStateV1 {
     targetCloudAccountName?: string;
     targetAzureApplicationAppId?: string;
     targetAzureServicePrincipalObjectId?: string;
+    /** @internal protected persistence */
+    targetCredentialBaselineHash?: string;
     azureApplicationObjectId?: string;
     azureApplicationAppId?: string;
     azureServicePrincipalObjectId?: string;
@@ -98,6 +100,7 @@ export interface AzureSpSetupDurableStateV1 {
     currentCheckpoint?: string;
     retryCategory?: AzureSpSetupRetryCategory;
     retryCount?: number;
+    retryAttemptsByOperation?: Record<string, number>;
     retryAfterAt?: string;
     nextDispatchSequence?: number;
     continuationMessageId?: string;
