@@ -1,24 +1,40 @@
 import {
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingOutputBindingV1,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
+  isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
   type ArtifactRevisionVector,
   type ArtifactPublicationDecision,
   type BillingAnalysisCurrentPointerV1,
+  type BillingAnalysisPromotionObservationV1,
   type BillingArtifactPublicationDecision,
   type BillingAnalyzerInputCurrentPointerV1,
   type BillingAnalyzerInputManifestV2,
+  type BillingAnalyzerInputObservationPointerV1,
   type BillingAnalyzerOutputManifestV2,
   type BillingAnalyzerRequestV2,
   type BillingCostAnalysisMetadataV2,
+  type BillingCostAnalysisLegacyFallbackResponse,
+  type BillingCostAnalysisReadResponse,
+  type BillingCostAnalysisVerifiedReadResponse,
   type BillingOutputBindingV1,
   type BillingPartialArtifactPublicationDecision,
 } from '../index';
@@ -55,6 +71,19 @@ const ownership = {
 
 const revision = {
   ownershipEpochRevision: 3,
+  sourceRevision: 42,
+  policyRevision: 7,
+} satisfies ArtifactRevisionVector;
+
+const observeOwnership = {
+  provider: 'azure',
+  tenantId: 'tenant-1',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  accountId: subscriptionId,
+} as const;
+
+const observeRevision = {
   sourceRevision: 42,
   policyRevision: 7,
 } satisfies ArtifactRevisionVector;
@@ -217,6 +246,31 @@ const analyzerRequest = {
   },
 } satisfies BillingAnalyzerRequestV2;
 
+const inputObservationPointer = {
+  schemaVersion: 1,
+  documentType: 'billing-analyzer-input-observation-pointer',
+  authority: 'diagnostic-only',
+  publicationMode: 'observe',
+  inputState: 'enqueued',
+  subscriptionId,
+  generationId,
+  ownership: observeOwnership,
+  revision: observeRevision,
+  inputManifestPath,
+  inputManifestDigest: inputManifest.manifestDigest,
+  messageId: analyzerRequest.messageId,
+  correlationId: analyzerRequest.correlationId,
+  enqueuedAt: completedAt,
+} satisfies BillingAnalyzerInputObservationPointerV1;
+
+const inputObservationPointerWithSelfDigest: BillingAnalyzerInputObservationPointerV1 = {
+  ...inputObservationPointer,
+  // @ts-expect-error Diagnostic discovery pointers do not carry a self digest.
+  observationDigest: digestD,
+};
+
+const inputObservationPointerPath = buildBillingAnalyzerInputObservationPointerPath(subscriptionId);
+
 const outputManifest = {
   schemaVersion: 2,
   status: 'completed',
@@ -256,6 +310,52 @@ const analysisPointer = {
   publicationDecision,
   completedAt,
 } satisfies BillingAnalysisCurrentPointerV1;
+
+const promotionObservation = {
+  schemaVersion: 1,
+  documentType: 'billing-analysis-promotion-observation',
+  authority: 'diagnostic-only',
+  publicationMode: 'observe',
+  processingState: 'succeeded',
+  subscriptionId,
+  generationId,
+  ownership: observeOwnership,
+  revision: observeRevision,
+  messageId: analyzerRequest.messageId,
+  correlationId: analyzerRequest.correlationId,
+  inputManifestPath,
+  inputManifestDigest: inputManifest.manifestDigest,
+  outputManifestPath,
+  outputManifestDigest: outputManifest.manifestDigest,
+  evaluation: {
+    comparison: 'unenforceable',
+    projectedOutcome: 'not-enforceable',
+  },
+  observationDigest: digestD,
+  observedAt: completedAt,
+} satisfies BillingAnalysisPromotionObservationV1;
+
+const equalSamePromotionObservation = {
+  ...promotionObservation,
+  ownership,
+  revision,
+  evaluation: {
+    comparison: 'equal',
+    projectedOutcome: 'would-be-idempotent',
+    outputDigestRelation: 'same',
+  },
+} satisfies BillingAnalysisPromotionObservationV1;
+
+const equalDifferentPromotionObservation = {
+  ...promotionObservation,
+  ownership,
+  revision,
+  evaluation: {
+    comparison: 'equal',
+    projectedOutcome: 'would-quarantine',
+    outputDigestRelation: 'different',
+  },
+} satisfies BillingAnalysisPromotionObservationV1;
 
 const costAnalysisMetadata = {
   schemaVersion: 2,
@@ -302,6 +402,7 @@ const canonicalPreimages: string[] = [
   canonicalizeBillingOutputBindingV1(binding),
   canonicalizeBillingAnalyzerInputManifestV2ForDigest(inputManifest),
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest(outputManifest),
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest(promotionObservation),
 ];
 
 const partialCostAnalysisMetadata = {
@@ -309,6 +410,20 @@ const partialCostAnalysisMetadata = {
   artifactState: 'partial',
   artifactEvidence: partialBillingPublicationDecision,
 } satisfies BillingCostAnalysisMetadataV2;
+
+const legacyFallbackResponse = {
+  subscriptionId: costAnalysisMetadata.subscriptionId,
+  billingGenerationId: costAnalysisMetadata.billingGenerationId,
+  chartData: costAnalysisMetadata.chartData,
+  anomalies: costAnalysisMetadata.anomalies,
+  currencyCode: costAnalysisMetadata.currencyCode,
+  currencySymbol: costAnalysisMetadata.currencySymbol,
+  artifactState: 'fallback',
+  artifactSource: 'legacy-transition',
+} satisfies BillingCostAnalysisLegacyFallbackResponse;
+
+const verifiedReadResponse = costAnalysisMetadata satisfies BillingCostAnalysisVerifiedReadResponse;
+const legacyReadResponse = legacyFallbackResponse satisfies BillingCostAnalysisReadResponse;
 
 const additiveInputPointer = {
   ...inputPointer,
@@ -382,9 +497,28 @@ const validationResults: boolean[] = [
   isBillingAnalysisCurrentPointerV1(analysisPointer),
   isBillingCostAnalysisMetadataV2(costAnalysisMetadata),
   isBillingCostAnalysisMetadataV2(partialCostAnalysisMetadata),
+  isBillingCostAnalysisBusinessPayloadV1(legacyFallbackResponse),
+  isBillingCostAnalysisLegacyFallbackResponse(legacyFallbackResponse),
+  isBillingCostAnalysisVerifiedReadResponse(verifiedReadResponse),
+  isBillingCostAnalysisReadResponse(verifiedReadResponse),
+  isBillingCostAnalysisReadResponse(legacyReadResponse),
+  isBillingAnalyzerInputObservationPointerV1(inputObservationPointer),
+  isBillingAnalysisPromotionObservationV1(promotionObservation),
+  isBillingAnalysisPromotionObservationV1(equalSamePromotionObservation),
+  isBillingAnalysisPromotionObservationV1(equalDifferentPromotionObservation),
+  !isBillingAnalyzerInputCurrentPointerV1(inputObservationPointer),
+  !isBillingAnalysisCurrentPointerV1(inputObservationPointer),
+  !isBillingAnalyzerInputCurrentPointerV1(promotionObservation),
+  !isBillingAnalysisCurrentPointerV1(promotionObservation),
 ];
 
 const runtimeSafetyResults: boolean[] = [
+  Object.isFrozen(BILLING_ARTIFACT_OBJECT_LIMITS_V1),
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH === 'history/billing/analyzer-inputs/latest-enqueued.json',
+  inputObservationPointerPath === 'subscriptions/sub-123/history/billing/analyzer-inputs/latest-enqueued.json',
+  isBillingAnalyzerInputObservationPointerPath(inputObservationPointerPath),
+  !isBillingAnalyzerInputObservationPointerPath('subscriptions/sub-123/history/billing/analyzer-inputs/current.json'),
+  !isBillingAnalyzerInputObservationPointerPath('subscriptions/../history/billing/analyzer-inputs/latest-enqueued.json'),
   isBillingAnalyzerRequestV2(harmlessAdditiveRequest),
   ...credentialBearingRequests.map(request => !isBillingAnalyzerRequestV2(request)),
   !isBillingAnalyzerInputCurrentPointerV1(controlCharacterInputPointer),
@@ -406,6 +540,12 @@ const unknownInputPointerVersion: BillingAnalyzerInputCurrentPointerV1 = { ...in
 
 // @ts-expect-error V2 analyzer requests use schema version 2.
 const unknownRequestVersion: BillingAnalyzerRequestV2 = { ...analyzerRequest, schemaVersion: 1 };
+
+// @ts-expect-error Observation pointers use schema version 1.
+const unknownInputObservationVersion: BillingAnalyzerInputObservationPointerV1 = { ...inputObservationPointer, schemaVersion: 2 };
+
+// @ts-expect-error Promotion observations use schema version 1.
+const unknownPromotionObservationVersion: BillingAnalysisPromotionObservationV1 = { ...promotionObservation, schemaVersion: 2 };
 
 // @ts-expect-error V2 output manifests reject unknown schema versions.
 const unknownOutputManifestVersion: BillingAnalyzerOutputManifestV2 = { ...outputManifest, schemaVersion: 3 };
@@ -459,12 +599,27 @@ const staleMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
   artifactEvidence: portalPluginPublicationDecision,
 };
 
-const fallbackMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
+const fallbackMetadataV2: BillingCostAnalysisMetadataV2 = {
   ...costAnalysisMetadata,
+  // @ts-expect-error V2 metadata never represents a legacy-transition fallback response.
   artifactState: 'fallback',
-  // @ts-expect-error Fallback billing metadata still requires billing-bound completed evidence.
-  artifactEvidence: portalPluginPublicationDecision,
 };
+
+const partialVerifiedReadResponse: BillingCostAnalysisVerifiedReadResponse = {
+  ...partialCostAnalysisMetadata,
+  // @ts-expect-error Partial V2 metadata remains internal and is not a verified endpoint response.
+  artifactState: 'partial',
+};
+
+const fallbackWithV2Leakage: BillingCostAnalysisLegacyFallbackResponse = {
+  ...legacyFallbackResponse,
+  // @ts-expect-error Legacy fallback responses must not expose V2 schema controls.
+  schemaVersion: 2,
+};
+
+const fallbackWithManifestDigestLeakageCandidate = { ...legacyFallbackResponse, manifestDigest: digestA };
+// @ts-expect-error Legacy fallback responses must not expose manifest evidence controls through structural assignment.
+const fallbackWithManifestDigestLeakage: BillingCostAnalysisLegacyFallbackResponse = fallbackWithManifestDigestLeakageCandidate;
 
 const completeEmptyMetadataWithPortalEvidence: BillingCostAnalysisMetadataV2 = {
   ...costAnalysisMetadata,
@@ -508,6 +663,9 @@ void [
   unknownInputManifestVersion,
   unknownInputPointerVersion,
   unknownRequestVersion,
+  unknownInputObservationVersion,
+  inputObservationPointerWithSelfDigest,
+  unknownPromotionObservationVersion,
   unknownOutputManifestVersion,
   incompleteAnalysisPointer,
   policyFreeOutputManifest,
@@ -519,7 +677,10 @@ void [
   partialBillingEvidence,
   currentMetadataWithPortalEvidence,
   staleMetadataWithPortalEvidence,
-  fallbackMetadataWithPortalEvidence,
+  fallbackMetadataV2,
+  partialVerifiedReadResponse,
+  fallbackWithV2Leakage,
+  fallbackWithManifestDigestLeakage,
   completeEmptyMetadataWithPortalEvidence,
   partialMetadataWithPortalEvidence,
   partialEvidenceWithWrongFirstDependency,

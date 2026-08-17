@@ -65,6 +65,34 @@ in both ownership and revision data. `npm run check:artifact-evidence-contracts`
 executes the canonical cross-runtime corpus, billing validator matrix, ownership
 checks, promotion preconditions, and every revision-comparison outcome.
 
+Observe-mode discovery uses `BillingAnalyzerInputObservationPointerV1` and
+`BillingAnalysisPromotionObservationV1`. Both are explicitly
+`diagnostic-only`, may never substitute for a current authority pointer, and
+may omit an ownership epoch only when ownership and revision omit it together.
+The promotion observation has a stable exact-field canonicalizer that excludes
+its own `observationDigest` and ignores additive-next fields. An epoch-free
+promotion observation must report `unenforceable` / `not-enforceable`; a
+matching present epoch must not report that pair. Current-pointer validators
+explicitly reject these diagnostic discriminants while retaining unrelated
+additive-next fields.
+
+Portable billing contract corpus v7 pins the shared stored/decoded object
+limits, safe `latest-enqueued.json` diagnostic discovery path, strict V1/V2/
+legacy-fallback response authority, prototype-key rejection, bounded iterative
+control-data traversal, and exact metadata/plot descriptor boundaries. The
+corpus contains 351 cases and 436 mutations at SHA-256
+`508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a`;
+its three promotion-observation digest vectors remain byte-for-byte compatible
+with v5.
+
+For an epoch-bound promotion observation, `evaluation.outputDigestRelation` is
+an optional V1 compatibility extension. Equal revisions may omit it only for
+the legacy `would-be-idempotent` shape; `same` also requires
+`would-be-idempotent`, while `different` requires `would-quarantine`. Every
+non-equal comparison forbids the relation. When present, the relation is part
+of the canonical observation preimage and therefore bound by
+`observationDigest`; legacy observations retain their original preimage.
+
 Billing output V2 uses an acyclic digest chain. Producers project the public
 `BillingOutputBindingV1`, canonicalize it with
 `canonicalizeBillingOutputBindingV1`, and SHA-256 that UTF-8 preimage to obtain

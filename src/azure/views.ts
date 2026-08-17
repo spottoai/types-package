@@ -18,6 +18,7 @@ import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilitySta
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import {
   allowedArtifactReferenceField,
+  allowedArtifactTraversalField,
   containsForbiddenArtifactControlData,
   type AllowedArtifactReferenceField,
 } from '../common/artifactControlData.js';
@@ -1077,6 +1078,11 @@ const isSha256 = (value: unknown): value is string => typeof value === 'string' 
 const allowedViewArtifactPaths = (artifacts: unknown): AllowedArtifactReferenceField[] =>
   Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedArtifactReferenceField(artifact, 'path')) : [];
 
+const containsForbiddenViewArtifactControlData = (value: unknown, allowedReferenceFields: AllowedArtifactReferenceField[] = []): boolean =>
+  containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+  });
+
 const isSafePathSegment = (value: unknown): value is string =>
   isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 
@@ -1131,7 +1137,14 @@ const hasRequiredViewDependencies = (decision: ArtifactPublicationDecision): boo
 
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export const isCompletedViewManifestV3 = (value: unknown): value is CompletedViewManifestV3 => {
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedViewArtifactPaths(value.artifacts))) return false;
+  if (
+    !isRecord(value) ||
+    containsForbiddenViewArtifactControlData(value, [
+      ...allowedArtifactTraversalField(value, 'artifacts'),
+      ...allowedViewArtifactPaths(value.artifacts),
+    ])
+  )
+    return false;
   if (value.schemaVersion !== 3 || value.status !== 'completed') return false;
   if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false)) return false;
   if (
@@ -1215,9 +1228,14 @@ const hasMatchingSurfaceDependency = (
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export const isCompletedAzureViewSetV2 = (value: unknown): value is CompletedAzureViewSetV2 => {
   const allowedReferences = isRecord(value)
-    ? [...allowedArtifactReferenceField(value.portal, 'manifestPath'), ...allowedArtifactReferenceField(value.plugin, 'manifestPath')]
+    ? [
+        ...allowedArtifactTraversalField(value, 'portal'),
+        ...allowedArtifactTraversalField(value, 'plugin'),
+        ...allowedArtifactReferenceField(value.portal, 'manifestPath'),
+        ...allowedArtifactReferenceField(value.plugin, 'manifestPath'),
+      ]
     : [];
-  if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedReferences)) return false;
+  if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) return false;
   if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
   if (
     !isSafePathSegment(value.subscriptionId) ||

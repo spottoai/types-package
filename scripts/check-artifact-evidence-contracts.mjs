@@ -3,7 +3,11 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 
 import {
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  BILLING_ARTIFACT_OBJECT_LIMITS_V1,
+  buildBillingAnalyzerInputObservationPointerPath,
   canonicalizeBillingAnalyzerInputManifestV2ForDigest,
+  canonicalizeBillingAnalysisPromotionObservationV1ForDigest,
   canonicalizeBillingAnalyzerOutputManifestV2ForDigest,
   canonicalizeBillingArtifactJson,
   canonicalizeBillingOutputBindingV1,
@@ -11,11 +15,18 @@ import {
   isArtifactOwnershipBinding,
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
+  isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputCurrentPointerV1,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
   isEnforceableArtifactOwnershipBinding,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
@@ -24,7 +35,91 @@ import {
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
 const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
-assert.equal(contractCorpus.corpusVersion, 3, 'portable corpus version must match the downstream parity contract');
+const EXPECTED_CORPUS_SHA256 = '508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a';
+const EXPECTED_CORPUS_CASE_COUNT = 351;
+const EXPECTED_CORPUS_MUTATION_COUNT = 436;
+const EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT = 3;
+const REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES = [
+  'observe promotion binding',
+  'equal revision and same output digest',
+  'equal revision and different output digest',
+];
+const REQUIRED_DIGEST_RELATION_CASE_NAMES = [
+  'promotion observation without an ownership epoch rejects a digest relation',
+  'promotion observation keeps legacy equal idempotency without a digest relation',
+  'promotion observation accepts equal output digests as idempotent',
+  'promotion observation quarantines equal revisions with different output digests',
+  'promotion observation rejects same output digests projected to quarantine',
+  'promotion observation rejects different output digests projected as idempotent',
+  'promotion observation rejects digest relation on a newer revision',
+  'promotion observation rejects digest relation on an incomparable revision',
+  'promotion observation rejects quarantine without a different digest relation',
+  'promotion observation rejects an unknown output digest relation',
+];
+const REQUIRED_V7_CASE_NAMES = [
+  'diagnostic discovery path accepts exact latest-enqueued location',
+  'diagnostic discovery path rejects traversal subscription segment',
+  'input manifest accepts exact stored object byte limit',
+  'input manifest rejects stored object byte limit plus one',
+  'output manifest accepts exact metadata stored byte limit',
+  'output manifest rejects metadata stored byte limit plus one',
+  'output manifest accepts exact plot stored byte limit',
+  'output manifest rejects plot stored byte limit plus one',
+  'legacy fallback response accepts explicit legacy transition',
+  'legacy fallback response rejects V2 spread leakage',
+  'verified read response accepts current evidence',
+  'verified read response rejects partial metadata',
+  'legacy business payload rejects V2 response state leakage',
+  'V2 metadata rejects legacy response source leakage',
+  'observe input pointer rejects nested __proto__ key',
+  'input manifest rejects nested prototype key',
+  'output manifest rejects nested constructor key',
+];
+
+assert.equal(contractCorpus.corpusVersion, 7, 'portable corpus version must match the downstream parity contract');
+assert.equal(corpusDigest, EXPECTED_CORPUS_SHA256, 'portable corpus exact bytes must remain pinned');
+assert.equal(contractCorpus.cases.length, EXPECTED_CORPUS_CASE_COUNT, 'portable corpus case count must remain pinned');
+assert.equal(
+  contractCorpus.observationDigestVectors.length,
+  EXPECTED_OBSERVATION_DIGEST_VECTOR_COUNT,
+  'portable observation digest vector count must remain pinned'
+);
+const corpusCaseNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.name));
+assert.equal(corpusCaseNames.size, contractCorpus.cases.length, 'portable corpus case names must be unique');
+for (const requiredCaseName of REQUIRED_DIGEST_RELATION_CASE_NAMES) {
+  assert.ok(corpusCaseNames.has(requiredCaseName), `required digest-relation corpus case is missing: ${requiredCaseName}`);
+}
+for (const requiredCaseName of REQUIRED_V7_CASE_NAMES) {
+  assert.ok(corpusCaseNames.has(requiredCaseName), `required v7 corpus case is missing: ${requiredCaseName}`);
+}
+assert.deepEqual(contractCorpus.objectLimitsV1, BILLING_ARTIFACT_OBJECT_LIMITS_V1, 'portable object limits must exactly match the root V1 export');
+assert.equal(
+  contractCorpus.diagnosticDiscoveryV1.relativeSuffix,
+  BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
+  'portable diagnostic discovery suffix must exactly match the root export'
+);
+assert.equal(
+  buildBillingAnalyzerInputObservationPointerPath(contractCorpus.diagnosticDiscoveryV1.subscriptionId),
+  contractCorpus.diagnosticDiscoveryV1.absolutePath,
+  'portable diagnostic discovery path must match the safe root builder'
+);
+assert.equal(
+  isBillingAnalyzerInputObservationPointerPath(contractCorpus.diagnosticDiscoveryV1.absolutePath),
+  true,
+  'portable diagnostic discovery path must pass the root validator'
+);
+for (const authorityNegativeCaseName of contractCorpus.diagnosticDiscoveryV1.authorityNegativeCaseNames) {
+  assert.ok(corpusCaseNames.has(authorityNegativeCaseName), `diagnostic authority-negative case is missing: ${authorityNegativeCaseName}`);
+}
+const observationDigestVectorNames = new Set(contractCorpus.observationDigestVectors.map(vector => vector.name));
+assert.equal(
+  observationDigestVectorNames.size,
+  contractCorpus.observationDigestVectors.length,
+  'portable observation digest vector names must be unique'
+);
+for (const requiredVectorName of REQUIRED_OBSERVATION_DIGEST_VECTOR_NAMES) {
+  assert.ok(observationDigestVectorNames.has(requiredVectorName), `required observation digest vector is missing: ${requiredVectorName}`);
+}
 
 const isRecord = value => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = value => typeof value === 'string' && value.length > 0;
@@ -115,37 +210,6 @@ assert.equal(
   'the comparator compares supplied vectors; callers must validate positive revisions before comparison'
 );
 
-const hasLegacyBillingCostAnalysisMetadataShape = value => {
-  if (
-    !isRecord(value) ||
-    value.schemaVersion !== undefined ||
-    !isNonEmptyString(value.subscriptionId) ||
-    !isNonEmptyString(value.billingGenerationId) ||
-    !isRecord(value.chartData) ||
-    !Array.isArray(value.anomalies) ||
-    !isNonEmptyString(value.currencyCode) ||
-    !isNonEmptyString(value.currencySymbol)
-  ) {
-    return false;
-  }
-
-  const { chartData } = value;
-  return (
-    Number.isSafeInteger(chartData.schemaVersion) &&
-    chartData.schemaVersion > 0 &&
-    isNonEmptyString(chartData.source) &&
-    isRecord(chartData.dataWindow) &&
-    Number.isFinite(chartData.dataWindow.startDate) &&
-    Number.isFinite(chartData.dataWindow.endDate) &&
-    Number.isSafeInteger(chartData.dataWindow.pointCount) &&
-    chartData.dataWindow.pointCount >= 0 &&
-    isRecord(chartData.views) &&
-    isRecord(chartData.detectors) &&
-    Number.isFinite(chartData.detectors.threshold) &&
-    Array.isArray(chartData.detectors.methods)
-  );
-};
-
 const satisfiesPromotionPrecondition = (current, candidate) => {
   const comparison = compareArtifactRevisionVector(candidate.revision, current.revision);
   if (comparison === 'newer' || comparison === 'newer-ownership') return true;
@@ -160,11 +224,18 @@ const satisfiesPromotionPrecondition = (current, candidate) => {
 const corpusValidators = {
   isArtifactPublicationDecision,
   isBillingAnalysisCurrentPointerV1,
+  isBillingAnalysisPromotionObservationV1,
   isBillingAnalyzerInputCurrentPointerV1,
+  isBillingAnalyzerInputObservationPointerV1,
+  isBillingAnalyzerInputObservationPointerPath,
   isBillingAnalyzerInputManifestV2,
   isBillingAnalyzerOutputManifestV2,
   isBillingAnalyzerRequestV2,
+  isBillingCostAnalysisBusinessPayloadV1,
+  isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisReadResponse,
+  isBillingCostAnalysisVerifiedReadResponse,
 };
 
 const expectedCorpusValidatorNames = new Set([
@@ -172,19 +243,33 @@ const expectedCorpusValidatorNames = new Set([
   'billingCostAnalysisMetadataCompatibility',
   'isArtifactPublicationDecision',
   'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputObservationPointerV1',
+  'isBillingAnalyzerInputObservationPointerPath',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisBusinessPayloadV1',
+  'isBillingCostAnalysisLegacyFallbackResponse',
   'isBillingCostAnalysisMetadataV2',
+  'isBillingCostAnalysisReadResponse',
+  'isBillingCostAnalysisVerifiedReadResponse',
 ]);
 const requiredPortableBillingValidatorNames = [
   'isBillingAnalysisCurrentPointerV1',
+  'isBillingAnalysisPromotionObservationV1',
   'isBillingAnalyzerInputCurrentPointerV1',
+  'isBillingAnalyzerInputObservationPointerV1',
+  'isBillingAnalyzerInputObservationPointerPath',
   'isBillingAnalyzerInputManifestV2',
   'isBillingAnalyzerOutputManifestV2',
   'isBillingAnalyzerRequestV2',
+  'isBillingCostAnalysisBusinessPayloadV1',
+  'isBillingCostAnalysisLegacyFallbackResponse',
   'isBillingCostAnalysisMetadataV2',
+  'isBillingCostAnalysisReadResponse',
+  'isBillingCostAnalysisVerifiedReadResponse',
 ];
 const corpusValidatorNames = new Set(contractCorpus.cases.map(corpusCase => corpusCase.validator));
 assert.deepEqual(corpusValidatorNames, expectedCorpusValidatorNames, 'portable corpus validator-name set must remain exact');
@@ -200,6 +285,26 @@ for (const validatorName of requiredPortableBillingValidatorNames) {
   );
 }
 
+for (const hybridCase of contractCorpus.hybridAuthorityCases) {
+  const observation = contractCorpus.fixtures[hybridCase.observationFixture];
+  const authority = contractCorpus.fixtures[hybridCase.authorityFixture];
+  assert.notEqual(observation, undefined, `${hybridCase.name}: observation fixture exists`);
+  assert.notEqual(authority, undefined, `${hybridCase.name}: authority fixture exists`);
+  const hybrid = { ...structuredClone(observation), ...structuredClone(authority) };
+  const validator = corpusValidators[hybridCase.validator];
+  assert.equal(typeof validator, 'function', `${hybridCase.name}: validator exists`);
+  assert.equal(validator(hybrid), false, hybridCase.name);
+}
+
+for (const discriminantCase of contractCorpus.diagnosticDiscriminantCases) {
+  const authority = contractCorpus.fixtures[discriminantCase.authorityFixture];
+  assert.notEqual(authority, undefined, `${discriminantCase.name}: authority fixture exists`);
+  const candidate = { ...structuredClone(authority), ...structuredClone(discriminantCase.fields) };
+  const validator = corpusValidators[discriminantCase.validator];
+  assert.equal(typeof validator, 'function', `${discriminantCase.name}: validator exists`);
+  assert.equal(validator(candidate), false, discriminantCase.name);
+}
+
 let mutationCount = 0;
 for (const corpusCase of contractCorpus.cases) {
   assert.ok(Array.isArray(corpusCase.mutations), `corpus case has no mutation list: ${corpusCase.name}`);
@@ -208,7 +313,7 @@ for (const corpusCase of contractCorpus.cases) {
 
   if (corpusCase.validator === 'billingCostAnalysisMetadataCompatibility') {
     assert.equal(isBillingCostAnalysisMetadataV2(document), false, `${corpusCase.name}: legacy V1 must not be treated as V2`);
-    assert.equal(hasLegacyBillingCostAnalysisMetadataShape(document), corpusCase.valid, `${corpusCase.name}: structural compatibility`);
+    assert.equal(isBillingCostAnalysisBusinessPayloadV1(document), corpusCase.valid, `${corpusCase.name}: strict V1 business compatibility`);
     continue;
   }
 
@@ -224,6 +329,107 @@ for (const corpusCase of contractCorpus.cases) {
   assert.equal(typeof validator, 'function', `unknown corpus validator: ${corpusCase.validator}`);
   assert.equal(validator(document), corpusCase.valid, corpusCase.name);
 }
+assert.equal(mutationCount, EXPECTED_CORPUS_MUTATION_COUNT, 'portable corpus mutation count must remain pinned');
+
+const buildDeepControlData = depth => {
+  let value = { label: 'safe-leaf' };
+  for (let level = 0; level < depth; level += 1) value = { next: value };
+  return value;
+};
+const deepLegacyBusinessPayload = {
+  ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+  future: buildDeepControlData(contractCorpus.controlDataTraversalV1.deepNestingDepth),
+};
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1(deepLegacyBusinessPayload),
+  true,
+  'control-data scan accepts harmless deep nesting without overflowing the call stack'
+);
+const cyclicControlData = { label: 'safe-cycle' };
+cyclicControlData.self = cyclicControlData;
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1({
+    ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+    future: cyclicControlData,
+  }),
+  false,
+  'control-data scan rejects repeated references without overflowing the call stack'
+);
+assert.equal(
+  isBillingCostAnalysisBusinessPayloadV1({
+    ...structuredClone(contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1),
+    future: Array.from({ length: contractCorpus.controlDataTraversalV1.maxVisitedNodes + 1 }, () => ({})),
+  }),
+  false,
+  'control-data scan rejects documents above the deterministic node limit'
+);
+
+const deepAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+deepAnalyzerRequest.displayMetadata = buildDeepControlData(contractCorpus.controlDataTraversalV1.deepNestingDepth);
+assert.equal(isBillingAnalyzerRequestV2(deepAnalyzerRequest), true, 'display metadata accepts harmless deep JSON without overflowing the call stack');
+const prototypeControlDocuments = [
+  ['input observation', isBillingAnalyzerInputObservationPointerV1, contractCorpus.fixtures.billingAnalyzerInputObservationPointerV1],
+  ['input manifest', isBillingAnalyzerInputManifestV2, contractCorpus.fixtures.billingAnalyzerInputManifestV2],
+  ['analyzer request', isBillingAnalyzerRequestV2, contractCorpus.fixtures.billingAnalyzerRequestV2],
+  ['output manifest', isBillingAnalyzerOutputManifestV2, contractCorpus.fixtures.billingAnalyzerOutputManifestV2],
+  ['V1 business payload', isBillingCostAnalysisBusinessPayloadV1, contractCorpus.fixtures.legacyBillingCostAnalysisMetadataV1],
+  ['V2 metadata', isBillingCostAnalysisMetadataV2, contractCorpus.fixtures.billingCostAnalysisMetadataV2],
+];
+for (const [documentName, validator, document] of prototypeControlDocuments) {
+  for (const forbiddenKey of contractCorpus.controlDataTraversalV1.forbiddenPrototypeKeys) {
+    const future = JSON.parse(`{"${forbiddenKey}":{"polluted":true}}`);
+    assert.equal(validator({ ...structuredClone(document), future }), false, `${documentName} rejects ${forbiddenKey} control data`);
+  }
+}
+const sharedSectionPaths = ['https://sections.example.invalid/cost-analysis'];
+const metadataWithSharedArray = structuredClone(contractCorpus.fixtures.billingCostAnalysisMetadataV2);
+metadataWithSharedArray.artifactEvidence.claims[0].sectionPaths = sharedSectionPaths;
+assert.equal(
+  isBillingCostAnalysisMetadataV2({ future: sharedSectionPaths, ...metadataWithSharedArray }),
+  false,
+  'a shared array scanned in a schema-owned text field is rescanned under a stricter unknown-field policy'
+);
+const metadataWithSharedRecord = structuredClone(contractCorpus.fixtures.billingCostAnalysisMetadataV2);
+metadataWithSharedRecord.future = metadataWithSharedRecord.artifactEvidence.claims[0];
+assert.equal(
+  isBillingCostAnalysisMetadataV2(metadataWithSharedRecord),
+  false,
+  'a shared record scanned in a schema-owned field is rescanned under a stricter unknown-field policy'
+);
+assert.equal(
+  isBillingCostAnalysisMetadataV2(metadataWithSharedRecord),
+  isBillingCostAnalysisMetadataV2(JSON.parse(JSON.stringify(metadataWithSharedRecord))),
+  'shared-record validation remains consistent with its decoded JSON shape'
+);
+
+for (const [documentName, validator, fixtureName, descriptorKey] of [
+  ['input manifest', isBillingAnalyzerInputManifestV2, 'billingAnalyzerInputManifestV2', 'inputs'],
+  ['output manifest', isBillingAnalyzerOutputManifestV2, 'billingAnalyzerOutputManifestV2', 'artifacts'],
+]) {
+  const documentWithSharedDescriptor = structuredClone(contractCorpus.fixtures[fixtureName]);
+  documentWithSharedDescriptor.future = documentWithSharedDescriptor[descriptorKey][0];
+  assert.equal(validator(documentWithSharedDescriptor), false, `${documentName} rejects a descriptor alias under an unknown field`);
+  assert.equal(
+    validator(JSON.parse(JSON.stringify(documentWithSharedDescriptor))),
+    false,
+    `${documentName} alias rejection remains consistent with its decoded JSON shape`
+  );
+}
+
+const cyclicDisplayMetadata = { label: 'safe-cycle' };
+cyclicDisplayMetadata.self = cyclicDisplayMetadata;
+const cyclicAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+cyclicAnalyzerRequest.displayMetadata = cyclicDisplayMetadata;
+assert.equal(isBillingAnalyzerRequestV2(cyclicAnalyzerRequest), false, 'display metadata rejects cyclic containers');
+const sharedDisplayMetadata = { label: 'safe-shared' };
+const sharedAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+sharedAnalyzerRequest.displayMetadata = { first: sharedDisplayMetadata, second: sharedDisplayMetadata };
+assert.equal(isBillingAnalyzerRequestV2(sharedAnalyzerRequest), true, 'display metadata preserves already-scanned shared DAG containers');
+const oversizedAnalyzerRequest = structuredClone(contractCorpus.fixtures.billingAnalyzerRequestV2);
+oversizedAnalyzerRequest.displayMetadata = {
+  values: Array.from({ length: contractCorpus.controlDataTraversalV1.maxVisitedNodes }, () => ({})),
+};
+assert.equal(isBillingAnalyzerRequestV2(oversizedAnalyzerRequest), false, 'display metadata rejects documents above the deterministic node limit');
 
 const comparisonOutcomes = new Set();
 for (const comparisonCase of contractCorpus.revisionComparisons) {
@@ -293,6 +499,99 @@ for (const vector of contractCorpus.digestVectors) {
 }
 const baselineDigestVector = digestVectorResults.get('current populated output');
 assert.ok(baselineDigestVector, 'canonical current populated digest vector is required');
+
+for (const vector of contractCorpus.observationDigestVectors) {
+  const observation = structuredClone(vector.observation);
+  const canonical = canonicalizeBillingAnalysisPromotionObservationV1ForDigest(observation);
+  assert.equal(canonical, vector.expectedCanonical, `${vector.name}: canonical preimage`);
+  assert.equal(sha256(canonical), vector.expectedDigest, `${vector.name}: canonical digest`);
+  assert.equal(observation.observationDigest, vector.expectedDigest, `${vector.name}: stored digest binds the canonical preimage`);
+  assert.equal(canonical.includes('"observationDigest"'), false, `${vector.name}: digest field excluded`);
+  assert.equal(isBillingAnalysisPromotionObservationV1(observation), true, `${vector.name}: structurally valid`);
+
+  const reordered = Object.fromEntries(Object.entries(observation).reverse());
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(reordered), canonical, `${vector.name}: top-level key order ignored`);
+
+  const additive = structuredClone(observation);
+  additive.future = { ignored: true };
+  additive.ownership.future = { ignored: true };
+  additive.evaluation.future = { ignored: true };
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(additive), canonical, `${vector.name}: additive fields ignored`);
+
+  const additiveAccessor = structuredClone(observation);
+  let additiveAccessorInvoked = false;
+  Object.defineProperty(additiveAccessor, 'future', {
+    enumerable: true,
+    get: () => {
+      additiveAccessorInvoked = true;
+      return 'ignored';
+    },
+  });
+  assert.equal(
+    canonicalizeBillingAnalysisPromotionObservationV1ForDigest(additiveAccessor),
+    canonical,
+    `${vector.name}: additive accessors do not affect the exact-field projection`
+  );
+  assert.equal(additiveAccessorInvoked, false, `${vector.name}: additive accessor never invoked`);
+
+  const changedDigest = structuredClone(observation);
+  changedDigest.observationDigest = 'c'.repeat(64);
+  assert.equal(canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changedDigest), canonical, `${vector.name}: observation digest excluded`);
+
+  if (observation.evaluation.outputDigestRelation !== undefined) {
+    const changedRelation = structuredClone(observation);
+    changedRelation.evaluation.outputDigestRelation = observation.evaluation.outputDigestRelation === 'same' ? 'different' : 'same';
+    const changedRelationCanonical = canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changedRelation);
+    assert.notEqual(changedRelationCanonical, canonical, `${vector.name}: changed output digest relation changes the preimage`);
+    assert.notEqual(
+      sha256(changedRelationCanonical),
+      changedRelation.observationDigest,
+      `${vector.name}: changed output digest relation invalidates the stored digest`
+    );
+  }
+
+  for (const mutation of contractCorpus.observationBindingMutationVectors) {
+    const changed = structuredClone(observation);
+    applyMutation(changed, mutation);
+    if (JSON.stringify(changed) === JSON.stringify(observation)) continue;
+    assert.notEqual(
+      canonicalizeBillingAnalysisPromotionObservationV1ForDigest(changed),
+      canonical,
+      `${vector.name}: ${mutation.name} changes the preimage`
+    );
+  }
+
+  const controlData = structuredClone(observation);
+  controlData.correlationId = 'correlation\u0000unsafe';
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(controlData), `${vector.name}: declared control data rejected`);
+
+  const accessor = structuredClone(observation);
+  let accessorInvoked = false;
+  Object.defineProperty(accessor, 'subscriptionId', {
+    enumerable: true,
+    get: () => {
+      accessorInvoked = true;
+      return 'unsafe';
+    },
+  });
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(accessor), `${vector.name}: accessor rejected`);
+  assert.equal(accessorInvoked, false, `${vector.name}: accessor never invoked`);
+
+  const nestedAccessor = structuredClone(observation);
+  let nestedAccessorInvoked = false;
+  Object.defineProperty(nestedAccessor.evaluation, 'comparison', {
+    enumerable: true,
+    get: () => {
+      nestedAccessorInvoked = true;
+      return 'unsafe';
+    },
+  });
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(nestedAccessor), `${vector.name}: nested accessor rejected`);
+  assert.equal(nestedAccessorInvoked, false, `${vector.name}: nested accessor never invoked`);
+
+  const customPrototype = Object.assign(Object.create({ future: true }), observation);
+  assert.throws(() => canonicalizeBillingAnalysisPromotionObservationV1ForDigest(customPrototype), `${vector.name}: custom prototype rejected`);
+}
 const validatesIntegratedDigestChain = vector => {
   try {
     const manifestProjection = projectBillingOutputBindingV1FromManifest(vector.outputManifest);
@@ -422,6 +721,31 @@ assert.equal(arrayAccessorInvoked, false, 'canonical binding never executes arra
 const cyclicArtifact = {};
 cyclicArtifact.loop = cyclicArtifact;
 assert.throws(() => canonicalizeBillingArtifactJson(cyclicArtifact), 'canonical JSON rejects cycles');
+const sharedCanonicalArtifact = { value: 1 };
+assert.equal(
+  canonicalizeBillingArtifactJson({ first: sharedCanonicalArtifact, second: sharedCanonicalArtifact }),
+  '{"first":{"value":1},"second":{"value":1}}',
+  'canonical JSON serializes completed shared aliases at each reference'
+);
+let deeplyNestedCanonicalArtifact = 0;
+for (let level = 0; level < 5_000; level += 1) deeplyNestedCanonicalArtifact = [deeplyNestedCanonicalArtifact];
+assert.equal(
+  canonicalizeBillingArtifactJson(deeplyNestedCanonicalArtifact),
+  '['.repeat(5_000) + '0' + ']'.repeat(5_000),
+  'canonical JSON is stack-safe at depth 5000 with Analyzer-exact bytes'
+);
+const maximumContainerVisitArtifact = Array.from({ length: 99_999 }, () => []);
+assert.equal(
+  canonicalizeBillingArtifactJson(maximumContainerVisitArtifact).length,
+  299_998,
+  'canonical JSON accepts exactly 100000 container visits'
+);
+maximumContainerVisitArtifact.push([]);
+assert.throws(
+  () => canonicalizeBillingArtifactJson(maximumContainerVisitArtifact),
+  /100000-container limit/,
+  'canonical JSON rejects the 100001st container visit'
+);
 const accessorBinding = structuredClone(contractCorpus.bindingBase);
 Object.defineProperty(accessorBinding, 'subscriptionId', { enumerable: true, get: () => 'unsafe' });
 assert.throws(() => canonicalizeBillingOutputBindingV1(accessorBinding), 'canonical binding rejects accessors');
@@ -911,7 +1235,8 @@ process.stdout.write(
     `${contractCorpus.revisionComparisons.length} revision comparisons, ${billingValidatorCases.length} billing checks, ` +
     `${billingControlDataCases.length} control-data checks, ${ownershipValidatorCases.length} ownership checks, ` +
     `${mutationFailureCases.length} mutation fail-fast checks, ${contractCorpus.digestVectors.length} digest vectors, ` +
-    `${contractCorpus.digestMismatchVectors.length} digest mismatch vectors.\n` +
+    `${contractCorpus.digestMismatchVectors.length} digest mismatch vectors, ` +
+    `${contractCorpus.observationDigestVectors.length} observation digest vectors.\n` +
     `Portable validator set: ${[...corpusValidatorNames].sort().join(', ')}\n` +
     `Artifact evidence corpus SHA-256: ${corpusDigest}\n`
 );

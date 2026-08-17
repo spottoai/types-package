@@ -1,4 +1,4 @@
-import { allowedArtifactReferenceField, containsForbiddenArtifactControlData, } from '../common/artifactControlData.js';
+import { allowedArtifactReferenceField, allowedArtifactTraversalField, containsForbiddenArtifactControlData, } from '../common/artifactControlData.js';
 import { isArtifactOwnershipBinding, isArtifactPublicationDecision, isEnforceableArtifactOwnershipBinding, } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
@@ -41,6 +41,9 @@ const isPositiveSafeInteger = (value) => Number.isSafeInteger(value) && Number(v
 const isNonNegativeSafeInteger = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
 const allowedViewArtifactPaths = (artifacts) => Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedArtifactReferenceField(artifact, 'path')) : [];
+const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = []) => containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+});
 const isSafePathSegment = (value) => isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 const isStrictCanonicalIsoTimestamp = (value) => {
     if (!isStrictNonEmptyString(value))
@@ -86,7 +89,11 @@ const hasRequiredViewDependencies = (decision) => {
 };
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export const isCompletedViewManifestV3 = (value) => {
-    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedViewArtifactPaths(value.artifacts)))
+    if (!isRecord(value) ||
+        containsForbiddenViewArtifactControlData(value, [
+            ...allowedArtifactTraversalField(value, 'artifacts'),
+            ...allowedViewArtifactPaths(value.artifacts),
+        ]))
         return false;
     if (value.schemaVersion !== 3 || value.status !== 'completed')
         return false;
@@ -152,9 +159,14 @@ const hasMatchingSurfaceDependency = (decision, name, surface) => {
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export const isCompletedAzureViewSetV2 = (value) => {
     const allowedReferences = isRecord(value)
-        ? [...allowedArtifactReferenceField(value.portal, 'manifestPath'), ...allowedArtifactReferenceField(value.plugin, 'manifestPath')]
+        ? [
+            ...allowedArtifactTraversalField(value, 'portal'),
+            ...allowedArtifactTraversalField(value, 'plugin'),
+            ...allowedArtifactReferenceField(value.portal, 'manifestPath'),
+            ...allowedArtifactReferenceField(value.plugin, 'manifestPath'),
+        ]
         : [];
-    if (!isRecord(value) || containsForbiddenArtifactControlData(value, allowedReferences))
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences))
         return false;
     if (value.schemaVersion !== 2 || value.status !== 'completed')
         return false;

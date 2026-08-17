@@ -1,14 +1,37 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = void 0;
+exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = exports.isBillingAnalyzerInputObservationPointerPath = exports.buildBillingAnalyzerInputObservationPointerPath = exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = void 0;
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const billingArtifactEvidence_js_1 = require("./billingArtifactEvidence.js");
+const billingArtifactLimits_js_1 = require("./billingArtifactLimits.js");
+/** Stable diagnostic-only suffix for the latest successfully enqueued observe input. */
+exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = 'history/billing/analyzer-inputs/latest-enqueued.json';
 const BILLING_BASES = new Set(['actual', 'amortized']);
 const COVERAGE_VERDICTS = new Set(['complete', 'partial', 'none', 'unknown']);
 const DATE_BASES = new Set(['utc', 'billing-calendar', 'company-local']);
 const CONTENT_ENCODINGS = new Set(['identity', 'gzip']);
+const OBSERVATION_COMPARISONS = new Set([
+    'authority-absent',
+    'newer',
+    'equal',
+    'older',
+    'incomparable',
+    'newer-ownership',
+    'older-ownership',
+    'unenforceable',
+]);
+const OBSERVATION_PROJECTED_OUTCOMES = new Map([
+    ['authority-absent', 'would-promote'],
+    ['newer', 'would-promote'],
+    ['newer-ownership', 'would-promote'],
+    ['equal', 'would-be-idempotent'],
+    ['older', 'would-be-superseded'],
+    ['older-ownership', 'would-be-superseded'],
+    ['incomparable', 'would-quarantine'],
+    ['unenforceable', 'not-enforceable'],
+]);
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() === value && value.length > 0;
@@ -28,7 +51,25 @@ const isCanonicalIsoTimestamp = (value) => {
 };
 const hasControlCharacters = (value) => Array.from(value).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127);
 const allowedDescriptorPaths = (descriptors) => Array.isArray(descriptors) ? descriptors.flatMap(descriptor => (0, artifactControlData_js_1.allowedArtifactReferenceField)(descriptor, 'path')) : [];
+const containsForbiddenBillingArtifactControlData = (value, allowedReferenceFields = []) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
+    requireAllowedFieldTraversalContext: true,
+});
 const isPathSegment = (value) => isNonEmptyString(value) && !/[\\/?#%]/.test(value) && !hasControlCharacters(value) && value !== '.' && value !== '..';
+/** Builds the diagnostic-only latest-enqueued observation path for one safe subscription segment. */
+const buildBillingAnalyzerInputObservationPointerPath = (subscriptionId) => {
+    if (!isPathSegment(subscriptionId))
+        throw new TypeError('subscriptionId must be a safe path segment');
+    return `subscriptions/${subscriptionId}/${exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH}`;
+};
+exports.buildBillingAnalyzerInputObservationPointerPath = buildBillingAnalyzerInputObservationPointerPath;
+/** Validates the exact diagnostic-only latest-enqueued observation logical path. */
+const isBillingAnalyzerInputObservationPointerPath = (value) => {
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value))
+        return false;
+    const match = /^subscriptions\/([^/]+)\/history\/billing\/analyzer-inputs\/latest-enqueued\.json$/.exec(value);
+    return match !== null && isPathSegment(match[1]);
+};
+exports.isBillingAnalyzerInputObservationPointerPath = isBillingAnalyzerInputObservationPointerPath;
 const inputGenerationPrefix = (subscriptionId, generationId) => `subscriptions/${subscriptionId}/history/billing/analyzer-inputs/generations/${generationId}/`;
 const inputManifestPath = (subscriptionId, generationId) => `${inputGenerationPrefix(subscriptionId, generationId)}manifest.json`;
 const outputGenerationPrefix = (subscriptionId, generationId) => `subscriptions/${subscriptionId}/billing/generations/${generationId}/`;
@@ -48,6 +89,9 @@ const hasMatchingIdentity = (subscriptionId, generationId, ownership, revision, 
     return !enforceable || (0, artifactEvidence_js_1.isEnforceableArtifactOwnershipBinding)(ownership);
 };
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
+const hasDiagnosticObservationDiscriminant = (value) => value.authority === 'diagnostic-only' ||
+    (value.publicationMode === 'observe' &&
+        (value.documentType === 'billing-analyzer-input-observation-pointer' || value.documentType === 'billing-analysis-promotion-observation'));
 const isRequestedPeriod = (value) => {
     if (!isRecord(value) ||
         !isCanonicalIsoTimestamp(value.fromInclusive) ||
@@ -68,6 +112,7 @@ const isInputObjectDescriptor = (value, subscriptionId, generationId) => {
         isNonEmptyString(value.etag) &&
         isSha256(value.sha256) &&
         isPositiveInteger(value.byteCount) &&
+        value.byteCount <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.inputObjectStoredBytes &&
         isNonNegativeInteger(value.rowCount) &&
         isStringIn(value.basis, BILLING_BASES) &&
         (value.currencyCode === undefined || isNonEmptyString(value.currencyCode)) &&
@@ -77,31 +122,76 @@ const isOutputArtifactDescriptor = (value, subscriptionId, generationId) => {
     if (!isRecord(value))
         return false;
     const prefix = outputGenerationPrefix(subscriptionId, generationId);
-    return (isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) &&
-        isNonEmptyString(value.name) &&
-        value.mediaType === 'application/json' &&
-        isStringIn(value.contentEncoding, CONTENT_ENCODINGS) &&
-        isNonNegativeInteger(value.byteLength) &&
-        isSha256(value.sha256));
+    if (!isGenerationPath(value.path, prefix, outputManifestPath(subscriptionId, generationId)) ||
+        !isPathSegment(value.name) ||
+        !((value.name === 'metadata.json' &&
+            value.path === `${prefix}metadata.json` &&
+            isNonNegativeInteger(value.byteLength) &&
+            value.byteLength <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.metadataStoredBytes) ||
+            (value.name !== 'metadata.json' &&
+                value.path === `${prefix}plots/${value.name}` &&
+                isNonNegativeInteger(value.byteLength) &&
+                value.byteLength <= billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.plotStoredBytes))) {
+        return false;
+    }
+    return value.mediaType === 'application/json' && isStringIn(value.contentEncoding, CONTENT_ENCODINGS) && isSha256(value.sha256);
 };
 const isJsonMetadata = (value) => {
     if (!isRecord(value))
         return false;
-    const visit = (candidate) => {
-        if (candidate === null || typeof candidate === 'string' || typeof candidate === 'boolean')
-            return true;
-        if (isFiniteNumber(candidate))
-            return true;
-        if (Array.isArray(candidate))
-            return candidate.every(visit);
-        return isRecord(candidate) && Object.getPrototypeOf(candidate) === Object.prototype && Object.values(candidate).every(visit);
-    };
-    return visit(value);
+    const pending = [{ kind: 'visit', value }];
+    const activeContainers = new WeakSet();
+    const completedContainers = new WeakSet();
+    let visitedNodeCount = 0;
+    while (pending.length > 0) {
+        const candidate = pending.pop();
+        if (candidate.kind === 'leave') {
+            activeContainers.delete(candidate.container);
+            completedContainers.add(candidate.container);
+            continue;
+        }
+        if (candidate.value === null || typeof candidate.value === 'string' || typeof candidate.value === 'boolean' || isFiniteNumber(candidate.value)) {
+            continue;
+        }
+        if (Array.isArray(candidate.value)) {
+            visitedNodeCount += 1;
+            if (visitedNodeCount > artifactControlData_js_1.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES)
+                return false;
+            if (activeContainers.has(candidate.value))
+                return false;
+            if (completedContainers.has(candidate.value))
+                continue;
+            activeContainers.add(candidate.value);
+            pending.push({ kind: 'leave', container: candidate.value });
+            for (let index = candidate.value.length - 1; index >= 0; index -= 1) {
+                pending.push({ kind: 'visit', value: candidate.value[index] });
+            }
+            continue;
+        }
+        if (!isRecord(candidate.value) || Object.getPrototypeOf(candidate.value) !== Object.prototype)
+            return false;
+        visitedNodeCount += 1;
+        if (visitedNodeCount > artifactControlData_js_1.ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES)
+            return false;
+        if (activeContainers.has(candidate.value))
+            return false;
+        if (completedContainers.has(candidate.value))
+            continue;
+        activeContainers.add(candidate.value);
+        pending.push({ kind: 'leave', container: candidate.value });
+        for (const child of Object.values(candidate.value))
+            pending.push({ kind: 'visit', value: child });
+    }
+    return true;
 };
 /** Validates one immutable billing analyzer input manifest without performing I/O. */
 const isBillingAnalyzerInputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'publicationKey'), ...allowedDescriptorPaths(value.inputs)])) {
+        containsForbiddenBillingArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'publicationKey'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'inputs'),
+            ...allowedDescriptorPaths(value.inputs),
+        ])) {
         return false;
     }
     if (value.schemaVersion !== 2 || value.status !== 'completed')
@@ -120,7 +210,7 @@ const isBillingAnalyzerInputManifestV2 = (value) => {
     const periodKeys = value.requestedPeriods.map(period => `${period.fromInclusive}\n${period.throughExclusive}\n${period.dateBasis}\n${period.timeZone ?? ''}\n${period.basis}`);
     if (!hasUniqueValues(periodKeys))
         return false;
-    if (!Array.isArray(value.inputs) || value.inputs.length === 0)
+    if (!Array.isArray(value.inputs) || value.inputs.length === 0 || value.inputs.length > billingArtifactLimits_js_1.BILLING_ARTIFACT_OBJECT_LIMITS_V1.maxInputObjects)
         return false;
     if (!value.inputs.every(input => isInputObjectDescriptor(input, value.subscriptionId, value.generationId)))
         return false;
@@ -129,7 +219,9 @@ const isBillingAnalyzerInputManifestV2 = (value) => {
 exports.isBillingAnalyzerInputManifestV2 = isBillingAnalyzerInputManifestV2;
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
+    if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
+        containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath')))
         return false;
     if (value.schemaVersion !== 1 || value.status !== 'completed')
         return false;
@@ -143,7 +235,7 @@ const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
 exports.isBillingAnalyzerInputCurrentPointerV1 = isBillingAnalyzerInputCurrentPointerV1;
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 const isBillingAnalyzerRequestV2 = (value) => {
-    if (!isRecord(value) || (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
         return false;
     if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce'))
         return false;
@@ -163,11 +255,33 @@ const isBillingAnalyzerRequestV2 = (value) => {
     return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
 exports.isBillingAnalyzerRequestV2 = isBillingAnalyzerRequestV2;
+/** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
+const isBillingAnalyzerInputObservationPointerV1 = (value) => {
+    if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
+        return false;
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analyzer-input-observation-pointer' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.inputState !== 'enqueued') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    return ((0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) &&
+        value.inputManifestPath === inputManifestPath(value.subscriptionId, value.generationId) &&
+        isSha256(value.inputManifestDigest) &&
+        isSha256(value.messageId) &&
+        isNonEmptyString(value.correlationId) &&
+        isCanonicalIsoTimestamp(value.enqueuedAt));
+};
+exports.isBillingAnalyzerInputObservationPointerV1 = isBillingAnalyzerInputObservationPointerV1;
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 const isBillingAnalyzerOutputManifestV2 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+        containsForbiddenBillingArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
             ...allowedDescriptorPaths(value.artifacts),
         ])) {
         return false;
@@ -201,9 +315,8 @@ const isBillingAnalyzerOutputManifestV2 = (value) => {
         publicationDecisionReferencesDigest(value.publicationDecision, new Set([...outputDerivedDigests].filter(digest => digest !== value.inputManifestDigest)))) {
         return false;
     }
-    if (!value.artifacts.some(artifact => artifact.path === `${outputGenerationPrefix(value.subscriptionId, value.generationId)}metadata.json`)) {
+    if (value.artifacts.filter(artifact => artifact.name === 'metadata.json').length !== 1)
         return false;
-    }
     return ((0, billingArtifactEvidence_js_1.isBillingCompletedArtifactPublicationDecision)(value.publicationDecision, value.generationId, value.inputManifestDigest) &&
         isCanonicalIsoTimestamp(value.completedAt));
 };
@@ -211,7 +324,8 @@ exports.isBillingAnalyzerOutputManifestV2 = isBillingAnalyzerOutputManifestV2;
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 const isBillingAnalysisCurrentPointerV1 = (value) => {
     if (!isRecord(value) ||
-        (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, [
+        hasDiagnosticObservationDiscriminant(value) ||
+        containsForbiddenBillingArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
         ])) {
@@ -235,4 +349,55 @@ const isBillingAnalysisCurrentPointerV1 = (value) => {
         isCanonicalIsoTimestamp(value.completedAt));
 };
 exports.isBillingAnalysisCurrentPointerV1 = isBillingAnalysisCurrentPointerV1;
+/** Validates an immutable diagnostic-only promotion evaluation. */
+const isBillingAnalysisPromotionObservationV1 = (value) => {
+    if (!isRecord(value) ||
+        containsForbiddenBillingArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
+        ])) {
+        return false;
+    }
+    if (value.schemaVersion !== 1 ||
+        value.documentType !== 'billing-analysis-promotion-observation' ||
+        value.authority !== 'diagnostic-only' ||
+        value.publicationMode !== 'observe' ||
+        value.processingState !== 'succeeded') {
+        return false;
+    }
+    if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, false))
+        return false;
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) ||
+        value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId) ||
+        !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.outputManifestPath) ||
+        value.outputManifestPath !== outputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!isSha256(value.inputManifestDigest) ||
+        !isSha256(value.outputManifestDigest) ||
+        !isSha256(value.observationDigest) ||
+        !isSha256(value.messageId) ||
+        !isNonEmptyString(value.correlationId) ||
+        !isCanonicalIsoTimestamp(value.observedAt) ||
+        !isRecord(value.evaluation) ||
+        !isStringIn(value.evaluation.comparison, OBSERVATION_COMPARISONS)) {
+        return false;
+    }
+    const hasOwnershipEpoch = value.ownership.ownershipEpochRevision !== undefined;
+    const outputDigestRelation = value.evaluation.outputDigestRelation;
+    if (outputDigestRelation !== undefined && outputDigestRelation !== 'same' && outputDigestRelation !== 'different')
+        return false;
+    if (!hasOwnershipEpoch) {
+        return (outputDigestRelation === undefined && value.evaluation.comparison === 'unenforceable' && value.evaluation.projectedOutcome === 'not-enforceable');
+    }
+    if (value.evaluation.comparison === 'equal') {
+        return outputDigestRelation === 'different'
+            ? value.evaluation.projectedOutcome === 'would-quarantine'
+            : value.evaluation.projectedOutcome === 'would-be-idempotent';
+    }
+    return (outputDigestRelation === undefined &&
+        value.evaluation.comparison !== 'unenforceable' &&
+        OBSERVATION_PROJECTED_OUTCOMES.get(value.evaluation.comparison) === value.evaluation.projectedOutcome);
+};
+exports.isBillingAnalysisPromotionObservationV1 = isBillingAnalysisPromotionObservationV1;
 //# sourceMappingURL=billingArtifactGeneration.js.map

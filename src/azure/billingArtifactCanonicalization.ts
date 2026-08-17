@@ -1,6 +1,15 @@
 import type { ArtifactOwnershipBinding, ArtifactRevisionVector } from '../common/artifactEvidence.js';
+import {
+  ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES,
+  allowedArtifactReferenceField,
+  containsForbiddenArtifactControlData,
+} from '../common/artifactControlData.js';
 import { type BillingArtifactPublicationDecision } from './billingArtifactEvidence.js';
-import type { BillingAnalyzerInputManifestV2, BillingAnalyzerOutputManifestV2 } from './billingArtifactGeneration.js';
+import type {
+  BillingAnalysisPromotionObservationV1,
+  BillingAnalyzerInputManifestV2,
+  BillingAnalyzerOutputManifestV2,
+} from './billingArtifactGeneration.js';
 import type { BillingCostAnalysisMetadataV2 } from './billingPlots.js';
 
 /** Stable identity/evidence projection shared by billing output manifests and metadata. */
@@ -185,6 +194,50 @@ const projectPublicationDecision = (value: unknown): BillingArtifactPublicationD
   } as unknown as BillingArtifactPublicationDecision;
 };
 
+const projectPromotionEvaluation = (value: unknown): Record<string, unknown> => {
+  const source = requirePlainRecord(value, 'Billing promotion observation evaluation');
+  const projected: Record<string, unknown> = {
+    comparison: readDataProperty(source, 'comparison'),
+    projectedOutcome: readDataProperty(source, 'projectedOutcome'),
+  };
+  selectOptional(source, projected, 'outputDigestRelation');
+  return projected;
+};
+
+const projectPromotionObservation = (value: unknown): Record<string, unknown> => {
+  const source = requirePlainRecord(value, 'Billing promotion observation');
+  const observationDigest = readDataProperty(source, 'observationDigest');
+  if (typeof observationDigest !== 'string') throw new TypeError('Billing promotion observation requires an observationDigest string.');
+  const projected: Record<string, unknown> = {
+    schemaVersion: readDataProperty(source, 'schemaVersion'),
+    documentType: readDataProperty(source, 'documentType'),
+    authority: readDataProperty(source, 'authority'),
+    publicationMode: readDataProperty(source, 'publicationMode'),
+    processingState: readDataProperty(source, 'processingState'),
+    subscriptionId: readDataProperty(source, 'subscriptionId'),
+    generationId: readDataProperty(source, 'generationId'),
+    ownership: projectOwnership(readDataProperty(source, 'ownership')),
+    revision: projectRevision(readDataProperty(source, 'revision')),
+    messageId: readDataProperty(source, 'messageId'),
+    correlationId: readDataProperty(source, 'correlationId'),
+    inputManifestPath: readDataProperty(source, 'inputManifestPath'),
+    inputManifestDigest: readDataProperty(source, 'inputManifestDigest'),
+    outputManifestPath: readDataProperty(source, 'outputManifestPath'),
+    outputManifestDigest: readDataProperty(source, 'outputManifestDigest'),
+    evaluation: projectPromotionEvaluation(readDataProperty(source, 'evaluation')),
+    observedAt: readDataProperty(source, 'observedAt'),
+  };
+  if (
+    containsForbiddenArtifactControlData(projected, [
+      ...allowedArtifactReferenceField(projected, 'inputManifestPath'),
+      ...allowedArtifactReferenceField(projected, 'outputManifestPath'),
+    ])
+  ) {
+    throw new TypeError('Billing promotion observation contains forbidden control data.');
+  }
+  return projected;
+};
+
 const projectBinding = (
   subscriptionId: unknown,
   generationId: unknown,
@@ -231,63 +284,104 @@ export const projectBillingOutputBindingV1FromMetadata = (metadata: BillingCostA
 
 const canonicalizeJson = (value: unknown): string => {
   const active = new Set<object>();
+  const fragments: string[] = [];
+  const pending: Array<
+    | { kind: 'value'; value: unknown }
+    | { kind: 'fragment'; value: string }
+    | { kind: 'leave'; value: object }
+  > = [{ kind: 'value', value }];
+  let visitedContainerCount = 0;
 
-  const serialize = (candidate: unknown): string => {
-    if (candidate === null || typeof candidate === 'boolean') return JSON.stringify(candidate);
+  while (pending.length > 0) {
+    const frame = pending.pop();
+    if (frame === undefined) break;
+    if (frame.kind === 'fragment') {
+      fragments.push(frame.value);
+      continue;
+    }
+    if (frame.kind === 'leave') {
+      active.delete(frame.value);
+      continue;
+    }
+
+    const candidate = frame.value;
+    if (candidate === null || typeof candidate === 'boolean') {
+      fragments.push(JSON.stringify(candidate));
+      continue;
+    }
     if (typeof candidate === 'string') {
       if (hasUnpairedSurrogate(candidate)) throw new TypeError('Canonical JSON rejects invalid Unicode surrogate data.');
-      return JSON.stringify(candidate);
+      fragments.push(JSON.stringify(candidate));
+      continue;
     }
     if (typeof candidate === 'number') {
       if (!Number.isFinite(candidate) || Object.is(candidate, -0) || (Number.isInteger(candidate) && !Number.isSafeInteger(candidate))) {
         throw new TypeError('Canonical JSON requires finite, safe, non-negative-zero numbers.');
       }
-      return JSON.stringify(candidate);
+      fragments.push(JSON.stringify(candidate));
+      continue;
     }
     if (typeof candidate !== 'object' || candidate === undefined) throw new TypeError('Canonical JSON rejects non-JSON values.');
+    visitedContainerCount += 1;
+    if (visitedContainerCount > ARTIFACT_CONTROL_DATA_MAX_VISITED_NODES) {
+      throw new TypeError('Canonical JSON exceeds its 100000-container limit.');
+    }
     if (active.has(candidate)) throw new TypeError('Canonical JSON rejects cyclic values.');
     active.add(candidate);
-    try {
-      if (Array.isArray(candidate)) {
-        if (Object.getPrototypeOf(candidate) !== Array.prototype) throw new TypeError('Canonical JSON requires plain arrays.');
-        const ownKeys = Reflect.ownKeys(candidate);
-        if (
-          ownKeys.some(key => typeof key === 'symbol') ||
-          ownKeys.some(key => typeof key === 'string' && key !== 'length' && !/^(0|[1-9]\d*)$/.test(key))
-        ) {
-          throw new TypeError('Canonical JSON arrays cannot contain custom properties.');
-        }
-        const values: string[] = [];
-        for (let index = 0; index < candidate.length; index += 1) {
-          if (!hasOwn(candidate, index)) throw new TypeError('Canonical JSON rejects sparse arrays.');
-          const descriptor = Object.getOwnPropertyDescriptor(candidate, String(index));
-          if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
-            throw new TypeError('Canonical JSON array entries must be enumerable JSON values.');
-          }
-          values.push(serialize(descriptor.value));
-        }
-        return `[${values.join(',')}]`;
-      }
 
-      const prototype = Object.getPrototypeOf(candidate);
-      if (prototype !== Object.prototype && prototype !== null) throw new TypeError('Canonical JSON requires plain objects.');
-      if (Object.getOwnPropertySymbols(candidate).length > 0) throw new TypeError('Canonical JSON rejects symbol properties.');
-      const entries: string[] = [];
-      for (const key of Object.getOwnPropertyNames(candidate).sort()) {
-        if (hasUnpairedSurrogate(key)) throw new TypeError('Canonical JSON rejects invalid Unicode property names.');
-        const descriptor = Object.getOwnPropertyDescriptor(candidate, key);
+    pending.push({ kind: 'leave', value: candidate });
+    if (Array.isArray(candidate)) {
+      if (Object.getPrototypeOf(candidate) !== Array.prototype) throw new TypeError('Canonical JSON requires plain arrays.');
+      const ownKeys = Reflect.ownKeys(candidate);
+      if (
+        ownKeys.some(key => typeof key === 'symbol') ||
+        ownKeys.some(key => typeof key === 'string' && key !== 'length' && !/^(0|[1-9]\d*)$/.test(key))
+      ) {
+        throw new TypeError('Canonical JSON arrays cannot contain custom properties.');
+      }
+      const values: unknown[] = [];
+      for (let index = 0; index < candidate.length; index += 1) {
+        if (!hasOwn(candidate, index)) throw new TypeError('Canonical JSON rejects sparse arrays.');
+        const descriptor = Object.getOwnPropertyDescriptor(candidate, String(index));
         if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
-          throw new TypeError('Canonical JSON object fields must be enumerable JSON values.');
+          throw new TypeError('Canonical JSON array entries must be enumerable JSON values.');
         }
-        entries.push(`${JSON.stringify(key)}:${serialize(descriptor.value)}`);
+        values.push(descriptor.value);
       }
-      return `{${entries.join(',')}}`;
-    } finally {
-      active.delete(candidate);
+      fragments.push('[');
+      pending.push({ kind: 'fragment', value: ']' });
+      for (let index = values.length - 1; index >= 0; index -= 1) {
+        pending.push({ kind: 'value', value: values[index] });
+        if (index > 0) pending.push({ kind: 'fragment', value: ',' });
+      }
+      continue;
     }
-  };
 
-  return serialize(value);
+    const prototype = Object.getPrototypeOf(candidate);
+    if (prototype !== Object.prototype && prototype !== null) throw new TypeError('Canonical JSON requires plain objects.');
+    if (Object.getOwnPropertySymbols(candidate).length > 0) throw new TypeError('Canonical JSON rejects symbol properties.');
+    const entries: Array<{ key: string; value: unknown }> = [];
+    for (const key of Object.getOwnPropertyNames(candidate).sort()) {
+      if (hasUnpairedSurrogate(key)) throw new TypeError('Canonical JSON rejects invalid Unicode property names.');
+      const descriptor = Object.getOwnPropertyDescriptor(candidate, key);
+      if (descriptor === undefined || !('value' in descriptor) || !descriptor.enumerable || descriptor.value === undefined) {
+        throw new TypeError('Canonical JSON object fields must be enumerable JSON values.');
+      }
+      entries.push({ key, value: descriptor.value });
+    }
+    fragments.push('{');
+    pending.push({ kind: 'fragment', value: '}' });
+    for (let index = entries.length - 1; index >= 0; index -= 1) {
+      const entry = entries[index];
+      pending.push({ kind: 'value', value: entry.value });
+      pending.push({
+        kind: 'fragment',
+        value: `${index > 0 ? ',' : ''}${JSON.stringify(entry.key)}:`,
+      });
+    }
+  }
+
+  return fragments.join('');
 };
 
 const withoutManifestDigest = (manifest: object): Record<string, unknown> => {
@@ -335,6 +429,10 @@ export const canonicalizeBillingAnalyzerInputManifestV2ForDigest = (manifest: Bi
 /** Returns the canonical output-manifest digest preimage, excluding only top-level manifestDigest. */
 export const canonicalizeBillingAnalyzerOutputManifestV2ForDigest = (manifest: BillingAnalyzerOutputManifestV2): string =>
   canonicalizeJson(withoutManifestDigest(manifest));
+
+/** Returns the exact promotion-observation digest preimage, excluding observationDigest and additive fields. */
+export const canonicalizeBillingAnalysisPromotionObservationV1ForDigest = (observation: BillingAnalysisPromotionObservationV1): string =>
+  canonicalizeJson(projectPromotionObservation(observation));
 
 /** Returns the RFC 8785/JCS-compatible canonical JSON string for a validated JSON value. */
 export const canonicalizeBillingArtifactJson = (value: unknown): string => canonicalizeJson(value);

@@ -118,6 +118,9 @@ const completedViewManifest = {
   completedAt,
 };
 
+const completedViewManifestWithSharedArtifactAlias = structuredClone(completedViewManifest);
+completedViewManifestWithSharedArtifactAlias.future = completedViewManifestWithSharedArtifactAlias.artifacts[0];
+
 const viewSetPublicationDecision = {
   processing: 'succeeded',
   evidence: 'complete',
@@ -166,6 +169,9 @@ const completedViewSet = {
   completedAt,
 };
 
+const completedViewSetWithSharedSurfaceAlias = structuredClone(completedViewSet);
+completedViewSetWithSharedSurfaceAlias.future = completedViewSetWithSharedSurfaceAlias.portal;
+
 const optionalUnverifiedEconomics = {
   ...completedViewManifest,
   publicationDecision: {
@@ -204,6 +210,12 @@ const optionalUnverifiedEconomics = {
 
 const viewManifestCases = [
   ['valid V3 completed manifest', completedViewManifest, true],
+  ['V3 rejects an artifact descriptor alias under an unknown field', completedViewManifestWithSharedArtifactAlias, false],
+  [
+    'V3 artifact alias rejection matches its decoded JSON shape',
+    JSON.parse(JSON.stringify(completedViewManifestWithSharedArtifactAlias)),
+    false,
+  ],
   ['known-version additive V3 fields', { ...completedViewManifest, future: { producer: 'next-version' } }, true],
   ['harmless credential-like V3 fields', { ...completedViewManifest, future: { tokenCount: 2, authorizationStatus: 'granted' } }, true],
   [
@@ -314,6 +326,12 @@ const viewManifestCases = [
 
 const viewSetCases = [
   ['valid V2 coordinated pointer', completedViewSet, true],
+  ['V2 rejects a surface reference alias under an unknown field', completedViewSetWithSharedSurfaceAlias, false],
+  [
+    'V2 surface alias rejection matches its decoded JSON shape',
+    JSON.parse(JSON.stringify(completedViewSetWithSharedSurfaceAlias)),
+    false,
+  ],
   ['known-version additive V2 fields', { ...completedViewSet, future: { producer: 'next-version' } }, true],
   ['harmless credential-like V2 fields', { ...completedViewSet, future: { tokenCount: 2, authorizationStatus: 'granted' } }, true],
   ['unknown V2 version', { ...completedViewSet, schemaVersion: 3 }, false],
