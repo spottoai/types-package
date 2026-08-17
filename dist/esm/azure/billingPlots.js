@@ -76,10 +76,30 @@ const allowedBillingBusinessTextFields = (value) => {
         if (isRecord(object))
             fields.push({ object, key, allowUriSchemeInStringArray: true });
     };
-    allowText(value, 'forecastMethod');
-    if (isRecord(value.chartData) && isRecord(value.chartData.detectors) && Array.isArray(value.chartData.detectors.methods)) {
-        for (const method of value.chartData.detectors.methods)
-            allowText(method, 'name', 'status', 'error');
+    allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
+    if (isRecord(value.chartData)) {
+        allowText(value.chartData, 'source');
+        if (isRecord(value.chartData.views)) {
+            for (const view of Object.values(value.chartData.views)) {
+                allowText(view, 'aggregation', 'forecastMethod');
+                if (!isRecord(view))
+                    continue;
+                allowText(view.trend, 'method');
+                for (const pointsKey of ['points', 'actualPoints', 'forecastPoints', 'fittedPoints']) {
+                    const points = view[pointsKey];
+                    if (!Array.isArray(points))
+                        continue;
+                    for (const point of points) {
+                        allowText(point, 'date', 'month');
+                        allowTextArray(point, 'anomalyMethods');
+                    }
+                }
+            }
+        }
+        if (isRecord(value.chartData.detectors) && Array.isArray(value.chartData.detectors.methods)) {
+            for (const method of value.chartData.detectors.methods)
+                allowText(method, 'name', 'status', 'error');
+        }
     }
     if (!Array.isArray(value.anomalies))
         return fields;

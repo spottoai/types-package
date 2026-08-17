@@ -26,9 +26,56 @@ const legacyFallback = {
 };
 const proseBearingLegacyBusinessPayload = {
   ...legacyBusinessPayload,
+  subscriptionId: 'tenant:sub-123',
+  billingGenerationId: 'billing:generation-v1',
+  currencyCode: 'currency:NZD',
+  currencySymbol: 'symbol:$',
   forecastMethod: 'forecast:linear-v2',
   chartData: {
     ...legacyBusinessPayload.chartData,
+    source: 'source:aggregated',
+    views: {
+      daily: {
+        aggregation: 'daily',
+        startDate: 1_782_864_000,
+        endDate: 1_785_542_400,
+        averageDailyCost: 10,
+        totalCost: 310,
+        points: [
+          {
+            date: 'date:2026-07-01',
+            timestamp: 1_782_864_000,
+            cost: 10,
+            isAnomaly: false,
+            anomalyVotes: 0,
+            anomalyMethods: ['detector:seasonal'],
+          },
+        ],
+        trend: { method: 'trend:linear', slope: 1, intercept: 0 },
+      },
+      forecast: {
+        aggregation: 'daily',
+        forecastMethod: 'forecast:linear-v2',
+        startDate: 1_782_864_000,
+        endDate: 1_785_542_400,
+        actualTotalCost: 10,
+        forecastRemaining: 20,
+        forecastMonthTotal: 30,
+        actualPoints: [
+          {
+            date: 'date:2026-07-01',
+            timestamp: 1_782_864_000,
+            cost: 10,
+            isAnomaly: false,
+            anomalyVotes: 0,
+            anomalyMethods: ['detector:actual'],
+          },
+        ],
+        forecastPoints: [{ date: 'date:2026-07-02', timestamp: 1_782_950_400, cost: 11 }],
+        fittedPoints: [{ date: 'date:2026-07-01', timestamp: 1_782_864_000, cost: 10 }],
+        trend: { method: 'trend:forecast', slope: 1, intercept: 0 },
+      },
+    },
     detectors: {
       ...legacyBusinessPayload.chartData.detectors,
       methods: [
@@ -131,6 +178,7 @@ for (const [name, maliciousAdditive] of [
   ['physical reference field', { sourcePath: 'private/metadata.json' }],
   ['credential field', { authorization: 'Bearer secret-example' }],
   ['physical URI value', { location: 'https://storage.example.invalid/private/metadata.json' }],
+  ['URI-shaped business-like field in an unknown subtree', { source: 'source:additive' }],
 ]) {
   const maliciousBusinessPayload = { ...legacyBusinessPayload, future: maliciousAdditive };
   const maliciousFallback = { ...legacyFallback, future: maliciousAdditive };
