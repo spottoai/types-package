@@ -1,9 +1,13 @@
 import {
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
+  isPublishedAzureViewSetV3,
+  isPublishedViewManifestV4,
   type ArtifactPublicationDecision,
   type CompletedAzureViewSetV2,
   type CompletedViewManifestV3,
+  type PublishedAzureViewSetV3,
+  type PublishedViewManifestV4,
 } from '../index';
 
 // @ts-expect-error V3 artifact descriptor helpers are intentionally module-private.
@@ -145,6 +149,161 @@ const completedViewSet = {
   publicationDecision: completedViewSetPublicationDecision,
   completedAt,
 } satisfies CompletedAzureViewSetV2;
+
+const projectedPortalArtifactPath = 'runs/portal-run-42/projected/resources.json';
+const projectedInventorySection = `${projectedPortalArtifactPath}#/resources`;
+const projectedSavingsSection = `${projectedPortalArtifactPath}#/savings`;
+
+const suppressedBillingDependency = {
+  name: 'billing',
+  required: true,
+  support: 'supported',
+  applicability: 'applicable',
+  attempt: 'failed',
+  coverage: 'none',
+  emptyEvidence: 'not-observed',
+  freshness: 'unknown',
+  evidence: 'insufficient',
+  publication: 'suppressed',
+  reasonCode: 'billing-unavailable',
+} as const;
+
+const completedInventoryClaim = {
+  claimId: 'azure.portal.inventory',
+  sectionPaths: [projectedInventorySection],
+  requiredDependencies: ['inventory'],
+  evidence: 'complete',
+  publication: 'completed',
+  issues: [],
+} satisfies ArtifactPublicationDecision['claims'][number];
+
+const suppressedSavingsClaim = {
+  claimId: 'azure.portal.savings',
+  sectionPaths: [projectedSavingsSection],
+  requiredDependencies: ['billing', 'economics'],
+  evidence: 'insufficient',
+  publication: 'suppressed',
+  issues: [{ code: 'billing-unavailable', blocking: true, dependency: 'billing' }],
+} satisfies ArtifactPublicationDecision['claims'][number];
+
+const partialViewPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'partial',
+  publication: 'partial',
+  dependencies: [
+    completedDependency('inventory', 'inventory-42', digestC),
+    suppressedBillingDependency,
+    completedDependency('economics', 'economics-42', digestB),
+  ],
+  claims: [completedInventoryClaim, suppressedSavingsClaim],
+  issues: [{ code: 'billing-unavailable', blocking: true, dependency: 'billing' }],
+} satisfies ArtifactPublicationDecision;
+
+const publishedPartialViewManifest = {
+  schemaVersion: 4,
+  status: 'published',
+  coverage: 'partial',
+  runId: 'portal-run-42',
+  subscriptionId,
+  artifacts: [
+    {
+      path: projectedPortalArtifactPath,
+      name: 'projected/resources.json',
+      mediaType: 'application/json',
+      contentEncoding: 'identity',
+      byteLength: 768,
+      sha256: digestA,
+      claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] }],
+    },
+  ],
+  artifactGeneration: {
+    runId: 'portal-run-42',
+    generatedAt: '2026-08-13T00:04:00.000Z',
+  },
+  requestedArtifactCount: 1,
+  requestedResourceCount: 25,
+  failedArtifactCount: 0,
+  failedResourceCount: 0,
+  ownership,
+  revision,
+  compositeDependencyDigest: digestC,
+  publicationDecision: partialViewPublicationDecision,
+  completedAt,
+} satisfies PublishedViewManifestV4;
+
+const completedViewPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'complete',
+  publication: 'completed',
+  dependencies: [
+    completedDependency('inventory', 'inventory-42', digestC),
+    completedDependency('billing', 'billing-42', digestA),
+    completedDependency('economics', 'economics-42', digestB),
+  ],
+  claims: [
+    completedInventoryClaim,
+    {
+      ...suppressedSavingsClaim,
+      evidence: 'complete',
+      publication: 'completed',
+      issues: [],
+    },
+  ],
+  issues: [],
+} satisfies ArtifactPublicationDecision;
+
+const publishedCompleteViewManifest = {
+  ...publishedPartialViewManifest,
+  coverage: 'complete',
+  artifacts: [
+    {
+      ...publishedPartialViewManifest.artifacts[0],
+      claimBindings: [
+        { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+        { claimId: suppressedSavingsClaim.claimId, sectionPaths: [projectedSavingsSection] },
+      ],
+    },
+  ],
+  publicationDecision: completedViewPublicationDecision,
+} satisfies PublishedViewManifestV4;
+
+const publishedViewSetPublicationDecision = {
+  ...completedViewSetPublicationDecision,
+  evidence: 'partial',
+} satisfies ArtifactPublicationDecision;
+
+const publishedPartialViewSet = {
+  schemaVersion: 3,
+  status: 'published',
+  coverage: 'partial',
+  subscriptionId,
+  publicationId: 'publication-43',
+  ownership,
+  revision,
+  portal: {
+    runId: 'portal-run-42',
+    manifestPath: 'runs/portal-run-42/published-view-manifest.json',
+    manifestDigest: digestA,
+    coverage: 'partial',
+    ownership,
+    revision,
+    compositeDependencyDigest: digestC,
+    completedAt: '2026-08-13T00:04:00.000Z',
+  },
+  plugin: {
+    runId: 'plugin-run-42',
+    manifestPath: 'runs/plugin-run-42/published-plugin-generation.json',
+    manifestDigest: digestB,
+    coverage: 'complete',
+    ownership,
+    revision,
+    compositeDependencyDigest: digestC,
+    completedAt,
+  },
+  compositeDependencyDigest: digestC,
+  publicationDecision: publishedViewSetPublicationDecision,
+  completedAt,
+} satisfies PublishedAzureViewSetV3;
 
 const optionalUnverifiedEconomics = {
   ...completedViewManifest,
@@ -415,7 +574,120 @@ const viewSetValidationResults: boolean[] = [
   ...physicalViewSetReferences.map(value => !isCompletedAzureViewSetV2(value)),
 ];
 
-if (!viewValidationResults.every(result => result) || !viewSetValidationResults.every(result => result)) {
+const publishedViewValidationResults: boolean[] = [
+  isPublishedViewManifestV4(publishedCompleteViewManifest),
+  isPublishedViewManifestV4(publishedPartialViewManifest),
+  isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    ownership: { ...ownership, ownershipEpochRevision: undefined },
+    revision: { ...revision, ownershipEpochRevision: undefined },
+  }),
+  !isPublishedViewManifestV4({ ...publishedPartialViewManifest, schemaVersion: 3 }),
+  !isPublishedViewManifestV4({ ...publishedPartialViewManifest, coverage: 'complete' }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    publicationDecision: completedViewPublicationDecision,
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    artifacts: [{ ...publishedPartialViewManifest.artifacts[0], claimBindings: [] }],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    artifacts: [
+      {
+        ...publishedPartialViewManifest.artifacts[0],
+        claimBindings: [{ claimId: suppressedSavingsClaim.claimId, sectionPaths: [projectedSavingsSection] }],
+      },
+    ],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    artifacts: [
+      {
+        ...publishedPartialViewManifest.artifacts[0],
+        claimBindings: [
+          { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+          { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+        ],
+      },
+    ],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    artifacts: [
+      {
+        ...publishedPartialViewManifest.artifacts[0],
+        claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedSavingsSection] }],
+      },
+    ],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    artifacts: [
+      {
+        ...publishedPartialViewManifest.artifacts[0],
+        claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: ['../resources.json#/resources'] }],
+      },
+    ],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedCompleteViewManifest,
+    artifacts: [
+      {
+        ...publishedCompleteViewManifest.artifacts[0],
+        claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] }],
+      },
+    ],
+  }),
+  !isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
+    publicationDecision: {
+      ...partialViewPublicationDecision,
+      claims: [completedInventoryClaim, { ...suppressedSavingsClaim, sectionPaths: [`${projectedInventorySection}/*/optimizationProfile`] }],
+    },
+  }),
+];
+
+const publishedViewSetValidationResults: boolean[] = [
+  isPublishedAzureViewSetV3(publishedPartialViewSet),
+  isPublishedAzureViewSetV3({
+    ...publishedPartialViewSet,
+    coverage: 'complete',
+    portal: { ...publishedPartialViewSet.portal, coverage: 'complete' },
+    publicationDecision: { ...publishedViewSetPublicationDecision, evidence: 'complete' },
+  }),
+  !isPublishedAzureViewSetV3({ ...publishedPartialViewSet, schemaVersion: 2 }),
+  !isPublishedAzureViewSetV3({ ...publishedPartialViewSet, coverage: 'complete' }),
+  !isPublishedAzureViewSetV3({
+    ...publishedPartialViewSet,
+    plugin: { ...publishedPartialViewSet.plugin, compositeDependencyDigest: digestA },
+  }),
+  !isPublishedAzureViewSetV3({
+    ...publishedPartialViewSet,
+    portal: { ...publishedPartialViewSet.portal, manifestPath: 'runs/portal-run-42/completed-view-manifest.json' },
+  }),
+  !isPublishedAzureViewSetV3({
+    ...publishedPartialViewSet,
+    ownership: { ...ownership, ownershipEpochRevision: undefined },
+  }),
+  !isPublishedAzureViewSetV3({
+    ...publishedPartialViewSet,
+    publicationDecision: {
+      ...publishedViewSetPublicationDecision,
+      dependencies: [completedDependency('portal', 'portal-run-other', digestA), completedDependency('plugin', 'plugin-run-42', digestB)],
+    },
+  }),
+  !isCompletedViewManifestV3(publishedPartialViewManifest),
+  !isCompletedAzureViewSetV2(publishedPartialViewSet),
+];
+
+if (
+  !viewValidationResults.every(result => result) ||
+  !viewSetValidationResults.every(result => result) ||
+  !publishedViewValidationResults.every(result => result) ||
+  !publishedViewSetValidationResults.every(result => result)
+) {
   throw new Error('Task 4 artifact evidence view runtime assertion failed.');
 }
 
@@ -434,6 +706,18 @@ const incompleteViewSet: CompletedAzureViewSetV2 = {
   publicationDecision: { ...completedViewSetPublicationDecision, evidence: 'insufficient', publication: 'quarantined' },
 };
 
+// @ts-expect-error V4 published manifests reject unknown schema versions.
+const unknownPublishedViewManifestVersion: PublishedViewManifestV4 = { ...publishedPartialViewManifest, schemaVersion: 5 };
+
+// @ts-expect-error V3 published view sets reject unknown schema versions.
+const unknownPublishedViewSetVersion: PublishedAzureViewSetV3 = { ...publishedPartialViewSet, schemaVersion: 4 };
+
+const invalidPublishedViewCoverage: PublishedViewManifestV4 = {
+  ...publishedPartialViewManifest,
+  // @ts-expect-error Published view coverage has a closed complete/partial vocabulary.
+  coverage: 'suppressed',
+};
+
 void [
   completedViewManifest,
   completedViewSet,
@@ -443,6 +727,14 @@ void [
   unknownViewSetVersion,
   missingViewArtifacts,
   incompleteViewSet,
+  publishedPartialViewManifest,
+  publishedCompleteViewManifest,
+  publishedPartialViewSet,
+  publishedViewValidationResults,
+  publishedViewSetValidationResults,
+  unknownPublishedViewManifestVersion,
+  unknownPublishedViewSetVersion,
+  invalidPublishedViewCoverage,
   // Prevent private-helper import assertions from being optimized away by editor tooling.
   undefined as unknown as CompletedViewArtifactDescriptor,
   undefined as unknown as AzureViewSetV2SurfaceReference,

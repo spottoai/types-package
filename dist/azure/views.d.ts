@@ -801,6 +801,22 @@ export type CompletedViewManifestV2 = CompletedViewManifestV2Base & ((CompletedV
 interface CompletedViewArtifactDescriptor extends ArtifactDescriptor {
     path: string;
 }
+export type PublishedViewCoverage = 'complete' | 'partial';
+export declare const PUBLISHED_VIEW_OBJECT_LIMITS_V1: {
+    readonly maxArtifacts: 512;
+    readonly maxClaims: 128;
+    readonly maxDependencies: 256;
+    readonly maxIssues: 512;
+    readonly maxClaimBindings: 512;
+    readonly maxSectionPaths: 512;
+};
+interface PublishedViewClaimBinding {
+    claimId: string;
+    sectionPaths: [string, ...string[]];
+}
+interface PublishedViewArtifactDescriptor extends CompletedViewArtifactDescriptor {
+    claimBindings: [PublishedViewClaimBinding, ...PublishedViewClaimBinding[]];
+}
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
     schemaVersion: 3;
@@ -808,6 +824,24 @@ export interface CompletedViewManifestV3 extends CompletedViewManifestV2Requeste
     runId: string;
     subscriptionId: string;
     artifacts: [CompletedViewArtifactDescriptor, ...CompletedViewArtifactDescriptor[]];
+    artifactGeneration: CompletedViewArtifactGeneration;
+    costSavings?: CompletedViewCostSavingsManifest;
+    failedArtifactCount: 0;
+    failedResourceCount: 0;
+    ownership: ArtifactOwnershipBinding<'azure'>;
+    revision: ArtifactRevisionVector;
+    compositeDependencyDigest: string;
+    publicationDecision: ArtifactPublicationDecision;
+    completedAt: string;
+}
+/** Claim-projected portal or plugin generation that can retain authoritative partial coverage. */
+export interface PublishedViewManifestV4 extends CompletedViewManifestV2RequestedCounts {
+    schemaVersion: 4;
+    status: 'published';
+    coverage: PublishedViewCoverage;
+    runId: string;
+    subscriptionId: string;
+    artifacts: [PublishedViewArtifactDescriptor, ...PublishedViewArtifactDescriptor[]];
     artifactGeneration: CompletedViewArtifactGeneration;
     costSavings?: CompletedViewCostSavingsManifest;
     failedArtifactCount: 0;
@@ -856,6 +890,9 @@ interface AzureViewSetV2SurfaceReference {
     compositeDependencyDigest: string;
     completedAt: string;
 }
+interface PublishedAzureViewSetV3SurfaceReference extends AzureViewSetV2SurfaceReference {
+    coverage: PublishedViewCoverage;
+}
 /** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
 export interface CompletedAzureViewSetV2 {
     schemaVersion: 2;
@@ -870,6 +907,25 @@ export interface CompletedAzureViewSetV2 {
     };
     portal: AzureViewSetV2SurfaceReference;
     plugin: AzureViewSetV2SurfaceReference;
+    compositeDependencyDigest: string;
+    publicationDecision: CompletedArtifactPublicationDecision;
+    completedAt: string;
+}
+/** Promoted authority for one claim-projected portal/plugin generation pair. */
+export interface PublishedAzureViewSetV3 {
+    schemaVersion: 3;
+    status: 'published';
+    coverage: PublishedViewCoverage;
+    subscriptionId: string;
+    publicationId: string;
+    ownership: ArtifactOwnershipBinding<'azure'> & {
+        ownershipEpochRevision: number;
+    };
+    revision: ArtifactRevisionVector & {
+        ownershipEpochRevision: number;
+    };
+    portal: PublishedAzureViewSetV3SurfaceReference;
+    plugin: PublishedAzureViewSetV3SurfaceReference;
     compositeDependencyDigest: string;
     publicationDecision: CompletedArtifactPublicationDecision;
     completedAt: string;
@@ -893,7 +949,11 @@ export interface AzureRecommendationResourceEvidenceDocument {
 export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export declare const isCompletedViewManifestV3: (value: unknown) => value is CompletedViewManifestV3;
+/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+export declare const isPublishedViewManifestV4: (value: unknown) => value is PublishedViewManifestV4;
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export declare const isCompletedAzureViewSetV2: (value: unknown) => value is CompletedAzureViewSetV2;
+/** Validates the promoted pointer for one claim-projected portal/plugin generation pair. */
+export declare const isPublishedAzureViewSetV3: (value: unknown) => value is PublishedAzureViewSetV3;
 export {};
 //# sourceMappingURL=views.d.ts.map
