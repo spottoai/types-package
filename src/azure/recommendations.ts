@@ -20,6 +20,7 @@ import type { RecommendationSystemTrackClassification } from './recommendationTr
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -390,6 +391,10 @@ export interface RecommendationWithResources {
   resources: RecommendationResource[];
   /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
   savings?: SavingsPotential;
+  /** Standalone recommendation scenario. This value is not portfolio-additive. */
+  scenarioSavings?: ScenarioSavingsPotentialV2;
+  /** Canonical producer-attributed contribution. This value is portfolio-additive. */
+  portfolioContribution?: PortfolioSavingsContributionV2;
   /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
   savingsByCurrency?: CurrencySavingsGroup[];
   /** Canonical resource ID that owns this recommendation savings amount for aggregation */
@@ -474,6 +479,10 @@ export interface RecommendationResource {
   savingsBasis?: CostSavingsSpendBasis;
   optimizationProfile?: ResourceSimpleOptimizationProfile;
   savings?: SavingsPotential;
+  /** Standalone recommendation scenario for this resource. This value is not portfolio-additive. */
+  scenarioSavings?: ScenarioSavingsPotentialV2;
+  /** Canonical producer-attributed contribution for this resource row. */
+  portfolioContribution?: PortfolioSavingsContributionV2;
   /** Standalone saving for this recommendation on this resource. */
   savingsDetails?: ResourceRecommendationSavingsDetails;
   /** Canonical resource ID that owns this resource savings amount for aggregation */
@@ -500,6 +509,8 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   savingsByCurrency?: CurrencySavingsGroup[];
   subscription: SubscriptionSummaryLite;
   costSavingsSummary?: CostSavingsSummary;
+  /** Authoritative additive savings total for this complete recommendation scope. */
+  savingsAggregate?: SavingsAggregateV2;
 }
 
 export interface ResourceId {
