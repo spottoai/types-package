@@ -384,6 +384,46 @@ const hasValidBillingCostAnalysisBusinessFields = (value) => {
         return false;
     return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
+const BILLING_PUBLIC_DATA_STATES = new Set(['current', 'stale', 'previous-verified']);
+const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
+    'schemaVersion',
+    'subscriptionId',
+    'dataState',
+    'chartData',
+    'anomalies',
+    'currencyCode',
+    'currencySymbol',
+    'forecastMethod',
+    'forecastMonthTotal',
+    'forecastRemaining',
+    'forecastPeriodEnd',
+]);
+const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState']);
+const hasOnlyFields = (value, allowedFields) => Object.keys(value).every(field => allowedFields.has(field));
+const hasValidBillingCostAnalysisPublicBusinessFields = (value) => {
+    if (!isPathSegment(value.subscriptionId))
+        return false;
+    if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly))
+        return false;
+    if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol))
+        return false;
+    if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod))
+        return false;
+    return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+/** Exact dependency-free validator for the customer-facing billing success contract. */
+export const isBillingCostAnalysisPublicResponse = (value) => {
+    if (!isRecord(value) || value.schemaVersion !== 1 || !isPathSegment(value.subscriptionId) || typeof value.dataState !== 'string') {
+        return false;
+    }
+    if (value.dataState === 'no-activity') {
+        return hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS);
+    }
+    return (BILLING_PUBLIC_DATA_STATES.has(value.dataState) &&
+        hasOnlyFields(value, BILLING_PUBLIC_BUSINESS_FIELDS) &&
+        !containsForbiddenBillingCostAnalysisControlData(value, 'business-v1') &&
+        hasValidBillingCostAnalysisPublicBusinessFields(value));
+};
 const isBillingCostAnalysisBusinessPayloadForBranch = (value, validationBranch) => !containsForbiddenBillingCostAnalysisControlData(value, validationBranch) &&
     !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
     hasValidBillingCostAnalysisBusinessFields(value);

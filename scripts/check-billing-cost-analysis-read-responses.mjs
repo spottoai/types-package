@@ -5,8 +5,10 @@ import {
   isBillingCostAnalysisBusinessPayloadV1,
   isBillingCostAnalysisLegacyFallbackResponse,
   isBillingCostAnalysisMetadataV2,
+  isBillingCostAnalysisPublicResponse,
   isBillingCostAnalysisReadResponse,
   isBillingCostAnalysisVerifiedReadResponse,
+  isPublicCostComposition,
 } from '../dist/index.js';
 
 const corpus = JSON.parse(await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url), 'utf8'));
@@ -141,6 +143,86 @@ const proseBearingLegacyFallback = {
   artifactState: 'fallback',
   artifactSource: 'legacy-transition',
 };
+const { billingGenerationId: _internalGenerationId, ...publicBusinessData } = legacyBusinessPayload;
+const currentPublicResponse = {
+  schemaVersion: 1,
+  dataState: 'current',
+  ...publicBusinessData,
+};
+const noActivityPublicResponse = {
+  schemaVersion: 1,
+  subscriptionId: legacyBusinessPayload.subscriptionId,
+  dataState: 'no-activity',
+};
+
+assert.equal(isBillingCostAnalysisPublicResponse(currentPublicResponse), true, 'public response accepts current business data');
+assert.equal(
+  isBillingCostAnalysisPublicResponse({ ...currentPublicResponse, dataState: 'previous-verified' }),
+  true,
+  'public response accepts previous verified business data'
+);
+assert.equal(isBillingCostAnalysisPublicResponse(noActivityPublicResponse), true, 'public response accepts no-activity state');
+for (const internalField of [
+  'billingGenerationId',
+  'ownership',
+  'revision',
+  'inputManifestDigest',
+  'outputBindingDigest',
+  'artifactState',
+  'artifactEvidence',
+  'artifactSource',
+  'runId',
+  'reason',
+]) {
+  assert.equal(
+    isBillingCostAnalysisPublicResponse({ ...currentPublicResponse, [internalField]: 'internal' }),
+    false,
+    `public response rejects internal field ${internalField}`
+  );
+}
+assert.equal(
+  isBillingCostAnalysisPublicResponse({ ...noActivityPublicResponse, chartData: legacyBusinessPayload.chartData }),
+  false,
+  'no-activity response rejects synthetic chart data'
+);
+
+const publicCostComposition = {
+  schemaVersion: 1,
+  selectedLens: 'actual-plus-estimated',
+  billed: {
+    basis: 'billed',
+    actual: { support: 'supported', availability: { status: 'available', component: { amount: '10.25', currencyCode: 'NZD' } } },
+    estimated: { support: 'supported', availability: { status: 'unavailable' } },
+    combined: { status: 'available', component: { amount: '10.25', currencyCode: 'NZD' } },
+    status: 'actual-only',
+    estimateConfidence: 'high',
+  },
+  amortized: {
+    basis: 'amortized',
+    actual: { support: 'unknown', availability: { status: 'unavailable' } },
+    estimated: { support: 'unknown', availability: { status: 'unavailable' } },
+    combined: { status: 'unavailable' },
+    status: 'unavailable',
+  },
+};
+assert.equal(isPublicCostComposition(publicCostComposition), true, 'public cost composition accepts customer monetary data');
+for (const internalField of [
+  'compositionId',
+  'coverageIdentity',
+  'coverageCompletenessRef',
+  'allocationRef',
+  'sourceGenerationRefs',
+  'rowCount',
+  'supersessionRefs',
+  'estimateMethodRef',
+  'uncertaintyRef',
+]) {
+  assert.equal(
+    isPublicCostComposition({ ...publicCostComposition, [internalField]: 'internal' }),
+    false,
+    `public cost composition rejects internal field ${internalField}`
+  );
+}
 
 assert.equal(isBillingCostAnalysisBusinessPayloadV1(legacyBusinessPayload), true, 'strict V1 business validator accepts the complete legacy payload');
 assert.equal(
