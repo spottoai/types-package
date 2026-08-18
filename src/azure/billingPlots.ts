@@ -284,6 +284,28 @@ export interface BillingCostAnalysisMetadata {
   forecastPeriodEnd?: number;
 }
 
+/** Customer-readable billing data states; internal publication states are deliberately excluded. */
+export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'previous-verified' | 'no-activity';
+
+/** Business fields that may cross the customer API boundary. */
+export type BillingCostAnalysisPublicBusinessData = Omit<BillingCostAnalysisMetadata, 'billingGenerationId'>;
+
+/** Customer response containing financial chart and anomaly data. */
+export type BillingCostAnalysisPublicDataResponse = BillingCostAnalysisPublicBusinessData & {
+  schemaVersion: 1;
+  dataState: Exclude<BillingCostAnalysisPublicDataState, 'no-activity'>;
+};
+
+/** Customer response indicating that the checked billing scope contained no activity. */
+export interface BillingCostAnalysisPublicNoActivityResponse {
+  schemaVersion: 1;
+  subscriptionId: string;
+  dataState: 'no-activity';
+}
+
+/** Successful customer-facing billing response with no internal authority or diagnostic fields. */
+export type BillingCostAnalysisPublicResponse = BillingCostAnalysisPublicDataResponse | BillingCostAnalysisPublicNoActivityResponse;
+
 type BillingCompletedCostAnalysisDocumentState = 'current' | 'stale' | 'complete-empty';
 
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
@@ -740,6 +762,49 @@ const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+
+const BILLING_PUBLIC_DATA_STATES = new Set<string>(['current', 'stale', 'previous-verified']);
+const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
+  'schemaVersion',
+  'subscriptionId',
+  'dataState',
+  'chartData',
+  'anomalies',
+  'currencyCode',
+  'currencySymbol',
+  'forecastMethod',
+  'forecastMonthTotal',
+  'forecastRemaining',
+  'forecastPeriodEnd',
+]);
+const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState']);
+
+const hasOnlyFields = (value: Record<string, unknown>, allowedFields: ReadonlySet<string>): boolean =>
+  Object.keys(value).every(field => allowedFields.has(field));
+
+const hasValidBillingCostAnalysisPublicBusinessFields = (value: Record<string, unknown>): boolean => {
+  if (!isPathSegment(value.subscriptionId)) return false;
+  if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
+  if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
+  return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+
+/** Exact dependency-free validator for the customer-facing billing success contract. */
+export const isBillingCostAnalysisPublicResponse = (value: unknown): value is BillingCostAnalysisPublicResponse => {
+  if (!isRecord(value) || value.schemaVersion !== 1 || !isPathSegment(value.subscriptionId) || typeof value.dataState !== 'string') {
+    return false;
+  }
+  if (value.dataState === 'no-activity') {
+    return hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS);
+  }
+  return (
+    BILLING_PUBLIC_DATA_STATES.has(value.dataState) &&
+    hasOnlyFields(value, BILLING_PUBLIC_BUSINESS_FIELDS) &&
+    !containsForbiddenBillingCostAnalysisControlData(value, 'business-v1') &&
+    hasValidBillingCostAnalysisPublicBusinessFields(value)
+  );
 };
 
 const isBillingCostAnalysisBusinessPayloadForBranch = (

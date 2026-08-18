@@ -1,4 +1,4 @@
-import type { CostComposition, EstimateLens } from './costComposition';
+import type { CostComposition, EstimateLens, PublicCostComposition } from './costComposition';
 
 const selectedLens: EstimateLens = 'actual-plus-estimated';
 
@@ -50,3 +50,25 @@ const unavailableComposition: CostComposition = {
 };
 
 void unavailableComposition;
+
+const publicComposition: PublicCostComposition = {
+  schemaVersion: 1,
+  selectedLens,
+  billed: {
+    basis: 'billed',
+    actual: { support: 'supported', availability: { status: 'available', component: { amount: '10.25', currencyCode: 'NZD' } } },
+    estimated: { support: 'supported', availability: { status: 'unavailable' } },
+    combined: { status: 'available', component: { amount: '10.25', currencyCode: 'NZD' } },
+    status: 'actual-only',
+    estimateConfidence: 'high',
+  },
+  amortized: {
+    basis: 'amortized',
+    actual: { support: 'unknown', availability: { status: 'unavailable' } },
+    estimated: { support: 'unknown', availability: { status: 'unavailable' } },
+    combined: { status: 'unavailable' },
+    status: 'unavailable',
+  },
+};
+
+void publicComposition;

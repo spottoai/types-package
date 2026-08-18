@@ -249,6 +249,23 @@ export interface BillingCostAnalysisMetadata {
     /** Forecast amount at the end of the current period. */
     forecastPeriodEnd?: number;
 }
+/** Customer-readable billing data states; internal publication states are deliberately excluded. */
+export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'previous-verified' | 'no-activity';
+/** Business fields that may cross the customer API boundary. */
+export type BillingCostAnalysisPublicBusinessData = Omit<BillingCostAnalysisMetadata, 'billingGenerationId'>;
+/** Customer response containing financial chart and anomaly data. */
+export type BillingCostAnalysisPublicDataResponse = BillingCostAnalysisPublicBusinessData & {
+    schemaVersion: 1;
+    dataState: Exclude<BillingCostAnalysisPublicDataState, 'no-activity'>;
+};
+/** Customer response indicating that the checked billing scope contained no activity. */
+export interface BillingCostAnalysisPublicNoActivityResponse {
+    schemaVersion: 1;
+    subscriptionId: string;
+    dataState: 'no-activity';
+}
+/** Successful customer-facing billing response with no internal authority or diagnostic fields. */
+export type BillingCostAnalysisPublicResponse = BillingCostAnalysisPublicDataResponse | BillingCostAnalysisPublicNoActivityResponse;
 type BillingCompletedCostAnalysisDocumentState = 'current' | 'stale' | 'complete-empty';
 /** Immutable billing metadata with an explicit evidence and read-state binding. */
 interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata {
@@ -281,6 +298,8 @@ export type BillingCostAnalysisVerifiedReadResponse = BillingCostAnalysisMetadat
 };
 /** Successful billing cost-analysis endpoint response. */
 export type BillingCostAnalysisReadResponse = BillingCostAnalysisVerifiedReadResponse | BillingCostAnalysisLegacyFallbackResponse;
+/** Exact dependency-free validator for the customer-facing billing success contract. */
+export declare const isBillingCostAnalysisPublicResponse: (value: unknown) => value is BillingCostAnalysisPublicResponse;
 /** Dependency-free validator for the complete legacy V1 business payload. */
 export declare const isBillingCostAnalysisBusinessPayloadV1: (value: unknown) => value is BillingCostAnalysisMetadata;
 /** Dependency-free validator for customer-readable V2 billing metadata. */

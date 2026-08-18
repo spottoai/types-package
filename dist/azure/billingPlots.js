@@ -3,7 +3,7 @@
  * Billing cost analysis types for Azure cost visualization.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBillingCostAnalysisReadResponse = exports.isBillingCostAnalysisVerifiedReadResponse = exports.isBillingCostAnalysisLegacyFallbackResponse = exports.isBillingCostAnalysisMetadataV2 = exports.isBillingCostAnalysisBusinessPayloadV1 = void 0;
+exports.isBillingCostAnalysisReadResponse = exports.isBillingCostAnalysisVerifiedReadResponse = exports.isBillingCostAnalysisLegacyFallbackResponse = exports.isBillingCostAnalysisMetadataV2 = exports.isBillingCostAnalysisBusinessPayloadV1 = exports.isBillingCostAnalysisPublicResponse = void 0;
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
@@ -387,6 +387,47 @@ const hasValidBillingCostAnalysisBusinessFields = (value) => {
         return false;
     return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
+const BILLING_PUBLIC_DATA_STATES = new Set(['current', 'stale', 'previous-verified']);
+const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
+    'schemaVersion',
+    'subscriptionId',
+    'dataState',
+    'chartData',
+    'anomalies',
+    'currencyCode',
+    'currencySymbol',
+    'forecastMethod',
+    'forecastMonthTotal',
+    'forecastRemaining',
+    'forecastPeriodEnd',
+]);
+const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState']);
+const hasOnlyFields = (value, allowedFields) => Object.keys(value).every(field => allowedFields.has(field));
+const hasValidBillingCostAnalysisPublicBusinessFields = (value) => {
+    if (!isPathSegment(value.subscriptionId))
+        return false;
+    if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly))
+        return false;
+    if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol))
+        return false;
+    if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod))
+        return false;
+    return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
+};
+/** Exact dependency-free validator for the customer-facing billing success contract. */
+const isBillingCostAnalysisPublicResponse = (value) => {
+    if (!isRecord(value) || value.schemaVersion !== 1 || !isPathSegment(value.subscriptionId) || typeof value.dataState !== 'string') {
+        return false;
+    }
+    if (value.dataState === 'no-activity') {
+        return hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS);
+    }
+    return (BILLING_PUBLIC_DATA_STATES.has(value.dataState) &&
+        hasOnlyFields(value, BILLING_PUBLIC_BUSINESS_FIELDS) &&
+        !containsForbiddenBillingCostAnalysisControlData(value, 'business-v1') &&
+        hasValidBillingCostAnalysisPublicBusinessFields(value));
+};
+exports.isBillingCostAnalysisPublicResponse = isBillingCostAnalysisPublicResponse;
 const isBillingCostAnalysisBusinessPayloadForBranch = (value, validationBranch) => !containsForbiddenBillingCostAnalysisControlData(value, validationBranch) &&
     !LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS.some(field => hasOwn(value, field)) &&
     hasValidBillingCostAnalysisBusinessFields(value);

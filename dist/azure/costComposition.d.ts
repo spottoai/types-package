@@ -71,4 +71,39 @@ export interface CostComposition {
     coverageCompletenessRef: string;
     allocationRef: string;
 }
+/** Monetary value safe for customer responses. */
+export interface PublicMoneyComponent {
+    amount: string;
+    currencyCode: string;
+}
+/** Customer availability omits internal source, coverage, row-count, and reason references. */
+export type PublicComponentAvailability = {
+    status: 'available';
+    component: PublicMoneyComponent;
+} | {
+    status: 'unavailable';
+};
+/** Customer support and availability for one actual or estimated component. */
+export interface PublicComponentState {
+    support: ComponentState['support'];
+    availability: PublicComponentAvailability;
+}
+/** Customer projection for one billed or amortized basis. */
+export interface PublicCostBasisComposition {
+    basis: CostBasis;
+    actual: PublicComponentState;
+    estimated: PublicComponentState;
+    combined: PublicComponentAvailability;
+    status: CostBasisComposition['status'];
+    estimateConfidence?: CostBasisComposition['estimateConfidence'];
+}
+/** Customer-facing cost composition with no authority, identity, generation, or evidence references. */
+export interface PublicCostComposition {
+    schemaVersion: 1;
+    selectedLens: EstimateLens;
+    billed: PublicCostBasisComposition;
+    amortized: PublicCostBasisComposition;
+}
+/** Exact dependency-free validator for the public cost-composition boundary. */
+export declare const isPublicCostComposition: (value: unknown) => value is PublicCostComposition;
 //# sourceMappingURL=costComposition.d.ts.map
