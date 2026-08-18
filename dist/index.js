@@ -49,6 +49,7 @@ __exportStar(require("./azure/resourceHealth"), exports);
 __exportStar(require("./azure/subscriptions"), exports);
 __exportStar(require("./azure/views"), exports);
 __exportStar(require("./azure/security"), exports);
+__exportStar(require("./azure/savings"), exports);
 __exportStar(require("./azure/serviceRetirement"), exports);
 __exportStar(require("./azure/serviceRetirementState"), exports);
 __exportStar(require("./azure/serviceRetirementWorkManagement"), exports);

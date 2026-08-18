@@ -33,6 +33,7 @@ export * from './azure/resourceHealth.js';
 export * from './azure/subscriptions.js';
 export * from './azure/views.js';
 export * from './azure/security.js';
+export * from './azure/savings.js';
 export * from './azure/serviceRetirement.js';
 export * from './azure/serviceRetirementState.js';
 export * from './azure/serviceRetirementWorkManagement.js';

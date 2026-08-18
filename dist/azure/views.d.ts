@@ -12,6 +12,7 @@ import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilitySta
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -22,6 +23,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     summary?: ExecutiveSummary;
     dailySummary?: DailySummary;
     costSavingsSummary?: CostSavingsSummary;
+    /** Authoritative additive savings total for this complete dashboard scope. */
+    savingsAggregate?: SavingsAggregateV2;
     advisorScore?: AdvisorScoreSummary;
     healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -39,6 +42,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     tags?: Record<string, string[]>;
     spottoTags?: Tags;
     costSavingsSummary?: CostSavingsSummary;
+    /** Authoritative additive savings total for this complete resource scope. */
+    savingsAggregate?: SavingsAggregateV2;
 }
 /**
  * Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
@@ -104,6 +109,8 @@ export interface AzureResourcePortalItem {
     /** Aggregation rule for this savings amount */
     savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     savings?: SavingsPotential;
+    /** Canonical additive contribution owned by this resource projection. */
+    portfolioContribution?: PortfolioSavingsContributionV2;
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
     customRecommendations: AzureRecommendationLite[];

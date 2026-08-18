@@ -32,6 +32,7 @@ import {
 } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummary;
@@ -43,6 +44,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   summary?: ExecutiveSummary;
   dailySummary?: DailySummary;
   costSavingsSummary?: CostSavingsSummary;
+  /** Authoritative additive savings total for this complete dashboard scope. */
+  savingsAggregate?: SavingsAggregateV2;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -62,6 +65,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   tags?: Record<string, string[]>;
   spottoTags?: Tags;
   costSavingsSummary?: CostSavingsSummary;
+  /** Authoritative additive savings total for this complete resource scope. */
+  savingsAggregate?: SavingsAggregateV2;
 }
 
 /**
@@ -128,6 +133,8 @@ export interface AzureResourcePortalItem {
   /** Aggregation rule for this savings amount */
   savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   savings?: SavingsPotential;
+  /** Canonical additive contribution owned by this resource projection. */
+  portfolioContribution?: PortfolioSavingsContributionV2;
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
   customRecommendations: AzureRecommendationLite[];
