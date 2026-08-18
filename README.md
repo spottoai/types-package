@@ -65,6 +65,16 @@ in both ownership and revision data. `npm run check:artifact-evidence-contracts`
 executes the canonical cross-runtime corpus, billing validator matrix, ownership
 checks, promotion preconditions, and every revision-comparison outcome.
 
+Claim-projected Azure views use `PublishedViewManifestV4` for one Portal or
+Plugin surface and `PublishedAzureViewSetV3` for the coordinated promoted pair.
+A surface may have `complete` or `partial` coverage, but every projected
+artifact must bind its exact section selectors only to completed claims. The
+coordinated pointer remains enforceable-only and therefore requires a positive,
+matching ownership epoch. Existing `CompletedViewManifestV3` and
+`CompletedAzureViewSetV2` retain their fully-completed semantics for N-1
+readers. Producers and readers share the bounded collection limits exported as
+`PUBLISHED_VIEW_OBJECT_LIMITS_V1`.
+
 Observe-mode discovery uses `BillingAnalyzerInputObservationPointerV1` and
 `BillingAnalysisPromotionObservationV1`. Both are explicitly
 `diagnostic-only`, may never substitute for a current authority pointer, and

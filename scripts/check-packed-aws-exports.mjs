@@ -99,6 +99,7 @@ const digestRepairRuntimeDocuments =
   '{"outputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"inputManifestPath":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/manifest.json","inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","artifacts":[{"path":"subscriptions/sub-123/billing/generations/billing-input-generation-42/metadata.json","name":"metadata.json","mediaType":"application/json","contentEncoding":"identity","byteLength":1924,"sha256":"77e5c414e955b33a68e0131874eb95fc6e6f4cf81cd1cc318d3563712479fd5e"}],"publicationDecision":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"manifestDigest":"eba62c30e4081c047d6ef10a62b72992905abed1350149b0e0b953328166ac06","completedAt":"2026-08-13T00:05:00.000Z","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63"},"metadata":{"schemaVersion":2,"subscriptionId":"sub-123","billingGenerationId":"billing-input-generation-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"artifactState":"partial","artifactEvidence":{"processing":"succeeded","evidence":"partial","publication":"partial","dependencies":[{"name":"billing-history","required":true,"support":"supported","applicability":"applicable","attempt":"succeeded","coverage":"complete","emptyEvidence":"populated","freshness":"current","evidence":"complete","publication":"completed","generationId":"billing-input-generation-42","digest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","sourceRevision":42,"policyRevision":7},{"name":"exchange-rates","required":false,"support":"supported","applicability":"applicable","attempt":"failed","coverage":"none","emptyEvidence":"not-observed","freshness":"unknown","evidence":"insufficient","publication":"suppressed","reasonCode":"exchange-rates-unavailable"}],"claims":[{"claimId":"cost-analysis","sectionPaths":["chartData","anomalies"],"requiredDependencies":["billing-history"],"evidence":"partial","publication":"partial","issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]}],"issues":[{"code":"exchange-rates-unavailable","blocking":false,"dependency":"exchange-rates"}]},"inputManifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","outputBindingDigest":"82073ad7769e4b90d979617dcebcadb6d25c54d7c0c287a561caa72df764ec63","chartData":{"schemaVersion":1,"source":"aggregated","dataWindow":{"startDate":1754006400,"endDate":1756684800,"pointCount":0},"views":{},"detectors":{"threshold":2,"methods":[]}},"anomalies":[],"currencyCode":"NZD","currencySymbol":"$"},"inputManifest":{"schemaVersion":2,"status":"completed","subscriptionId":"sub-123","generationId":"billing-input-generation-42","publicationKey":"billing-input:sub-123:source-run-42","ownership":{"provider":"azure","tenantId":"tenant-1","companyId":"company-1","cloudAccountId":"cloud-account-1","accountId":"sub-123","ownershipEpochRevision":3},"revision":{"ownershipEpochRevision":3,"sourceRevision":42,"policyRevision":7},"coveragePlanDigest":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","asOfUtc":"2026-08-13T00:00:00.000Z","stableCutoffUtc":"2026-08-12T00:00:00.000Z","requestedPeriods":[{"fromInclusive":"2026-07-01T00:00:00.000Z","throughExclusive":"2026-08-01T00:00:00.000Z","dateBasis":"utc","basis":"amortized"}],"inputs":[{"path":"subscriptions/sub-123/history/billing/analyzer-inputs/generations/billing-input-generation-42/months/month_2026-07.json.gz","versionId":"version-1","etag":"etag-1","sha256":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","byteCount":512,"rowCount":31,"basis":"amortized","currencyCode":"NZD","coverage":"complete"}],"manifestDigest":"91dd12d5e391e3b6825669db62af9b38755f37d9a6d97c2e127d6957b96c412a","completedAt":"2026-08-13T00:05:00.000Z"}}';
 const artifactEvidenceConsumerSource = `
 import {
+  PUBLISHED_VIEW_OBJECT_LIMITS_V1,
   BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
   BILLING_ARTIFACT_OBJECT_LIMITS_V1,
   buildBillingAnalyzerInputObservationPointerPath,
@@ -124,6 +125,8 @@ import {
   isBillingCostAnalysisVerifiedReadResponse,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
+  isPublishedAzureViewSetV3,
+  isPublishedViewManifestV4,
   isEnforceableArtifactOwnershipBinding,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
@@ -159,9 +162,13 @@ import {
   type BillingOutputBindingV1,
   type CompletedAzureViewSetV2,
   type CompletedViewManifestV3,
+  type PublishedAzureViewSetV3,
+  type PublishedViewCoverage,
+  type PublishedViewManifestV4,
 } from '@spottoai/types-package';
 
 const runtimeExports = [
+  PUBLISHED_VIEW_OBJECT_LIMITS_V1,
   BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH,
   BILLING_ARTIFACT_OBJECT_LIMITS_V1,
   buildBillingAnalyzerInputObservationPointerPath,
@@ -187,12 +194,14 @@ const runtimeExports = [
   isBillingCostAnalysisVerifiedReadResponse,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
+  isPublishedAzureViewSetV3,
+  isPublishedViewManifestV4,
   isEnforceableArtifactOwnershipBinding,
   projectBillingOutputBindingV1FromManifest,
   projectBillingOutputBindingV1FromMetadata,
 ];
 
-type Dev1036PublishedTypes = [
+type PublishedArtifactEvidenceTypes = [
   ArtifactApplicabilityVerdict,
   ArtifactAttemptOutcome,
   ArtifactClaimDependencyDecision,
@@ -225,6 +234,9 @@ type Dev1036PublishedTypes = [
   BillingOutputBindingV1,
   CompletedAzureViewSetV2,
   CompletedViewManifestV3,
+  PublishedAzureViewSetV3,
+  PublishedViewCoverage,
+  PublishedViewManifestV4,
 ];
 
 const legacyBillingMetadata = ${legacyBillingMetadataLiteral} satisfies BillingCostAnalysisMetadata;
@@ -264,7 +276,7 @@ void legacyBillingMetadata;
 void billingReadResponses;
 void packedCanonicalPreimages;
 void observationRuntimeChecks;
-void (null as unknown as Dev1036PublishedTypes);
+void (null as unknown as PublishedArtifactEvidenceTypes);
 `;
 const dev1036RuntimeExportNames = [
   'buildBillingAnalyzerInputObservationPointerPath',
@@ -286,6 +298,8 @@ const dev1036RuntimeExportNames = [
   'isBillingCostAnalysisVerifiedReadResponse',
   'isCompletedAzureViewSetV2',
   'isCompletedViewManifestV3',
+  'isPublishedAzureViewSetV3',
+  'isPublishedViewManifestV4',
   'isEnforceableArtifactOwnershipBinding',
   'projectBillingOutputBindingV1FromManifest',
   'projectBillingOutputBindingV1FromMetadata',
@@ -423,7 +437,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      `import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; const documents = ${digestRepairRuntimeDocuments}; const manifestBinding = root.projectBillingOutputBindingV1FromManifest(documents.outputManifest); const metadataBinding = root.projectBillingOutputBindingV1FromMetadata(documents.metadata); const bindingCanonical = root.canonicalizeBillingOutputBindingV1(manifestBinding); const metadataBindingCanonical = root.canonicalizeBillingOutputBindingV1(metadataBinding); const inputPreimage = root.canonicalizeBillingAnalyzerInputManifestV2ForDigest(documents.inputManifest); const outputPreimage = root.canonicalizeBillingAnalyzerOutputManifestV2ForDigest(documents.outputManifest); if (JSON.stringify(manifestBinding) !== JSON.stringify(metadataBinding) || bindingCanonical !== metadataBindingCanonical || !bindingCanonical.includes('"kind":"billing-analysis-output"') || inputPreimage.includes('"manifestDigest"') || outputPreimage.includes('"manifestDigest"') || !outputPreimage.includes('"outputBindingDigest"') || root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION !== 2 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME !== 'relationships.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function' || typeof aws.validateAwsPortalRelationshipArtifact !== 'function' || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
+      `import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; const documents = ${digestRepairRuntimeDocuments}; const manifestBinding = root.projectBillingOutputBindingV1FromManifest(documents.outputManifest); const metadataBinding = root.projectBillingOutputBindingV1FromMetadata(documents.metadata); const bindingCanonical = root.canonicalizeBillingOutputBindingV1(manifestBinding); const metadataBindingCanonical = root.canonicalizeBillingOutputBindingV1(metadataBinding); const inputPreimage = root.canonicalizeBillingAnalyzerInputManifestV2ForDigest(documents.inputManifest); const outputPreimage = root.canonicalizeBillingAnalyzerOutputManifestV2ForDigest(documents.outputManifest); if (JSON.stringify(manifestBinding) !== JSON.stringify(metadataBinding) || bindingCanonical !== metadataBindingCanonical || !bindingCanonical.includes('"kind":"billing-analysis-output"') || inputPreimage.includes('"manifestDigest"') || outputPreimage.includes('"manifestDigest"') || !outputPreimage.includes('"outputBindingDigest"') || root.PUBLISHED_VIEW_OBJECT_LIMITS_V1?.maxArtifacts !== 512 || root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !Array.isArray(root.AWS_COMMAND_ACTIONS) || !Array.isArray(root.AWS_COMMAND_ENTITIES) || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PLUGIN_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_RELATIONSHIP_SCHEMA_VERSION !== 2 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('plugin-resource') || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('account-summary-ai-cost-summary') || aws.AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME !== 'resources.json.gz' || aws.AWS_PORTAL_RELATIONSHIP_LOGICAL_NAME !== 'relationships.json.gz' || aws.buildAwsPluginSubscriptionLogicalName('a'.repeat(64)) !== 'plugin-subscription--' + 'a'.repeat(64) + '.json.gz' || typeof aws.sha256AwsPluginIdentity !== 'function' || typeof aws.validateAwsPluginGenerationManifest !== 'function' || typeof aws.validateAwsPortalAccountSummaryAiCostSummaryArtifact !== 'function' || typeof aws.validateAwsPortalRelationshipArtifact !== 'function' || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
     ],
     consumerRoot
   );

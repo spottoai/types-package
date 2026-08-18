@@ -1,6 +1,13 @@
 import assert from 'node:assert/strict';
 
-import { isCompletedAzureViewSetV1, isCompletedAzureViewSetV2, isCompletedViewManifestV3 } from '../dist/index.js';
+import {
+  PUBLISHED_VIEW_OBJECT_LIMITS_V1,
+  isCompletedAzureViewSetV1,
+  isCompletedAzureViewSetV2,
+  isCompletedViewManifestV3,
+  isPublishedAzureViewSetV3,
+  isPublishedViewManifestV4,
+} from '../dist/index.js';
 
 const valid = {
   schemaVersion: 1,
@@ -169,6 +176,151 @@ const completedViewSet = {
   completedAt,
 };
 
+const projectedPortalArtifactPath = 'runs/portal-run-42/projected/resources.json';
+const projectedInventorySection = `${projectedPortalArtifactPath}#/resources`;
+const projectedSavingsSection = `${projectedPortalArtifactPath}#/savings`;
+
+const completedInventoryClaim = {
+  claimId: 'azure.portal.inventory',
+  sectionPaths: [projectedInventorySection],
+  requiredDependencies: ['inventory'],
+  evidence: 'complete',
+  publication: 'completed',
+  issues: [],
+};
+
+const suppressedSavingsClaim = {
+  claimId: 'azure.portal.savings',
+  sectionPaths: [projectedSavingsSection],
+  requiredDependencies: ['billing', 'economics'],
+  evidence: 'insufficient',
+  publication: 'suppressed',
+  issues: [{ code: 'billing-unavailable', blocking: true, dependency: 'billing' }],
+};
+
+const partialViewPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'partial',
+  publication: 'partial',
+  dependencies: [
+    completedDependency('inventory', 'inventory-42', digestC),
+    {
+      name: 'billing',
+      required: true,
+      support: 'supported',
+      applicability: 'applicable',
+      attempt: 'failed',
+      coverage: 'none',
+      emptyEvidence: 'not-observed',
+      freshness: 'unknown',
+      evidence: 'insufficient',
+      publication: 'suppressed',
+      reasonCode: 'billing-unavailable',
+    },
+    completedDependency('economics', 'economics-42', digestB),
+  ],
+  claims: [completedInventoryClaim, suppressedSavingsClaim],
+  issues: [{ code: 'billing-unavailable', blocking: true, dependency: 'billing' }],
+};
+
+const publishedPartialViewManifest = {
+  schemaVersion: 4,
+  status: 'published',
+  coverage: 'partial',
+  runId: 'portal-run-42',
+  subscriptionId,
+  artifacts: [
+    {
+      path: projectedPortalArtifactPath,
+      name: 'projected/resources.json',
+      mediaType: 'application/json',
+      contentEncoding: 'identity',
+      byteLength: 768,
+      sha256: digestA,
+      claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] }],
+    },
+  ],
+  artifactGeneration: { runId: 'portal-run-42', generatedAt: '2026-08-13T00:04:00.000Z' },
+  requestedArtifactCount: 1,
+  requestedResourceCount: 25,
+  failedArtifactCount: 0,
+  failedResourceCount: 0,
+  ownership,
+  revision,
+  compositeDependencyDigest: digestC,
+  publicationDecision: partialViewPublicationDecision,
+  completedAt,
+};
+
+const completedViewPublicationDecision = {
+  processing: 'succeeded',
+  evidence: 'complete',
+  publication: 'completed',
+  dependencies: [
+    completedDependency('inventory', 'inventory-42', digestC),
+    completedDependency('billing', 'billing-42', digestA),
+    completedDependency('economics', 'economics-42', digestB),
+  ],
+  claims: [completedInventoryClaim, { ...suppressedSavingsClaim, evidence: 'complete', publication: 'completed', issues: [] }],
+  issues: [],
+};
+
+const publishedCompleteViewManifest = {
+  ...publishedPartialViewManifest,
+  coverage: 'complete',
+  artifacts: [
+    {
+      ...publishedPartialViewManifest.artifacts[0],
+      claimBindings: [
+        { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+        { claimId: suppressedSavingsClaim.claimId, sectionPaths: [projectedSavingsSection] },
+      ],
+    },
+  ],
+  publicationDecision: completedViewPublicationDecision,
+};
+
+const publishedViewSetPublicationDecision = { ...viewSetPublicationDecision, evidence: 'partial' };
+
+const publishedPartialViewSet = {
+  schemaVersion: 3,
+  status: 'published',
+  coverage: 'partial',
+  subscriptionId,
+  publicationId: 'publication-43',
+  ownership,
+  revision,
+  portal: {
+    runId: 'portal-run-42',
+    manifestPath: 'runs/portal-run-42/published-view-manifest.json',
+    manifestDigest: digestA,
+    coverage: 'partial',
+    ownership,
+    revision,
+    compositeDependencyDigest: digestC,
+    completedAt: '2026-08-13T00:04:00.000Z',
+  },
+  plugin: {
+    runId: 'plugin-run-42',
+    manifestPath: 'runs/plugin-run-42/published-plugin-generation.json',
+    manifestDigest: digestB,
+    coverage: 'complete',
+    ownership,
+    revision,
+    compositeDependencyDigest: digestC,
+    completedAt,
+  },
+  compositeDependencyDigest: digestC,
+  publicationDecision: publishedViewSetPublicationDecision,
+  completedAt,
+};
+
+const publishedViewManifestWithSharedArtifactAlias = structuredClone(publishedPartialViewManifest);
+publishedViewManifestWithSharedArtifactAlias.future = publishedViewManifestWithSharedArtifactAlias.artifacts[0];
+
+const publishedViewSetWithSharedSurfaceAlias = structuredClone(publishedPartialViewSet);
+publishedViewSetWithSharedSurfaceAlias.future = publishedViewSetWithSharedSurfaceAlias.portal;
+
 const completedViewSetWithSharedSurfaceAlias = structuredClone(completedViewSet);
 completedViewSetWithSharedSurfaceAlias.future = completedViewSetWithSharedSurfaceAlias.portal;
 
@@ -211,11 +363,7 @@ const optionalUnverifiedEconomics = {
 const viewManifestCases = [
   ['valid V3 completed manifest', completedViewManifest, true],
   ['V3 rejects an artifact descriptor alias under an unknown field', completedViewManifestWithSharedArtifactAlias, false],
-  [
-    'V3 artifact alias rejection matches its decoded JSON shape',
-    JSON.parse(JSON.stringify(completedViewManifestWithSharedArtifactAlias)),
-    false,
-  ],
+  ['V3 artifact alias rejection matches its decoded JSON shape', JSON.parse(JSON.stringify(completedViewManifestWithSharedArtifactAlias)), false],
   ['known-version additive V3 fields', { ...completedViewManifest, future: { producer: 'next-version' } }, true],
   ['harmless credential-like V3 fields', { ...completedViewManifest, future: { tokenCount: 2, authorizationStatus: 'granted' } }, true],
   [
@@ -327,11 +475,7 @@ const viewManifestCases = [
 const viewSetCases = [
   ['valid V2 coordinated pointer', completedViewSet, true],
   ['V2 rejects a surface reference alias under an unknown field', completedViewSetWithSharedSurfaceAlias, false],
-  [
-    'V2 surface alias rejection matches its decoded JSON shape',
-    JSON.parse(JSON.stringify(completedViewSetWithSharedSurfaceAlias)),
-    false,
-  ],
+  ['V2 surface alias rejection matches its decoded JSON shape', JSON.parse(JSON.stringify(completedViewSetWithSharedSurfaceAlias)), false],
   ['known-version additive V2 fields', { ...completedViewSet, future: { producer: 'next-version' } }, true],
   ['harmless credential-like V2 fields', { ...completedViewSet, future: { tokenCount: 2, authorizationStatus: 'granted' } }, true],
   ['unknown V2 version', { ...completedViewSet, schemaVersion: 3 }, false],
@@ -395,6 +539,181 @@ const viewSetCases = [
   ['V2 nested percent-encoded slash', { ...completedViewSet, future: { nested: { label: 'safe%2Fprivate' } } }, false],
 ];
 
+const publishedViewManifestCases = [
+  ['valid complete V4 published manifest', publishedCompleteViewManifest, true],
+  ['valid partial V4 published manifest', publishedPartialViewManifest, true],
+  ['known-version additive V4 fields', { ...publishedPartialViewManifest, future: { producer: 'next-version' } }, true],
+  ['V4 rejects an artifact alias under an unknown field', publishedViewManifestWithSharedArtifactAlias, false],
+  ['V4 rejects an exact clientSecret field', { ...publishedPartialViewManifest, future: { clientSecret: 'secret-example' } }, false],
+  ['V4 rejects an absolute additive path', { ...publishedPartialViewManifest, future: { filePath: '/tmp/view.json' } }, false],
+  ['V4 rejects prototype control data', { ...publishedPartialViewManifest, future: JSON.parse('{"__proto__":{"polluted":true}}') }, false],
+  [
+    'observe V4 without ownership epoch',
+    {
+      ...publishedPartialViewManifest,
+      ownership: { ...ownership, ownershipEpochRevision: undefined },
+      revision: { ...revision, ownershipEpochRevision: undefined },
+    },
+    true,
+  ],
+  ['V4 rejects old schema discriminator', { ...publishedPartialViewManifest, schemaVersion: 3 }, false],
+  ['V4 complete coverage rejects a partial decision', { ...publishedPartialViewManifest, coverage: 'complete' }, false],
+  [
+    'V4 partial coverage rejects a completed decision',
+    { ...publishedPartialViewManifest, publicationDecision: completedViewPublicationDecision },
+    false,
+  ],
+  [
+    'V4 rejects an unclaimed projected descriptor',
+    { ...publishedPartialViewManifest, artifacts: [{ ...publishedPartialViewManifest.artifacts[0], claimBindings: [] }] },
+    false,
+  ],
+  [
+    'V4 rejects a projected descriptor bound to a suppressed claim',
+    {
+      ...publishedPartialViewManifest,
+      artifacts: [
+        {
+          ...publishedPartialViewManifest.artifacts[0],
+          claimBindings: [{ claimId: suppressedSavingsClaim.claimId, sectionPaths: [projectedSavingsSection] }],
+        },
+      ],
+    },
+    false,
+  ],
+  [
+    'V4 rejects duplicate claim bindings',
+    {
+      ...publishedPartialViewManifest,
+      artifacts: [
+        {
+          ...publishedPartialViewManifest.artifacts[0],
+          claimBindings: [
+            { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+            { claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] },
+          ],
+        },
+      ],
+    },
+    false,
+  ],
+  [
+    'V4 rejects a claim binding to the wrong section',
+    {
+      ...publishedPartialViewManifest,
+      artifacts: [
+        {
+          ...publishedPartialViewManifest.artifacts[0],
+          claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedSavingsSection] }],
+        },
+      ],
+    },
+    false,
+  ],
+  [
+    'V4 rejects an unsafe projected section path',
+    {
+      ...publishedPartialViewManifest,
+      artifacts: [
+        {
+          ...publishedPartialViewManifest.artifacts[0],
+          claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: ['../resources.json#/resources'] }],
+        },
+      ],
+    },
+    false,
+  ],
+  [
+    'V4 rejects a completed claim whose section has no descriptor binding',
+    {
+      ...publishedCompleteViewManifest,
+      artifacts: [
+        {
+          ...publishedCompleteViewManifest.artifacts[0],
+          claimBindings: [{ claimId: completedInventoryClaim.claimId, sectionPaths: [projectedInventorySection] }],
+        },
+      ],
+    },
+    false,
+  ],
+  [
+    'V4 rejects overlapping completed and suppressed claim sections',
+    {
+      ...publishedPartialViewManifest,
+      publicationDecision: {
+        ...partialViewPublicationDecision,
+        claims: [completedInventoryClaim, { ...suppressedSavingsClaim, sectionPaths: [`${projectedInventorySection}/*/optimizationProfile`] }],
+      },
+    },
+    false,
+  ],
+  [
+    'V4 rejects an excessive section-path collection',
+    {
+      ...publishedPartialViewManifest,
+      publicationDecision: {
+        ...partialViewPublicationDecision,
+        claims: [
+          completedInventoryClaim,
+          {
+            ...suppressedSavingsClaim,
+            sectionPaths: Array.from(
+              { length: PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxSectionPaths + 1 },
+              (_, index) => `${projectedPortalArtifactPath}#/suppressed-${index}`
+            ),
+          },
+        ],
+      },
+    },
+    false,
+  ],
+];
+
+const publishedViewSetCases = [
+  ['valid partial V3 published pointer', publishedPartialViewSet, true],
+  ['known-version additive published V3 fields', { ...publishedPartialViewSet, future: { producer: 'next-version' } }, true],
+  ['published V3 rejects a surface alias under an unknown field', publishedViewSetWithSharedSurfaceAlias, false],
+  ['published V3 rejects an exact accessToken field', { ...publishedPartialViewSet, future: { accessToken: 'token-example' } }, false],
+  ['published V3 rejects a parent traversal path', { ...publishedPartialViewSet, future: { filePath: '../view.json' } }, false],
+  [
+    'valid complete V3 published pointer',
+    {
+      ...publishedPartialViewSet,
+      coverage: 'complete',
+      portal: { ...publishedPartialViewSet.portal, coverage: 'complete' },
+      publicationDecision: { ...publishedViewSetPublicationDecision, evidence: 'complete' },
+    },
+    true,
+  ],
+  ['published V3 rejects old schema discriminator', { ...publishedPartialViewSet, schemaVersion: 2 }, false],
+  ['published V3 rejects top-level coverage mismatch', { ...publishedPartialViewSet, coverage: 'complete' }, false],
+  [
+    'published V3 rejects cross-surface composite mismatch',
+    { ...publishedPartialViewSet, plugin: { ...publishedPartialViewSet.plugin, compositeDependencyDigest: digestA } },
+    false,
+  ],
+  [
+    'published V3 rejects a legacy manifest logical name',
+    {
+      ...publishedPartialViewSet,
+      portal: { ...publishedPartialViewSet.portal, manifestPath: 'runs/portal-run-42/completed-view-manifest.json' },
+    },
+    false,
+  ],
+  ['published V3 requires an ownership epoch', { ...publishedPartialViewSet, ownership: { ...ownership, ownershipEpochRevision: undefined } }, false],
+  [
+    'published V3 rejects a surface dependency mismatch',
+    {
+      ...publishedPartialViewSet,
+      publicationDecision: {
+        ...publishedViewSetPublicationDecision,
+        dependencies: [completedDependency('portal', 'portal-run-other', digestA), completedDependency('plugin', 'plugin-run-42', digestB)],
+      },
+    },
+    false,
+  ],
+];
+
 for (const [name, value, expected] of viewManifestCases) {
   assert.equal(isCompletedViewManifestV3(value), expected, name);
 }
@@ -403,6 +722,17 @@ for (const [name, value, expected] of viewSetCases) {
   assert.equal(isCompletedAzureViewSetV2(value), expected, name);
 }
 
+for (const [name, value, expected] of publishedViewManifestCases) {
+  assert.equal(isPublishedViewManifestV4(value), expected, name);
+}
+
+for (const [name, value, expected] of publishedViewSetCases) {
+  assert.equal(isPublishedAzureViewSetV3(value), expected, name);
+}
+
+assert.equal(isCompletedViewManifestV3(publishedPartialViewManifest), false, 'legacy V3 rejects a V4 manifest');
+assert.equal(isCompletedAzureViewSetV2(publishedPartialViewSet), false, 'legacy V2 rejects a published V3 pointer');
+
 console.log(
-  `Azure completed view-set contract checks passed: 10 legacy V1 checks, ${viewManifestCases.length} V3 checks, ${viewSetCases.length} V2 checks.`
+  `Azure view-set contract checks passed: 10 legacy V1 checks, ${viewManifestCases.length} completed V3 checks, ${viewSetCases.length} completed V2 checks, ${publishedViewManifestCases.length} published V4 checks, ${publishedViewSetCases.length} published V3 checks.`
 );

@@ -1,9 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isCompletedAzureViewSetV2 = exports.isCompletedViewManifestV3 = exports.isCompletedAzureViewSetV1 = void 0;
+exports.isPublishedAzureViewSetV3 = exports.isCompletedAzureViewSetV2 = exports.isPublishedViewManifestV4 = exports.isCompletedViewManifestV3 = exports.isCompletedAzureViewSetV1 = exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1 = void 0;
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
+exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1 = {
+    maxArtifacts: 512,
+    maxClaims: 128,
+    maxDependencies: 256,
+    maxIssues: 512,
+    maxClaimBindings: 512,
+    maxSectionPaths: 512,
+};
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim().length > 0;
 const isCanonicalIsoTimestamp = (value) => {
     if (!isNonEmptyString(value))
@@ -77,6 +85,120 @@ const isViewArtifactDescriptor = (value, runId) => isRecord(value) &&
     VIEW_CONTENT_ENCODINGS.has(value.contentEncoding) &&
     isNonNegativeSafeInteger(value.byteLength) &&
     isSha256(value.sha256);
+const isPublishedViewCoverage = (value) => value === 'complete' || value === 'partial';
+const isProjectedSectionPathForArtifact = (value, artifactPath) => {
+    if (!isStrictNonEmptyString(value))
+        return false;
+    if (value === artifactPath)
+        return true;
+    if (!value.startsWith(`${artifactPath}#/`))
+        return false;
+    const pointer = value.slice(artifactPath.length + 1);
+    return !pointer.includes('\\') && !pointer.includes('?') && !/%(?:2f|2F|5c|5C)/.test(pointer);
+};
+const parseProjectedSectionPath = (value) => {
+    const fragmentIndex = value.indexOf('#');
+    const artifactPath = fragmentIndex < 0 ? value : value.slice(0, fragmentIndex);
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(artifactPath) || !isProjectedSectionPathForArtifact(value, artifactPath))
+        return undefined;
+    return {
+        artifactPath,
+        pointerSegments: fragmentIndex < 0 ? [] : value.slice(fragmentIndex + 2).split('/'),
+    };
+};
+const doProjectedSectionsOverlap = (left, right) => {
+    const parsedLeft = parseProjectedSectionPath(left);
+    const parsedRight = parseProjectedSectionPath(right);
+    if (!parsedLeft || !parsedRight || parsedLeft.artifactPath !== parsedRight.artifactPath)
+        return false;
+    if (parsedLeft.pointerSegments.length === 0 || parsedRight.pointerSegments.length === 0)
+        return true;
+    const sharedLength = Math.min(parsedLeft.pointerSegments.length, parsedRight.pointerSegments.length);
+    for (let index = 0; index < sharedLength; index += 1) {
+        const leftSegment = parsedLeft.pointerSegments[index];
+        const rightSegment = parsedRight.pointerSegments[index];
+        if (leftSegment === rightSegment)
+            continue;
+        if (leftSegment === '*' || leftSegment === '**' || rightSegment === '*' || rightSegment === '**')
+            return true;
+        return false;
+    }
+    return true;
+};
+const hasUnambiguousPublishedClaimSections = (decision) => {
+    const declaredSections = [];
+    for (const claim of decision.claims) {
+        if (new Set(claim.sectionPaths).size !== claim.sectionPaths.length)
+            return false;
+        for (const sectionPath of claim.sectionPaths) {
+            if (!parseProjectedSectionPath(sectionPath))
+                return false;
+            if (declaredSections.some(declaredSection => doProjectedSectionsOverlap(declaredSection, sectionPath)))
+                return false;
+            declaredSections.push(sectionPath);
+        }
+    }
+    return true;
+};
+const isPublishedViewArtifactDescriptor = (value, runId) => {
+    if (!isViewArtifactDescriptor(value, runId) || !isRecord(value))
+        return false;
+    const runPrefix = `runs/${runId}/`;
+    if (value.name !== value.path.slice(runPrefix.length))
+        return false;
+    if (!Array.isArray(value.claimBindings) ||
+        value.claimBindings.length === 0 ||
+        value.claimBindings.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxClaimBindings) {
+        return false;
+    }
+    const claimIds = new Set();
+    for (const binding of value.claimBindings) {
+        if (!isRecord(binding) || !isStrictNonEmptyString(binding.claimId) || claimIds.has(binding.claimId))
+            return false;
+        claimIds.add(binding.claimId);
+        if (!Array.isArray(binding.sectionPaths) ||
+            binding.sectionPaths.length === 0 ||
+            binding.sectionPaths.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxSectionPaths) {
+            return false;
+        }
+        if (new Set(binding.sectionPaths).size !== binding.sectionPaths.length)
+            return false;
+        if (!binding.sectionPaths.every(sectionPath => isProjectedSectionPathForArtifact(sectionPath, value.path)))
+            return false;
+    }
+    return true;
+};
+const hasPublishedViewDecisionBounds = (decision) => {
+    if (decision.claims.length === 0 ||
+        decision.claims.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxClaims ||
+        decision.dependencies.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxDependencies ||
+        decision.issues.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxIssues) {
+        return false;
+    }
+    let sectionPathCount = 0;
+    let issueCount = decision.issues.length;
+    for (const claim of decision.claims) {
+        sectionPathCount += claim.sectionPaths.length;
+        issueCount += claim.issues.length;
+        if (sectionPathCount > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxSectionPaths || issueCount > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxIssues) {
+            return false;
+        }
+    }
+    return true;
+};
+const hasPublishedViewArtifactBounds = (artifacts) => {
+    let claimBindingCount = 0;
+    let sectionPathCount = 0;
+    for (const artifact of artifacts) {
+        claimBindingCount += artifact.claimBindings.length;
+        for (const binding of artifact.claimBindings)
+            sectionPathCount += binding.sectionPaths.length;
+        if (claimBindingCount > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxClaimBindings || sectionPathCount > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxSectionPaths) {
+            return false;
+        }
+    }
+    return true;
+};
 const hasRequiredViewDependencies = (decision) => {
     const dependencies = new Map(decision.dependencies.map(dependency => [dependency.name, dependency]));
     const billing = dependencies.get('billing');
@@ -128,6 +250,91 @@ const isCompletedViewManifestV3 = (value) => {
     return (0, artifactEvidence_js_1.isArtifactPublicationDecision)(value.publicationDecision) && hasRequiredViewDependencies(value.publicationDecision);
 };
 exports.isCompletedViewManifestV3 = isCompletedViewManifestV3;
+const hasExactPublishedClaimProjection = (artifacts, decision) => {
+    if (!hasUnambiguousPublishedClaimSections(decision))
+        return false;
+    const claimById = new Map(decision.claims.map(claim => [claim.claimId, claim]));
+    const completedClaims = decision.claims.filter(claim => claim.publication === 'completed');
+    if (completedClaims.length === 0)
+        return false;
+    const expectedBindings = new Set();
+    for (const claim of completedClaims) {
+        if (claim.sectionPaths.length === 0 || new Set(claim.sectionPaths).size !== claim.sectionPaths.length)
+            return false;
+        for (const sectionPath of claim.sectionPaths)
+            expectedBindings.add(`${claim.claimId}\0${sectionPath}`);
+    }
+    const actualBindings = new Set();
+    for (const artifact of artifacts) {
+        for (const binding of artifact.claimBindings) {
+            const claim = claimById.get(binding.claimId);
+            if (!claim || claim.publication !== 'completed')
+                return false;
+            for (const sectionPath of binding.sectionPaths) {
+                if (!claim.sectionPaths.includes(sectionPath))
+                    return false;
+                const key = `${binding.claimId}\0${sectionPath}`;
+                if (actualBindings.has(key))
+                    return false;
+                actualBindings.add(key);
+            }
+        }
+    }
+    return expectedBindings.size === actualBindings.size && Array.from(expectedBindings).every(binding => actualBindings.has(binding));
+};
+const isPublishedDecisionForCoverage = (decision, coverage) => {
+    if (!hasRequiredViewDependencies(decision) || decision.processing !== 'succeeded')
+        return false;
+    const completedClaimCount = decision.claims.filter(claim => claim.publication === 'completed').length;
+    if (coverage === 'complete') {
+        return decision.publication === 'completed' && decision.evidence === 'complete' && completedClaimCount === decision.claims.length;
+    }
+    return (decision.publication === 'partial' && decision.evidence === 'partial' && completedClaimCount > 0 && completedClaimCount < decision.claims.length);
+};
+/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+const isPublishedViewManifestV4 = (value) => {
+    if (!isRecord(value) ||
+        containsForbiddenViewArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
+            ...allowedViewArtifactPaths(value.artifacts),
+        ])) {
+        return false;
+    }
+    if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage))
+        return false;
+    if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false))
+        return false;
+    if (!isRecord(value.artifactGeneration) ||
+        value.artifactGeneration.runId !== value.runId ||
+        !isStrictCanonicalIsoTimestamp(value.artifactGeneration.generatedAt)) {
+        return false;
+    }
+    if (!Array.isArray(value.artifacts) || value.artifacts.length === 0 || value.artifacts.length > exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1.maxArtifacts) {
+        return false;
+    }
+    if (!value.artifacts.every(artifact => isPublishedViewArtifactDescriptor(artifact, value.runId)))
+        return false;
+    if (!hasPublishedViewArtifactBounds(value.artifacts))
+        return false;
+    if (new Set(value.artifacts.map(artifact => artifact.path)).size !== value.artifacts.length ||
+        new Set(value.artifacts.map(artifact => artifact.name)).size !== value.artifacts.length) {
+        return false;
+    }
+    if (!isPositiveSafeInteger(value.requestedArtifactCount) ||
+        value.requestedArtifactCount !== value.artifacts.length ||
+        !isNonNegativeSafeInteger(value.requestedResourceCount) ||
+        value.failedArtifactCount !== 0 ||
+        value.failedResourceCount !== 0 ||
+        !isSha256(value.compositeDependencyDigest) ||
+        !isStrictCanonicalIsoTimestamp(value.completedAt) ||
+        !(0, artifactEvidence_js_1.isArtifactPublicationDecision)(value.publicationDecision) ||
+        !hasPublishedViewDecisionBounds(value.publicationDecision)) {
+        return false;
+    }
+    return (isPublishedDecisionForCoverage(value.publicationDecision, value.coverage) &&
+        hasExactPublishedClaimProjection(value.artifacts, value.publicationDecision));
+};
+exports.isPublishedViewManifestV4 = isPublishedViewManifestV4;
 const hasSameOwnership = (left, right) => left.provider === right.provider &&
     left.tenantId === right.tenantId &&
     left.companyId === right.companyId &&
@@ -141,6 +348,22 @@ const isViewSetV2SurfaceReference = (value, surface, subscriptionId, ownership, 
     if (!isRecord(value) || !isSafePathSegment(value.runId))
         return false;
     const expectedManifestName = surface === 'portal' ? 'completed-view-manifest.json' : 'completed-plugin-generation.json';
+    if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.manifestPath))
+        return false;
+    if (!isEnforceableAzureOwnershipBinding(value.ownership) || !(0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value.revision))
+        return false;
+    if (!hasMatchingViewOwnership(subscriptionId, value.ownership, value.revision, true))
+        return false;
+    if (!hasSameOwnership(ownership, value.ownership) || !hasSameRevision(revision, value.revision))
+        return false;
+    return (isSha256(value.manifestDigest) &&
+        value.compositeDependencyDigest === compositeDependencyDigest &&
+        isStrictCanonicalIsoTimestamp(value.completedAt));
+};
+const isPublishedViewSetV3SurfaceReference = (value, surface, subscriptionId, ownership, revision, compositeDependencyDigest) => {
+    if (!isRecord(value) || !isSafePathSegment(value.runId) || !isPublishedViewCoverage(value.coverage))
+        return false;
+    const expectedManifestName = surface === 'portal' ? 'published-view-manifest.json' : 'published-plugin-generation.json';
     if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.manifestPath))
         return false;
     if (!isEnforceableAzureOwnershipBinding(value.ownership) || !(0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value.revision))
@@ -197,4 +420,45 @@ const isCompletedAzureViewSetV2 = (value) => {
         hasMatchingSurfaceDependency(value.publicationDecision, 'plugin', value.plugin));
 };
 exports.isCompletedAzureViewSetV2 = isCompletedAzureViewSetV2;
+/** Validates the promoted pointer for one claim-projected portal/plugin generation pair. */
+const isPublishedAzureViewSetV3 = (value) => {
+    const allowedReferences = isRecord(value)
+        ? [
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'portal'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'plugin'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.portal, 'manifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.plugin, 'manifestPath'),
+        ]
+        : [];
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences))
+        return false;
+    if (value.schemaVersion !== 3 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage))
+        return false;
+    if (!isSafePathSegment(value.subscriptionId) ||
+        !isStrictNonEmptyString(value.publicationId) ||
+        !isEnforceableAzureOwnershipBinding(value.ownership) ||
+        !(0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value.revision) ||
+        !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, true)) {
+        return false;
+    }
+    if (!isSha256(value.compositeDependencyDigest) || !isStrictCanonicalIsoTimestamp(value.completedAt))
+        return false;
+    if (!isPublishedViewSetV3SurfaceReference(value.portal, 'portal', value.subscriptionId, value.ownership, value.revision, value.compositeDependencyDigest) ||
+        !isPublishedViewSetV3SurfaceReference(value.plugin, 'plugin', value.subscriptionId, value.ownership, value.revision, value.compositeDependencyDigest)) {
+        return false;
+    }
+    const expectedCoverage = value.portal.coverage === 'complete' && value.plugin.coverage === 'complete' ? 'complete' : 'partial';
+    if (value.coverage !== expectedCoverage)
+        return false;
+    const laterSurfaceCompletedAt = Date.parse(value.portal.completedAt) >= Date.parse(value.plugin.completedAt) ? value.portal.completedAt : value.plugin.completedAt;
+    if (value.completedAt !== laterSurfaceCompletedAt)
+        return false;
+    return ((0, artifactEvidence_js_1.isArtifactPublicationDecision)(value.publicationDecision) &&
+        hasPublishedViewDecisionBounds(value.publicationDecision) &&
+        value.publicationDecision.publication === 'completed' &&
+        value.publicationDecision.evidence === value.coverage &&
+        hasMatchingSurfaceDependency(value.publicationDecision, 'portal', value.portal) &&
+        hasMatchingSurfaceDependency(value.publicationDecision, 'plugin', value.plugin));
+};
+exports.isPublishedAzureViewSetV3 = isPublishedAzureViewSetV3;
 //# sourceMappingURL=views.js.map
