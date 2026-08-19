@@ -1,7 +1,7 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
-import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
+import type { BenefitCostBasis, BenefitType, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import {
   AzureRecommendationLite,
   Recommendation,
@@ -197,6 +197,8 @@ export interface BenefitCoverageSummary {
   coveredQuantity: number;
   benefitIds: string[];
   benefitNames: string[];
+  /** Explicit benefit classifications represented by this coverage window. */
+  benefitTypes?: BenefitType[];
   basis?: BenefitCostBasis;
   eligibleQuantity?: number;
   eligibleCost?: number;
@@ -330,6 +332,40 @@ export type VmPricePerformanceComparisonEligibility =
   | 'feature-trade-off'
   | string;
 
+export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
+
+export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+
+export type VmReservationCompatibilityReason =
+  | 'same-flexibility-group-within-covered-units'
+  | 'same-flexibility-group-exceeds-covered-units'
+  | 'different-flexibility-group'
+  | 'instance-flexibility-disabled'
+  | 'missing-instance-flexibility-setting'
+  | 'missing-flexibility-evidence'
+  | string;
+
+export interface VmReservationCoverageContext {
+  benefitType: 'reservation';
+  benefitIds?: string[];
+  benefitNames?: string[];
+  coveragePercent?: number;
+  flexibilityGroup?: string;
+  currentNormalizedUnits?: number;
+  coveredNormalizedUnits?: number;
+  instanceFlexibility: 'on' | 'off' | 'unknown';
+  evidenceSource: 'azure-reservations-catalog' | 'billing-coverage-only';
+}
+
+export interface VmReservationCoverageImpact {
+  compatibility: VmReservationCompatibility;
+  reason: VmReservationCompatibilityReason;
+  flexibilityGroup?: string;
+  normalizedUnitsRequired?: number;
+  normalizedUnitsCovered?: number;
+  normalizedUnitsDelta?: number;
+}
+
 export interface VmPricePerformanceCatalogSource {
   /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
   fileName: string;
@@ -437,6 +473,10 @@ export interface VmPricePerformanceSku {
   localPricePerCore?: number;
   localPricePerMemoryGB?: number;
   comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+  /** Azure Reservation Catalog instance-size-flexibility group. */
+  reservationFlexibilityGroup?: string;
+  /** Azure Reservation Catalog normalized-unit ratio for this SKU. */
+  reservationNormalizedUnits?: number;
 }
 
 export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
@@ -454,6 +494,7 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   lostCapabilities?: string[];
   burstableFit?: VmBurstableFitEvidence;
   capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+  reservationCoverageImpact?: VmReservationCoverageImpact;
 }
 
 export type VmBurstableFit = 'strong' | 'possible';
@@ -496,6 +537,8 @@ export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanc
 export interface VmPricePerformanceInsights {
   /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
   comparisonScope: 'same-region';
+  /** Authority used for user-visible comparisons and recommendation semantics. */
+  comparisonBasis?: VmPricePerformanceComparisonBasis;
   /** Subscription/display currency used for user-facing price fields when available. */
   displayCurrencyCode?: string;
   displayCurrencySymbol?: string;
@@ -508,6 +551,8 @@ export interface VmPricePerformanceInsights {
   /** True only when the displayed catalog price includes the Windows license component. */
   windowsLicenseIncludedInPrice?: boolean;
   current?: VmPricePerformanceSku;
+  /** Present when current billing usage is covered by an active Reservation. */
+  reservationCoverage?: VmReservationCoverageContext;
   /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
   currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
   /** Feature-compatible alternatives that are safe default candidates. */

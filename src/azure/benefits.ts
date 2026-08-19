@@ -138,6 +138,8 @@ export interface IBenefitCoverageServiceSummary {
 export interface IBenefitCoverageBreakdownEntry {
   benefitId?: string;
   benefitName?: string;
+  /** Explicit producer classification. Consumers should only infer from identifiers for legacy artifacts. */
+  benefitType?: BenefitType;
   coveredQuantity?: number;
   coveredCost?: number;
 }
