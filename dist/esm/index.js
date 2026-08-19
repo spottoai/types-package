@@ -7,6 +7,7 @@ export * from './azure/billingGeneration.js';
 export * from './azure/billingArtifactGeneration.js';
 export * from './azure/billingArtifactLimits.js';
 export * from './azure/billingArtifactCanonicalization.js';
+export * from './azure/artifactRunReference.js';
 export * from './azure/billingPlots.js';
 export * from './azure/benefits.js';
 export * from './azure/commitmentsPlanning.js';

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   PUBLISHED_VIEW_OBJECT_LIMITS_V1,
+  encodeArtifactRunReferenceV1,
   isCompletedAzureViewSetV1,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
@@ -56,6 +57,19 @@ const ownership = {
 
 const revision = {
   ownershipEpochRevision: 3,
+  sourceRevision: 42,
+  policyRevision: 7,
+};
+
+const latestOwnership = {
+  provider: 'azure',
+  tenantId: 'tenant-1',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  accountId: subscriptionId,
+};
+
+const latestRevision = {
   sourceRevision: 42,
   policyRevision: 7,
 };
@@ -176,7 +190,9 @@ const completedViewSet = {
   completedAt,
 };
 
-const projectedPortalArtifactPath = 'runs/portal-run-42/projected/resources.json';
+const portalRunReference = encodeArtifactRunReferenceV1('portal-run-42');
+const pluginRunReference = encodeArtifactRunReferenceV1('plugin-run-42');
+const projectedPortalArtifactPath = `runs/${portalRunReference}/projected/resources.json`;
 const projectedInventorySection = `${projectedPortalArtifactPath}#/resources`;
 const projectedSavingsSection = `${projectedPortalArtifactPath}#/savings`;
 
@@ -245,8 +261,8 @@ const publishedPartialViewManifest = {
   requestedResourceCount: 25,
   failedArtifactCount: 0,
   failedResourceCount: 0,
-  ownership,
-  revision,
+  ownership: latestOwnership,
+  revision: latestRevision,
   compositeDependencyDigest: digestC,
   publicationDecision: partialViewPublicationDecision,
   completedAt,
@@ -288,25 +304,25 @@ const publishedPartialViewSet = {
   coverage: 'partial',
   subscriptionId,
   publicationId: 'publication-43',
-  ownership,
-  revision,
+  ownership: latestOwnership,
+  revision: latestRevision,
   portal: {
     runId: 'portal-run-42',
-    manifestPath: 'runs/portal-run-42/published-view-manifest.json',
+    manifestPath: `runs/${portalRunReference}/published-view-manifest.json`,
     manifestDigest: digestA,
     coverage: 'partial',
-    ownership,
-    revision,
+    ownership: latestOwnership,
+    revision: latestRevision,
     compositeDependencyDigest: digestC,
     completedAt: '2026-08-13T00:04:00.000Z',
   },
   plugin: {
     runId: 'plugin-run-42',
-    manifestPath: 'runs/plugin-run-42/published-plugin-generation.json',
+    manifestPath: `runs/${pluginRunReference}/published-plugin-generation.json`,
     manifestDigest: digestB,
     coverage: 'complete',
-    ownership,
-    revision,
+    ownership: latestOwnership,
+    revision: latestRevision,
     compositeDependencyDigest: digestC,
     completedAt,
   },
@@ -548,13 +564,9 @@ const publishedViewManifestCases = [
   ['V4 rejects an absolute additive path', { ...publishedPartialViewManifest, future: { filePath: '/tmp/view.json' } }, false],
   ['V4 rejects prototype control data', { ...publishedPartialViewManifest, future: JSON.parse('{"__proto__":{"polluted":true}}') }, false],
   [
-    'observe V4 without ownership epoch',
-    {
-      ...publishedPartialViewManifest,
-      ownership: { ...ownership, ownershipEpochRevision: undefined },
-      revision: { ...revision, ownershipEpochRevision: undefined },
-    },
-    true,
+    'V4 rejects an ownership epoch',
+    { ...publishedPartialViewManifest, ownership },
+    false,
   ],
   ['V4 rejects old schema discriminator', { ...publishedPartialViewManifest, schemaVersion: 3 }, false],
   ['V4 complete coverage rejects a partial decision', { ...publishedPartialViewManifest, coverage: 'complete' }, false],
@@ -700,7 +712,7 @@ const publishedViewSetCases = [
     },
     false,
   ],
-  ['published V3 requires an ownership epoch', { ...publishedPartialViewSet, ownership: { ...ownership, ownershipEpochRevision: undefined } }, false],
+  ['published V3 rejects an ownership epoch', { ...publishedPartialViewSet, ownership }, false],
   [
     'published V3 rejects a surface dependency mismatch',
     {

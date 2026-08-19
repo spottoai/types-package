@@ -7,6 +7,7 @@ export * from './azure/billingGeneration';
 export * from './azure/billingArtifactGeneration';
 export * from './azure/billingArtifactLimits';
 export * from './azure/billingArtifactCanonicalization';
+export * from './azure/artifactRunReference';
 export * from './azure/billingPlots';
 export * from './azure/benefits';
 export * from './azure/commitmentsPlanning';

@@ -140,5 +140,12 @@ export declare const isEnforceableArtifactOwnershipBinding: (value: unknown) => 
  * Callers must validate both vectors before comparison; this function deliberately compares the supplied values without adding a second validation policy.
  */
 export declare const compareArtifactRevisionVector: (left: ArtifactRevisionVector, right: ArtifactRevisionVector) => ArtifactRevisionComparison;
+export type EpochFreeArtifactRevisionComparison = 'newer' | 'equal' | 'older' | 'incomparable';
+/**
+ * Compares latest epoch-free authority revisions under a fixed policy revision.
+ * A policy mismatch is intentionally incomparable so a policy rollout cannot
+ * silently reuse source ordering without a separate contract decision.
+ */
+export declare const compareEpochFreeArtifactRevisionVector: (left: ArtifactRevisionVector, right: ArtifactRevisionVector) => EpochFreeArtifactRevisionComparison;
 export {};
 //# sourceMappingURL=artifactEvidence.d.ts.map

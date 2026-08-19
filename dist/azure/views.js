@@ -4,6 +4,7 @@ exports.isPublishedAzureViewSetV3 = exports.isCompletedAzureViewSetV2 = exports.
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
+const artifactRunReference_js_1 = require("./artifactRunReference.js");
 exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1 = {
     maxArtifacts: 512,
     maxClaims: 128,
@@ -56,6 +57,34 @@ const allowedViewArtifactPaths = (artifacts) => Array.isArray(artifacts) ? artif
 const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = []) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
     requireAllowedFieldTraversalContext: true,
 });
+const allowedPublicationDecisionIdentityFields = (decision) => {
+    if (!isRecord(decision))
+        return [];
+    const dependencies = Array.isArray(decision.dependencies) ? decision.dependencies : [];
+    return [
+        ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(decision, 'dependencies'),
+        ...dependencies.flatMap(dependency => (0, artifactControlData_js_1.allowedArtifactIdentityField)(dependency, 'generationId')),
+    ];
+};
+const allowedPublishedCostSavingsIdentityFields = (manifest) => {
+    if (!isRecord(manifest) || !isRecord(manifest.costSavings))
+        return [];
+    const costSavings = manifest.costSavings;
+    const diagnostics = costSavings.stableWholeResourceDeletionBackfill;
+    return [
+        ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(manifest, 'costSavings'),
+        ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(costSavings, 'stableWholeResourceDeletionBackfill'),
+        ...(isRecord(diagnostics)
+            ? [
+                {
+                    object: diagnostics,
+                    key: 'missingStableSpendResourceSamples',
+                    allowUriSchemeInStringArray: true,
+                },
+            ]
+            : []),
+    ];
+};
 const isSafePathSegment = (value) => isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 const isStrictCanonicalIsoTimestamp = (value) => {
     if (!isStrictNonEmptyString(value))
@@ -75,10 +104,15 @@ const hasMatchingViewOwnership = (subscriptionId, ownership, revision, enforceab
         return false;
     return ownership.ownershipEpochRevision === revision.ownershipEpochRevision;
 };
-const isViewArtifactDescriptor = (value, runId) => isRecord(value) &&
+const isEpochFreeAzureViewOwnership = (value) => (0, artifactEvidence_js_1.isArtifactOwnershipBinding)(value) && value.provider === 'azure' && !Object.prototype.hasOwnProperty.call(value, 'ownershipEpochRevision');
+const isEpochFreeViewRevision = (value) => (0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value) && !Object.prototype.hasOwnProperty.call(value, 'ownershipEpochRevision');
+const hasEpochFreeMatchingViewOwnership = (subscriptionId, ownership, revision) => isEpochFreeAzureViewOwnership(ownership) &&
+    isEpochFreeViewRevision(revision) &&
+    hasMatchingViewOwnership(subscriptionId, ownership, revision, false);
+const isViewArtifactDescriptor = (value, runId, runReference = runId) => isRecord(value) &&
     (0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.path) &&
-    value.path.startsWith(`runs/${runId}/`) &&
-    value.path.length > `runs/${runId}/`.length &&
+    value.path.startsWith(`runs/${runReference}/`) &&
+    value.path.length > `runs/${runReference}/`.length &&
     isStrictNonEmptyString(value.name) &&
     value.mediaType === 'application/json' &&
     typeof value.contentEncoding === 'string' &&
@@ -141,9 +175,10 @@ const hasUnambiguousPublishedClaimSections = (decision) => {
     return true;
 };
 const isPublishedViewArtifactDescriptor = (value, runId) => {
-    if (!isViewArtifactDescriptor(value, runId) || !isRecord(value))
+    const runReference = (0, artifactRunReference_js_1.encodeArtifactRunReferenceV1)(runId);
+    if (!isViewArtifactDescriptor(value, runId, runReference) || !isRecord(value))
         return false;
-    const runPrefix = `runs/${runId}/`;
+    const runPrefix = `runs/${runReference}/`;
     if (value.name !== value.path.slice(runPrefix.length))
         return false;
     if (!Array.isArray(value.claimBindings) ||
@@ -291,18 +326,26 @@ const isPublishedDecisionForCoverage = (decision, coverage) => {
     }
     return (decision.publication === 'partial' && decision.evidence === 'partial' && completedClaimCount > 0 && completedClaimCount < decision.claims.length);
 };
-/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+/** Validates a claim-projected portal or plugin generation under the latest epoch-free authority contract. */
 const isPublishedViewManifestV4 = (value) => {
-    if (!isRecord(value) ||
-        containsForbiddenViewArtifactControlData(value, [
+    const allowedReferences = isRecord(value)
+        ? [
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'runId'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifactGeneration'),
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value.artifactGeneration, 'runId'),
             ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
             ...allowedViewArtifactPaths(value.artifacts),
-        ])) {
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'publicationDecision'),
+            ...allowedPublicationDecisionIdentityFields(value.publicationDecision),
+            ...allowedPublishedCostSavingsIdentityFields(value),
+        ]
+        : [];
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) {
         return false;
     }
     if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage))
         return false;
-    if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false))
+    if (!(0, artifactRunReference_js_1.isRawArtifactRunIdV1)(value.runId) || !hasEpochFreeMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision))
         return false;
     if (!isRecord(value.artifactGeneration) ||
         value.artifactGeneration.runId !== value.runId ||
@@ -361,15 +404,17 @@ const isViewSetV2SurfaceReference = (value, surface, subscriptionId, ownership, 
         isStrictCanonicalIsoTimestamp(value.completedAt));
 };
 const isPublishedViewSetV3SurfaceReference = (value, surface, subscriptionId, ownership, revision, compositeDependencyDigest) => {
-    if (!isRecord(value) || !isSafePathSegment(value.runId) || !isPublishedViewCoverage(value.coverage))
+    if (!isRecord(value) || !(0, artifactRunReference_js_1.isRawArtifactRunIdV1)(value.runId) || !isPublishedViewCoverage(value.coverage))
         return false;
     const expectedManifestName = surface === 'portal' ? 'published-view-manifest.json' : 'published-plugin-generation.json';
-    if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.manifestPath))
+    const runReference = (0, artifactRunReference_js_1.encodeArtifactRunReferenceV1)(value.runId);
+    if (value.manifestPath !== `runs/${runReference}/${expectedManifestName}` || !(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.manifestPath))
         return false;
-    if (!isEnforceableAzureOwnershipBinding(value.ownership) || !(0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value.revision))
+    if (!isEpochFreeAzureViewOwnership(value.ownership) ||
+        !isEpochFreeViewRevision(value.revision) ||
+        !hasEpochFreeMatchingViewOwnership(subscriptionId, value.ownership, value.revision)) {
         return false;
-    if (!hasMatchingViewOwnership(subscriptionId, value.ownership, value.revision, true))
-        return false;
+    }
     if (!hasSameOwnership(ownership, value.ownership) || !hasSameRevision(revision, value.revision))
         return false;
     return (isSha256(value.manifestDigest) &&
@@ -424,10 +469,15 @@ exports.isCompletedAzureViewSetV2 = isCompletedAzureViewSetV2;
 const isPublishedAzureViewSetV3 = (value) => {
     const allowedReferences = isRecord(value)
         ? [
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value, 'publicationId'),
             ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'portal'),
             ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'plugin'),
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value.portal, 'runId'),
+            ...(0, artifactControlData_js_1.allowedArtifactIdentityField)(value.plugin, 'runId'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.portal, 'manifestPath'),
             ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value.plugin, 'manifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'publicationDecision'),
+            ...allowedPublicationDecisionIdentityFields(value.publicationDecision),
         ]
         : [];
     if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences))
@@ -436,9 +486,9 @@ const isPublishedAzureViewSetV3 = (value) => {
         return false;
     if (!isSafePathSegment(value.subscriptionId) ||
         !isStrictNonEmptyString(value.publicationId) ||
-        !isEnforceableAzureOwnershipBinding(value.ownership) ||
-        !(0, artifactEvidenceValidation_js_1.isArtifactRevisionVector)(value.revision) ||
-        !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, true)) {
+        !isEpochFreeAzureViewOwnership(value.ownership) ||
+        !isEpochFreeViewRevision(value.revision) ||
+        !hasEpochFreeMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision)) {
         return false;
     }
     if (!isSha256(value.compositeDependencyDigest) || !isStrictCanonicalIsoTimestamp(value.completedAt))

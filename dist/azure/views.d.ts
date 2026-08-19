@@ -824,6 +824,12 @@ interface PublishedViewClaimBinding {
 interface PublishedViewArtifactDescriptor extends CompletedViewArtifactDescriptor {
     claimBindings: [PublishedViewClaimBinding, ...PublishedViewClaimBinding[]];
 }
+type EpochFreeAzureViewOwnership = ArtifactOwnershipBinding<'azure'> & {
+    ownershipEpochRevision?: never;
+};
+type EpochFreeViewRevision = ArtifactRevisionVector & {
+    ownershipEpochRevision?: never;
+};
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
     schemaVersion: 3;
@@ -853,8 +859,8 @@ export interface PublishedViewManifestV4 extends CompletedViewManifestV2Requeste
     costSavings?: CompletedViewCostSavingsManifest;
     failedArtifactCount: 0;
     failedResourceCount: 0;
-    ownership: ArtifactOwnershipBinding<'azure'>;
-    revision: ArtifactRevisionVector;
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
     compositeDependencyDigest: string;
     publicationDecision: ArtifactPublicationDecision;
     completedAt: string;
@@ -897,8 +903,15 @@ interface AzureViewSetV2SurfaceReference {
     compositeDependencyDigest: string;
     completedAt: string;
 }
-interface PublishedAzureViewSetV3SurfaceReference extends AzureViewSetV2SurfaceReference {
+interface PublishedAzureViewSetV3SurfaceReference {
+    runId: string;
+    manifestPath: string;
+    manifestDigest: string;
     coverage: PublishedViewCoverage;
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
+    compositeDependencyDigest: string;
+    completedAt: string;
 }
 /** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
 export interface CompletedAzureViewSetV2 {
@@ -925,12 +938,8 @@ export interface PublishedAzureViewSetV3 {
     coverage: PublishedViewCoverage;
     subscriptionId: string;
     publicationId: string;
-    ownership: ArtifactOwnershipBinding<'azure'> & {
-        ownershipEpochRevision: number;
-    };
-    revision: ArtifactRevisionVector & {
-        ownershipEpochRevision: number;
-    };
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
     portal: PublishedAzureViewSetV3SurfaceReference;
     plugin: PublishedAzureViewSetV3SurfaceReference;
     compositeDependencyDigest: string;
@@ -956,7 +965,7 @@ export interface AzureRecommendationResourceEvidenceDocument {
 export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export declare const isCompletedViewManifestV3: (value: unknown) => value is CompletedViewManifestV3;
-/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+/** Validates a claim-projected portal or plugin generation under the latest epoch-free authority contract. */
 export declare const isPublishedViewManifestV4: (value: unknown) => value is PublishedViewManifestV4;
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export declare const isCompletedAzureViewSetV2: (value: unknown) => value is CompletedAzureViewSetV2;

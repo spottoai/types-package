@@ -23,6 +23,7 @@ __exportStar(require("./azure/billingGeneration"), exports);
 __exportStar(require("./azure/billingArtifactGeneration"), exports);
 __exportStar(require("./azure/billingArtifactLimits"), exports);
 __exportStar(require("./azure/billingArtifactCanonicalization"), exports);
+__exportStar(require("./azure/artifactRunReference"), exports);
 __exportStar(require("./azure/billingPlots"), exports);
 __exportStar(require("./azure/benefits"), exports);
 __exportStar(require("./azure/commitmentsPlanning"), exports);
