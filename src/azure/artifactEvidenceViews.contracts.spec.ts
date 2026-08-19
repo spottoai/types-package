@@ -1,4 +1,5 @@
 import {
+  encodeArtifactRunReferenceV1,
   isCompletedAzureViewSetV2,
   isCompletedViewManifestV3,
   isPublishedAzureViewSetV3,
@@ -32,6 +33,19 @@ const ownership = {
 
 const revision = {
   ownershipEpochRevision: 3,
+  sourceRevision: 42,
+  policyRevision: 7,
+} as const;
+
+const latestOwnership = {
+  provider: 'azure',
+  tenantId: 'tenant-1',
+  companyId: 'company-1',
+  cloudAccountId: 'cloud-account-1',
+  accountId: subscriptionId,
+} as const;
+
+const latestRevision = {
   sourceRevision: 42,
   policyRevision: 7,
 } as const;
@@ -150,7 +164,9 @@ const completedViewSet = {
   completedAt,
 } satisfies CompletedAzureViewSetV2;
 
-const projectedPortalArtifactPath = 'runs/portal-run-42/projected/resources.json';
+const portalRunReference = encodeArtifactRunReferenceV1('portal:run-42');
+const pluginRunReference = encodeArtifactRunReferenceV1('plugin:run-42');
+const projectedPortalArtifactPath = `runs/${portalRunReference}/projected/resources.json`;
 const projectedInventorySection = `${projectedPortalArtifactPath}#/resources`;
 const projectedSavingsSection = `${projectedPortalArtifactPath}#/savings`;
 
@@ -203,7 +219,7 @@ const publishedPartialViewManifest = {
   schemaVersion: 4,
   status: 'published',
   coverage: 'partial',
-  runId: 'portal-run-42',
+  runId: 'portal:run-42',
   subscriptionId,
   artifacts: [
     {
@@ -217,15 +233,15 @@ const publishedPartialViewManifest = {
     },
   ],
   artifactGeneration: {
-    runId: 'portal-run-42',
+    runId: 'portal:run-42',
     generatedAt: '2026-08-13T00:04:00.000Z',
   },
   requestedArtifactCount: 1,
   requestedResourceCount: 25,
   failedArtifactCount: 0,
   failedResourceCount: 0,
-  ownership,
-  revision,
+  ownership: latestOwnership,
+  revision: latestRevision,
   compositeDependencyDigest: digestC,
   publicationDecision: partialViewPublicationDecision,
   completedAt,
@@ -270,6 +286,7 @@ const publishedCompleteViewManifest = {
 const publishedViewSetPublicationDecision = {
   ...completedViewSetPublicationDecision,
   evidence: 'partial',
+  dependencies: [completedDependency('portal', 'portal:run-42', digestA), completedDependency('plugin', 'plugin:run-42', digestB)],
 } satisfies ArtifactPublicationDecision;
 
 const publishedPartialViewSet = {
@@ -277,26 +294,26 @@ const publishedPartialViewSet = {
   status: 'published',
   coverage: 'partial',
   subscriptionId,
-  publicationId: 'publication-43',
-  ownership,
-  revision,
+  publicationId: 'publication:43',
+  ownership: latestOwnership,
+  revision: latestRevision,
   portal: {
-    runId: 'portal-run-42',
-    manifestPath: 'runs/portal-run-42/published-view-manifest.json',
+    runId: 'portal:run-42',
+    manifestPath: `runs/${portalRunReference}/published-view-manifest.json`,
     manifestDigest: digestA,
     coverage: 'partial',
-    ownership,
-    revision,
+    ownership: latestOwnership,
+    revision: latestRevision,
     compositeDependencyDigest: digestC,
     completedAt: '2026-08-13T00:04:00.000Z',
   },
   plugin: {
-    runId: 'plugin-run-42',
-    manifestPath: 'runs/plugin-run-42/published-plugin-generation.json',
+    runId: 'plugin:run-42',
+    manifestPath: `runs/${pluginRunReference}/published-plugin-generation.json`,
     manifestDigest: digestB,
     coverage: 'complete',
-    ownership,
-    revision,
+    ownership: latestOwnership,
+    revision: latestRevision,
     compositeDependencyDigest: digestC,
     completedAt,
   },
@@ -579,6 +596,26 @@ const publishedViewValidationResults: boolean[] = [
   isPublishedViewManifestV4(publishedPartialViewManifest),
   isPublishedViewManifestV4({
     ...publishedPartialViewManifest,
+    costSavings: {
+      stableWholeResourceDeletionBackfill: {
+        recommendationCount: 1,
+        resourceCount: 1,
+        stableBillingRowCount: 0,
+        stableSpendIndexResourceCount: 0,
+        registeredResourceCount: 0,
+        missingStableSpendResourceCount: 1,
+        missingStableSpendReasonCounts: { 'no-stable-spend': 1 },
+        relatedResourceCount: 0,
+        registeredMaxMonthlySavings: 0,
+        registeredRecommendations: {},
+        missingStableSpendResourceSamples: [
+          'no-stable-spend: /subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1',
+        ],
+      },
+    },
+  }),
+  isPublishedViewManifestV4({
+    ...publishedPartialViewManifest,
     ownership: { ...ownership, ownershipEpochRevision: undefined },
     revision: { ...revision, ownershipEpochRevision: undefined },
   }),
@@ -669,7 +706,7 @@ const publishedViewSetValidationResults: boolean[] = [
   }),
   !isPublishedAzureViewSetV3({
     ...publishedPartialViewSet,
-    ownership: { ...ownership, ownershipEpochRevision: undefined },
+    ownership: { ...latestOwnership, ownershipEpochRevision: 3 },
   }),
   !isPublishedAzureViewSetV3({
     ...publishedPartialViewSet,

@@ -34,6 +34,12 @@ interface BillingGenerationDocumentV2 {
     ownership: ArtifactOwnershipBinding<'azure'>;
     revision: ArtifactRevisionVector;
 }
+type EpochFreeAzureOwnership = ArtifactOwnershipBinding<'azure'> & {
+    ownershipEpochRevision?: never;
+};
+type EpochFreeArtifactRevision = ArtifactRevisionVector & {
+    ownershipEpochRevision?: never;
+};
 export interface BillingAnalyzerInputManifestV2 extends BillingGenerationDocumentV2 {
     publicationKey: string;
     coveragePlanDigest: string;
@@ -59,6 +65,18 @@ export interface BillingAnalyzerInputCurrentPointerV1 {
     manifestDigest: string;
     completedAt: string;
 }
+/** Latest epoch-free authority for one immutable analyzer input generation. */
+export interface BillingAnalyzerInputCurrentPointerV2 {
+    schemaVersion: 2;
+    status: 'completed';
+    subscriptionId: string;
+    generationId: string;
+    ownership: EpochFreeAzureOwnership;
+    revision: EpochFreeArtifactRevision;
+    manifestPath: string;
+    manifestDigest: string;
+    completedAt: string;
+}
 export interface BillingAnalyzerRequestV2 {
     schemaVersion: 2;
     eventId: string;
@@ -71,6 +89,22 @@ export interface BillingAnalyzerRequestV2 {
     generationId: string;
     ownership: ArtifactOwnershipBinding<'azure'>;
     revision: ArtifactRevisionVector;
+    inputManifestPath: string;
+    inputManifestDigest: string;
+    displayMetadata?: BillingAnalyzerMetadata;
+}
+/** Latest-only queue envelope for one immutable analyzer input generation. */
+export interface BillingAnalyzerRequestV3 {
+    schemaVersion: 3;
+    eventId: string;
+    messageId: string;
+    correlationId: string;
+    occurredAt: string;
+    idempotencyKey: string;
+    subscriptionId: string;
+    generationId: string;
+    ownership: EpochFreeAzureOwnership;
+    revision: EpochFreeArtifactRevision;
     inputManifestPath: string;
     inputManifestDigest: string;
     displayMetadata?: BillingAnalyzerMetadata;
@@ -119,6 +153,21 @@ export interface BillingAnalysisCurrentPointerV1 {
     publicationDecision: BillingCompletedArtifactPublicationDecision;
     completedAt: string;
 }
+/** Latest epoch-free authority for one completed immutable analyzer output generation. */
+export interface BillingAnalysisCurrentPointerV2 {
+    schemaVersion: 2;
+    status: 'completed';
+    subscriptionId: string;
+    generationId: string;
+    ownership: EpochFreeAzureOwnership;
+    revision: EpochFreeArtifactRevision;
+    inputManifestPath: string;
+    inputManifestDigest: string;
+    outputManifestPath: string;
+    outputManifestDigest: string;
+    publicationDecision: BillingCompletedArtifactPublicationDecision;
+    completedAt: string;
+}
 /** Immutable diagnostic record of what observe mode would have done at promotion time. */
 export interface BillingAnalysisPromotionObservationV1 {
     schemaVersion: 1;
@@ -152,14 +201,20 @@ export declare const isBillingAnalyzerInputObservationPointerPath: (value: unkno
 export declare const isBillingAnalyzerInputManifestV2: (value: unknown) => value is BillingAnalyzerInputManifestV2;
 /** Validates the enforceable current pointer for one published analyzer input generation. */
 export declare const isBillingAnalyzerInputCurrentPointerV1: (value: unknown) => value is BillingAnalyzerInputCurrentPointerV1;
+/** Validates the latest epoch-free current pointer for one analyzer input generation. */
+export declare const isBillingAnalyzerInputCurrentPointerV2: (value: unknown) => value is BillingAnalyzerInputCurrentPointerV2;
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export declare const isBillingAnalyzerRequestV2: (value: unknown) => value is BillingAnalyzerRequestV2;
+/** Validates the latest-only V3 queue envelope and immutable input-manifest binding. */
+export declare const isBillingAnalyzerRequestV3: (value: unknown) => value is BillingAnalyzerRequestV3;
 /** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
 export declare const isBillingAnalyzerInputObservationPointerV1: (value: unknown) => value is BillingAnalyzerInputObservationPointerV1;
 /** Validates an immutable analyzer output manifest and its exact input binding. */
 export declare const isBillingAnalyzerOutputManifestV2: (value: unknown) => value is BillingAnalyzerOutputManifestV2;
 /** Validates the sole promoted authority pointer for completed billing analysis. */
 export declare const isBillingAnalysisCurrentPointerV1: (value: unknown) => value is BillingAnalysisCurrentPointerV1;
+/** Validates the latest epoch-free promoted authority pointer for completed billing analysis. */
+export declare const isBillingAnalysisCurrentPointerV2: (value: unknown) => value is BillingAnalysisCurrentPointerV2;
 /** Validates an immutable diagnostic-only promotion evaluation. */
 export declare const isBillingAnalysisPromotionObservationV1: (value: unknown) => value is BillingAnalysisPromotionObservationV1;
 export {};
