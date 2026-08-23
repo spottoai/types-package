@@ -1,5 +1,6 @@
 import type { CloudAccountAuthMode } from '../accounts/accounts.js';
 import type { AzureGuestAccessSubscriptionMessageMetadata } from './payloads.js';
+import type { CommentMention, CommentNotificationContext } from './recommendationState.js';
 
 export interface ReviewChecklistRequest {
   tenantId?: string;
@@ -54,14 +55,19 @@ export interface ReviewChecklistItemState {
   status?: ReviewChecklistItemStatus;
   statusSource?: 'system' | 'user';
   comments?: string;
+  mentions?: CommentMention[];
+  notificationContext?: CommentNotificationContext;
   lastUpdated?: string;
   updatedBy?: string;
   updatedByUserId?: string;
 }
 
 export interface ReviewChecklistItemStateUpdateRequest {
+  companyId?: string;
   status?: ReviewChecklistItemStatus;
   comments?: string;
+  mentions?: CommentMention[];
+  notificationContext?: CommentNotificationContext;
 }
 
 export interface ReviewChecklistDefinition {
@@ -108,6 +114,8 @@ export interface ReviewChecklistItemOutput extends ReviewChecklistItemResult {
   hasGraph: boolean | null;
   graphSourceAI: boolean | null;
   comments?: string | null;
+  mentions?: CommentMention[];
+  notificationContext?: CommentNotificationContext;
   statusSource?: 'system' | 'user';
   lastUpdated?: string | null;
   updatedBy?: string | null;
