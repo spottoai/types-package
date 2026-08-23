@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = exports.isBillingAnalyzerInputObservationPointerPath = exports.buildBillingAnalyzerInputObservationPointerPath = exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = void 0;
+exports.isBillingAnalysisPromotionObservationV1 = exports.isBillingAnalysisCurrentPointerV2 = exports.isBillingAnalysisCurrentPointerV1 = exports.isBillingAnalyzerOutputManifestV2 = exports.isBillingAnalyzerInputObservationPointerV1 = exports.isBillingAnalyzerRequestV3 = exports.isBillingAnalyzerRequestV2 = exports.isBillingAnalyzerInputCurrentPointerV2 = exports.isBillingAnalyzerInputCurrentPointerV1 = exports.isBillingAnalyzerInputManifestV2 = exports.isBillingAnalyzerInputObservationPointerPath = exports.buildBillingAnalyzerInputObservationPointerPath = exports.BILLING_ANALYZER_INPUT_OBSERVATION_POINTER_RELATIVE_PATH = void 0;
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
@@ -88,6 +88,11 @@ const hasMatchingIdentity = (subscriptionId, generationId, ownership, revision, 
         return false;
     return !enforceable || (0, artifactEvidence_js_1.isEnforceableArtifactOwnershipBinding)(ownership);
 };
+const hasEpochFreeMatchingIdentity = (subscriptionId, generationId, ownership, revision) => hasMatchingIdentity(subscriptionId, generationId, ownership, revision, false) &&
+    isRecord(ownership) &&
+    isRecord(revision) &&
+    !Object.prototype.hasOwnProperty.call(ownership, 'ownershipEpochRevision') &&
+    !Object.prototype.hasOwnProperty.call(revision, 'ownershipEpochRevision');
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
 const hasDiagnosticObservationDiscriminant = (value) => value.authority === 'diagnostic-only' ||
     (value.publicationMode === 'observe' &&
@@ -233,6 +238,23 @@ const isBillingAnalyzerInputCurrentPointerV1 = (value) => {
         isCanonicalIsoTimestamp(value.completedAt));
 };
 exports.isBillingAnalyzerInputCurrentPointerV1 = isBillingAnalyzerInputCurrentPointerV1;
+/** Validates the latest epoch-free current pointer for one analyzer input generation. */
+const isBillingAnalyzerInputCurrentPointerV2 = (value) => {
+    if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
+        containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'manifestPath'))) {
+        return false;
+    }
+    if (value.schemaVersion !== 2 || value.status !== 'completed')
+        return false;
+    if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision))
+        return false;
+    return ((0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.manifestPath) &&
+        value.manifestPath === inputManifestPath(value.subscriptionId, value.generationId) &&
+        isSha256(value.manifestDigest) &&
+        isCanonicalIsoTimestamp(value.completedAt));
+};
+exports.isBillingAnalyzerInputCurrentPointerV2 = isBillingAnalyzerInputCurrentPointerV2;
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 const isBillingAnalyzerRequestV2 = (value) => {
     if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
@@ -255,6 +277,30 @@ const isBillingAnalyzerRequestV2 = (value) => {
     return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
 };
 exports.isBillingAnalyzerRequestV2 = isBillingAnalyzerRequestV2;
+/** Validates the latest-only V3 queue envelope and immutable input-manifest binding. */
+const isBillingAnalyzerRequestV3 = (value) => {
+    if (!isRecord(value) ||
+        Object.prototype.hasOwnProperty.call(value, 'publicationMode') ||
+        containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'))) {
+        return false;
+    }
+    if (value.schemaVersion !== 3)
+        return false;
+    if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision))
+        return false;
+    if (![value.eventId, value.correlationId].every(isNonEmptyString) || !isSha256(value.messageId) || !isSha256(value.idempotencyKey))
+        return false;
+    if (value.idempotencyKey !== value.messageId || !isCanonicalIsoTimestamp(value.occurredAt))
+        return false;
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) ||
+        value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!isSha256(value.inputManifestDigest))
+        return false;
+    return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
+};
+exports.isBillingAnalyzerRequestV3 = isBillingAnalyzerRequestV3;
 /** Validates a diagnostic-only latest-enqueued pointer; it is never customer authority. */
 const isBillingAnalyzerInputObservationPointerV1 = (value) => {
     if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, (0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath')))
@@ -349,6 +395,34 @@ const isBillingAnalysisCurrentPointerV1 = (value) => {
         isCanonicalIsoTimestamp(value.completedAt));
 };
 exports.isBillingAnalysisCurrentPointerV1 = isBillingAnalysisCurrentPointerV1;
+/** Validates the latest epoch-free promoted authority pointer for completed billing analysis. */
+const isBillingAnalysisCurrentPointerV2 = (value) => {
+    if (!isRecord(value) ||
+        hasDiagnosticObservationDiscriminant(value) ||
+        containsForbiddenBillingArtifactControlData(value, [
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'inputManifestPath'),
+            ...(0, artifactControlData_js_1.allowedArtifactReferenceField)(value, 'outputManifestPath'),
+        ])) {
+        return false;
+    }
+    if (value.schemaVersion !== 2 || value.status !== 'completed')
+        return false;
+    if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision))
+        return false;
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.inputManifestPath) ||
+        value.inputManifestPath !== inputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!(0, artifactEvidenceValidation_js_1.isStrictLogicalArtifactReference)(value.outputManifestPath) ||
+        value.outputManifestPath !== outputManifestPath(value.subscriptionId, value.generationId)) {
+        return false;
+    }
+    if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputManifestDigest))
+        return false;
+    return ((0, billingArtifactEvidence_js_1.isBillingCompletedArtifactPublicationDecision)(value.publicationDecision, value.generationId, value.inputManifestDigest) &&
+        isCanonicalIsoTimestamp(value.completedAt));
+};
+exports.isBillingAnalysisCurrentPointerV2 = isBillingAnalysisCurrentPointerV2;
 /** Validates an immutable diagnostic-only promotion evaluation. */
 const isBillingAnalysisPromotionObservationV1 = (value) => {
     if (!isRecord(value) ||

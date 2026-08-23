@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.compareArtifactRevisionVector = exports.isEnforceableArtifactOwnershipBinding = exports.isArtifactOwnershipBinding = exports.isArtifactPublicationDecision = void 0;
+exports.compareEpochFreeArtifactRevisionVector = exports.compareArtifactRevisionVector = exports.isEnforceableArtifactOwnershipBinding = exports.isArtifactOwnershipBinding = exports.isArtifactPublicationDecision = void 0;
 const artifactEvidenceValidation_js_1 = require("./artifactEvidenceValidation.js");
 const SUPPORT_VERDICTS = new Set(['supported', 'unsupported', 'unknown']);
 const APPLICABILITY_VERDICTS = new Set(['applicable', 'not-applicable', 'unknown']);
@@ -178,4 +178,30 @@ const compareArtifactRevisionVector = (left, right) => {
     return 'incomparable';
 };
 exports.compareArtifactRevisionVector = compareArtifactRevisionVector;
+/**
+ * Compares latest epoch-free authority revisions under a fixed policy revision.
+ * A policy mismatch is intentionally incomparable so a policy rollout cannot
+ * silently reuse source ordering without a separate contract decision.
+ */
+const compareEpochFreeArtifactRevisionVector = (left, right) => {
+    if (left.ownershipEpochRevision !== undefined || right.ownershipEpochRevision !== undefined)
+        return 'incomparable';
+    if (!Number.isSafeInteger(left.sourceRevision) ||
+        left.sourceRevision < 1 ||
+        !Number.isSafeInteger(right.sourceRevision) ||
+        right.sourceRevision < 1 ||
+        !Number.isSafeInteger(left.policyRevision) ||
+        left.policyRevision < 1 ||
+        !Number.isSafeInteger(right.policyRevision) ||
+        right.policyRevision < 1 ||
+        left.policyRevision !== right.policyRevision) {
+        return 'incomparable';
+    }
+    if (left.sourceRevision > right.sourceRevision)
+        return 'newer';
+    if (left.sourceRevision < right.sourceRevision)
+        return 'older';
+    return 'equal';
+};
+exports.compareEpochFreeArtifactRevisionVector = compareEpochFreeArtifactRevisionVector;
 //# sourceMappingURL=artifactEvidence.js.map

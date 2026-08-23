@@ -1,7 +1,7 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
-import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
+import type { BenefitCostBasis, BenefitType, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import {
   AzureRecommendationLite,
   Recommendation,
@@ -17,6 +17,7 @@ import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import {
+  allowedArtifactIdentityField,
   allowedArtifactReferenceField,
   allowedArtifactTraversalField,
   containsForbiddenArtifactControlData,
@@ -32,6 +33,8 @@ import {
 } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
+import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   subscription: SubscriptionSummary;
@@ -43,6 +46,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   summary?: ExecutiveSummary;
   dailySummary?: DailySummary;
   costSavingsSummary?: CostSavingsSummary;
+  /** Authoritative additive savings total for this complete dashboard scope. */
+  savingsAggregate?: SavingsAggregateV2;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -62,6 +67,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   tags?: Record<string, string[]>;
   spottoTags?: Tags;
   costSavingsSummary?: CostSavingsSummary;
+  /** Authoritative additive savings total for this complete resource scope. */
+  savingsAggregate?: SavingsAggregateV2;
 }
 
 /**
@@ -128,6 +135,8 @@ export interface AzureResourcePortalItem {
   /** Aggregation rule for this savings amount */
   savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   savings?: SavingsPotential;
+  /** Canonical additive contribution owned by this resource projection. */
+  portfolioContribution?: PortfolioSavingsContributionV2;
   recommendations: AzureRecommendationLite[];
   /** Spotto recommendations */
   customRecommendations: AzureRecommendationLite[];
@@ -188,6 +197,8 @@ export interface BenefitCoverageSummary {
   coveredQuantity: number;
   benefitIds: string[];
   benefitNames: string[];
+  /** Explicit benefit classifications represented by this coverage window. */
+  benefitTypes?: BenefitType[];
   basis?: BenefitCostBasis;
   eligibleQuantity?: number;
   eligibleCost?: number;
@@ -321,6 +332,40 @@ export type VmPricePerformanceComparisonEligibility =
   | 'feature-trade-off'
   | string;
 
+export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
+
+export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+
+export type VmReservationCompatibilityReason =
+  | 'same-flexibility-group-within-covered-units'
+  | 'same-flexibility-group-exceeds-covered-units'
+  | 'different-flexibility-group'
+  | 'instance-flexibility-disabled'
+  | 'missing-instance-flexibility-setting'
+  | 'missing-flexibility-evidence'
+  | string;
+
+export interface VmReservationCoverageContext {
+  benefitType: 'reservation';
+  benefitIds?: string[];
+  benefitNames?: string[];
+  coveragePercent?: number;
+  flexibilityGroup?: string;
+  currentNormalizedUnits?: number;
+  coveredNormalizedUnits?: number;
+  instanceFlexibility: 'on' | 'off' | 'unknown';
+  evidenceSource: 'azure-reservations-catalog' | 'billing-coverage-only';
+}
+
+export interface VmReservationCoverageImpact {
+  compatibility: VmReservationCompatibility;
+  reason: VmReservationCompatibilityReason;
+  flexibilityGroup?: string;
+  normalizedUnitsRequired?: number;
+  normalizedUnitsCovered?: number;
+  normalizedUnitsDelta?: number;
+}
+
 export interface VmPricePerformanceCatalogSource {
   /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
   fileName: string;
@@ -428,6 +473,10 @@ export interface VmPricePerformanceSku {
   localPricePerCore?: number;
   localPricePerMemoryGB?: number;
   comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+  /** Azure Reservation Catalog instance-size-flexibility group. */
+  reservationFlexibilityGroup?: string;
+  /** Azure Reservation Catalog normalized-unit ratio for this SKU. */
+  reservationNormalizedUnits?: number;
 }
 
 export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
@@ -445,6 +494,7 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   lostCapabilities?: string[];
   burstableFit?: VmBurstableFitEvidence;
   capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+  reservationCoverageImpact?: VmReservationCoverageImpact;
 }
 
 export type VmBurstableFit = 'strong' | 'possible';
@@ -487,6 +537,8 @@ export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanc
 export interface VmPricePerformanceInsights {
   /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
   comparisonScope: 'same-region';
+  /** Authority used for user-visible comparisons and recommendation semantics. */
+  comparisonBasis?: VmPricePerformanceComparisonBasis;
   /** Subscription/display currency used for user-facing price fields when available. */
   displayCurrencyCode?: string;
   displayCurrencySymbol?: string;
@@ -499,6 +551,8 @@ export interface VmPricePerformanceInsights {
   /** True only when the displayed catalog price includes the Windows license component. */
   windowsLicenseIncludedInPrice?: boolean;
   current?: VmPricePerformanceSku;
+  /** Present when current billing usage is covered by an active Reservation. */
+  reservationCoverage?: VmReservationCoverageContext;
   /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
   currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
   /** Feature-compatible alternatives that are safe default candidates. */
@@ -962,6 +1016,9 @@ interface PublishedViewArtifactDescriptor extends CompletedViewArtifactDescripto
   claimBindings: [PublishedViewClaimBinding, ...PublishedViewClaimBinding[]];
 }
 
+type EpochFreeAzureViewOwnership = ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision?: never };
+type EpochFreeViewRevision = ArtifactRevisionVector & { ownershipEpochRevision?: never };
+
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
   schemaVersion: 3;
@@ -992,8 +1049,8 @@ export interface PublishedViewManifestV4 extends CompletedViewManifestV2Requeste
   costSavings?: CompletedViewCostSavingsManifest;
   failedArtifactCount: 0;
   failedResourceCount: 0;
-  ownership: ArtifactOwnershipBinding<'azure'>;
-  revision: ArtifactRevisionVector;
+  ownership: EpochFreeAzureViewOwnership;
+  revision: EpochFreeViewRevision;
   compositeDependencyDigest: string;
   publicationDecision: ArtifactPublicationDecision;
   completedAt: string;
@@ -1036,8 +1093,15 @@ interface AzureViewSetV2SurfaceReference {
   completedAt: string;
 }
 
-interface PublishedAzureViewSetV3SurfaceReference extends AzureViewSetV2SurfaceReference {
+interface PublishedAzureViewSetV3SurfaceReference {
+  runId: string;
+  manifestPath: string;
+  manifestDigest: string;
   coverage: PublishedViewCoverage;
+  ownership: EpochFreeAzureViewOwnership;
+  revision: EpochFreeViewRevision;
+  compositeDependencyDigest: string;
+  completedAt: string;
 }
 
 /** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
@@ -1062,8 +1126,8 @@ export interface PublishedAzureViewSetV3 {
   coverage: PublishedViewCoverage;
   subscriptionId: string;
   publicationId: string;
-  ownership: ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number };
-  revision: ArtifactRevisionVector & { ownershipEpochRevision: number };
+  ownership: EpochFreeAzureViewOwnership;
+  revision: EpochFreeViewRevision;
   portal: PublishedAzureViewSetV3SurfaceReference;
   plugin: PublishedAzureViewSetV3SurfaceReference;
   compositeDependencyDigest: string;
@@ -1142,6 +1206,34 @@ const containsForbiddenViewArtifactControlData = (value: unknown, allowedReferen
     requireAllowedFieldTraversalContext: true,
   });
 
+const allowedPublicationDecisionIdentityFields = (decision: unknown): AllowedArtifactReferenceField[] => {
+  if (!isRecord(decision)) return [];
+  const dependencies = Array.isArray(decision.dependencies) ? decision.dependencies : [];
+  return [
+    ...allowedArtifactTraversalField(decision, 'dependencies'),
+    ...dependencies.flatMap(dependency => allowedArtifactIdentityField(dependency, 'generationId')),
+  ];
+};
+
+const allowedPublishedCostSavingsIdentityFields = (manifest: unknown): AllowedArtifactReferenceField[] => {
+  if (!isRecord(manifest) || !isRecord(manifest.costSavings)) return [];
+  const costSavings = manifest.costSavings;
+  const diagnostics = costSavings.stableWholeResourceDeletionBackfill;
+  return [
+    ...allowedArtifactTraversalField(manifest, 'costSavings'),
+    ...allowedArtifactTraversalField(costSavings, 'stableWholeResourceDeletionBackfill'),
+    ...(isRecord(diagnostics)
+      ? [
+          {
+            object: diagnostics,
+            key: 'missingStableSpendResourceSamples',
+            allowUriSchemeInStringArray: true,
+          } satisfies AllowedArtifactReferenceField,
+        ]
+      : []),
+  ];
+};
+
 const isSafePathSegment = (value: unknown): value is string =>
   isStrictNonEmptyString(value) && !/[\\/?#%]/.test(value) && value !== '.' && value !== '..';
 
@@ -1162,11 +1254,22 @@ const hasMatchingViewOwnership = (subscriptionId: unknown, ownership: unknown, r
   return ownership.ownershipEpochRevision === revision.ownershipEpochRevision;
 };
 
-const isViewArtifactDescriptor = (value: unknown, runId: string): value is CompletedViewArtifactDescriptor =>
+const isEpochFreeAzureViewOwnership = (value: unknown): value is EpochFreeAzureViewOwnership =>
+  isArtifactOwnershipBinding(value) && value.provider === 'azure' && !Object.prototype.hasOwnProperty.call(value, 'ownershipEpochRevision');
+
+const isEpochFreeViewRevision = (value: unknown): value is EpochFreeViewRevision =>
+  isArtifactRevisionVector(value) && !Object.prototype.hasOwnProperty.call(value, 'ownershipEpochRevision');
+
+const hasEpochFreeMatchingViewOwnership = (subscriptionId: unknown, ownership: unknown, revision: unknown): boolean =>
+  isEpochFreeAzureViewOwnership(ownership) &&
+  isEpochFreeViewRevision(revision) &&
+  hasMatchingViewOwnership(subscriptionId, ownership, revision, false);
+
+const isViewArtifactDescriptor = (value: unknown, runId: string, runReference: string = runId): value is CompletedViewArtifactDescriptor =>
   isRecord(value) &&
   isStrictLogicalArtifactReference(value.path) &&
-  value.path.startsWith(`runs/${runId}/`) &&
-  value.path.length > `runs/${runId}/`.length &&
+  value.path.startsWith(`runs/${runReference}/`) &&
+  value.path.length > `runs/${runReference}/`.length &&
   isStrictNonEmptyString(value.name) &&
   value.mediaType === 'application/json' &&
   typeof value.contentEncoding === 'string' &&
@@ -1224,8 +1327,9 @@ const hasUnambiguousPublishedClaimSections = (decision: ArtifactPublicationDecis
 };
 
 const isPublishedViewArtifactDescriptor = (value: unknown, runId: string): value is PublishedViewArtifactDescriptor => {
-  if (!isViewArtifactDescriptor(value, runId) || !isRecord(value)) return false;
-  const runPrefix = `runs/${runId}/`;
+  const runReference = encodeArtifactRunReferenceV1(runId);
+  if (!isViewArtifactDescriptor(value, runId, runReference) || !isRecord(value)) return false;
+  const runPrefix = `runs/${runReference}/`;
   if (value.name !== value.path.slice(runPrefix.length)) return false;
   if (
     !Array.isArray(value.claimBindings) ||
@@ -1386,19 +1490,25 @@ const isPublishedDecisionForCoverage = (decision: ArtifactPublicationDecision, c
   );
 };
 
-/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+/** Validates a claim-projected portal or plugin generation under the latest epoch-free authority contract. */
 export const isPublishedViewManifestV4 = (value: unknown): value is PublishedViewManifestV4 => {
-  if (
-    !isRecord(value) ||
-    containsForbiddenViewArtifactControlData(value, [
-      ...allowedArtifactTraversalField(value, 'artifacts'),
-      ...allowedViewArtifactPaths(value.artifacts),
-    ])
-  ) {
+  const allowedReferences = isRecord(value)
+    ? [
+        ...allowedArtifactIdentityField(value, 'runId'),
+        ...allowedArtifactTraversalField(value, 'artifactGeneration'),
+        ...allowedArtifactIdentityField(value.artifactGeneration, 'runId'),
+        ...allowedArtifactTraversalField(value, 'artifacts'),
+        ...allowedViewArtifactPaths(value.artifacts),
+        ...allowedArtifactTraversalField(value, 'publicationDecision'),
+        ...allowedPublicationDecisionIdentityFields(value.publicationDecision),
+        ...allowedPublishedCostSavingsIdentityFields(value),
+      ]
+    : [];
+  if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) {
     return false;
   }
   if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage)) return false;
-  if (!isSafePathSegment(value.runId) || !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, false)) return false;
+  if (!isRawArtifactRunIdV1(value.runId) || !hasEpochFreeMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision)) return false;
   if (
     !isRecord(value.artifactGeneration) ||
     value.artifactGeneration.runId !== value.runId ||
@@ -1478,11 +1588,17 @@ const isPublishedViewSetV3SurfaceReference = (
   revision: ArtifactRevisionVector,
   compositeDependencyDigest: string
 ): value is PublishedAzureViewSetV3SurfaceReference => {
-  if (!isRecord(value) || !isSafePathSegment(value.runId) || !isPublishedViewCoverage(value.coverage)) return false;
+  if (!isRecord(value) || !isRawArtifactRunIdV1(value.runId) || !isPublishedViewCoverage(value.coverage)) return false;
   const expectedManifestName = surface === 'portal' ? 'published-view-manifest.json' : 'published-plugin-generation.json';
-  if (value.manifestPath !== `runs/${value.runId}/${expectedManifestName}` || !isStrictLogicalArtifactReference(value.manifestPath)) return false;
-  if (!isEnforceableAzureOwnershipBinding(value.ownership) || !isArtifactRevisionVector(value.revision)) return false;
-  if (!hasMatchingViewOwnership(subscriptionId, value.ownership, value.revision, true)) return false;
+  const runReference = encodeArtifactRunReferenceV1(value.runId);
+  if (value.manifestPath !== `runs/${runReference}/${expectedManifestName}` || !isStrictLogicalArtifactReference(value.manifestPath)) return false;
+  if (
+    !isEpochFreeAzureViewOwnership(value.ownership) ||
+    !isEpochFreeViewRevision(value.revision) ||
+    !hasEpochFreeMatchingViewOwnership(subscriptionId, value.ownership, value.revision)
+  ) {
+    return false;
+  }
   if (!hasSameOwnership(ownership, value.ownership) || !hasSameRevision(revision, value.revision)) return false;
   return (
     isSha256(value.manifestDigest) &&
@@ -1494,7 +1610,7 @@ const isPublishedViewSetV3SurfaceReference = (
 const hasMatchingSurfaceDependency = (
   decision: ArtifactPublicationDecision,
   name: 'portal' | 'plugin',
-  surface: AzureViewSetV2SurfaceReference
+  surface: Pick<AzureViewSetV2SurfaceReference, 'runId' | 'manifestDigest'>
 ): boolean => {
   const dependency = decision.dependencies.find(candidate => candidate.name === name);
   return (
@@ -1549,10 +1665,15 @@ export const isCompletedAzureViewSetV2 = (value: unknown): value is CompletedAzu
 export const isPublishedAzureViewSetV3 = (value: unknown): value is PublishedAzureViewSetV3 => {
   const allowedReferences = isRecord(value)
     ? [
+        ...allowedArtifactIdentityField(value, 'publicationId'),
         ...allowedArtifactTraversalField(value, 'portal'),
         ...allowedArtifactTraversalField(value, 'plugin'),
+        ...allowedArtifactIdentityField(value.portal, 'runId'),
+        ...allowedArtifactIdentityField(value.plugin, 'runId'),
         ...allowedArtifactReferenceField(value.portal, 'manifestPath'),
         ...allowedArtifactReferenceField(value.plugin, 'manifestPath'),
+        ...allowedArtifactTraversalField(value, 'publicationDecision'),
+        ...allowedPublicationDecisionIdentityFields(value.publicationDecision),
       ]
     : [];
   if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) return false;
@@ -1560,9 +1681,9 @@ export const isPublishedAzureViewSetV3 = (value: unknown): value is PublishedAzu
   if (
     !isSafePathSegment(value.subscriptionId) ||
     !isStrictNonEmptyString(value.publicationId) ||
-    !isEnforceableAzureOwnershipBinding(value.ownership) ||
-    !isArtifactRevisionVector(value.revision) ||
-    !hasMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision, true)
+    !isEpochFreeAzureViewOwnership(value.ownership) ||
+    !isEpochFreeViewRevision(value.revision) ||
+    !hasEpochFreeMatchingViewOwnership(value.subscriptionId, value.ownership, value.revision)
   ) {
     return false;
   }

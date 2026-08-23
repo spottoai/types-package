@@ -58,6 +58,9 @@ interface BillingGenerationDocumentV2 {
   revision: ArtifactRevisionVector;
 }
 
+type EpochFreeAzureOwnership = ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision?: never };
+type EpochFreeArtifactRevision = ArtifactRevisionVector & { ownershipEpochRevision?: never };
+
 export interface BillingAnalyzerInputManifestV2 extends BillingGenerationDocumentV2 {
   publicationKey: string;
   coveragePlanDigest: string;
@@ -81,6 +84,19 @@ export interface BillingAnalyzerInputCurrentPointerV1 {
   completedAt: string;
 }
 
+/** Latest epoch-free authority for one immutable analyzer input generation. */
+export interface BillingAnalyzerInputCurrentPointerV2 {
+  schemaVersion: 2;
+  status: 'completed';
+  subscriptionId: string;
+  generationId: string;
+  ownership: EpochFreeAzureOwnership;
+  revision: EpochFreeArtifactRevision;
+  manifestPath: string;
+  manifestDigest: string;
+  completedAt: string;
+}
+
 export interface BillingAnalyzerRequestV2 {
   schemaVersion: 2;
   eventId: string;
@@ -93,6 +109,23 @@ export interface BillingAnalyzerRequestV2 {
   generationId: string;
   ownership: ArtifactOwnershipBinding<'azure'>;
   revision: ArtifactRevisionVector;
+  inputManifestPath: string;
+  inputManifestDigest: string;
+  displayMetadata?: BillingAnalyzerMetadata;
+}
+
+/** Latest-only queue envelope for one immutable analyzer input generation. */
+export interface BillingAnalyzerRequestV3 {
+  schemaVersion: 3;
+  eventId: string;
+  messageId: string;
+  correlationId: string;
+  occurredAt: string;
+  idempotencyKey: string;
+  subscriptionId: string;
+  generationId: string;
+  ownership: EpochFreeAzureOwnership;
+  revision: EpochFreeArtifactRevision;
   inputManifestPath: string;
   inputManifestDigest: string;
   displayMetadata?: BillingAnalyzerMetadata;
@@ -133,6 +166,22 @@ export interface BillingAnalysisCurrentPointerV1 {
   generationId: string;
   ownership: ArtifactOwnershipBinding<'azure'> & { ownershipEpochRevision: number };
   revision: ArtifactRevisionVector & { ownershipEpochRevision: number };
+  inputManifestPath: string;
+  inputManifestDigest: string;
+  outputManifestPath: string;
+  outputManifestDigest: string;
+  publicationDecision: BillingCompletedArtifactPublicationDecision;
+  completedAt: string;
+}
+
+/** Latest epoch-free authority for one completed immutable analyzer output generation. */
+export interface BillingAnalysisCurrentPointerV2 {
+  schemaVersion: 2;
+  status: 'completed';
+  subscriptionId: string;
+  generationId: string;
+  ownership: EpochFreeAzureOwnership;
+  revision: EpochFreeArtifactRevision;
   inputManifestPath: string;
   inputManifestDigest: string;
   outputManifestPath: string;
@@ -272,6 +321,13 @@ const hasMatchingIdentity = (
   if (ownership.ownershipEpochRevision !== revision.ownershipEpochRevision) return false;
   return !enforceable || isEnforceableArtifactOwnershipBinding(ownership);
 };
+
+const hasEpochFreeMatchingIdentity = (subscriptionId: unknown, generationId: unknown, ownership: unknown, revision: unknown): boolean =>
+  hasMatchingIdentity(subscriptionId, generationId, ownership, revision, false) &&
+  isRecord(ownership) &&
+  isRecord(revision) &&
+  !Object.prototype.hasOwnProperty.call(ownership, 'ownershipEpochRevision') &&
+  !Object.prototype.hasOwnProperty.call(revision, 'ownershipEpochRevision');
 
 const isSha256 = (value: unknown): value is string => typeof value === 'string' && SHA256_PATTERN.test(value);
 
@@ -426,12 +482,54 @@ export const isBillingAnalyzerInputCurrentPointerV1 = (value: unknown): value is
   );
 };
 
+/** Validates the latest epoch-free current pointer for one analyzer input generation. */
+export const isBillingAnalyzerInputCurrentPointerV2 = (value: unknown): value is BillingAnalyzerInputCurrentPointerV2 => {
+  if (
+    !isRecord(value) ||
+    hasDiagnosticObservationDiscriminant(value) ||
+    containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'manifestPath'))
+  ) {
+    return false;
+  }
+  if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
+  if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision)) return false;
+  return (
+    isStrictLogicalArtifactReference(value.manifestPath) &&
+    value.manifestPath === inputManifestPath(value.subscriptionId as string, value.generationId as string) &&
+    isSha256(value.manifestDigest) &&
+    isCanonicalIsoTimestamp(value.completedAt)
+  );
+};
+
 /** Validates the V2 queue envelope and its immutable input-manifest binding. */
 export const isBillingAnalyzerRequestV2 = (value: unknown): value is BillingAnalyzerRequestV2 => {
   if (!isRecord(value) || containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))) return false;
   if (value.schemaVersion !== 2 || (value.publicationMode !== 'observe' && value.publicationMode !== 'enforce')) return false;
   const enforceable = value.publicationMode === 'enforce';
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, enforceable)) return false;
+  if (![value.eventId, value.correlationId].every(isNonEmptyString) || !isSha256(value.messageId) || !isSha256(value.idempotencyKey)) return false;
+  if (value.idempotencyKey !== value.messageId || !isCanonicalIsoTimestamp(value.occurredAt)) return false;
+  if (
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
+  if (!isSha256(value.inputManifestDigest)) return false;
+  return value.displayMetadata === undefined || isJsonMetadata(value.displayMetadata);
+};
+
+/** Validates the latest-only V3 queue envelope and immutable input-manifest binding. */
+export const isBillingAnalyzerRequestV3 = (value: unknown): value is BillingAnalyzerRequestV3 => {
+  if (
+    !isRecord(value) ||
+    Object.prototype.hasOwnProperty.call(value, 'publicationMode') ||
+    containsForbiddenBillingArtifactControlData(value, allowedArtifactReferenceField(value, 'inputManifestPath'))
+  ) {
+    return false;
+  }
+  if (value.schemaVersion !== 3) return false;
+  if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision)) return false;
   if (![value.eventId, value.correlationId].every(isNonEmptyString) || !isSha256(value.messageId) || !isSha256(value.idempotencyKey)) return false;
   if (value.idempotencyKey !== value.messageId || !isCanonicalIsoTimestamp(value.occurredAt)) return false;
   if (
@@ -532,6 +630,39 @@ export const isBillingAnalysisCurrentPointerV1 = (value: unknown): value is Bill
   }
   if (value.schemaVersion !== 1 || value.status !== 'completed') return false;
   if (!hasMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision, true)) return false;
+  if (
+    !isStrictLogicalArtifactReference(value.inputManifestPath) ||
+    value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
+  if (
+    !isStrictLogicalArtifactReference(value.outputManifestPath) ||
+    value.outputManifestPath !== outputManifestPath(value.subscriptionId as string, value.generationId as string)
+  ) {
+    return false;
+  }
+  if (!isSha256(value.inputManifestDigest) || !isSha256(value.outputManifestDigest)) return false;
+  return (
+    isBillingCompletedArtifactPublicationDecision(value.publicationDecision, value.generationId as string, value.inputManifestDigest as string) &&
+    isCanonicalIsoTimestamp(value.completedAt)
+  );
+};
+
+/** Validates the latest epoch-free promoted authority pointer for completed billing analysis. */
+export const isBillingAnalysisCurrentPointerV2 = (value: unknown): value is BillingAnalysisCurrentPointerV2 => {
+  if (
+    !isRecord(value) ||
+    hasDiagnosticObservationDiscriminant(value) ||
+    containsForbiddenBillingArtifactControlData(value, [
+      ...allowedArtifactReferenceField(value, 'inputManifestPath'),
+      ...allowedArtifactReferenceField(value, 'outputManifestPath'),
+    ])
+  ) {
+    return false;
+  }
+  if (value.schemaVersion !== 2 || value.status !== 'completed') return false;
+  if (!hasEpochFreeMatchingIdentity(value.subscriptionId, value.generationId, value.ownership, value.revision)) return false;
   if (
     !isStrictLogicalArtifactReference(value.inputManifestPath) ||
     value.inputManifestPath !== inputManifestPath(value.subscriptionId as string, value.generationId as string)

@@ -1,7 +1,7 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
-import type { BenefitCostBasis, IBenefitCoverageBreakdownEntry } from './benefits.js';
+import type { BenefitCostBasis, BenefitType, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import { AzureRecommendationLite, Recommendation, RecommendationDecisionContext, type RecommendationResource, type ResourceScopedRecommendation } from './recommendations.js';
 import { SpendDataSource, SubscriptionSummary, SubscriptionSummaryLite } from './subscriptions.js';
 import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } from './resourceOptimization.js';
@@ -12,6 +12,7 @@ import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilitySta
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -22,6 +23,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     summary?: ExecutiveSummary;
     dailySummary?: DailySummary;
     costSavingsSummary?: CostSavingsSummary;
+    /** Authoritative additive savings total for this complete dashboard scope. */
+    savingsAggregate?: SavingsAggregateV2;
     advisorScore?: AdvisorScoreSummary;
     healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -39,6 +42,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     tags?: Record<string, string[]>;
     spottoTags?: Tags;
     costSavingsSummary?: CostSavingsSummary;
+    /** Authoritative additive savings total for this complete resource scope. */
+    savingsAggregate?: SavingsAggregateV2;
 }
 /**
  * Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
@@ -104,6 +109,8 @@ export interface AzureResourcePortalItem {
     /** Aggregation rule for this savings amount */
     savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     savings?: SavingsPotential;
+    /** Canonical additive contribution owned by this resource projection. */
+    portfolioContribution?: PortfolioSavingsContributionV2;
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
     customRecommendations: AzureRecommendationLite[];
@@ -159,6 +166,8 @@ export interface BenefitCoverageSummary {
     coveredQuantity: number;
     benefitIds: string[];
     benefitNames: string[];
+    /** Explicit benefit classifications represented by this coverage window. */
+    benefitTypes?: BenefitType[];
     basis?: BenefitCostBasis;
     eligibleQuantity?: number;
     eligibleCost?: number;
@@ -274,6 +283,28 @@ export type VmPricePerformanceTier = 'standard' | 'spot' | 'low' | string;
 export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y' | 'reserved3y' | 'savingsplan1y' | 'savingsplan3y' | 'spot' | string;
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
 export type VmPricePerformanceComparisonEligibility = 'default' | 'excluded-tier' | 'excluded-burstable' | 'excluded-low-confidence' | 'unavailable-in-subscription' | 'feature-trade-off' | string;
+export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
+export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+export type VmReservationCompatibilityReason = 'same-flexibility-group-within-covered-units' | 'same-flexibility-group-exceeds-covered-units' | 'different-flexibility-group' | 'instance-flexibility-disabled' | 'missing-instance-flexibility-setting' | 'missing-flexibility-evidence' | string;
+export interface VmReservationCoverageContext {
+    benefitType: 'reservation';
+    benefitIds?: string[];
+    benefitNames?: string[];
+    coveragePercent?: number;
+    flexibilityGroup?: string;
+    currentNormalizedUnits?: number;
+    coveredNormalizedUnits?: number;
+    instanceFlexibility: 'on' | 'off' | 'unknown';
+    evidenceSource: 'azure-reservations-catalog' | 'billing-coverage-only';
+}
+export interface VmReservationCoverageImpact {
+    compatibility: VmReservationCompatibility;
+    reason: VmReservationCompatibilityReason;
+    flexibilityGroup?: string;
+    normalizedUnitsRequired?: number;
+    normalizedUnitsCovered?: number;
+    normalizedUnitsDelta?: number;
+}
 export interface VmPricePerformanceCatalogSource {
     /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
     fileName: string;
@@ -375,6 +406,10 @@ export interface VmPricePerformanceSku {
     localPricePerCore?: number;
     localPricePerMemoryGB?: number;
     comparisonEligibility?: VmPricePerformanceComparisonEligibility;
+    /** Azure Reservation Catalog instance-size-flexibility group. */
+    reservationFlexibilityGroup?: string;
+    /** Azure Reservation Catalog normalized-unit ratio for this SKU. */
+    reservationNormalizedUnits?: number;
 }
 export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
     rank: number;
@@ -391,6 +426,7 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
     lostCapabilities?: string[];
     burstableFit?: VmBurstableFitEvidence;
     capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
+    reservationCoverageImpact?: VmReservationCoverageImpact;
 }
 export type VmBurstableFit = 'strong' | 'possible';
 export type VmBurstableAlternativeRole = 'lowest-cost' | 'balanced' | 'maximum-headroom' | 'additional';
@@ -426,6 +462,8 @@ export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanc
 export interface VmPricePerformanceInsights {
     /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
     comparisonScope: 'same-region';
+    /** Authority used for user-visible comparisons and recommendation semantics. */
+    comparisonBasis?: VmPricePerformanceComparisonBasis;
     /** Subscription/display currency used for user-facing price fields when available. */
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
@@ -438,6 +476,8 @@ export interface VmPricePerformanceInsights {
     /** True only when the displayed catalog price includes the Windows license component. */
     windowsLicenseIncludedInPrice?: boolean;
     current?: VmPricePerformanceSku;
+    /** Present when current billing usage is covered by an active Reservation. */
+    reservationCoverage?: VmReservationCoverageContext;
     /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
     currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */
@@ -817,6 +857,12 @@ interface PublishedViewClaimBinding {
 interface PublishedViewArtifactDescriptor extends CompletedViewArtifactDescriptor {
     claimBindings: [PublishedViewClaimBinding, ...PublishedViewClaimBinding[]];
 }
+type EpochFreeAzureViewOwnership = ArtifactOwnershipBinding<'azure'> & {
+    ownershipEpochRevision?: never;
+};
+type EpochFreeViewRevision = ArtifactRevisionVector & {
+    ownershipEpochRevision?: never;
+};
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
     schemaVersion: 3;
@@ -846,8 +892,8 @@ export interface PublishedViewManifestV4 extends CompletedViewManifestV2Requeste
     costSavings?: CompletedViewCostSavingsManifest;
     failedArtifactCount: 0;
     failedResourceCount: 0;
-    ownership: ArtifactOwnershipBinding<'azure'>;
-    revision: ArtifactRevisionVector;
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
     compositeDependencyDigest: string;
     publicationDecision: ArtifactPublicationDecision;
     completedAt: string;
@@ -890,8 +936,15 @@ interface AzureViewSetV2SurfaceReference {
     compositeDependencyDigest: string;
     completedAt: string;
 }
-interface PublishedAzureViewSetV3SurfaceReference extends AzureViewSetV2SurfaceReference {
+interface PublishedAzureViewSetV3SurfaceReference {
+    runId: string;
+    manifestPath: string;
+    manifestDigest: string;
     coverage: PublishedViewCoverage;
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
+    compositeDependencyDigest: string;
+    completedAt: string;
 }
 /** Sole promoted authority for one evidence-enforced portal/plugin generation pair. */
 export interface CompletedAzureViewSetV2 {
@@ -918,12 +971,8 @@ export interface PublishedAzureViewSetV3 {
     coverage: PublishedViewCoverage;
     subscriptionId: string;
     publicationId: string;
-    ownership: ArtifactOwnershipBinding<'azure'> & {
-        ownershipEpochRevision: number;
-    };
-    revision: ArtifactRevisionVector & {
-        ownershipEpochRevision: number;
-    };
+    ownership: EpochFreeAzureViewOwnership;
+    revision: EpochFreeViewRevision;
     portal: PublishedAzureViewSetV3SurfaceReference;
     plugin: PublishedAzureViewSetV3SurfaceReference;
     compositeDependencyDigest: string;
@@ -949,7 +998,7 @@ export interface AzureRecommendationResourceEvidenceDocument {
 export declare const isCompletedAzureViewSetV1: (value: unknown) => value is CompletedAzureViewSetV1;
 /** Validates an evidence-aware completed portal or plugin generation manifest. */
 export declare const isCompletedViewManifestV3: (value: unknown) => value is CompletedViewManifestV3;
-/** Validates a claim-projected portal or plugin generation, including observe-mode epoch-free manifests. */
+/** Validates a claim-projected portal or plugin generation under the latest epoch-free authority contract. */
 export declare const isPublishedViewManifestV4: (value: unknown) => value is PublishedViewManifestV4;
 /** Validates the promoted pointer for an evidence-enforced portal/plugin view pair. */
 export declare const isCompletedAzureViewSetV2: (value: unknown) => value is CompletedAzureViewSetV2;
