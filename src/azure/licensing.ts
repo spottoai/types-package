@@ -28,6 +28,18 @@ export type LicensingConfidence = 'high' | 'medium' | 'low' | 'unknown';
 
 export type LicensingEstimateOutcome = 'indicative-saving' | 'payg-may-be-cheaper' | 'unavailable';
 
+export type LicensingSubscriptionPricingClassification = 'standard' | 'dev-test' | 'unknown';
+
+export type LicensingRetailPriceType = 'consumption' | 'devtestconsumption' | 'unknown';
+
+export type LicensingScenarioKind = 'current-state' | 'target-state';
+
+export type LicensingTargetStateAvailability = 'available' | 'review-required';
+
+export type LicensingTargetStateDependencyCode = 'resize' | 'scheduled-runtime';
+
+export type LicensingTargetRuntimeSource = 'company-business-hours' | 'fallback-business-hours-only' | 'recommendation-schedule';
+
 export type LicensingFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 
 export type LicensingDecisionStatus =
@@ -91,6 +103,10 @@ export type LicensingReasonCode =
   | 'stale-public-price'
   | 'missing-fx-rate'
   | 'stale-fx-rate'
+  | 'dev-test-standard-retail-excluded'
+  | 'target-shape-incomplete'
+  | 'target-retail-price-missing'
+  | 'target-runtime-invalid'
   | 'entitlement-not-confirmed'
   | 'insufficient-history'
   | 'partial-historical-coverage'
@@ -102,6 +118,14 @@ export type LicensingReasonCode =
 export interface LicensingMoneyAmount {
   amount: number;
   currency: string;
+}
+
+export interface LicensingSubscriptionPricingContext {
+  classification: LicensingSubscriptionPricingClassification;
+  retailPriceType: LicensingRetailPriceType;
+  displayName: 'Standard' | 'Dev/Test' | 'Unknown';
+  source: 'subscription-quota' | 'unknown';
+  quotaId?: string;
 }
 
 export interface LicensingObservationWindow {
@@ -240,12 +264,49 @@ export interface LicensingPurchaseScenario {
   assumptionCodes: string[];
 }
 
+export interface LicensingTargetShape {
+  sourceRecommendationId: string;
+  skuName: string;
+  vCpuCount?: number;
+  vCoreCount?: number;
+  instanceCount?: number;
+}
+
+export interface LicensingTargetRuntime {
+  sourceRecommendationId: string;
+  source: LicensingTargetRuntimeSource;
+  baselineHoursPerMonth: number;
+  projectedHoursPerMonth: number;
+  usageRatio: number;
+  windowSummary?: string;
+}
+
+export interface LicensingTargetStateScenario {
+  kind: 'target-state';
+  availability: LicensingTargetStateAvailability;
+  /** Current and target state are alternatives; this scenario is never portfolio-additive. */
+  nonAdditive: true;
+  dependencyCodes: LicensingTargetStateDependencyCode[];
+  reasonCodes?: LicensingReasonCode[];
+  targetShape?: LicensingTargetShape;
+  runtime?: LicensingTargetRuntime;
+  licenseRequirement?: LicensingLicenseRequirement;
+  azureLicenseCharge?: LicensingAzureLicenseCharge;
+  purchaseScenario?: LicensingPurchaseScenario;
+  outcome: LicensingEstimateOutcome;
+  unavailableReason?: LicensingReasonCode;
+}
+
 export interface LicensingResourceEconomics {
+  /** Marker for the backward-compatible top-level economics fields. */
+  currentStateKind?: 'current-state';
   azureLicenseCharge?: LicensingAzureLicenseCharge;
   purchaseScenario?: LicensingPurchaseScenario;
   outcome: LicensingEstimateOutcome;
   recommendationSavings?: SavingsPotential;
   unavailableReason?: LicensingReasonCode;
+  /** Optional, source-backed scenario after ordered resize/runtime changes. */
+  targetState?: LicensingTargetStateScenario;
 }
 
 export interface LicensingHistoricalWindow {
@@ -446,6 +507,7 @@ export interface LicensingPlanningView {
   subscription?: SubscriptionSummaryLite;
   summary: LicensingSummary;
   resources: LicensingResourceItem[];
+  subscriptionPricingContext?: LicensingSubscriptionPricingContext;
   pricingContext: LicensingPricingContext;
   freshness: LicensingFreshness;
   warnings?: string[];
@@ -460,6 +522,7 @@ export interface LicensingRecommendationResourceEstimate {
   licenseRequirement?: LicensingLicenseRequirement;
   azureLicenseCharge?: LicensingAzureLicenseCharge;
   purchaseScenario?: LicensingPurchaseScenario;
+  targetState?: LicensingTargetStateScenario;
   historicalEvidence?: LicensingHistoricalEvidence;
   actionProfile?: LicensingActionProfile;
   outcome: LicensingEstimateOutcome;

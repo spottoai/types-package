@@ -1,5 +1,11 @@
 import type { LicensingPlanningView as ExportedLicensingPlanningView } from '../index';
-import type { LicensingPlanningView, LicensingPurchaseScenarioEconomics, LicensingRecommendationResourceEstimate } from './licensing';
+import type {
+  LicensingPlanningView,
+  LicensingPurchaseScenarioEconomics,
+  LicensingRecommendationResourceEstimate,
+  LicensingSubscriptionPricingContext,
+  LicensingTargetStateScenario,
+} from './licensing';
 
 const windowsOpportunity: LicensingPlanningView = {
   version: '1.0',
@@ -314,6 +320,64 @@ const sqlUnavailable: LicensingPlanningView = {
   ],
 };
 
+const devTestPricingContext: LicensingSubscriptionPricingContext = {
+  classification: 'dev-test',
+  retailPriceType: 'devtestconsumption',
+  displayName: 'Dev/Test',
+  source: 'subscription-quota',
+  quotaId: 'MSDNDevTest_2014-09-01',
+};
+
+const targetStateScenario: LicensingTargetStateScenario = {
+  kind: 'target-state',
+  availability: 'available',
+  nonAdditive: true,
+  dependencyCodes: ['resize', 'scheduled-runtime'],
+  targetShape: {
+    sourceRecommendationId: 'advisor-underutilized-vm',
+    skuName: 'Standard_D2s_v5',
+    vCpuCount: 2,
+  },
+  runtime: {
+    sourceRecommendationId: 'compute-virtualmachines_schedule-shutdown-windows',
+    source: 'company-business-hours',
+    baselineHoursPerMonth: 730,
+    projectedHoursPerMonth: 173.81,
+    usageRatio: 0.2381,
+    windowSummary: 'Mon 08:00-Mon 16:00',
+  },
+  licenseRequirement: windowsOpportunity.resources[0].licenseRequirement,
+  azureLicenseCharge: {
+    ...windowsOpportunity.resources[0].economics.azureLicenseCharge!,
+    monthly: { amount: 48.88, currency: 'NZD' },
+    annualized: { amount: 586.56, currency: 'NZD' },
+    assumptionCodes: ['target-shape-applied', 'scheduled-runtime-applied'],
+  },
+  purchaseScenario: windowsOpportunity.resources[0].economics.purchaseScenario,
+  outcome: 'indicative-saving',
+};
+
+const targetStateView: LicensingPlanningView = {
+  ...windowsOpportunity,
+  subscriptionPricingContext: devTestPricingContext,
+  resources: [
+    {
+      ...windowsOpportunity.resources[0],
+      economics: {
+        ...windowsOpportunity.resources[0].economics,
+        currentStateKind: 'current-state',
+        targetState: targetStateScenario,
+      },
+    },
+  ],
+};
+
+const invalidAdditiveTargetState: LicensingTargetStateScenario = {
+  ...targetStateScenario,
+  // @ts-expect-error current and target states are alternatives and cannot be portfolio-added.
+  nonAdditive: false,
+};
+
 const exportedContract: ExportedLicensingPlanningView = windowsOpportunity;
 
 const invalidVersion: LicensingPlanningView = {
@@ -382,6 +446,7 @@ const recommendationResourceEstimate: LicensingRecommendationResourceEstimate = 
   licenseRequirement: windowsOpportunity.resources[0].licenseRequirement,
   azureLicenseCharge: windowsOpportunity.resources[0].economics.azureLicenseCharge,
   purchaseScenario: windowsOpportunity.resources[0].economics.purchaseScenario,
+  targetState: targetStateScenario,
   historicalEvidence: windowsOpportunity.resources[0].historicalEvidence,
   actionProfile: windowsOpportunity.resources[0].actionProfile,
   outcome: windowsOpportunity.resources[0].economics.outcome,
@@ -397,3 +462,7 @@ void invalidBillingCadence;
 void invalidIncompleteScenarioEconomics;
 void invalidHistoricalMonthStatus;
 void recommendationResourceEstimate;
+void devTestPricingContext;
+void targetStateScenario;
+void targetStateView;
+void invalidAdditiveTargetState;
