@@ -26,4 +26,4 @@ Add an optional, additive `ReservedInstanceRecommendationRenderData` contract to
 - TypeScript build proves the export and union are consumable.
 - Cloud-engine and UI producer-consumer tests provide runtime contract evidence.
 - No runtime validator or API endpoint is added.
-- `npm run build:check` passes.
+- `npm run build` passes and regenerates the expected declarations. (`build:check` is intentionally main-branch-only and is not a feature-branch gate.)
