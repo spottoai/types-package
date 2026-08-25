@@ -227,7 +227,41 @@ export interface HddOsRetirementRenderStrategyPayload {
   disks: HddOsRetirementDiskRenderItem[];
 }
 
-export type RecommendationKnownRenderData = HddOsRetirementRenderStrategyPayload | VmPricePerformanceInsights | LicensingRecommendationRenderData;
+/**
+ * One reservation-purchase compatibility group within the currently loaded
+ * recommendation scope. The key includes the provider scope so independently
+ * actionable Azure subscriptions never collapse into one purchase group.
+ */
+export interface ReservedInstanceRecommendationCompatibilityGroup {
+  key: string;
+  providerScopeId: string;
+  sourceRecommendationIds: string[];
+  resourceIds: string[];
+  location: string;
+  skuName: string;
+  resourceType: string;
+  vmSizeFlexibilityGroup?: string;
+  platform?: 'linux' | 'windows' | 'unknown';
+}
+
+/**
+ * Presentation-family evidence for resource-specific Reserved Instance
+ * recommendations. Source IDs remain authoritative for resource-level joins;
+ * familyId is only the stable identity of the grouped recommendation surface
+ * and must not be used for recommendation state, audit, sharing or actions.
+ */
+export interface ReservedInstanceRecommendationRenderData {
+  kind: 'reserved-instance-opportunity';
+  familyId: 'benefits-resource-ri';
+  sourceRecommendationIds: string[];
+  compatibilityGroups: ReservedInstanceRecommendationCompatibilityGroup[];
+}
+
+export type RecommendationKnownRenderData =
+  | HddOsRetirementRenderStrategyPayload
+  | VmPricePerformanceInsights
+  | LicensingRecommendationRenderData
+  | ReservedInstanceRecommendationRenderData;
 
 export type AnyRecommendationRenderData = Record<string, unknown>;
 
