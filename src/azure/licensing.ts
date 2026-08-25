@@ -28,6 +28,16 @@ export type LicensingConfidence = 'high' | 'medium' | 'low' | 'unknown';
 
 export type LicensingEstimateOutcome = 'indicative-saving' | 'payg-may-be-cheaper' | 'unavailable';
 
+export type LicensingSubscriptionPricingClassification = 'standard' | 'dev-test' | 'unknown';
+
+export type LicensingRetailPriceType = 'consumption' | 'devtestconsumption' | 'unknown';
+
+export type LicensingTargetStateAvailability = 'available' | 'review-required';
+
+export type LicensingTargetStateDependencyCode = 'resize' | 'scheduled-runtime';
+
+export type LicensingTargetRuntimeSource = 'company-business-hours' | 'fallback-business-hours-only' | 'recommendation-schedule';
+
 export type LicensingFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 
 export type LicensingDecisionStatus =
@@ -91,6 +101,10 @@ export type LicensingReasonCode =
   | 'stale-public-price'
   | 'missing-fx-rate'
   | 'stale-fx-rate'
+  | 'dev-test-standard-retail-excluded'
+  | 'target-shape-incomplete'
+  | 'target-retail-price-missing'
+  | 'target-runtime-invalid'
   | 'entitlement-not-confirmed'
   | 'insufficient-history'
   | 'partial-historical-coverage'
@@ -103,6 +117,26 @@ export interface LicensingMoneyAmount {
   amount: number;
   currency: string;
 }
+
+export type LicensingSubscriptionPricingContext =
+  | {
+      classification: 'standard';
+      retailPriceType: 'consumption';
+      displayName: 'Standard';
+      source: 'subscription-quota';
+    }
+  | {
+      classification: 'dev-test';
+      retailPriceType: 'devtestconsumption';
+      displayName: 'Dev/Test';
+      source: 'subscription-quota';
+    }
+  | {
+      classification: 'unknown';
+      retailPriceType: 'unknown';
+      displayName: 'Unknown';
+      source: 'unknown';
+    };
 
 export interface LicensingObservationWindow {
   start: string;
@@ -153,6 +187,31 @@ export interface LicensingAzureLicenseCharge {
   sourceIds: string[];
   assumptionCodes?: string[];
 }
+
+interface LicensingTargetAzureLicenseChargeBase {
+  monthly: LicensingMoneyAmount;
+  annualized: LicensingMoneyAmount;
+  basis: 'modelled-target';
+  confidence: LicensingConfidence;
+  indicative: true;
+  sourceIds: [string, ...string[]];
+  sourceRecommendationIds: [string, ...string[]];
+  assumptionCodes?: string[];
+}
+
+export type LicensingTargetAzureLicenseCharge = LicensingTargetAzureLicenseChargeBase &
+  (
+    | {
+        sourceBasis: 'observed-billing';
+        sourceObservationWindow: LicensingObservationWindow;
+        sourceAsOf?: never;
+      }
+    | {
+        sourceBasis: 'azure-retail';
+        sourceObservationWindow?: never;
+        sourceAsOf: string;
+      }
+  );
 
 export interface LicensingLicenseRequirement {
   basis: LicensingRequirementBasis;
@@ -240,12 +299,96 @@ export interface LicensingPurchaseScenario {
   assumptionCodes: string[];
 }
 
+export interface LicensingTargetPurchaseScenarioEconomics
+  extends Omit<LicensingPurchaseScenarioEconomics, 'paybackMonths' | 'breakEvenUtilizationPercent'> {
+  /** Unavailable when the modelled target has no avoidable Azure charge. */
+  paybackMonths?: number;
+  /** Unavailable when the modelled target has no avoidable Azure charge. */
+  breakEvenUtilizationPercent?: number;
+}
+
+export interface LicensingTargetPurchaseScenario extends Omit<LicensingPurchaseScenario, 'economics'> {
+  economics: LicensingTargetPurchaseScenarioEconomics;
+}
+
+export interface LicensingTargetShape {
+  sourceRecommendationId: string;
+  skuName: string;
+  vCpuCount?: number;
+  vCoreCount?: number;
+  instanceCount?: number;
+}
+
+export interface LicensingTargetRuntime {
+  sourceRecommendationId: string;
+  source: LicensingTargetRuntimeSource;
+  baselineHoursPerMonth: number;
+  projectedHoursPerMonth: number;
+  usageRatio: number;
+  windowSummary?: string;
+}
+
+interface LicensingTargetStateScenarioBase {
+  kind: 'target-state';
+  /** Current and target state are alternatives; this scenario is never portfolio-additive. */
+  nonAdditive: true;
+}
+
+export type LicensingTargetStateDependencyCodes = ['resize'] | ['scheduled-runtime'] | ['resize', 'scheduled-runtime'];
+
+type LicensingAvailableTargetStateEvidence =
+  | {
+      dependencyCodes: ['resize'];
+      targetShape: LicensingTargetShape;
+      runtime?: never;
+    }
+  | {
+      dependencyCodes: ['scheduled-runtime'];
+      targetShape?: never;
+      runtime: LicensingTargetRuntime;
+    }
+  | {
+      dependencyCodes: ['resize', 'scheduled-runtime'];
+      targetShape: LicensingTargetShape;
+      runtime: LicensingTargetRuntime;
+    };
+
+export type LicensingAvailableTargetStateScenario = LicensingTargetStateScenarioBase &
+  LicensingAvailableTargetStateEvidence & {
+    availability: 'available';
+    reasonCodes?: never;
+    licenseRequirement: LicensingLicenseRequirement;
+    azureLicenseCharge: LicensingTargetAzureLicenseCharge;
+    purchaseScenario: LicensingTargetPurchaseScenario;
+    outcome: Exclude<LicensingEstimateOutcome, 'unavailable'>;
+    unavailableReason?: never;
+  };
+
+export interface LicensingReviewRequiredTargetStateScenario extends LicensingTargetStateScenarioBase {
+  availability: 'review-required';
+  dependencyCodes: LicensingTargetStateDependencyCodes;
+  targetShape?: LicensingTargetShape;
+  runtime?: LicensingTargetRuntime;
+  reasonCodes: LicensingReasonCode[];
+  licenseRequirement?: never;
+  azureLicenseCharge?: never;
+  purchaseScenario?: never;
+  outcome: 'unavailable';
+  unavailableReason: LicensingReasonCode;
+}
+
+export type LicensingTargetStateScenario = LicensingAvailableTargetStateScenario | LicensingReviewRequiredTargetStateScenario;
+
 export interface LicensingResourceEconomics {
+  /** Marker for the backward-compatible top-level economics fields. */
+  currentStateKind?: 'current-state';
   azureLicenseCharge?: LicensingAzureLicenseCharge;
   purchaseScenario?: LicensingPurchaseScenario;
   outcome: LicensingEstimateOutcome;
   recommendationSavings?: SavingsPotential;
   unavailableReason?: LicensingReasonCode;
+  /** Optional, source-backed scenario after ordered resize/runtime changes. */
+  targetState?: LicensingTargetStateScenario;
 }
 
 export interface LicensingHistoricalWindow {
@@ -446,6 +589,7 @@ export interface LicensingPlanningView {
   subscription?: SubscriptionSummaryLite;
   summary: LicensingSummary;
   resources: LicensingResourceItem[];
+  subscriptionPricingContext?: LicensingSubscriptionPricingContext;
   pricingContext: LicensingPricingContext;
   freshness: LicensingFreshness;
   warnings?: string[];
@@ -460,6 +604,7 @@ export interface LicensingRecommendationResourceEstimate {
   licenseRequirement?: LicensingLicenseRequirement;
   azureLicenseCharge?: LicensingAzureLicenseCharge;
   purchaseScenario?: LicensingPurchaseScenario;
+  targetState?: LicensingTargetStateScenario;
   historicalEvidence?: LicensingHistoricalEvidence;
   actionProfile?: LicensingActionProfile;
   outcome: LicensingEstimateOutcome;

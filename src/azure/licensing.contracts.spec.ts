@@ -1,5 +1,13 @@
 import type { LicensingPlanningView as ExportedLicensingPlanningView } from '../index';
-import type { LicensingPlanningView, LicensingPurchaseScenarioEconomics, LicensingRecommendationResourceEstimate } from './licensing';
+import type {
+  LicensingPlanningView,
+  LicensingPurchaseScenarioEconomics,
+  LicensingRecommendationResourceEstimate,
+  LicensingSubscriptionPricingContext,
+  LicensingTargetAzureLicenseCharge,
+  LicensingTargetPurchaseScenarioEconomics,
+  LicensingTargetStateScenario,
+} from './licensing';
 
 const windowsOpportunity: LicensingPlanningView = {
   version: '1.0',
@@ -314,6 +322,122 @@ const sqlUnavailable: LicensingPlanningView = {
   ],
 };
 
+const devTestPricingContext: LicensingSubscriptionPricingContext = {
+  classification: 'dev-test',
+  retailPriceType: 'devtestconsumption',
+  displayName: 'Dev/Test',
+  source: 'subscription-quota',
+};
+
+const targetAzureLicenseCharge: LicensingTargetAzureLicenseCharge = {
+  monthly: { amount: 48.88, currency: 'NZD' },
+  annualized: { amount: 586.56, currency: 'NZD' },
+  basis: 'modelled-target',
+  sourceBasis: 'observed-billing',
+  confidence: 'medium',
+  indicative: true,
+  sourceObservationWindow: { start: '2026-06-01', end: '2026-06-30', stableDays: 30 },
+  sourceIds: ['stable-billing-window'],
+  sourceRecommendationIds: ['advisor-underutilized-vm', 'compute-virtualmachines_schedule-shutdown-windows'],
+  assumptionCodes: ['target-shape-applied', 'scheduled-runtime-applied'],
+};
+
+const targetStateScenario: LicensingTargetStateScenario = {
+  kind: 'target-state',
+  availability: 'available',
+  nonAdditive: true,
+  dependencyCodes: ['resize', 'scheduled-runtime'],
+  targetShape: {
+    sourceRecommendationId: 'advisor-underutilized-vm',
+    skuName: 'Standard_D2s_v5',
+    vCpuCount: 2,
+  },
+  runtime: {
+    sourceRecommendationId: 'compute-virtualmachines_schedule-shutdown-windows',
+    source: 'company-business-hours',
+    baselineHoursPerMonth: 730,
+    projectedHoursPerMonth: 173.81,
+    usageRatio: 0.2381,
+    windowSummary: 'Mon 08:00-Mon 16:00',
+  },
+  licenseRequirement: windowsOpportunity.resources[0].licenseRequirement!,
+  azureLicenseCharge: targetAzureLicenseCharge,
+  purchaseScenario: windowsOpportunity.resources[0].economics.purchaseScenario!,
+  outcome: 'indicative-saving',
+};
+
+const targetStateView: LicensingPlanningView = {
+  ...windowsOpportunity,
+  subscriptionPricingContext: devTestPricingContext,
+  resources: [
+    {
+      ...windowsOpportunity.resources[0],
+      economics: {
+        ...windowsOpportunity.resources[0].economics,
+        currentStateKind: 'current-state',
+        targetState: targetStateScenario,
+      },
+    },
+  ],
+};
+
+const invalidAdditiveTargetState: LicensingTargetStateScenario = {
+  ...targetStateScenario,
+  // @ts-expect-error current and target states are alternatives and cannot be portfolio-added.
+  nonAdditive: false,
+};
+
+// @ts-expect-error an available target must carry its requirement and modelled charge.
+const invalidAvailableTargetState: LicensingTargetStateScenario = {
+  kind: 'target-state',
+  availability: 'available',
+  nonAdditive: true,
+  dependencyCodes: ['resize'],
+  outcome: 'indicative-saving',
+};
+
+const invalidEmptyTargetDependencies: LicensingTargetStateScenario = {
+  ...targetStateScenario,
+  // @ts-expect-error an available target must declare at least one concrete dependency.
+  dependencyCodes: [],
+};
+
+// @ts-expect-error a resize dependency must include target-shape evidence.
+const invalidMismatchedTargetEvidence: LicensingTargetStateScenario = {
+  ...targetStateScenario,
+  dependencyCodes: ['resize'],
+  targetShape: undefined,
+};
+
+const reviewRequiredTargetState: LicensingTargetStateScenario = {
+  kind: 'target-state',
+  availability: 'review-required',
+  nonAdditive: true,
+  dependencyCodes: ['resize'],
+  reasonCodes: ['target-shape-incomplete'],
+  outcome: 'unavailable',
+  unavailableReason: 'target-shape-incomplete',
+};
+
+// @ts-expect-error review-required targets cannot expose modelled money.
+const invalidReviewRequiredMoney: LicensingTargetStateScenario = {
+  ...reviewRequiredTargetState,
+  azureLicenseCharge: targetAzureLicenseCharge,
+};
+
+const { sourceObservationWindow: _sourceObservationWindow, ...observedTargetWithoutWindow } = targetAzureLicenseCharge;
+
+// @ts-expect-error observed-billing target charges require an evidence window.
+const invalidObservedTargetCharge: LicensingTargetAzureLicenseCharge = observedTargetWithoutWindow;
+
+// @ts-expect-error Dev/Test classification cannot advertise standard consumption pricing.
+const invalidDevTestPricingContext: LicensingSubscriptionPricingContext = {
+  classification: 'dev-test',
+  retailPriceType: 'consumption',
+  displayName: 'Standard',
+  source: 'unknown',
+};
+
 const exportedContract: ExportedLicensingPlanningView = windowsOpportunity;
 
 const invalidVersion: LicensingPlanningView = {
@@ -355,6 +479,17 @@ const invalidIncompleteScenarioEconomics: LicensingPurchaseScenarioEconomics = {
   runtimeScenarios: [],
 };
 
+const zeroChargeScenarioEconomics: LicensingTargetPurchaseScenarioEconomics = {
+  fullTermInvestment: { amount: 275, currency: 'USD' },
+  monthlyEquivalent: { amount: 22.92, currency: 'USD' },
+  grossAvoidedOverTerm: { amount: 0, currency: 'USD' },
+  netBenefitOverTerm: { amount: -275, currency: 'USD' },
+  netBenefitMonthlyEquivalent: { amount: -22.92, currency: 'USD' },
+  roiOverTermPercent: -100,
+  maximumUsageReductionBeforeLossPercent: 0,
+  runtimeScenarios: [],
+};
+
 const invalidHistoricalMonthStatus: LicensingPlanningView = {
   ...windowsOpportunity,
   resources: [
@@ -382,6 +517,7 @@ const recommendationResourceEstimate: LicensingRecommendationResourceEstimate = 
   licenseRequirement: windowsOpportunity.resources[0].licenseRequirement,
   azureLicenseCharge: windowsOpportunity.resources[0].economics.azureLicenseCharge,
   purchaseScenario: windowsOpportunity.resources[0].economics.purchaseScenario,
+  targetState: targetStateScenario,
   historicalEvidence: windowsOpportunity.resources[0].historicalEvidence,
   actionProfile: windowsOpportunity.resources[0].actionProfile,
   outcome: windowsOpportunity.resources[0].economics.outcome,
@@ -395,5 +531,18 @@ void exportedContract;
 void invalidVersion;
 void invalidBillingCadence;
 void invalidIncompleteScenarioEconomics;
+void zeroChargeScenarioEconomics;
 void invalidHistoricalMonthStatus;
 void recommendationResourceEstimate;
+void devTestPricingContext;
+void targetAzureLicenseCharge;
+void targetStateScenario;
+void targetStateView;
+void invalidAvailableTargetState;
+void invalidEmptyTargetDependencies;
+void invalidMismatchedTargetEvidence;
+void reviewRequiredTargetState;
+void invalidReviewRequiredMoney;
+void invalidObservedTargetCharge;
+void invalidDevTestPricingContext;
+void invalidAdditiveTargetState;
