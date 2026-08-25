@@ -33,6 +33,7 @@
     "src/azure/recommendationWorkflow.contracts.spec.ts",
     "src/azure/resourceOptimization.contracts.spec.ts",
     "src/azure/workManagement.contracts.spec.ts",
+    "src/azure/vmPatchManagement.contracts.spec.ts",
     "src/common/artifactGeneration.contracts.spec.ts",
     "src/common/artifactEvidence.contracts.spec.ts",
     "src/common/capabilityPassport.contracts.spec.ts",

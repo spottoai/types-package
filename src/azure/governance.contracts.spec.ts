@@ -7,6 +7,9 @@ import type {
   TenantGovernanceAccessArtifact,
   TenantGovernanceGraphArtifact,
   TenantGovernanceReport,
+  TenantMfaEnforcementScenario,
+  TenantMfaPosture,
+  TenantMfaPostureArtifact,
 } from './governance';
 import {
   GOVERNANCE_ACCESS_SCHEMA_VERSION,
@@ -15,6 +18,7 @@ import {
   TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION,
   TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION,
   TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
+  TENANT_MFA_POSTURE_SCHEMA_VERSION,
 } from './governance';
 
 const governanceReport: GovernanceReport = {
@@ -442,6 +446,7 @@ const globalAdminCoverage: GlobalAdminCoverage = {
   groups: { state: 'complete', source: 'governance', requiredPermissions: ['GroupMember.Read.All'] },
   groupMemberships: { state: 'complete', source: 'governance', requiredPermissions: ['GroupMember.Read.All'] },
   globalAdminResolution: { state: 'complete', source: 'derived' },
+  userRegistrationDetails: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['AuditLog.Read.All'] },
 };
 
 const governanceAccessGlobalAdmins: GovernanceAccessGlobalAdminSection = {
@@ -463,6 +468,7 @@ const governanceAccessGlobalAdmins: GovernanceAccessGlobalAdminSection = {
       userPrincipalName: 'global.admin@example.com',
       mail: 'global.admin@example.com',
       accountEnabled: true,
+      mfaStatus: 'mfa',
       assignmentSource: 'direct',
       assignmentModes: ['eligible', 'active'],
       isPimBacked: true,
@@ -701,6 +707,184 @@ const governanceAccessArtifact: GovernanceAccessArtifact = {
 
 void governanceAccessArtifact;
 
+const tenantMfaPosture: TenantMfaPosture = {
+  generatedAt: '2026-08-25T00:00:00.000Z',
+  summary: {
+    assessmentState: 'partial',
+    activeUsers: 2,
+    mfaCapableUsers: 1,
+    notMfaCapableUsers: 0,
+    unknownRegistrationUsers: 1,
+    enforcementKnownUsers: 1,
+    enforcementUnknownUsers: 1,
+  },
+  tenantPolicy: {
+    securityDefaults: 'disabled',
+    conditionalAccess: {
+      enabledMfaPolicyCount: 1,
+      reportOnlyMfaPolicyCount: 1,
+      disabledMfaPolicyCount: 0,
+    },
+    authenticationMethodsPolicy: {
+      allowedMethods: ['microsoftAuthenticator', 'fido2'],
+    },
+    crossTenantAccess: {
+      defaultInboundMfaTrust: 'notAccepted',
+      partnerOverrideCount: 1,
+    },
+  },
+  users: [
+    {
+      userId: 'user-1',
+      userType: 'member',
+      accountEnabled: true,
+      registration: {
+        status: 'capable',
+        isMfaRegistered: true,
+        isMfaCapable: true,
+        methodsRegistered: ['microsoftAuthenticatorPush'],
+        sourceUpdatedAt: '2026-08-24T12:00:00.000Z',
+      },
+      enforcement: [
+        {
+          scenario: { type: 'allResources' },
+          status: 'conditionallyEnforced',
+          mechanisms: ['conditionalAccess'],
+          policyIds: ['conditional-access-policy-1'],
+        },
+        {
+          scenario: {
+            type: 'application',
+            applicationId: 'application-1',
+            applicationDisplayName: 'Example SaaS application',
+          },
+          status: 'enforced',
+          mechanisms: ['conditionalAccess'],
+          policyIds: ['conditional-access-policy-1'],
+        },
+      ],
+      observedSignIns: {
+        status: 'mfaRequired',
+        lookbackDays: 30,
+        lastObservedAt: '2026-08-24T18:30:00.000Z',
+        mfaRequiredSignInCount: 4,
+        singleFactorSignInCount: 0,
+      },
+      licensing: {
+        status: 'licensed',
+        skuIds: ['entra-p1-sku-id'],
+        servicePlanIds: ['entra-p1-service-plan-id'],
+      },
+    },
+    {
+      userId: 'guest-1',
+      userType: 'guest',
+      accountEnabled: true,
+      registration: {
+        status: 'unknown',
+      },
+      enforcement: [
+        {
+          scenario: { type: 'azureManagement' },
+          status: 'unknown',
+          mechanisms: [],
+          reason: 'Guest home-tenant MFA registration is not visible in the resource tenant.',
+        },
+      ],
+      guestTrust: {
+        homeTenantMfaTrust: 'accepted',
+      },
+      licensing: {
+        status: 'notRequired',
+        reason: 'Guest access uses External ID billing evidence rather than a directly assigned Entra seat.',
+      },
+    },
+  ],
+  coverage: {
+    users: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['User.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    userRegistrationDetails: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['AuditLog.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+      maximumSourceLagHours: 36,
+    },
+    securityDefaults: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['Policy.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    conditionalAccess: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['Policy.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    authenticationMethodsPolicy: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['Policy.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    crossTenantAccess: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['Policy.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    signIns: {
+      state: 'unavailable',
+      source: 'microsoft-graph',
+      reason: 'entra_premium_license_required',
+      requiredPermissions: ['AuditLog.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+    },
+    licensing: {
+      state: 'complete',
+      source: 'microsoft-graph',
+      requiredPermissions: ['LicenseAssignment.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+  },
+  sources: [
+    {
+      source: 'microsoftGraph',
+      endpoint: '/v1.0/reports/authenticationMethods/userRegistrationDetails',
+      state: 'complete',
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    {
+      source: 'microsoftGraph',
+      endpoint: '/v1.0/auditLogs/signIns',
+      state: 'unavailable',
+      reason: 'entra_premium_license_required',
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+    },
+  ],
+};
+
+const tenantMfaPostureArtifact: TenantMfaPostureArtifact = {
+  ...tenantMfaPosture,
+  schemaVersion: TENANT_MFA_POSTURE_SCHEMA_VERSION,
+  tenantId: 'tenant-1',
+};
+
+void tenantMfaPostureArtifact;
+
 const tenantGovernanceAccessArtifact: TenantGovernanceAccessArtifact = {
   schemaVersion: TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION,
   generatedAt: '2026-05-13T00:00:00.000Z',
@@ -715,6 +899,13 @@ const tenantGovernanceAccessArtifact: TenantGovernanceAccessArtifact = {
 };
 
 void tenantGovernanceAccessArtifact;
+
+const tenantGovernanceAccessArtifactWithMfa: TenantGovernanceAccessArtifact = {
+  ...tenantGovernanceAccessArtifact,
+  mfaPosture: tenantMfaPosture,
+};
+
+void tenantGovernanceAccessArtifactWithMfa;
 
 const tenantGovernanceReport: TenantGovernanceReport = {
   schemaVersion: TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,
@@ -1094,6 +1285,34 @@ const invalidTenantScopeRollup: TenantGovernanceReport = {
   },
 };
 
+const invalidTenantMfaSchemaVersion: TenantMfaPostureArtifact = {
+  ...tenantMfaPostureArtifact,
+  // @ts-expect-error tenant MFA posture schema version must match the published contract.
+  schemaVersion: '2026-08-25.tenant-mfa-posture-v2',
+};
+
+const invalidTenantMfaRegistrationStatus: TenantMfaPostureArtifact = {
+  ...tenantMfaPostureArtifact,
+  users: [
+    {
+      ...tenantMfaPostureArtifact.users[0],
+      registration: {
+        ...tenantMfaPostureArtifact.users[0].registration,
+        // @ts-expect-error MFA registration uses readiness states rather than an enabled boolean state.
+        status: 'enabled',
+      },
+    },
+  ],
+};
+
+// @ts-expect-error an application enforcement scenario requires the target application ID.
+const invalidTenantMfaApplicationScenario: TenantMfaEnforcementScenario = {
+  type: 'application',
+};
+
 void invalidTenantReportSchemaVersion;
 void invalidTenantGraphNodeType;
 void invalidTenantScopeRollup;
+void invalidTenantMfaSchemaVersion;
+void invalidTenantMfaRegistrationStatus;
+void invalidTenantMfaApplicationScenario;
