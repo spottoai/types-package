@@ -12,7 +12,6 @@ export type LicensingConfidence = 'high' | 'medium' | 'low' | 'unknown';
 export type LicensingEstimateOutcome = 'indicative-saving' | 'payg-may-be-cheaper' | 'unavailable';
 export type LicensingSubscriptionPricingClassification = 'standard' | 'dev-test' | 'unknown';
 export type LicensingRetailPriceType = 'consumption' | 'devtestconsumption' | 'unknown';
-export type LicensingScenarioKind = 'current-state' | 'target-state';
 export type LicensingTargetStateAvailability = 'available' | 'review-required';
 export type LicensingTargetStateDependencyCode = 'resize' | 'scheduled-runtime';
 export type LicensingTargetRuntimeSource = 'company-business-hours' | 'fallback-business-hours-only' | 'recommendation-schedule';
@@ -35,13 +34,22 @@ export interface LicensingMoneyAmount {
     amount: number;
     currency: string;
 }
-export interface LicensingSubscriptionPricingContext {
-    classification: LicensingSubscriptionPricingClassification;
-    retailPriceType: LicensingRetailPriceType;
-    displayName: 'Standard' | 'Dev/Test' | 'Unknown';
-    source: 'subscription-quota' | 'unknown';
-    quotaId?: string;
-}
+export type LicensingSubscriptionPricingContext = {
+    classification: 'standard';
+    retailPriceType: 'consumption';
+    displayName: 'Standard';
+    source: 'subscription-quota';
+} | {
+    classification: 'dev-test';
+    retailPriceType: 'devtestconsumption';
+    displayName: 'Dev/Test';
+    source: 'subscription-quota';
+} | {
+    classification: 'unknown';
+    retailPriceType: 'unknown';
+    displayName: 'Unknown';
+    source: 'unknown';
+};
 export interface LicensingObservationWindow {
     start: string;
     end: string;
@@ -86,6 +94,25 @@ export interface LicensingAzureLicenseCharge {
     sourceIds: string[];
     assumptionCodes?: string[];
 }
+interface LicensingTargetAzureLicenseChargeBase {
+    monthly: LicensingMoneyAmount;
+    annualized: LicensingMoneyAmount;
+    basis: 'modelled-target';
+    confidence: LicensingConfidence;
+    indicative: true;
+    sourceIds: [string, ...string[]];
+    sourceRecommendationIds: [string, ...string[]];
+    assumptionCodes?: string[];
+}
+export type LicensingTargetAzureLicenseCharge = LicensingTargetAzureLicenseChargeBase & ({
+    sourceBasis: 'observed-billing';
+    sourceObservationWindow: LicensingObservationWindow;
+    sourceAsOf?: never;
+} | {
+    sourceBasis: 'azure-retail';
+    sourceObservationWindow?: never;
+    sourceAsOf: string;
+});
 export interface LicensingLicenseRequirement {
     basis: LicensingRequirementBasis;
     resourceCoreCount?: number;
@@ -165,6 +192,15 @@ export interface LicensingPurchaseScenario {
     sourceIds: string[];
     assumptionCodes: string[];
 }
+export interface LicensingTargetPurchaseScenarioEconomics extends Omit<LicensingPurchaseScenarioEconomics, 'paybackMonths' | 'breakEvenUtilizationPercent'> {
+    /** Unavailable when the modelled target has no avoidable Azure charge. */
+    paybackMonths?: number;
+    /** Unavailable when the modelled target has no avoidable Azure charge. */
+    breakEvenUtilizationPercent?: number;
+}
+export interface LicensingTargetPurchaseScenario extends Omit<LicensingPurchaseScenario, 'economics'> {
+    economics: LicensingTargetPurchaseScenarioEconomics;
+}
 export interface LicensingTargetShape {
     sourceRecommendationId: string;
     skuName: string;
@@ -180,21 +216,47 @@ export interface LicensingTargetRuntime {
     usageRatio: number;
     windowSummary?: string;
 }
-export interface LicensingTargetStateScenario {
+interface LicensingTargetStateScenarioBase {
     kind: 'target-state';
-    availability: LicensingTargetStateAvailability;
     /** Current and target state are alternatives; this scenario is never portfolio-additive. */
     nonAdditive: true;
-    dependencyCodes: LicensingTargetStateDependencyCode[];
-    reasonCodes?: LicensingReasonCode[];
+}
+export type LicensingTargetStateDependencyCodes = ['resize'] | ['scheduled-runtime'] | ['resize', 'scheduled-runtime'];
+type LicensingAvailableTargetStateEvidence = {
+    dependencyCodes: ['resize'];
+    targetShape: LicensingTargetShape;
+    runtime?: never;
+} | {
+    dependencyCodes: ['scheduled-runtime'];
+    targetShape?: never;
+    runtime: LicensingTargetRuntime;
+} | {
+    dependencyCodes: ['resize', 'scheduled-runtime'];
+    targetShape: LicensingTargetShape;
+    runtime: LicensingTargetRuntime;
+};
+export type LicensingAvailableTargetStateScenario = LicensingTargetStateScenarioBase & LicensingAvailableTargetStateEvidence & {
+    availability: 'available';
+    reasonCodes?: never;
+    licenseRequirement: LicensingLicenseRequirement;
+    azureLicenseCharge: LicensingTargetAzureLicenseCharge;
+    purchaseScenario: LicensingTargetPurchaseScenario;
+    outcome: Exclude<LicensingEstimateOutcome, 'unavailable'>;
+    unavailableReason?: never;
+};
+export interface LicensingReviewRequiredTargetStateScenario extends LicensingTargetStateScenarioBase {
+    availability: 'review-required';
+    dependencyCodes: LicensingTargetStateDependencyCodes;
     targetShape?: LicensingTargetShape;
     runtime?: LicensingTargetRuntime;
-    licenseRequirement?: LicensingLicenseRequirement;
-    azureLicenseCharge?: LicensingAzureLicenseCharge;
-    purchaseScenario?: LicensingPurchaseScenario;
-    outcome: LicensingEstimateOutcome;
-    unavailableReason?: LicensingReasonCode;
+    reasonCodes: LicensingReasonCode[];
+    licenseRequirement?: never;
+    azureLicenseCharge?: never;
+    purchaseScenario?: never;
+    outcome: 'unavailable';
+    unavailableReason: LicensingReasonCode;
 }
+export type LicensingTargetStateScenario = LicensingAvailableTargetStateScenario | LicensingReviewRequiredTargetStateScenario;
 export interface LicensingResourceEconomics {
     /** Marker for the backward-compatible top-level economics fields. */
     currentStateKind?: 'current-state';
@@ -432,4 +494,5 @@ export interface LicensingRecommendationRenderData {
     confidence: LicensingConfidence;
     reasonCodes: LicensingReasonCode[];
 }
+export {};
 //# sourceMappingURL=licensing.d.ts.map
