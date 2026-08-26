@@ -38,6 +38,7 @@ export type CommitmentsAppliedScopeType =
   | 'single-resource-group'
   | 'single-subscription'
   | 'linked-account'
+  | 'payer'
   | 'management-group'
   | 'shared'
   | 'unknown';
@@ -472,6 +473,7 @@ export type CommitmentsPurchaseRecommendationScope =
   | 'single-resource-group'
   | 'single-subscription'
   | 'linked-account'
+  | 'payer'
   | 'management-group'
   | 'shared'
   | 'unknown';

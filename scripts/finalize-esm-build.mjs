@@ -5,12 +5,16 @@ import { fileURLToPath } from 'node:url';
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const esmRoot = join(packageRoot, 'dist', 'esm');
 
-const exists = async (path) => access(path).then(() => true, () => false);
+const exists = async path =>
+  access(path).then(
+    () => true,
+    () => false
+  );
 
-const listJavaScriptFiles = async (directory) => {
+const listJavaScriptFiles = async directory => {
   const entries = await readdir(directory, { withFileTypes: true });
   const files = await Promise.all(
-    entries.map((entry) => {
+    entries.map(entry => {
       const path = join(directory, entry.name);
       return entry.isDirectory() ? listJavaScriptFiles(path) : Promise.resolve(entry.name.endsWith('.js') ? [path] : []);
     })
@@ -26,7 +30,7 @@ const resolveRelativeSpecifier = async (file, specifier) => {
   throw new Error(`Cannot resolve ESM specifier ${specifier} from ${relative(packageRoot, file)}.`);
 };
 
-const rewriteRelativeSpecifiers = async (file) => {
+const rewriteRelativeSpecifiers = async file => {
   const source = await readFile(file, 'utf8');
   const pattern = /((?:from\s+|import\s*\(\s*|import\s+)["'])(\.\.?\/[^"']+)(["'])/g;
   const matches = [...source.matchAll(pattern)];
@@ -48,7 +52,7 @@ const entries = {
   root: '../index.js',
   aws: '../aws/index.js',
   relationships: '../aws/portalRelationshipPublicArtifactValidation.js',
-  'commitments-planning': '../aws/commitmentsPlanningValidation.js',
+  'commitments-planning': '../aws/commitments-planning.js',
   recommendations: '../azure/recommendations.js',
   provider: '../common/provider.js',
 };

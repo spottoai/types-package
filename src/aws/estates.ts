@@ -9,7 +9,13 @@ export const AWS_ESTATES_MANIFEST_PROVIDER = 'AWS' as const;
 export const AWS_ESTATE_KINDS = ['standalone', 'organization'] as const;
 export const AWS_ESTATE_ACCOUNT_SOURCES = ['manual'] as const;
 export const AWS_ESTATE_ROLE_DEPLOYMENT_MODES = ['customer-managed'] as const;
-export const AWS_ESTATE_ACCOUNT_PURPOSES = ['resource-discovery', 'organization-discovery', 'billing-definition', 'billing-storage'] as const;
+export const AWS_ESTATE_ACCOUNT_PURPOSES = [
+  'resource-discovery',
+  'organization-discovery',
+  'commitments-planning',
+  'billing-definition',
+  'billing-storage',
+] as const;
 
 /**
  * Credential-shaped fields that manifest API boundaries must reject

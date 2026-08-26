@@ -5,7 +5,7 @@ export const AWS_COMMAND_SCHEMA_VERSION = 1 as const;
 export const AWS_COMMAND_PROVIDER = 'aws' as const;
 
 /** Entities handled by AWS estate orchestration. */
-export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source'] as const;
+export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'organization-commitments'] as const;
 
 /** Actions supported across AWS estate orchestration commands. */
 export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete'] as const;
@@ -45,6 +45,11 @@ export type AwsCommandForbiddenConfigurationFields = AwsForbiddenCredentialField
   externalId?: never;
   billingExport?: never;
   manifest?: never;
+  organizationId?: never;
+  managementAccountId?: never;
+  payerAccountId?: never;
+  accountIds?: never;
+  membership?: never;
 };
 
 /** Common secret-free envelope shared by every AWS orchestration command. */
@@ -102,10 +107,18 @@ export interface AwsBillingSourceRefreshCommand extends AwsCommandBase {
   billingSourceId: string;
 }
 
+/** Starts the dedicated commitments refresh for one desired organization estate. */
+export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase {
+  entity: 'organization-commitments';
+  action: 'refresh';
+  estateId: string;
+}
+
 /** Complete command union consumed by the dedicated AWS orchestration ingress. */
 export type AwsCommand =
   | AwsEstateReconcileCommand
   | AwsEstateDeleteCommand
   | AwsAccountRefreshCommand
   | AwsAccountDeleteCommand
-  | AwsBillingSourceRefreshCommand;
+  | AwsBillingSourceRefreshCommand
+  | AwsOrganizationCommitmentsRefreshCommand;

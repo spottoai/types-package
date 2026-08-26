@@ -16,7 +16,7 @@ const managementAccount: AwsEstateAccountMembership<ExampleCompanyId, ExampleEst
   accountId: '111122223333',
   name: 'Example management account',
   roleArn: 'arn:aws:iam::111122223333:role/ExampleReadOnlyRole',
-  purposes: ['organization-discovery', 'billing-definition'],
+  purposes: ['organization-discovery', 'commitments-planning', 'billing-definition'],
   enabled: true,
 };
 
