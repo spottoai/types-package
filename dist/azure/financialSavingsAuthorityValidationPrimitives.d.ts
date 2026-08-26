@@ -1,0 +1,11 @@
+export type FinancialSavingsJsonRecord = Record<string, unknown>;
+export declare const isFinancialSavingsRecord: (value: unknown) => value is FinancialSavingsJsonRecord;
+export declare const hasExactFinancialSavingsFields: (value: FinancialSavingsJsonRecord, required: readonly string[], optional?: readonly string[]) => boolean;
+export declare const isFinancialSavingsIdentity: (value: unknown) => value is string;
+export declare const isFinancialSavingsHash: (value: unknown) => value is string;
+export declare const isFinancialSavingsMinorUnits: (value: unknown) => value is number;
+export declare const isFinancialSavingsIsoInstant: (value: unknown) => value is string;
+export declare const haveSameFinancialSavingsSet: (left: readonly string[], right: readonly string[]) => boolean;
+export declare const sumFinancialSavingsMinorUnits: (values: readonly number[]) => number | undefined;
+export declare const canonicalizeFinancialSavingsJsonValue: (value: unknown) => unknown;
+//# sourceMappingURL=financialSavingsAuthorityValidationPrimitives.d.ts.map

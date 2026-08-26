@@ -16,11 +16,28 @@ export interface ScenarioSavingsPotentialV2 {
     combinationGroupId?: string;
     range: CanonicalMoneyRangeV2;
 }
+/** Customer-facing explanation of one recommendation's exact share of a portfolio contribution. */
+export interface PortfolioSavingsAttributionV2 {
+    recommendationId: string;
+    label: string;
+    allocationIds: string[];
+    range: CanonicalMoneyRangeV2;
+}
 /** Savings attributed by the producer from canonical allocations. This value is portfolio-additive. */
 export interface PortfolioSavingsContributionV2 {
     semantics: 'portfolio-contribution';
     allocationIds: string[];
     range: CanonicalMoneyRangeV2;
+    /** Optional presentation attribution; when present it must partition this contribution exactly. */
+    attributions?: PortfolioSavingsAttributionV2[];
+}
+/** Mutable lifecycle freshness gate applied to an immutable savings artifact. */
+export interface SavingsLifecycleFreshnessV1 {
+    status: 'current' | 'refresh-required';
+    authorityGeneratedAt: string;
+    evaluatedAt: string;
+    reason?: 'lifecycle-newer' | 'lifecycle-unavailable' | 'lifecycle-conflict';
+    staleResourceIds?: string[];
 }
 export type SavingsScopeKindV2 = 'subscription-full' | 'recommendation-query' | 'resource-query';
 /** Identifies the complete result scope represented by a savings aggregate. */

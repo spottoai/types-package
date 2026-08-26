@@ -1,6 +1,27 @@
 /** Controls whether a financial projection includes actual, estimated, or both source components. */
 export type EstimateLens = 'actual-only' | 'actual-plus-estimated' | 'estimates-only';
 
+/** Canonical successor vocabulary; legacy V2 baseline wire tokens remain unchanged. */
+export type FinancialEstimateLensV1 = 'billing-only' | 'include-estimates' | 'estimates-only';
+
+const CANONICAL_ESTIMATE_LENS_BY_LEGACY = {
+  'actual-only': 'billing-only',
+  'actual-plus-estimated': 'include-estimates',
+  'estimates-only': 'estimates-only',
+} as const satisfies Record<EstimateLens, FinancialEstimateLensV1>;
+
+const LEGACY_ESTIMATE_LENS_BY_CANONICAL = {
+  'billing-only': 'actual-only',
+  'include-estimates': 'actual-plus-estimated',
+  'estimates-only': 'estimates-only',
+} as const satisfies Record<FinancialEstimateLensV1, EstimateLens>;
+
+export const toCanonicalEstimateLensV1 = <Lens extends EstimateLens>(value: Lens): (typeof CANONICAL_ESTIMATE_LENS_BY_LEGACY)[Lens] =>
+  CANONICAL_ESTIMATE_LENS_BY_LEGACY[value];
+
+export const toLegacyEstimateLensV1 = <Lens extends FinancialEstimateLensV1>(value: Lens): (typeof LEGACY_ESTIMATE_LENS_BY_CANONICAL)[Lens] =>
+  LEGACY_ESTIMATE_LENS_BY_CANONICAL[value];
+
 /** Financial basis kept independent throughout composition and projection. */
 export type CostBasis = 'billed' | 'amortized';
 
@@ -84,9 +105,7 @@ export interface PublicMoneyComponent {
 }
 
 /** Customer availability omits internal source, coverage, row-count, and reason references. */
-export type PublicComponentAvailability =
-  | { status: 'available'; component: PublicMoneyComponent }
-  | { status: 'unavailable' };
+export type PublicComponentAvailability = { status: 'available'; component: PublicMoneyComponent } | { status: 'unavailable' };
 
 /** Customer support and availability for one actual or estimated component. */
 export interface PublicComponentState {
@@ -118,8 +137,7 @@ const BASIS_STATUSES = new Set<string>(['actual-only', 'actual-plus-estimated', 
 const ESTIMATE_CONFIDENCE_VALUES = new Set<string>(['high', 'medium', 'low', 'unknown']);
 const MONEY_PATTERN = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 const hasExactFields = (value: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): boolean => {
   const allowed = new Set([...required, ...optional]);
   return required.every(field => Object.prototype.hasOwnProperty.call(value, field)) && Object.keys(value).every(field => allowed.has(field));

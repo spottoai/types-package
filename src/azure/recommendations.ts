@@ -21,6 +21,7 @@ import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type { FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -545,6 +546,9 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete recommendation scope. */
   savingsAggregate?: SavingsAggregateV2;
+  savingsLifecycleFreshness?: import('./savings.js').SavingsLifecycleFreshnessV1;
+  /** Compact generation-bound projection of the canonical Resources financial savings authority. */
+  financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
 }
 
 export interface ResourceId {

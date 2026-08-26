@@ -1,5 +1,19 @@
 /** Controls whether a financial projection includes actual, estimated, or both source components. */
 export type EstimateLens = 'actual-only' | 'actual-plus-estimated' | 'estimates-only';
+/** Canonical successor vocabulary; legacy V2 baseline wire tokens remain unchanged. */
+export type FinancialEstimateLensV1 = 'billing-only' | 'include-estimates' | 'estimates-only';
+declare const CANONICAL_ESTIMATE_LENS_BY_LEGACY: {
+    readonly 'actual-only': "billing-only";
+    readonly 'actual-plus-estimated': "include-estimates";
+    readonly 'estimates-only': "estimates-only";
+};
+declare const LEGACY_ESTIMATE_LENS_BY_CANONICAL: {
+    readonly 'billing-only': "actual-only";
+    readonly 'include-estimates': "actual-plus-estimated";
+    readonly 'estimates-only': "estimates-only";
+};
+export declare const toCanonicalEstimateLensV1: <Lens extends EstimateLens>(value: Lens) => (typeof CANONICAL_ESTIMATE_LENS_BY_LEGACY)[Lens];
+export declare const toLegacyEstimateLensV1: <Lens extends FinancialEstimateLensV1>(value: Lens) => (typeof LEGACY_ESTIMATE_LENS_BY_CANONICAL)[Lens];
 /** Financial basis kept independent throughout composition and projection. */
 export type CostBasis = 'billed' | 'amortized';
 /** Reason a supported monetary component cannot be returned. */
@@ -106,4 +120,5 @@ export interface PublicCostComposition {
 }
 /** Exact dependency-free validator for the public cost-composition boundary. */
 export declare const isPublicCostComposition: (value: unknown) => value is PublicCostComposition;
+export {};
 //# sourceMappingURL=costComposition.d.ts.map

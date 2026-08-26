@@ -45,6 +45,27 @@ const contribution: PortfolioSavingsContributionV2 = {
   semantics: 'portfolio-contribution',
   allocationIds: [allocation.allocationId],
   range: allocation.range,
+  attributions: [
+    {
+      recommendationId: allocation.attributedRecommendationId,
+      label: 'Right-size App Service Plan',
+      allocationIds: [allocation.allocationId],
+      range: allocation.range,
+    },
+  ],
+};
+
+const invalidAttribution: PortfolioSavingsContributionV2 = {
+  ...contribution,
+  attributions: [
+    {
+      recommendationId: allocation.attributedRecommendationId,
+      label: 'Right-size App Service Plan',
+      allocationIds: [allocation.allocationId],
+      // @ts-expect-error Canonical attribution ranges use exact minor units, not floating monthly amounts.
+      range: { currency: 'NZD', maxAmount: 17.46 },
+    },
+  ],
 };
 
 const aggregate: SavingsAggregateV2 = {
@@ -117,6 +138,7 @@ const missingGeneration: SavingsAggregateV2 = {
 };
 
 void contribution;
+void invalidAttribution;
 void aggregateSet;
 void ledger;
 void invalidContribution;

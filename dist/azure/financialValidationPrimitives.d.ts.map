@@ -1,0 +1,1 @@
+{"version":3,"file":"financialValidationPrimitives.d.ts","sourceRoot":"","sources":["../../src/azure/financialValidationPrimitives.ts"],"names":[],"mappings":"AAAA,MAAM,WAAW,mBAAmB;IAClC,MAAM,EAAE,MAAM,CAAC;IACf,YAAY,EAAE,MAAM,CAAC;CACtB;AAQD,+FAA+F;AAC/F,eAAO,MAAM,qBAAqB,GAAI,OAAO,OAAO,KAAG,KAAK,IAAI,mBAUrB,CAAC"}

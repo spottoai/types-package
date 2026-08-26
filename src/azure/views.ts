@@ -1,6 +1,6 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
-import { CostSummaryDetails } from './prices.js';
+import { CostSummaryDetails, type AzureRetailPricingEvidence } from './prices.js';
 import type { BenefitCostBasis, BenefitType, IBenefitCoverageBreakdownEntry } from './benefits.js';
 import {
   AzureRecommendationLite,
@@ -33,7 +33,10 @@ import {
 } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
-import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
+import type { PortfolioSavingsContributionV2, SavingsAggregateV2, SavingsLifecycleFreshnessV1 } from './savings.js';
+import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView.js';
+import type { FinancialSavingsAuthorityV1 } from './financialSavingsAuthority.js';
+import type { FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -48,6 +51,9 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete dashboard scope. */
   savingsAggregate?: SavingsAggregateV2;
+  savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
+  /** Compact generation-bound projection of the canonical Resources financial savings authority. */
+  financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -69,6 +75,10 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete resource scope. */
   savingsAggregate?: SavingsAggregateV2;
+  /** Single generation-bound financial authority for vertically migrated resource scopes. */
+  financialAuthority?: FinancialAuthorityViewV1;
+  /** Savings authority bound one-to-one to the financial authority coordinates. */
+  financialSavingsAuthority?: FinancialSavingsAuthorityV1;
 }
 
 /**
@@ -305,6 +315,8 @@ export interface AzureResourcePluginItemDetailed {
   optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Resource-scoped, non-additive projection from the canonical Portal financial authority. */
+  financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
   /** Generic compute hosting model alternatives, including cross-platform options. */
   computeAlternatives?: ComputeAlternativesInsights;
 }
@@ -415,6 +427,24 @@ export interface VmPricePerformanceCapabilityImpact {
   message?: string;
 }
 
+/**
+ * Azure-reported Kusto SKU availability and capacity constraints for a
+ * catalogue alternative. These fields are capability metadata, not financial
+ * evidence, and must never be used alone to project whole-cluster cost.
+ */
+export interface KustoClusterSkuConfiguration {
+  sourceKustoSkuName: string;
+  sourceTier: string;
+  sourceCapacity: number;
+  targetKustoSkuName: string;
+  targetTier: string;
+  targetCapacity: number;
+  targetMinimumCapacity: number;
+  targetMaximumCapacity: number;
+  targetDefaultCapacity: number;
+  capacitySelectionBasis: 'current-capacity' | 'target-minimum';
+}
+
 export interface VmPricePerformanceSku {
   armSkuName: string;
   region: string;
@@ -434,7 +464,13 @@ export interface VmPricePerformanceSku {
   localCurrencyCode?: string;
   localCurrencySymbol?: string;
   localHourlyPrice?: number;
+  /** Exact decimal representation consumed by the financial projection engine. */
+  localHourlyPriceExact?: string;
   localMonthlyPrice?: number;
+  /** Content-bound retail-rate evidence. Monetary projections require this. */
+  retailRateEvidence?: AzureRetailPricingEvidence;
+  /** Azure-reported capability metadata for a Kusto engine SKU candidate. */
+  kustoClusterConfiguration?: KustoClusterSkuConfiguration;
   numberOfCores?: number;
   memoryGB?: number;
   maxDataDiskCount?: number;

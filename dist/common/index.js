@@ -21,4 +21,6 @@ __exportStar(require("./provider"), exports);
 __exportStar(require("./providerSyncProgress"), exports);
 __exportStar(require("./relationships"), exports);
 __exportStar(require("./syncProgress"), exports);
+__exportStar(require("./sha256"), exports);
+__exportStar(require("./exactDecimal"), exports);
 //# sourceMappingURL=index.js.map

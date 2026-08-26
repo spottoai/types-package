@@ -1,7 +1,7 @@
 import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
-import type { CostComposition } from './costComposition.js';
+import type { CostBasis, CostComposition } from './costComposition.js';
 export type ResourceCostSource = SpendDataSource;
 export type CostSourceConfidence = 'high' | 'unknown';
 /** Calendar used to interpret a financial date-only value. */
@@ -104,6 +104,13 @@ export interface CostSummaryDetails {
     amortizedTotal?: number;
     /** Total cost in the previous 30 days, taking into account reserved instances and savings plans */
     amortizedTotalPrevious?: number;
+    /** Explicit previous-period evidence state by basis; absence means legacy/unknown. */
+    previousPeriodAvailability?: Partial<Record<CostBasis, {
+        status: 'available';
+    } | {
+        status: 'unavailable';
+        reason: string;
+    }>>;
     /** Optional active-day coverage for the 30-day spend window (e.g. 18 means 18/30 active days). */
     coverageDays?: number;
     items?: ResourceCostSummary[];
@@ -173,6 +180,13 @@ export interface ResourceCostSummary {
     spendAmortized: number;
     /** e.g. 217.21 (rounded to 2 decimal places) */
     quantity: number;
+    /**
+     * Explicit evidence state for quantity. Legacy rows omit this field and keep
+     * their existing numeric contract. Authority-backed adapters set
+     * `unavailable` instead of presenting a synthetic zero when the evidence
+     * bundle contains no quantity.
+     */
+    quantityAvailability?: 'available' | 'unavailable';
     /** e.g. [ { startDate: 20250601, endDate: 20250610 } ] */
     dates?: ActiveDates[];
     /** e.g. 0.304140 1/Hour */
@@ -408,6 +422,14 @@ export interface ResourceSpend {
 export interface PricingResponse {
     Items: AzurePrice[];
     NextPageLink?: string;
+}
+/** Content-bound observation of the Azure Retail Prices response consumed by a calculation. */
+export interface AzureRetailPricingEvidence {
+    sourceKind: 'azure-retail-prices-api';
+    revisionId: string;
+    evidenceDigest: string;
+    observedAt: string;
+    rowCount: number;
 }
 export interface MiscCost {
     spendSummary?: ResourceSpend[];

@@ -1,6 +1,7 @@
 /** Main entry point - export all interfaces from this package */
 export * from './azure/common.js';
 export * from './azure/costComposition.js';
+export * from './azure/financialScope.js';
 export * from './azure/activityLogs.js';
 export * from './azure/budgets.js';
 export * from './azure/billingGeneration.js';

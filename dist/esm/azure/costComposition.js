@@ -1,3 +1,15 @@
+const CANONICAL_ESTIMATE_LENS_BY_LEGACY = {
+    'actual-only': 'billing-only',
+    'actual-plus-estimated': 'include-estimates',
+    'estimates-only': 'estimates-only',
+};
+const LEGACY_ESTIMATE_LENS_BY_CANONICAL = {
+    'billing-only': 'actual-only',
+    'include-estimates': 'actual-plus-estimated',
+    'estimates-only': 'estimates-only',
+};
+export const toCanonicalEstimateLensV1 = (value) => CANONICAL_ESTIMATE_LENS_BY_LEGACY[value];
+export const toLegacyEstimateLensV1 = (value) => LEGACY_ESTIMATE_LENS_BY_CANONICAL[value];
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
 const SUPPORT_STATES = new Set(['supported', 'unsupported', 'unknown']);
 const BASIS_STATUSES = new Set(['actual-only', 'actual-plus-estimated', 'estimated-only', 'unavailable']);

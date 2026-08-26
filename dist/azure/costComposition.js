@@ -1,6 +1,20 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isPublicCostComposition = void 0;
+exports.isPublicCostComposition = exports.toLegacyEstimateLensV1 = exports.toCanonicalEstimateLensV1 = void 0;
+const CANONICAL_ESTIMATE_LENS_BY_LEGACY = {
+    'actual-only': 'billing-only',
+    'actual-plus-estimated': 'include-estimates',
+    'estimates-only': 'estimates-only',
+};
+const LEGACY_ESTIMATE_LENS_BY_CANONICAL = {
+    'billing-only': 'actual-only',
+    'include-estimates': 'actual-plus-estimated',
+    'estimates-only': 'estimates-only',
+};
+const toCanonicalEstimateLensV1 = (value) => CANONICAL_ESTIMATE_LENS_BY_LEGACY[value];
+exports.toCanonicalEstimateLensV1 = toCanonicalEstimateLensV1;
+const toLegacyEstimateLensV1 = (value) => LEGACY_ESTIMATE_LENS_BY_CANONICAL[value];
+exports.toLegacyEstimateLensV1 = toLegacyEstimateLensV1;
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
 const SUPPORT_STATES = new Set(['supported', 'unsupported', 'unknown']);
 const BASIS_STATUSES = new Set(['actual-only', 'actual-plus-estimated', 'estimated-only', 'unavailable']);

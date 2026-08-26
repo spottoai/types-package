@@ -5,3 +5,5 @@ export * from './provider.js';
 export * from './providerSyncProgress.js';
 export * from './relationships.js';
 export * from './syncProgress.js';
+export * from './sha256.js';
+export * from './exactDecimal.js';

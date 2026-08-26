@@ -118,5 +118,16 @@ export interface Comment {
     userAvatar?: string;
     content: string;
     createdAt: string;
+    mentions?: CommentMention[];
+    notificationContext?: CommentNotificationContext;
+}
+export interface CommentMention {
+    userId: string;
+    displayName: string;
+}
+export interface CommentNotificationContext {
+    title: string;
+    summary?: string;
+    affectedResources?: string;
 }
 //# sourceMappingURL=recommendationState.d.ts.map

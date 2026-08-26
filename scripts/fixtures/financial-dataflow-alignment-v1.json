@@ -1,0 +1,1044 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "financial-dataflow-alignment/v1",
+  "description": "Synthetic language-neutral vectors for exact-scope current spend, analytics, policy revision, evaluation, and acyclic authority semantics.",
+  "limits": {
+    "maximumCases": 128,
+    "maximumMutations": 256,
+    "maximumGraphNodes": 64,
+    "maximumGraphEdges": 128,
+    "maximumIdentifierLength": 256,
+    "maximumPoints": 3660
+  },
+  "requiredDecisions": [
+    "acyclic-engine-derived-estimates",
+    "definition-revision-bound-evaluation",
+    "exact-scope-analytics",
+    "no-forecast-fallback",
+    "one-canonical-producer-per-coordinate",
+    "policy-read-action-separated",
+    "ui-display-only-composition",
+    "v2-baseline-members-not-reowned"
+  ],
+  "cases": [
+    {
+      "caseId": "subscription-budget-current-and-forecast",
+      "purpose": "One budget revision evaluates current-spend and forecast thresholds against separate immutable inputs for the same exact subscription coordinate.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "subscription",
+          "scopeId": "fixture-subscription:aud",
+          "scopeFingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "calendar-month",
+          "startDate": "2026-08-01",
+          "endDateExclusive": "2026-09-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "billed",
+        "estimateLens": "include-estimates",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:subscription-current",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:one",
+            "baselineId": "fixture-baseline:one",
+            "status": "included"
+          },
+          {
+            "memberScopeId": "fixture-resource:two",
+            "baselineId": "fixture-baseline:two",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "348",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "analyticsInput": {
+        "analyticsInputId": "fixture-analytics-input:subscription-history",
+        "coordinatePeriodRole": "analytics-input",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-02",
+          "endDateExclusive": "2026-08-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "producerGenerationId": "fixture-generation:analytics-input:one",
+        "points": [
+          {
+            "date": "2026-07-30",
+            "compositionId": "fixture-composition:day:2026-07-30",
+            "status": "available",
+            "amount": "10"
+          },
+          {
+            "date": "2026-07-31",
+            "compositionId": "fixture-composition:day:2026-07-31",
+            "status": "available",
+            "amount": "12"
+          }
+        ],
+        "coverage": {
+          "availableDayCount": 2,
+          "partialDayCount": 0,
+          "unavailableDayCount": 28
+        },
+        "gaps": [
+          {
+            "startDate": "2026-07-02",
+            "endDateExclusive": "2026-07-30",
+            "reasonCodes": ["evidence-not-produced"]
+          }
+        ]
+      },
+      "projection": {
+        "analyticsProjectionId": "fixture-projection:subscription-forecast",
+        "analyticsInputId": "fixture-analytics-input:subscription-history",
+        "currentSpendCompositionId": "fixture-composition:subscription-current",
+        "coordinatePeriodRole": "projection-target",
+        "outputGenerationId": "fixture-generation:analytics-output:subscription-forecast",
+        "resultKind": "forecast",
+        "status": "available",
+        "projectedTotal": {
+          "amount": "420",
+          "currencyCode": "AUD"
+        },
+        "projectedRemaining": {
+          "amount": "72",
+          "currencyCode": "AUD"
+        },
+        "algorithmVersion": "forecast-ets/v1",
+        "producedAt": "2026-08-10T00:00:00.000Z"
+      },
+      "policyDefinition": {
+        "definitionId": "fixture-policy:budget",
+        "revision": "7",
+        "effectiveState": "enabled",
+        "policyKind": "budget",
+        "budget": {
+          "amount": "400",
+          "currencyCode": "AUD"
+        },
+        "currentSpendThresholds": {
+          "amounts": ["350"],
+          "percents": ["80", "100"]
+        },
+        "forecastThresholds": {
+          "amounts": ["410"],
+          "percents": ["100"]
+        },
+        "destinationRefIds": ["fixture-destination:email:one"],
+        "destinationsDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "authoredAt": "2026-08-09T00:00:00.000Z",
+        "authoredByUserId": "fixture-user:author"
+      },
+      "evaluation": {
+        "evaluationId": "fixture-evaluation:budget-forecast:7",
+        "definitionId": "fixture-policy:budget",
+        "definitionRevision": "7",
+        "currentSpendCompositionId": "fixture-composition:subscription-current",
+        "analyticsProjectionId": "fixture-projection:subscription-forecast",
+        "signalKind": "budget-forecast",
+        "result": "matched",
+        "reasonCode": "forecast-threshold-amount-matched",
+        "readProjectionId": "fixture-evaluation:budget-forecast:7:read",
+        "actionAuditId": "fixture-evaluation:budget-forecast:7:action",
+        "policyAlgorithmVersion": "financial-policy-evaluator/v1",
+        "evaluatedAt": "2026-08-10T00:01:00.000Z"
+      },
+      "covers": [
+        "acyclic-engine-derived-estimates",
+        "definition-revision-bound-evaluation",
+        "exact-scope-analytics",
+        "one-canonical-producer-per-coordinate",
+        "policy-read-action-separated",
+        "v2-baseline-members-not-reowned"
+      ]
+    },
+    {
+      "caseId": "resource-billed-zero-with-evidence",
+      "purpose": "A resource may have a genuine billed zero; zero remains available and is not confused with missing evidence.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "resource",
+          "scopeId": "fixture-resource:covered-vm",
+          "scopeFingerprint": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "utc",
+          "timeZone": "UTC"
+        },
+        "costBasis": "billed",
+        "estimateLens": "billing-only",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:covered-vm",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:covered-vm",
+            "baselineId": "fixture-baseline:covered-vm",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "0",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "covers": ["v2-baseline-members-not-reowned"]
+    },
+    {
+      "caseId": "tag-amortized-history-with-refund-and-credit",
+      "purpose": "Exact tag-scope analytics retains signed refund and credit days and a typed partial day without changing basis or estimate lens.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:nzd"],
+        "scope": {
+          "kind": "tag-scope",
+          "scopeId": "fixture-tag:environment=dev",
+          "scopeFingerprint": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "amortized",
+        "estimateLens": "estimates-only",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "NZD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:tag-current",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:tag-one",
+            "baselineId": "fixture-baseline:tag-one",
+            "status": "included"
+          },
+          {
+            "memberScopeId": "fixture-resource:tag-two",
+            "status": "unavailable",
+            "reasonCode": "evidence-not-produced"
+          }
+        ],
+        "amount": {
+          "status": "partial",
+          "knownAmount": "75",
+          "currencyCode": "NZD",
+          "reasonCodes": ["evidence-not-produced"]
+        },
+        "membershipDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "analyticsInput": {
+        "analyticsInputId": "fixture-analytics-input:tag-history",
+        "coordinatePeriodRole": "analytics-input",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "producerGenerationId": "fixture-generation:analytics-input:tag",
+        "points": [
+          {
+            "date": "2026-08-08",
+            "compositionId": "fixture-composition:tag-day:refund",
+            "status": "available",
+            "amount": "-20"
+          },
+          {
+            "date": "2026-08-09",
+            "compositionId": "fixture-composition:tag-day:credit",
+            "status": "available",
+            "amount": "-5"
+          },
+          {
+            "date": "2026-08-10",
+            "compositionId": "fixture-composition:tag-day:partial",
+            "status": "partial",
+            "knownAmount": "10",
+            "reasonCodes": ["evidence-not-produced"]
+          }
+        ],
+        "coverage": {
+          "availableDayCount": 2,
+          "partialDayCount": 1,
+          "unavailableDayCount": 27
+        },
+        "gaps": [
+          {
+            "startDate": "2026-07-12",
+            "endDateExclusive": "2026-08-08",
+            "reasonCodes": ["evidence-not-produced"]
+          }
+        ]
+      },
+      "covers": ["exact-scope-analytics", "ui-display-only-composition"]
+    },
+    {
+      "caseId": "multi-subscription-mixed-currency-unavailable",
+      "purpose": "A multi-subscription scalar composition with conflicting accounting currencies is unavailable rather than defaulted or summed.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": [
+          "fixture-subscription:aud",
+          "fixture-subscription:nzd"
+        ],
+        "scope": {
+          "kind": "multi-subscription",
+          "scopeId": "fixture-portfolio:all-subscriptions",
+          "scopeFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "billed",
+        "estimateLens": "billing-only",
+        "accountingCurrency": {
+          "status": "unresolved",
+          "reasonCode": "currency-conflicting"
+        }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:mixed-currency",
+        "members": [
+          {
+            "memberScopeId": "fixture-subscription:aud",
+            "status": "unavailable",
+            "reasonCode": "currency-conflicting"
+          },
+          {
+            "memberScopeId": "fixture-subscription:nzd",
+            "status": "unavailable",
+            "reasonCode": "currency-conflicting"
+          }
+        ],
+        "amount": {
+          "status": "unavailable",
+          "reasonCodes": ["currency-conflicting"]
+        },
+        "membershipDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "covers": ["exact-scope-analytics"]
+    },
+    {
+      "caseId": "resource-group-unsupported-forecast-no-fallback",
+      "purpose": "An unsupported forecast scope remains typed unavailable and cannot invoke a subscription or linear fallback.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "resource-group",
+          "scopeId": "fixture-resource-group:unsupported",
+          "scopeFingerprint": "sha256:4444444444444444444444444444444444444444444444444444444444444444"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "calendar-month",
+          "startDate": "2026-08-01",
+          "endDateExclusive": "2026-09-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "amortized",
+        "estimateLens": "include-estimates",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:resource-group",
+        "members": [],
+        "amount": {
+          "status": "unavailable",
+          "reasonCodes": ["unsupported-scope"]
+        },
+        "membershipDigest": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "projection": {
+        "analyticsProjectionId": "fixture-projection:resource-group-unavailable",
+        "coordinatePeriodRole": "projection-target",
+        "outputGenerationId": "fixture-generation:analytics-output:resource-group-unavailable",
+        "resultKind": "forecast",
+        "status": "unavailable",
+        "reasonCodes": ["unsupported-scope"],
+        "algorithmVersion": "forecast-ets/v1",
+        "producedAt": "2026-08-10T00:00:00.000Z"
+      },
+      "covers": ["no-forecast-fallback"]
+    },
+    {
+      "caseId": "stale-forecast-policy-unavailable",
+      "purpose": "A stale promoted forecast cannot be replaced locally; the bound policy evaluation records typed unavailable.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "subscription",
+          "scopeId": "fixture-subscription:aud",
+          "scopeFingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "calendar-month",
+          "startDate": "2026-08-01",
+          "endDateExclusive": "2026-09-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "billed",
+        "estimateLens": "include-estimates",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:subscription-current",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:one",
+            "baselineId": "fixture-baseline:one",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "348",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "analyticsInput": {
+        "analyticsInputId": "fixture-analytics-input:stale",
+        "coordinatePeriodRole": "analytics-input",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-02",
+          "endDateExclusive": "2026-08-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "producerGenerationId": "fixture-generation:analytics-input:stale",
+        "points": [
+          {
+            "date": "2026-07-31",
+            "compositionId": "fixture-composition:stale-day:2026-07-31",
+            "status": "available",
+            "amount": "12"
+          }
+        ],
+        "coverage": {
+          "availableDayCount": 1,
+          "partialDayCount": 0,
+          "unavailableDayCount": 29
+        },
+        "gaps": [
+          {
+            "startDate": "2026-07-02",
+            "endDateExclusive": "2026-07-31",
+            "reasonCodes": ["evidence-not-produced"]
+          }
+        ]
+      },
+      "projection": {
+        "analyticsProjectionId": "fixture-projection:stale",
+        "analyticsInputId": "fixture-analytics-input:stale",
+        "currentSpendCompositionId": "fixture-composition:subscription-current",
+        "coordinatePeriodRole": "projection-target",
+        "outputGenerationId": "fixture-generation:analytics-output:stale",
+        "resultKind": "forecast",
+        "status": "unavailable",
+        "reasonCodes": ["analytics-stale"],
+        "algorithmVersion": "forecast-ets/v1",
+        "producedAt": "2026-08-01T00:00:00.000Z"
+      },
+      "policyDefinition": {
+        "definitionId": "fixture-policy:budget",
+        "revision": "7",
+        "effectiveState": "enabled",
+        "policyKind": "budget",
+        "budget": {
+          "amount": "400",
+          "currencyCode": "AUD"
+        },
+        "forecastThresholds": {
+          "amounts": ["410"],
+          "percents": ["100"]
+        },
+        "destinationRefIds": ["fixture-destination:email:one"],
+        "destinationsDigest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "authoredAt": "2026-08-09T00:00:00.000Z",
+        "authoredByUserId": "fixture-user:author"
+      },
+      "evaluation": {
+        "evaluationId": "fixture-evaluation:stale-forecast:7",
+        "definitionId": "fixture-policy:budget",
+        "definitionRevision": "7",
+        "currentSpendCompositionId": "fixture-composition:subscription-current",
+        "analyticsProjectionId": "fixture-projection:stale",
+        "signalKind": "budget-forecast",
+        "result": "unavailable",
+        "reasonCode": "analytics-stale",
+        "readProjectionId": "fixture-evaluation:stale-forecast:7:read",
+        "actionAuditId": "fixture-evaluation:stale-forecast:7:action",
+        "policyAlgorithmVersion": "financial-policy-evaluator/v1",
+        "evaluatedAt": "2026-08-10T00:01:00.000Z"
+      },
+      "covers": [
+        "definition-revision-bound-evaluation",
+        "no-forecast-fallback",
+        "policy-read-action-separated"
+      ]
+    },
+    {
+      "caseId": "resource-trend-and-anomaly-results-are-distinct",
+      "purpose": "Trend and anomaly results retain kind-specific semantics and do not overload one optional amount.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "resource",
+          "scopeId": "fixture-resource:trend",
+          "scopeFingerprint": "sha256:8888888888888888888888888888888888888888888888888888888888888888"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "utc",
+          "timeZone": "UTC"
+        },
+        "costBasis": "amortized",
+        "estimateLens": "billing-only",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:trend-resource",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:trend",
+            "baselineId": "fixture-baseline:trend",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "90",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "comparisonComposition": {
+        "compositionId": "fixture-composition:trend-resource-comparison",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-06-12",
+          "endDateExclusive": "2026-07-12",
+          "dateBasis": "utc",
+          "timeZone": "UTC"
+        },
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:trend",
+            "baselineId": "fixture-baseline:trend-comparison",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "75",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:9898989898989898989898989898989898989898989898989898989898989898",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "analyticsInput": {
+        "analyticsInputId": "fixture-analytics-input:trend-resource-history",
+        "coordinatePeriodRole": "analytics-input",
+        "period": {
+          "windowKind": "rolling-30-days",
+          "startDate": "2026-07-12",
+          "endDateExclusive": "2026-08-11",
+          "dateBasis": "utc",
+          "timeZone": "UTC"
+        },
+        "producerGenerationId": "fixture-generation:analytics-input:trend-resource",
+        "points": [
+          {
+            "date": "2026-08-10",
+            "compositionId": "fixture-composition:trend-resource-day:2026-08-10",
+            "status": "available",
+            "amount": "30"
+          }
+        ],
+        "coverage": {
+          "availableDayCount": 1,
+          "partialDayCount": 0,
+          "unavailableDayCount": 29
+        },
+        "gaps": [
+          {
+            "startDate": "2026-07-12",
+            "endDateExclusive": "2026-08-10",
+            "reasonCodes": ["evidence-not-produced"]
+          }
+        ]
+      },
+      "analyticsResults": [
+        {
+          "analyticsProjectionId": "fixture-projection:trend-resource",
+          "analyticsInputId": "fixture-analytics-input:trend-resource-history",
+          "currentSpendCompositionId": "fixture-composition:trend-resource",
+          "comparisonCompositionId": "fixture-composition:trend-resource-comparison",
+          "coordinatePeriodRole": "projection-target",
+          "outputGenerationId": "fixture-generation:analytics-output:trend-resource",
+          "resultKind": "trend",
+          "method": "exact-comparison",
+          "algorithmVersion": "trend-comparison/v1",
+          "producedAt": "2026-08-11T00:00:00.000Z",
+          "direction": "increasing",
+          "change": {
+            "amount": "15",
+            "currencyCode": "AUD"
+          },
+          "percentChange": "20"
+        },
+        {
+          "analyticsProjectionId": "fixture-projection:anomaly-resource",
+          "analyticsInputId": "fixture-analytics-input:trend-resource-history",
+          "coordinatePeriodRole": "projection-target",
+          "outputGenerationId": "fixture-generation:analytics-output:anomaly-resource",
+          "resultKind": "anomaly",
+          "method": "fixture-anomaly",
+          "algorithmVersion": "anomaly/v1",
+          "producedAt": "2026-08-11T00:00:00.000Z",
+          "events": [
+            {
+              "date": "2026-08-10",
+              "observed": {
+                "amount": "30",
+                "currencyCode": "AUD"
+              },
+              "expected": {
+                "amount": "10",
+                "currencyCode": "AUD"
+              },
+              "delta": {
+                "amount": "20",
+                "currencyCode": "AUD"
+              },
+              "score": "0.95"
+            }
+          ]
+        }
+      ],
+      "covers": ["exact-scope-analytics"]
+    },
+    {
+      "caseId": "action-retry-reuses-evaluation-identity",
+      "purpose": "A retry changes action-attempt state without creating another financial evaluation or read projection.",
+      "coordinate": {
+        "companyId": "fixture-company:alpha",
+        "provider": "azure",
+        "providerAccountRefs": ["fixture-subscription:aud"],
+        "scope": {
+          "kind": "subscription",
+          "scopeId": "fixture-subscription:aud",
+          "scopeFingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "periodRole": "current-spend",
+        "period": {
+          "windowKind": "calendar-month",
+          "startDate": "2026-08-01",
+          "endDateExclusive": "2026-09-01",
+          "dateBasis": "company-local",
+          "timeZone": "Pacific/Auckland"
+        },
+        "costBasis": "billed",
+        "estimateLens": "include-estimates",
+        "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
+      },
+      "composition": {
+        "compositionId": "fixture-composition:subscription-current",
+        "members": [
+          {
+            "memberScopeId": "fixture-resource:one",
+            "baselineId": "fixture-baseline:one",
+            "status": "included"
+          }
+        ],
+        "amount": {
+          "status": "available",
+          "amount": "348",
+          "currencyCode": "AUD"
+        },
+        "membershipDigest": "sha256:abababababababababababababababababababababababababababababababab",
+        "algorithmVersion": "current-spend-composition/v1"
+      },
+      "policyDefinition": {
+        "definitionId": "fixture-policy:budget-current",
+        "revision": "3",
+        "effectiveState": "enabled",
+        "policyKind": "budget",
+        "budget": {
+          "amount": "300",
+          "currencyCode": "AUD"
+        },
+        "currentSpendThresholds": {
+          "amounts": ["300"],
+          "percents": ["100"]
+        },
+        "destinationRefIds": ["fixture-destination:webhook:one"],
+        "destinationsDigest": "sha256:cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "authoredAt": "2026-08-09T00:00:00.000Z",
+        "authoredByUserId": "fixture-user:author"
+      },
+      "evaluation": {
+        "evaluationId": "fixture-evaluation:budget-current:3",
+        "definitionId": "fixture-policy:budget-current",
+        "definitionRevision": "3",
+        "currentSpendCompositionId": "fixture-composition:subscription-current",
+        "signalKind": "budget-current-spend",
+        "result": "matched",
+        "reasonCode": "current-spend-threshold-amount-matched",
+        "readProjectionId": "fixture-evaluation:budget-current:3:read",
+        "actionAuditId": "fixture-evaluation:budget-current:3:action",
+        "policyAlgorithmVersion": "financial-policy-evaluator/v1",
+        "evaluatedAt": "2026-08-10T00:01:00.000Z",
+        "actionAttempts": [
+          {
+            "attempt": 1,
+            "status": "retryable-failure"
+          },
+          {
+            "attempt": 2,
+            "status": "succeeded"
+          }
+        ]
+      },
+      "covers": ["policy-read-action-separated"]
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "coordinate-company",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.companyId",
+      "replacement": "fixture-company:other",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-provider-account",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.providerAccountRefs.0",
+      "replacement": "fixture-subscription:other",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-scope-kind",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.scope.kind",
+      "replacement": "tag-scope",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-scope-id",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.scope.scopeId",
+      "replacement": "fixture-subscription:other",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-scope-fingerprint",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.scope.scopeFingerprint",
+      "replacement": "sha256:babababababababababababababababababababababababababababababababa",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-period-kind",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.period.windowKind",
+      "replacement": "stable-billing-window",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-basis",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.costBasis",
+      "replacement": "amortized",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-lens",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.estimateLens",
+      "replacement": "billing-only",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "coordinate-currency",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.accountingCurrency.currencyCode",
+      "replacement": "NZD",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "analytics-generation",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "analyticsInput",
+      "path": "analyticsInput.producerGenerationId",
+      "replacement": "fixture-generation:analytics-input:other",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "projection-algorithm",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "projection",
+      "path": "projection.algorithmVersion",
+      "replacement": "forecast-ets/v2",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "projection-output-generation",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "projection",
+      "path": "projection.outputGenerationId",
+      "replacement": "fixture-generation:analytics-output:other",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "definition-revision",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "policyDefinition",
+      "path": "policyDefinition.revision",
+      "replacement": "8",
+      "expected": "identity-change"
+    },
+    {
+      "mutationId": "evaluation-definition-drift",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "evaluation",
+      "path": "evaluation.definitionRevision",
+      "replacement": "8",
+      "expected": "reject",
+      "reasonCode": "definition-revision-mismatch"
+    },
+    {
+      "mutationId": "evaluation-read-drift",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "evaluation",
+      "path": "evaluation.readProjectionId",
+      "replacement": "fixture-evaluation:wrong:read",
+      "expected": "reject",
+      "reasonCode": "read-action-identity-mismatch"
+    },
+    {
+      "mutationId": "evaluation-action-drift",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "evaluation",
+      "path": "evaluation.actionAuditId",
+      "replacement": "fixture-evaluation:wrong:action",
+      "expected": "reject",
+      "reasonCode": "read-action-identity-mismatch"
+    },
+    {
+      "mutationId": "invalid-currency-token",
+      "targetCaseId": "subscription-budget-current-and-forecast",
+      "identityTarget": "coordinate",
+      "path": "coordinate.accountingCurrency.currencyCode",
+      "replacement": "aud",
+      "expected": "reject",
+      "reasonCode": "invalid-currency"
+    },
+    {
+      "mutationId": "missing-as-zero",
+      "targetCaseId": "resource-group-unsupported-forecast-no-fallback",
+      "identityTarget": "composition",
+      "path": "composition.amount.amount",
+      "operation": "add",
+      "replacement": "0",
+      "expected": "reject",
+      "reasonCode": "unavailable-carries-money"
+    },
+    {
+      "mutationId": "trend-comparison-composition-drift",
+      "targetCaseId": "resource-trend-and-anomaly-results-are-distinct",
+      "identityTarget": "analyticsResults",
+      "path": "analyticsResults.0.comparisonCompositionId",
+      "replacement": "fixture-composition:wrong-comparison",
+      "expected": "reject",
+      "reasonCode": "composition-mismatch"
+    },
+    {
+      "mutationId": "trend-change-drift",
+      "targetCaseId": "resource-trend-and-anomaly-results-are-distinct",
+      "identityTarget": "analyticsResults",
+      "path": "analyticsResults.0.change.amount",
+      "replacement": "16",
+      "expected": "reject",
+      "reasonCode": "invalid-projection"
+    },
+    {
+      "mutationId": "anomaly-input-drift",
+      "targetCaseId": "resource-trend-and-anomaly-results-are-distinct",
+      "identityTarget": "analyticsResults",
+      "path": "analyticsResults.1.analyticsInputId",
+      "replacement": "fixture-analytics-input:wrong",
+      "expected": "reject",
+      "reasonCode": "analytics-input-mismatch"
+    },
+    {
+      "mutationId": "anomaly-observed-drift",
+      "targetCaseId": "resource-trend-and-anomaly-results-are-distinct",
+      "identityTarget": "analyticsResults",
+      "path": "analyticsResults.1.events.0.observed.amount",
+      "replacement": "31",
+      "expected": "reject",
+      "reasonCode": "invalid-projection"
+    },
+    {
+      "mutationId": "trend-comparison-window-drift",
+      "targetCaseId": "resource-trend-and-anomaly-results-are-distinct",
+      "identityTarget": "comparisonComposition",
+      "path": "comparisonComposition.period.windowKind",
+      "replacement": "daily",
+      "expected": "reject",
+      "reasonCode": "invalid-period"
+    },
+    {
+      "mutationId": "stale-forecast-input-drift",
+      "targetCaseId": "stale-forecast-policy-unavailable",
+      "identityTarget": "projection",
+      "path": "projection.analyticsInputId",
+      "replacement": "fixture-analytics-input:wrong",
+      "expected": "reject",
+      "reasonCode": "analytics-input-mismatch"
+    }
+  ],
+  "producerAuthorities": [
+    {
+      "semanticCoordinate": "current-spend/exact-coordinate",
+      "producer": "cloud-engine/current-spend-composition",
+      "disposition": "canonical"
+    },
+    {
+      "semanticCoordinate": "analytics-projection/exact-coordinate",
+      "producer": "metrics-analyzer/financial-analytics",
+      "disposition": "canonical"
+    },
+    {
+      "semanticCoordinate": "financial-policy-evaluation/exact-definition-revision",
+      "producer": "cloud-engine/financial-policy-evaluator",
+      "disposition": "canonical"
+    }
+  ],
+  "graphCases": [
+    {
+      "graphCaseId": "valid-dataflow",
+      "nodes": [
+        { "nodeId": "provider-billing", "role": "provider-source-evidence" },
+        { "nodeId": "current-spend", "role": "engine-derived-current-spend" },
+        {
+          "nodeId": "analytics-input",
+          "role": "engine-derived-analytics-input"
+        },
+        {
+          "nodeId": "analytics-projection",
+          "role": "analytics-derived-projection"
+        },
+        {
+          "nodeId": "policy-evaluation",
+          "role": "engine-derived-policy-evaluation"
+        }
+      ],
+      "edges": [
+        { "from": "provider-billing", "to": "current-spend" },
+        { "from": "current-spend", "to": "analytics-input" },
+        { "from": "analytics-input", "to": "analytics-projection" },
+        { "from": "current-spend", "to": "policy-evaluation" },
+        { "from": "analytics-projection", "to": "policy-evaluation" }
+      ],
+      "expected": "valid"
+    },
+    {
+      "graphCaseId": "engine-derived-estimate-misclassified-as-provider-source",
+      "nodes": [
+        { "nodeId": "estimate", "role": "engine-derived-estimate" },
+        { "nodeId": "source", "role": "provider-source-evidence" }
+      ],
+      "edges": [{ "from": "estimate", "to": "source" }],
+      "expected": "reject",
+      "reasonCode": "engine-derived-cannot-produce-provider-source"
+    },
+    {
+      "graphCaseId": "analytics-output-feedback-cycle",
+      "nodes": [
+        {
+          "nodeId": "analytics-input",
+          "role": "engine-derived-analytics-input"
+        },
+        {
+          "nodeId": "analytics-projection",
+          "role": "analytics-derived-projection"
+        }
+      ],
+      "edges": [
+        { "from": "analytics-input", "to": "analytics-projection" },
+        { "from": "analytics-projection", "to": "analytics-input" }
+      ],
+      "expected": "reject",
+      "reasonCode": "dependency-cycle"
+    }
+  ]
+}

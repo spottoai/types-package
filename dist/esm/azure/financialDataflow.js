@@ -1,0 +1,2 @@
+export const FINANCIAL_DATAFLOW_SCHEMA_VERSION_V1 = 1;
+export const FINANCIAL_CURRENT_SPEND_COMPOSITION_CONTRACT_VERSION_V1 = 'current-spend-composition/v1';

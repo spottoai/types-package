@@ -49,7 +49,12 @@ import type { AwsPortalAccountSummaryArtifact, AwsPortalResourceCollectionArtifa
 // compatibility-wide AWS barrel.
 import { validateAwsPortalRelationshipArtifact } from '@spottoai/types-package/aws/relationships';
 import { validateAwsCommitmentsPlanningViewIdentity } from '@spottoai/types-package/aws/commitments-planning';
+
+// Import the current financial authority contract family without the wider root barrel.
+import { isFinancialScopeBaselineEnvelopeV2 } from '@spottoai/types-package/azure/financial-scope';
 ```
+
+The retired `azure/financial-baseline` V1 probe is not a compatibility entry point. Current evidence, owner/aggregate baseline, projection, authority-view, and savings-authority contracts are exported by `azure/financial-scope` and the package root.
 
 The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
