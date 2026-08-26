@@ -745,6 +745,9 @@ const tenantMfaPosture: TenantMfaPosture = {
         methodsRegistered: ['microsoftAuthenticatorPush'],
         sourceUpdatedAt: '2026-08-24T12:00:00.000Z',
       },
+      perUserMfa: {
+        state: 'enforced',
+      },
       enforcement: [
         {
           scenario: { type: 'allResources' },
@@ -816,6 +819,13 @@ const tenantMfaPosture: TenantMfaPosture = {
       lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
       maximumSourceLagHours: 36,
     },
+    perUserMfa: {
+      state: 'complete',
+      source: 'microsoft-graph-beta',
+      requiredPermissions: ['Policy.Read.All'],
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
     securityDefaults: {
       state: 'complete',
       source: 'microsoft-graph',
@@ -863,6 +873,13 @@ const tenantMfaPosture: TenantMfaPosture = {
     {
       source: 'microsoftGraph',
       endpoint: '/v1.0/reports/authenticationMethods/userRegistrationDetails',
+      state: 'complete',
+      lastAttemptedAt: '2026-08-25T00:00:00.000Z',
+      lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
+    },
+    {
+      source: 'microsoftGraph',
+      endpoint: '/beta/users/{id}/authentication/requirements',
       state: 'complete',
       lastAttemptedAt: '2026-08-25T00:00:00.000Z',
       lastSuccessfulAt: '2026-08-25T00:00:00.000Z',
@@ -1305,6 +1322,19 @@ const invalidTenantMfaRegistrationStatus: TenantMfaPostureArtifact = {
   ],
 };
 
+const invalidTenantMfaPerUserState: TenantMfaPostureArtifact = {
+  ...tenantMfaPostureArtifact,
+  users: [
+    {
+      ...tenantMfaPostureArtifact.users[0],
+      perUserMfa: {
+        // @ts-expect-error per-user MFA state uses the Microsoft Graph state vocabulary.
+        state: 'required',
+      },
+    },
+  ],
+};
+
 // @ts-expect-error an application enforcement scenario requires the target application ID.
 const invalidTenantMfaApplicationScenario: TenantMfaEnforcementScenario = {
   type: 'application',
@@ -1315,4 +1345,5 @@ void invalidTenantGraphNodeType;
 void invalidTenantScopeRollup;
 void invalidTenantMfaSchemaVersion;
 void invalidTenantMfaRegistrationStatus;
+void invalidTenantMfaPerUserState;
 void invalidTenantMfaApplicationScenario;

@@ -818,6 +818,7 @@ export interface GovernanceAccessArtifact {
 export type TenantMfaAssessmentState = Exclude<GovernanceCoverageState, 'skipped'>;
 export type TenantMfaUserType = 'member' | 'guest' | 'unknown';
 export type TenantMfaRegistrationStatus = 'capable' | 'registeredButNotAllowed' | 'notCapable' | 'unknown';
+export type TenantMfaPerUserState = 'disabled' | 'enabled' | 'enforced' | 'unknown';
 export type TenantMfaEnforcementStatus = 'enforced' | 'conditionallyEnforced' | 'notEnforced' | 'unknown';
 export type TenantMfaEnforcementMechanism = 'securityDefaults' | 'conditionalAccess' | 'perUserMfa' | 'mandatoryAzureMfa';
 export type TenantMfaObservedSignInStatus = 'mfaRequired' | 'singleFactorObserved' | 'noRecentSignIn' | 'unknown';
@@ -840,6 +841,7 @@ export interface TenantMfaCoverageSection {
 export interface TenantMfaCoverage {
   users: TenantMfaCoverageSection;
   userRegistrationDetails: TenantMfaCoverageSection;
+  perUserMfa?: TenantMfaCoverageSection;
   securityDefaults: TenantMfaCoverageSection;
   conditionalAccess: TenantMfaCoverageSection;
   authenticationMethodsPolicy: TenantMfaCoverageSection;
@@ -894,6 +896,11 @@ export interface TenantMfaRegistrationAssessment {
   sourceUpdatedAt?: string;
 }
 
+export interface TenantMfaPerUserAssessment {
+  state: TenantMfaPerUserState;
+  reason?: string;
+}
+
 export interface TenantMfaEnforcementAssessment {
   scenario: TenantMfaEnforcementScenario;
   status: TenantMfaEnforcementStatus;
@@ -927,6 +934,7 @@ export interface TenantMfaUserAssessment {
   userType: TenantMfaUserType;
   accountEnabled: boolean;
   registration: TenantMfaRegistrationAssessment;
+  perUserMfa?: TenantMfaPerUserAssessment;
   enforcement: TenantMfaEnforcementAssessment[];
   observedSignIns?: TenantMfaObservedSignInSummary;
   guestTrust?: TenantMfaGuestTrustAssessment;
