@@ -931,6 +931,10 @@ export interface TenantMfaLicenseAssessment {
 
 export interface TenantMfaUserAssessment {
   userId: string;
+  /** Friendly Microsoft Entra display name when user inventory evidence includes it. */
+  displayName?: string;
+  /** Sign-in name used to identify the user when user inventory evidence includes it. */
+  userPrincipalName?: string;
   userType: TenantMfaUserType;
   accountEnabled: boolean;
   registration: TenantMfaRegistrationAssessment;

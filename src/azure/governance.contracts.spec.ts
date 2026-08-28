@@ -736,6 +736,8 @@ const tenantMfaPosture: TenantMfaPosture = {
   users: [
     {
       userId: 'user-1',
+      displayName: 'Alex Morgan',
+      userPrincipalName: 'alex.morgan@example.com',
       userType: 'member',
       accountEnabled: true,
       registration: {
