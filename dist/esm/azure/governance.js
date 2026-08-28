@@ -6,6 +6,7 @@ export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v
 export const GLOBAL_ADMIN_RAW_SCHEMA_VERSION = '2026-06-24.global-admin-raw-v1';
 export const PRIVILEGED_ROLE_SUMMARY_SCHEMA_VERSION = '2026-06-24.privileged-role-summary-v1';
 export const TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-06-24.tenant-governance-access-v1';
+export const TENANT_MFA_POSTURE_SCHEMA_VERSION = '2026-08-25.tenant-mfa-posture-v1';
 export const GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz';
 export const GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz';
 export const GOVERNANCE_ACCESS_PORTAL_FILE = 'governance-access.json.gz';

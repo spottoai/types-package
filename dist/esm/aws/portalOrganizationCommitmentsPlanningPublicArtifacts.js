@@ -1,0 +1,2 @@
+export const AWS_ORGANIZATION_COMMITMENTS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1;
+export const AWS_ORGANIZATION_COMMITMENTS_PLANNING_LOGICAL_NAME = 'organization-commitments-planning.json.gz';

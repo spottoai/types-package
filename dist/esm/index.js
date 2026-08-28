@@ -44,6 +44,7 @@ export * from './azure/storage-inventory.js';
 export * from './azure/governance.js';
 export * from './azure/publicIpAddresses.js';
 export * from './azure/workManagement.js';
+export * from './azure/vmPatchManagement.js';
 export * from './aws/index.js';
 export * from './accounts/index.js';
 export * from './assessments/index.js';

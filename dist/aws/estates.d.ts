@@ -6,7 +6,7 @@ export declare const AWS_ESTATES_MANIFEST_PROVIDER: "AWS";
 export declare const AWS_ESTATE_KINDS: readonly ["standalone", "organization"];
 export declare const AWS_ESTATE_ACCOUNT_SOURCES: readonly ["manual"];
 export declare const AWS_ESTATE_ROLE_DEPLOYMENT_MODES: readonly ["customer-managed"];
-export declare const AWS_ESTATE_ACCOUNT_PURPOSES: readonly ["resource-discovery", "organization-discovery", "billing-definition", "billing-storage"];
+export declare const AWS_ESTATE_ACCOUNT_PURPOSES: readonly ["resource-discovery", "organization-discovery", "commitments-planning", "billing-definition", "billing-storage"];
 /**
  * Credential-shaped fields that manifest API boundaries must reject
  * recursively before persisting untyped JSON.
