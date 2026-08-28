@@ -13,8 +13,8 @@ export interface DailyMetrics {
     timeZone?: string;
     /** number spend on the resource that day */
     spend: number;
-    /** number amortized spend on the resource that day */
-    costAmortized: number;
+    /** Amortized spend for the day; omitted when that basis lacks evidence. */
+    costAmortized?: number;
     summary: MetricSummary[];
     /** optional for drill-down scenarios */
     hourlyData?: HourlyMetrics[];

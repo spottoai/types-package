@@ -81,7 +81,7 @@ export interface MeterDetail {
   /** 12.721536 */
   cost: number;
   /** 12.721536 */
-  costAmortized: number;
+  costAmortized?: number;
   /** cost / quantity = rate per unit */
   unitCost?: number;
 }
@@ -101,7 +101,8 @@ export interface DecompositionTree {
   totalSpendPrevious?: number;
   totalSpendAmortizedPrevious?: number;
   currency: string;
-  currencySymbol: string;
+  /** Optional display symbol paired with currency evidence; never defaulted when unknown. */
+  currencySymbol?: string;
   version?: string;
   composition?: CostComposition;
 }

@@ -20,6 +20,13 @@ const EVIDENCE_ROLES = new Set([
     'retail-rate',
     'commitment-quote',
     'fx-conversion',
+    'commercial-arrangement',
+    'provider-access-observation',
+    'configuration-timeline',
+    'provider-price-schedule',
+    'pricing-function',
+    'charge-inclusion-policy',
+    'settlement-revision',
     'eligibility-rule',
     'recommendation-scenario-set',
     'recommendation-lifecycle',
@@ -38,7 +45,14 @@ const OWNER_SCOPE_KINDS = new Set(['canonical-resource-owner', 'composite-resour
 const AGGREGATE_SCOPE_KINDS = new Set(['subscription-aggregate', 'portfolio-currency-group']);
 const COST_BASES = new Set(['billed', 'amortized']);
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
-const WINDOW_KINDS = new Set(['rolling-30-days', 'calendar-month', 'provider-billing-period', 'stable-billing-window', 'daily']);
+const WINDOW_KINDS = new Set([
+    'rolling-30-days',
+    'calendar-month',
+    'provider-billing-period',
+    'stable-billing-window',
+    'analytics-history',
+    'daily',
+]);
 const SETTLEMENT_STATES = new Set(['settled', 'unsettled', 'mixed', 'unknown']);
 const CHARGE_CLASSIFICATIONS = new Set(['usage', 'purchase', 'adjustment', 'tax', 'credit', 'refund', 'residual']);
 const UNAVAILABLE_REASONS = new Set(financialScopeBaseline_1.FINANCIAL_SCOPE_BASELINE_UNAVAILABLE_REASONS_V2);

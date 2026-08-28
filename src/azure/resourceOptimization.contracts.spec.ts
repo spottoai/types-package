@@ -51,6 +51,16 @@ const portalResource: AzureResourcePortalItem = {
   },
 };
 
+const portalResourceWithoutAmortizedEvidence: AzureResourcePortalItem = {
+  id: '/subscriptions/sub/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/no-amortized-export',
+  name: 'no-amortized-export',
+  type: 'microsoft.storage/storageaccounts',
+  location: 'australiaeast',
+  spend: 25,
+  recommendations: [],
+  customRecommendations: [],
+};
+
 const pluginResource: AzureResourcePluginItemDetailed = {
   id: portalResource.id,
   name: portalResource.name,
@@ -98,7 +108,7 @@ const recommendationResource: RecommendationResource = {
   name: portalResource.name,
   type: portalResource.type,
   spend: portalResource.spend,
-  spendAmortized: portalResource.spendAmortized,
+  spendAmortized: 2504.38,
   savingsBasis: 'billed',
   optimizationProfile: portalResource.optimizationProfile,
 };
@@ -117,5 +127,6 @@ void pluginResource.costEstimation;
 void recommendationResource.costEstimation;
 
 void pluginResource;
+void portalResourceWithoutAmortizedEvidence;
 void recommendationResource;
 void recommendationResourceWithInvalidBasis;

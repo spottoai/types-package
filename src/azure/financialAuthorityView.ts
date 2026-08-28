@@ -4,6 +4,7 @@ import type { FinancialProjectionEnvelopeV1 } from './financialProjection';
 import type { FinancialBaselinePeriodV2, FinancialScopeBaselineEnvelopeV2 } from './financialScopeBaseline';
 import type { FinancialEvidenceAssessmentV1, FinancialEvidenceBundleV1 } from './financialScopeEvidence';
 import type { FinancialAuthorityComponentDescriptorV1, FinancialDisplayRollupV1 } from './financialDisplayRollup';
+import type { FinancialChargeCompositionV1 } from './financialChargeComposition';
 
 export const FINANCIAL_AUTHORITY_VIEW_SCHEMA_VERSION_V1 = 1 as const;
 export const FINANCIAL_AUTHORITY_VIEW_CONTRACT_VERSION_V1 = 'financial-authority-view/v1' as const;
@@ -37,6 +38,8 @@ export interface FinancialAuthorityCoordinateV1 {
   ownerBaselines: [FinancialScopeBaselineEnvelopeV2, ...FinancialScopeBaselineEnvelopeV2[]];
   residualBaseline: FinancialScopeBaselineEnvelopeV2;
   aggregateBaseline: FinancialScopeBaselineEnvelopeV2;
+  /** One reconciled source/recurrence partition for every available owner or residual baseline; aggregate baselines are never filtered. */
+  chargeCompositions: FinancialChargeCompositionV1[];
   componentDescriptors: FinancialAuthorityComponentDescriptorV1[];
   displayRollups: FinancialDisplayRollupV1[];
   projections: FinancialProjectionEnvelopeV1[];
@@ -71,6 +74,7 @@ export interface FinancialAuthorityResourceCoordinateV1 {
   estimateLens: EstimateLens;
   requestedCurrencyCode?: string;
   ownerBaseline: FinancialScopeBaselineEnvelopeV2;
+  chargeComposition?: FinancialChargeCompositionV1;
   componentDescriptors: FinancialAuthorityComponentDescriptorV1[];
   displayRollups: FinancialDisplayRollupV1[];
   projections: FinancialProjectionEnvelopeV1[];

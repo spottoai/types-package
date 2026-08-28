@@ -380,7 +380,10 @@ export interface RecommendationWithResources {
     scenarioSavings?: ScenarioSavingsPotentialV2;
     /** Canonical producer-attributed contribution. This value is portfolio-additive. */
     portfolioContribution?: PortfolioSavingsContributionV2;
-    /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+    /**
+     * @deprecated No Azure producer owns this compatibility field. Use
+     * `portfolioContribution` for additive recommendation attribution.
+     */
     savingsByCurrency?: CurrencySavingsGroup[];
     /** Canonical resource ID that owns this recommendation savings amount for aggregation */
     savingsOwnerResourceId?: string;
@@ -448,8 +451,10 @@ export interface RecommendationResource {
         product: string;
         aliases?: string[];
     };
-    spend: number;
-    spendAmortized: number;
+    /** Billed spend for this recommendation resource when the billed basis is available. */
+    spend?: number;
+    /** Amortized spend for this recommendation resource when the amortized basis is available. */
+    spendAmortized?: number;
     /** Spend basis used to calculate this recommendation resource's savings. */
     savingsBasis?: CostSavingsSpendBasis;
     optimizationProfile?: ResourceSimpleOptimizationProfile;
@@ -479,7 +484,10 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
     subscriptionSecurityStatus?: SubscriptionSecurityStatus;
     /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
     savings?: SavingsPotential;
-    /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
+    /**
+     * @deprecated Use `financialSavingsProjection.savingsByCurrency`; this field
+     * has no authoritative Azure producer.
+     */
     savingsByCurrency?: CurrencySavingsGroup[];
     subscription: SubscriptionSummaryLite;
     costSavingsSummary?: CostSavingsSummary;

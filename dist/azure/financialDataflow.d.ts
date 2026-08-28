@@ -1,15 +1,52 @@
 import type { CostBasis, FinancialEstimateLensV1 } from './costComposition';
-import type { FinancialBaselinePeriodV2 } from './financialScopeBaseline';
+import type { FinancialEvidenceIntervalV1 } from './financialScopeEvidence';
+import type { FinancialChargeInclusionPolicyRefV2, FinancialWindowKindV2 } from './financialScopeBaseline';
+import type { FinancialChargeSelectionV1 } from './financialChargeComposition';
 export declare const FINANCIAL_DATAFLOW_SCHEMA_VERSION_V1: 1;
 export declare const FINANCIAL_CURRENT_SPEND_COMPOSITION_CONTRACT_VERSION_V1: "current-spend-composition/v1";
 export type FinancialDataflowScopeKindV1 = 'resource' | 'resource-group' | 'subscription' | 'tag-scope' | 'multi-subscription';
 export type FinancialDataflowPeriodRoleV1 = 'current-spend' | 'comparison' | 'analytics-input' | 'projection-target';
+/** Stable period identity. Result-specific observed coverage and gaps live in evidence artifacts, not the coordinate ID. */
+export interface FinancialDataflowPeriodV1 {
+    windowKind: FinancialWindowKindV2;
+    requested: FinancialEvidenceIntervalV1;
+    providerBillingPeriodId?: string;
+}
 export interface FinancialDataflowScopeV1 {
     kind: FinancialDataflowScopeKindV1;
     scopeId: string;
     /** Digest of normalized membership and selector semantics, not a display label. */
     scopeFingerprint: string;
 }
+/** Stored-byte descriptor shared by immutable financial delivery manifests. */
+export interface FinancialDataflowJsonGzipArtifactDescriptorV1 {
+    path: string;
+    sha256: string;
+    byteCount: number;
+    mediaType: 'application/json';
+    contentEncoding: 'gzip';
+}
+export interface FinancialDataflowTagSelectorV1 {
+    key: string;
+    value: string;
+}
+export type FinancialDataflowScopeSelectorV1 = {
+    kind: 'resource';
+    resourceIds: [string, ...string[]];
+} | {
+    kind: 'resource-group';
+    resourceGroupIds: [string, ...string[]];
+} | {
+    kind: 'subscription';
+    subscriptionIds: [string, ...string[]];
+} | {
+    kind: 'tag-scope';
+    tags: [FinancialDataflowTagSelectorV1, ...FinancialDataflowTagSelectorV1[]];
+    tagMatch: 'any' | 'all';
+} | {
+    kind: 'multi-subscription';
+    subscriptionIds: [string, ...string[]];
+};
 export type FinancialAccountingCurrencyStateV1 = {
     status: 'resolved';
     currencyCode: string;
@@ -25,16 +62,19 @@ export interface FinancialDataflowCoordinateV1 {
     providerAccountRefs: [string, ...string[]];
     scope: FinancialDataflowScopeV1;
     periodRole: FinancialDataflowPeriodRoleV1;
-    period: FinancialBaselinePeriodV2;
+    period: FinancialDataflowPeriodV1;
     costBasis: CostBasis;
     estimateLens: FinancialEstimateLensV1;
     /** Requested presentation currency. A resolved coordinate must resolve to this currency; this never implies FX conversion. */
     requestedCurrencyCode?: string;
     accountingCurrency: FinancialAccountingCurrencyStateV1;
+    /** Registered, digest-bound policy that changes current-spend and downstream result identity. */
+    chargeInclusionPolicyRef: FinancialChargeInclusionPolicyRefV2;
 }
 export interface IncludedCurrentSpendMemberV1 {
     memberScopeId: string;
     baselineId: string;
+    chargeCompositionId: string;
     status: 'included';
     reasonCode?: never;
 }
@@ -62,6 +102,7 @@ export interface AvailableCurrentSpendCompositionV1 extends CurrentSpendComposit
         knownAmount?: never;
         reasonCodes?: never;
     };
+    chargeSelection: FinancialChargeSelectionV1;
 }
 export interface PartialCurrentSpendCompositionV1 extends CurrentSpendCompositionCommonV1 {
     amount: {
@@ -71,6 +112,7 @@ export interface PartialCurrentSpendCompositionV1 extends CurrentSpendCompositio
         reasonCodes: [string, ...string[]];
         amount?: never;
     };
+    chargeSelection: FinancialChargeSelectionV1;
 }
 export interface UnavailableCurrentSpendCompositionV1 extends CurrentSpendCompositionCommonV1 {
     amount: {
@@ -80,6 +122,7 @@ export interface UnavailableCurrentSpendCompositionV1 extends CurrentSpendCompos
         knownAmount?: never;
         currencyCode?: never;
     };
+    chargeSelection?: never;
 }
 export type CurrentSpendCompositionV1 = AvailableCurrentSpendCompositionV1 | PartialCurrentSpendCompositionV1 | UnavailableCurrentSpendCompositionV1;
 export type CurrentSpendCompositionIdentityPreimageV1 = CurrentSpendCompositionV1 extends infer Composition ? Composition extends CurrentSpendCompositionV1 ? Omit<Composition, 'compositionId'> : never : never;

@@ -1,6 +1,6 @@
 export declare const FINANCIAL_PROJECTION_SCHEMA_VERSION_V1: 1;
 export declare const FINANCIAL_PROJECTION_CONTRACT_VERSION_V1: "financial-projection/v1";
-export type FinancialProjectionOperationKindV1 = 'replace-rate' | 'replace-quantity' | 'remove-component' | 'schedule-quantity' | 'commitment-coverage';
+export type FinancialProjectionOperationKindV1 = 'unclassified' | 'replace-rate' | 'replace-quantity' | 'replace-quantity-and-rate' | 'remove-component' | 'schedule-quantity' | 'commitment-coverage';
 export type FinancialProjectionTargetProvenanceV1 = 'retail-derived' | 'provider-quote-derived' | 'billing-backed' | 'estimated' | 'configuration-derived';
 export type FinancialProjectionTargetPeriodConventionV1 = 'same-observed-quantity' | 'same-period-quantity' | 'normalized-average-month';
 export interface FinancialProjectionNormalizedAverageMonthV1 {
@@ -116,6 +116,16 @@ export type FinancialProjectionAppliedComponentTargetV1 = FinancialProjectionApp
     targetQuantity: {
         amount: string;
         unit: string;
+    };
+} | {
+    targetQuantity: {
+        amount: string;
+        unit: string;
+    };
+    targetRate: {
+        amount: string;
+        currencyCode: string;
+        quantityUnit: string;
     };
 } | {
     targetAmount: '0';

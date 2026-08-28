@@ -29,10 +29,8 @@ export const runFinancialDataflowContractNegativeChecks = context => {
     forecast,
     forecastIdentity,
     hash,
-    historyPeriod,
     input,
     partialIdentity,
-    period,
     targetCoordinate,
   } = context;
   const rejects = (validator, value, message) => assert.equal(validator(value), false, message);
@@ -78,7 +76,13 @@ export const runFinancialDataflowContractNegativeChecks = context => {
     isFinancialAnalyticsInputSeriesV1,
     {
       ...input,
-      coordinate: { ...input.coordinate, period: { ...historyPeriod, requested: { ...historyPeriod.requested, startDate: '2026-02-30' } } },
+      coordinate: {
+        ...input.coordinate,
+        period: {
+          ...input.coordinate.period,
+          requested: { ...input.coordinate.period.requested, startDate: '2026-02-30' },
+        },
+      },
     },
     'Invalid dates must fail.'
   );
@@ -87,13 +91,6 @@ export const runFinancialDataflowContractNegativeChecks = context => {
     {
       ...input,
       gaps: [{ ...input.gaps[0], endDateExclusive: '2026-07-31' }],
-      coordinate: {
-        ...input.coordinate,
-        period: {
-          ...input.coordinate.period,
-          gaps: [{ ...input.coordinate.period.gaps[0], endDateExclusive: '2026-07-31' }],
-        },
-      },
       coverage: { availableDayCount: 1, partialDayCount: 1, unavailableDayCount: 29 },
     },
     'Daily points and gaps must not overlap.'
@@ -105,7 +102,6 @@ export const runFinancialDataflowContractNegativeChecks = context => {
   );
   const invalidAnomalyIdentity = {
     ...forecastIdentity,
-    currentSpendCompositionId: undefined,
     result: {
       kind: 'anomaly',
       events: [
@@ -140,15 +136,8 @@ export const runFinancialDataflowContractNegativeChecks = context => {
   );
 
   const previousPeriod = {
-    ...period,
-    requested: { ...period.requested, startDate: '2026-07-01', endDateExclusive: '2026-08-01' },
-    observed: { ...period.observed, startDate: '2026-07-01', endDateExclusive: '2026-08-01' },
-    coverage: [
-      {
-        ...period.coverage[0],
-        interval: { ...period.coverage[0].interval, startDate: '2026-07-01', endDateExclusive: '2026-08-01' },
-      },
-    ],
+    ...targetCoordinate.period,
+    requested: { ...targetCoordinate.period.requested, startDate: '2026-07-01', endDateExclusive: '2026-08-01' },
   };
   const staleIdentity = { ...forecastIdentity, coordinate: { ...targetCoordinate, period: previousPeriod } };
   const staleProjection = { ...staleIdentity, analyticsProjectionId: createFinancialAnalyticsProjectionIdV1(staleIdentity) };
@@ -158,8 +147,9 @@ export const runFinancialDataflowContractNegativeChecks = context => {
     'Policy analytics must match the exact current-period coordinate.'
   );
 
+  const { chargeSelection: _availableChargeSelection, ...unavailableCompositionCommon } = compositionIdentity;
   const unavailableCompositionIdentity = {
-    ...compositionIdentity,
+    ...unavailableCompositionCommon,
     members: unavailableOnlyMembers,
     membershipDigest: createCurrentSpendMembershipDigestV1(unavailableOnlyMembers),
     amount: { status: 'unavailable', reasonCodes: ['evidence-not-produced'] },

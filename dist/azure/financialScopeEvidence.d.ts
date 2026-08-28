@@ -1,6 +1,6 @@
 export declare const FINANCIAL_EVIDENCE_BUNDLE_CONTRACT_VERSION_V1: "financial-evidence-bundle/v1";
 export declare const FINANCIAL_EVIDENCE_ASSESSMENT_CONTRACT_VERSION_V1: "financial-evidence-assessment/v1";
-export type FinancialEvidenceRoleV1 = 'billing' | 'billing-currency-declaration' | 'estimate' | 'inventory-configuration' | 'retail-rate' | 'commitment-quote' | 'fx-conversion' | 'eligibility-rule' | 'recommendation-scenario-set' | 'recommendation-lifecycle';
+export type FinancialEvidenceRoleV1 = 'billing' | 'billing-currency-declaration' | 'estimate' | 'inventory-configuration' | 'retail-rate' | 'commitment-quote' | 'fx-conversion' | 'commercial-arrangement' | 'provider-access-observation' | 'configuration-timeline' | 'provider-price-schedule' | 'pricing-function' | 'charge-inclusion-policy' | 'settlement-revision' | 'eligibility-rule' | 'recommendation-scenario-set' | 'recommendation-lifecycle';
 export interface FinancialEvidenceIntervalV1 {
     startDate: string;
     endDateExclusive: string;

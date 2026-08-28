@@ -9,6 +9,7 @@ const financialDataflowValidation_1 = require("./financialDataflowValidation");
 const financialDataflowValidation_2 = require("./financialDataflowValidation");
 const MAX_POINTS = 3660;
 const MAX_GAPS = 3660;
+const MAX_REFERENCE_COMPOSITIONS = 2;
 const isReasonCodes = (value) => Array.isArray(value) &&
     value.length > 0 &&
     value.length <= financialDataflowValidation_1.FINANCIAL_DATAFLOW_LIMITS_V1.maximumReasonCodes &&
@@ -32,6 +33,7 @@ const comparableCoordinate = (value) => ({
     estimateLens: value.estimateLens,
     requestedCurrencyCode: value.requestedCurrencyCode,
     accountingCurrency: value.accountingCurrency,
+    chargeInclusionPolicyRef: value.chargeInclusionPolicyRef,
 });
 const hasSameFinancialDimensions = (left, right) => (0, financialDataflowValidation_1.canonicalizeFinancialDataflowJsonV1)(comparableCoordinate(left)) === (0, financialDataflowValidation_1.canonicalizeFinancialDataflowJsonV1)(comparableCoordinate(right));
 const hasComparableTrendPeriods = (current, comparison) => {
@@ -45,6 +47,10 @@ const hasComparableTrendPeriods = (current, comparison) => {
     return (intervalDayCount(current.period.requested.startDate, current.period.requested.endDateExclusive) ===
         intervalDayCount(comparison.period.requested.startDate, comparison.period.requested.endDateExclusive));
 };
+const periodContains = (container, target) => container.period.requested.dateBasis === target.period.requested.dateBasis &&
+    container.period.requested.timeZone === target.period.requested.timeZone &&
+    container.period.requested.startDate <= target.period.requested.startDate &&
+    container.period.requested.endDateExclusive >= target.period.requested.endDateExclusive;
 const isInputIdentity = (value) => {
     if (!(0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value) ||
         !(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value, [
@@ -53,6 +59,7 @@ const isInputIdentity = (value) => {
             'coordinate',
             'granularity',
             'producerGenerationId',
+            'referenceCompositions',
             'points',
             'gaps',
             'coverage',
@@ -62,9 +69,12 @@ const isInputIdentity = (value) => {
         value.contractVersion !== financialAnalytics_1.FINANCIAL_ANALYTICS_INPUT_CONTRACT_VERSION_V1 ||
         !(0, financialDataflowValidation_1.isFinancialDataflowCoordinateV1)(value.coordinate) ||
         value.coordinate.periodRole !== 'analytics-input' ||
+        value.coordinate.period.windowKind !== 'analytics-history' ||
         value.coordinate.accountingCurrency.status !== 'resolved' ||
         value.granularity !== 'daily' ||
         !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.producerGenerationId) ||
+        !Array.isArray(value.referenceCompositions) ||
+        value.referenceCompositions.length > MAX_REFERENCE_COMPOSITIONS ||
         !Array.isArray(value.points) ||
         value.points.length > MAX_POINTS ||
         !Array.isArray(value.gaps) ||
@@ -72,6 +82,16 @@ const isInputIdentity = (value) => {
         !(0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value.coverage) ||
         !(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value.coverage, ['availableDayCount', 'partialDayCount', 'unavailableDayCount']) ||
         !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.algorithmVersion)) {
+        return false;
+    }
+    const coordinate = value.coordinate;
+    const referenceCompositions = value.referenceCompositions;
+    if (!referenceCompositions.every(financialDataflowValidation_2.isCurrentSpendCompositionV1))
+        return false;
+    const referenceRoles = referenceCompositions.map(composition => composition.coordinate.periodRole);
+    if (new Set(referenceCompositions.map(composition => composition.compositionId)).size !== referenceCompositions.length ||
+        new Set(referenceRoles).size !== referenceRoles.length ||
+        referenceCompositions.some(composition => !hasSameFinancialDimensions(coordinate, composition.coordinate))) {
         return false;
     }
     const gaps = value.gaps;
@@ -89,16 +109,47 @@ const isInputIdentity = (value) => {
             return false;
         }
         dates.add(point.date);
+        const pointForecastFields = [
+            point.forecastEligibleAmount,
+            point.oneTimeAmount,
+            point.unknownRecurrenceAmount,
+        ];
+        if (!pointForecastFields.every(amount => (0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount, currencyCode: coordinate.accountingCurrency.currencyCode })) ||
+            (point.forecastStatus !== 'available' && point.forecastStatus !== 'partial') ||
+            (point.forecastStatus === 'available'
+                ? point.forecastReasonCodes !== undefined || point.unknownRecurrenceAmount !== '0'
+                : !isReasonCodes(point.forecastReasonCodes))) {
+            return false;
+        }
         if (point.status === 'available') {
-            if (!(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(point, ['date', 'compositionId', 'status', 'amount']) ||
-                !(0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount: point.amount, currencyCode: 'AUD' }))
+            if (!(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(point, [
+                'date',
+                'compositionId',
+                'status',
+                'amount',
+                'forecastEligibleAmount',
+                'oneTimeAmount',
+                'unknownRecurrenceAmount',
+                'forecastStatus',
+            ], ['forecastReasonCodes']) ||
+                !(0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount: point.amount, currencyCode: coordinate.accountingCurrency.currencyCode }))
                 return false;
             availableDayCount += 1;
         }
         else {
             if (point.status !== 'partial' ||
-                !(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(point, ['date', 'compositionId', 'status', 'knownAmount', 'reasonCodes']) ||
-                !(0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount: point.knownAmount, currencyCode: 'AUD' }) ||
+                !(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(point, [
+                    'date',
+                    'compositionId',
+                    'status',
+                    'knownAmount',
+                    'reasonCodes',
+                    'forecastEligibleAmount',
+                    'oneTimeAmount',
+                    'unknownRecurrenceAmount',
+                    'forecastStatus',
+                ], ['forecastReasonCodes']) ||
+                !(0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount: point.knownAmount, currencyCode: coordinate.accountingCurrency.currencyCode }) ||
                 !isReasonCodes(point.reasonCodes))
                 return false;
             partialDayCount += 1;
@@ -146,9 +197,7 @@ const isInputIdentity = (value) => {
         value.coverage.partialDayCount === partialDayCount &&
         value.coverage.unavailableDayCount === unavailableDayCount &&
         availableDayCount + partialDayCount + unavailableDayCount === expectedDays &&
-        cursor === requested.endDateExclusive &&
-        value.coordinate.period.gaps.length === gaps.length &&
-        value.coordinate.period.gaps.every(periodGap => gaps.some(gap => gap.startDate === periodGap.startDate && gap.endDateExclusive === periodGap.endDateExclusive)));
+        cursor === requested.endDateExclusive);
 };
 const canonicalizeFinancialAnalyticsInputIdentityV1 = (value) => {
     if (!(0, financialDataflowValidation_1.isFinancialDataflowValueWithinLimitsV1)(value) || !isInputIdentity(value)) {
@@ -157,9 +206,16 @@ const canonicalizeFinancialAnalyticsInputIdentityV1 = (value) => {
     return (0, financialDataflowValidation_1.canonicalizeFinancialDataflowJsonV1)({
         ...value,
         coordinate: { ...value.coordinate, providerAccountRefs: [...value.coordinate.providerAccountRefs].sort() },
+        referenceCompositions: [...value.referenceCompositions].sort((left, right) => left.compositionId.localeCompare(right.compositionId)),
         points: [...value.points]
             .sort((left, right) => left.date.localeCompare(right.date))
-            .map(point => (point.status === 'partial' ? { ...point, reasonCodes: [...point.reasonCodes].sort() } : point)),
+            .map(point => ({
+            ...point,
+            ...(point.status === 'partial' ? { reasonCodes: [...point.reasonCodes].sort() } : {}),
+            ...(point.forecastReasonCodes === undefined
+                ? {}
+                : { forecastReasonCodes: [...point.forecastReasonCodes].sort() }),
+        })),
         gaps: [...value.gaps]
             .sort((left, right) => `${left.startDate}\u0000${left.endDateExclusive}`.localeCompare(`${right.startDate}\u0000${right.endDateExclusive}`))
             .map(gap => ({ ...gap, reasonCodes: [...gap.reasonCodes].sort() })),
@@ -179,6 +235,18 @@ const isFinancialAnalyticsInputSeriesV1 = (value) => {
 exports.isFinancialAnalyticsInputSeriesV1 = isFinancialAnalyticsInputSeriesV1;
 const nextCalendarDate = (value) => new Date(Date.parse(`${value}T00:00:00.000Z`) + 86400000).toISOString().slice(0, 10);
 const hasSameReasonCodes = (left, right) => left.length === right.length && left.every(reasonCode => right.includes(reasonCode));
+const hasSameForecastSlice = (point, composition) => {
+    const selection = composition.chargeSelection;
+    return selection !== undefined &&
+        point.forecastEligibleAmount === selection.forecastEligibleAmount &&
+        point.oneTimeAmount === selection.oneTimeAmount &&
+        point.unknownRecurrenceAmount === selection.unknownRecurrenceAmount &&
+        point.forecastStatus === selection.forecastStatus &&
+        (point.forecastReasonCodes === undefined
+            ? selection.forecastReasonCodes === undefined
+            : selection.forecastReasonCodes !== undefined &&
+                hasSameReasonCodes(point.forecastReasonCodes, selection.forecastReasonCodes));
+};
 /** Proves that every analytics point is an exact projection of its referenced daily composition. */
 const isFinancialAnalyticsInputSeriesCompatibleV1 = (input, dailyCompositions) => {
     if (!(0, exports.isFinancialAnalyticsInputSeriesV1)(input) ||
@@ -194,6 +262,7 @@ const isFinancialAnalyticsInputSeriesCompatibleV1 = (input, dailyCompositions) =
     return input.points.every(point => {
         const composition = compositionById.get(point.compositionId);
         if (composition === undefined ||
+            composition.amount.status === 'unavailable' ||
             composition.coordinate.periodRole !== 'current-spend' ||
             composition.coordinate.period.windowKind !== 'daily' ||
             composition.coordinate.period.requested.startDate !== point.date ||
@@ -202,11 +271,14 @@ const isFinancialAnalyticsInputSeriesCompatibleV1 = (input, dailyCompositions) =
             return false;
         }
         if (point.status === 'available') {
-            return composition.amount.status === 'available' && point.amount === composition.amount.amount;
+            return (composition.amount.status === 'available' &&
+                point.amount === composition.amount.amount &&
+                hasSameForecastSlice(point, composition));
         }
         return (composition.amount.status === 'partial' &&
             point.knownAmount === composition.amount.knownAmount &&
-            hasSameReasonCodes(point.reasonCodes, composition.amount.reasonCodes));
+            hasSameReasonCodes(point.reasonCodes, composition.amount.reasonCodes) &&
+            hasSameForecastSlice(point, composition));
     });
 };
 exports.isFinancialAnalyticsInputSeriesCompatibleV1 = isFinancialAnalyticsInputSeriesCompatibleV1;
@@ -241,7 +313,6 @@ const isResult = (value, currency) => {
     return (value.kind === 'anomaly' &&
         (0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value, ['kind', 'events']) &&
         Array.isArray(value.events) &&
-        value.events.length > 0 &&
         value.events.length <= MAX_POINTS &&
         value.events.every(event => {
             if (!(0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(event) ||
@@ -290,9 +361,9 @@ const isProjectionIdentity = (value) => {
         return false;
     const currency = coordinateCurrency(value.coordinate);
     return ((0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.analyticsInputId) &&
+        (0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.currentSpendCompositionId) &&
         currency !== undefined &&
-        isResult(value.result, currency) &&
-        (value.result.kind === 'anomaly' || (0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.currentSpendCompositionId)));
+        isResult(value.result, currency));
 };
 const canonicalizeFinancialAnalyticsProjectionIdentityV1 = (value) => {
     if (!(0, financialDataflowValidation_1.isFinancialDataflowValueWithinLimitsV1)(value) || !isProjectionIdentity(value)) {
@@ -344,17 +415,24 @@ const isFinancialAnalyticsProjectionCompatibleV1 = (projection, input, currentSp
                 hasSameFinancialDimensions(projection.coordinate, currentSpendComposition.coordinate)));
     }
     if (projection.result.kind === 'anomaly') {
-        if (projection.currentSpendCompositionId !== undefined &&
-            (!(0, financialDataflowValidation_2.isCurrentSpendCompositionV1)(currentSpendComposition) ||
-                projection.currentSpendCompositionId !== currentSpendComposition.compositionId ||
-                !hasSameFinancialDimensions(projection.coordinate, currentSpendComposition.coordinate))) {
+        if (!(0, financialDataflowValidation_2.isCurrentSpendCompositionV1)(currentSpendComposition) ||
+            projection.currentSpendCompositionId !== currentSpendComposition.compositionId ||
+            !hasSameFinancialDimensions(projection.coordinate, currentSpendComposition.coordinate) ||
+            (0, financialDataflowValidation_1.canonicalizeFinancialDataflowCoordinateV1)({ ...projection.coordinate, periodRole: 'current-spend' }) !==
+                (0, financialDataflowValidation_1.canonicalizeFinancialDataflowCoordinateV1)(currentSpendComposition.coordinate) ||
+            !periodContains(input.coordinate, projection.coordinate)) {
             return false;
         }
         const pointsByDate = new Map(input.points.map(point => [point.date, point]));
         const eventDates = new Set();
+        const targetPeriod = projection.coordinate.period.requested;
         return projection.result.events.every(event => {
             const point = pointsByDate.get(event.date);
-            if (point === undefined || eventDates.has(event.date) || (projection.status === 'available' && point.status !== 'available'))
+            if (event.date < targetPeriod.startDate ||
+                event.date >= targetPeriod.endDateExclusive ||
+                point === undefined ||
+                eventDates.has(event.date) ||
+                (projection.status === 'available' && point.status !== 'available'))
                 return false;
             eventDates.add(event.date);
             const observedAmount = point.status === 'available' ? point.amount : point.knownAmount;
@@ -404,7 +482,11 @@ const isFinancialAnalyticsProjectionCompatibleV1 = (projection, input, currentSp
             (0, financialDataflowValidation_1.canonicalizeFinancialDataflowCoordinateV1)(currentSpendComposition.coordinate)) {
         return false;
     }
-    if (projection.status === 'available' && currentSpendComposition.amount.status !== 'available')
+    if (projection.status === 'available' &&
+        currentSpendComposition.amount.status !== 'available' &&
+        !(currentSpendComposition.amount.status === 'partial' &&
+            currentSpendComposition.amount.reasonCodes.length === 1 &&
+            currentSpendComposition.amount.reasonCodes[0] === 'coverage-incomplete'))
         return false;
     if (currentSpendComposition.amount.status === 'unavailable')
         return false;

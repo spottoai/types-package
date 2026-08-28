@@ -42,7 +42,7 @@
           "timeZone": "Pacific/Auckland"
         },
         "costBasis": "billed",
-        "estimateLens": "include-estimates",
+        "estimateLens": "billing-only",
         "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
       },
       "composition": {
@@ -71,7 +71,7 @@
         "analyticsInputId": "fixture-analytics-input:subscription-history",
         "coordinatePeriodRole": "analytics-input",
         "period": {
-          "windowKind": "rolling-30-days",
+          "windowKind": "analytics-history",
           "startDate": "2026-07-02",
           "endDateExclusive": "2026-08-01",
           "dateBasis": "company-local",
@@ -263,7 +263,7 @@
         "analyticsInputId": "fixture-analytics-input:tag-history",
         "coordinatePeriodRole": "analytics-input",
         "period": {
-          "windowKind": "rolling-30-days",
+          "windowKind": "analytics-history",
           "startDate": "2026-07-12",
           "endDateExclusive": "2026-08-11",
           "dateBasis": "company-local",
@@ -426,7 +426,7 @@
           "timeZone": "Pacific/Auckland"
         },
         "costBasis": "billed",
-        "estimateLens": "include-estimates",
+        "estimateLens": "billing-only",
         "accountingCurrency": { "status": "resolved", "currencyCode": "AUD" }
       },
       "composition": {
@@ -450,7 +450,7 @@
         "analyticsInputId": "fixture-analytics-input:stale",
         "coordinatePeriodRole": "analytics-input",
         "period": {
-          "windowKind": "rolling-30-days",
+          "windowKind": "analytics-history",
           "startDate": "2026-07-02",
           "endDateExclusive": "2026-08-01",
           "dateBasis": "company-local",
@@ -597,7 +597,7 @@
         "analyticsInputId": "fixture-analytics-input:trend-resource-history",
         "coordinatePeriodRole": "analytics-input",
         "period": {
-          "windowKind": "rolling-30-days",
+          "windowKind": "analytics-history",
           "startDate": "2026-07-12",
           "endDateExclusive": "2026-08-11",
           "dateBasis": "utc",
@@ -822,7 +822,7 @@
       "targetCaseId": "subscription-budget-current-and-forecast",
       "identityTarget": "coordinate",
       "path": "coordinate.estimateLens",
-      "replacement": "billing-only",
+      "replacement": "include-estimates",
       "expected": "identity-change"
     },
     {

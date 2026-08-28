@@ -13,6 +13,12 @@ export interface ResourcesByType {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** billing-backed portion of the rolling 30-day billed and amortized baselines */
+  spend30DaysActual?: number;
+  spend30DaysAmortizedActual?: number;
+  /** estimated-only portion of the rolling 30-day billed and amortized baselines */
+  spend30DaysEstimated?: number;
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
@@ -37,6 +43,12 @@ export interface ResourceByLocation {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** billing-backed portion of the rolling 30-day billed and amortized baselines */
+  spend30DaysActual?: number;
+  spend30DaysAmortizedActual?: number;
+  /** estimated-only portion of the rolling 30-day billed and amortized baselines */
+  spend30DaysEstimated?: number;
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;

@@ -5,6 +5,8 @@ import { isFinancialEvidenceAssessmentV1 } from './financialEvidenceAssessmentVa
 import { formatExactDecimalValue, multiplyExactDecimalValues, parseCanonicalDecimal, sumCanonicalDecimals } from '../common/exactDecimal.js';
 import { isFinancialBaselinePeriodV2, isFinancialEvidenceBundleV1, isFinancialScopeBaselineEnvelopeV2 } from './financialScopeBaselineValidation.js';
 import { isFinancialAuthorityComponentDescriptorV1, isFinancialDisplayRollupV1 } from './financialDisplayRollupValidation.js';
+import { AZURE_BILLED_ALL_CHARGES_POLICY_V1 } from './financialChargeComposition.js';
+import { isFinancialChargeCompositionV1 } from './financialChargeCompositionValidation.js';
 const SHA256_ID = /^sha256:[0-9a-f]{64}$/;
 const CURRENCY = /^[A-Z]{3}$/;
 const AZURE_RESOURCE_TYPE = /^[a-z0-9.-]+\/[a-z0-9._/-]+$/;
@@ -55,6 +57,7 @@ const canonicalCoordinatePreimage = (value) => ({
     ownerBaselines: [...value.ownerBaselines].sort((left, right) => left.scopeId.localeCompare(right.scopeId)),
     residualBaseline: value.residualBaseline,
     aggregateBaseline: value.aggregateBaseline,
+    chargeCompositions: [...value.chargeCompositions].sort((left, right) => left.baselineId.localeCompare(right.baselineId)),
     componentDescriptors: [...value.componentDescriptors].sort((left, right) => `${left.baselineId}\u0000${left.componentId}`.localeCompare(`${right.baselineId}\u0000${right.componentId}`)),
     displayRollups: [...value.displayRollups].sort((left, right) => left.displayRollupId.localeCompare(right.displayRollupId)),
     projections: [...value.projections].sort((left, right) => left.scenarioId.localeCompare(right.scenarioId)),
@@ -95,6 +98,7 @@ const isCoordinate = (value, coveredScopeIds, financialRoleByScope, providerAcco
             'ownerBaselines',
             'residualBaseline',
             'aggregateBaseline',
+            'chargeCompositions',
             'componentDescriptors',
             'displayRollups',
             'projections',
@@ -113,6 +117,9 @@ const isCoordinate = (value, coveredScopeIds, financialRoleByScope, providerAcco
         !value.ownerBaselines.every(isFinancialScopeBaselineEnvelopeV2) ||
         !isFinancialScopeBaselineEnvelopeV2(value.residualBaseline) ||
         !isFinancialScopeBaselineEnvelopeV2(value.aggregateBaseline) ||
+        !Array.isArray(value.chargeCompositions) ||
+        value.chargeCompositions.length > 20001 ||
+        !value.chargeCompositions.every(isFinancialChargeCompositionV1) ||
         !Array.isArray(value.componentDescriptors) ||
         value.componentDescriptors.length > 20000 ||
         !value.componentDescriptors.every(isFinancialAuthorityComponentDescriptorV1) ||
@@ -173,6 +180,38 @@ const isCoordinate = (value, coveredScopeIds, financialRoleByScope, providerAcco
     }
     if (coordinate.residualBaseline.status === 'available' && !bundleIds.has(coordinate.residualBaseline.evidenceBundleId))
         return false;
+    const composableBaselines = [...coordinate.ownerBaselines, coordinate.residualBaseline].filter((baseline) => baseline.status === 'available' && baseline.baselineKind === 'owner');
+    const chargeCompositionByBaselineId = new Map(coordinate.chargeCompositions.map(composition => [composition.baselineId, composition]));
+    if (chargeCompositionByBaselineId.size !== coordinate.chargeCompositions.length ||
+        coordinate.chargeCompositions.length !== composableBaselines.length)
+        return false;
+    for (const baseline of composableBaselines) {
+        const composition = chargeCompositionByBaselineId.get(baseline.baselineId);
+        if (composition === undefined ||
+            canonicalText(baseline.chargeInclusionPolicyRef) !== canonicalText(AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef) ||
+            composition.ownerScopeId !== baseline.scopeId ||
+            periodText(composition.period) !== periodText(baseline.period) ||
+            composition.costBasis !== baseline.costBasis ||
+            composition.estimateLens !== baseline.estimateLens ||
+            composition.accountingCurrencyCode !== baseline.total.currencyCode ||
+            composition.reconciliation.sourceTotal !== baseline.total.amount)
+            return false;
+        const baselineComponentById = new Map(baseline.components.map(component => [component.componentId, component]));
+        const partitionedComponentIds = composition.buckets.flatMap(bucket => bucket.componentIds);
+        if (partitionedComponentIds.length !== baseline.components.length ||
+            new Set(partitionedComponentIds).size !== partitionedComponentIds.length ||
+            partitionedComponentIds.some(componentId => !baselineComponentById.has(componentId)))
+            return false;
+        for (const bucket of composition.buckets) {
+            try {
+                if (formatExactDecimalValue(sumCanonicalDecimals(bucket.componentIds.map(componentId => baselineComponentById.get(componentId).amount))) !== bucket.amount)
+                    return false;
+            }
+            catch {
+                return false;
+            }
+        }
+    }
     const financialOwnerBaselines = coordinate.ownerBaselines.filter(baseline => financialRoleByScope.get(baseline.scopeId) === 'owner');
     const availableMembers = [...financialOwnerBaselines, coordinate.residualBaseline]
         .filter(baseline => baseline.status === 'available')
@@ -256,7 +295,7 @@ const isCoordinate = (value, coveredScopeIds, financialRoleByScope, providerAcco
             (projection.targetEvidenceBundleId !== undefined && !bundleIds.has(projection.targetEvidenceBundleId)) ||
             (targetAssessment !== undefined &&
                 (targetAssessment.request.scopeId !== projection.scopeId ||
-                    targetAssessment.result !== 'available' ||
+                    (projection.status === 'available' && targetAssessment.result !== 'available') ||
                     targetAssessment.evidenceBundleId !== projection.targetEvidenceBundleId)) ||
             (projection.baselineId !== undefined && (owner.status !== 'available' || projection.baselineId !== owner.baselineId)) ||
             (projection.status === 'available' && owner.status !== 'available'))
@@ -325,6 +364,15 @@ const isCoordinate = (value, coveredScopeIds, financialRoleByScope, providerAcco
                             applied.targetRate.quantityUnit !== component.quantity.unit ||
                             applied.targetRate.currencyCode !== projection.accountingCurrencyCode ||
                             formatExactDecimalValue(multiplyExactDecimalValues(parseCanonicalDecimal(applied.sourceQuantity.amount), parseCanonicalDecimal(applied.targetRate.amount))) !== applied.targetAmount)
+                            return false;
+                        continue;
+                    }
+                    if (projection.operationKind === 'replace-quantity-and-rate') {
+                        if (!('targetQuantity' in applied) || !('targetRate' in applied))
+                            return false;
+                        if (applied.targetQuantity.unit !== applied.targetRate.quantityUnit ||
+                            applied.targetRate.currencyCode !== projection.accountingCurrencyCode ||
+                            formatExactDecimalValue(multiplyExactDecimalValues(parseCanonicalDecimal(applied.targetQuantity.amount), parseCanonicalDecimal(applied.targetRate.amount))) !== applied.targetAmount)
                             return false;
                         continue;
                     }

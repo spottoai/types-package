@@ -1,4 +1,4 @@
-import { type CurrentSpendCompositionIdentityPreimageV1, type CurrentSpendCompositionMemberV1, type CurrentSpendCompositionV1, type FinancialDataflowCoordinateV1, type FinancialDataflowScopeV1 } from './financialDataflow';
+import { type CurrentSpendCompositionIdentityPreimageV1, type CurrentSpendCompositionMemberV1, type CurrentSpendCompositionV1, type FinancialDataflowCoordinateV1, type FinancialDataflowJsonGzipArtifactDescriptorV1, type FinancialDataflowPeriodV1, type FinancialDataflowScopeSelectorV1, type FinancialDataflowScopeV1 } from './financialDataflow';
 export type FinancialDataflowJsonRecordV1 = Record<string, unknown>;
 export declare const FINANCIAL_DATAFLOW_LIMITS_V1: {
     readonly maximumIdentifierLength: 2048;
@@ -17,12 +17,15 @@ export declare const isFinancialDataflowIdentityV1: (value: unknown) => value is
 export declare const isFinancialDataflowHashV1: (value: unknown) => value is string;
 export declare const isFinancialDataflowCurrencyV1: (value: unknown) => value is string;
 export declare const isFinancialDataflowIsoInstantV1: (value: unknown) => value is string;
+export declare const isFinancialDataflowJsonGzipArtifactDescriptorV1: (value: unknown) => value is FinancialDataflowJsonGzipArtifactDescriptorV1;
 export declare const isFinancialDataflowCalendarDateV1: (value: unknown) => value is string;
 export declare const isFinancialDataflowSortedUniqueStringsV1: (value: unknown, maximum: number, validate?: (entry: unknown) => entry is string) => value is string[];
 export declare const canonicalizeFinancialDataflowJsonV1: (value: unknown) => string;
 /** Parses bounded JSON while rejecting duplicate and prototype-sensitive object keys. */
 export declare const parseFinancialDataflowJsonV1: (text: string) => unknown;
 export declare const isFinancialDataflowScopeV1: (value: unknown) => value is FinancialDataflowScopeV1;
+export declare const isFinancialDataflowPeriodV1: (value: unknown) => value is FinancialDataflowPeriodV1;
+export declare const isFinancialDataflowScopeSelectorV1: (value: unknown) => value is FinancialDataflowScopeSelectorV1;
 export declare const isFinancialDataflowCoordinateV1: (value: unknown) => value is FinancialDataflowCoordinateV1;
 export declare const canonicalizeFinancialDataflowCoordinateV1: (value: FinancialDataflowCoordinateV1) => string;
 export declare const createFinancialDataflowCoordinateIdV1: (value: FinancialDataflowCoordinateV1) => string;
@@ -32,5 +35,5 @@ export declare const canonicalizeCurrentSpendCompositionIdentityV1: (value: Curr
 export declare const createCurrentSpendCompositionIdV1: (value: CurrentSpendCompositionIdentityPreimageV1) => string;
 export declare const isCurrentSpendCompositionV1: (value: unknown) => value is CurrentSpendCompositionV1;
 /** Proves that composition membership and money reconcile to exact V2 baseline envelopes. */
-export declare const isCurrentSpendCompositionCompatibleV1: (composition: unknown, baselines: unknown) => boolean;
+export declare const isCurrentSpendCompositionCompatibleV1: (composition: unknown, baselines: unknown, chargeCompositions: unknown) => boolean;
 //# sourceMappingURL=financialDataflowValidation.d.ts.map

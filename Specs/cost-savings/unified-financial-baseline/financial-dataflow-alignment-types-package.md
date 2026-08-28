@@ -2,11 +2,11 @@
 
 ## Metadata
 
-Status: implemented and self-reviewed for local contract freeze; publication deferred
+Status: successor contracts implemented; `.3` is published, `.4` content passed the full local package gate, and the identical `.5` candidate is prepared for publication/consumer repin
 Approved: Yes
 Approved by: User, conversation instruction to freeze contracts and self-review, 2026-08-26
 Iterations: 2
-Last updated: 2026-08-26
+Last updated: 2026-08-28
 Repo: types-package
 Domain: cost-savings / unified-financial-baseline
 Parent spec: `core/specs/cost-savings/unified-financial-baseline/financial-dataflow-alignment-implementation-plan.md`
@@ -14,7 +14,7 @@ Spec location: `Specs/cost-savings/unified-financial-baseline/financial-dataflow
 
 ## Summary
 
-Freeze the dependency-free portable contracts that join an exact company-authorized financial scope to current-spend composition, immutable daily analytics input, promoted forecast/trend/anomaly output, immutable Policy Definition revision, and deterministic Financial Policy Evaluation. The contracts reuse Financial Scope Baseline V2 IDs, periods, evidence identities, exact-decimal utilities, and digest conventions. They do not create another owner-baseline model and are not published or adopted by runtime consumers in this checkpoint.
+Freeze the dependency-free portable contracts that join an exact company-authorized financial scope to current-spend composition, immutable daily analytics input, promoted forecast/trend/anomaly output, immutable Policy Definition revision, and deterministic Financial Policy Evaluation. The contracts reuse Financial Scope Baseline V2 IDs, periods, evidence identities, exact-decimal utilities, and digest conventions. They do not create another owner-baseline model. Cloud Engine, Metrics Analyzer, API, and UI now consume the successor surface in DEV-1138; final package publication/pinning and runtime verification remain pending.
 
 ## Scope
 
@@ -25,15 +25,16 @@ In scope:
 - a composition envelope over existing V2 baseline IDs, including available, partial, and unavailable states;
 - daily analytics input with available/partial points bound to composition IDs and explicit unavailable gap intervals;
 - discriminated forecast, trend, and anomaly projection results;
-- identity-only analytics job requests and CAS-friendly promoted-current pointers bound to verified artifact digests and generations;
+- identity-only analytics job requests, shared immutable output manifests, and CAS-friendly promoted-current pointers bound to verified artifact digests and generations;
 - immutable budget or cost-anomaly Policy Definition revisions;
-- deterministic Policy Evaluation with one signal kind, a portal-safe read projection, and server-only action attempts sharing one action-audit identity;
+- deterministic Policy Evaluation with one signal kind, a shared immutable read manifest, a portal-safe read projection, and server-only action attempts sharing one action-audit identity;
 - strict validators, canonical preimages, SHA-256 identity helpers, limits, logical artifact names, Core corpus execution, root exports, and compile-time contract tests.
+- optional dependency roles for commercial arrangement, provider-access observation, configuration timeline, provider price schedule, pricing function, charge-inclusion policy, and settlement revision. These roles identify consumed evidence only; they are not Financial Coordinate axes and do not infer PAYG, access, or zero cost.
 
-Out of scope:
+Out of scope for this repository:
 
-- package publication, version bump, or consumer pinning;
-- Cloud Engine, Metrics Analyzer, API, UI, queue, storage, or authorization implementation;
+- runtime deployment and environment configuration in consumer repositories;
+- Cloud Engine, Metrics Analyzer, API, UI, queue, storage, or authorization implementation details;
 - analytics formulas and anomaly model internals;
 - physical blob paths, retention durations, retry cadence defaults, or scheduler behavior;
 - modifying the existing Financial Scope Baseline V2 wire tokens;
@@ -43,7 +44,7 @@ Out of scope:
 
 - Provider-neutral scope variants follow a proven AWS producer boundary; V1 is Azure-specific.
 - A future contract generation may remove legacy `actual-only` and `actual-plus-estimated` tokens from Financial Scope Baseline itself. This freeze adds an explicit bridge without silently changing V2 bytes or IDs.
-- Package publication and downstream pinning remain WP8 release work.
+- `1.0.2-dev1138.1` is an intermediate prerelease. Changes made after that publication, including request-time identity binding and embedded immutable analytics evidence, require the next exact DEV-1138 prerelease and exact consumer repins.
 
 ## Success Criteria
 
@@ -88,9 +89,9 @@ Add focused contract families under the existing `azure/financial-scope` export 
 
 1. `financialDataflow.ts` owns canonical lens bridging, exact derived-data coordinate, and current-spend composition.
 2. `financialAnalytics.ts` owns daily inputs and kind-specific analytics projections.
-3. `financialAnalyticsDelivery.ts` owns identity-only queue requests, logical artifact names, and promoted-current pointers.
+3. `financialAnalyticsDelivery.ts` owns identity-only queue requests, immutable output manifests, logical artifact names, and promoted-current pointers.
 4. `financialPolicy.ts` owns immutable definition revisions and evaluations.
-5. `financialPolicyDelivery.ts` owns the portal-safe read DTO and server-only action-attempt audit DTO.
+5. `financialPolicyDelivery.ts` owns the immutable read manifest, portal-safe read DTO, and server-only action-attempt audit DTO.
 
 Keep validation and canonical identity helpers beside each contract family. Reuse existing exact-decimal and SHA-256 primitives. The Core corpus adapter supplies contract framing only; it cannot infer scope, period, money, currency, availability, or evidence.
 
@@ -143,7 +144,7 @@ Action:
 - Define one exact derived-data coordinate and composition member/result unions over existing baseline IDs.
 - Define bounded daily points whose amounts carry availability and composition identity.
 - Define kind-specific forecast/trend/anomaly result unions and available/partial/unavailable projection envelopes.
-- Implement strict validators, compatibility checks, canonical preimages, and deterministic SHA-256 IDs.
+- Implement strict validators, shared manifest descriptors, compatibility checks, canonical preimages, and deterministic SHA-256 IDs.
 
 Verify:
 
@@ -232,7 +233,7 @@ Key links:
 - Current-spend composition -> existing V2 baseline IDs.
 - Analytics daily points -> composition IDs.
 - Analytics projection -> exact immutable input-series ID.
-- Job request -> exact input generation and verified artifact digest; retry time is excluded from stable request identity.
+- Job request -> exact input generation, verified artifact digest, requested outputs, and fixed `requestedAt`. Transport retries reuse the exact request unchanged; a later requested calculation receives a different request ID so it cannot collide with different `producedAt` bytes at one immutable output path.
 - Current pointer -> exact projection ID, output generation, coordinate ID, and verified artifact digest.
 - Policy Evaluation -> exact definition revision + current composition + optional analytics projection.
 - Read and action artifacts -> one evaluation ID.
@@ -252,7 +253,7 @@ Key links:
 - [x] No new contract duplicates V2 owner/component reconciliation.
 - [x] Budget current and forecast thresholds coexist in one revision.
 - [x] Forecast/trend/anomaly outputs are discriminated, exact-arithmetic checked where internally provable, generation-bound, and scope-bound.
-- [x] Package version and consumer dependencies are unchanged.
+- [ ] Publish the post-`dev1138.1` contract corrections under a new non-`latest` prerelease and exact-pin every runtime consumer.
 
 ### Completion Checklist
 
@@ -260,7 +261,7 @@ Key links:
 - [x] Security review covers company/scope binding, prototype/duplicate keys, hostile size/depth, destination secrecy, and action authority.
 - [x] Performance review covers bounded arrays/strings, interval scanning, canonicalization cost, and hard file-size limits.
 - [x] Modularity review covers reuse of V2 baseline and shared exact-decimal/digest primitives.
-- [x] Runtime validation in dev environment: N/A; contracts only.
+- [ ] Re-run the full package gates after the final contract delta and verify the packed artifact consumed by Cloud Engine, Metrics Analyzer adapters, API, and UI.
 - [x] Public docs: N/A; internal draft contract.
 - [x] MCP: N/A; no tool contract change.
 - [x] Swagger: N/A; no API endpoint change.
@@ -294,7 +295,7 @@ Key links:
 - Delete only the new draft modules, tests, script, and scoped exports/package script.
 - Restore only the small canonical lens bridge additions if the successor contract is rejected.
 - Do not reset or discard unrelated DEV-1138 worktree changes.
-- No runtime feature flag applies because no consumer is changed in this checkpoint.
+- Runtime consumers are now changed in DEV-1138. Rollback must pin all consumers back to one mutually compatible exact package version and disable the successor routes/workers together; it cannot mix contract generations.
 
 ## Security Considerations
 

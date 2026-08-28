@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 
 import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
   FINANCIAL_CURRENT_SPEND_COMPOSITION_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_INPUT_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_PROJECTION_CONTRACT_VERSION_V1,
@@ -54,39 +55,57 @@ const toInterval = period => ({
   ...(period.timeZone === undefined ? {} : { timeZone: period.timeZone }),
 });
 
-const toPeriod = (period, caseId) => {
-  const interval = toInterval(period);
-  return {
-    windowKind: period.windowKind,
-    requested: interval,
-    observed: interval,
-    coverage: [
-      {
-        coverageId: hashIdentity(`${caseId}:coverage`),
-        interval,
-        settlementState: 'unknown',
-        evidenceRefIds: [hashIdentity(`${caseId}:evidence`)],
-      },
-    ],
-    gaps: [],
-  };
-};
+const toCoordinatePeriod = period => ({
+  windowKind: period.windowKind,
+  requested: toInterval(period),
+  ...(period.providerBillingPeriodId === undefined ? {} : { providerBillingPeriodId: period.providerBillingPeriodId }),
+});
+
+const toAzureProviderAccountRef = value => (value.startsWith('azure-subscription:') ? value : `azure-subscription:${value}`);
 
 const toCoordinate = testCase => ({
   ...testCase.coordinate,
-  providerAccountRefs: [...testCase.coordinate.providerAccountRefs].sort(),
-  period: toPeriod(testCase.coordinate.period, testCase.caseId),
+  providerAccountRefs: testCase.coordinate.providerAccountRefs.map(toAzureProviderAccountRef).sort(),
+  period: toCoordinatePeriod(testCase.coordinate.period),
   ...(testCase.coordinate.accountingCurrency.status === 'resolved'
     ? { requestedCurrencyCode: testCase.coordinate.accountingCurrency.currencyCode }
     : {}),
+  chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
 });
 
 const nextCalendarDate = value => new Date(Date.parse(`${value}T00:00:00.000Z`) + 86_400_000).toISOString().slice(0, 10);
 
 const toMember = member =>
   member.status === 'included'
-    ? { memberScopeId: member.memberScopeId, baselineId: hashIdentity(member.baselineId), status: 'included' }
+    ? {
+        memberScopeId: member.memberScopeId,
+        baselineId: hashIdentity(member.baselineId),
+        chargeCompositionId: hashIdentity(`${member.baselineId}:charge-composition`),
+        status: 'included',
+      }
     : { memberScopeId: member.memberScopeId, status: 'unavailable', reasonCode: member.reasonCode };
+
+const toAllChargeSelection = (amount, currencyCode) => ({
+  status: 'available',
+  includedAmount: amount,
+  excludedAmount: '0',
+  withheldAmount: '0',
+  forecastEligibleAmount: amount,
+  oneTimeAmount: '0',
+  unknownRecurrenceAmount: '0',
+  forecastStatus: 'available',
+  currencyCode,
+});
+
+const toChargeSelection = (amount, coordinate) =>
+  amount.status === 'unavailable'
+    ? {}
+    : {
+        chargeSelection: toAllChargeSelection(
+          amount.status === 'available' ? amount.amount : amount.knownAmount,
+          coordinate.accountingCurrency.currencyCode
+        ),
+      };
 
 /** Adapts one contract-neutral Core case into the exact Types contract and executes its validators. */
 export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
@@ -98,6 +117,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
     coordinate,
     members,
     amount: testCase.composition.amount,
+    ...toChargeSelection(testCase.composition.amount, coordinate),
     membershipDigest: createCurrentSpendMembershipDigestV1(members),
     algorithmVersion: testCase.composition.algorithmVersion,
   };
@@ -118,10 +138,11 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
       coordinate: {
         ...coordinate,
         periodRole: 'comparison',
-        period: toPeriod(testCase.comparisonComposition.period, `${testCase.caseId}:comparison`),
+        period: toCoordinatePeriod(testCase.comparisonComposition.period),
       },
       members: comparisonMembers,
       amount: testCase.comparisonComposition.amount,
+      ...toChargeSelection(testCase.comparisonComposition.amount, coordinate),
       membershipDigest: createCurrentSpendMembershipDigestV1(comparisonMembers),
       algorithmVersion: testCase.comparisonComposition.algorithmVersion,
     };
@@ -149,6 +170,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
               {
                 memberScopeId: `${testCase.coordinate.scope.scopeId}:daily:${point.date}`,
                 baselineId: hashIdentity(point.compositionId),
+                chargeCompositionId: hashIdentity(`${point.compositionId}:charge-composition`),
                 status: 'included',
               },
             ]
@@ -156,6 +178,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
               {
                 memberScopeId: `${testCase.coordinate.scope.scopeId}:daily:${point.date}:known`,
                 baselineId: hashIdentity(`${point.compositionId}:known`),
+                chargeCompositionId: hashIdentity(`${point.compositionId}:known:charge-composition`),
                 status: 'included',
               },
               {
@@ -173,16 +196,6 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
           period: {
             windowKind: 'daily',
             requested: interval,
-            observed: interval,
-            coverage: [
-              {
-                coverageId: hashIdentity(`${testCase.caseId}:daily:${point.date}:coverage`),
-                interval,
-                settlementState: point.status === 'available' ? 'settled' : 'mixed',
-                evidenceRefIds: [hashIdentity(`${testCase.caseId}:daily:${point.date}:evidence`)],
-              },
-            ],
-            gaps: [],
           },
         },
         members: dailyMembers,
@@ -195,6 +208,10 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
                 currencyCode: coordinate.accountingCurrency.currencyCode,
                 reasonCodes: point.reasonCodes,
               },
+        chargeSelection: toAllChargeSelection(
+          point.status === 'available' ? point.amount : point.knownAmount,
+          coordinate.accountingCurrency.currencyCode
+        ),
         membershipDigest: createCurrentSpendMembershipDigestV1(dailyMembers),
         algorithmVersion: 'current-spend-composition/core-adapter-v1',
       };
@@ -202,39 +219,32 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
     });
     const dailyCompositionByIndex = new Map(dailyCompositions.map(item => [item.corePointIndex, item]));
     dailyCompositions = dailyCompositions.map(({ corePointIndex: _corePointIndex, ...item }) => item);
-    const requested = toInterval(testCase.analyticsInput.period);
-    const analyticsPeriod = {
-      windowKind: testCase.analyticsInput.period.windowKind,
-      requested,
-      ...(testCase.analyticsInput.points.length === 0 ? {} : { observed: requested }),
-      coverage: testCase.analyticsInput.points.map((point, index) => ({
-        coverageId: hashIdentity(`${testCase.caseId}:analytics:${point.date}:coverage`),
-        interval: {
-          startDate: point.date,
-          endDateExclusive: nextCalendarDate(point.date),
-          dateBasis: testCase.analyticsInput.period.dateBasis,
-          ...(testCase.analyticsInput.period.timeZone === undefined ? {} : { timeZone: testCase.analyticsInput.period.timeZone }),
-        },
-        settlementState: point.status === 'available' ? 'settled' : 'mixed',
-        evidenceRefIds: [hashIdentity(`${testCase.caseId}:analytics:${point.date}:evidence`)],
-      })),
-      gaps: testCase.analyticsInput.gaps.map(gap => ({
-        startDate: gap.startDate,
-        endDateExclusive: gap.endDateExclusive,
-        dateBasis: testCase.analyticsInput.period.dateBasis,
-        ...(testCase.analyticsInput.period.timeZone === undefined ? {} : { timeZone: testCase.analyticsInput.period.timeZone }),
-      })),
-    };
+    const analyticsPeriod = toCoordinatePeriod(testCase.analyticsInput.period);
     const inputIdentity = {
       schemaVersion: 1,
       contractVersion: FINANCIAL_ANALYTICS_INPUT_CONTRACT_VERSION_V1,
-      coordinate: { ...coordinate, periodRole: 'analytics-input', period: analyticsPeriod },
+      coordinate: {
+        ...coordinate,
+        periodRole: 'analytics-input',
+        period: analyticsPeriod,
+      },
       granularity: 'daily',
       producerGenerationId: testCase.analyticsInput.producerGenerationId,
-      points: testCase.analyticsInput.points.map((point, index) => ({
-        ...point,
-        compositionId: dailyCompositionByIndex.get(index).compositionId,
-      })),
+      referenceCompositions: [composition],
+      points: testCase.analyticsInput.points.map((point, index) => {
+        const dailyComposition = dailyCompositionByIndex.get(index);
+        return {
+          ...point,
+          compositionId: dailyComposition.compositionId,
+          forecastEligibleAmount: dailyComposition.chargeSelection.forecastEligibleAmount,
+          oneTimeAmount: dailyComposition.chargeSelection.oneTimeAmount,
+          unknownRecurrenceAmount: dailyComposition.chargeSelection.unknownRecurrenceAmount,
+          forecastStatus: dailyComposition.chargeSelection.forecastStatus,
+          ...(dailyComposition.chargeSelection.forecastReasonCodes === undefined
+            ? {}
+            : { forecastReasonCodes: dailyComposition.chargeSelection.forecastReasonCodes }),
+        };
+      }),
       gaps: testCase.analyticsInput.gaps,
       coverage: testCase.analyticsInput.coverage,
       algorithmVersion: 'financial-analytics-input/core-adapter-v1',
@@ -292,7 +302,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
         schemaVersion: 1,
         contractVersion: FINANCIAL_ANALYTICS_PROJECTION_CONTRACT_VERSION_V1,
         analyticsInputId: analyticsInput.analyticsInputId,
-        ...(coreResult.resultKind === 'trend' ? { currentSpendCompositionId: composition.compositionId } : {}),
+        currentSpendCompositionId: composition.compositionId,
         coordinate: { ...coordinate, periodRole: 'projection-target' },
         outputGenerationId: coreResult.outputGenerationId,
         method: coreResult.method,
@@ -317,7 +327,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
       const compatible = isFinancialAnalyticsProjectionCompatibleV1(
         projection,
         analyticsInput,
-        coreResult.resultKind === 'trend' ? composition : undefined,
+        composition,
         coreResult.resultKind === 'trend' ? comparisonComposition : undefined
       );
       if (!isFinancialAnalyticsProjectionV1(projection) || !compatible) {
@@ -335,15 +345,37 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
       contractVersion: FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1,
       companyId: coordinate.companyId,
       definitionId: coreDefinition.definitionId,
+      displayName: `Policy ${coreDefinition.definitionId}`,
       revision: coreDefinition.revision,
       effectiveState: coreDefinition.effectiveState,
       coordinateRequest: {
         provider: coordinate.provider,
         providerAccountRefs: [...coordinate.providerAccountRefs],
-        scope: coordinate.scope,
-        period: { kind: coordinate.period.windowKind, timeZone: coordinate.period.requested.timeZone ?? 'UTC' },
+        scope: { kind: coordinate.scope.kind, scopeId: coordinate.scope.scopeId },
+        scopeSelector:
+          coordinate.scope.kind === 'subscription'
+            ? { kind: 'subscription', subscriptionIds: [coordinate.providerAccountRefs[0].replace(/^azure-subscription:/, '')] }
+            : coordinate.scope.kind === 'multi-subscription'
+              ? {
+                  kind: 'multi-subscription',
+                  subscriptionIds: coordinate.providerAccountRefs.map(value => value.replace(/^azure-subscription:/, '')).sort(),
+                }
+              : coordinate.scope.kind === 'resource-group'
+                ? { kind: 'resource-group', resourceGroupIds: [coordinate.scope.scopeId] }
+                : coordinate.scope.kind === 'tag-scope'
+                  ? { kind: 'tag-scope', tags: [{ key: 'scope', value: coordinate.scope.scopeId }], tagMatch: 'all' }
+                  : { kind: 'resource', resourceIds: [coordinate.scope.scopeId] },
+        period:
+          coordinate.period.requested.dateBasis === 'company-local'
+            ? {
+                kind: coordinate.period.windowKind,
+                dateBasis: 'company-local',
+                timeZone: coordinate.period.requested.timeZone ?? 'UTC',
+              }
+            : { kind: coordinate.period.windowKind, dateBasis: 'utc' },
         costBasis: coordinate.costBasis,
         estimateLens: coordinate.estimateLens,
+        chargeInclusionPolicyRef: coordinate.chargeInclusionPolicyRef,
         requiredAccountingCurrencyCode: coordinate.accountingCurrency.currencyCode,
       },
       criteria:
@@ -440,9 +472,11 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
       companyId: policyEvaluation.companyId,
       definitionId: policyEvaluation.definitionId,
       definitionRevision: policyEvaluation.definitionRevision,
+      policyDefinitionRevisionId: policyEvaluation.policyDefinitionRevisionId,
       coordinateId: policyEvaluation.coordinateId,
       currentSpendCompositionId: policyEvaluation.currentSpendCompositionId,
       ...(policyEvaluation.analyticsProjectionId === undefined ? {} : { analyticsProjectionId: policyEvaluation.analyticsProjectionId }),
+      ...(policyEvaluation.analyticsProjectionId === undefined ? {} : { analyticsProjection }),
       signalKind: policyEvaluation.signalKind,
       evaluatedAt: policyEvaluation.evaluatedAt,
       result: policyEvaluation.result,
@@ -451,7 +485,7 @@ export const validateCoreFinancialDataflowCaseAgainstTypesV1 = testCase => {
     };
     if (
       !isFinancialPolicyEvaluationReadProjectionV1(policyReadProjection) ||
-      !isFinancialPolicyEvaluationReadProjectionCompatibleV1(policyReadProjection, policyEvaluation)
+      !isFinancialPolicyEvaluationReadProjectionCompatibleV1(policyReadProjection, policyEvaluation, analyticsProjection)
     ) {
       throw new TypeError(`Core case ${testCase.caseId} does not adapt to FinancialPolicyEvaluationReadProjectionV1.`);
     }

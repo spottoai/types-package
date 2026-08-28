@@ -60,6 +60,7 @@ const coordinate: FinancialAuthorityCoordinateV1 = {
   ownerBaselines: [owner],
   residualBaseline: residual,
   aggregateBaseline: aggregate,
+  chargeCompositions: [],
   componentDescriptors: [componentDescriptor],
   displayRollups: [displayRollup],
   projections: [],

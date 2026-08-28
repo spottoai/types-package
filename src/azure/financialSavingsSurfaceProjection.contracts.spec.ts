@@ -1,5 +1,6 @@
 import type { FinancialSavingsSurfaceProjectionIdentityPreimageV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection';
 import { createFinancialSavingsSurfaceProjectionIdV1, isFinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjectionValidation';
+import { AZURE_BILLED_ALL_CHARGES_POLICY_V1 } from './financialChargeComposition';
 
 const availableProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPreimageV1 = {
   schemaVersion: 1,
@@ -32,6 +33,7 @@ const availableProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPrei
       },
       costBasis: 'billed',
       estimateLens: 'actual-plus-estimated',
+      chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
       requestedCurrencyCode: 'AUD',
       currentAggregateBaselineId: `sha256:${'6'.repeat(64)}`,
       currentAggregate: { amount: '100', currencyCode: 'AUD' },
@@ -55,6 +57,20 @@ const availableProjection: FinancialSavingsSurfaceProjectionV1 = {
   projectionId: createFinancialSavingsSurfaceProjectionIdV1(availableProjectionIdentity),
 };
 
+const partialProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPreimageV1 = {
+  ...availableProjectionIdentity,
+  coordinates: availableProjectionIdentity.coordinates.map(coordinate =>
+    coordinate.status === 'available'
+      ? { ...coordinate, status: 'partial' as const, unavailableRecommendationIds: ['rec-without-evidence'] }
+      : coordinate
+  ) as FinancialSavingsSurfaceProjectionIdentityPreimageV1['coordinates'],
+};
+
+const partialProjection: FinancialSavingsSurfaceProjectionV1 = {
+  ...partialProjectionIdentity,
+  projectionId: createFinancialSavingsSurfaceProjectionIdV1(partialProjectionIdentity),
+};
+
 const filteredProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPreimageV1 = {
   ...availableProjectionIdentity,
   scope: {
@@ -75,6 +91,7 @@ const unavailableProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPr
       period: availableProjectionIdentity.coordinates[0].period,
       costBasis: 'billed',
       estimateLens: 'actual-plus-estimated',
+      chargeInclusionPolicyRef: availableProjectionIdentity.coordinates[0].chargeInclusionPolicyRef,
       requestedCurrencyCode: 'AUD',
       currentAggregateBaselineId: `sha256:${'6'.repeat(64)}`,
       unavailableReason: 'projection-unavailable',
@@ -85,3 +102,4 @@ const unavailableProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPr
 void filteredProjectionIdentity;
 void unavailableProjectionIdentity;
 void isFinancialSavingsSurfaceProjectionV1(availableProjection);
+void isFinancialSavingsSurfaceProjectionV1(partialProjection);

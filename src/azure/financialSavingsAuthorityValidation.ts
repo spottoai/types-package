@@ -60,7 +60,7 @@ export const canonicalizeFinancialSavingsAuthorityIdentityV1 = (value: Financial
                     ...allocation,
                     billableComponentIds: [...allocation.billableComponentIds].sort(),
                     eligibility:
-                      allocation.eligibility.kind === 'not-applicable'
+                      allocation.eligibility.kind !== 'mapped'
                         ? allocation.eligibility
                         : {
                             ...allocation.eligibility,
@@ -70,6 +70,13 @@ export const canonicalizeFinancialSavingsAuthorityIdentityV1 = (value: Financial
                   })),
                 resourceContributions: [...coordinate.resourceContributions]
                   .sort((left, right) => left.ownerScopeId.localeCompare(right.ownerScopeId))
+                  .map(contribution => ({ ...contribution, allocationIds: [...contribution.allocationIds].sort() })),
+                recommendationContributions: [...coordinate.recommendationContributions]
+                  .sort((left, right) =>
+                    `${left.ownerScopeId}\u0000${left.recommendationId}`.localeCompare(
+                      `${right.ownerScopeId}\u0000${right.recommendationId}`
+                    )
+                  )
                   .map(contribution => ({ ...contribution, allocationIds: [...contribution.allocationIds].sort() })),
                 aggregate: { ...coordinate.aggregate, allocationIds: [...coordinate.aggregate.allocationIds].sort() },
               }

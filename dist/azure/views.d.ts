@@ -14,7 +14,8 @@ import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type A
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, SavingsLifecycleFreshnessV1 } from './savings.js';
 import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView.js';
-import type { FinancialSavingsAuthorityV1 } from './financialSavingsAuthority.js';
+import type { CurrentSpendCompositionV1 } from './financialDataflow.js';
+import type { FinancialSavingsAuthorityV1, FinancialSavingsResourceProjectionV1 } from './financialSavingsAuthority.js';
 import type { FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
@@ -31,6 +32,12 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
     /** Compact generation-bound projection of the canonical Resources financial savings authority. */
     financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
+    /**
+     * Producer-owned subscription current-spend compositions for the dashboard.
+     * Consumers select an exact coordinate and never rebuild spend from summary,
+     * budget, resource-row, or retail-price fields.
+     */
+    financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
     advisorScore?: AdvisorScoreSummary;
     healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -85,8 +92,13 @@ export interface AzureResourcePortalItem {
     location: string;
     /** Total spend over the last 30 days */
     spend: number;
-    /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
-    spendAmortized: number;
+    /**
+     * Total amortized spend over the rolling 30-day window.
+     * Absent when the artifact has no complete amortized-basis evidence; consumers
+     * must not substitute billed spend. Use `composition.amortized` for the typed
+     * availability reason when a cost composition is present.
+     */
+    spendAmortized?: number;
     /** Billing-backed portion of spend over the last 30 days */
     spendActual?: number;
     /** Billing-backed portion of amortized spend over the last 30 days */
@@ -149,9 +161,11 @@ export interface SavingsOpportunity {
 }
 export interface SavingsPotential {
     minAmount: number;
-    minPercentage: number;
+    /** Percentage of the exact affected-current denominator, when produced. */
+    minPercentage?: number;
     maxAmount: number;
-    maxPercentage: number;
+    /** Percentage of the exact affected-current denominator, when produced. */
+    maxPercentage?: number;
     /** Source-agnostic explanations for the displayed savings amount. */
     opportunities?: SavingsOpportunity[];
     /**
@@ -283,6 +297,8 @@ export interface AzureResourcePluginItemDetailed {
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Resource-scoped, non-additive projection from the canonical Portal financial authority. */
     financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
+    /** Resource-scoped, non-additive projection from the matching Portal savings authority. */
+    financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
     /** Generic compute hosting model alternatives, including cross-platform options. */
     computeAlternatives?: ComputeAlternativesInsights;
 }

@@ -4,7 +4,13 @@ import type { FinancialEvidenceAssessmentSummaryV1, FinancialEvidenceIntervalV1,
 export const FINANCIAL_SCOPE_BASELINE_SCHEMA_VERSION_V2 = 2 as const;
 export const FINANCIAL_SCOPE_BASELINE_CONTRACT_VERSION_V2 = 'financial-scope-baseline/v2' as const;
 
-export type FinancialWindowKindV2 = 'rolling-30-days' | 'calendar-month' | 'provider-billing-period' | 'stable-billing-window' | 'daily';
+export type FinancialWindowKindV2 =
+  | 'rolling-30-days'
+  | 'calendar-month'
+  | 'provider-billing-period'
+  | 'stable-billing-window'
+  | 'analytics-history'
+  | 'daily';
 
 export interface FinancialBaselineCoverageV2 {
   coverageId: string;
@@ -30,6 +36,19 @@ export interface AvailableFinancialBaselinePeriodV2 extends FinancialBaselinePer
   observed: FinancialEvidenceIntervalV1;
   coverage: [FinancialBaselineCoverageV2, ...FinancialBaselineCoverageV2[]];
 }
+
+/**
+ * True only when the produced evidence covers the entire requested interval.
+ * Partial periods remain valid monetary evidence for display and forecasting,
+ * but must not be used as the current side of an optimization projection.
+ */
+export const isCompleteFinancialBaselinePeriodV2 = (period: FinancialBaselinePeriodV2): boolean =>
+  period.observed !== undefined &&
+  period.observed.startDate === period.requested.startDate &&
+  period.observed.endDateExclusive === period.requested.endDateExclusive &&
+  period.observed.dateBasis === period.requested.dateBasis &&
+  period.observed.timeZone === period.requested.timeZone &&
+  period.gaps.length === 0;
 
 interface FinancialScopeBaselineRequestV2 {
   schemaVersion: typeof FINANCIAL_SCOPE_BASELINE_SCHEMA_VERSION_V2;
@@ -139,6 +158,7 @@ export const FINANCIAL_SCOPE_BASELINE_UNAVAILABLE_REASONS_V2 = [
   'mixed-generation',
   'member-incompatible',
   'reconciliation-failure',
+  'scope-membership-empty',
   'unsupported-scope',
 ] as const;
 

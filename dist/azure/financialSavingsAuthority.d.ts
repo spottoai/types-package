@@ -2,6 +2,7 @@ import type { ArtifactGeneration } from '../common/artifactGeneration';
 import type { AvailableOwnerFinancialScopeBaselineV2 } from './financialScopeBaseline';
 export declare const FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1: 1;
 export declare const FINANCIAL_SAVINGS_AUTHORITY_CONTRACT_VERSION_V1: "financial-savings-authority/v1";
+export declare const FINANCIAL_SAVINGS_RESOURCE_PROJECTION_CONTRACT_VERSION_V1: "financial-savings-resource-projection/v1";
 export type FinancialSavingsUnavailableReasonV1 = 'scenario-coverage-unproven' | 'unmigrated-scenario-producer' | 'projection-unavailable' | 'activation-unavailable' | 'allocation-unavailable';
 export declare const FINANCIAL_ELIGIBILITY_ASSESSMENT_SCHEMA_VERSION_V1: 1;
 export declare const FINANCIAL_ELIGIBILITY_ASSESSMENT_CONTRACT_VERSION_V1: "financial-eligibility-assessment/v1";
@@ -67,6 +68,9 @@ export interface FinancialSavingsDenominatorIdentityPreimageV1 {
 export type FinancialSavingsEligibilityReferenceV1 = {
     kind: 'not-applicable';
 } | {
+    kind: 'unavailable';
+    reason: FinancialEligibilityUnavailableReasonV1;
+} | {
     kind: 'mapped';
     eligibilityId: string;
     eligibilityBaselineId: string;
@@ -75,11 +79,15 @@ export type FinancialSavingsEligibilityReferenceV1 = {
 };
 export type FinancialSavingsActivationResultV1 = 'included' | 'excluded' | 'unavailable';
 export type FinancialSavingsLifecycleStateV1 = 'Active' | 'Prioritized' | 'Dismissed' | 'Archived' | 'Implementing' | 'Implemented' | 'Failed' | 'Unrecognized';
-export type FinancialSavingsActivationReasonV1 = 'active' | 'prioritized' | 'dismissal-expired' | 'implementing' | 'failed' | 'archived' | 'implemented' | 'dismissed-active' | 'lifecycle-stale' | 'lifecycle-unavailable' | 'lifecycle-conflict' | 'unrecognized-lifecycle' | 'generation-mismatch';
+export type FinancialSavingsActivationReasonV1 = 'active' | 'prioritized' | 'dismissal-expired' | 'implementing' | 'failed' | 'archived' | 'implemented' | 'dismissed-active' | 'lifecycle-stale' | 'lifecycle-unavailable' | 'lifecycle-conflict' | 'unrecognized-lifecycle' | 'generation-mismatch' | 'projection-unavailable' | 'eligibility-unavailable';
 export interface FinancialSavingsActivationV1 {
     activationId: string;
+    /** Producer-unique scenario identity used to bind the Financial Projection. */
+    scenarioId: string;
+    /** Customer-facing recommendation lifecycle identity represented by the scenario. */
     recommendationId: string;
-    projectionId: string;
+    /** Required when included; optional when lifecycle or financial evidence excludes/unavailable the scenario. */
+    projectionId?: string;
     lifecycleState: FinancialSavingsLifecycleStateV1;
     lifecycleVersion: string;
     lifecycleEvidenceRefId: string;
@@ -94,6 +102,7 @@ export interface FinancialSavingsAllocationV1 {
     allocationId: string;
     ownerScopeId: string;
     billableComponentIds: [string, ...string[]];
+    scenarioId: string;
     recommendationId: string;
     baselineId: string;
     projectionId: string;
@@ -106,6 +115,13 @@ export type FinancialSavingsAllocationIdentityPreimageV1 = Omit<FinancialSavings
 /** Producer-computed resource contribution. Consumers never rebuild it from allocations. */
 export interface FinancialSavingsResourceContributionV1 {
     ownerScopeId: string;
+    allocationIds: [string, ...string[]];
+    savingsMinorUnits: number;
+}
+/** Producer-owned recommendation attribution within one canonical owner. */
+export interface FinancialSavingsOwnerRecommendationContributionV1 {
+    ownerScopeId: string;
+    recommendationId: string;
     allocationIds: [string, ...string[]];
     savingsMinorUnits: number;
 }
@@ -124,9 +140,18 @@ export interface AvailableFinancialSavingsCoordinateV1 {
     activations: FinancialSavingsActivationV1[];
     allocations: FinancialSavingsAllocationV1[];
     resourceContributions: FinancialSavingsResourceContributionV1[];
+    recommendationContributions: FinancialSavingsOwnerRecommendationContributionV1[];
     aggregate: {
         allocationIds: string[];
         savingsMinorUnits: number;
+    };
+}
+export interface PartialFinancialSavingsCoordinateV1 extends Omit<AvailableFinancialSavingsCoordinateV1, 'status' | 'scenarioCoverage'> {
+    status: 'partial';
+    scenarioCoverage: {
+        status: 'partial';
+        evidenceRefId: string;
+        scenarioIds: string[];
     };
 }
 export interface UnavailableFinancialSavingsCoordinateV1 {
@@ -135,7 +160,7 @@ export interface UnavailableFinancialSavingsCoordinateV1 {
     currentAggregateBaselineId?: string;
     unavailableReason: FinancialSavingsUnavailableReasonV1;
 }
-export type FinancialSavingsCoordinateEnvelopeV1 = AvailableFinancialSavingsCoordinateV1 | UnavailableFinancialSavingsCoordinateV1;
+export type FinancialSavingsCoordinateEnvelopeV1 = AvailableFinancialSavingsCoordinateV1 | PartialFinancialSavingsCoordinateV1 | UnavailableFinancialSavingsCoordinateV1;
 /** Savings authority paired one-to-one with every coordinate in a Financial Authority view. */
 export interface FinancialSavingsAuthorityV1 {
     schemaVersion: typeof FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1;
@@ -148,5 +173,30 @@ export interface FinancialSavingsAuthorityV1 {
     coordinates: [FinancialSavingsCoordinateEnvelopeV1, ...FinancialSavingsCoordinateEnvelopeV1[]];
 }
 export type FinancialSavingsAuthorityIdentityPreimageV1 = Omit<FinancialSavingsAuthorityV1, 'savingsAuthorityId'>;
+export interface AvailableFinancialSavingsResourceCoordinateV1 {
+    status: 'available';
+    coordinateId: string;
+    currentAggregateBaselineId: string;
+    accountingCurrencyCode: string;
+    minorUnitScale: number;
+    roundingMode: 'half-away-from-zero';
+    resourceContribution?: FinancialSavingsResourceContributionV1;
+    recommendationContributions: FinancialSavingsOwnerRecommendationContributionV1[];
+}
+/** Proven resource contributions retained with explicit scenario gaps. */
+export interface PartialFinancialSavingsResourceCoordinateV1 extends Omit<AvailableFinancialSavingsResourceCoordinateV1, 'status'> {
+    status: 'partial';
+    unavailableScenarioIds: [string, ...string[]];
+}
+export type FinancialSavingsResourceCoordinateEnvelopeV1 = AvailableFinancialSavingsResourceCoordinateV1 | PartialFinancialSavingsResourceCoordinateV1 | UnavailableFinancialSavingsCoordinateV1;
+/** Compact, non-additive API projection for one canonical savings owner. */
+export interface FinancialSavingsResourceProjectionV1 {
+    contractVersion: typeof FINANCIAL_SAVINGS_RESOURCE_PROJECTION_CONTRACT_VERSION_V1;
+    savingsAuthorityId: string;
+    financialAuthorityId: string;
+    artifactGeneration: ArtifactGeneration;
+    scopeId: string;
+    coordinates: [FinancialSavingsResourceCoordinateEnvelopeV1, ...FinancialSavingsResourceCoordinateEnvelopeV1[]];
+}
 export {};
 //# sourceMappingURL=financialSavingsAuthority.d.ts.map

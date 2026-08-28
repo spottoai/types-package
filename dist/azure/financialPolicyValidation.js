@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isFinancialPolicyEvaluationCompatibleV1 = exports.isFinancialPolicyEvaluationV1 = exports.createFinancialPolicyEvaluationActionAuditIdV1 = exports.createFinancialPolicyEvaluationReadProjectionIdV1 = exports.createFinancialPolicyEvaluationIdV1 = exports.canonicalizeFinancialPolicyEvaluationIdentityV1 = exports.isFinancialPolicyDefinitionRevisionV1 = exports.createFinancialPolicyDefinitionRevisionIdV1 = exports.canonicalizeFinancialPolicyDefinitionRevisionIdentityV1 = void 0;
+exports.isFinancialPolicyEvaluationCompatibleV1 = exports.isFinancialPolicyEvaluationV1 = exports.createFinancialPolicyEvaluationActionAuditIdV1 = exports.createFinancialPolicyEvaluationReadProjectionIdV1 = exports.createFinancialPolicyEvaluationIdV1 = exports.canonicalizeFinancialPolicyEvaluationIdentityV1 = exports.isFinancialPolicyDefinitionRevisionV1 = exports.createFinancialPolicyDefinitionRevisionIdV1 = exports.canonicalizeFinancialPolicyDefinitionRevisionIdentityV1 = exports.isFinancialPolicyDefinitionRevisionIdentityPreimageV1 = void 0;
 const exactDecimal_1 = require("../common/exactDecimal");
 const sha256_1 = require("../common/sha256");
 const financialValidationPrimitives_1 = require("./financialValidationPrimitives");
+const financialChargeCompositionValidation_1 = require("./financialChargeCompositionValidation");
 const financialPolicy_1 = require("./financialPolicy");
 const financialDataflowValidation_1 = require("./financialDataflowValidation");
 const financialDataflowValidation_2 = require("./financialDataflowValidation");
@@ -13,6 +14,12 @@ const ESTIMATE_LENSES = new Set(['billing-only', 'include-estimates', 'estimates
 const MATCHED_THRESHOLD_KINDS = new Set(['amount', 'percent', 'minimum-amount', 'minimum-delta', 'minimum-percent-change']);
 const MAX_THRESHOLDS = 64;
 const MAX_DESTINATIONS = 256;
+const isCanonicalPolicyRevision = (value) => {
+    if (typeof value !== 'string' || !/^[1-9]\d*$/.test(value))
+        return false;
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && String(parsed) === value;
+};
 const isCanonicalDecimal = (value) => typeof value === 'string' && (0, financialValidationPrimitives_1.isCanonicalExactMoney)({ amount: value, currencyCode: 'AUD' });
 const isNonNegativeDecimal = (value) => {
     if (!isCanonicalDecimal(value))
@@ -49,28 +56,63 @@ const isThresholdSet = (value) => {
     }
     return new Set(value.amounts).size === value.amounts.length && new Set(value.percents).size === value.percents.length;
 };
+const isScopeSelectorBoundToProviderAccounts = (selector, providerAccountRefs) => {
+    if (!(0, financialDataflowValidation_1.isFinancialDataflowScopeSelectorV1)(selector) || !Array.isArray(providerAccountRefs))
+        return false;
+    const providerSubscriptions = providerAccountRefs.map(value => {
+        if (typeof value !== 'string' || !value.toLowerCase().startsWith('azure-subscription:'))
+            return undefined;
+        const subscriptionId = value.slice('azure-subscription:'.length).trim().toLowerCase();
+        return subscriptionId || undefined;
+    });
+    if (providerSubscriptions.some(value => value === undefined))
+        return false;
+    const authorized = new Set(providerSubscriptions);
+    if (selector.kind === 'subscription' || selector.kind === 'multi-subscription') {
+        const selected = selector.subscriptionIds.map(value => value.trim().toLowerCase());
+        return selected.length === authorized.size && selected.every(value => authorized.has(value));
+    }
+    if (selector.kind === 'tag-scope')
+        return true;
+    const ids = selector.kind === 'resource' ? selector.resourceIds : selector.resourceGroupIds;
+    return ids.every(value => {
+        const match = /^\/subscriptions\/([^/]+)(?:\/|$)/i.exec(value.trim());
+        return match?.[1] !== undefined && authorized.has(match[1].toLowerCase());
+    });
+};
 const isCoordinateRequest = (value, companyId) => (0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value) &&
     (0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value, [
         'provider',
         'providerAccountRefs',
         'scope',
+        'scopeSelector',
         'period',
         'costBasis',
         'estimateLens',
+        'chargeInclusionPolicyRef',
         'requiredAccountingCurrencyCode',
     ]) &&
     value.provider === 'azure' &&
     (0, financialDataflowValidation_1.isFinancialDataflowSortedUniqueStringsV1)(value.providerAccountRefs, financialDataflowValidation_1.FINANCIAL_DATAFLOW_LIMITS_V1.maximumProviderAccounts) &&
     value.providerAccountRefs.length > 0 &&
-    (0, financialDataflowValidation_1.isFinancialDataflowScopeV1)(value.scope) &&
+    (0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value.scope) &&
+    (0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value.scope, ['kind', 'scopeId']) &&
+    ['resource', 'resource-group', 'subscription', 'tag-scope', 'multi-subscription'].includes(String(value.scope.kind)) &&
+    (0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.scope.scopeId) &&
+    (0, financialDataflowValidation_1.isFinancialDataflowScopeSelectorV1)(value.scopeSelector) &&
+    value.scopeSelector.kind === value.scope.kind &&
+    isScopeSelectorBoundToProviderAccounts(value.scopeSelector, value.providerAccountRefs) &&
     (0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value.period) &&
-    (0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value.period, ['kind', 'timeZone']) &&
+    (0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value.period, ['kind', 'dateBasis'], ['timeZone']) &&
     (value.period.kind === 'calendar-month' || value.period.kind === 'rolling-30-days') &&
-    (0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.period.timeZone) &&
+    (value.period.dateBasis === 'utc'
+        ? value.period.timeZone === undefined
+        : value.period.dateBasis === 'company-local' && (0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.period.timeZone)) &&
     typeof value.costBasis === 'string' &&
     COST_BASES.has(value.costBasis) &&
     typeof value.estimateLens === 'string' &&
     ESTIMATE_LENSES.has(value.estimateLens) &&
+    (0, financialChargeCompositionValidation_1.isFinancialChargeInclusionPolicyRefV1)(value.chargeInclusionPolicyRef) &&
     (0, financialDataflowValidation_1.isFinancialDataflowCurrencyV1)(value.requiredAccountingCurrencyCode) &&
     (0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(companyId);
 const isCriteria = (value, currencyCode) => {
@@ -92,13 +134,14 @@ const isCriteria = (value, currencyCode) => {
         (value.minimumDelta === undefined || isNonNegativeDecimal(value.minimumDelta)) &&
         (value.minimumPercentChange === undefined || isNonNegativeDecimal(value.minimumPercentChange)));
 };
-const isDefinitionIdentity = (value) => {
+const isFinancialPolicyDefinitionRevisionIdentityPreimageV1 = (value) => {
     if (!(0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value) ||
         !(0, financialDataflowValidation_1.hasFinancialDataflowExactFieldsV1)(value, [
             'schemaVersion',
             'contractVersion',
             'companyId',
             'definitionId',
+            'displayName',
             'revision',
             'effectiveState',
             'coordinateRequest',
@@ -113,7 +156,8 @@ const isDefinitionIdentity = (value) => {
         value.contractVersion !== financialPolicy_1.FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1 ||
         !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.companyId) ||
         !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.definitionId) ||
-        !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.revision) ||
+        !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.displayName) ||
+        !isCanonicalPolicyRevision(value.revision) ||
         !['enabled', 'disabled', 'deleted'].includes(String(value.effectiveState)) ||
         !isCoordinateRequest(value.coordinateRequest, value.companyId) ||
         !(0, financialDataflowValidation_1.isFinancialDataflowRecordV1)(value.coordinateRequest) ||
@@ -129,10 +173,23 @@ const isDefinitionIdentity = (value) => {
         !(0, financialDataflowValidation_1.isFinancialDataflowIdentityV1)(value.authoredByUserId)) {
         return false;
     }
-    return value.effectiveState !== 'enabled' || value.destinationRefIds.length > 0;
+    if (value.criteria.kind === 'budget' &&
+        value.criteria.forecastThresholds !== undefined &&
+        (value.coordinateRequest.period.kind !== 'calendar-month' || value.coordinateRequest.estimateLens !== 'billing-only')) {
+        return false;
+    }
+    if (value.criteria.kind === 'cost-anomaly' &&
+        (value.coordinateRequest.period.kind !== 'rolling-30-days' || value.coordinateRequest.estimateLens !== 'billing-only')) {
+        return false;
+    }
+    // Alert Instance state is the canonical internal policy side effect.
+    // External destinations are optional and must not determine whether an
+    // enabled policy is valid or evaluable.
+    return true;
 };
+exports.isFinancialPolicyDefinitionRevisionIdentityPreimageV1 = isFinancialPolicyDefinitionRevisionIdentityPreimageV1;
 const canonicalizeFinancialPolicyDefinitionRevisionIdentityV1 = (value) => {
-    if (!(0, financialDataflowValidation_1.isFinancialDataflowValueWithinLimitsV1)(value) || !isDefinitionIdentity(value)) {
+    if (!(0, financialDataflowValidation_1.isFinancialDataflowValueWithinLimitsV1)(value) || !(0, exports.isFinancialPolicyDefinitionRevisionIdentityPreimageV1)(value)) {
         throw new TypeError('Invalid FinancialPolicyDefinitionRevisionIdentityPreimageV1.');
     }
     const criteria = value.criteria.kind === 'budget'
@@ -176,7 +233,7 @@ const isFinancialPolicyDefinitionRevisionV1 = (value) => {
         return false;
     const { policyDefinitionRevisionId, ...identity } = value;
     return ((0, financialDataflowValidation_1.isFinancialDataflowHashV1)(policyDefinitionRevisionId) &&
-        isDefinitionIdentity(identity) &&
+        (0, exports.isFinancialPolicyDefinitionRevisionIdentityPreimageV1)(identity) &&
         policyDefinitionRevisionId === (0, exports.createFinancialPolicyDefinitionRevisionIdV1)(identity));
 };
 exports.isFinancialPolicyDefinitionRevisionV1 = isFinancialPolicyDefinitionRevisionV1;
@@ -222,8 +279,12 @@ const isEvaluationIdentity = (value) => {
         !isMatchedThresholds(value.matchedThresholds)) {
         return false;
     }
-    const analyticsRequired = value.signalKind === 'budget-forecast' || value.signalKind === 'cost-anomaly';
-    return analyticsRequired ? (0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.analyticsProjectionId) : value.analyticsProjectionId === undefined;
+    const analyticsSignal = value.signalKind === 'budget-forecast' || value.signalKind === 'cost-anomaly';
+    if (!analyticsSignal)
+        return value.analyticsProjectionId === undefined;
+    if (value.result !== 'unavailable')
+        return (0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.analyticsProjectionId);
+    return value.analyticsProjectionId === undefined || (0, financialDataflowValidation_1.isFinancialDataflowHashV1)(value.analyticsProjectionId);
 };
 const canonicalizeFinancialPolicyEvaluationIdentityV1 = (value) => {
     if (!(0, financialDataflowValidation_1.isFinancialDataflowValueWithinLimitsV1)(value) || !isEvaluationIdentity(value)) {
@@ -343,6 +404,10 @@ const safeAnomalyMatchedThresholds = (definition, analyticsProjection) => {
         return undefined;
     }
 };
+const isExpectedCalendarMonthTargetPartial = (composition) => composition.coordinate.period.windowKind === 'calendar-month' &&
+    composition.amount.status === 'partial' &&
+    composition.amount.reasonCodes.length === 1 &&
+    composition.amount.reasonCodes[0] === 'coverage-incomplete';
 /** Validates definition, coordinate, financial input, and signal links after authorization. */
 const isFinancialPolicyEvaluationCompatibleV1 = (evaluation, definition, currentSpendComposition, analyticsProjection) => {
     if (!(0, exports.isFinancialPolicyEvaluationV1)(evaluation) ||
@@ -366,13 +431,17 @@ const isFinancialPolicyEvaluationCompatibleV1 = (evaluation, definition, current
         !sameStrings(request.providerAccountRefs, coordinate.providerAccountRefs) ||
         request.scope.kind !== coordinate.scope.kind ||
         request.scope.scopeId !== coordinate.scope.scopeId ||
-        request.scope.scopeFingerprint !== coordinate.scope.scopeFingerprint ||
         request.costBasis !== coordinate.costBasis ||
         request.estimateLens !== coordinate.estimateLens ||
-        request.requiredAccountingCurrencyCode !== currency ||
+        (0, financialDataflowValidation_1.canonicalizeFinancialDataflowJsonV1)(request.chargeInclusionPolicyRef) !==
+            (0, financialDataflowValidation_1.canonicalizeFinancialDataflowJsonV1)(coordinate.chargeInclusionPolicyRef) ||
         coordinate.requestedCurrencyCode !== request.requiredAccountingCurrencyCode ||
+        (currency === undefined
+            ? currentSpendComposition.amount.status !== 'unavailable'
+            : request.requiredAccountingCurrencyCode !== currency) ||
         request.period.kind !== coordinate.period.windowKind ||
-        request.period.timeZone !== periodTimeZone) {
+        request.period.dateBasis !== coordinate.period.requested.dateBasis ||
+        (request.period.dateBasis === 'company-local' && request.period.timeZone !== periodTimeZone)) {
         return false;
     }
     if (evaluation.result === 'matched' ? evaluation.matchedThresholds.length === 0 : evaluation.matchedThresholds.length > 0)
@@ -414,7 +483,16 @@ const isFinancialPolicyEvaluationCompatibleV1 = (evaluation, definition, current
             return evaluation.result === 'unavailable' && evaluation.matchedThresholds.length === 0;
         }
         if (currentSpendComposition.amount.status === 'partial') {
-            return evaluation.result === 'partial' && evaluation.matchedThresholds.length === 0;
+            if (!isExpectedCalendarMonthTargetPartial(currentSpendComposition)) {
+                return evaluation.result === 'partial' && evaluation.matchedThresholds.length === 0;
+            }
+            if (definition.criteria.kind !== 'budget' || definition.criteria.currentSpendThresholds === undefined)
+                return false;
+            const expectedThresholds = safeBudgetMatchedThresholds(currentSpendComposition.amount.knownAmount, definition.criteria.budget.amount, definition.criteria.currentSpendThresholds);
+            if (expectedThresholds === undefined)
+                return false;
+            return (evaluation.result === (expectedThresholds.length > 0 ? 'matched' : 'not-matched') &&
+                hasExactMatchedThresholds(evaluation.matchedThresholds, expectedThresholds));
         }
         if (definition.criteria.kind !== 'budget' || definition.criteria.currentSpendThresholds === undefined)
             return false;
@@ -423,6 +501,12 @@ const isFinancialPolicyEvaluationCompatibleV1 = (evaluation, definition, current
             return false;
         return (evaluation.result === (expectedThresholds.length > 0 ? 'matched' : 'not-matched') &&
             hasExactMatchedThresholds(evaluation.matchedThresholds, expectedThresholds));
+    }
+    if (evaluation.result === 'unavailable' &&
+        evaluation.analyticsProjectionId === undefined &&
+        analyticsProjection === undefined &&
+        (evaluation.signalKind === 'budget-forecast' || evaluation.signalKind === 'cost-anomaly')) {
+        return evaluation.matchedThresholds.length === 0 && evaluation.reasonCode === 'analytics-projection-unavailable';
     }
     if (!(0, financialAnalyticsValidation_1.isFinancialAnalyticsProjectionV1)(analyticsProjection) ||
         evaluation.analyticsProjectionId !== analyticsProjection.analyticsProjectionId ||
@@ -440,10 +524,21 @@ const isFinancialPolicyEvaluationCompatibleV1 = (evaluation, definition, current
     const actualAnalyticsKind = analyticsProjection.status === 'unavailable' ? analyticsProjection.resultKind : analyticsProjection.result.kind;
     if (actualAnalyticsKind !== expectedAnalyticsKind)
         return false;
+    if (analyticsProjection.currentSpendCompositionId !== undefined &&
+        analyticsProjection.currentSpendCompositionId !== currentSpendComposition.compositionId) {
+        return false;
+    }
+    if (evaluation.signalKind === 'budget-forecast' &&
+        analyticsProjection.status !== 'unavailable' &&
+        analyticsProjection.currentSpendCompositionId !== currentSpendComposition.compositionId) {
+        return false;
+    }
     if (currentSpendComposition.amount.status === 'unavailable' || analyticsProjection.status === 'unavailable') {
         return evaluation.result === 'unavailable' && evaluation.matchedThresholds.length === 0;
     }
-    if (currentSpendComposition.amount.status === 'partial' || analyticsProjection.status === 'partial') {
+    if (analyticsProjection.status === 'partial' ||
+        (currentSpendComposition.amount.status === 'partial' &&
+            !(evaluation.signalKind === 'budget-forecast' && isExpectedCalendarMonthTargetPartial(currentSpendComposition)))) {
         return evaluation.result === 'partial' && evaluation.matchedThresholds.length === 0;
     }
     if (evaluation.result !== 'matched' && evaluation.result !== 'not-matched')

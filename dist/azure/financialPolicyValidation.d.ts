@@ -1,4 +1,5 @@
 import { type FinancialPolicyDefinitionRevisionIdentityPreimageV1, type FinancialPolicyDefinitionRevisionV1, type FinancialPolicyEvaluationIdentityPreimageV1, type FinancialPolicyEvaluationV1 } from './financialPolicy';
+export declare const isFinancialPolicyDefinitionRevisionIdentityPreimageV1: (value: unknown) => value is FinancialPolicyDefinitionRevisionIdentityPreimageV1;
 export declare const canonicalizeFinancialPolicyDefinitionRevisionIdentityV1: (value: FinancialPolicyDefinitionRevisionIdentityPreimageV1) => string;
 export declare const createFinancialPolicyDefinitionRevisionIdV1: (value: FinancialPolicyDefinitionRevisionIdentityPreimageV1) => string;
 export declare const isFinancialPolicyDefinitionRevisionV1: (value: unknown) => value is FinancialPolicyDefinitionRevisionV1;

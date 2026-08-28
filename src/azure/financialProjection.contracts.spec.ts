@@ -117,6 +117,29 @@ const configurationRemoval: AvailableFinancialProjectionV1 = {
   reconciliation: { status: 'reconciled', difference: '0' },
 };
 
+const quantityAndRate: AvailableFinancialProjectionV1 = {
+  ...common,
+  scenarioId: 'storage:cool-tier',
+  operationKind: 'replace-quantity-and-rate',
+  status: 'available',
+  baselineId: `sha256:${'4'.repeat(64)}`,
+  appliedComponentTargets: [
+    {
+      componentId: common.affectedComponentIds[0],
+      targetAmount: '36',
+      targetConfigurationId: 'azure-storage-tier:cool',
+      targetEvidenceRefIds: [`sha256:${'6'.repeat(64)}`] as [string],
+      targetQuantity: { amount: '120', unit: 'gb-month' },
+      targetRate: { amount: '0.3', currencyCode: 'AUD', quantityUnit: 'gb-month' },
+    },
+  ],
+  projectionId: `sha256:${'9'.repeat(64)}`,
+  current: { total: '60', affected: '60', unchanged: '0' },
+  target: { total: '36', affected: '36', unchanged: '0' },
+  change: { delta: '-24', savings: '24', increase: '0' },
+  reconciliation: { status: 'reconciled', difference: '0' },
+};
+
 const invalidUnavailable: UnavailableFinancialProjectionV1 = {
   ...unavailable,
   // @ts-expect-error unavailable projection cannot publish partial money.
@@ -129,7 +152,7 @@ const invalidUnavailableTargetVector: UnavailableFinancialProjectionV1 = {
   appliedComponentTargets: available.appliedComponentTargets,
 };
 
-const envelopes: FinancialProjectionEnvelopeV1[] = [available, unavailable, commitment, configurationRemoval];
+const envelopes: FinancialProjectionEnvelopeV1[] = [available, unavailable, commitment, configurationRemoval, quantityAndRate];
 void invalidUnavailable;
 void invalidUnavailableTargetVector;
 void envelopes;

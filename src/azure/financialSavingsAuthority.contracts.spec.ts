@@ -1,4 +1,8 @@
-import type { FinancialSavingsAuthorityV1, FinancialSavingsDenominatorIdentityPreimageV1 } from '../index.js';
+import type {
+  FinancialSavingsAuthorityV1,
+  FinancialSavingsDenominatorIdentityPreimageV1,
+  FinancialSavingsResourceProjectionV1,
+} from '../index.js';
 
 const unavailableAuthority: FinancialSavingsAuthorityV1 = {
   schemaVersion: 1,
@@ -36,6 +40,7 @@ const availableAuthority: FinancialSavingsAuthorityV1 = {
       activations: [
         {
           activationId: `sha256:${'5'.repeat(64)}`,
+          scenarioId: 'recommendation-1',
           recommendationId: 'recommendation-1',
           projectionId: `sha256:${'6'.repeat(64)}`,
           lifecycleState: 'Active',
@@ -52,6 +57,7 @@ const availableAuthority: FinancialSavingsAuthorityV1 = {
           allocationId: `sha256:${'7'.repeat(64)}`,
           ownerScopeId: '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm-1',
           billableComponentIds: [`sha256:${'8'.repeat(64)}`],
+          scenarioId: 'recommendation-1',
           recommendationId: 'recommendation-1',
           baselineId: `sha256:${'9'.repeat(64)}`,
           projectionId: `sha256:${'6'.repeat(64)}`,
@@ -68,9 +74,49 @@ const availableAuthority: FinancialSavingsAuthorityV1 = {
           savingsMinorUnits: 1234,
         },
       ],
+      recommendationContributions: [
+        {
+          ownerScopeId: '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm-1',
+          recommendationId: 'recommendation-1',
+          allocationIds: [`sha256:${'7'.repeat(64)}`],
+          savingsMinorUnits: 1234,
+        },
+      ],
       aggregate: { allocationIds: [`sha256:${'7'.repeat(64)}`], savingsMinorUnits: 1234 },
     },
   ],
+};
+
+const partialAuthority: FinancialSavingsAuthorityV1 = {
+  ...availableAuthority,
+  coordinates: availableAuthority.coordinates.map(coordinate =>
+    coordinate.status === 'available'
+      ? {
+          ...coordinate,
+          status: 'partial' as const,
+          scenarioCoverage: {
+            ...coordinate.scenarioCoverage,
+            status: 'partial' as const,
+            scenarioIds: [...coordinate.scenarioCoverage.scenarioIds, 'recommendation-without-evidence'],
+          },
+          activations: [
+            ...coordinate.activations,
+            {
+              activationId: `sha256:${'d'.repeat(64)}`,
+              scenarioId: 'recommendation-without-evidence',
+              recommendationId: 'recommendation-without-evidence',
+              lifecycleState: 'Active' as const,
+              lifecycleVersion: '2026-08-24T00:00:00.000Z',
+              lifecycleEvidenceRefId: `sha256:${'e'.repeat(64)}`,
+              result: 'unavailable' as const,
+              reason: 'projection-unavailable' as const,
+              evaluatedAt: '2026-08-24T00:00:00.000Z',
+              policyVersion: 'financial-savings-activation/v1' as const,
+            },
+          ],
+        }
+      : coordinate
+  ) as FinancialSavingsAuthorityV1['coordinates'],
 };
 
 const invalidAuthority: FinancialSavingsAuthorityV1 = {
@@ -88,6 +134,7 @@ const invalidAuthority: FinancialSavingsAuthorityV1 = {
 
 void unavailableAuthority;
 void availableAuthority;
+void partialAuthority;
 void invalidAuthority;
 
 const denominatorIdentity: FinancialSavingsDenominatorIdentityPreimageV1 = {
@@ -98,3 +145,43 @@ const denominatorIdentity: FinancialSavingsDenominatorIdentityPreimageV1 = {
   currencyCode: 'AUD',
 };
 void denominatorIdentity;
+
+const resourceProjection: FinancialSavingsResourceProjectionV1 = {
+  contractVersion: 'financial-savings-resource-projection/v1',
+  savingsAuthorityId: availableAuthority.savingsAuthorityId,
+  financialAuthorityId: availableAuthority.financialAuthorityId,
+  artifactGeneration: availableAuthority.artifactGeneration,
+  scopeId: '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm-1',
+  coordinates: [
+    {
+      status: 'available',
+      coordinateId: `sha256:${'3'.repeat(64)}`,
+      currentAggregateBaselineId: `sha256:${'4'.repeat(64)}`,
+      accountingCurrencyCode: 'AUD',
+      minorUnitScale: 2,
+      roundingMode: 'half-away-from-zero',
+      resourceContribution: availableAuthority.coordinates[0].status === 'available'
+        ? availableAuthority.coordinates[0].resourceContributions[0]
+        : undefined,
+      recommendationContributions:
+        availableAuthority.coordinates[0].status === 'available'
+          ? availableAuthority.coordinates[0].recommendationContributions
+          : [],
+    },
+  ],
+};
+void resourceProjection;
+
+const partialResourceProjection: FinancialSavingsResourceProjectionV1 = {
+  ...resourceProjection,
+  coordinates: [
+    resourceProjection.coordinates[0].status === 'available'
+      ? {
+          ...resourceProjection.coordinates[0],
+          status: 'partial',
+          unavailableScenarioIds: ['recommendation-without-evidence'],
+        }
+      : resourceProjection.coordinates[0],
+  ],
+};
+void partialResourceProjection;

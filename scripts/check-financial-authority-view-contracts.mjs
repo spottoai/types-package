@@ -1,12 +1,14 @@
 import assert from 'node:assert/strict';
 
 import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
   canonicalizeFinancialEvidenceAssessmentIdentityV1,
   canonicalizeFinancialEvidenceBundleIdentityV1,
   canonicalizeFinancialProjectionIdentityV1,
   canonicalizeFinancialScopeBaselineIdentityV2,
   createFinancialAuthorityCoordinateIdV1,
   createFinancialAuthorityViewIdV1,
+  createFinancialChargeCompositionV1,
   createFinancialDisplayRollupIdV1,
   createFinancialEligibilityAssessmentIdV1,
   createFinancialSavingsActivationIdV1,
@@ -171,7 +173,7 @@ const ownerIdentity = {
   baselineKind: 'owner',
   evidenceBundleId: bundle.bundleId,
   accountingCurrency: { currencyCode: 'AUD', sourceCurrencyCode: 'AUD', evidenceRefIds: [evidenceReference.evidenceRefId] },
-  chargeInclusionPolicyRef: { policyId: 'azure-current-cost/v1', policyDigest: hash('charge-policy') },
+  chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
   components: [
     {
       componentId: hash('vm-component'),
@@ -248,6 +250,25 @@ const aggregate = {
   total: { amount: '610.85', currencyCode: 'AUD' },
   reconciliation: { status: 'reconciled', memberTotal: '600.85', residualTotal: '10', difference: '0' },
 };
+const chargeCompositionFor = baseline =>
+  createFinancialChargeCompositionV1({
+    baselineId: baseline.baselineId,
+    ownerScopeId: baseline.scopeId,
+    period: baseline.period,
+    costBasis: baseline.costBasis,
+    estimateLens: baseline.estimateLens,
+    accountingCurrencyCode: baseline.total.currencyCode,
+    sourceTotal: baseline.total.amount,
+    components: baseline.components.map(component => ({
+      componentId: component.componentId,
+      chargeSource: 'azure-native',
+      chargeRecurrence: 'usage-based',
+      chargeClassification: component.chargeClassification,
+      amount: component.amount,
+      evidenceRefIds: component.evidenceRefIds,
+    })),
+    algorithmVersion: 'financial-charge-composition/fixture-v1',
+  });
 const presentationFor = baseline => {
   const component = baseline.components[0];
   const descriptor = {
@@ -283,6 +304,7 @@ const coordinateIdentity = {
   ownerBaselines: [owner],
   residualBaseline: residual,
   aggregateBaseline: aggregate,
+  chargeCompositions: [chargeCompositionFor(owner), chargeCompositionFor(residual)],
   ...presentationFor(owner),
   projections: [],
 };
@@ -331,6 +353,7 @@ const coordinateFor = (estimateLens, ownerAmount, ownerRate, residualAmount) => 
     ownerBaselines: [nextOwner],
     residualBaseline: nextResidual,
     aggregateBaseline: nextAggregate,
+    chargeCompositions: [chargeCompositionFor(nextOwner), chargeCompositionFor(nextResidual)],
     ...presentationFor(nextOwner),
     projections: [],
   };
@@ -669,6 +692,48 @@ const projectedAuthority = {
   authorityId: createFinancialAuthorityViewIdV1(projectedAuthorityIdentity),
 };
 assert.equal(isFinancialAuthorityViewV1(projectedAuthority), true, 'authority with one exact projection is valid');
+const quantityAndRateProjectionIdentity = {
+  ...projectionIdentity,
+  scenarioId: 'recommendation-quantity-and-rate',
+  operationKind: 'replace-quantity-and-rate',
+  targetPeriodConvention: 'same-period-quantity',
+  appliedComponentTargets: [
+    {
+      componentId: actualCoordinate.ownerBaselines[0].components[0].componentId,
+      targetAmount: '400',
+      targetConfigurationId: 'azure-resource-optimization:target-tier',
+      targetEvidenceRefIds: [retailRateEvidenceReference.evidenceRefId],
+      targetQuantity: { amount: '1000', unit: '1 Hour' },
+      targetRate: { amount: '0.4', currencyCode: 'AUD', quantityUnit: '1 Hour' },
+    },
+  ],
+};
+const quantityAndRateProjection = {
+  ...quantityAndRateProjectionIdentity,
+  status: 'available',
+  projectionId: hash(canonicalizeFinancialProjectionIdentityV1(quantityAndRateProjectionIdentity)),
+  current: { total: '500', affected: '500', unchanged: '0' },
+  target: { total: '400', affected: '400', unchanged: '0' },
+  change: { delta: '-100', savings: '100', increase: '0' },
+  reconciliation: { status: 'reconciled', difference: '0' },
+};
+const quantityAndRateCoordinateIdentity = { ...actualCoordinateWithoutId, projections: [quantityAndRateProjection] };
+const quantityAndRateCoordinate = {
+  ...quantityAndRateCoordinateIdentity,
+  coordinateId: createFinancialAuthorityCoordinateIdV1(quantityAndRateCoordinateIdentity),
+};
+const quantityAndRateAuthorityIdentity = {
+  ...authorityIdentity,
+  coordinates: [quantityAndRateCoordinate, combinedCoordinate, estimatedCoordinate],
+};
+assert.equal(
+  isFinancialAuthorityViewV1({
+    ...quantityAndRateAuthorityIdentity,
+    authorityId: createFinancialAuthorityViewIdV1(quantityAndRateAuthorityIdentity),
+  }),
+  true,
+  'authority accepts an exact quantity-and-rate projection replayed from target evidence'
+);
 const normalizedCommitmentIdentity = {
   ...projectionIdentity,
   scenarioId: 'reservation:normalized-month',
@@ -822,14 +887,13 @@ assert.equal(
   false,
   'projection current amounts must be recomputed from the referenced baseline components'
 );
-assert.equal(
-  isFinancialAuthorityViewV1(
+assert.throws(
+  () =>
     mutateProjectedAuthority(changedProjection => {
       changedProjection.appliedComponentTargets[0].sourceQuantity.amount = '799';
-    })
-  ),
-  false,
-  'projection applied inputs must match and replay against the referenced baseline component'
+    }),
+  /Invalid FinancialProjectionIdentityPreimageV1/,
+  'projection applied inputs must first replay to their declared target amount'
 );
 assert.equal(
   isFinancialAuthorityViewV1(
@@ -842,6 +906,7 @@ assert.equal(
 );
 
 const activationIdentity = {
+  scenarioId: 'recommendation-1',
   recommendationId: 'recommendation-1',
   projectionId: projection.projectionId,
   lifecycleState: 'Active',
@@ -859,6 +924,7 @@ const activation = {
 const allocationIdentity = {
   ownerScopeId: vmId,
   billableComponentIds: [...projection.affectedComponentIds],
+  scenarioId: 'recommendation-1',
   recommendationId: 'recommendation-1',
   baselineId: projection.baselineId,
   projectionId: projection.projectionId,
@@ -901,6 +967,14 @@ const availableSavingsIdentity = {
           activations: [activation],
           allocations: [allocation],
           resourceContributions: [{ ownerScopeId: vmId, allocationIds: [allocation.allocationId], savingsMinorUnits: 10_000 }],
+          recommendationContributions: [
+            {
+              ownerScopeId: vmId,
+              recommendationId: 'recommendation-1',
+              allocationIds: [allocation.allocationId],
+              savingsMinorUnits: 10_000,
+            },
+          ],
           aggregate: { allocationIds: [allocation.allocationId], savingsMinorUnits: 10_000 },
         }
       : {
@@ -933,6 +1007,7 @@ const overlapAuthorityIdentity = { ...projectedAuthorityIdentity, coordinates: [
 const overlapAuthority = { ...overlapAuthorityIdentity, authorityId: createFinancialAuthorityViewIdV1(overlapAuthorityIdentity) };
 const overlappingActivationIdentity = {
   ...activationIdentity,
+  scenarioId: 'recommendation-2',
   recommendationId: 'recommendation-2',
   projectionId: overlappingProjection.projectionId,
 };
@@ -942,6 +1017,7 @@ const overlappingActivation = {
 };
 const overlappingAllocationIdentity = {
   ...allocationIdentity,
+  scenarioId: 'recommendation-2',
   recommendationId: 'recommendation-2',
   projectionId: overlappingProjection.projectionId,
   activationId: overlappingActivation.activationId,
@@ -966,6 +1042,20 @@ const overlappingSavingsIdentity = {
               ownerScopeId: vmId,
               allocationIds: [allocation.allocationId, overlappingAllocation.allocationId],
               savingsMinorUnits: 20_000,
+            },
+          ],
+          recommendationContributions: [
+            {
+              ownerScopeId: vmId,
+              recommendationId: 'recommendation-1',
+              allocationIds: [allocation.allocationId],
+              savingsMinorUnits: 10_000,
+            },
+            {
+              ownerScopeId: vmId,
+              recommendationId: 'recommendation-2',
+              allocationIds: [overlappingAllocation.allocationId],
+              savingsMinorUnits: 10_000,
             },
           ],
           aggregate: { allocationIds: [allocation.allocationId, overlappingAllocation.allocationId], savingsMinorUnits: 20_000 },
@@ -1110,6 +1200,14 @@ const mappedSavingsIdentity = {
           allocations: [mappedAllocation],
           resourceContributions: [
             { ownerScopeId: vmId, allocationIds: [mappedAllocation.allocationId], savingsMinorUnits: mappedAllocation.savingsMinorUnits },
+          ],
+          recommendationContributions: [
+            {
+              ownerScopeId: vmId,
+              recommendationId: mappedAllocation.recommendationId,
+              allocationIds: [mappedAllocation.allocationId],
+              savingsMinorUnits: mappedAllocation.savingsMinorUnits,
+            },
           ],
           aggregate: { allocationIds: [mappedAllocation.allocationId], savingsMinorUnits: mappedAllocation.savingsMinorUnits },
         }

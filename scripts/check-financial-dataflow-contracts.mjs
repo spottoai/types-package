@@ -7,12 +7,15 @@ import { runFinancialDataflowContractNegativeChecks } from './check-financial-da
 import { validateCoreFinancialDataflowCaseAgainstTypesV1 } from './financial-dataflow-core-types-adapter.mjs';
 
 import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
+  AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1,
   FINANCIAL_ANALYTICS_INPUT_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_CURRENT_POINTER_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_JOB_REQUEST_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_PROJECTION_CONTRACT_VERSION_V1,
   FINANCIAL_CURRENT_SPEND_COMPOSITION_CONTRACT_VERSION_V1,
   FINANCIAL_POLICY_ACTION_ATTEMPT_CONTRACT_VERSION_V1,
+  FINANCIAL_POLICY_DEFINITION_COMMAND_CONTRACT_VERSION_V1,
   FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1,
   FINANCIAL_POLICY_EVALUATION_CONTRACT_VERSION_V1,
   FINANCIAL_POLICY_READ_PROJECTION_CONTRACT_VERSION_V1,
@@ -21,6 +24,7 @@ import {
   canonicalizeFinancialScopeBaselineIdentityV2,
   createCurrentSpendCompositionIdV1,
   createCurrentSpendMembershipDigestV1,
+  createFinancialChargeCompositionV1,
   createFinancialAnalyticsInputIdV1,
   createFinancialAnalyticsCurrentPointerDigestV1,
   createFinancialAnalyticsJobRequestIdV1,
@@ -44,12 +48,14 @@ import {
   isFinancialBaselinePeriodV2,
   isFinancialPolicyActionAttemptCompatibleV1,
   isFinancialPolicyActionAttemptV1,
+  isFinancialPolicyDefinitionCommandV1,
   isFinancialPolicyDefinitionRevisionV1,
   isFinancialPolicyEvaluationCompatibleV1,
   isFinancialPolicyEvaluationReadProjectionCompatibleV1,
   isFinancialPolicyEvaluationReadProjectionV1,
   isFinancialPolicyEvaluationV1,
   isFinancialDataflowValueWithinLimitsV1,
+  isFinancialDataflowCoordinateV1,
   parseFinancialDataflowJsonV1,
   toCanonicalEstimateLensV1,
   toLegacyEstimateLensV1,
@@ -111,6 +117,17 @@ assert.equal(toLegacyEstimateLensV1('include-estimates'), 'actual-plus-estimated
 assert.equal(toLegacyEstimateLensV1('estimates-only'), 'estimates-only');
 
 const hash = character => `sha256:${character.repeat(64)}`;
+const allChargeSelection = amount => ({
+  status: 'available',
+  includedAmount: amount,
+  excludedAmount: '0',
+  withheldAmount: '0',
+  forecastEligibleAmount: amount,
+  oneTimeAmount: '0',
+  unknownRecurrenceAmount: '0',
+  forecastStatus: 'available',
+  currencyCode: 'AUD',
+});
 assert.throws(() => parseFinancialDataflowJsonV1('\u00a0{}'), SyntaxError, 'Only RFC 8259 JSON whitespace is accepted.');
 assert.equal(
   isFinancialDataflowValueWithinLimitsV1({ payload: 'x'.repeat(5_242_881) }),
@@ -139,6 +156,11 @@ const period = {
   ],
   gaps: [],
 };
+const coordinatePeriod = value => ({
+  windowKind: value.windowKind,
+  requested: value.requested,
+  ...(value.providerBillingPeriodId === undefined ? {} : { providerBillingPeriodId: value.providerBillingPeriodId }),
+});
 assert.equal(isFinancialBaselinePeriodV2({ ...period, windowKind: 'daily' }), false, 'A daily baseline period must span exactly one day.');
 assert.equal(
   isFinancialBaselinePeriodV2({
@@ -196,22 +218,29 @@ assert.equal(
 const coordinate = {
   companyId: 'fixture-company:alpha',
   provider: 'azure',
-  providerAccountRefs: ['fixture-subscription:aud'],
+  providerAccountRefs: ['azure-subscription:fixture-subscription:aud'],
   scope: {
     kind: 'subscription',
-    scopeId: 'fixture-subscription:aud',
+    scopeId: 'azure-subscription:fixture-subscription:aud',
     scopeFingerprint: hash('3'),
   },
   periodRole: 'current-spend',
-  period,
+  period: coordinatePeriod(period),
   costBasis: 'billed',
-  estimateLens: 'include-estimates',
+  estimateLens: 'billing-only',
   requestedCurrencyCode: 'AUD',
   accountingCurrency: { status: 'resolved', currencyCode: 'AUD' },
+  chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
 };
+assert.equal(isFinancialDataflowCoordinateV1(coordinate), true, 'A coordinate carries only stable period identity.');
+assert.equal(
+  isFinancialDataflowCoordinateV1({ ...coordinate, period }),
+  false,
+  'Result-specific observed coverage and gaps cannot enter the stable coordinate identity.'
+);
 const members = [
-  { memberScopeId: 'fixture-resource:one', baselineId: hash('4'), status: 'included' },
-  { memberScopeId: 'fixture-resource:two', baselineId: hash('5'), status: 'included' },
+  { memberScopeId: 'fixture-resource:one', baselineId: hash('4'), chargeCompositionId: hash('d'), status: 'included' },
+  { memberScopeId: 'fixture-resource:two', baselineId: hash('5'), chargeCompositionId: hash('e'), status: 'included' },
 ];
 const compositionIdentity = {
   schemaVersion: 1,
@@ -219,6 +248,7 @@ const compositionIdentity = {
   coordinate,
   members,
   amount: { status: 'available', amount: '348', currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection('348'),
   membershipDigest: createCurrentSpendMembershipDigestV1(members),
   algorithmVersion: 'current-spend-composition/v1',
 };
@@ -259,7 +289,7 @@ const createOwnerBaseline = ({ scopeId, amount, componentCharacter }) => {
     baselineKind: 'owner',
     evidenceBundleId: hash('b'),
     accountingCurrency: { currencyCode: 'AUD', sourceCurrencyCode: 'AUD', evidenceRefIds: [evidenceRefId] },
-    chargeInclusionPolicyRef: { policyId: 'fixture-charge-policy/v1', policyDigest: hash('c') },
+    chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
     components: [
       {
         componentId: hash(componentCharacter === 'd' ? '7' : '8'),
@@ -291,9 +321,30 @@ const reconciledBaselines = [
   createOwnerBaseline({ scopeId: 'fixture-resource:reconciled-one', amount: '200', componentCharacter: 'd' }),
   createOwnerBaseline({ scopeId: 'fixture-resource:reconciled-two', amount: '148', componentCharacter: 'e' }),
 ];
+const createAllChargeComposition = baseline =>
+  createFinancialChargeCompositionV1({
+    baselineId: baseline.baselineId,
+    ownerScopeId: baseline.scopeId,
+    period: baseline.period,
+    costBasis: baseline.costBasis,
+    estimateLens: baseline.estimateLens,
+    accountingCurrencyCode: baseline.total.currencyCode,
+    sourceTotal: baseline.total.amount,
+    components: baseline.components.map(component => ({
+      componentId: component.componentId,
+      chargeSource: 'azure-native',
+      chargeRecurrence: 'usage-based',
+      chargeClassification: component.chargeClassification,
+      amount: component.amount,
+      evidenceRefIds: component.evidenceRefIds,
+    })),
+    algorithmVersion: 'financial-charge-composition/fixture-v1',
+  });
+const reconciledChargeCompositions = reconciledBaselines.map(createAllChargeComposition);
 const reconciledMembers = reconciledBaselines.map(baseline => ({
   memberScopeId: baseline.scopeId,
   baselineId: baseline.baselineId,
+  chargeCompositionId: reconciledChargeCompositions.find(candidate => candidate.baselineId === baseline.baselineId).chargeCompositionId,
   status: 'included',
 }));
 const reconciledCompositionIdentity = {
@@ -305,7 +356,7 @@ const reconciledComposition = {
   ...reconciledCompositionIdentity,
   compositionId: createCurrentSpendCompositionIdV1(reconciledCompositionIdentity),
 };
-assert.equal(isCurrentSpendCompositionCompatibleV1(reconciledComposition, reconciledBaselines), true);
+assert.equal(isCurrentSpendCompositionCompatibleV1(reconciledComposition, reconciledBaselines, reconciledChargeCompositions), true);
 const unavailableBaseline = {
   schemaVersion: 2,
   contractVersion: 'financial-scope-baseline/v2',
@@ -330,13 +381,17 @@ const sourceBoundPartialIdentity = {
   ...compositionIdentity,
   members: sourceBoundPartialMembers,
   amount: { status: 'partial', knownAmount: '200', currencyCode: 'AUD', reasonCodes: ['evidence-not-produced'] },
+  chargeSelection: allChargeSelection('200'),
   membershipDigest: createCurrentSpendMembershipDigestV1(sourceBoundPartialMembers),
 };
 const sourceBoundPartial = {
   ...sourceBoundPartialIdentity,
   compositionId: createCurrentSpendCompositionIdV1(sourceBoundPartialIdentity),
 };
-assert.equal(isCurrentSpendCompositionCompatibleV1(sourceBoundPartial, [reconciledBaselines[0], unavailableBaseline]), true);
+assert.equal(
+  isCurrentSpendCompositionCompatibleV1(sourceBoundPartial, [reconciledBaselines[0], unavailableBaseline], [reconciledChargeCompositions[0]]),
+  true
+);
 const fabricatedReasonIdentity = {
   ...sourceBoundPartialIdentity,
   amount: { ...sourceBoundPartialIdentity.amount, reasonCodes: ['coverage-incomplete'] },
@@ -345,28 +400,30 @@ assert.equal(
   isCurrentSpendCompositionCompatibleV1({ ...fabricatedReasonIdentity, compositionId: createCurrentSpendCompositionIdV1(fabricatedReasonIdentity) }, [
     reconciledBaselines[0],
     unavailableBaseline,
-  ]),
+  ], [reconciledChargeCompositions[0]]),
   false,
   'Composition availability reasons must be derived from the exact member baseline states.'
 );
 const fabricatedCompositionIdentity = {
   ...reconciledCompositionIdentity,
   amount: { status: 'available', amount: '999999', currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection('999999'),
 };
 const fabricatedComposition = {
   ...fabricatedCompositionIdentity,
   compositionId: createCurrentSpendCompositionIdV1(fabricatedCompositionIdentity),
 };
 assert.equal(
-  isCurrentSpendCompositionCompatibleV1(fabricatedComposition, reconciledBaselines),
+  isCurrentSpendCompositionCompatibleV1(fabricatedComposition, reconciledBaselines, reconciledChargeCompositions),
   false,
   'Composition money must equal the exact sum of its referenced V2 baselines.'
 );
 
 const zeroIdentity = {
   ...compositionIdentity,
-  members: [{ memberScopeId: 'fixture-resource:zero', baselineId: hash('6'), status: 'included' }],
+  members: [{ memberScopeId: 'fixture-resource:zero', baselineId: hash('6'), chargeCompositionId: hash('f'), status: 'included' }],
   amount: { status: 'available', amount: '0', currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection('0'),
 };
 zeroIdentity.membershipDigest = createCurrentSpendMembershipDigestV1(zeroIdentity.members);
 assert.equal(isCurrentSpendCompositionV1({ ...zeroIdentity, compositionId: createCurrentSpendCompositionIdV1(zeroIdentity) }), true);
@@ -374,16 +431,17 @@ assert.equal(isCurrentSpendCompositionV1({ ...zeroIdentity, compositionId: creat
 const partialIdentity = {
   ...compositionIdentity,
   members: [
-    { memberScopeId: 'fixture-resource:one', baselineId: hash('4'), status: 'included' },
+    { memberScopeId: 'fixture-resource:one', baselineId: hash('4'), chargeCompositionId: hash('d'), status: 'included' },
     { memberScopeId: 'fixture-resource:missing', status: 'unavailable', reasonCode: 'evidence-not-produced' },
   ],
   amount: { status: 'partial', knownAmount: '-5', currencyCode: 'AUD', reasonCodes: ['evidence-not-produced'] },
+  chargeSelection: allChargeSelection('-5'),
 };
 partialIdentity.membershipDigest = createCurrentSpendMembershipDigestV1(partialIdentity.members);
 assert.equal(isCurrentSpendCompositionV1({ ...partialIdentity, compositionId: createCurrentSpendCompositionIdV1(partialIdentity) }), true);
 
 const historyPeriod = {
-  windowKind: 'rolling-30-days',
+  windowKind: 'analytics-history',
   requested: { startDate: '2026-07-02', endDateExclusive: '2026-08-01', dateBasis: 'company-local', timeZone: 'Pacific/Auckland' },
   observed: { startDate: '2026-07-02', endDateExclusive: '2026-08-01', dateBasis: 'company-local', timeZone: 'Pacific/Auckland' },
   coverage: [
@@ -399,12 +457,13 @@ const historyPeriod = {
 const inputIdentity = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_INPUT_CONTRACT_VERSION_V1,
-  coordinate: { ...coordinate, periodRole: 'analytics-input', period: historyPeriod },
+  coordinate: { ...coordinate, periodRole: 'analytics-input', period: coordinatePeriod(historyPeriod) },
   granularity: 'daily',
   producerGenerationId: 'fixture-generation:analytics-input:one',
+  referenceCompositions: [composition],
   points: [
-    { date: '2026-07-30', compositionId: hash('8'), status: 'available', amount: '-20' },
-    { date: '2026-07-31', compositionId: hash('9'), status: 'partial', knownAmount: '12', reasonCodes: ['evidence-not-produced'] },
+    { date: '2026-07-30', compositionId: hash('8'), status: 'available', amount: '-20', forecastEligibleAmount: '-20', oneTimeAmount: '0', unknownRecurrenceAmount: '0', forecastStatus: 'available' },
+    { date: '2026-07-31', compositionId: hash('9'), status: 'partial', knownAmount: '12', reasonCodes: ['evidence-not-produced'], forecastEligibleAmount: '12', oneTimeAmount: '0', unknownRecurrenceAmount: '0', forecastStatus: 'available' },
   ],
   gaps: [{ startDate: '2026-07-02', endDateExclusive: '2026-07-30', reasonCodes: ['evidence-not-produced'] }],
   coverage: { availableDayCount: 1, partialDayCount: 1, unavailableDayCount: 28 },
@@ -426,9 +485,12 @@ const dailyPeriod = {
 assert.equal(isFinancialBaselinePeriodV2(dailyPeriod), true, 'Daily is a first-class baseline window, not only an analytics label.');
 const dailyCompositionIdentity = {
   ...compositionIdentity,
-  coordinate: { ...coordinate, period: dailyPeriod },
-  members: [{ memberScopeId: 'fixture-resource:daily', baselineId: hash('8'), status: 'included' }],
+  coordinate: { ...coordinate, period: coordinatePeriod(dailyPeriod) },
+  members: [
+    { memberScopeId: 'fixture-resource:daily', baselineId: hash('8'), chargeCompositionId: hash('1'), status: 'included' },
+  ],
   amount: { status: 'available', amount: '-20', currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection('-20'),
 };
 dailyCompositionIdentity.membershipDigest = createCurrentSpendMembershipDigestV1(dailyCompositionIdentity.members);
 const dailyComposition = {
@@ -450,14 +512,15 @@ const partialDailyPeriod = {
   gaps: [],
 };
 const partialDailyMembers = [
-  { memberScopeId: 'fixture-resource:daily-known', baselineId: hash('a'), status: 'included' },
+  { memberScopeId: 'fixture-resource:daily-known', baselineId: hash('a'), chargeCompositionId: hash('2'), status: 'included' },
   { memberScopeId: 'fixture-resource:daily-missing', status: 'unavailable', reasonCode: 'evidence-not-produced' },
 ];
 const partialDailyCompositionIdentity = {
   ...compositionIdentity,
-  coordinate: { ...coordinate, period: partialDailyPeriod },
+  coordinate: { ...coordinate, period: coordinatePeriod(partialDailyPeriod) },
   members: partialDailyMembers,
   amount: { status: 'partial', knownAmount: '12', currencyCode: 'AUD', reasonCodes: ['evidence-not-produced'] },
+  chargeSelection: allChargeSelection('12'),
   membershipDigest: createCurrentSpendMembershipDigestV1(partialDailyMembers),
 };
 const partialDailyComposition = {
@@ -465,13 +528,26 @@ const partialDailyComposition = {
   compositionId: createCurrentSpendCompositionIdV1(partialDailyCompositionIdentity),
 };
 inputIdentity.points = [
-  { date: '2026-07-30', compositionId: dailyComposition.compositionId, status: 'available', amount: '-20' },
+  {
+    date: '2026-07-30',
+    compositionId: dailyComposition.compositionId,
+    status: 'available',
+    amount: '-20',
+    forecastEligibleAmount: '-20',
+    oneTimeAmount: '0',
+    unknownRecurrenceAmount: '0',
+    forecastStatus: 'available',
+  },
   {
     date: '2026-07-31',
     compositionId: partialDailyComposition.compositionId,
     status: 'partial',
     knownAmount: '12',
     reasonCodes: ['evidence-not-produced'],
+    forecastEligibleAmount: '12',
+    oneTimeAmount: '0',
+    unknownRecurrenceAmount: '0',
+    forecastStatus: 'available',
   },
 ];
 const input = { ...inputIdentity, analyticsInputId: createFinancialAnalyticsInputIdV1(inputIdentity) };
@@ -493,6 +569,7 @@ assert.equal(
   'Input identity must canonicalize daily point order.'
 );
 
+const targetCoordinate = { ...coordinate, periodRole: 'projection-target' };
 const jobRequestIdentity = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_JOB_REQUEST_CONTRACT_VERSION_V1,
@@ -501,12 +578,18 @@ const jobRequestIdentity = {
   analyticsInputId: input.analyticsInputId,
   inputGenerationId: input.producerGenerationId,
   inputArtifactDigest: hash('c'),
-  requestedResultKinds: ['forecast'],
+  requestedOutputs: [
+    {
+      resultKind: 'forecast',
+      targetCoordinate,
+      currentSpendCompositionId: composition.compositionId,
+    },
+  ],
+  requestedAt: '2026-08-10T00:00:00.000Z',
 };
 const jobRequest = {
   ...jobRequestIdentity,
   requestId: createFinancialAnalyticsJobRequestIdV1(jobRequestIdentity),
-  requestedAt: '2026-08-10T00:00:00.000Z',
 };
 assert.equal(isFinancialAnalyticsJobRequestV1(jobRequest), true);
 assert.equal(isFinancialAnalyticsJobRequestCompatibleV1(jobRequest, input, jobRequest.inputArtifactDigest), true);
@@ -514,10 +597,14 @@ assert.equal(isFinancialAnalyticsJobRequestCompatibleV1(jobRequest, input, hash(
 assert.equal(
   jobRequest.requestId,
   createFinancialAnalyticsJobRequestIdV1(jobRequestIdentity),
-  'Retries must reuse the same request identity rather than include enqueue time.'
+  'Retries must reuse the same request identity, including the fixed evaluation instant.'
+);
+assert.notEqual(
+  jobRequest.requestId,
+  createFinancialAnalyticsJobRequestIdV1({ ...jobRequestIdentity, requestedAt: '2026-08-10T00:01:00.000Z' }),
+  'A later evaluation instant must not collide with an earlier immutable analytics output generation.'
 );
 
-const targetCoordinate = { ...coordinate, periodRole: 'projection-target' };
 const unsupportedProjectionIdentity = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_PROJECTION_CONTRACT_VERSION_V1,
@@ -575,8 +662,9 @@ const comparisonPeriod = {
 };
 const comparisonCompositionIdentity = {
   ...compositionIdentity,
-  coordinate: { ...coordinate, periodRole: 'comparison', period: comparisonPeriod },
+  coordinate: { ...coordinate, periodRole: 'comparison', period: coordinatePeriod(comparisonPeriod) },
   amount: { status: 'available', amount: '300', currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection('300'),
 };
 const comparisonComposition = {
   ...comparisonCompositionIdentity,
@@ -605,7 +693,7 @@ const trend = { ...trendIdentity, analyticsProjectionId: createFinancialAnalytic
 assert.equal(isFinancialAnalyticsProjectionCompatibleV1(trend, input, composition, comparisonComposition), true);
 const incomparablePeriodCompositionIdentity = {
   ...comparisonCompositionIdentity,
-  coordinate: { ...comparisonCompositionIdentity.coordinate, period: dailyPeriod },
+  coordinate: { ...comparisonCompositionIdentity.coordinate, period: coordinatePeriod(dailyPeriod) },
 };
 const incomparablePeriodComposition = {
   ...incomparablePeriodCompositionIdentity,
@@ -638,11 +726,33 @@ assert.equal(
   'Trend money must reconcile to current minus comparison composition.'
 );
 
+const anomalyCompositionIdentity = {
+  ...compositionIdentity,
+  coordinate: {
+    ...coordinate,
+    period: coordinatePeriod({ ...historyPeriod, windowKind: 'rolling-30-days' }),
+  },
+};
+const anomalyComposition = {
+  ...anomalyCompositionIdentity,
+  compositionId: createCurrentSpendCompositionIdV1(anomalyCompositionIdentity),
+};
+const anomalyInputIdentity = {
+  ...inputIdentity,
+  producerGenerationId: 'fixture-generation:analytics-input:anomaly',
+  referenceCompositions: [anomalyComposition],
+};
+const anomalyInput = {
+  ...anomalyInputIdentity,
+  analyticsInputId: createFinancialAnalyticsInputIdV1(anomalyInputIdentity),
+};
+const anomalyTargetCoordinate = { ...anomalyComposition.coordinate, periodRole: 'projection-target' };
 const anomalyIdentity = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_PROJECTION_CONTRACT_VERSION_V1,
-  analyticsInputId: input.analyticsInputId,
-  coordinate: targetCoordinate,
+  analyticsInputId: anomalyInput.analyticsInputId,
+  currentSpendCompositionId: anomalyComposition.compositionId,
+  coordinate: anomalyTargetCoordinate,
   outputGenerationId: 'fixture-generation:analytics-output:anomaly',
   method: 'fixture-anomaly',
   algorithmVersion: 'anomaly/v1',
@@ -662,7 +772,7 @@ const anomalyIdentity = {
   },
 };
 const anomaly = { ...anomalyIdentity, analyticsProjectionId: createFinancialAnalyticsProjectionIdV1(anomalyIdentity) };
-assert.equal(isFinancialAnalyticsProjectionCompatibleV1(anomaly, input), true);
+assert.equal(isFinancialAnalyticsProjectionCompatibleV1(anomaly, anomalyInput, anomalyComposition), true);
 const fabricatedAnomalyIdentity = {
   ...anomalyIdentity,
   result: {
@@ -679,7 +789,7 @@ const fabricatedAnomaly = {
   analyticsProjectionId: createFinancialAnalyticsProjectionIdV1(fabricatedAnomalyIdentity),
 };
 assert.equal(
-  isFinancialAnalyticsProjectionCompatibleV1(fabricatedAnomaly, input),
+  isFinancialAnalyticsProjectionCompatibleV1(fabricatedAnomaly, anomalyInput, anomalyComposition),
   false,
   'Anomaly observed money must equal the bound daily analytics point.'
 );
@@ -688,6 +798,10 @@ const pointerIdentity = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_CURRENT_POINTER_CONTRACT_VERSION_V1,
   coordinateId: createFinancialDataflowCoordinateIdV1(targetCoordinate),
+  resultKind: 'forecast',
+  sourceRequestId: jobRequest.requestId,
+  sourceRequestedAt: jobRequest.requestedAt,
+  analyticsInputId: input.analyticsInputId,
   pointerRevision: 1,
   outputGenerationId: 'fixture-generation:analytics-output:one',
   analyticsProjectionId: forecast.analyticsProjectionId,
@@ -713,15 +827,18 @@ const definitionIdentity = {
   contractVersion: FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1,
   companyId: coordinate.companyId,
   definitionId: 'fixture-policy:budget',
+  displayName: 'Fixture budget',
   revision: '7',
   effectiveState: 'enabled',
   coordinateRequest: {
     provider: 'azure',
     providerAccountRefs: [...coordinate.providerAccountRefs],
-    scope: coordinate.scope,
-    period: { kind: 'calendar-month', timeZone: 'Pacific/Auckland' },
+    scope: { kind: coordinate.scope.kind, scopeId: coordinate.scope.scopeId },
+    scopeSelector: { kind: 'subscription', subscriptionIds: ['fixture-subscription:aud'] },
+    period: { kind: 'calendar-month', dateBasis: 'company-local', timeZone: 'Pacific/Auckland' },
     costBasis: coordinate.costBasis,
     estimateLens: coordinate.estimateLens,
+    chargeInclusionPolicyRef: coordinate.chargeInclusionPolicyRef,
     requiredAccountingCurrencyCode: 'AUD',
   },
   criteria: {
@@ -741,6 +858,32 @@ const definition = {
   policyDefinitionRevisionId: createFinancialPolicyDefinitionRevisionIdV1(definitionIdentity),
 };
 assert.equal(isFinancialPolicyDefinitionRevisionV1(definition), true);
+const validDefinitionCommand = {
+  schemaVersion: 1,
+  contractVersion: FINANCIAL_POLICY_DEFINITION_COMMAND_CONTRACT_VERSION_V1,
+  displayName: definitionIdentity.displayName,
+  effectiveState: definitionIdentity.effectiveState,
+  coordinateRequest: definitionIdentity.coordinateRequest,
+  criteria: definitionIdentity.criteria,
+  schedule: definitionIdentity.schedule,
+  destinationRefIds: definitionIdentity.destinationRefIds,
+};
+assert.equal(isFinancialPolicyDefinitionCommandV1(validDefinitionCommand), true);
+const invalidDefinitionCommand = { ...validDefinitionCommand, coordinateRequest: {} };
+assert.doesNotThrow(
+  () => isFinancialPolicyDefinitionCommandV1(invalidDefinitionCommand),
+  'Malformed commands must fail closed instead of throwing while deriving the revision ID.'
+);
+assert.equal(isFinancialPolicyDefinitionCommandV1(invalidDefinitionCommand), false);
+const forecastWithEstimatedCurrentSpendIdentity = {
+  ...definitionIdentity,
+  coordinateRequest: { ...definitionIdentity.coordinateRequest, estimateLens: 'include-estimates' },
+};
+assert.throws(
+  () => createFinancialPolicyDefinitionRevisionIdV1(forecastWithEstimatedCurrentSpendIdentity),
+  TypeError,
+  'Forecast policies must not add a remaining-period projection to current spend that already includes estimates.'
+);
 
 const evaluationIdentity = {
   schemaVersion: 1,
@@ -775,6 +918,22 @@ const evaluation = materializePolicyEvaluation(evaluationIdentity);
 const evaluationId = evaluation.evaluationId;
 assert.equal(isFinancialPolicyEvaluationV1(evaluation), true);
 assert.equal(isFinancialPolicyEvaluationCompatibleV1(evaluation, definition, composition, forecast), true);
+const excludingMarketplaceDefinitionIdentity = {
+  ...definitionIdentity,
+  coordinateRequest: {
+    ...definitionIdentity.coordinateRequest,
+    chargeInclusionPolicyRef: AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1.policyRef,
+  },
+};
+const excludingMarketplaceDefinition = {
+  ...excludingMarketplaceDefinitionIdentity,
+  policyDefinitionRevisionId: createFinancialPolicyDefinitionRevisionIdV1(excludingMarketplaceDefinitionIdentity),
+};
+assert.equal(
+  isFinancialPolicyEvaluationCompatibleV1(evaluation, excludingMarketplaceDefinition, composition, forecast),
+  false,
+  'Policy evaluation cannot cross charge-inclusion policy identities.'
+);
 
 const wrongKindUnavailableIdentity = {
   ...forecastIdentity,
@@ -840,6 +999,7 @@ const maximumScaleDecimal = `0.${'1'.repeat(126)}`;
 const maximumScaleCompositionIdentity = {
   ...compositionIdentity,
   amount: { status: 'available', amount: maximumScaleDecimal, currencyCode: 'AUD' },
+  chargeSelection: allChargeSelection(maximumScaleDecimal),
 };
 const maximumScaleComposition = {
   ...maximumScaleCompositionIdentity,
@@ -889,8 +1049,9 @@ assert.equal(
 );
 
 const unavailableMembers = [{ memberScopeId: 'fixture-resource:unavailable', status: 'unavailable', reasonCode: 'evidence-not-produced' }];
+const { chargeSelection: _availableChargeSelection, ...unavailableCompositionCommon } = compositionIdentity;
 const unavailableCompositionIdentity = {
-  ...compositionIdentity,
+  ...unavailableCompositionCommon,
   members: unavailableMembers,
   amount: { status: 'unavailable', reasonCodes: ['evidence-not-produced'] },
   membershipDigest: createCurrentSpendMembershipDigestV1(unavailableMembers),
@@ -915,24 +1076,40 @@ assert.equal(
 const anomalyDefinitionIdentity = {
   ...definitionIdentity,
   definitionId: 'fixture-policy:cost-anomaly',
+  coordinateRequest: {
+    ...definitionIdentity.coordinateRequest,
+    period: { kind: 'rolling-30-days', dateBasis: 'company-local', timeZone: 'Pacific/Auckland' },
+    estimateLens: 'billing-only',
+  },
   criteria: { kind: 'cost-anomaly', minimumDelta: '5' },
 };
 const anomalyDefinition = {
   ...anomalyDefinitionIdentity,
   policyDefinitionRevisionId: createFinancialPolicyDefinitionRevisionIdV1(anomalyDefinitionIdentity),
 };
+assert.throws(
+  () =>
+    createFinancialPolicyDefinitionRevisionIdV1({
+      ...anomalyDefinitionIdentity,
+      coordinateRequest: { ...anomalyDefinitionIdentity.coordinateRequest, estimateLens: 'include-estimates' },
+    }),
+  TypeError,
+  'Anomaly policies must compare authoritative billed daily spend rather than estimated rows.'
+);
 const anomalyEvaluationIdentity = {
   ...evaluationIdentity,
   policyDefinitionRevisionId: anomalyDefinition.policyDefinitionRevisionId,
   definitionId: anomalyDefinition.definitionId,
   definitionRevision: anomalyDefinition.revision,
+  coordinateId: createFinancialDataflowCoordinateIdV1(anomalyComposition.coordinate),
+  currentSpendCompositionId: anomalyComposition.compositionId,
   analyticsProjectionId: anomaly.analyticsProjectionId,
   signalKind: 'cost-anomaly',
   reasonCode: 'minimum-delta-matched',
   matchedThresholds: [{ thresholdKind: 'minimum-delta', configuredValue: '5' }],
 };
 const anomalyEvaluation = materializePolicyEvaluation(anomalyEvaluationIdentity);
-assert.equal(isFinancialPolicyEvaluationCompatibleV1(anomalyEvaluation, anomalyDefinition, composition, anomaly), true);
+assert.equal(isFinancialPolicyEvaluationCompatibleV1(anomalyEvaluation, anomalyDefinition, anomalyComposition, anomaly), true);
 
 const belowThresholdDefinitionIdentity = {
   ...anomalyDefinitionIdentity,
@@ -950,7 +1127,7 @@ const falseMatchedAnomalyEvaluation = materializePolicyEvaluation({
   matchedThresholds: [{ thresholdKind: 'minimum-delta', configuredValue: '6' }],
 });
 assert.equal(
-  isFinancialPolicyEvaluationCompatibleV1(falseMatchedAnomalyEvaluation, belowThresholdDefinition, composition, anomaly),
+  isFinancialPolicyEvaluationCompatibleV1(falseMatchedAnomalyEvaluation, belowThresholdDefinition, anomalyComposition, anomaly),
   false,
   'An anomaly below the configured exact threshold cannot be claimed as matched.'
 );
@@ -963,9 +1140,11 @@ const readProjection = {
   companyId: evaluation.companyId,
   definitionId: evaluation.definitionId,
   definitionRevision: evaluation.definitionRevision,
+  policyDefinitionRevisionId: evaluation.policyDefinitionRevisionId,
   coordinateId: evaluation.coordinateId,
   currentSpendCompositionId: evaluation.currentSpendCompositionId,
   analyticsProjectionId: evaluation.analyticsProjectionId,
+  analyticsProjection: forecast,
   signalKind: evaluation.signalKind,
   evaluatedAt: evaluation.evaluatedAt,
   result: evaluation.result,
@@ -973,8 +1152,20 @@ const readProjection = {
   matchedThresholds: evaluation.matchedThresholds,
 };
 assert.equal(isFinancialPolicyEvaluationReadProjectionV1(readProjection), true);
-assert.equal(isFinancialPolicyEvaluationReadProjectionCompatibleV1(readProjection, evaluation), true);
+assert.equal(isFinancialPolicyEvaluationReadProjectionCompatibleV1(readProjection, evaluation, forecast), true);
 assert.equal(Object.prototype.hasOwnProperty.call(readProjection, 'actionAuditId'), false);
+const readProjectionWithoutBoundAnalytics = { ...readProjection };
+delete readProjectionWithoutBoundAnalytics.analyticsProjection;
+assert.equal(
+  isFinancialPolicyEvaluationReadProjectionV1(readProjectionWithoutBoundAnalytics),
+  false,
+  'A read projection with an analytics projection ID must embed the exact immutable analytics evidence.'
+);
+assert.equal(
+  isFinancialPolicyEvaluationReadProjectionV1({ ...readProjection, analyticsProjection: wrongGenerationProjection }),
+  false,
+  'Embedded analytics evidence must match the analytics projection ID bound by the evaluation.'
+);
 
 const actionAttemptIdentity = {
   schemaVersion: 1,
@@ -1012,10 +1203,8 @@ runFinancialDataflowContractNegativeChecks({
   forecast,
   forecastIdentity,
   hash,
-  historyPeriod,
   input,
   partialIdentity,
-  period,
   targetCoordinate,
 });
 

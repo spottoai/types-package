@@ -1,12 +1,21 @@
 import { sha256Utf8 } from '../common/sha256';
+import type { FinancialDataflowCoordinateV1 } from './financialDataflow';
 import { isFinancialAnalyticsInputSeriesV1, isFinancialAnalyticsProjectionV1 } from './financialAnalyticsValidation';
 import {
   FINANCIAL_ANALYTICS_CURRENT_POINTER_CONTRACT_VERSION_V1,
+  FINANCIAL_ANALYTICS_BATCH_QUERY_CONTRACT_VERSION_V1,
+  FINANCIAL_ANALYTICS_BATCH_RESPONSE_CONTRACT_VERSION_V1,
   FINANCIAL_ANALYTICS_JOB_REQUEST_CONTRACT_VERSION_V1,
+  FINANCIAL_ANALYTICS_OUTPUT_MANIFEST_CONTRACT_VERSION_V1,
+  type FinancialAnalyticsBatchQueryV1,
+  type FinancialAnalyticsBatchResponseV1,
   type FinancialAnalyticsCurrentPointerIdentityPreimageV1,
   type FinancialAnalyticsCurrentPointerV1,
   type FinancialAnalyticsJobRequestIdentityPreimageV1,
   type FinancialAnalyticsJobRequestV1,
+  type FinancialAnalyticsOutputManifestIdentityPreimageV1,
+  type FinancialAnalyticsOutputManifestV1,
+  type FinancialAnalyticsRequestedOutputV1,
 } from './financialAnalyticsDelivery';
 import {
   canonicalizeFinancialDataflowJsonV1,
@@ -15,11 +24,51 @@ import {
   isFinancialDataflowHashV1,
   isFinancialDataflowIdentityV1,
   isFinancialDataflowIsoInstantV1,
+  isFinancialDataflowJsonGzipArtifactDescriptorV1,
   isFinancialDataflowRecordV1,
-  isFinancialDataflowSortedUniqueStringsV1,
+  isFinancialDataflowCoordinateV1,
 } from './financialDataflowValidation';
 
 const RESULT_KINDS = new Set(['forecast', 'trend', 'anomaly']);
+const MAX_REQUESTED_OUTPUTS = 16;
+const MAX_BATCH_QUERY_ITEMS = 200;
+
+const isRequestedOutput = (value: unknown): value is FinancialAnalyticsRequestedOutputV1 => {
+  if (
+    !isFinancialDataflowRecordV1(value) ||
+    !hasFinancialDataflowExactFieldsV1(
+      value,
+      ['resultKind', 'targetCoordinate'],
+      ['currentSpendCompositionId', 'comparisonSpendCompositionId']
+    ) ||
+    !RESULT_KINDS.has(String(value.resultKind)) ||
+    !isFinancialDataflowCoordinateV1(value.targetCoordinate) ||
+    value.targetCoordinate.periodRole !== 'projection-target' ||
+    (value.currentSpendCompositionId !== undefined && !isFinancialDataflowHashV1(value.currentSpendCompositionId)) ||
+    (value.comparisonSpendCompositionId !== undefined && !isFinancialDataflowHashV1(value.comparisonSpendCompositionId))
+  ) {
+    return false;
+  }
+  if (value.resultKind === 'forecast') return value.currentSpendCompositionId !== undefined && value.comparisonSpendCompositionId === undefined;
+  if (value.resultKind === 'trend') return value.currentSpendCompositionId !== undefined && value.comparisonSpendCompositionId !== undefined;
+  return value.currentSpendCompositionId !== undefined && value.comparisonSpendCompositionId === undefined;
+};
+
+const requestedOutputKey = (value: FinancialAnalyticsRequestedOutputV1): string =>
+  `${value.resultKind}\u0000${createFinancialDataflowCoordinateIdV1(value.targetCoordinate)}`;
+
+const sameCoordinateWithRole = (
+  target: FinancialAnalyticsRequestedOutputV1['targetCoordinate'],
+  source: FinancialDataflowCoordinateV1,
+  sourceRole: FinancialDataflowCoordinateV1['periodRole']
+): boolean =>
+  canonicalizeFinancialDataflowJsonV1({ ...target, periodRole: sourceRole }) === canonicalizeFinancialDataflowJsonV1(source);
+
+const periodContains = (container: FinancialDataflowCoordinateV1, target: FinancialDataflowCoordinateV1): boolean =>
+  container.period.requested.dateBasis === target.period.requested.dateBasis &&
+  container.period.requested.timeZone === target.period.requested.timeZone &&
+  container.period.requested.startDate <= target.period.requested.startDate &&
+  container.period.requested.endDateExclusive >= target.period.requested.endDateExclusive;
 
 const isJobRequestIdentity = (value: unknown): value is FinancialAnalyticsJobRequestIdentityPreimageV1 =>
   isFinancialDataflowRecordV1(value) &&
@@ -31,7 +80,8 @@ const isJobRequestIdentity = (value: unknown): value is FinancialAnalyticsJobReq
     'analyticsInputId',
     'inputGenerationId',
     'inputArtifactDigest',
-    'requestedResultKinds',
+    'requestedOutputs',
+    'requestedAt',
   ]) &&
   value.schemaVersion === 1 &&
   value.contractVersion === FINANCIAL_ANALYTICS_JOB_REQUEST_CONTRACT_VERSION_V1 &&
@@ -40,17 +90,40 @@ const isJobRequestIdentity = (value: unknown): value is FinancialAnalyticsJobReq
   isFinancialDataflowHashV1(value.analyticsInputId) &&
   isFinancialDataflowIdentityV1(value.inputGenerationId) &&
   isFinancialDataflowHashV1(value.inputArtifactDigest) &&
-  isFinancialDataflowSortedUniqueStringsV1(value.requestedResultKinds, RESULT_KINDS.size) &&
-  value.requestedResultKinds.length > 0 &&
-  value.requestedResultKinds.every(kind => RESULT_KINDS.has(kind));
+  isFinancialDataflowIsoInstantV1(value.requestedAt) &&
+  Array.isArray(value.requestedOutputs) &&
+  value.requestedOutputs.length > 0 &&
+  value.requestedOutputs.length <= MAX_REQUESTED_OUTPUTS &&
+  value.requestedOutputs.every(isRequestedOutput) &&
+  new Set(value.requestedOutputs.map(requestedOutputKey)).size === value.requestedOutputs.length;
 
 export const canonicalizeFinancialAnalyticsJobRequestIdentityV1 = (value: FinancialAnalyticsJobRequestIdentityPreimageV1): string => {
   if (!isJobRequestIdentity(value)) throw new TypeError('Invalid FinancialAnalyticsJobRequestIdentityPreimageV1.');
-  return canonicalizeFinancialDataflowJsonV1({ ...value, requestedResultKinds: [...value.requestedResultKinds].sort() });
+  return canonicalizeFinancialDataflowJsonV1({
+    ...value,
+    requestedOutputs: [...value.requestedOutputs].sort((left, right) => requestedOutputKey(left).localeCompare(requestedOutputKey(right))),
+  });
 };
 
 export const createFinancialAnalyticsJobRequestIdV1 = (value: FinancialAnalyticsJobRequestIdentityPreimageV1): string =>
   `sha256:${sha256Utf8(canonicalizeFinancialAnalyticsJobRequestIdentityV1(value))}`;
+
+/** Stable immutable output generation selected by one exact job output. */
+export const createFinancialAnalyticsOutputGenerationIdV1 = (
+  requestId: string,
+  output: FinancialAnalyticsRequestedOutputV1
+): string => {
+  if (!isFinancialDataflowHashV1(requestId) || !isRequestedOutput(output)) {
+    throw new TypeError('Invalid financial analytics output generation identity.');
+  }
+  return `financial-analytics-${sha256Utf8(
+    canonicalizeFinancialDataflowJsonV1({
+      requestId,
+      resultKind: output.resultKind,
+      targetCoordinate: output.targetCoordinate,
+    })
+  )}`;
+};
 
 export const isFinancialAnalyticsJobRequestV1 = (value: unknown): value is FinancialAnalyticsJobRequestV1 => {
   if (
@@ -64,15 +137,14 @@ export const isFinancialAnalyticsJobRequestV1 = (value: unknown): value is Finan
       'analyticsInputId',
       'inputGenerationId',
       'inputArtifactDigest',
-      'requestedResultKinds',
+      'requestedOutputs',
       'requestedAt',
     ])
   )
     return false;
-  const { requestId, requestedAt, ...identity } = value;
+  const { requestId, ...identity } = value;
   return (
     isFinancialDataflowHashV1(requestId) &&
-    isFinancialDataflowIsoInstantV1(requestedAt) &&
     isJobRequestIdentity(identity) &&
     requestId === createFinancialAnalyticsJobRequestIdV1(identity)
   );
@@ -87,7 +159,36 @@ export const isFinancialAnalyticsJobRequestCompatibleV1 = (request: unknown, inp
   request.coordinateId === createFinancialDataflowCoordinateIdV1(input.coordinate) &&
   request.analyticsInputId === input.analyticsInputId &&
   request.inputGenerationId === input.producerGenerationId &&
-  request.inputArtifactDigest === verifiedInputArtifactDigest;
+  request.inputArtifactDigest === verifiedInputArtifactDigest &&
+  request.requestedOutputs.every(output => {
+    const current =
+      output.currentSpendCompositionId === undefined
+        ? undefined
+        : input.referenceCompositions.find(composition => composition.compositionId === output.currentSpendCompositionId);
+    const comparison =
+      output.comparisonSpendCompositionId === undefined
+        ? undefined
+        : input.referenceCompositions.find(composition => composition.compositionId === output.comparisonSpendCompositionId);
+    return (
+      output.targetCoordinate.companyId === input.coordinate.companyId &&
+      output.targetCoordinate.provider === input.coordinate.provider &&
+      canonicalizeFinancialDataflowJsonV1(output.targetCoordinate.providerAccountRefs) ===
+        canonicalizeFinancialDataflowJsonV1(input.coordinate.providerAccountRefs) &&
+      canonicalizeFinancialDataflowJsonV1(output.targetCoordinate.scope) === canonicalizeFinancialDataflowJsonV1(input.coordinate.scope) &&
+      output.targetCoordinate.costBasis === input.coordinate.costBasis &&
+      output.targetCoordinate.estimateLens === input.coordinate.estimateLens &&
+      output.targetCoordinate.requestedCurrencyCode === input.coordinate.requestedCurrencyCode &&
+      canonicalizeFinancialDataflowJsonV1(output.targetCoordinate.accountingCurrency) ===
+        canonicalizeFinancialDataflowJsonV1(input.coordinate.accountingCurrency) &&
+      (current === undefined || current.coordinate.periodRole === 'current-spend') &&
+      (comparison === undefined || comparison.coordinate.periodRole === 'comparison') &&
+      (output.currentSpendCompositionId === undefined || current !== undefined) &&
+      (output.comparisonSpendCompositionId === undefined || comparison !== undefined) &&
+      current !== undefined &&
+      sameCoordinateWithRole(output.targetCoordinate, current.coordinate, 'current-spend') &&
+      (output.resultKind !== 'anomaly' || periodContains(input.coordinate, output.targetCoordinate))
+    );
+  });
 
 const isCurrentPointerIdentity = (value: unknown): value is FinancialAnalyticsCurrentPointerIdentityPreimageV1 =>
   isFinancialDataflowRecordV1(value) &&
@@ -95,6 +196,10 @@ const isCurrentPointerIdentity = (value: unknown): value is FinancialAnalyticsCu
     'schemaVersion',
     'contractVersion',
     'coordinateId',
+    'resultKind',
+    'sourceRequestId',
+    'sourceRequestedAt',
+    'analyticsInputId',
     'pointerRevision',
     'outputGenerationId',
     'analyticsProjectionId',
@@ -104,6 +209,11 @@ const isCurrentPointerIdentity = (value: unknown): value is FinancialAnalyticsCu
   value.schemaVersion === 1 &&
   value.contractVersion === FINANCIAL_ANALYTICS_CURRENT_POINTER_CONTRACT_VERSION_V1 &&
   isFinancialDataflowHashV1(value.coordinateId) &&
+  typeof value.resultKind === 'string' &&
+  RESULT_KINDS.has(value.resultKind) &&
+  isFinancialDataflowHashV1(value.sourceRequestId) &&
+  isFinancialDataflowIsoInstantV1(value.sourceRequestedAt) &&
+  isFinancialDataflowHashV1(value.analyticsInputId) &&
   Number.isSafeInteger(value.pointerRevision) &&
   Number(value.pointerRevision) > 0 &&
   isFinancialDataflowIdentityV1(value.outputGenerationId) &&
@@ -139,6 +249,126 @@ export const isFinancialAnalyticsCurrentPointerCompatibleV1 = (
   isFinancialAnalyticsProjectionV1(projection) &&
   isFinancialDataflowHashV1(verifiedProjectionArtifactDigest) &&
   pointer.coordinateId === createFinancialDataflowCoordinateIdV1(projection.coordinate) &&
+  pointer.resultKind === (projection.status === 'unavailable' ? projection.resultKind : projection.result.kind) &&
+  pointer.analyticsInputId === projection.analyticsInputId &&
   pointer.outputGenerationId === projection.outputGenerationId &&
   pointer.analyticsProjectionId === projection.analyticsProjectionId &&
   pointer.projectionArtifactDigest === verifiedProjectionArtifactDigest;
+
+const isOutputManifestIdentity = (value: unknown): value is FinancialAnalyticsOutputManifestIdentityPreimageV1 =>
+  isFinancialDataflowRecordV1(value) &&
+  hasFinancialDataflowExactFieldsV1(value, [
+    'schemaVersion',
+    'contractVersion',
+    'coordinateId',
+    'resultKind',
+    'outputGenerationId',
+    'analyticsProjectionId',
+    'sourceRequestId',
+    'analyticsInputId',
+    'inputArtifactDigest',
+    'projection',
+    'publishedAt',
+  ]) &&
+  value.schemaVersion === 1 &&
+  value.contractVersion === FINANCIAL_ANALYTICS_OUTPUT_MANIFEST_CONTRACT_VERSION_V1 &&
+  isFinancialDataflowHashV1(value.coordinateId) &&
+  typeof value.resultKind === 'string' &&
+  RESULT_KINDS.has(value.resultKind) &&
+  isFinancialDataflowIdentityV1(value.outputGenerationId) &&
+  isFinancialDataflowHashV1(value.analyticsProjectionId) &&
+  isFinancialDataflowHashV1(value.sourceRequestId) &&
+  isFinancialDataflowHashV1(value.analyticsInputId) &&
+  isFinancialDataflowHashV1(value.inputArtifactDigest) &&
+  isFinancialDataflowJsonGzipArtifactDescriptorV1(value.projection) &&
+  isFinancialDataflowIsoInstantV1(value.publishedAt);
+
+export const createFinancialAnalyticsOutputManifestDigestV1 = (
+  value: FinancialAnalyticsOutputManifestIdentityPreimageV1
+): string => {
+  if (!isOutputManifestIdentity(value)) throw new TypeError('Invalid FinancialAnalyticsOutputManifestIdentityPreimageV1.');
+  return `sha256:${sha256Utf8(canonicalizeFinancialDataflowJsonV1(value))}`;
+};
+
+export const isFinancialAnalyticsOutputManifestV1 = (value: unknown): value is FinancialAnalyticsOutputManifestV1 => {
+  if (!isFinancialDataflowRecordV1(value) || !Object.prototype.hasOwnProperty.call(value, 'manifestDigest')) return false;
+  const { manifestDigest, ...identity } = value;
+  try {
+    return (
+      isFinancialDataflowHashV1(manifestDigest) &&
+      manifestDigest === createFinancialAnalyticsOutputManifestDigestV1(
+        identity as FinancialAnalyticsOutputManifestIdentityPreimageV1
+      )
+    );
+  } catch {
+    return false;
+  }
+};
+
+export const isFinancialAnalyticsOutputManifestCompatibleV1 = (
+  manifest: unknown,
+  projection: unknown,
+  verifiedProjectionArtifactDigest: unknown
+): boolean =>
+  isFinancialAnalyticsOutputManifestV1(manifest) &&
+  isFinancialAnalyticsProjectionV1(projection) &&
+  isFinancialDataflowHashV1(verifiedProjectionArtifactDigest) &&
+  manifest.coordinateId === createFinancialDataflowCoordinateIdV1(projection.coordinate) &&
+  manifest.resultKind === (projection.status === 'unavailable' ? projection.resultKind : projection.result.kind) &&
+  manifest.outputGenerationId === projection.outputGenerationId &&
+  manifest.analyticsProjectionId === projection.analyticsProjectionId &&
+  manifest.analyticsInputId === projection.analyticsInputId &&
+  manifest.publishedAt === projection.producedAt &&
+  manifest.projection.sha256 === verifiedProjectionArtifactDigest;
+
+const isBatchQueryItem = (value: unknown): boolean =>
+  isFinancialDataflowRecordV1(value) &&
+  hasFinancialDataflowExactFieldsV1(value, ['coordinateId', 'resultKind']) &&
+  isFinancialDataflowHashV1(value.coordinateId) &&
+  typeof value.resultKind === 'string' &&
+  RESULT_KINDS.has(value.resultKind);
+
+const batchQueryItemKey = (value: { coordinateId: string; resultKind: string }): string =>
+  `${value.coordinateId}\u0000${value.resultKind}`;
+
+export const isFinancialAnalyticsBatchQueryV1 = (value: unknown): value is FinancialAnalyticsBatchQueryV1 =>
+  isFinancialDataflowRecordV1(value) &&
+  hasFinancialDataflowExactFieldsV1(value, ['schemaVersion', 'contractVersion', 'items']) &&
+  value.schemaVersion === 1 &&
+  value.contractVersion === FINANCIAL_ANALYTICS_BATCH_QUERY_CONTRACT_VERSION_V1 &&
+  Array.isArray(value.items) &&
+  value.items.length > 0 &&
+  value.items.length <= MAX_BATCH_QUERY_ITEMS &&
+  value.items.every(isBatchQueryItem) &&
+  new Set(value.items.map(item => batchQueryItemKey(item as { coordinateId: string; resultKind: string }))).size === value.items.length;
+
+export const isFinancialAnalyticsBatchResponseV1 = (value: unknown): value is FinancialAnalyticsBatchResponseV1 =>
+  isFinancialDataflowRecordV1(value) &&
+  hasFinancialDataflowExactFieldsV1(value, ['schemaVersion', 'contractVersion', 'results']) &&
+  value.schemaVersion === 1 &&
+  value.contractVersion === FINANCIAL_ANALYTICS_BATCH_RESPONSE_CONTRACT_VERSION_V1 &&
+  Array.isArray(value.results) &&
+  value.results.length > 0 &&
+  value.results.length <= MAX_BATCH_QUERY_ITEMS &&
+  value.results.every(result => {
+    if (!isFinancialDataflowRecordV1(result) || !isBatchQueryItem(result)) return false;
+    if (result.status === 'unavailable') {
+      return hasFinancialDataflowExactFieldsV1(result, ['coordinateId', 'resultKind', 'status', 'reasonCode']) &&
+        result.reasonCode === 'not-produced';
+    }
+    return result.status === 'available' &&
+      hasFinancialDataflowExactFieldsV1(result, ['coordinateId', 'resultKind', 'status', 'projection']) &&
+      isFinancialAnalyticsProjectionV1(result.projection) &&
+      createFinancialDataflowCoordinateIdV1(result.projection.coordinate) === result.coordinateId &&
+      (result.projection.status === 'unavailable' ? result.projection.resultKind : result.projection.result.kind) === result.resultKind;
+  }) &&
+  new Set(value.results.map(result => batchQueryItemKey(result as { coordinateId: string; resultKind: string }))).size === value.results.length;
+
+export const isFinancialAnalyticsBatchResponseCompatibleV1 = (query: unknown, response: unknown): boolean =>
+  isFinancialAnalyticsBatchQueryV1(query) &&
+  isFinancialAnalyticsBatchResponseV1(response) &&
+  query.items.length === response.results.length &&
+  query.items.every((item, index) => {
+    const result = response.results[index];
+    return result !== undefined && batchQueryItemKey(item) === batchQueryItemKey(result);
+  });

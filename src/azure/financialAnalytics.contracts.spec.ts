@@ -14,7 +14,10 @@ import {
   type FinancialDataflowCoordinateV1,
 } from '../index.js';
 
-declare const historyCoordinate: FinancialDataflowCoordinateV1 & { periodRole: 'analytics-input' };
+declare const historyCoordinate: FinancialDataflowCoordinateV1 & {
+  periodRole: 'analytics-input';
+  period: FinancialDataflowCoordinateV1['period'] & { windowKind: 'analytics-history' };
+};
 declare const targetCoordinate: FinancialDataflowCoordinateV1 & { periodRole: 'projection-target' };
 
 const inputWithoutId = {
@@ -23,12 +26,17 @@ const inputWithoutId = {
   coordinate: historyCoordinate,
   granularity: 'daily',
   producerGenerationId: 'analytics-input-generation-1',
+  referenceCompositions: [],
   points: [
     {
       date: '2026-08-09',
       compositionId: `sha256:${'1'.repeat(64)}`,
       status: 'available',
       amount: '10',
+      forecastEligibleAmount: '10',
+      oneTimeAmount: '0',
+      unknownRecurrenceAmount: '0',
+      forecastStatus: 'available',
     },
     {
       date: '2026-08-10',
@@ -36,6 +44,10 @@ const inputWithoutId = {
       status: 'partial',
       knownAmount: '-5',
       reasonCodes: ['evidence-not-produced'],
+      forecastEligibleAmount: '-5',
+      oneTimeAmount: '0',
+      unknownRecurrenceAmount: '0',
+      forecastStatus: 'available',
     },
   ],
   gaps: [

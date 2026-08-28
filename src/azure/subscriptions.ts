@@ -188,8 +188,10 @@ export interface SubscriptionProperties {
   advisorScorePerformance?: number;
   advisorScoreReliability?: number;
   advisorScoreOperationalExcellence?: number;
-  currency: string;
-  currencySymbol: string;
+  /** Omitted until supported Azure billing evidence resolves a subscription currency. */
+  currency?: string;
+  /** Omitted while currency is unresolved or when no display symbol is known. */
+  currencySymbol?: string;
   foundCurrency: boolean;
   showAmortizedCosts: boolean;
 }

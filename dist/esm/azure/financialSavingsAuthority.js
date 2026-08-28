@@ -1,4 +1,5 @@
 export const FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1 = 1;
 export const FINANCIAL_SAVINGS_AUTHORITY_CONTRACT_VERSION_V1 = 'financial-savings-authority/v1';
+export const FINANCIAL_SAVINGS_RESOURCE_PROJECTION_CONTRACT_VERSION_V1 = 'financial-savings-resource-projection/v1';
 export const FINANCIAL_ELIGIBILITY_ASSESSMENT_SCHEMA_VERSION_V1 = 1;
 export const FINANCIAL_ELIGIBILITY_ASSESSMENT_CONTRACT_VERSION_V1 = 'financial-eligibility-assessment/v1';

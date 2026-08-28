@@ -13,7 +13,10 @@ import {
   type FinancialAnalyticsCurrentPointerIdentityPreimageV1,
   type FinancialAnalyticsJobRequestIdentityPreimageV1,
   type FinancialAnalyticsJobRequestV1,
+  type FinancialDataflowCoordinateV1,
 } from '../index.js';
+
+declare const targetCoordinate: FinancialDataflowCoordinateV1 & { periodRole: 'projection-target' };
 
 const requestWithoutId: FinancialAnalyticsJobRequestIdentityPreimageV1 = {
   schemaVersion: 1,
@@ -23,19 +26,29 @@ const requestWithoutId: FinancialAnalyticsJobRequestIdentityPreimageV1 = {
   analyticsInputId: `sha256:${'2'.repeat(64)}`,
   inputGenerationId: 'generation-1',
   inputArtifactDigest: `sha256:${'3'.repeat(64)}`,
-  requestedResultKinds: ['forecast'],
+  requestedOutputs: [
+    {
+      resultKind: 'forecast',
+      targetCoordinate,
+      currentSpendCompositionId: `sha256:${'4'.repeat(64)}`,
+    },
+  ],
+  requestedAt: '2026-08-10T00:00:00.000Z',
 };
 
 const request: FinancialAnalyticsJobRequestV1 = {
   ...requestWithoutId,
   requestId: createFinancialAnalyticsJobRequestIdV1(requestWithoutId),
-  requestedAt: '2026-08-10T00:00:00.000Z',
 };
 
 const pointerWithoutDigest: FinancialAnalyticsCurrentPointerIdentityPreimageV1 = {
   schemaVersion: 1,
   contractVersion: FINANCIAL_ANALYTICS_CURRENT_POINTER_CONTRACT_VERSION_V1,
   coordinateId: request.coordinateId,
+  resultKind: 'forecast',
+  sourceRequestId: request.requestId,
+  sourceRequestedAt: request.requestedAt,
+  analyticsInputId: request.analyticsInputId,
   pointerRevision: 2,
   outputGenerationId: 'generation-2',
   analyticsProjectionId: `sha256:${'4'.repeat(64)}`,

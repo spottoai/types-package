@@ -367,5 +367,9 @@ export interface CostAlertInstance extends BaseAlertInstance<CostAlertSummary, C
     summary?: CostAlertSummary;
     breakdown?: CostAlertBreakdownSummary;
     definitionSnapshot?: string;
+    /** Immutable Financial Policy evaluation reference for historical detail reads. */
+    financialPolicyEvaluationId?: string;
+    financialPolicyDefinitionRevisionId?: string;
+    financialPolicySignalKind?: 'budget-current-spend' | 'budget-forecast' | 'cost-anomaly';
 }
 //# sourceMappingURL=cost.d.ts.map

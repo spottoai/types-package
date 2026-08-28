@@ -1,5 +1,6 @@
 import type { CostBasis, FinancialEstimateLensV1 } from './costComposition';
-import type { FinancialDataflowScopeV1 } from './financialDataflow';
+import type { FinancialDataflowScopeKindV1, FinancialDataflowScopeSelectorV1 } from './financialDataflow';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
 import type { CanonicalExactMoney } from './financialValidationPrimitives';
 
 export const FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1 = 'financial-policy-definition/v1' as const;
@@ -8,10 +9,17 @@ export const FINANCIAL_POLICY_EVALUATION_CONTRACT_VERSION_V1 = 'financial-policy
 export interface FinancialPolicyCoordinateRequestV1 {
   provider: 'azure';
   providerAccountRefs: [string, ...string[]];
-  scope: FinancialDataflowScopeV1;
-  period: { kind: 'calendar-month' | 'rolling-30-days'; timeZone: string };
+  /** Stable policy scope identity. The current membership fingerprint is resolved at evaluation time. */
+  scope: { kind: FinancialDataflowScopeKindV1; scopeId: string };
+  /** Re-resolvable selector; fingerprint alone cannot recover scheduled scope membership. */
+  scopeSelector: FinancialDataflowScopeSelectorV1;
+  period:
+    | { kind: 'calendar-month' | 'rolling-30-days'; dateBasis: 'utc'; timeZone?: never }
+    | { kind: 'calendar-month' | 'rolling-30-days'; dateBasis: 'company-local'; timeZone: string };
   costBasis: CostBasis;
   estimateLens: FinancialEstimateLensV1;
+  /** Explicit value-affecting charge source policy. Existing definitions migrate to all-charge. */
+  chargeInclusionPolicyRef: FinancialChargeInclusionPolicyRefV2;
   /** Required match condition; this field never authorizes FX conversion or a caller currency default. */
   requiredAccountingCurrencyCode: string;
 }
@@ -43,6 +51,7 @@ export interface FinancialPolicyDefinitionRevisionV1 {
   policyDefinitionRevisionId: string;
   companyId: string;
   definitionId: string;
+  displayName: string;
   revision: string;
   effectiveState: 'enabled' | 'disabled' | 'deleted';
   coordinateRequest: FinancialPolicyCoordinateRequestV1;
@@ -91,7 +100,8 @@ export interface CurrentSpendFinancialPolicyEvaluationV1 extends FinancialPolicy
 
 export interface AnalyticsFinancialPolicyEvaluationV1 extends FinancialPolicyEvaluationCommonV1 {
   signalKind: 'budget-forecast' | 'cost-anomaly';
-  analyticsProjectionId: string;
+  /** Absent only when the analytics projection itself is unavailable at the fixed evaluation instant. */
+  analyticsProjectionId?: string;
 }
 
 export type FinancialPolicyEvaluationV1 = CurrentSpendFinancialPolicyEvaluationV1 | AnalyticsFinancialPolicyEvaluationV1;

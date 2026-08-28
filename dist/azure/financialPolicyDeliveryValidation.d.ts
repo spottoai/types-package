@@ -1,8 +1,22 @@
-import { type FinancialPolicyActionAttemptIdentityPreimageV1, type FinancialPolicyActionAttemptV1, type FinancialPolicyEvaluationReadProjectionV1 } from './financialPolicyDelivery';
+import type { FinancialAnalyticsProjectionV1 } from './financialAnalytics';
+import { type FinancialPolicyActionAttemptIdentityPreimageV1, type FinancialPolicyActionAttemptV1, type FinancialPolicyActionCompletionIdentityPreimageV1, type FinancialPolicyActionCompletionV1, type FinancialPolicyDefinitionCommandV1, type FinancialPolicyEvaluationReadCurrentPointerIdentityPreimageV1, type FinancialPolicyEvaluationReadCurrentPointerV1, type FinancialPolicyEvaluationReadManifestIdentityPreimageV1, type FinancialPolicyEvaluationReadManifestV1, type FinancialPolicyEvaluationReadProjectionV1 } from './financialPolicyDelivery';
+export declare const createFinancialPolicyDestinationsDigestV1: (destinationRefIds: readonly string[]) => string;
+export declare const isFinancialPolicyDefinitionCommandV1: (value: unknown) => value is FinancialPolicyDefinitionCommandV1;
 export declare const isFinancialPolicyEvaluationReadProjectionV1: (value: unknown) => value is FinancialPolicyEvaluationReadProjectionV1;
-export declare const isFinancialPolicyEvaluationReadProjectionCompatibleV1: (projection: unknown, evaluation: unknown) => boolean;
+export declare const isFinancialPolicyEvaluationReadProjectionCompatibleV1: (projection: unknown, evaluation: unknown, analyticsProjection?: FinancialAnalyticsProjectionV1) => boolean;
+export declare const canonicalizeFinancialPolicyEvaluationReadCurrentPointerIdentityV1: (value: FinancialPolicyEvaluationReadCurrentPointerIdentityPreimageV1) => string;
+export declare const createFinancialPolicyEvaluationReadCurrentPointerDigestV1: (value: FinancialPolicyEvaluationReadCurrentPointerIdentityPreimageV1) => string;
+export declare const isFinancialPolicyEvaluationReadCurrentPointerV1: (value: unknown) => value is FinancialPolicyEvaluationReadCurrentPointerV1;
+export declare const isFinancialPolicyEvaluationReadCurrentPointerCompatibleV1: (pointer: unknown, projection: unknown, projectionArtifactDigest: unknown) => boolean;
+export declare const createFinancialPolicyEvaluationReadManifestDigestV1: (value: FinancialPolicyEvaluationReadManifestIdentityPreimageV1) => string;
+export declare const isFinancialPolicyEvaluationReadManifestV1: (value: unknown) => value is FinancialPolicyEvaluationReadManifestV1;
+export declare const isFinancialPolicyEvaluationReadManifestCompatibleV1: (manifest: unknown, projection: unknown, verifiedProjectionArtifactDigest: unknown) => boolean;
 export declare const canonicalizeFinancialPolicyActionAttemptIdentityV1: (value: FinancialPolicyActionAttemptIdentityPreimageV1) => string;
 export declare const createFinancialPolicyActionAttemptIdV1: (value: FinancialPolicyActionAttemptIdentityPreimageV1) => string;
 export declare const isFinancialPolicyActionAttemptV1: (value: unknown) => value is FinancialPolicyActionAttemptV1;
 export declare const isFinancialPolicyActionAttemptCompatibleV1: (attempt: unknown, evaluation: unknown, definition: unknown) => boolean;
+export declare const canonicalizeFinancialPolicyActionCompletionIdentityV1: (value: FinancialPolicyActionCompletionIdentityPreimageV1) => string;
+export declare const createFinancialPolicyActionCompletionIdV1: (value: FinancialPolicyActionCompletionIdentityPreimageV1) => string;
+export declare const isFinancialPolicyActionCompletionV1: (value: unknown) => value is FinancialPolicyActionCompletionV1;
+export declare const isFinancialPolicyActionCompletionCompatibleV1: (completion: unknown, evaluation: unknown, definition: unknown) => boolean;
 //# sourceMappingURL=financialPolicyDeliveryValidation.d.ts.map

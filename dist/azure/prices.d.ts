@@ -151,12 +151,15 @@ export interface AzureResourceCostPeriodsCatalog {
 export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
     resourceId: string;
     total: number;
-    amortizedTotal: number;
+    /** Omitted when the period lacks complete amortized-basis evidence. */
+    amortizedTotal?: number;
     items: ResourceCostSummary[];
     billingActualThroughDate?: number;
     estimationCutoffStartDate?: number;
     composition?: CostComposition;
 };
+export type ResourceOperationalState = 'active' | 'inactive' | 'deleted' | 'unknown';
+export type BillingItemState = 'current' | 'historical' | 'superseded';
 export interface ResourceCostSummary {
     /** e.g. "Basic Plan (B2 App)" */
     label1: string;
@@ -172,12 +175,21 @@ export interface ResourceCostSummary {
     reservation?: string;
     /** e.g. true means the resource is active, false means the resource was active (old SKU) */
     active: boolean;
+    /** Current resource lifecycle state used when interpreting historical billing rows. */
+    resourceOperationalState?: ResourceOperationalState;
+    /** Whether this billing row is current, historical, or superseded by another shape. */
+    billingItemState?: BillingItemState;
+    billingItemStateReason?: 'replacement' | 'ended_window' | 'deleted_resource' | 'inactive_resource';
+    supersededOn?: number;
+    replacementFamilyKey?: string;
+    replacementItemKey?: string;
     /** e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR */
     addon: boolean;
     /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range */
     spend: number;
     /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range, taking into account reserved instances and savings plans */
-    spendAmortized: number;
+    /** Omitted when this row lacks amortized-basis evidence. */
+    spendAmortized?: number;
     /** e.g. 217.21 (rounded to 2 decimal places) */
     quantity: number;
     /**
@@ -192,7 +204,8 @@ export interface ResourceCostSummary {
     /** e.g. 0.304140 1/Hour */
     unitPrice: string;
     /** e.g. 0.304140 1/Hour */
-    unitPriceAmortized: string;
+    /** Omitted when this row lacks amortized-basis evidence. */
+    unitPriceAmortized?: string;
     /** e.g. 730.00 (rounded to 2 decimal places) */
     monthlyPrice?: number;
     /** e.g. -4% */

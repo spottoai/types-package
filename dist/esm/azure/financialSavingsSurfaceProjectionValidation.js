@@ -2,6 +2,7 @@ import { sha256Utf8 } from '../common/sha256.js';
 import { canonicalizeFinancialSavingsJsonValue, hasExactFinancialSavingsFields, haveSameFinancialSavingsSet, isFinancialSavingsHash, isFinancialSavingsIdentity, isFinancialSavingsIsoInstant, isFinancialSavingsMinorUnits, isFinancialSavingsRecord, sumFinancialSavingsMinorUnits, } from './financialSavingsAuthorityValidationPrimitives.js';
 import { FINANCIAL_SAVINGS_SURFACE_PROJECTION_CONTRACT_VERSION_V1, FINANCIAL_SAVINGS_SURFACE_PROJECTION_SCHEMA_VERSION_V1, } from './financialSavingsSurfaceProjection.js';
 import { isFinancialBaselinePeriodV2 } from './financialScopeBaselineValidation.js';
+import { isFinancialChargeInclusionPolicyRefV1 } from './financialChargeCompositionValidation.js';
 import { isCanonicalExactMoney } from './financialValidationPrimitives.js';
 const COST_BASES = new Set(['billed', 'amortized']);
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
@@ -53,9 +54,11 @@ const isCoordinateCommon = (value) => isFinancialSavingsHash(value.coordinateId)
     COST_BASES.has(value.costBasis) &&
     typeof value.estimateLens === 'string' &&
     ESTIMATE_LENSES.has(value.estimateLens) &&
+    isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef) &&
     (value.requestedCurrencyCode === undefined || isCurrency(value.requestedCurrencyCode)) &&
     (value.currentAggregateBaselineId === undefined || isFinancialSavingsHash(value.currentAggregateBaselineId));
-const isAvailableCoordinate = (value, queryRecommendationIds) => {
+const isComposedCoordinate = (value, queryRecommendationIds) => {
+    const partial = value.status === 'partial';
     if (!hasExactFinancialSavingsFields(value, [
         'status',
         'coordinateId',
@@ -63,6 +66,7 @@ const isAvailableCoordinate = (value, queryRecommendationIds) => {
         'period',
         'costBasis',
         'estimateLens',
+        'chargeInclusionPolicyRef',
         'currentAggregateBaselineId',
         'currentAggregate',
         'accountingCurrencyCode',
@@ -70,6 +74,7 @@ const isAvailableCoordinate = (value, queryRecommendationIds) => {
         'roundingMode',
         'recommendationContributions',
         'aggregate',
+        ...(partial ? ['unavailableRecommendationIds'] : []),
     ], ['requestedCurrencyCode']) ||
         !isCoordinateCommon(value) ||
         !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
@@ -89,6 +94,14 @@ const isAvailableCoordinate = (value, queryRecommendationIds) => {
         !value.aggregate.allocationIds.every(isFinancialSavingsHash) ||
         new Set(value.aggregate.allocationIds).size !== value.aggregate.allocationIds.length ||
         !isFinancialSavingsMinorUnits(value.aggregate.savingsMinorUnits))
+        return false;
+    if (partial &&
+        (!Array.isArray(value.unavailableRecommendationIds) ||
+            value.unavailableRecommendationIds.length === 0 ||
+            value.unavailableRecommendationIds.length > MAX_ALLOCATIONS ||
+            !value.unavailableRecommendationIds.every(isFinancialSavingsIdentity) ||
+            new Set(value.unavailableRecommendationIds).size !== value.unavailableRecommendationIds.length ||
+            (queryRecommendationIds !== undefined && value.unavailableRecommendationIds.some(id => !queryRecommendationIds.has(id)))))
         return false;
     const recommendationIds = new Set();
     const allocationIds = [];
@@ -114,7 +127,7 @@ const isAvailableCoordinate = (value, queryRecommendationIds) => {
         haveSameFinancialSavingsSet(allocationIds, value.aggregate.allocationIds) &&
         sumFinancialSavingsMinorUnits(contributionAmounts) === value.aggregate.savingsMinorUnits);
 };
-const isUnavailableCoordinate = (value) => hasExactFinancialSavingsFields(value, ['status', 'coordinateId', 'periodRole', 'period', 'costBasis', 'estimateLens', 'unavailableReason'], ['requestedCurrencyCode', 'currentAggregateBaselineId']) &&
+const isUnavailableCoordinate = (value) => hasExactFinancialSavingsFields(value, ['status', 'coordinateId', 'periodRole', 'period', 'costBasis', 'estimateLens', 'chargeInclusionPolicyRef', 'unavailableReason'], ['requestedCurrencyCode', 'currentAggregateBaselineId']) &&
     isCoordinateCommon(value) &&
     typeof value.unavailableReason === 'string' &&
     UNAVAILABLE_REASONS.has(value.unavailableReason);
@@ -160,8 +173,8 @@ export const isFinancialSavingsSurfaceProjectionV1 = (value) => {
     if (!projection.coordinates.every(coordinate => {
         if (!isFinancialSavingsRecord(coordinate))
             return false;
-        return coordinate.status === 'available'
-            ? isAvailableCoordinate(coordinate, queryRecommendationIds)
+        return coordinate.status === 'available' || coordinate.status === 'partial'
+            ? isComposedCoordinate(coordinate, queryRecommendationIds)
             : coordinate.status === 'unavailable' && isUnavailableCoordinate(coordinate);
     }) ||
         new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size !== projection.coordinates.length)

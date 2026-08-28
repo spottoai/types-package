@@ -23,8 +23,17 @@ const ACTIVATION_REASONS = new Set([
     'lifecycle-conflict',
     'unrecognized-lifecycle',
     'generation-mismatch',
+    'projection-unavailable',
+    'eligibility-unavailable',
 ]);
-const UNAVAILABLE_ACTIVATION_REASONS = new Set(['lifecycle-stale', 'lifecycle-unavailable', 'lifecycle-conflict', 'generation-mismatch']);
+const UNAVAILABLE_ACTIVATION_REASONS = new Set([
+    'lifecycle-stale',
+    'lifecycle-unavailable',
+    'lifecycle-conflict',
+    'generation-mismatch',
+    'projection-unavailable',
+    'eligibility-unavailable',
+]);
 export const canonicalizeFinancialSavingsDenominatorIdentityV1 = (value) => JSON.stringify(canonicalizeFinancialSavingsJsonValue({
     kind: value.kind,
     baselineId: value.baselineId,
@@ -35,7 +44,8 @@ export const canonicalizeFinancialSavingsDenominatorIdentityV1 = (value) => JSON
 export const createFinancialSavingsDenominatorIdV1 = (value) => `sha256:${sha256Utf8(canonicalizeFinancialSavingsDenominatorIdentityV1(value))}`;
 export const canonicalizeFinancialSavingsActivationIdentityV1 = (value) => JSON.stringify(canonicalizeFinancialSavingsJsonValue({
     recommendationId: value.recommendationId,
-    projectionId: value.projectionId,
+    scenarioId: value.scenarioId,
+    ...(value.projectionId === undefined ? {} : { projectionId: value.projectionId }),
     lifecycleState: value.lifecycleState,
     lifecycleVersion: value.lifecycleVersion,
     lifecycleEvidenceRefId: value.lifecycleEvidenceRefId,
@@ -49,10 +59,11 @@ export const canonicalizeFinancialSavingsAllocationIdentityV1 = (value) => JSON.
     ownerScopeId: value.ownerScopeId,
     billableComponentIds: [...value.billableComponentIds].sort(),
     recommendationId: value.recommendationId,
+    scenarioId: value.scenarioId,
     baselineId: value.baselineId,
     projectionId: value.projectionId,
     denominatorId: value.denominatorId,
-    eligibility: value.eligibility.kind === 'not-applicable'
+    eligibility: value.eligibility.kind !== 'mapped'
         ? value.eligibility
         : {
             ...value.eligibility,
@@ -98,10 +109,23 @@ const isActivationDecision = (state, result, reason) => {
     return UNAVAILABLE_ACTIVATION_REASONS.has(reason);
 };
 const isEligibility = (value) => {
-    if (!isFinancialSavingsRecord(value) || (value.kind !== 'not-applicable' && value.kind !== 'mapped'))
+    if (!isFinancialSavingsRecord(value) || !['not-applicable', 'unavailable', 'mapped'].includes(String(value.kind)))
         return false;
     if (value.kind === 'not-applicable')
         return Object.keys(value).length === 1;
+    if (value.kind === 'unavailable') {
+        return (Object.keys(value).length === 2 &&
+            typeof value.reason === 'string' &&
+            [
+                'rule-evidence-unavailable',
+                'eligibility-baseline-unavailable',
+                'eligible-components-unavailable',
+                'denominator-unavailable',
+                'current-baseline-mapping-unavailable',
+                'currency-conflict',
+                'reconciliation-failure',
+            ].includes(value.reason));
+    }
     return (Object.keys(value).length === 5 &&
         isFinancialSavingsHash(value.eligibilityId) &&
         isFinancialSavingsHash(value.eligibilityBaselineId) &&
@@ -114,7 +138,7 @@ const isEligibility = (value) => {
         value.eligibilityComponentIds.every(isFinancialSavingsIdentity) &&
         new Set(value.eligibilityComponentIds).size === value.eligibilityComponentIds.length);
 };
-const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById, evidenceById, authorityGeneratedAt, authorityRunId) => {
+const validateComposedCoordinate = (value, authorityCoordinate, eligibilityById, evidenceById, authorityGeneratedAt, authorityRunId) => {
     if (!hasExactFinancialSavingsFields(value, [
         'status',
         'coordinateId',
@@ -126,6 +150,7 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         'activations',
         'allocations',
         'resourceContributions',
+        'recommendationContributions',
         'aggregate',
     ]) ||
         !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
@@ -139,7 +164,7 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         value.roundingMode !== 'half-away-from-zero' ||
         !isFinancialSavingsRecord(value.scenarioCoverage) ||
         !hasExactFinancialSavingsFields(value.scenarioCoverage, ['status', 'evidenceRefId', 'scenarioIds']) ||
-        value.scenarioCoverage.status !== 'complete' ||
+        value.scenarioCoverage.status !== (value.status === 'available' ? 'complete' : 'partial') ||
         !isFinancialSavingsHash(value.scenarioCoverage.evidenceRefId) ||
         !Array.isArray(value.scenarioCoverage.scenarioIds) ||
         value.scenarioCoverage.scenarioIds.length > 20000 ||
@@ -151,6 +176,8 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         value.allocations.length > 20000 ||
         !Array.isArray(value.resourceContributions) ||
         value.resourceContributions.length > 20000 ||
+        !Array.isArray(value.recommendationContributions) ||
+        value.recommendationContributions.length > 20000 ||
         !isFinancialSavingsRecord(value.aggregate) ||
         !hasExactFinancialSavingsFields(value.aggregate, ['allocationIds', 'savingsMinorUnits']) ||
         !Array.isArray(value.aggregate.allocationIds) ||
@@ -163,15 +190,17 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         Date.parse(scenarioCoverageEvidence.intrinsicTime.at) > Date.parse(authorityGeneratedAt))
         return false;
     const projectionById = new Map(authorityCoordinate.projections.flatMap(projection => (projection.status === 'available' ? [[projection.projectionId, projection]] : [])));
+    const availableProjectionScenarioIds = new Set(authorityCoordinate.projections.flatMap(projection => (projection.status === 'available' ? [projection.scenarioId] : [])));
+    const unavailableEligibilityScenarioIds = new Set([...eligibilityById.values()].flatMap(assessment => (assessment.status === 'unavailable' ? [assessment.scenarioId] : [])));
     const activationById = new Map();
-    const activationByRecommendationId = new Map();
+    const activationByScenarioId = new Map();
     for (const activation of value.activations) {
         const lifecycleEvidence = evidenceById.get(activation.lifecycleEvidenceRefId);
         if (!isFinancialSavingsRecord(activation) ||
             !hasExactFinancialSavingsFields(activation, [
                 'activationId',
+                'scenarioId',
                 'recommendationId',
-                'projectionId',
                 'lifecycleState',
                 'lifecycleVersion',
                 'lifecycleEvidenceRefId',
@@ -179,19 +208,29 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
                 'reason',
                 'evaluatedAt',
                 'policyVersion',
-            ]) ||
+            ], ['projectionId']) ||
             !isFinancialSavingsHash(activation.activationId) ||
             activationById.has(activation.activationId) ||
-            activationByRecommendationId.has(activation.recommendationId) ||
+            activationByScenarioId.has(activation.scenarioId) ||
+            !isFinancialSavingsIdentity(activation.scenarioId) ||
             !isFinancialSavingsIdentity(activation.recommendationId) ||
-            !isFinancialSavingsHash(activation.projectionId) ||
+            (activation.projectionId !== undefined && !isFinancialSavingsHash(activation.projectionId)) ||
             !isFinancialSavingsIdentity(activation.lifecycleVersion) ||
             !isFinancialSavingsHash(activation.lifecycleEvidenceRefId) ||
             !isActivationDecision(activation.lifecycleState, activation.result, activation.reason) ||
             !isFinancialSavingsIsoInstant(activation.evaluatedAt) ||
             Date.parse(activation.evaluatedAt) > Date.parse(authorityGeneratedAt) ||
             !isFinancialSavingsIdentity(activation.policyVersion) ||
-            projectionById.get(activation.projectionId)?.scenarioId !== activation.recommendationId ||
+            (activation.result === 'included' &&
+                (activation.projectionId === undefined || projectionById.get(activation.projectionId)?.scenarioId !== activation.scenarioId)) ||
+            (activation.result === 'excluded' &&
+                activation.projectionId !== undefined &&
+                projectionById.get(activation.projectionId)?.scenarioId !== activation.scenarioId) ||
+            (activation.result === 'unavailable' &&
+                (activation.projectionId !== undefined ||
+                    (activation.reason === 'projection-unavailable' && availableProjectionScenarioIds.has(activation.scenarioId)) ||
+                    (activation.reason === 'eligibility-unavailable' &&
+                        !unavailableEligibilityScenarioIds.has(activation.scenarioId)))) ||
             lifecycleEvidence?.role !== 'recommendation-lifecycle' ||
             lifecycleEvidence.revisionId !== activation.lifecycleVersion ||
             Date.parse(lifecycleEvidence.intrinsicTime.at) > Date.parse(authorityGeneratedAt))
@@ -200,12 +239,15 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         if (activation.activationId !== createFinancialSavingsActivationIdV1(activationIdentity))
             return false;
         activationById.set(activation.activationId, activation);
-        activationByRecommendationId.set(activation.recommendationId, activation);
+        activationByScenarioId.set(activation.scenarioId, activation);
     }
     const coveredScenarioIds = new Set(value.scenarioCoverage.scenarioIds);
-    const activatedScenarioIds = new Set(value.activations.map(activation => activation.recommendationId));
+    const activatedScenarioIds = new Set(value.activations.map(activation => activation.scenarioId));
     if (value.scenarioCoverage.scenarioIds.some(scenarioId => !activatedScenarioIds.has(scenarioId)) ||
-        value.activations.some(activation => !coveredScenarioIds.has(activation.recommendationId)))
+        value.activations.some(activation => !coveredScenarioIds.has(activation.scenarioId)))
+        return false;
+    const hasUnavailableActivation = value.activations.some(activation => activation.result === 'unavailable');
+    if ((value.status === 'available' && hasUnavailableActivation) || (value.status === 'partial' && !hasUnavailableActivation))
         return false;
     const allocationById = new Map();
     const allocatedBaselineComponents = new Set();
@@ -215,7 +257,7 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         const eligibility = allocation.eligibility.kind === 'mapped' ? eligibilityById.get(allocation.eligibility.eligibilityId) : undefined;
         const expectedDenominatorId = allocation.eligibility.kind === 'mapped' && eligibility?.status === 'available'
             ? eligibility.denominator.denominatorId
-            : projection
+            : allocation.eligibility.kind === 'not-applicable' && projection
                 ? createFinancialSavingsDenominatorIdV1({
                     kind: 'projection-affected-current',
                     baselineId: projection.baselineId,
@@ -229,6 +271,7 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
                 'allocationId',
                 'ownerScopeId',
                 'billableComponentIds',
+                'scenarioId',
                 'recommendationId',
                 'baselineId',
                 'projectionId',
@@ -245,6 +288,7 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
             allocation.billableComponentIds.length > 20000 ||
             !allocation.billableComponentIds.every(isFinancialSavingsIdentity) ||
             new Set(allocation.billableComponentIds).size !== allocation.billableComponentIds.length ||
+            !isFinancialSavingsIdentity(allocation.scenarioId) ||
             !isFinancialSavingsIdentity(allocation.recommendationId) ||
             !isFinancialSavingsHash(allocation.baselineId) ||
             !isFinancialSavingsHash(allocation.projectionId) ||
@@ -258,15 +302,17 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
             projection.baselineId !== allocation.baselineId ||
             !haveSameFinancialSavingsSet(projection.affectedComponentIds, allocation.billableComponentIds) ||
             decimalToMinorUnits(projection.change.savings, value.minorUnitScale) !== allocation.savingsMinorUnits ||
+            projection.scenarioId !== allocation.scenarioId ||
             !activation ||
             activation.result !== 'included' ||
+            activation.scenarioId !== allocation.scenarioId ||
             activation.recommendationId !== allocation.recommendationId ||
             activation.projectionId !== allocation.projectionId ||
             (allocation.eligibility.kind === 'mapped' &&
                 (!eligibility ||
                     eligibility.status !== 'available' ||
                     eligibility.scopeId !== allocation.ownerScopeId ||
-                    eligibility.scenarioId !== allocation.recommendationId ||
+                    eligibility.scenarioId !== allocation.scenarioId ||
                     eligibility.eligibilityBaselineId !== allocation.eligibility.eligibilityBaselineId ||
                     eligibility.denominator.denominatorId !== allocation.denominatorId ||
                     eligibility.currentBaselineMapping.currentBaselineId !== allocation.baselineId ||
@@ -307,8 +353,41 @@ const validateAvailableCoordinate = (value, authorityCoordinate, eligibilityById
         contributedAllocationIds.push(...contribution.allocationIds);
     }
     const allocationIds = [...allocationById.keys()];
+    const recommendationContributionAllocationIds = [];
+    const recommendationContributionKeys = new Set();
+    for (const contribution of value.recommendationContributions) {
+        if (!isFinancialSavingsRecord(contribution) ||
+            !hasExactFinancialSavingsFields(contribution, [
+                'ownerScopeId',
+                'recommendationId',
+                'allocationIds',
+                'savingsMinorUnits',
+            ]) ||
+            !isFinancialSavingsIdentity(contribution.ownerScopeId) ||
+            !isFinancialSavingsIdentity(contribution.recommendationId) ||
+            !Array.isArray(contribution.allocationIds) ||
+            contribution.allocationIds.length === 0 ||
+            contribution.allocationIds.length > 20000 ||
+            !contribution.allocationIds.every(isFinancialSavingsHash) ||
+            new Set(contribution.allocationIds).size !== contribution.allocationIds.length ||
+            !isFinancialSavingsMinorUnits(contribution.savingsMinorUnits))
+            return false;
+        const contributionKey = `${contribution.ownerScopeId}\u0000${contribution.recommendationId}`;
+        if (recommendationContributionKeys.has(contributionKey))
+            return false;
+        const allocations = contribution.allocationIds.map(id => allocationById.get(id));
+        if (allocations.some(allocation => !allocation ||
+            allocation.ownerScopeId !== contribution.ownerScopeId ||
+            allocation.recommendationId !== contribution.recommendationId) ||
+            sumFinancialSavingsMinorUnits(allocations.map(allocation => allocation.savingsMinorUnits)) !== contribution.savingsMinorUnits)
+            return false;
+        recommendationContributionKeys.add(contributionKey);
+        recommendationContributionAllocationIds.push(...contribution.allocationIds);
+    }
     return (haveSameFinancialSavingsSet(contributedAllocationIds, allocationIds) &&
         new Set(contributedAllocationIds).size === contributedAllocationIds.length &&
+        haveSameFinancialSavingsSet(recommendationContributionAllocationIds, allocationIds) &&
+        new Set(recommendationContributionAllocationIds).size === recommendationContributionAllocationIds.length &&
         haveSameFinancialSavingsSet(value.aggregate.allocationIds, allocationIds) &&
         new Set(value.aggregate.allocationIds).size === value.aggregate.allocationIds.length &&
         value.aggregate.savingsMinorUnits === sumFinancialSavingsMinorUnits(value.allocations.map(allocation => allocation.savingsMinorUnits)));
@@ -324,6 +403,6 @@ export const validateFinancialSavingsCoordinateEnvelopeV1 = (value, authorityCoo
                 ? value.currentAggregateBaselineId === authorityCoordinate.aggregateBaseline.baselineId
                 : value.currentAggregateBaselineId === undefined));
     }
-    return (value.status === 'available' &&
-        validateAvailableCoordinate(value, authorityCoordinate, eligibilityById, evidenceById, authorityGeneratedAt, authorityRunId));
+    return ((value.status === 'available' || value.status === 'partial') &&
+        validateComposedCoordinate(value, authorityCoordinate, eligibilityById, evidenceById, authorityGeneratedAt, authorityRunId));
 };

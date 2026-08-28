@@ -4,7 +4,15 @@ import { isCanonicalExactMoney } from './financialValidationPrimitives.js';
 import { FINANCIAL_PROJECTION_CONTRACT_VERSION_V1, FINANCIAL_PROJECTION_SCHEMA_VERSION_V1, FINANCIAL_PROJECTION_UNAVAILABLE_REASONS_V1, } from './financialProjection.js';
 const SHA256_ID = /^sha256:[0-9a-f]{64}$/;
 const CURRENCY = /^[A-Z]{3}$/;
-const OPERATIONS = new Set(['replace-rate', 'replace-quantity', 'remove-component', 'schedule-quantity', 'commitment-coverage']);
+const OPERATIONS = new Set([
+    'unclassified',
+    'replace-rate',
+    'replace-quantity',
+    'replace-quantity-and-rate',
+    'remove-component',
+    'schedule-quantity',
+    'commitment-coverage',
+]);
 const COST_BASES = new Set(['billed', 'amortized']);
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
 const TARGET_PROVENANCE = new Set(['retail-derived', 'provider-quote-derived', 'billing-backed', 'estimated', 'configuration-derived']);
@@ -32,6 +40,16 @@ const isNonNegativeDecimal = (value, currency = 'AUD') => {
     }
 };
 const isUnit = (value) => isIdentity(value) && value.length <= 512;
+const isReplayedProduct = (quantity, rate, targetAmount, currency) => {
+    if (!isNonNegativeDecimal(quantity) || !isNonNegativeDecimal(rate, currency) || !isDecimal(targetAmount, currency))
+        return false;
+    try {
+        return equalsDecimal(multiplyExactDecimalValues(parseCanonicalDecimal(quantity), parseCanonicalDecimal(rate)), parseCanonicalDecimal(targetAmount));
+    }
+    catch {
+        return false;
+    }
+};
 const isCanonicalDate = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T00:00:00.000Z`));
 const isNormalizedAverageMonthProfile = (value) => isRecord(value) &&
     hasExactFields(value, ['kind', 'annualDayCount', 'monthDivisor', 'hoursPerDay', 'normalizedHours']) &&
@@ -203,7 +221,8 @@ const isAppliedComponentTargets = (value, operationKind, targetProvenance, targe
                 !isNonNegativeDecimal(target.targetRate.amount) ||
                 target.targetRate.currencyCode !== accountingCurrencyCode ||
                 !isUnit(target.targetRate.quantityUnit) ||
-                target.targetRate.quantityUnit !== target.sourceQuantity.unit)
+                target.targetRate.quantityUnit !== target.sourceQuantity.unit ||
+                !isReplayedProduct(target.sourceQuantity.amount, target.targetRate.amount, target.targetAmount, accountingCurrencyCode))
                 return false;
             continue;
         }
@@ -218,7 +237,24 @@ const isAppliedComponentTargets = (value, operationKind, targetProvenance, targe
                 !hasExactFields(target.targetQuantity, ['amount', 'unit']) ||
                 !isNonNegativeDecimal(target.targetQuantity.amount) ||
                 !isUnit(target.targetQuantity.unit) ||
-                target.targetQuantity.unit !== target.sourceRate.unit)
+                target.targetQuantity.unit !== target.sourceRate.unit ||
+                !isReplayedProduct(target.targetQuantity.amount, target.sourceRate.amount, target.targetAmount, accountingCurrencyCode))
+                return false;
+            continue;
+        }
+        if (operationKind === 'replace-quantity-and-rate') {
+            if (!hasExactFields(target, ['componentId', 'targetAmount', 'targetConfigurationId', 'targetEvidenceRefIds', 'targetQuantity', 'targetRate']) ||
+                !isRecord(target.targetQuantity) ||
+                !hasExactFields(target.targetQuantity, ['amount', 'unit']) ||
+                !isNonNegativeDecimal(target.targetQuantity.amount) ||
+                !isUnit(target.targetQuantity.unit) ||
+                !isRecord(target.targetRate) ||
+                !hasExactFields(target.targetRate, ['amount', 'currencyCode', 'quantityUnit']) ||
+                !isNonNegativeDecimal(target.targetRate.amount, accountingCurrencyCode) ||
+                target.targetRate.currencyCode !== accountingCurrencyCode ||
+                !isUnit(target.targetRate.quantityUnit) ||
+                target.targetRate.quantityUnit !== target.targetQuantity.unit ||
+                !isReplayedProduct(target.targetQuantity.amount, target.targetRate.amount, target.targetAmount, accountingCurrencyCode))
                 return false;
             continue;
         }
@@ -428,6 +464,10 @@ const isUnavailable = (value) => {
         !TARGET_PERIOD_CONVENTIONS.has(value.targetPeriodConvention) ||
         !isTargetPeriodProfileCompatible(value.targetPeriodConvention, value.targetPeriodProfile, false) ||
         (isObservedPeriodProfile(value.targetPeriodProfile) && value.operationKind !== 'commitment-coverage') ||
+        (value.operationKind === 'unclassified' &&
+            (value.unavailableReason !== 'target-evidence-unavailable' ||
+                !Array.isArray(value.affectedComponentIds) ||
+                value.affectedComponentIds.length !== 0)) ||
         (value.targetProvenance === 'configuration-derived' && value.operationKind !== 'remove-component') ||
         (value.operationKind === 'commitment-coverage' && value.targetProvenance !== 'provider-quote-derived') ||
         !isPossiblyEmptyHashArray(value.affectedComponentIds) ||

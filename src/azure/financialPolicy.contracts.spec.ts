@@ -1,4 +1,5 @@
 import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
   FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1,
   FINANCIAL_POLICY_EVALUATION_CONTRACT_VERSION_V1,
   createFinancialPolicyDefinitionRevisionIdV1,
@@ -18,6 +19,7 @@ const definitionWithoutId: FinancialPolicyDefinitionRevisionIdentityPreimageV1 =
   contractVersion: FINANCIAL_POLICY_DEFINITION_CONTRACT_VERSION_V1,
   companyId: 'company-1',
   definitionId: 'budget-definition-1',
+  displayName: 'Monthly budget',
   revision: '7',
   effectiveState: 'enabled',
   coordinateRequest: {
@@ -26,11 +28,12 @@ const definitionWithoutId: FinancialPolicyDefinitionRevisionIdentityPreimageV1 =
     scope: {
       kind: 'subscription',
       scopeId: 'azure-subscription:sub-1',
-      scopeFingerprint: `sha256:${'1'.repeat(64)}`,
     },
-    period: { kind: 'calendar-month', timeZone: 'Pacific/Auckland' },
+    scopeSelector: { kind: 'subscription', subscriptionIds: ['sub-1'] },
+    period: { kind: 'calendar-month', dateBasis: 'company-local', timeZone: 'Pacific/Auckland' },
     costBasis: 'billed',
-    estimateLens: 'include-estimates',
+    estimateLens: 'billing-only',
+    chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
     requiredAccountingCurrencyCode: 'AUD',
   },
   criteria: {
@@ -77,12 +80,5 @@ const evaluation: FinancialPolicyEvaluationV1 = {
   actionAuditId: createFinancialPolicyEvaluationActionAuditIdV1(evaluationId),
 };
 
-// @ts-expect-error forecast evaluation requires an analytics projection identity.
-const forecastWithoutProjection: FinancialPolicyEvaluationV1 = {
-  ...evaluation,
-  analyticsProjectionId: undefined,
-};
-
 void isFinancialPolicyDefinitionRevisionV1(definition);
 void isFinancialPolicyEvaluationV1(evaluation);
-void forecastWithoutProjection;

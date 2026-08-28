@@ -44,6 +44,39 @@ const projection = {
 
 assert.equal(isFinancialProjectionEnvelopeV1(projection), true);
 
+const unclassifiedUnavailable = {
+  schemaVersion: 1,
+  contractVersion: 'financial-projection/v1',
+  provider: 'azure',
+  providerAccountRefs: ['azure-subscription:sub-1'],
+  scopeId: '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.unknown/widgets/widget-1',
+  scenarioId: 'unknown-financial-scenario',
+  operationKind: 'unclassified',
+  baselineCostBasis: 'billed',
+  baselineEstimateLens: 'actual-only',
+  targetCostBasis: 'billed',
+  targetProvenance: 'estimated',
+  targetPeriodConvention: 'same-period-quantity',
+  affectedComponentIds: [],
+  status: 'unavailable',
+  unavailableReason: 'target-evidence-unavailable',
+};
+assert.equal(
+  isFinancialProjectionEnvelopeV1(unclassifiedUnavailable),
+  true,
+  'An unclassified strategy may be represented only as explicit target-evidence-unavailable.'
+);
+assert.equal(
+  isFinancialProjectionEnvelopeV1({ ...unclassifiedUnavailable, unavailableReason: 'baseline-unavailable' }),
+  false,
+  'An unclassified strategy cannot hide another failure reason.'
+);
+assert.equal(
+  isFinancialProjectionEnvelopeV1({ ...unclassifiedUnavailable, affectedComponentIds: [`sha256:${'1'.repeat(64)}`] }),
+  false,
+  'An unclassified strategy cannot claim affected components without target evidence.'
+);
+
 const commitmentIdentity = {
   ...identity,
   scenarioId: 'reservation:one-year:d11-v2',
@@ -153,6 +186,43 @@ const removalProjection = {
   reconciliation: { status: 'reconciled', difference: '0' },
 };
 assert.equal(isFinancialProjectionEnvelopeV1(removalProjection), true, 'Configuration-derived removal must remain replayable.');
+
+const quantityAndRateIdentity = {
+  ...identity,
+  scenarioId: 'storage:cool-tier',
+  operationKind: 'replace-quantity-and-rate',
+  appliedComponentTargets: [
+    {
+      componentId: identity.affectedComponentIds[0],
+      targetAmount: '36',
+      targetConfigurationId: 'azure-storage-tier:cool',
+      targetEvidenceRefIds: [`sha256:${'6'.repeat(64)}`],
+      targetQuantity: { amount: '120', unit: 'gb-month' },
+      targetRate: { amount: '0.3', currencyCode: 'AUD', quantityUnit: 'gb-month' },
+    },
+  ],
+};
+const quantityAndRateProjection = {
+  ...quantityAndRateIdentity,
+  status: 'available',
+  projectionId: `sha256:${createHash('sha256').update(canonicalizeFinancialProjectionIdentityV1(quantityAndRateIdentity)).digest('hex')}`,
+  current: { total: '60', affected: '60', unchanged: '0' },
+  target: { total: '36', affected: '36', unchanged: '0' },
+  change: { delta: '-24', savings: '24', increase: '0' },
+  reconciliation: { status: 'reconciled', difference: '0' },
+};
+assert.equal(
+  isFinancialProjectionEnvelopeV1(quantityAndRateProjection),
+  true,
+  'A simultaneous target quantity and rate change must replay target money from both exact inputs.'
+);
+const forgedQuantityAndRate = structuredClone(quantityAndRateProjection);
+forgedQuantityAndRate.appliedComponentTargets[0].targetAmount = '35';
+assert.equal(
+  isFinancialProjectionEnvelopeV1(forgedQuantityAndRate),
+  false,
+  'A producer-provided target total cannot override the replayed quantity-rate product.'
+);
 
 const invalidCommitmentAmount = structuredClone(commitmentIdentity);
 invalidCommitmentAmount.appliedComponentTargets[0].targetAmount = '491';

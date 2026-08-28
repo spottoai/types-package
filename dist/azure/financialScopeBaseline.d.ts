@@ -2,7 +2,7 @@ import type { CostBasis, EstimateLens } from './costComposition';
 import type { FinancialEvidenceAssessmentSummaryV1, FinancialEvidenceIntervalV1, FinancialScopeKindV2 } from './financialScopeEvidence';
 export declare const FINANCIAL_SCOPE_BASELINE_SCHEMA_VERSION_V2: 2;
 export declare const FINANCIAL_SCOPE_BASELINE_CONTRACT_VERSION_V2: "financial-scope-baseline/v2";
-export type FinancialWindowKindV2 = 'rolling-30-days' | 'calendar-month' | 'provider-billing-period' | 'stable-billing-window' | 'daily';
+export type FinancialWindowKindV2 = 'rolling-30-days' | 'calendar-month' | 'provider-billing-period' | 'stable-billing-window' | 'analytics-history' | 'daily';
 export interface FinancialBaselineCoverageV2 {
     coverageId: string;
     interval: FinancialEvidenceIntervalV1;
@@ -25,6 +25,12 @@ export interface AvailableFinancialBaselinePeriodV2 extends FinancialBaselinePer
     observed: FinancialEvidenceIntervalV1;
     coverage: [FinancialBaselineCoverageV2, ...FinancialBaselineCoverageV2[]];
 }
+/**
+ * True only when the produced evidence covers the entire requested interval.
+ * Partial periods remain valid monetary evidence for display and forecasting,
+ * but must not be used as the current side of an optimization projection.
+ */
+export declare const isCompleteFinancialBaselinePeriodV2: (period: FinancialBaselinePeriodV2) => boolean;
 interface FinancialScopeBaselineRequestV2 {
     schemaVersion: typeof FINANCIAL_SCOPE_BASELINE_SCHEMA_VERSION_V2;
     contractVersion: typeof FINANCIAL_SCOPE_BASELINE_CONTRACT_VERSION_V2;
@@ -121,7 +127,7 @@ export interface AvailableAggregateFinancialScopeBaselineV2 extends FinancialSco
     components?: never;
     evidenceBundleId?: never;
 }
-export declare const FINANCIAL_SCOPE_BASELINE_UNAVAILABLE_REASONS_V2: readonly ["evidence-not-produced", "evidence-not-matched", "period-unresolved", "coverage-incomplete", "basis-unavailable", "estimate-lens-unavailable", "currency-unresolved", "currency-conflicting", "component-identity-unavailable", "ownership-unresolved", "ownership-conflict", "mixed-generation", "member-incompatible", "reconciliation-failure", "unsupported-scope"];
+export declare const FINANCIAL_SCOPE_BASELINE_UNAVAILABLE_REASONS_V2: readonly ["evidence-not-produced", "evidence-not-matched", "period-unresolved", "coverage-incomplete", "basis-unavailable", "estimate-lens-unavailable", "currency-unresolved", "currency-conflicting", "component-identity-unavailable", "ownership-unresolved", "ownership-conflict", "mixed-generation", "member-incompatible", "reconciliation-failure", "scope-membership-empty", "unsupported-scope"];
 export type FinancialScopeBaselineUnavailableReasonV2 = (typeof FINANCIAL_SCOPE_BASELINE_UNAVAILABLE_REASONS_V2)[number];
 export interface UnavailableFinancialScopeBaselineV2 extends FinancialScopeBaselineRequestV2 {
     status: 'unavailable';

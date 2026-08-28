@@ -9,6 +9,13 @@ export type FinancialEvidenceRoleV1 =
   | 'retail-rate'
   | 'commitment-quote'
   | 'fx-conversion'
+  | 'commercial-arrangement'
+  | 'provider-access-observation'
+  | 'configuration-timeline'
+  | 'provider-price-schedule'
+  | 'pricing-function'
+  | 'charge-inclusion-policy'
+  | 'settlement-revision'
   | 'eligibility-rule'
   | 'recommendation-scenario-set'
   | 'recommendation-lifecycle';

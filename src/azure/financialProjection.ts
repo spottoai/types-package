@@ -2,8 +2,10 @@ export const FINANCIAL_PROJECTION_SCHEMA_VERSION_V1 = 1 as const;
 export const FINANCIAL_PROJECTION_CONTRACT_VERSION_V1 = 'financial-projection/v1' as const;
 
 export type FinancialProjectionOperationKindV1 =
+  | 'unclassified'
   | 'replace-rate'
   | 'replace-quantity'
+  | 'replace-quantity-and-rate'
   | 'remove-component'
   | 'schedule-quantity'
   | 'commitment-coverage';
@@ -108,6 +110,10 @@ export type FinancialProjectionAppliedComponentTargetV1 = FinancialProjectionApp
     | {
         sourceRate: { amount: string; unit: string; currencyCode: string };
         targetQuantity: { amount: string; unit: string };
+      }
+    | {
+        targetQuantity: { amount: string; unit: string };
+        targetRate: { amount: string; currencyCode: string; quantityUnit: string };
       }
     | {
         targetAmount: '0';
