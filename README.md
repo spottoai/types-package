@@ -136,6 +136,15 @@ relationship, and dependency-free allowlist validator. The validator binds the
 envelope, provider scope, nested applied scopes, and account-bearing ARNs while
 rejecting internal metadata, Azure-only fields, and undeclared public fields.
 
+The same entry points expose a separate organization commitments contract
+family: a secret-free `organization-commitments` refresh command, a safe scope
+selector and progress response, a payer-aware planning view, and the immutable
+`organization-commitments-planning.json.gz` artifact. Its validator binds the
+company, estate, manifest revision, organization, management account, exact
+member set, and account-bearing ARNs without weakening the exact-account
+validator. Allocation and resource attribution remain explicitly unavailable
+until a producer supplies proved persisted evidence.
+
 The stable `/aws/relationships` and `/aws/commitments-planning` entry points
 expose those runtime contracts independently for browser consumers. The root
 and `/aws` barrels remain compatibility entry points and continue to export the

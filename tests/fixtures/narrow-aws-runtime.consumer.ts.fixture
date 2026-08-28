@@ -3,8 +3,14 @@ import {
   type AwsPortalRelationshipArtifact,
 } from '@spottoai/types-package/aws/relationships';
 import {
+  validateAwsPortalOrganizationCommitmentsPlanningArtifact,
   validateAwsCommitmentsPlanningViewIdentity,
+  validateAwsOrganizationCommitmentsRefreshAcceptedResponse,
+  validateAwsOrganizationCommitmentsRefreshStatusResponse,
+  validateAwsOrganizationCommitmentsScopeListResponse,
   type AwsCommitmentsPlanningView,
+  type AwsOrganizationCommitmentsPlanningView,
+  type AwsPortalOrganizationCommitmentsPlanningArtifact,
 } from '@spottoai/types-package/aws/commitments-planning';
 
 const commitmentsViewValidator: (value: unknown, expectedAccountId?: string) => asserts value is AwsCommitmentsPlanningView =
@@ -13,6 +19,12 @@ const commitmentsViewValidator: (value: unknown, expectedAccountId?: string) => 
 void [
   validateAwsPortalRelationshipArtifact,
   commitmentsViewValidator,
+  validateAwsPortalOrganizationCommitmentsPlanningArtifact,
+  validateAwsOrganizationCommitmentsRefreshAcceptedResponse,
+  validateAwsOrganizationCommitmentsRefreshStatusResponse,
+  validateAwsOrganizationCommitmentsScopeListResponse,
 ];
 
 void (undefined as unknown as AwsPortalRelationshipArtifact);
+void (undefined as unknown as AwsOrganizationCommitmentsPlanningView);
+void (undefined as unknown as AwsPortalOrganizationCommitmentsPlanningArtifact);

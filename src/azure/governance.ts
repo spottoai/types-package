@@ -6,6 +6,7 @@ export const TENANT_GOVERNANCE_GRAPH_SCHEMA_VERSION = '2026-05-02.tenant-graph-v
 export const GLOBAL_ADMIN_RAW_SCHEMA_VERSION = '2026-06-24.global-admin-raw-v1' as const;
 export const PRIVILEGED_ROLE_SUMMARY_SCHEMA_VERSION = '2026-06-24.privileged-role-summary-v1' as const;
 export const TENANT_GOVERNANCE_ACCESS_SCHEMA_VERSION = '2026-06-24.tenant-governance-access-v1' as const;
+export const TENANT_MFA_POSTURE_SCHEMA_VERSION = '2026-08-25.tenant-mfa-posture-v1' as const;
 
 export const GOVERNANCE_REPORT_PORTAL_FILE = 'governance.json.gz' as const;
 export const GOVERNANCE_GRAPH_PORTAL_FILE = 'governance-graph.json.gz' as const;
@@ -689,6 +690,7 @@ export type GlobalAdminPrincipalType = 'user' | 'group' | 'servicePrincipal' | '
 export type GlobalAdminAssignmentSource = 'direct' | 'groupDerived' | 'unknown';
 export type GlobalAdminAssignmentMode = 'permanent' | 'eligible' | 'active' | 'unknown';
 export type GlobalAdminLastActivatedEvidence = 'roleAssignmentScheduleInstance' | 'directoryAudit' | 'none' | 'unavailable';
+export type GlobalAdminMfaStatus = 'mfa' | 'unknown';
 
 export interface GlobalAdminCoverageSection {
   state: GovernanceCoverageState;
@@ -707,6 +709,7 @@ export interface GlobalAdminCoverage {
   groups: GlobalAdminCoverageSection;
   groupMemberships: GlobalAdminCoverageSection;
   globalAdminResolution: GlobalAdminCoverageSection;
+  userRegistrationDetails?: GlobalAdminCoverageSection;
 }
 
 export interface GlobalAdminWarning {
@@ -730,6 +733,7 @@ export interface GlobalAdminPrincipal {
   userPrincipalName?: string;
   mail?: string;
   accountEnabled?: boolean;
+  mfaStatus?: GlobalAdminMfaStatus;
   assignmentSource: GlobalAdminAssignmentSource;
   assignmentModes: GlobalAdminAssignmentMode[];
   isPimBacked: boolean | 'unknown';
@@ -811,6 +815,159 @@ export interface GovernanceAccessArtifact {
   sourceMetadata: GovernanceAccessSourceMetadata;
 }
 
+export type TenantMfaAssessmentState = Exclude<GovernanceCoverageState, 'skipped'>;
+export type TenantMfaUserType = 'member' | 'guest' | 'unknown';
+export type TenantMfaRegistrationStatus = 'capable' | 'registeredButNotAllowed' | 'notCapable' | 'unknown';
+export type TenantMfaPerUserState = 'disabled' | 'enabled' | 'enforced' | 'unknown';
+export type TenantMfaEnforcementStatus = 'enforced' | 'conditionallyEnforced' | 'notEnforced' | 'unknown';
+export type TenantMfaEnforcementMechanism = 'securityDefaults' | 'conditionalAccess' | 'perUserMfa' | 'mandatoryAzureMfa';
+export type TenantMfaObservedSignInStatus = 'mfaRequired' | 'singleFactorObserved' | 'noRecentSignIn' | 'unknown';
+export type TenantMfaGuestTrustStatus = 'accepted' | 'notAccepted' | 'unknown';
+export type TenantMfaLicenseStatus = 'licensed' | 'notLicensed' | 'notRequired' | 'unknown';
+export type TenantMfaSecurityDefaultsStatus = 'enabled' | 'disabled' | 'unknown';
+export type TenantMfaSource = 'microsoftGraph' | 'logAnalytics' | 'derived';
+
+export interface TenantMfaCoverageSection {
+  state: GovernanceCoverageState;
+  source: GovernanceAccessCoverageSource | string;
+  reason?: string;
+  message?: string;
+  requiredPermissions?: string[];
+  lastAttemptedAt?: string;
+  lastSuccessfulAt?: string;
+  maximumSourceLagHours?: number;
+}
+
+export interface TenantMfaCoverage {
+  users: TenantMfaCoverageSection;
+  userRegistrationDetails: TenantMfaCoverageSection;
+  perUserMfa?: TenantMfaCoverageSection;
+  securityDefaults: TenantMfaCoverageSection;
+  conditionalAccess: TenantMfaCoverageSection;
+  authenticationMethodsPolicy: TenantMfaCoverageSection;
+  crossTenantAccess: TenantMfaCoverageSection;
+  signIns: TenantMfaCoverageSection;
+  licensing: TenantMfaCoverageSection;
+}
+
+export interface TenantMfaPostureSummary {
+  assessmentState: TenantMfaAssessmentState;
+  activeUsers?: number;
+  mfaCapableUsers?: number;
+  notMfaCapableUsers?: number;
+  unknownRegistrationUsers?: number;
+  enforcementKnownUsers?: number;
+  enforcementUnknownUsers?: number;
+}
+
+export interface TenantMfaConditionalAccessSummary {
+  enabledMfaPolicyCount?: number;
+  reportOnlyMfaPolicyCount?: number;
+  disabledMfaPolicyCount?: number;
+}
+
+export interface TenantMfaAuthenticationMethodsSummary {
+  allowedMethods?: string[];
+}
+
+export interface TenantMfaCrossTenantAccessSummary {
+  defaultInboundMfaTrust: TenantMfaGuestTrustStatus;
+  partnerOverrideCount?: number;
+}
+
+export interface TenantMfaPolicyPosture {
+  securityDefaults: TenantMfaSecurityDefaultsStatus;
+  conditionalAccess: TenantMfaConditionalAccessSummary;
+  authenticationMethodsPolicy: TenantMfaAuthenticationMethodsSummary;
+  crossTenantAccess: TenantMfaCrossTenantAccessSummary;
+}
+
+export type TenantMfaEnforcementScenario =
+  | { type: 'allResources' }
+  | { type: 'azureManagement' }
+  | { type: 'adminPortals' }
+  | { type: 'application'; applicationId: string; applicationDisplayName?: string };
+
+export interface TenantMfaRegistrationAssessment {
+  status: TenantMfaRegistrationStatus;
+  isMfaRegistered?: boolean;
+  isMfaCapable?: boolean;
+  methodsRegistered?: string[];
+  sourceUpdatedAt?: string;
+}
+
+export interface TenantMfaPerUserAssessment {
+  state: TenantMfaPerUserState;
+  reason?: string;
+}
+
+export interface TenantMfaEnforcementAssessment {
+  scenario: TenantMfaEnforcementScenario;
+  status: TenantMfaEnforcementStatus;
+  mechanisms: TenantMfaEnforcementMechanism[];
+  policyIds?: string[];
+  reason?: string;
+}
+
+export interface TenantMfaObservedSignInSummary {
+  status: TenantMfaObservedSignInStatus;
+  lookbackDays: number;
+  lastObservedAt?: string;
+  mfaRequiredSignInCount?: number;
+  singleFactorSignInCount?: number;
+}
+
+export interface TenantMfaGuestTrustAssessment {
+  homeTenantMfaTrust: TenantMfaGuestTrustStatus;
+  reason?: string;
+}
+
+export interface TenantMfaLicenseAssessment {
+  status: TenantMfaLicenseStatus;
+  skuIds?: string[];
+  servicePlanIds?: string[];
+  reason?: string;
+}
+
+export interface TenantMfaUserAssessment {
+  userId: string;
+  /** Friendly Microsoft Entra display name when user inventory evidence includes it. */
+  displayName?: string;
+  /** Sign-in name used to identify the user when user inventory evidence includes it. */
+  userPrincipalName?: string;
+  userType: TenantMfaUserType;
+  accountEnabled: boolean;
+  registration: TenantMfaRegistrationAssessment;
+  perUserMfa?: TenantMfaPerUserAssessment;
+  enforcement: TenantMfaEnforcementAssessment[];
+  observedSignIns?: TenantMfaObservedSignInSummary;
+  guestTrust?: TenantMfaGuestTrustAssessment;
+  licensing?: TenantMfaLicenseAssessment;
+}
+
+export interface TenantMfaSourceMetadata {
+  source: TenantMfaSource;
+  endpoint?: string;
+  state: GovernanceCoverageState;
+  reason?: string;
+  lastAttemptedAt?: string;
+  lastSuccessfulAt?: string;
+}
+
+export interface TenantMfaPosture {
+  generatedAt: string;
+  summary: TenantMfaPostureSummary;
+  tenantPolicy: TenantMfaPolicyPosture;
+  users: TenantMfaUserAssessment[];
+  coverage: TenantMfaCoverage;
+  sources: TenantMfaSourceMetadata[];
+}
+
+export interface TenantMfaPostureArtifact extends TenantMfaPosture {
+  schemaVersion: typeof TENANT_MFA_POSTURE_SCHEMA_VERSION;
+  tenantId: string;
+}
+
 export interface TenantGovernanceAccessSourceMetadata {
   tenantFiles: string[];
   graphEndpoints: string[];
@@ -823,6 +980,7 @@ export interface TenantGovernanceAccessArtifact {
     tenantId: string;
   };
   globalAdmins: GovernanceAccessGlobalAdminSection;
+  mfaPosture?: TenantMfaPosture;
   sourceMetadata: TenantGovernanceAccessSourceMetadata;
 }
 

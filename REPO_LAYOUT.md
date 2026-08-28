@@ -30,7 +30,10 @@ Folder `README.md` files are authoritative for local implementation details.
   domain and are exported through both package entrypoints.
   The same domain owns the immutable AWS Commitments Planning Portal envelope,
   package logical name/registry relationship, and exact-account allowlist
-  validator; materialization and storage paths remain engine-owned.
+  validator; materialization and storage paths remain engine-owned. A distinct
+  organization commitments family owns the dedicated refresh/read/status
+  contracts, payer/account planning view, estate-bound immutable artifact, and
+  declared-membership validator without widening the account envelope.
   It also includes the secret-free AWS estates desired-state manifest,
   estate/account/billing-source orchestration commands, and company trust
   setup shapes. Engine persistence and saga types are intentionally excluded.

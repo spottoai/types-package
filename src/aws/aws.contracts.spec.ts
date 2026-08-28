@@ -11,6 +11,7 @@ import {
   type AwsCompanyTrustSetupResponse,
   type AwsEstateDeleteCommand,
   type AwsEstateReconcileCommand,
+  type AwsOrganizationCommitmentsRefreshCommand,
 } from '../index';
 
 // @ts-expect-error The abandoned single-account setup request is not exported.
@@ -78,7 +79,20 @@ const billingSourceRefresh: AwsBillingSourceRefreshCommand = {
   requestedAt: '2026-07-31T00:02:00.000Z',
 };
 
-const commands: AwsCommand[] = [estateReconcile, estateDelete, accountRefresh, accountDelete, billingSourceRefresh];
+const organizationCommitmentsRefresh: AwsOrganizationCommitmentsRefreshCommand = {
+  schemaVersion: 1,
+  provider: 'aws',
+  entity: 'organization-commitments',
+  action: 'refresh',
+  companyId: 'company-example',
+  estateId: 'estate-example',
+  manifestRevision: 'etag-42',
+  requestId: 'request-organization-commitments-refresh',
+  correlationId: 'correlation-example',
+  requestedAt: '2026-07-31T00:03:00.000Z',
+};
+
+const commands: AwsCommand[] = [estateReconcile, estateDelete, accountRefresh, accountDelete, billingSourceRefresh, organizationCommitmentsRefresh];
 
 const companyTrustSetup: AwsCompanyTrustSetupResponse = {
   provider: 'AWS',
@@ -113,6 +127,31 @@ const companyTrustSetup: AwsCompanyTrustSetupResponse = {
     guardrailPolicy: {
       Version: '2012-10-17',
       Statement: [{ Sid: 'DenySecretReads', Effect: 'Deny', Action: 'secretsmanager:GetSecretValue', Resource: '*' }],
+    },
+    commitmentsAccessPolicyName: 'SpottoCommitmentsPlanning',
+    commitmentsAccessPolicy: {
+      Version: '2012-10-17',
+      Statement: [
+        {
+          Sid: 'ReadOrganizationCommitments',
+          Effect: 'Allow',
+          Action: [
+            'ce:GetReservationCoverage',
+            'ce:GetReservationUtilization',
+            'ce:GetReservationPurchaseRecommendation',
+            'ce:GetSavingsPlansCoverage',
+            'ce:GetSavingsPlansUtilization',
+            'ce:GetSavingsPlansPurchaseRecommendation',
+            'ce:ListSavingsPlansPurchaseRecommendationGeneration',
+            'ce:StartSavingsPlansPurchaseRecommendationGeneration',
+            'ec2:DescribeReservedInstances',
+            'organizations:DescribeOrganization',
+            'organizations:ListAccounts',
+            'savingsplans:DescribeSavingsPlans',
+          ],
+          Resource: '*',
+        },
+      ],
     },
     instructionsMarkdown: '# Create the role using the generated policies.',
   },

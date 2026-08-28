@@ -44,6 +44,7 @@ export * from './azure/storage-inventory';
 export * from './azure/governance';
 export * from './azure/publicIpAddresses';
 export * from './azure/workManagement';
+export * from './azure/vmPatchManagement';
 export * from './aws';
 export * from './accounts';
 export * from './assessments';

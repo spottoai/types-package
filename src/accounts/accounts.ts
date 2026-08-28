@@ -3,6 +3,7 @@ import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
+import type { EnvironmentType, ProviderScopeDisplayMetadata } from '../common/provider';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 import type {
   AzureSpSetupErrorCode,
@@ -14,7 +15,8 @@ import type {
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
-export type SubscriptionType = 'Production' | 'Non-Production' | 'Mixed';
+/** Azure compatibility alias for the provider-neutral environment classification. */
+export type SubscriptionType = EnvironmentType;
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
@@ -532,7 +534,11 @@ export interface AwsPublicCloudAccountFields {
   lastSuccessfulSyncAt?: string;
 }
 
-export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AzureSpSetupCloudAccountFields, AwsPublicCloudAccountFields {
+export interface CloudAccount
+  extends AzureGuestAccessCloudAccountFields,
+    AzureSpSetupCloudAccountFields,
+    AwsPublicCloudAccountFields,
+    ProviderScopeDisplayMetadata {
   /** Partition Key */
   companyId: string;
   /** Stable cloud-account row identifier. Provider account metadata is carried in provider-specific fields. */
