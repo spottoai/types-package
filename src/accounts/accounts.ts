@@ -12,7 +12,7 @@ import type {
   AzureSpSetupReaderReadiness,
   AzureSpSetupResult,
 } from './azureSpSetup';
-import type { AzureBillingExportConfigurationStatus, AzureBillingExportScopeType } from './azureManualOnboarding';
+import type { AzureBillingExportConfigurationStatus, AzureBillingExportDatasetType, AzureBillingExportScopeType } from './azureManualOnboarding';
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
@@ -22,8 +22,8 @@ export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap'
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
-/** Internal compatibility alias used by the persisted cloud-engine locator. */
-export type BillingExportLocatorScopeType = AzureBillingExportScopeType;
+/** Scope vocabulary used by the legacy unversioned cloud-engine locator. */
+export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
 export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
 export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
 export type AzureGdapValidationStatus = 'notValidated' | 'ready' | 'degraded' | 'blocked' | 'expired' | 'reauthRequired';
@@ -260,6 +260,28 @@ export interface CloudAccountBillingExportLocator {
   actual?: BillingExportLocatorEntry;
   amortized?: BillingExportLocatorEntry;
 }
+
+/** Resolved storage locator for one source in the versioned cloud-account collection. */
+export interface BillingExportLocatorSource {
+  datasetType: AzureBillingExportDatasetType;
+  scopeType: AzureBillingExportScopeType;
+  scopePath: string;
+  exportName: string;
+  storageAccountName: string;
+  container: string;
+  rootFolderPath: string;
+}
+
+export const CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION = 1 as const;
+
+/** Preferred persisted locator shape for one or more Azure billing export sources. */
+export interface CloudAccountBillingExportLocatorV1 {
+  schemaVersion: typeof CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION;
+  sources: [BillingExportLocatorSource, ...BillingExportLocatorSource[]];
+}
+
+/** Accepts legacy persisted records while cloud-engine and API migrate to the source collection. */
+export type CloudAccountBillingExportLocatorConfiguration = CloudAccountBillingExportLocator | CloudAccountBillingExportLocatorV1;
 
 export const AZURE_SYNC_FEATURE_ORDER = [
   'activityMonitoring',
@@ -630,7 +652,7 @@ export interface CloudAccount
   /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
   gdapCredentialReference?: string;
   /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
-  billingExportLocator?: string | CloudAccountBillingExportLocator;
+  billingExportLocator?: string | CloudAccountBillingExportLocatorConfiguration;
 }
 
 export type PublicCloudAccountDto = Omit<

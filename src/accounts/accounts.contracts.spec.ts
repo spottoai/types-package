@@ -32,7 +32,13 @@ import type {
   SubscriptionInfoBase,
   SubscriptionSyncFeatureOptOutsUpdateRequest,
 } from './accounts';
-import type { AzureBillingExportConfigurationInput, AzureManualOnboardingImportV1, CloudAccountTenantSyncRequestMessage } from '../index';
+import type {
+  AzureBillingExportConfigurationInput,
+  AzureBillingExportScopeType,
+  AzureManualOnboardingImportV1,
+  CloudAccountBillingExportLocatorConfiguration,
+  CloudAccountTenantSyncRequestMessage,
+} from '../index';
 import type { CompanySubscription, SecureScoreEvidence } from '../azure/subscriptions';
 import {
   AZURE_SYNC_FEATURE_METADATA,
@@ -44,7 +50,11 @@ import {
   isAzureSyncFeatureSupportedInScope,
   sortAzureSyncFeatureIds,
 } from './accounts';
-import { AZURE_MANUAL_ONBOARDING_IMPORT_KIND, AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION } from '../index';
+import {
+  AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION,
+  CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+} from '../index';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -378,48 +388,81 @@ const invalidGdapCloudAccountCreateRequestWithoutSelection: AzureGdapCloudAccoun
 };
 
 const manualBillingExportConfigurationByStorageName: AzureBillingExportConfigurationInput = {
-  actual: {
-    scopeType: 'billingAccount',
-    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
-    exportName: 'Cortex-actual-cost',
-    destination: {
-      storageAccountName: 'eroadstaazurebilling',
-      container: 'azurecostmanagement',
-      rootFolderPath: 'eroad',
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingAccount',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+      exportName: 'Cortex-actual-cost',
+      destination: {
+        storageAccountName: 'eroadstaazurebilling',
+        container: 'azurecostmanagement',
+        rootFolderPath: 'eroad',
+      },
     },
-  },
-  amortized: {
-    scopeType: 'billingAccount',
-    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
-    exportName: 'Cortex-amortized-cost',
-    destination: {
-      storageAccountName: 'eroadstaazurebilling',
-      container: 'azurecostmanagement',
-      rootFolderPath: 'eroad',
+    {
+      datasetType: 'amortized',
+      scopeType: 'billingProfile',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123',
+      exportName: 'Cortex-amortized-cost',
+      destination: {
+        storageAccountName: 'eroadstaazurebilling',
+        container: 'azurecostmanagement',
+        rootFolderPath: 'eroad',
+      },
     },
-  },
+    {
+      datasetType: 'actual',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'spotto-actual-daily',
+      destination: {
+        storageAccountName: 'billingexportstenant123',
+        container: 'cost-exports',
+        rootFolderPath: 'spotto/subscription-123',
+      },
+    },
+  ],
 };
 
 const manualBillingExportConfigurationWithApiResolvedDestination: AzureBillingExportConfigurationInput = {
-  actual: {
-    scopeType: 'tenant',
-    scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
-    exportName: 'tenant-actual-daily',
-  },
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'managementGroup',
+      scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
+      exportName: 'tenant-actual-daily',
+    },
+  ],
 };
 
 const manualBillingExportConfigurationByStorageResourceId: AzureBillingExportConfigurationInput = {
-  amortized: {
-    scopeType: 'billingAccount',
-    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
-    exportName: 'amortized-daily',
-    destination: {
-      storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/billing-rg/providers/Microsoft.Storage/storageAccounts/billingexports',
-      container: 'cost-exports',
-      rootFolderPath: 'spotto',
+  sources: [
+    {
+      datasetType: 'amortized',
+      scopeType: 'invoiceSection',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123/invoiceSections/section-123',
+      exportName: 'amortized-daily',
+      destination: {
+        storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/billing-rg/providers/Microsoft.Storage/storageAccounts/billingexports',
+        container: 'cost-exports',
+        rootFolderPath: 'spotto',
+      },
     },
-  },
+  ],
 };
+
+const supportedManualBillingExportScopes: AzureBillingExportScopeType[] = [
+  'subscription',
+  'resourceGroup',
+  'managementGroup',
+  'billingAccount',
+  'billingProfile',
+  'invoiceSection',
+  'department',
+  'enrollmentAccount',
+  'partnerCustomer',
+];
 
 const manualOnboardingImport: AzureManualOnboardingImportV1 = {
   schemaVersion: AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION,
@@ -443,20 +486,87 @@ const manualOnboardingImportForReusedCredential: AzureManualOnboardingImportV1 =
   billingExports: manualBillingExportConfigurationWithApiResolvedDestination,
 };
 
-// @ts-expect-error At least one billing export dataset must be configured.
-const invalidEmptyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {};
+const invalidEmptyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {
+  // @ts-expect-error At least one billing export source must be configured.
+  sources: [],
+};
 
-const invalidPartialManualBillingExportDestination: AzureBillingExportConfigurationInput = {
+const invalidLegacyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {
+  // @ts-expect-error Manual onboarding uses the source collection, not the legacy persisted locator shape.
   actual: {
     scopeType: 'billingAccount',
     scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
     exportName: 'actual-daily',
-    // @ts-expect-error A supplied destination requires a storage identifier, container, and root folder.
-    destination: {
-      storageAccountName: 'billingexports',
-      container: 'cost-exports',
-    },
   },
+};
+
+const invalidPartialManualBillingExportDestination: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingAccount',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+      exportName: 'actual-daily',
+      // @ts-expect-error A supplied destination requires a storage identifier, container, and root folder.
+      destination: {
+        storageAccountName: 'billingexports',
+        container: 'cost-exports',
+      },
+    },
+  ],
+};
+
+const invalidManualBillingExportScope: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      // @ts-expect-error Tenant-root exports are represented explicitly as management-group scopes.
+      scopeType: 'tenant',
+      scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
+      exportName: 'tenant-actual-daily',
+    },
+  ],
+};
+
+const legacyCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  actual: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'Cortex-actual-cost',
+    storageAccountName: 'eroadstaazurebilling',
+    container: 'azurecostmanagement',
+    rootFolderPath: 'eroad',
+  },
+};
+
+const versionedCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  schemaVersion: CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingProfile',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123',
+      exportName: 'Cortex-actual-cost',
+      storageAccountName: 'eroadstaazurebilling',
+      container: 'azurecostmanagement',
+      rootFolderPath: 'eroad',
+    },
+    {
+      datasetType: 'actual',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'spotto-actual-daily',
+      storageAccountName: 'billingexportstenant123',
+      container: 'cost-exports',
+      rootFolderPath: 'spotto/subscription-123',
+    },
+  ],
+};
+
+const invalidEmptyVersionedCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  schemaVersion: CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+  // @ts-expect-error A versioned persisted locator must contain at least one source.
+  sources: [],
 };
 
 const invalidManualOnboardingImportVersion: AzureManualOnboardingImportV1 = {

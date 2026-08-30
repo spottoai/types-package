@@ -1,5 +1,17 @@
-/** Azure Cost Management export scopes supported by the shared manual-onboarding contract. */
-export type AzureBillingExportScopeType = 'tenant' | 'billingAccount';
+/** Cost Management dataset represented by one Azure billing export source. */
+export type AzureBillingExportDatasetType = 'actual' | 'amortized';
+
+/** Azure scopes at which Cost Management exports can be configured. */
+export type AzureBillingExportScopeType =
+  | 'subscription'
+  | 'resourceGroup'
+  | 'managementGroup'
+  | 'billingAccount'
+  | 'billingProfile'
+  | 'invoiceSection'
+  | 'department'
+  | 'enrollmentAccount'
+  | 'partnerCustomer';
 
 /**
  * Optional direct Blob destination supplied for one Cost Management export.
@@ -23,24 +35,19 @@ export type AzureBillingExportDestinationInput =
       rootFolderPath: string;
     };
 
-/** User- or script-supplied configuration for one billing export dataset. */
-export interface AzureBillingExportDatasetConfigurationInput {
+/** User- or script-supplied configuration for one billing export source. */
+export interface AzureBillingExportSourceInput {
+  datasetType: AzureBillingExportDatasetType;
   scopeType: AzureBillingExportScopeType;
   scopePath: string;
   exportName: string;
   destination?: AzureBillingExportDestinationInput;
 }
 
-/** At least one of the Actual or Amortized export configurations must be supplied. */
-export type AzureBillingExportConfigurationInput =
-  | {
-      actual: AzureBillingExportDatasetConfigurationInput;
-      amortized?: AzureBillingExportDatasetConfigurationInput;
-    }
-  | {
-      actual?: AzureBillingExportDatasetConfigurationInput;
-      amortized: AzureBillingExportDatasetConfigurationInput;
-    };
+/** A manual-onboarding billing export configuration must contain at least one source. */
+export interface AzureBillingExportConfigurationInput {
+  sources: [AzureBillingExportSourceInput, ...AzureBillingExportSourceInput[]];
+}
 
 /** Credentials emitted by manual Azure onboarding tooling for import into Spotto. */
 export interface AzureManualOnboardingCredentialsInput {
