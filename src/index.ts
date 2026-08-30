@@ -54,6 +54,7 @@ export * from './company';
 export * from './customProperties';
 export * from './scheduler';
 export * from './ai';
+export * from './environment';
 export * from './events';
 export * from './integrations';
 export * from './identity';

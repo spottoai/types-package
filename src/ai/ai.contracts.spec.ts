@@ -1,11 +1,60 @@
 import type {
   AIChatCanonicalStreamEvent,
   AIChatCanonicalStreamEventName,
+  AIChatEvidenceCoverage,
+  AIChatRetrievalSourceType,
+  AIChatToolDescriptor,
   AIChatDoneEvent,
+  AIEnvironmentEvidenceMatch,
   AIChatRunCompletedEvent,
   AIChatRunStartRequest,
   AIChatTerminalSnapshot,
 } from '../index';
+
+const environmentSource: AIChatRetrievalSourceType = 'environment';
+const compatibleExistingSources: AIChatRetrievalSourceType[] = ['operational', 'memory', 'knowledge', 'external'];
+
+const environmentMatch: AIEnvironmentEvidenceMatch = {
+  safeLabel: 'Production subscription cost summary',
+  portalRoute: '/companies/company-1/subscriptions/subscription-1/cost',
+  scope: {
+    kind: 'azure-subscription',
+    tenantId: 'tenant-1',
+    companyId: 'company-1',
+    subscriptionId: 'subscription-1',
+  },
+  artifactKind: 'subscription-summary',
+  sourceGeneration: {
+    viewSetSchemaVersion: 1,
+    publicationId: 'publication-1',
+    portalRunId: 'portal:run/1',
+    pluginRunId: 'plugin:run/1',
+    economicsGenerationId: 'economics-1',
+    economicsFingerprint: 'source-fingerprint',
+    completedAt: '2026-08-29T00:00:00.000Z',
+  },
+};
+
+const environmentCoverage: AIChatEvidenceCoverage = {
+  sourceTypes: ['environment'],
+  evidenceGroups: [],
+  citationCoverage: { required: true, satisfied: true, citationCount: 1 },
+  environmentMatches: [environmentMatch],
+};
+
+const environmentTool: AIChatToolDescriptor = {
+  toolName: 'environment_read',
+  source: 'internal',
+  title: 'Read environment evidence',
+  description: 'Reads one authorized environment document.',
+  mutationMode: 'read',
+  retrievalSourceType: 'environment',
+};
+
+void environmentSource;
+void compatibleExistingSources;
+void environmentCoverage;
+void environmentTool;
 
 const run = {
   runId: 'run-1',
