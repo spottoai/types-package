@@ -12,6 +12,7 @@ import type {
   AzureSpSetupReaderReadiness,
   AzureSpSetupResult,
 } from './azureSpSetup';
+import type { AzureBillingExportConfigurationStatus, AzureBillingExportScopeType } from './azureManualOnboarding';
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
@@ -21,7 +22,8 @@ export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap'
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
-export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
+/** Internal compatibility alias used by the persisted cloud-engine locator. */
+export type BillingExportLocatorScopeType = AzureBillingExportScopeType;
 export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
 export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
 export type AzureGdapValidationStatus = 'notValidated' | 'ready' | 'degraded' | 'blocked' | 'expired' | 'reauthRequired';
@@ -636,6 +638,8 @@ export type PublicCloudAccountDto = Omit<
   'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'
 > &
   AwsForbiddenCredentialFields & {
+    /** Public-safe billing export configuration status. Raw locator coordinates remain internal. */
+    billingExportConfigurationStatus?: AzureBillingExportConfigurationStatus;
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */

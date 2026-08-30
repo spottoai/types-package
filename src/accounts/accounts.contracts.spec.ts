@@ -32,7 +32,7 @@ import type {
   SubscriptionInfoBase,
   SubscriptionSyncFeatureOptOutsUpdateRequest,
 } from './accounts';
-import type { CloudAccountTenantSyncRequestMessage } from '../index';
+import type { AzureBillingExportConfigurationInput, AzureManualOnboardingImportV1, CloudAccountTenantSyncRequestMessage } from '../index';
 import type { CompanySubscription, SecureScoreEvidence } from '../azure/subscriptions';
 import {
   AZURE_SYNC_FEATURE_METADATA,
@@ -44,6 +44,7 @@ import {
   isAzureSyncFeatureSupportedInScope,
   sortAzureSyncFeatureIds,
 } from './accounts';
+import { AZURE_MANUAL_ONBOARDING_IMPORT_KIND, AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION } from '../index';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -376,6 +377,98 @@ const invalidGdapCloudAccountCreateRequestWithoutSelection: AzureGdapCloudAccoun
   gdapAuthorizationProfileId: 'gdapauth-profile-123',
 };
 
+const manualBillingExportConfigurationByStorageName: AzureBillingExportConfigurationInput = {
+  actual: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'Cortex-actual-cost',
+    destination: {
+      storageAccountName: 'eroadstaazurebilling',
+      container: 'azurecostmanagement',
+      rootFolderPath: 'eroad',
+    },
+  },
+  amortized: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'Cortex-amortized-cost',
+    destination: {
+      storageAccountName: 'eroadstaazurebilling',
+      container: 'azurecostmanagement',
+      rootFolderPath: 'eroad',
+    },
+  },
+};
+
+const manualBillingExportConfigurationWithApiResolvedDestination: AzureBillingExportConfigurationInput = {
+  actual: {
+    scopeType: 'tenant',
+    scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
+    exportName: 'tenant-actual-daily',
+  },
+};
+
+const manualBillingExportConfigurationByStorageResourceId: AzureBillingExportConfigurationInput = {
+  amortized: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'amortized-daily',
+    destination: {
+      storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/billing-rg/providers/Microsoft.Storage/storageAccounts/billingexports',
+      container: 'cost-exports',
+      rootFolderPath: 'spotto',
+    },
+  },
+};
+
+const manualOnboardingImport: AzureManualOnboardingImportV1 = {
+  schemaVersion: AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION,
+  kind: AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+    clientSecret: 'generated-secret-value',
+    clientSecretExpiresAt: '2027-08-30',
+  },
+  billingExports: manualBillingExportConfigurationByStorageName,
+};
+
+const manualOnboardingImportForReusedCredential: AzureManualOnboardingImportV1 = {
+  schemaVersion: 1,
+  kind: 'spotto.azure.manual-onboarding',
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+  },
+  billingExports: manualBillingExportConfigurationWithApiResolvedDestination,
+};
+
+// @ts-expect-error At least one billing export dataset must be configured.
+const invalidEmptyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {};
+
+const invalidPartialManualBillingExportDestination: AzureBillingExportConfigurationInput = {
+  actual: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'actual-daily',
+    // @ts-expect-error A supplied destination requires a storage identifier, container, and root folder.
+    destination: {
+      storageAccountName: 'billingexports',
+      container: 'cost-exports',
+    },
+  },
+};
+
+const invalidManualOnboardingImportVersion: AzureManualOnboardingImportV1 = {
+  // @ts-expect-error Unsupported bundle schema versions must not compile as V1.
+  schemaVersion: 2,
+  kind: AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+  },
+};
+
 const publicCloudAccountDto: PublicCloudAccountDto = {
   companyId: 'comp-123',
   id: 'delegated-account-123',
@@ -397,7 +490,20 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   connectedUserEmail: 'owner@example.com',
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
+  billingExportConfigurationStatus: {
+    configured: true,
+    actualConfigured: true,
+    amortizedConfigured: true,
+    destinationProvided: true,
+    verificationStatus: 'verified',
+  },
   syncFeatureOptOuts: ['billing'],
+};
+
+const invalidPublicCloudAccountBillingExportLocatorDto: PublicCloudAccountDto = {
+  ...publicCloudAccountDto,
+  // @ts-expect-error Raw billing export locator coordinates remain internal.
+  billingExportLocator: manualBillingExportConfigurationByStorageResourceId,
 };
 
 const publicAwsCloudAccountDto: PublicCloudAccountDto = {
