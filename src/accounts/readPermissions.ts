@@ -5,6 +5,7 @@ export type {
   CloudAccountCapabilityValidationScope,
   CloudAccountCapabilityValidationStatus,
   CloudAccountReadAccessValidation,
+  CloudAccountValidationRequest,
   CloudAccountValidationResult,
   CloudAccountValidationStreamEvent,
   CloudAccountWriteAccessValidation,

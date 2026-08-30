@@ -1,4 +1,24 @@
 import type { SubscriptionAccount } from './accounts';
+import type { AzureManualOnboardingBillingExportDiscoveryResult } from './azureManualOnboarding';
+
+/**
+ * Validation-only Azure service-principal input. Persistence metadata is
+ * intentionally excluded because a cloud account does not exist yet during onboarding.
+ */
+export interface CloudAccountValidationRequest {
+  companyId: string;
+  provider: 'Azure';
+  id: string;
+  name: string;
+  companyName?: string;
+  authMode?: 'servicePrincipal';
+  tenantId: string;
+  secret: string;
+  useWriteAccess?: boolean;
+  writeClientId?: string;
+  writeSecret?: string;
+  includeBillingExportDiscovery?: boolean;
+}
 
 export type SubscriptionValidationStatus = 'confirmed' | 'forbidden' | 'unauthorized' | 'throttled' | 'unavailable';
 
@@ -21,13 +41,7 @@ export interface CloudAccountWriteAccessValidation {
   subscriptions: SubscriptionAccount[];
 }
 
-export type CloudAccountCapabilityValidationStatus =
-  | 'confirmed'
-  | 'missing'
-  | 'notApplicable'
-  | 'notTested'
-  | 'warning'
-  | 'unknown';
+export type CloudAccountCapabilityValidationStatus = 'confirmed' | 'missing' | 'notApplicable' | 'notTested' | 'warning' | 'unknown';
 
 export type CloudAccountCapabilityValidationScope = 'tenant' | 'subscription' | 'resource' | 'write';
 
@@ -53,6 +67,7 @@ export interface CloudAccountValidationResult {
   readAccess: CloudAccountReadAccessValidation;
   writeAccess?: CloudAccountWriteAccessValidation;
   capabilityChecks?: CloudAccountCapabilityValidationResult[];
+  billingExportDiscovery?: AzureManualOnboardingBillingExportDiscoveryResult;
 }
 
 export interface CloudAccountCapabilityValidationProgress {
@@ -104,6 +119,11 @@ export type CloudAccountValidationStreamEvent =
       event: 'writeAccessCompleted';
       message: string;
       writeAccess: CloudAccountWriteAccessValidation;
+    }
+  | {
+      event: 'billingExportDiscoveryCompleted';
+      message: string;
+      result: AzureManualOnboardingBillingExportDiscoveryResult;
     }
   | {
       event: 'completed';
