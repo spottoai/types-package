@@ -137,3 +137,36 @@ export interface AzureSpSetupDurableStateV1 {
   targetClaimExpiresAt?: string;
   targetedRefreshCheckpoints?: AzureSpSetupTargetedRefreshCheckpoint[];
 }
+
+/**
+ * Durable setup fields stored only in the protected blob projection.
+ * API and cloud-engine storage adapters must consume this exact list.
+ */
+export const AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1 = [
+  'codeVerifier',
+  'nonce',
+  'encryptedMicrosoftTokenCache',
+  'generatedClientSecretEncrypted',
+  'discoveredTenants',
+  'selectedSubscriptionIds',
+  'subscriptions',
+  'managementGroups',
+  'permissionPlan',
+  'billingExportPlan',
+  'billingExportResults',
+  'billingExportBackfillMarkers',
+  'operationResults',
+  'progress',
+  'selectedPermissionInstanceKeys',
+  'executionRequest',
+  'targetCredentialBaselineHash',
+  'retryAttemptsByOperation',
+  'accountReadiness',
+  'subscriptionReadiness',
+  'targetedRefreshCheckpoints',
+] as const satisfies readonly (keyof AzureSpSetupDurableStateV1)[];
+
+export type AzureSpSetupDurableStateBlobOnlyFieldV1 = (typeof AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1)[number];
+
+/** Azure Table-safe setup-state projection; protected and high-cardinality fields are excluded. */
+export type AzureSpSetupDurableStateTableProjectionV1 = Omit<AzureSpSetupDurableStateV1, AzureSpSetupDurableStateBlobOnlyFieldV1>;

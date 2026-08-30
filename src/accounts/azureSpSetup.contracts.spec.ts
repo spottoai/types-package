@@ -1,6 +1,8 @@
 import type {
+  AzureSpBillingExportCreateTarget,
   AzureSpBillingExportPlan,
   AzureSpBillingExportResult,
+  AzureSpBillingExportSelection,
   AzureSpPermissionKey,
   AzureSpPermissionManifestItem,
   AzureSpSetupPermissionSummary,
@@ -16,7 +18,12 @@ import type {
   AzureSpSetupStartRequest,
   AzureSpSetupStatusResponse,
 } from './azureSpSetup';
-import type { AzureSpSetupDurableStateV1 } from './azureSpSetupDurable';
+import { AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1 } from './azureSpSetupDurable';
+import type {
+  AzureSpSetupDurableStateBlobOnlyFieldV1,
+  AzureSpSetupDurableStateTableProjectionV1,
+  AzureSpSetupDurableStateV1,
+} from './azureSpSetupDurable';
 
 const keyVaultReaderPermissionKey: AzureSpPermissionKey = 'keyVaultReader';
 
@@ -55,11 +62,19 @@ type DeepProtectedDurableKeys<T> = T extends readonly (infer Item)[]
 
 type AssertNoProtectedDurableKey<T> = DeepProtectedDurableKeys<T> extends never ? true : never;
 
+type Assert<T extends true> = T;
+type IsNever<T> = [T] extends [never] ? true : false;
+
 const statusHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupStatusResponse> = true;
 const summaryHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupCloudAccountSummaryV1> = true;
 const executionRequestHasNoForbiddenPublicKeys: AssertNoForbiddenPublicKey<AzureSpSetupExecutionRequestV1> = true;
 const statusHasNoProtectedDurableKeys: AssertNoProtectedDurableKey<AzureSpSetupStatusResponse> = true;
 const summaryHasNoProtectedDurableKeys: AssertNoProtectedDurableKey<AzureSpSetupCloudAccountSummaryV1> = true;
+const blobOnlyFieldsUseSharedContract: readonly AzureSpSetupDurableStateBlobOnlyFieldV1[] = AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1;
+type BlobOnlyFieldsAreExcludedFromTableProjection = Assert<
+  IsNever<Extract<keyof AzureSpSetupDurableStateTableProjectionV1, AzureSpSetupDurableStateBlobOnlyFieldV1>>
+>;
+const blobOnlyFieldsAreExcludedFromTableProjection: BlobOnlyFieldsAreExcludedFromTableProjection = true;
 
 const createModeStartRequest: AzureSpSetupStartRequest = {
   redirectAfter: '/company/comp-123/cloud-accounts',
@@ -100,9 +115,11 @@ const billingExportPlan: AzureSpBillingExportPlan = {
   defaultLocation: 'australiaeast',
   detectedCompatibleExports: [
     {
+      scopeType: 'subscription',
+      scope: '/subscriptions/sub-123',
       subscriptionId: 'sub-123',
       dataset: 'ActualCost',
-      effectiveDefinitionType: 'Usage',
+      effectiveDefinitionType: 'ActualCost',
       exportName: 'existing-actual-export',
       exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
       storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
@@ -113,6 +130,8 @@ const billingExportPlan: AzureSpBillingExportPlan = {
       canBeReused: true,
     },
     {
+      scopeType: 'subscription',
+      scope: '/subscriptions/sub-123',
       subscriptionId: 'sub-123',
       dataset: 'AmortizedCost',
       effectiveDefinitionType: 'AmortizedCost',
@@ -137,20 +156,55 @@ const billingExportPlan: AzureSpBillingExportPlan = {
       containerName: 'spotto-cost-exports',
     },
   ],
-  selectedMode: 'reuseExisting',
-  selectedReuseDetectedExportResourceIds: [
-    '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
-    '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-amortized-export',
+  targets: [
+    {
+      targetKey: 'reuse-existing-actual:sub-123',
+      action: 'reuseExisting',
+      scopeType: 'subscription',
+      scope: '/subscriptions/sub-123',
+      scopeLabel: 'Production Subscription',
+      subscriptionId: 'sub-123',
+      dataset: 'ActualCost',
+      effectiveDefinitionType: 'ActualCost',
+      exportName: 'existing-actual-export',
+      exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
+      storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+      containerName: 'spotto-cost-exports',
+      rootFolderPath: 'spotto/sub-123/actual/recurring',
+      selectedByDefault: true,
+      requiredForCompleteness: true,
+    },
+    {
+      targetKey: 'create-amortized:sub-123',
+      action: 'create',
+      scopeType: 'subscription',
+      scope: '/subscriptions/sub-123',
+      scopeLabel: 'Production Subscription',
+      subscriptionId: 'sub-123',
+      dataset: 'AmortizedCost',
+      exportName: 'spotto-amortized-daily',
+      selectedByDefault: true,
+      requiredForCompleteness: true,
+    },
   ],
-  selectedStorageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
-  selectedContainerName: 'spotto-cost-exports',
+  selection: {
+    enabled: true,
+    mode: 'useExistingStorage',
+    reuseTargetKeys: ['reuse-existing-actual:sub-123'],
+    createTargetKeys: ['create-amortized:sub-123'],
+    storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+    containerName: 'spotto-cost-exports',
+  },
 };
 
 const billingExportResults: AzureSpBillingExportResult[] = [
   {
+    targetKey: 'reuse-existing-actual:sub-123',
+    scopeType: 'subscription',
+    scope: '/subscriptions/sub-123',
     subscriptionId: 'sub-123',
     dataset: 'ActualCost',
-    effectiveDefinitionType: 'Usage',
+    effectiveDefinitionType: 'ActualCost',
     exportKind: 'recurring',
     exportName: 'existing-actual-export',
     exportResourceId: '/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export',
@@ -158,9 +212,12 @@ const billingExportResults: AzureSpBillingExportResult[] = [
     storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
     containerName: 'spotto-cost-exports',
     rootFolderPath: 'spotto/sub-123/actual/recurring',
-    message: 'Existing compatible Usage export is reused for actual-cost data.',
+    message: 'Existing compatible ActualCost export is reused.',
   },
   {
+    targetKey: 'backfill-actual:sub-123:202604',
+    scopeType: 'subscription',
+    scope: '/subscriptions/sub-123',
     subscriptionId: 'sub-123',
     dataset: 'ActualCost',
     effectiveDefinitionType: 'Usage',
@@ -174,6 +231,9 @@ const billingExportResults: AzureSpBillingExportResult[] = [
     rootFolderPath: 'spotto/sub-123/actual/backfill/202604',
   },
   {
+    targetKey: 'create-actual:sub-123',
+    scopeType: 'subscription',
+    scope: '/subscriptions/sub-123',
     subscriptionId: 'sub-123',
     dataset: 'ActualCost',
     effectiveDefinitionType: 'ActualCost',
@@ -186,6 +246,9 @@ const billingExportResults: AzureSpBillingExportResult[] = [
     rootFolderPath: 'spotto/sub-123/actual/recurring',
   },
   {
+    targetKey: 'create-amortized:sub-123',
+    scopeType: 'subscription',
+    scope: '/subscriptions/sub-123',
     subscriptionId: 'sub-123',
     dataset: 'AmortizedCost',
     effectiveDefinitionType: 'AmortizedCost',
@@ -196,6 +259,9 @@ const billingExportResults: AzureSpBillingExportResult[] = [
     message: 'Amortized exports are not available for this subscription agreement.',
   },
   {
+    targetKey: 'storage:sub-123',
+    scopeType: 'subscription',
+    scope: '/subscriptions/sub-123',
     subscriptionId: 'sub-123',
     exportKind: 'storage',
     status: 'updated',
@@ -345,8 +411,7 @@ const executeRequest: AzureSpSetupExecuteRequest = {
   billingExports: {
     enabled: true,
     mode: 'reuseExisting',
-    reuseDetectedExportResourceIds: ['/subscriptions/sub-123/providers/Microsoft.CostManagement/exports/existing-actual-export'],
-    containerName: 'spotto-cost-exports',
+    reuseTargetKeys: ['reuse-existing-actual:sub-123'],
   },
   cloudAccountName: 'Production Azure',
   groupNames: ['Production'],
@@ -360,6 +425,8 @@ const selectedExistingStorageExecuteRequest: AzureSpSetupExecuteRequest = {
   billingExports: {
     enabled: true,
     mode: 'useExistingStorage',
+    reuseTargetKeys: ['reuse-existing-actual:sub-123'],
+    createTargetKeys: ['create-amortized:sub-123'],
     storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
     containerName: 'spotto-cost-exports',
   },
@@ -371,6 +438,7 @@ const createStorageExecuteRequest: AzureSpSetupExecuteRequest = {
   billingExports: {
     enabled: true,
     mode: 'createStorage',
+    createTargetKeys: ['create-actual:sub-123', 'create-amortized:sub-123'],
     createStorage: {
       subscriptionId: 'sub-123',
       resourceGroupName: 'rg-spotto-cost-exports',
@@ -379,6 +447,92 @@ const createStorageExecuteRequest: AzureSpSetupExecuteRequest = {
       containerName: 'spotto-cost-exports',
     },
   },
+};
+
+const skippedBillingExports: AzureSpBillingExportSelection = {
+  enabled: false,
+  mode: 'skip',
+};
+
+const invalidSkippedBillingExportsWithStorage: AzureSpBillingExportSelection = {
+  enabled: false,
+  mode: 'skip',
+  // @ts-expect-error skipped billing exports cannot carry a storage destination.
+  storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+};
+
+// @ts-expect-error skip mode and enabled setup cannot be combined.
+const invalidEnabledSkipSelection: AzureSpBillingExportSelection = {
+  enabled: true,
+  mode: 'skip',
+};
+
+// @ts-expect-error reuse mode requires at least one explicit reusable plan target.
+const invalidReuseBillingExportsWithoutTargets: AzureSpBillingExportSelection = {
+  enabled: true,
+  mode: 'reuseExisting',
+};
+
+const invalidExistingStorageSelectionWithCreateStorage: AzureSpBillingExportSelection = {
+  enabled: true,
+  mode: 'useExistingStorage',
+  createTargetKeys: ['create-actual:sub-123'],
+  storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+  containerName: 'spotto-cost-exports',
+  // @ts-expect-error existing-storage mode cannot also request storage creation.
+  createStorage: {
+    subscriptionId: 'sub-123',
+    resourceGroupName: 'rg-spotto-cost-exports',
+    location: 'australiaeast',
+    storageAccountName: 'spottoexports123',
+    containerName: 'spotto-cost-exports',
+  },
+};
+
+const invalidExistingStorageSelectionWithoutCreateTargets: AzureSpBillingExportSelection = {
+  enabled: true,
+  mode: 'useExistingStorage',
+  // @ts-expect-error configured storage requires at least one explicit creation target.
+  createTargetKeys: [],
+  storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+  containerName: 'spotto-cost-exports',
+};
+
+const managementGroupUsageTarget: AzureSpBillingExportCreateTarget = {
+  targetKey: 'create-usage:management-group-123',
+  action: 'create',
+  scopeType: 'managementGroup',
+  scope: '/providers/Microsoft.Management/managementGroups/management-group-123',
+  scopeLabel: 'Platform management group',
+  managementGroupId: 'management-group-123',
+  dataset: 'Usage',
+  exportName: 'spotto-usage-daily',
+  selectedByDefault: true,
+  requiredForCompleteness: false,
+};
+
+// @ts-expect-error management-group creation supports Usage only.
+const invalidManagementGroupAmortizedTarget: AzureSpBillingExportCreateTarget = {
+  ...managementGroupUsageTarget,
+  dataset: 'AmortizedCost',
+};
+
+const billingProfileActualTarget: AzureSpBillingExportCreateTarget = {
+  targetKey: 'create-actual:billing-profile-123',
+  action: 'create',
+  scopeType: 'billingProfile',
+  scope: '/providers/Microsoft.Billing/billingAccounts/account-123/billingProfiles/profile-123',
+  scopeLabel: 'Production billing profile',
+  dataset: 'ActualCost',
+  exportName: 'spotto-actual-daily',
+  selectedByDefault: true,
+  requiredForCompleteness: false,
+};
+
+const invalidDepartmentCreateTarget: AzureSpBillingExportCreateTarget = {
+  ...billingProfileActualTarget,
+  // @ts-expect-error department exports may be reused when discovered but are not creation targets.
+  scopeType: 'department',
 };
 
 const invalidPlanResponse: AzureSpSetupPlanResponse = {
@@ -468,6 +622,7 @@ const repairExecutionRequest: AzureSpSetupExecutionRequestV1 = {
     'subscriptionReader:/subscriptions/sub-123',
     'subscriptionReader:/subscriptions/sub-456',
   ],
+  billingExportPlan,
   cloudAccountName: 'Production Azure',
   targetCloudAccountId: 'client-id-123',
   targetAzureApplicationAppId: 'client-id-123',
@@ -484,6 +639,12 @@ const repairExecutionRequest: AzureSpSetupExecutionRequestV1 = {
   },
   requestedRefreshComponents: ['resourceInventory', 'billing'],
   snapshotHash: 'sha256:canonical-non-secret-snapshot',
+};
+
+const invalidExecutionRequestWithRawBillingSelection: AzureSpSetupExecutionRequestV1 = {
+  ...repairExecutionRequest,
+  // @ts-expect-error immutable execution requests carry the resolved billing plan, not raw client selection.
+  billingExports: skippedBillingExports,
 };
 
 const invalidExecutionRequestWithToken: AzureSpSetupExecutionRequestV1 = {
@@ -661,6 +822,33 @@ const protectedDurableSetupState: AzureSpSetupDurableStateV1 = {
   ],
 };
 
+const durableTableProjection: AzureSpSetupDurableStateTableProjectionV1 = {
+  schemaVersion: 1,
+  stateRevision: 1,
+  setupId: 'setup-123',
+  mode: 'createCloudAccount',
+  companyId: 'comp-123',
+  initiatedByUserId: 'user-123',
+  phase: 'queued',
+  result: 'none',
+  permissionManifestVersion: 'azure-sp-setup-2026-08-31',
+  createdAt: '2026-08-31T00:00:00.000Z',
+  updatedAt: '2026-08-31T00:01:00.000Z',
+  expiresAt: '2026-08-31T01:00:00.000Z',
+};
+
+const invalidDurableTableProjectionWithTokenCache: AzureSpSetupDurableStateTableProjectionV1 = {
+  ...durableTableProjection,
+  // @ts-expect-error protected token state is blob-only.
+  encryptedMicrosoftTokenCache: 'fake-encrypted-token-cache',
+};
+
+const invalidDurableTableProjectionWithRetryAttempts: AzureSpSetupDurableStateTableProjectionV1 = {
+  ...durableTableProjection,
+  // @ts-expect-error per-operation retry attempts are blob-only.
+  retryAttemptsByOperation: { subscriptionReader: 1 },
+};
+
 void createModeStartRequest;
 void keyVaultReaderPermissionKey;
 void statusHasNoForbiddenPublicKeys;
@@ -668,6 +856,8 @@ void summaryHasNoForbiddenPublicKeys;
 void executionRequestHasNoForbiddenPublicKeys;
 void statusHasNoProtectedDurableKeys;
 void summaryHasNoProtectedDurableKeys;
+void blobOnlyFieldsUseSharedContract;
+void blobOnlyFieldsAreExcludedFromTableProjection;
 void permissionUpdateStartRequest;
 void setupMode;
 void invalidSetupMode;
@@ -682,6 +872,16 @@ void planResponse;
 void executeRequest;
 void selectedExistingStorageExecuteRequest;
 void createStorageExecuteRequest;
+void skippedBillingExports;
+void invalidSkippedBillingExportsWithStorage;
+void invalidEnabledSkipSelection;
+void invalidReuseBillingExportsWithoutTargets;
+void invalidExistingStorageSelectionWithCreateStorage;
+void invalidExistingStorageSelectionWithoutCreateTargets;
+void managementGroupUsageTarget;
+void invalidManagementGroupAmortizedTarget;
+void billingProfileActualTarget;
+void invalidDepartmentCreateTarget;
 void invalidPlanResponse;
 void durableActivePhases;
 void durableTerminalPhases;
@@ -690,6 +890,7 @@ void invalidTerminalResult;
 void independentReaderResults;
 void invalidReaderResultWithFallbackScope;
 void repairExecutionRequest;
+void invalidExecutionRequestWithRawBillingSelection;
 void invalidExecutionRequestWithToken;
 void accountSummary;
 void publicDurableStatus;
@@ -702,3 +903,6 @@ void invalidAccountSummaryWithRetryAttempts;
 void invalidAccountSummaryWithCredentialBaseline;
 void migratedLegacySetupState;
 void protectedDurableSetupState;
+void durableTableProjection;
+void invalidDurableTableProjectionWithTokenCache;
+void invalidDurableTableProjectionWithRetryAttempts;
