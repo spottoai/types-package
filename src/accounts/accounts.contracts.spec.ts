@@ -528,6 +528,18 @@ const invalidManualBillingExportScope: AzureBillingExportConfigurationInput = {
   ],
 };
 
+const invalidManualBillingExportDataset: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      // @ts-expect-error The ingestion contract currently supports only Actual and Amortized datasets.
+      datasetType: 'usage',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'usage-daily',
+    },
+  ],
+};
+
 const legacyCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
   actual: {
     scopeType: 'billingAccount',
@@ -567,6 +579,12 @@ const invalidEmptyVersionedCloudAccountBillingExportLocator: CloudAccountBilling
   schemaVersion: CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
   // @ts-expect-error A versioned persisted locator must contain at least one source.
   sources: [],
+};
+
+const invalidVersionedCloudAccountBillingExportLocatorSchema: CloudAccountBillingExportLocatorConfiguration = {
+  // @ts-expect-error Persisted locator schema versions are exact discriminants.
+  schemaVersion: 2,
+  sources: versionedCloudAccountBillingExportLocator.sources,
 };
 
 const invalidManualOnboardingImportVersion: AzureManualOnboardingImportV1 = {
