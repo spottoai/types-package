@@ -94,6 +94,7 @@ export type AzureSpPermissionKey =
   | 'monitoringReader'
   | 'logAnalyticsReader'
   | 'securityReader'
+  | 'keyVaultReader'
   | 'rootManagementGroupReader'
   | 'managementGroupReader'
   | 'reservationsReader'

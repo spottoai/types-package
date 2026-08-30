@@ -1,6 +1,7 @@
 import type {
   AzureSpBillingExportPlan,
   AzureSpBillingExportResult,
+  AzureSpPermissionKey,
   AzureSpPermissionManifestItem,
   AzureSpSetupPermissionSummary,
   AzureSpSetupExecuteRequest,
@@ -16,6 +17,8 @@ import type {
   AzureSpSetupStatusResponse,
 } from './azureSpSetup';
 import type { AzureSpSetupDurableStateV1 } from './azureSpSetupDurable';
+
+const keyVaultReaderPermissionKey: AzureSpPermissionKey = 'keyVaultReader';
 
 type AzureSpSetupForbiddenPublicKey =
   | 'accessToken'
@@ -659,6 +662,7 @@ const protectedDurableSetupState: AzureSpSetupDurableStateV1 = {
 };
 
 void createModeStartRequest;
+void keyVaultReaderPermissionKey;
 void statusHasNoForbiddenPublicKeys;
 void summaryHasNoForbiddenPublicKeys;
 void executionRequestHasNoForbiddenPublicKeys;
