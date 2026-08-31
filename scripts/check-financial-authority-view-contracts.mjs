@@ -16,8 +16,13 @@ import {
   createFinancialSavingsAuthorityIdV1,
   createFinancialSavingsDenominatorIdV1,
   isFinancialAuthorityViewBoundToArtifactGenerationV1,
+  isFinancialAuthorityResourceProjectionV1,
   isFinancialAuthorityViewV1,
   isFinancialSavingsAuthorityBoundToFinancialAuthorityV1,
+  isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1,
+  isFinancialSavingsResourceProjectionV1,
+  projectFinancialAuthorityResourceV1,
+  projectFinancialSavingsResourceV1,
   sha256Utf8,
 } from '../dist/index.js';
 
@@ -1418,6 +1423,55 @@ assert.equal(
   }),
   false,
   'financial authority cannot consume evidence observed or published after its generation time'
+);
+
+const boundedFinancialProjection = projectFinancialAuthorityResourceV1(
+  projectedAuthority,
+  'microsoft.compute/virtualmachines',
+  vmId
+);
+assert.ok(boundedFinancialProjection, 'validated authority projects one bounded resource view');
+assert.equal(
+  boundedFinancialProjection.coordinates[0].chargeComposition?.baselineId,
+  boundedFinancialProjection.coordinates[0].ownerBaseline.baselineId,
+  'bounded resource projection carries the matching charge composition'
+);
+assert.equal(
+  isFinancialAuthorityResourceProjectionV1(boundedFinancialProjection),
+  true,
+  'bounded resource authority projection passes strict semantic validation'
+);
+const invalidBoundedFinancialProjection = structuredClone(boundedFinancialProjection);
+invalidBoundedFinancialProjection.coordinates[0].chargeComposition.ownerScopeId = `${vmId}/other`;
+assert.equal(
+  isFinancialAuthorityResourceProjectionV1(invalidBoundedFinancialProjection),
+  false,
+  'bounded resource authority projection rejects charge composition scope drift'
+);
+
+const boundedSavingsProjection = projectFinancialSavingsResourceV1(
+  availableSavingsAuthority,
+  boundedFinancialProjection,
+  projectedAuthority
+);
+assert.equal(
+  isFinancialSavingsResourceProjectionV1(boundedSavingsProjection),
+  true,
+  'bounded resource savings projection passes strict semantic validation'
+);
+assert.equal(
+  isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1(boundedSavingsProjection, boundedFinancialProjection),
+  true,
+  'bounded savings and current-spend resource projections bind one-to-one'
+);
+const invalidBoundedSavingsProjection = structuredClone(boundedSavingsProjection);
+if (invalidBoundedSavingsProjection.coordinates[0].status !== 'unavailable') {
+  invalidBoundedSavingsProjection.coordinates[0].recommendationContributions[0].savingsMinorUnits += 1;
+}
+assert.equal(
+  isFinancialSavingsResourceProjectionV1(invalidBoundedSavingsProjection),
+  false,
+  'bounded resource savings projection rejects non-reconciling recommendation contributions'
 );
 
 console.log('Financial authority view contract checks passed.');

@@ -21,7 +21,7 @@ import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
-import type { FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
+import type { FinancialSavingsQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -557,6 +557,8 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   savingsLifecycleFreshness?: import('./savings.js').SavingsLifecycleFreshnessV1;
   /** Compact generation-bound projection of the canonical Resources financial savings authority. */
   financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
+  /** API-selected non-monetary membership; composed into query totals only by the UI Financial Domain/shared Kernel. */
+  financialSavingsQuerySelection?: FinancialSavingsQuerySelectionV1;
 }
 
 export interface ResourceId {

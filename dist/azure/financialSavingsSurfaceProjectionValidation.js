@@ -22,7 +22,22 @@ const MAX_ALLOCATIONS = 20000;
 const canonicalizeFinancialSavingsSurfaceProjectionIdentityV1 = (value) => JSON.stringify((0, financialSavingsAuthorityValidationPrimitives_1.canonicalizeFinancialSavingsJsonValue)({
     ...value,
     providerAccountRefs: [...value.providerAccountRefs].sort(),
-    scope: value.scope.kind === 'subscription-full' ? value.scope : { ...value.scope, recommendationIds: [...value.scope.recommendationIds].sort() },
+    ...(value.lifecycleBindings === undefined
+        ? {}
+        : {
+            lifecycleBindings: [...value.lifecycleBindings]
+                .sort((left, right) => left.resourceId.localeCompare(right.resourceId) || left.recommendationId.localeCompare(right.recommendationId))
+                .map(binding => ({ ...binding, allocationIds: [...binding.allocationIds].sort() })),
+        }),
+    scope: value.scope.kind === 'subscription-full'
+        ? value.scope
+        : value.scope.kind === 'recommendation-query'
+            ? { ...value.scope, recommendationIds: [...value.scope.recommendationIds].sort() }
+            : {
+                ...value.scope,
+                allocationIds: [...value.scope.allocationIds].sort(),
+                recommendationIds: [...value.scope.recommendationIds].sort(),
+            },
     coordinates: [...value.coordinates]
         .sort((left, right) => left.coordinateId.localeCompare(right.coordinateId))
         .map(coordinate => coordinate.status === 'unavailable'
@@ -31,7 +46,15 @@ const canonicalizeFinancialSavingsSurfaceProjectionIdentityV1 = (value) => JSON.
             ...coordinate,
             recommendationContributions: [...coordinate.recommendationContributions]
                 .sort((left, right) => left.recommendationId.localeCompare(right.recommendationId))
-                .map(contribution => ({ ...contribution, allocationIds: [...contribution.allocationIds].sort() })),
+                .map(contribution => ({
+                ...contribution,
+                allocationIds: [...contribution.allocationIds].sort(),
+                ...(contribution.allocations === undefined
+                    ? {}
+                    : {
+                        allocations: [...contribution.allocations].sort((left, right) => left.allocationId.localeCompare(right.allocationId)),
+                    }),
+            })),
             aggregate: { ...coordinate.aggregate, allocationIds: [...coordinate.aggregate.allocationIds].sort() },
         }),
 }));
@@ -44,9 +67,21 @@ const isScope = (value) => {
         return false;
     if (value.kind === 'subscription-full')
         return (0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['kind']);
-    return (value.kind === 'recommendation-query' &&
+    if (value.kind === 'recommendation-query' &&
         (0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['kind', 'filterFingerprint', 'recommendationIds']) &&
         (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.filterFingerprint) &&
+        Array.isArray(value.recommendationIds) &&
+        value.recommendationIds.length <= MAX_ALLOCATIONS &&
+        value.recommendationIds.every(financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIdentity) &&
+        new Set(value.recommendationIds).size === value.recommendationIds.length)
+        return true;
+    return (value.kind === 'resource-query' &&
+        (0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['kind', 'filterFingerprint', 'allocationIds', 'recommendationIds']) &&
+        (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.filterFingerprint) &&
+        Array.isArray(value.allocationIds) &&
+        value.allocationIds.length <= MAX_ALLOCATIONS &&
+        value.allocationIds.every(financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash) &&
+        new Set(value.allocationIds).size === value.allocationIds.length &&
         Array.isArray(value.recommendationIds) &&
         value.recommendationIds.length <= MAX_ALLOCATIONS &&
         value.recommendationIds.every(financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIdentity) &&
@@ -62,7 +97,16 @@ const isCoordinateCommon = (value) => (0, financialSavingsAuthorityValidationPri
     (0, financialChargeCompositionValidation_1.isFinancialChargeInclusionPolicyRefV1)(value.chargeInclusionPolicyRef) &&
     (value.requestedCurrencyCode === undefined || isCurrency(value.requestedCurrencyCode)) &&
     (value.currentAggregateBaselineId === undefined || (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.currentAggregateBaselineId));
-const isComposedCoordinate = (value, queryRecommendationIds) => {
+const isLifecycleBinding = (value) => (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsRecord)(value) &&
+    (0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['resourceId', 'recommendationId', 'allocationIds']) &&
+    (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIdentity)(value.resourceId) &&
+    (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIdentity)(value.recommendationId) &&
+    Array.isArray(value.allocationIds) &&
+    value.allocationIds.length > 0 &&
+    value.allocationIds.length <= MAX_ALLOCATIONS &&
+    value.allocationIds.every(financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash) &&
+    new Set(value.allocationIds).size === value.allocationIds.length;
+const isComposedCoordinate = (value, queryRecommendationIds, queryAllocationIds) => {
     const partial = value.status === 'partial';
     if (!(0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, [
         'status',
@@ -113,7 +157,7 @@ const isComposedCoordinate = (value, queryRecommendationIds) => {
     const contributionAmounts = [];
     for (const contribution of value.recommendationContributions) {
         if (!(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsRecord)(contribution) ||
-            !(0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(contribution, ['recommendationId', 'allocationIds', 'savingsMinorUnits']) ||
+            !(0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(contribution, ['recommendationId', 'allocationIds', 'savingsMinorUnits'], ['allocations']) ||
             !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIdentity)(contribution.recommendationId) ||
             recommendationIds.has(contribution.recommendationId) ||
             (queryRecommendationIds !== undefined && !queryRecommendationIds.has(contribution.recommendationId)) ||
@@ -122,7 +166,33 @@ const isComposedCoordinate = (value, queryRecommendationIds) => {
             contribution.allocationIds.length > MAX_ALLOCATIONS ||
             !contribution.allocationIds.every(financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash) ||
             new Set(contribution.allocationIds).size !== contribution.allocationIds.length ||
-            !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsMinorUnits)(contribution.savingsMinorUnits))
+            !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsMinorUnits)(contribution.savingsMinorUnits) ||
+            (queryAllocationIds !== undefined && !Array.isArray(contribution.allocations)) ||
+            (contribution.allocations !== undefined &&
+                (!Array.isArray(contribution.allocations) || contribution.allocations.length !== contribution.allocationIds.length)))
+            return false;
+        const exactAllocations = contribution.allocations;
+        if (exactAllocations === undefined) {
+            recommendationIds.add(contribution.recommendationId);
+            allocationIds.push(...contribution.allocationIds);
+            contributionAmounts.push(contribution.savingsMinorUnits);
+            continue;
+        }
+        const exactAllocationIds = [];
+        const exactAllocationAmounts = [];
+        for (const allocation of exactAllocations) {
+            if (!(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsRecord)(allocation) ||
+                !(0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(allocation, ['allocationId', 'savingsMinorUnits']) ||
+                !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(allocation.allocationId) ||
+                (queryAllocationIds !== undefined && !queryAllocationIds.has(allocation.allocationId)) ||
+                !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsMinorUnits)(allocation.savingsMinorUnits))
+                return false;
+            exactAllocationIds.push(allocation.allocationId);
+            exactAllocationAmounts.push(allocation.savingsMinorUnits);
+        }
+        if (new Set(exactAllocationIds).size !== exactAllocationIds.length ||
+            !(0, financialSavingsAuthorityValidationPrimitives_1.haveSameFinancialSavingsSet)(exactAllocationIds, contribution.allocationIds) ||
+            (0, financialSavingsAuthorityValidationPrimitives_1.sumFinancialSavingsMinorUnits)(exactAllocationAmounts) !== contribution.savingsMinorUnits)
             return false;
         recommendationIds.add(contribution.recommendationId);
         allocationIds.push(...contribution.allocationIds);
@@ -150,13 +220,15 @@ const isFinancialSavingsSurfaceProjectionV1 = (value) => {
             'financialAuthorityId',
             'savingsAuthorityId',
             'coordinates',
-        ]) ||
+        ], ['lifecycleBindings']) ||
         value.schemaVersion !== financialSavingsSurfaceProjection_1.FINANCIAL_SAVINGS_SURFACE_PROJECTION_SCHEMA_VERSION_V1 ||
         value.contractVersion !== financialSavingsSurfaceProjection_1.FINANCIAL_SAVINGS_SURFACE_PROJECTION_CONTRACT_VERSION_V1 ||
         !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.projectionId) ||
-        (value.surface !== 'recommendations' && value.surface !== 'dashboard') ||
+        (value.surface !== 'recommendations' && value.surface !== 'resources' && value.surface !== 'dashboard') ||
         !isScope(value.scope) ||
         (value.surface === 'dashboard' && value.scope.kind !== 'subscription-full') ||
+        (value.surface === 'recommendations' && value.scope.kind === 'resource-query') ||
+        (value.surface === 'resources' && value.scope.kind === 'recommendation-query') ||
         value.provider !== 'azure' ||
         !Array.isArray(value.providerAccountRefs) ||
         value.providerAccountRefs.length === 0 ||
@@ -169,21 +241,50 @@ const isFinancialSavingsSurfaceProjectionV1 = (value) => {
         !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsIsoInstant)(value.artifactGeneration.generatedAt) ||
         !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.financialAuthorityId) ||
         !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.savingsAuthorityId) ||
+        (value.lifecycleBindings !== undefined &&
+            (!Array.isArray(value.lifecycleBindings) ||
+                value.lifecycleBindings.length === 0 ||
+                value.lifecycleBindings.length > MAX_ALLOCATIONS ||
+                !value.lifecycleBindings.every(isLifecycleBinding))) ||
         !Array.isArray(value.coordinates) ||
         value.coordinates.length === 0 ||
         value.coordinates.length > MAX_COORDINATES)
         return false;
     const projection = value;
-    const queryRecommendationIds = projection.scope.kind === 'recommendation-query' ? new Set(projection.scope.recommendationIds) : undefined;
+    const queryRecommendationIds = projection.scope.kind === 'recommendation-query' || projection.scope.kind === 'resource-query'
+        ? new Set(projection.scope.recommendationIds)
+        : undefined;
+    const queryAllocationIds = projection.scope.kind === 'resource-query' ? new Set(projection.scope.allocationIds) : undefined;
     if (!projection.coordinates.every(coordinate => {
         if (!(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsRecord)(coordinate))
             return false;
         return coordinate.status === 'available' || coordinate.status === 'partial'
-            ? isComposedCoordinate(coordinate, queryRecommendationIds)
+            ? isComposedCoordinate(coordinate, queryRecommendationIds, queryAllocationIds)
             : coordinate.status === 'unavailable' && isUnavailableCoordinate(coordinate);
     }) ||
         new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size !== projection.coordinates.length)
         return false;
+    if (projection.lifecycleBindings !== undefined) {
+        const lifecycleKeys = projection.lifecycleBindings.map(binding => `${binding.resourceId}\u0000${binding.recommendationId}`);
+        const boundAllocationIds = projection.lifecycleBindings.flatMap(binding => binding.allocationIds);
+        const projectedAllocationOwners = new Map();
+        for (const coordinate of projection.coordinates) {
+            if (coordinate.status === 'unavailable')
+                continue;
+            for (const contribution of coordinate.recommendationContributions) {
+                for (const allocationId of contribution.allocationIds) {
+                    if (projectedAllocationOwners.has(allocationId))
+                        return false;
+                    projectedAllocationOwners.set(allocationId, contribution.recommendationId);
+                }
+            }
+        }
+        if (new Set(lifecycleKeys).size !== lifecycleKeys.length ||
+            new Set(boundAllocationIds).size !== boundAllocationIds.length ||
+            boundAllocationIds.length !== projectedAllocationOwners.size ||
+            projection.lifecycleBindings.some(binding => binding.allocationIds.some(allocationId => projectedAllocationOwners.get(allocationId) !== binding.recommendationId)))
+            return false;
+    }
     const { projectionId: _projectionId, ...identity } = projection;
     return projection.projectionId === (0, exports.createFinancialSavingsSurfaceProjectionIdV1)(identity);
 };

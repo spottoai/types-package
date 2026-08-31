@@ -45,6 +45,7 @@ const availableProjectionIdentity: FinancialSavingsSurfaceProjectionIdentityPrei
           recommendationId: 'rec-1',
           allocationIds: [`sha256:${'7'.repeat(64)}`],
           savingsMinorUnits: 1234,
+          allocations: [{ allocationId: `sha256:${'7'.repeat(64)}`, savingsMinorUnits: 1234 }],
         },
       ],
       aggregate: { allocationIds: [`sha256:${'7'.repeat(64)}`], savingsMinorUnits: 1234 },

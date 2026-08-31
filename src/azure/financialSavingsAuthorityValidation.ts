@@ -1,10 +1,11 @@
 import { sha256Utf8 } from '../common/sha256';
-import type { FinancialAuthorityViewV1 } from './financialAuthorityView';
+import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView';
 import {
   FINANCIAL_SAVINGS_AUTHORITY_CONTRACT_VERSION_V1,
   FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1,
   type FinancialSavingsAuthorityIdentityPreimageV1,
   type FinancialSavingsAuthorityV1,
+  type FinancialSavingsResourceProjectionV1,
 } from './financialSavingsAuthority';
 import {
   validateFinancialEligibilityAssessmentV1,
@@ -16,8 +17,13 @@ import type { FinancialEvidenceReferenceV1 } from './financialScopeEvidence';
 import {
   canonicalizeFinancialSavingsJsonValue,
   hasExactFinancialSavingsFields,
+  haveSameFinancialSavingsSet,
   isFinancialSavingsHash,
+  isFinancialSavingsIdentity,
+  isFinancialSavingsIsoInstant,
+  isFinancialSavingsMinorUnits,
   isFinancialSavingsRecord,
+  sumFinancialSavingsMinorUnits,
 } from './financialSavingsAuthorityValidationPrimitives';
 
 export {
@@ -175,4 +181,171 @@ export const isFinancialSavingsAuthorityBoundToFinancialAuthorityV1 = (
     return false;
   const { savingsAuthorityId: _savingsAuthorityId, ...identity } = savingsAuthority;
   return savingsAuthority.savingsAuthorityId === createFinancialSavingsAuthorityIdV1(identity);
+};
+
+const RESOURCE_PROJECTION_UNAVAILABLE_REASONS = new Set([
+  'scenario-coverage-unproven',
+  'unmigrated-scenario-producer',
+  'projection-unavailable',
+  'activation-unavailable',
+  'allocation-unavailable',
+]);
+const RESOURCE_PROJECTION_CURRENCY = /^[A-Z]{3}$/;
+const normalizeResourceScope = (value: string): string => value.trim().toLowerCase().replace(/\/+$/, '');
+
+const isResourceContribution = (value: unknown, scopeId: string): value is {
+  ownerScopeId: string;
+  allocationIds: [string, ...string[]];
+  savingsMinorUnits: number;
+} =>
+  isFinancialSavingsRecord(value) &&
+  hasExactFinancialSavingsFields(value, ['ownerScopeId', 'allocationIds', 'savingsMinorUnits']) &&
+  isFinancialSavingsIdentity(value.ownerScopeId) &&
+  normalizeResourceScope(value.ownerScopeId) === scopeId &&
+  Array.isArray(value.allocationIds) &&
+  value.allocationIds.length > 0 &&
+  value.allocationIds.length <= 20_000 &&
+  value.allocationIds.every(isFinancialSavingsHash) &&
+  new Set(value.allocationIds).size === value.allocationIds.length &&
+  isFinancialSavingsMinorUnits(value.savingsMinorUnits);
+
+const isRecommendationContribution = (value: unknown, scopeId: string): value is {
+  ownerScopeId: string;
+  recommendationId: string;
+  allocationIds: [string, ...string[]];
+  savingsMinorUnits: number;
+} =>
+  isFinancialSavingsRecord(value) &&
+  hasExactFinancialSavingsFields(value, ['ownerScopeId', 'recommendationId', 'allocationIds', 'savingsMinorUnits']) &&
+  isFinancialSavingsIdentity(value.ownerScopeId) &&
+  normalizeResourceScope(value.ownerScopeId) === scopeId &&
+  isFinancialSavingsIdentity(value.recommendationId) &&
+  Array.isArray(value.allocationIds) &&
+  value.allocationIds.length > 0 &&
+  value.allocationIds.length <= 20_000 &&
+  value.allocationIds.every(isFinancialSavingsHash) &&
+  new Set(value.allocationIds).size === value.allocationIds.length &&
+  isFinancialSavingsMinorUnits(value.savingsMinorUnits);
+
+const isSavingsResourceCoordinate = (value: unknown, scopeId: string): boolean => {
+  if (!isFinancialSavingsRecord(value) || !isFinancialSavingsHash(value.coordinateId)) return false;
+  if (value.status === 'unavailable') {
+    return (
+      hasExactFinancialSavingsFields(
+        value,
+        ['status', 'coordinateId', 'unavailableReason'],
+        ['currentAggregateBaselineId']
+      ) &&
+      (value.currentAggregateBaselineId === undefined || isFinancialSavingsHash(value.currentAggregateBaselineId)) &&
+      typeof value.unavailableReason === 'string' &&
+      RESOURCE_PROJECTION_UNAVAILABLE_REASONS.has(value.unavailableReason)
+    );
+  }
+  const partial = value.status === 'partial';
+  if (
+    value.status !== 'available' &&
+    !partial
+  ) return false;
+  if (
+    !hasExactFinancialSavingsFields(
+      value,
+      [
+        'status',
+        'coordinateId',
+        'currentAggregateBaselineId',
+        'accountingCurrencyCode',
+        'minorUnitScale',
+        'roundingMode',
+        'recommendationContributions',
+        ...(partial ? ['unavailableScenarioIds'] : []),
+      ],
+      ['resourceContribution']
+    ) ||
+    !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
+    typeof value.accountingCurrencyCode !== 'string' ||
+    !RESOURCE_PROJECTION_CURRENCY.test(value.accountingCurrencyCode) ||
+    !Number.isSafeInteger(value.minorUnitScale) ||
+    Number(value.minorUnitScale) < 0 ||
+    Number(value.minorUnitScale) > 6 ||
+    value.roundingMode !== 'half-away-from-zero' ||
+    (value.resourceContribution !== undefined && !isResourceContribution(value.resourceContribution, scopeId)) ||
+    !Array.isArray(value.recommendationContributions) ||
+    value.recommendationContributions.length > 20_000 ||
+    !value.recommendationContributions.every(contribution => isRecommendationContribution(contribution, scopeId)) ||
+    (partial &&
+      (!Array.isArray(value.unavailableScenarioIds) ||
+        value.unavailableScenarioIds.length === 0 ||
+        value.unavailableScenarioIds.length > 20_000 ||
+        !value.unavailableScenarioIds.every(isFinancialSavingsIdentity) ||
+        new Set(value.unavailableScenarioIds).size !== value.unavailableScenarioIds.length))
+  )
+    return false;
+
+  const recommendationIds = value.recommendationContributions.map(contribution => contribution.recommendationId);
+  const allocationIds = value.recommendationContributions.flatMap(contribution => contribution.allocationIds);
+  const contributionSum = sumFinancialSavingsMinorUnits(
+    value.recommendationContributions.map(contribution => contribution.savingsMinorUnits)
+  );
+  const resourceContribution = value.resourceContribution;
+  return (
+    new Set(recommendationIds).size === recommendationIds.length &&
+    new Set(allocationIds).size === allocationIds.length &&
+    contributionSum !== undefined &&
+    (resourceContribution === undefined
+      ? allocationIds.length === 0 && contributionSum === 0
+      : haveSameFinancialSavingsSet(allocationIds, resourceContribution.allocationIds) &&
+        contributionSum === resourceContribution.savingsMinorUnits)
+  );
+};
+
+/** Strict structural and arithmetic validation for one bounded resource savings projection. */
+export const isFinancialSavingsResourceProjectionV1 = (value: unknown): value is FinancialSavingsResourceProjectionV1 => {
+  if (
+    !isFinancialSavingsRecord(value) ||
+    !hasExactFinancialSavingsFields(value, [
+      'contractVersion',
+      'savingsAuthorityId',
+      'financialAuthorityId',
+      'artifactGeneration',
+      'scopeId',
+      'coordinates',
+    ]) ||
+    value.contractVersion !== 'financial-savings-resource-projection/v1' ||
+    !isFinancialSavingsHash(value.savingsAuthorityId) ||
+    !isFinancialSavingsHash(value.financialAuthorityId) ||
+    !isFinancialSavingsRecord(value.artifactGeneration) ||
+    !hasExactFinancialSavingsFields(value.artifactGeneration, ['runId', 'generatedAt']) ||
+    !isFinancialSavingsIdentity(value.artifactGeneration.runId) ||
+    !isFinancialSavingsIsoInstant(value.artifactGeneration.generatedAt) ||
+    !isFinancialSavingsIdentity(value.scopeId) ||
+    value.scopeId !== normalizeResourceScope(value.scopeId) ||
+    !Array.isArray(value.coordinates) ||
+    value.coordinates.length === 0 ||
+    value.coordinates.length > 128
+  )
+    return false;
+  const projection = value as unknown as FinancialSavingsResourceProjectionV1;
+  return (
+    projection.coordinates.every(coordinate => isSavingsResourceCoordinate(coordinate, projection.scopeId)) &&
+    new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size === projection.coordinates.length
+  );
+};
+
+/** Verifies that the bounded savings projection is the exact companion of one bounded Financial Authority projection. */
+export const isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1 = (
+  value: unknown,
+  financialProjection: FinancialAuthorityResourceProjectionV1
+): value is FinancialSavingsResourceProjectionV1 => {
+  if (!isFinancialSavingsResourceProjectionV1(value)) return false;
+  const financialCoordinateIds = financialProjection.coordinates.map(coordinate => coordinate.coordinateId);
+  return (
+    value.financialAuthorityId === financialProjection.authorityId &&
+    normalizeResourceScope(value.scopeId) === normalizeResourceScope(financialProjection.scopeId) &&
+    value.artifactGeneration.runId === financialProjection.artifactGeneration.runId &&
+    value.artifactGeneration.generatedAt === financialProjection.artifactGeneration.generatedAt &&
+    haveSameFinancialSavingsSet(
+      value.coordinates.map(coordinate => coordinate.coordinateId),
+      financialCoordinateIds
+    )
+  );
 };

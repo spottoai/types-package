@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isFinancialAuthorityViewBoundToArtifactGenerationV1 = exports.isFinancialAuthorityViewV1 = exports.createFinancialAuthorityViewIdV1 = exports.canonicalizeFinancialAuthorityViewIdentityV1 = exports.createFinancialAuthorityCoordinateIdV1 = exports.canonicalizeFinancialAuthorityCoordinateIdentityV1 = void 0;
+exports.isFinancialAuthorityResourceProjectionV1 = exports.isFinancialAuthorityViewBoundToArtifactGenerationV1 = exports.isFinancialAuthorityViewV1 = exports.createFinancialAuthorityViewIdV1 = exports.canonicalizeFinancialAuthorityViewIdentityV1 = exports.createFinancialAuthorityCoordinateIdV1 = exports.canonicalizeFinancialAuthorityCoordinateIdentityV1 = void 0;
 const sha256_1 = require("../common/sha256");
 const financialAuthorityView_1 = require("./financialAuthorityView");
 const financialProjectionValidation_1 = require("./financialProjectionValidation");
@@ -552,4 +552,160 @@ const isFinancialAuthorityViewBoundToArtifactGenerationV1 = (value, expected) =>
     value.artifactGeneration.runId === expected.runId &&
     value.artifactGeneration.generatedAt === expected.generatedAt;
 exports.isFinancialAuthorityViewBoundToArtifactGenerationV1 = isFinancialAuthorityViewBoundToArtifactGenerationV1;
+const isSameProviderAccountSet = (left, right) => {
+    if (left.length !== right.length)
+        return false;
+    const sortedLeft = [...left].sort();
+    const sortedRight = [...right].sort();
+    return sortedLeft.every((value, index) => value === sortedRight[index]);
+};
+const isResourceProjectionCoordinate = (value, projection, assessmentById, bundleIds) => {
+    if (!isRecord(value) ||
+        !hasExactFields(value, [
+            'coordinateId',
+            'periodRole',
+            'period',
+            'costBasis',
+            'estimateLens',
+            'ownerBaseline',
+            'componentDescriptors',
+            'displayRollups',
+            'projections',
+        ], ['requestedCurrencyCode', 'chargeComposition']) ||
+        !isHash(value.coordinateId) ||
+        (value.periodRole !== 'current' && value.periodRole !== 'previous') ||
+        !(0, financialScopeBaselineValidation_1.isFinancialBaselinePeriodV2)(value.period) ||
+        typeof value.costBasis !== 'string' ||
+        !COST_BASES.has(value.costBasis) ||
+        typeof value.estimateLens !== 'string' ||
+        !ESTIMATE_LENSES.has(value.estimateLens) ||
+        (value.requestedCurrencyCode !== undefined && (typeof value.requestedCurrencyCode !== 'string' || !CURRENCY.test(value.requestedCurrencyCode))) ||
+        !(0, financialScopeBaselineValidation_1.isFinancialScopeBaselineEnvelopeV2)(value.ownerBaseline) ||
+        (value.chargeComposition !== undefined && !(0, financialChargeCompositionValidation_1.isFinancialChargeCompositionV1)(value.chargeComposition)) ||
+        !Array.isArray(value.componentDescriptors) ||
+        value.componentDescriptors.length > 20000 ||
+        !value.componentDescriptors.every(financialDisplayRollupValidation_1.isFinancialAuthorityComponentDescriptorV1) ||
+        !Array.isArray(value.displayRollups) ||
+        value.displayRollups.length > 20000 ||
+        !value.displayRollups.every(financialDisplayRollupValidation_1.isFinancialDisplayRollupV1) ||
+        !Array.isArray(value.projections) ||
+        value.projections.length > 20000 ||
+        !value.projections.every(financialProjectionValidation_1.isFinancialProjectionEnvelopeV1))
+        return false;
+    const coordinate = value;
+    const baseline = coordinate.ownerBaseline;
+    const assessment = assessmentById.get(baseline.assessmentId);
+    if (normalizeScopeId(baseline.scopeId) !== projection.scopeId ||
+        baseline.costBasis !== coordinate.costBasis ||
+        baseline.estimateLens !== coordinate.estimateLens ||
+        periodText(baseline.period) !== periodText(coordinate.period) ||
+        baseline.requestedCurrencyCode !== coordinate.requestedCurrencyCode ||
+        !isSameProviderAccountSet(baseline.providerAccountRefs, projection.providerAccountRefs) ||
+        !assessment ||
+        assessment.request.scopeId !== baseline.scopeId ||
+        assessment.request.scopeKind !== baseline.scopeKind ||
+        assessment.result !== baseline.status)
+        return false;
+    if (projection.financialRole === 'display-only' && (baseline.status !== 'unavailable' || baseline.unavailableReason !== 'unsupported-scope')) {
+        return false;
+    }
+    if (projection.financialRole === 'unclassified' && (baseline.status !== 'unavailable' || baseline.unavailableReason !== 'ownership-unresolved')) {
+        return false;
+    }
+    if (baseline.status !== 'available' || baseline.baselineKind !== 'owner') {
+        return (coordinate.chargeComposition === undefined &&
+            coordinate.componentDescriptors.length === 0 &&
+            coordinate.displayRollups.length === 0 &&
+            coordinate.projections.every(projectionValue => normalizeScopeId(projectionValue.scopeId) === projection.scopeId) &&
+            new Set(coordinate.projections.map(projectionValue => projectionValue.scenarioId)).size === coordinate.projections.length);
+    }
+    if (baseline.scopeKind !== 'canonical-resource-owner' && baseline.scopeKind !== 'composite-resource')
+        return false;
+    if (!bundleIds.has(baseline.evidenceBundleId) || assessment.evidenceBundleId !== baseline.evidenceBundleId)
+        return false;
+    const composition = coordinate.chargeComposition;
+    if (!composition ||
+        composition.baselineId !== baseline.baselineId ||
+        normalizeScopeId(composition.ownerScopeId) !== projection.scopeId ||
+        periodText(composition.period) !== periodText(baseline.period) ||
+        composition.costBasis !== baseline.costBasis ||
+        composition.estimateLens !== baseline.estimateLens ||
+        composition.accountingCurrencyCode !== baseline.total.currencyCode ||
+        composition.reconciliation.sourceTotal !== baseline.total.amount)
+        return false;
+    const componentKeys = new Set(baseline.components.map(component => `${baseline.baselineId}\u0000${component.componentId}`));
+    const descriptorKeys = coordinate.componentDescriptors.map(descriptor => `${descriptor.baselineId}\u0000${descriptor.componentId}`);
+    if (descriptorKeys.length !== componentKeys.size ||
+        new Set(descriptorKeys).size !== descriptorKeys.length ||
+        descriptorKeys.some(key => !componentKeys.has(key)) ||
+        coordinate.displayRollups.some(rollup => normalizeScopeId(rollup.displayScopeId) !== projection.scopeId ||
+            rollup.members.some(member => !componentKeys.has(`${member.baselineId}\u0000${member.componentId}`))) ||
+        coordinate.projections.some(projectionValue => normalizeScopeId(projectionValue.scopeId) !== projection.scopeId))
+        return false;
+    const rolledUpKeys = coordinate.displayRollups.flatMap(rollup => rollup.members.map(member => `${member.baselineId}\u0000${member.componentId}`));
+    return (rolledUpKeys.length === componentKeys.size &&
+        new Set(rolledUpKeys).size === rolledUpKeys.length &&
+        rolledUpKeys.every(key => componentKeys.has(key)) &&
+        new Set(coordinate.projections.map(projectionValue => projectionValue.scenarioId)).size === coordinate.projections.length);
+};
+/** Strictly validates one bounded, non-additive resource projection without requiring the full authority ledger. */
+const isFinancialAuthorityResourceProjectionV1 = (value) => {
+    if (!isRecord(value) ||
+        !hasExactFields(value, [
+            'contractVersion',
+            'authorityId',
+            'provider',
+            'providerAccountRefs',
+            'artifactGeneration',
+            'billingGenerationId',
+            'resourceType',
+            'financialRole',
+            'scopeId',
+            'evidenceBundles',
+            'evidenceAssessments',
+            'coordinates',
+        ]) ||
+        value.contractVersion !== 'financial-authority-resource-projection/v1' ||
+        !isHash(value.authorityId) ||
+        value.provider !== 'azure' ||
+        !Array.isArray(value.providerAccountRefs) ||
+        value.providerAccountRefs.length === 0 ||
+        value.providerAccountRefs.length > 64 ||
+        !value.providerAccountRefs.every(isIdentity) ||
+        new Set(value.providerAccountRefs).size !== value.providerAccountRefs.length ||
+        !isRecord(value.artifactGeneration) ||
+        !hasExactFields(value.artifactGeneration, ['runId', 'generatedAt']) ||
+        !isIdentity(value.artifactGeneration.runId) ||
+        !isIsoInstant(value.artifactGeneration.generatedAt) ||
+        !isIdentity(value.billingGenerationId) ||
+        typeof value.resourceType !== 'string' ||
+        !AZURE_RESOURCE_TYPE.test(value.resourceType) ||
+        value.resourceType !== normalizeScopeId(value.resourceType) ||
+        (value.financialRole !== 'owner' && value.financialRole !== 'display-only' && value.financialRole !== 'unclassified') ||
+        !isIdentity(value.scopeId) ||
+        value.scopeId !== normalizeScopeId(value.scopeId) ||
+        !Array.isArray(value.evidenceBundles) ||
+        value.evidenceBundles.length > 20000 ||
+        !value.evidenceBundles.every(financialScopeBaselineValidation_1.isFinancialEvidenceBundleV1) ||
+        !Array.isArray(value.evidenceAssessments) ||
+        value.evidenceAssessments.length > 20000 ||
+        !value.evidenceAssessments.every(financialEvidenceAssessmentValidation_1.isFinancialEvidenceAssessmentV1) ||
+        !Array.isArray(value.coordinates) ||
+        value.coordinates.length === 0 ||
+        value.coordinates.length > 128)
+        return false;
+    const projection = value;
+    const bundleIds = new Set(projection.evidenceBundles.map(bundle => bundle.bundleId));
+    const assessmentById = new Map(projection.evidenceAssessments.map(assessment => [assessment.assessmentId, assessment]));
+    if (bundleIds.size !== projection.evidenceBundles.length || assessmentById.size !== projection.evidenceAssessments.length)
+        return false;
+    if (projection.evidenceAssessments.some(assessment => (assessment.evidenceBundleId !== undefined && !bundleIds.has(assessment.evidenceBundleId)) ||
+        !isSameProviderAccountSet(assessment.request.providerAccountRefs, projection.providerAccountRefs) ||
+        normalizeScopeId(assessment.request.scopeId) !== projection.scopeId) ||
+        !projection.coordinates.every(coordinate => isResourceProjectionCoordinate(coordinate, projection, assessmentById, bundleIds)) ||
+        new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size !== projection.coordinates.length)
+        return false;
+    return true;
+};
+exports.isFinancialAuthorityResourceProjectionV1 = isFinancialAuthorityResourceProjectionV1;
 //# sourceMappingURL=financialAuthorityViewValidation.js.map

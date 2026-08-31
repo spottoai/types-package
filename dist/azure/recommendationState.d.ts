@@ -108,7 +108,7 @@ export interface RecommendationHistory {
     userId: string;
     createdAt: Date;
     /** restore means back from dismissed state */
-    action: 'Dismiss' | 'Restore' | 'Prioritize' | 'Unprioritize' | 'Implement';
+    action: 'Archive' | 'Dismiss' | 'Restore' | 'Prioritize' | 'Unprioritize' | 'Implement';
     reason?: string;
 }
 export interface Comment {
