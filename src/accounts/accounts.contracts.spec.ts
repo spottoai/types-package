@@ -813,6 +813,11 @@ const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
   azureSpSetupLastResult: 'partial',
   azureSpSetupLastAttemptedAt: '2026-08-09T00:00:00.000Z',
   azureSpSetupSummaryJson: '{"schemaVersion":1}',
+  azureSpSetupTenantRootReaderReadiness: 'granted',
+  azureSpSetupTenantRootReaderScope: '/providers/Microsoft.Management/managementGroups/tenant-123',
+  azureSpSetupTenantRootReaderSetupId: 'setup-123',
+  azureSpSetupTenantRootReaderExecutionId: 'execution-123',
+  azureSpSetupTenantRootReaderVerifiedAt: '2026-08-09T00:10:00.000Z',
 };
 
 const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
@@ -821,6 +826,9 @@ const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
   azureSpSetupReadinessSetupId: 'setup-123',
   azureSpSetupReadinessExecutionId: 'execution-123',
   azureSpSetupReadinessVerifiedAt: '2026-08-09T00:10:00.000Z',
+  azureSpSetupReadinessLastAttemptedAt: '2026-08-09T00:10:00.000Z',
+  azureSpSetupReaderReadinessSource: 'tenantRootManagementGroup',
+  azureSpSetupReadinessSourceScope: '/providers/Microsoft.Management/managementGroups/tenant-123',
 };
 
 const subscriptionNeedingAzureSpSetupRepair: SubscriptionInfoBase = {

@@ -164,6 +164,7 @@ export type AzureSpSetupExecutionOwner = 'apiLegacy' | 'cloudEngine';
 export type AzureSpSetupProvisioningStatus = 'credentialPending' | 'permissionsPending' | 'ready' | 'partial' | 'needsAdminAction' | 'cancelled';
 
 export type AzureSpSetupReaderReadiness = 'pending' | 'granted' | 'failed' | 'needsValidation';
+export type AzureSpSetupReaderReadinessSource = 'directSubscription' | 'tenantRootManagementGroup';
 
 export type AzureSpSetupCapabilityReadinessStatus = 'pending' | 'granted' | 'partial' | 'failed' | 'needsAdminAction' | 'notSelected';
 

@@ -10,6 +10,7 @@ import type {
   AzureSpSetupPhase,
   AzureSpSetupProvisioningStatus,
   AzureSpSetupReaderReadiness,
+  AzureSpSetupReaderReadinessSource,
   AzureSpSetupResult,
 } from './azureSpSetup';
 import type {
@@ -541,13 +542,25 @@ export interface AzureSpSetupCloudAccountFields {
   azureSpSetupBillingExportLocatorOmittedSourceCount?: number;
   /** UTC time at which assisted onboarding last projected billing-export locators. */
   azureSpSetupBillingExportLocatorUpdatedAt?: string;
+  /** Exact effective Reader evidence at the tenant-root management group for future-subscription inheritance. */
+  azureSpSetupTenantRootReaderReadiness?: AzureSpSetupReaderReadiness;
+  /** Exact management-group ARM scope that produced tenant-root Reader evidence. */
+  azureSpSetupTenantRootReaderScope?: string;
+  azureSpSetupTenantRootReaderSetupId?: string;
+  azureSpSetupTenantRootReaderExecutionId?: string;
+  azureSpSetupTenantRootReaderVerifiedAt?: string;
 }
 
 export interface AzureSpSetupSubscriptionReadinessFields {
   azureSpSetupReaderReadiness?: AzureSpSetupReaderReadiness;
+  azureSpSetupReaderReadinessSource?: AzureSpSetupReaderReadinessSource;
+  /** Exact scope from which the subscription Reader evidence was derived. */
+  azureSpSetupReadinessSourceScope?: string;
   azureSpSetupReadinessSetupId?: string;
   azureSpSetupReadinessExecutionId?: string;
   azureSpSetupReadinessVerifiedAt?: string;
+  /** UTC time of the most recent automatic inherited-Reader validation attempt. */
+  azureSpSetupReadinessLastAttemptedAt?: string;
   azureSpSetupReadinessErrorCode?: AzureSpSetupErrorCode;
 }
 
