@@ -193,6 +193,9 @@ export type AzureSpBillingExportResultStatus =
 
 export type AzureSpBillingExportTargetKeyList = [string, ...string[]];
 
+/** Maximum subscriptions accepted by one assisted Azure setup execution. */
+export const AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS = 100 as const;
+
 export interface AzureSpBillingExportCreateStorage {
   conventionVersion?: 1;
   subscriptionId: string;
@@ -218,6 +221,8 @@ export interface AzureSpBillingExportUseExistingStorageSelection {
   mode: 'useExistingStorage';
   reuseTargetKeys?: string[];
   createTargetKeys: AzureSpBillingExportTargetKeyList;
+  /** Broad-scope create targets explicitly approved by the operator; must be a subset of createTargetKeys. */
+  broadCreateTargetKeys?: string[];
   storageAccountResourceId: string;
   containerName: string;
 }
@@ -227,6 +232,8 @@ export interface AzureSpBillingExportCreateStorageSelection {
   mode: 'createStorage';
   reuseTargetKeys?: string[];
   createTargetKeys: AzureSpBillingExportTargetKeyList;
+  /** Broad-scope create targets explicitly approved by the operator; must be a subset of createTargetKeys. */
+  broadCreateTargetKeys?: string[];
   createStorage: AzureSpBillingExportCreateStorage;
 }
 

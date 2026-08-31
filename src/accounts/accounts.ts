@@ -12,7 +12,12 @@ import type {
   AzureSpSetupReaderReadiness,
   AzureSpSetupResult,
 } from './azureSpSetup';
-import type { AzureBillingExportConfigurationStatus, AzureBillingExportDatasetType, AzureBillingExportScopeType } from './azureManualOnboarding';
+import type {
+  AzureBillingExportConfigurationInput,
+  AzureBillingExportConfigurationStatus,
+  AzureBillingExportDatasetType,
+  AzureBillingExportScopeType,
+} from './azureManualOnboarding';
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
@@ -666,8 +671,13 @@ export type PublicCloudAccountDto = Omit<
   'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'
 > &
   AwsForbiddenCredentialFields & {
-    /** Public-safe billing export configuration status. Raw locator coordinates remain internal. */
+    /** Public-safe billing export configuration status. */
     billingExportConfigurationStatus?: AzureBillingExportConfigurationStatus;
+    /**
+     * Editable, credential-free billing export coordinates. Present only on an authorized
+     * single-account detail read for a caller with cloud-account management access.
+     */
+    billingExports?: AzureBillingExportConfigurationInput;
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */

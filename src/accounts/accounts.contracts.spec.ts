@@ -625,12 +625,13 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
     destinationProvided: true,
     verificationStatus: 'verified',
   },
+  billingExports: manualBillingExportConfigurationByStorageName,
   syncFeatureOptOuts: ['billing'],
 };
 
 const invalidPublicCloudAccountBillingExportLocatorDto: PublicCloudAccountDto = {
   ...publicCloudAccountDto,
-  // @ts-expect-error Raw billing export locator coordinates remain internal.
+  // @ts-expect-error The raw persisted locator remains internal even though typed editable coordinates may be projected.
   billingExportLocator: manualBillingExportConfigurationByStorageResourceId,
 };
 

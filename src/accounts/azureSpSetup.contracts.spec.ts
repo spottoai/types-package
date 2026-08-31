@@ -1,22 +1,23 @@
-import type {
-  AzureSpBillingExportCreateTarget,
-  AzureSpBillingExportPlan,
-  AzureSpBillingExportResult,
-  AzureSpBillingExportSelection,
-  AzureSpPermissionKey,
-  AzureSpPermissionManifestItem,
-  AzureSpSetupPermissionSummary,
-  AzureSpSetupExecuteRequest,
-  AzureSpSetupExecutionRequestV1,
-  AzureSpSetupCloudAccountSummaryV1,
-  AzureSpSetupCancelResponse,
-  AzureSpSetupMode,
-  AzureSpSetupOperationResult,
-  AzureSpSetupPhase,
-  AzureSpSetupPlanResponse,
-  AzureSpSetupResult,
-  AzureSpSetupStartRequest,
-  AzureSpSetupStatusResponse,
+import {
+  AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS,
+  type AzureSpBillingExportCreateTarget,
+  type AzureSpBillingExportPlan,
+  type AzureSpBillingExportResult,
+  type AzureSpBillingExportSelection,
+  type AzureSpPermissionKey,
+  type AzureSpPermissionManifestItem,
+  type AzureSpSetupPermissionSummary,
+  type AzureSpSetupExecuteRequest,
+  type AzureSpSetupExecutionRequestV1,
+  type AzureSpSetupCloudAccountSummaryV1,
+  type AzureSpSetupCancelResponse,
+  type AzureSpSetupMode,
+  type AzureSpSetupOperationResult,
+  type AzureSpSetupPhase,
+  type AzureSpSetupPlanResponse,
+  type AzureSpSetupResult,
+  type AzureSpSetupStartRequest,
+  type AzureSpSetupStatusResponse,
 } from './azureSpSetup';
 import { AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1 } from './azureSpSetupDurable';
 import type {
@@ -24,6 +25,8 @@ import type {
   AzureSpSetupDurableStateTableProjectionV1,
   AzureSpSetupDurableStateV1,
 } from './azureSpSetupDurable';
+
+const assistedSetupSubscriptionLimit: 100 = AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS;
 
 const keyVaultReaderPermissionKey: AzureSpPermissionKey = 'keyVaultReader';
 
@@ -498,6 +501,15 @@ const invalidExistingStorageSelectionWithoutCreateTargets: AzureSpBillingExportS
   mode: 'useExistingStorage',
   // @ts-expect-error configured storage requires at least one explicit creation target.
   createTargetKeys: [],
+  storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
+  containerName: 'spotto-cost-exports',
+};
+
+const existingStorageSelectionWithBroadConsent: AzureSpBillingExportSelection = {
+  enabled: true,
+  mode: 'useExistingStorage',
+  createTargetKeys: ['create-usage:/providers/microsoft.management/managementgroups/root'],
+  broadCreateTargetKeys: ['create-usage:/providers/microsoft.management/managementgroups/root'],
   storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/spottoexports',
   containerName: 'spotto-cost-exports',
 };
