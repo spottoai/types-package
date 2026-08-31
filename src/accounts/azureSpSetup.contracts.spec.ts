@@ -113,6 +113,8 @@ const billingExportPlan: AzureSpBillingExportPlan = {
   defaultRootFolderPath: 'spotto',
   defaultResourceGroupName: 'rg-spotto-cost-exports',
   defaultLocation: 'australiaeast',
+  discoveryComplete: true,
+  discoveryWarnings: [],
   detectedCompatibleExports: [
     {
       scopeType: 'subscription',
@@ -330,6 +332,8 @@ const permissionSummary: AzureSpSetupPermissionSummary = {
         skipped: 0,
         notStarted: 0,
         running: 0,
+        needsAdminAction: 0,
+        retrying: 0,
       },
     },
   ],

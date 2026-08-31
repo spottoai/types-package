@@ -194,6 +194,7 @@ export type AzureSpBillingExportResultStatus =
 export type AzureSpBillingExportTargetKeyList = [string, ...string[]];
 
 export interface AzureSpBillingExportCreateStorage {
+  conventionVersion?: 1;
   subscriptionId: string;
   resourceGroupName: string;
   location: string;
@@ -446,6 +447,8 @@ export interface AzureSpSetupPermissionCapabilityCounts {
   skipped: number;
   notStarted: number;
   running: number;
+  needsAdminAction: number;
+  retrying: number;
 }
 
 export interface AzureSpSetupPermissionCapabilitySummary {
@@ -488,7 +491,31 @@ export interface AzureSpBillingExportStorageOption {
   location?: string;
   isFromCompatibleExistingExport: boolean;
   containerName?: string;
+  ownershipStatus?: 'owned' | 'exportReferenced';
+  discoverySource?: 'deterministicName' | 'ownershipTags' | 'compatibleExport';
 }
+
+export interface AzureSpBillingExportStorageRecommendation {
+  subscriptionId: string;
+  resourceGroupName: string;
+  storageAccountName: string;
+  location: string;
+  availableLocations: string[];
+  existingStorageAccountResourceId?: string;
+}
+
+/** Versioned storage identity shared by assisted and manual Azure onboarding. */
+export const AZURE_SP_BILLING_STORAGE_CONVENTION_V1 = {
+  version: 1,
+  namePrefix: 'billingexports',
+  candidateCount: 20,
+  defaultLocation: 'australiaeast',
+  purposeTagName: 'SpottoPurpose',
+  purposeTagValue: 'BillingExports',
+  tenantTagName: 'SpottoTenantId',
+  aliasTagName: 'spotto',
+  aliasTagValue: 'billing-exports',
+} as const;
 
 export interface AzureSpBillingExportDetectedExport {
   scopeType: AzureSpBillingExportScopeType;
@@ -557,6 +584,11 @@ export type AzureSpBillingExportCreateTarget =
 
 export type AzureSpBillingExportTarget = AzureSpBillingExportReuseTarget | AzureSpBillingExportCreateTarget;
 
+export interface AzureSpBillingExportDiscoveryWarning {
+  code: 'discoveryUnavailable' | 'resultTruncated';
+  message: string;
+}
+
 export interface AzureSpBillingExportPlan {
   enabledByDefault: boolean;
   selectedByDefault: boolean;
@@ -566,6 +598,9 @@ export interface AzureSpBillingExportPlan {
   defaultLocation: 'australiaeast';
   detectedCompatibleExports: AzureSpBillingExportDetectedExport[];
   storageOptions: AzureSpBillingExportStorageOption[];
+  storageRecommendations?: AzureSpBillingExportStorageRecommendation[];
+  discoveryComplete: boolean;
+  discoveryWarnings: AzureSpBillingExportDiscoveryWarning[];
   targets: AzureSpBillingExportTarget[];
   selection: AzureSpBillingExportSelection;
 }

@@ -530,6 +530,12 @@ export interface AzureSpSetupCloudAccountFields {
   azureSpSetupLastResult?: AzureSpSetupResult;
   azureSpSetupLastAttemptedAt?: string;
   azureSpSetupSummaryJson?: string;
+  /** Internal count of billing-export locator sources persisted after bounding. */
+  azureSpSetupBillingExportLocatorSourceCount?: number;
+  /** Internal count of otherwise valid locator sources omitted by the durable bound. */
+  azureSpSetupBillingExportLocatorOmittedSourceCount?: number;
+  /** UTC time at which assisted onboarding last projected billing-export locators. */
+  azureSpSetupBillingExportLocatorUpdatedAt?: string;
 }
 
 export interface AzureSpSetupSubscriptionReadinessFields {
