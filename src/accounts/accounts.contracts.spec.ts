@@ -755,6 +755,48 @@ const subscriptionAccountWithSecureScoreEvidence: SubscriptionAccount = {
   secureScoreEvidence: availableZeroSecureScoreEvidence,
 };
 
+const subscriptionInfoBaseWithCompletionTimestamps: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastUpdated: '2026-08-30T12:00:00.000Z',
+  lastSuccessfulSyncAt: '2026-08-30T11:45:00.000Z',
+  lastSuccessfulBillingSyncAt: '2026-08-30T03:20:00.000Z',
+};
+
+// Both completion timestamps are optional: a subscription that has never completed omits them.
+const subscriptionInfoBaseWithoutCompletionTimestamps: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastUpdated: '2026-08-30T12:00:00.000Z',
+};
+
+const subscriptionAccountWithCompletionTimestamps: SubscriptionAccount = {
+  ...subscriptionInfoBaseWithCompletionTimestamps,
+  id: 'sub-123',
+  companyId: 'comp-123',
+};
+
+const companySubscriptionWithCompletionTimestamps: CompanySubscription = {
+  ...subscriptionInfoBaseWithCompletionTimestamps,
+  id: 'sub-123',
+  companyId: 'comp-123',
+};
+
+const subscriptionWithBillingCompletionOnly: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastSuccessfulBillingSyncAt: '2026-08-30T03:20:00.000Z',
+};
+
+const invalidSubscriptionSyncCompletionType: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  // @ts-expect-error Completion timestamps are stored as ISO 8601 strings, never Date objects.
+  lastSuccessfulSyncAt: new Date('2026-08-30T11:45:00.000Z'),
+};
+
+const invalidSubscriptionBillingCompletionType: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  // @ts-expect-error Completion timestamps are stored as ISO 8601 strings, never Date objects.
+  lastSuccessfulBillingSyncAt: 1788134141955,
+};
+
 const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   azureSpSetupProvisioningStatus: 'partial',
@@ -1106,3 +1148,10 @@ void combinedCloudAccountReadPermission;
 void subscriptionReadPermissionMetadataShapeCheck;
 void cloudAccountReadPermissionMetadataShapeCheck;
 void graphCloudAccountReadPermissionMetadataShapeCheck;
+void subscriptionInfoBaseWithCompletionTimestamps;
+void subscriptionInfoBaseWithoutCompletionTimestamps;
+void subscriptionAccountWithCompletionTimestamps;
+void companySubscriptionWithCompletionTimestamps;
+void subscriptionWithBillingCompletionOnly;
+void invalidSubscriptionSyncCompletionType;
+void invalidSubscriptionBillingCompletionType;

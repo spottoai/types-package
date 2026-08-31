@@ -743,7 +743,33 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
   status?: string;
   statusLabel?: string;
   error?: string;
+  /**
+   * Timestamp of the last terminal event for this subscription, successful or failed.
+   * This is not a success signal: an errored run advances it. Use `lastSuccessfulSyncAt`
+   * to reason about whether a sync actually succeeded.
+   */
   lastUpdated?: string;
+  /**
+   * ISO 8601 timestamp of the last run that reached terminal success for this subscription.
+   * Absent means no run has ever completed successfully. Advanced only on a `Completed`
+   * status with no error; never advanced by an errored, partial or skipped run.
+   *
+   * Named to match `AwsPublicCloudAccountFields.lastSuccessfulSyncAt` and
+   * `ProviderSyncProgressBase.lastSuccessfulSyncAt`, so the platform carries one
+   * convention for "last successful sync" across providers.
+   */
+  lastSuccessfulSyncAt?: string;
+  /**
+   * ISO 8601 timestamp of the last billing component run that completed successfully and
+   * materially advanced coverage. Absent means billing has never completed for this
+   * subscription. Not advanced on continuation, gap-fill or post-gap-fill budget
+   * exhaustion, partial-data completion, denied billing access, or a freshness-gate skip.
+   *
+   * Distinct from `lastSuccessfulSyncAt` because a run can reach terminal success with the
+   * billing component opted out, skipped or partial. Subscription dispatch ordering and the
+   * billing freshness gate key on this field, not on the run-level one.
+   */
+  lastSuccessfulBillingSyncAt?: string;
   hostname?: string;
   quotaId?: string;
   duration?: string;
