@@ -55,6 +55,7 @@ const entries = {
   'commitments-planning': '../aws/commitments-planning.js',
   recommendations: '../azure/recommendations.js',
   provider: '../common/provider.js',
+  environment: '../environment/index.js',
 };
 await Promise.all(
   Object.entries(entries).map(([name, target]) =>

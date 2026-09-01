@@ -32,7 +32,13 @@ import type {
   SubscriptionInfoBase,
   SubscriptionSyncFeatureOptOutsUpdateRequest,
 } from './accounts';
-import type { CloudAccountTenantSyncRequestMessage } from '../index';
+import type {
+  AzureBillingExportConfigurationInput,
+  AzureBillingExportScopeType,
+  AzureManualOnboardingImportV1,
+  CloudAccountBillingExportLocatorConfiguration,
+  CloudAccountTenantSyncRequestMessage,
+} from '../index';
 import type { CompanySubscription, SecureScoreEvidence } from '../azure/subscriptions';
 import {
   AZURE_SYNC_FEATURE_METADATA,
@@ -44,6 +50,11 @@ import {
   isAzureSyncFeatureSupportedInScope,
   sortAzureSyncFeatureIds,
 } from './accounts';
+import {
+  AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION,
+  CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+} from '../index';
 import {
   CloudAccountReadPermission,
   SubscriptionReadPermission,
@@ -376,6 +387,216 @@ const invalidGdapCloudAccountCreateRequestWithoutSelection: AzureGdapCloudAccoun
   gdapAuthorizationProfileId: 'gdapauth-profile-123',
 };
 
+const manualBillingExportConfigurationByStorageName: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingAccount',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+      exportName: 'Cortex-actual-cost',
+      destination: {
+        storageAccountName: 'eroadstaazurebilling',
+        container: 'azurecostmanagement',
+        rootFolderPath: 'eroad',
+      },
+    },
+    {
+      datasetType: 'amortized',
+      scopeType: 'billingProfile',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123',
+      exportName: 'Cortex-amortized-cost',
+      destination: {
+        storageAccountName: 'eroadstaazurebilling',
+        container: 'azurecostmanagement',
+        rootFolderPath: 'eroad',
+      },
+    },
+    {
+      datasetType: 'actual',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'spotto-actual-daily',
+      destination: {
+        storageAccountName: 'billingexportstenant123',
+        container: 'cost-exports',
+        rootFolderPath: 'spotto/subscription-123',
+      },
+    },
+  ],
+};
+
+const manualBillingExportConfigurationWithApiResolvedDestination: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'managementGroup',
+      scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
+      exportName: 'tenant-actual-daily',
+    },
+  ],
+};
+
+const manualBillingExportConfigurationByStorageResourceId: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'amortized',
+      scopeType: 'invoiceSection',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123/invoiceSections/section-123',
+      exportName: 'amortized-daily',
+      destination: {
+        storageAccountResourceId: '/subscriptions/sub-123/resourceGroups/billing-rg/providers/Microsoft.Storage/storageAccounts/billingexports',
+        container: 'cost-exports',
+        rootFolderPath: 'spotto',
+      },
+    },
+  ],
+};
+
+const supportedManualBillingExportScopes: AzureBillingExportScopeType[] = [
+  'subscription',
+  'resourceGroup',
+  'managementGroup',
+  'billingAccount',
+  'billingProfile',
+  'invoiceSection',
+  'department',
+  'enrollmentAccount',
+  'partnerCustomer',
+];
+
+const manualOnboardingImport: AzureManualOnboardingImportV1 = {
+  schemaVersion: AZURE_MANUAL_ONBOARDING_IMPORT_SCHEMA_VERSION,
+  kind: AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+    clientSecret: 'generated-secret-value',
+    clientSecretExpiresAt: '2027-08-30',
+  },
+  billingExports: manualBillingExportConfigurationByStorageName,
+};
+
+const manualOnboardingImportForReusedCredential: AzureManualOnboardingImportV1 = {
+  schemaVersion: 1,
+  kind: 'spotto.azure.manual-onboarding',
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+  },
+  billingExports: manualBillingExportConfigurationWithApiResolvedDestination,
+};
+
+const invalidEmptyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {
+  // @ts-expect-error At least one billing export source must be configured.
+  sources: [],
+};
+
+const invalidLegacyManualBillingExportConfiguration: AzureBillingExportConfigurationInput = {
+  // @ts-expect-error Manual onboarding uses the source collection, not the legacy persisted locator shape.
+  actual: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'actual-daily',
+  },
+};
+
+const invalidPartialManualBillingExportDestination: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingAccount',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+      exportName: 'actual-daily',
+      // @ts-expect-error A supplied destination requires a storage identifier, container, and root folder.
+      destination: {
+        storageAccountName: 'billingexports',
+        container: 'cost-exports',
+      },
+    },
+  ],
+};
+
+const invalidManualBillingExportScope: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      datasetType: 'actual',
+      // @ts-expect-error Tenant-root exports are represented explicitly as management-group scopes.
+      scopeType: 'tenant',
+      scopePath: '/providers/Microsoft.Management/managementGroups/tenant-123',
+      exportName: 'tenant-actual-daily',
+    },
+  ],
+};
+
+const invalidManualBillingExportDataset: AzureBillingExportConfigurationInput = {
+  sources: [
+    {
+      // @ts-expect-error The ingestion contract currently supports only Actual and Amortized datasets.
+      datasetType: 'usage',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'usage-daily',
+    },
+  ],
+};
+
+const legacyCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  actual: {
+    scopeType: 'billingAccount',
+    scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123',
+    exportName: 'Cortex-actual-cost',
+    storageAccountName: 'eroadstaazurebilling',
+    container: 'azurecostmanagement',
+    rootFolderPath: 'eroad',
+  },
+};
+
+const versionedCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  schemaVersion: CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+  sources: [
+    {
+      datasetType: 'actual',
+      scopeType: 'billingProfile',
+      scopePath: '/providers/Microsoft.Billing/billingAccounts/billing-account-123/billingProfiles/profile-123',
+      exportName: 'Cortex-actual-cost',
+      storageAccountName: 'eroadstaazurebilling',
+      container: 'azurecostmanagement',
+      rootFolderPath: 'eroad',
+    },
+    {
+      datasetType: 'actual',
+      scopeType: 'subscription',
+      scopePath: '/subscriptions/subscription-123',
+      exportName: 'spotto-actual-daily',
+      storageAccountName: 'billingexportstenant123',
+      container: 'cost-exports',
+      rootFolderPath: 'spotto/subscription-123',
+    },
+  ],
+};
+
+const invalidEmptyVersionedCloudAccountBillingExportLocator: CloudAccountBillingExportLocatorConfiguration = {
+  schemaVersion: CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION,
+  // @ts-expect-error A versioned persisted locator must contain at least one source.
+  sources: [],
+};
+
+const invalidVersionedCloudAccountBillingExportLocatorSchema: CloudAccountBillingExportLocatorConfiguration = {
+  // @ts-expect-error Persisted locator schema versions are exact discriminants.
+  schemaVersion: 2,
+  sources: versionedCloudAccountBillingExportLocator.sources,
+};
+
+const invalidManualOnboardingImportVersion: AzureManualOnboardingImportV1 = {
+  // @ts-expect-error Unsupported bundle schema versions must not compile as V1.
+  schemaVersion: 2,
+  kind: AZURE_MANUAL_ONBOARDING_IMPORT_KIND,
+  credentials: {
+    tenantId: 'tenant-123',
+    clientId: 'client-123',
+  },
+};
+
 const publicCloudAccountDto: PublicCloudAccountDto = {
   companyId: 'comp-123',
   id: 'delegated-account-123',
@@ -397,7 +618,21 @@ const publicCloudAccountDto: PublicCloudAccountDto = {
   connectedUserEmail: 'owner@example.com',
   secretPreview: 'abc*****',
   writeSecretPreview: 'xyz*****',
+  billingExportConfigurationStatus: {
+    configured: true,
+    actualConfigured: true,
+    amortizedConfigured: true,
+    destinationProvided: true,
+    verificationStatus: 'verified',
+  },
+  billingExports: manualBillingExportConfigurationByStorageName,
   syncFeatureOptOuts: ['billing'],
+};
+
+const invalidPublicCloudAccountBillingExportLocatorDto: PublicCloudAccountDto = {
+  ...publicCloudAccountDto,
+  // @ts-expect-error The raw persisted locator remains internal even though typed editable coordinates may be projected.
+  billingExportLocator: manualBillingExportConfigurationByStorageResourceId,
 };
 
 const publicAwsCloudAccountDto: PublicCloudAccountDto = {
@@ -521,6 +756,48 @@ const subscriptionAccountWithSecureScoreEvidence: SubscriptionAccount = {
   secureScoreEvidence: availableZeroSecureScoreEvidence,
 };
 
+const subscriptionInfoBaseWithCompletionTimestamps: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastUpdated: '2026-08-30T12:00:00.000Z',
+  lastSuccessfulSyncAt: '2026-08-30T11:45:00.000Z',
+  lastSuccessfulBillingSyncAt: '2026-08-30T03:20:00.000Z',
+};
+
+// Both completion timestamps are optional: a subscription that has never completed omits them.
+const subscriptionInfoBaseWithoutCompletionTimestamps: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastUpdated: '2026-08-30T12:00:00.000Z',
+};
+
+const subscriptionAccountWithCompletionTimestamps: SubscriptionAccount = {
+  ...subscriptionInfoBaseWithCompletionTimestamps,
+  id: 'sub-123',
+  companyId: 'comp-123',
+};
+
+const companySubscriptionWithCompletionTimestamps: CompanySubscription = {
+  ...subscriptionInfoBaseWithCompletionTimestamps,
+  id: 'sub-123',
+  companyId: 'comp-123',
+};
+
+const subscriptionWithBillingCompletionOnly: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  lastSuccessfulBillingSyncAt: '2026-08-30T03:20:00.000Z',
+};
+
+const invalidSubscriptionSyncCompletionType: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  // @ts-expect-error Completion timestamps are stored as ISO 8601 strings, never Date objects.
+  lastSuccessfulSyncAt: new Date('2026-08-30T11:45:00.000Z'),
+};
+
+const invalidSubscriptionBillingCompletionType: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  // @ts-expect-error Completion timestamps are stored as ISO 8601 strings, never Date objects.
+  lastSuccessfulBillingSyncAt: 1788134141955,
+};
+
 const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
   ...cloudAccountWithRecommendationEffortProfile,
   azureSpSetupProvisioningStatus: 'partial',
@@ -536,6 +813,11 @@ const cloudAccountWithAzureSpSetupReadiness: CloudAccount = {
   azureSpSetupLastResult: 'partial',
   azureSpSetupLastAttemptedAt: '2026-08-09T00:00:00.000Z',
   azureSpSetupSummaryJson: '{"schemaVersion":1}',
+  azureSpSetupTenantRootReaderReadiness: 'granted',
+  azureSpSetupTenantRootReaderScope: '/providers/Microsoft.Management/managementGroups/tenant-123',
+  azureSpSetupTenantRootReaderSetupId: 'setup-123',
+  azureSpSetupTenantRootReaderExecutionId: 'execution-123',
+  azureSpSetupTenantRootReaderVerifiedAt: '2026-08-09T00:10:00.000Z',
 };
 
 const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
@@ -544,6 +826,9 @@ const subscriptionWithAzureSpSetupReadiness: SubscriptionInfoBase = {
   azureSpSetupReadinessSetupId: 'setup-123',
   azureSpSetupReadinessExecutionId: 'execution-123',
   azureSpSetupReadinessVerifiedAt: '2026-08-09T00:10:00.000Z',
+  azureSpSetupReadinessLastAttemptedAt: '2026-08-09T00:10:00.000Z',
+  azureSpSetupReaderReadinessSource: 'tenantRootManagementGroup',
+  azureSpSetupReadinessSourceScope: '/providers/Microsoft.Management/managementGroups/tenant-123',
 };
 
 const subscriptionNeedingAzureSpSetupRepair: SubscriptionInfoBase = {
@@ -872,3 +1157,10 @@ void combinedCloudAccountReadPermission;
 void subscriptionReadPermissionMetadataShapeCheck;
 void cloudAccountReadPermissionMetadataShapeCheck;
 void graphCloudAccountReadPermissionMetadataShapeCheck;
+void subscriptionInfoBaseWithCompletionTimestamps;
+void subscriptionInfoBaseWithoutCompletionTimestamps;
+void subscriptionAccountWithCompletionTimestamps;
+void companySubscriptionWithCompletionTimestamps;
+void subscriptionWithBillingCompletionOnly;
+void invalidSubscriptionSyncCompletionType;
+void invalidSubscriptionBillingCompletionType;

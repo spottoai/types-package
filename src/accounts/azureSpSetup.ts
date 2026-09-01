@@ -94,6 +94,7 @@ export type AzureSpPermissionKey =
   | 'monitoringReader'
   | 'logAnalyticsReader'
   | 'securityReader'
+  | 'keyVaultReader'
   | 'rootManagementGroupReader'
   | 'managementGroupReader'
   | 'reservationsReader'
@@ -109,6 +110,7 @@ export type AzureSpPermissionKey =
   | 'graphPolicyReadAll'
   | 'graphLicenseAssignmentReadAll'
   | 'billingScopeReader'
+  | 'billingExportOperatorContributor'
   | 'costManagementProviderRegistration'
   | 'billingExportStorage'
   | 'billingExportContainer'
@@ -162,11 +164,21 @@ export type AzureSpSetupExecutionOwner = 'apiLegacy' | 'cloudEngine';
 export type AzureSpSetupProvisioningStatus = 'credentialPending' | 'permissionsPending' | 'ready' | 'partial' | 'needsAdminAction' | 'cancelled';
 
 export type AzureSpSetupReaderReadiness = 'pending' | 'granted' | 'failed' | 'needsValidation';
+export type AzureSpSetupReaderReadinessSource = 'directSubscription' | 'tenantRootManagementGroup';
 
 export type AzureSpSetupCapabilityReadinessStatus = 'pending' | 'granted' | 'partial' | 'failed' | 'needsAdminAction' | 'notSelected';
 
 export type AzureSpBillingExportMode = 'skip' | 'reuseExisting' | 'useExistingStorage' | 'createStorage';
-export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost';
+export type AzureSpBillingExportScopeType =
+  | 'subscription'
+  | 'managementGroup'
+  | 'billingAccount'
+  | 'billingProfile'
+  | 'invoiceSection'
+  | 'department'
+  | 'enrollmentAccount'
+  | 'partnerCustomer';
+export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost' | 'Usage';
 export type AzureSpBillingExportEffectiveDefinitionType = 'ActualCost' | 'Usage' | 'AmortizedCost';
 export type AzureSpBillingExportResultStatus =
   | 'notStarted'
@@ -179,6 +191,59 @@ export type AzureSpBillingExportResultStatus =
   | 'failed'
   | 'unavailable'
   | 'skipped';
+
+export type AzureSpBillingExportTargetKeyList = [string, ...string[]];
+
+/** Maximum subscriptions accepted by one assisted Azure setup execution. */
+export const AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS = 100 as const;
+
+export interface AzureSpBillingExportCreateStorage {
+  conventionVersion?: 1;
+  subscriptionId: string;
+  resourceGroupName: string;
+  location: string;
+  storageAccountName: string;
+  containerName: string;
+}
+
+export interface AzureSpBillingExportSkipSelection {
+  enabled: false;
+  mode: 'skip';
+}
+
+export interface AzureSpBillingExportReuseSelection {
+  enabled: true;
+  mode: 'reuseExisting';
+  reuseTargetKeys: AzureSpBillingExportTargetKeyList;
+}
+
+export interface AzureSpBillingExportUseExistingStorageSelection {
+  enabled: true;
+  mode: 'useExistingStorage';
+  reuseTargetKeys?: string[];
+  createTargetKeys: AzureSpBillingExportTargetKeyList;
+  /** Broad-scope create targets explicitly approved by the operator; must be a subset of createTargetKeys. */
+  broadCreateTargetKeys?: string[];
+  storageAccountResourceId: string;
+  containerName: string;
+}
+
+export interface AzureSpBillingExportCreateStorageSelection {
+  enabled: true;
+  mode: 'createStorage';
+  reuseTargetKeys?: string[];
+  createTargetKeys: AzureSpBillingExportTargetKeyList;
+  /** Broad-scope create targets explicitly approved by the operator; must be a subset of createTargetKeys. */
+  broadCreateTargetKeys?: string[];
+  createStorage: AzureSpBillingExportCreateStorage;
+}
+
+/** Mutually exclusive billing-export selection submitted by the portal. */
+export type AzureSpBillingExportSelection =
+  | AzureSpBillingExportSkipSelection
+  | AzureSpBillingExportReuseSelection
+  | AzureSpBillingExportUseExistingStorageSelection
+  | AzureSpBillingExportCreateStorageSelection;
 
 export interface AzureSpSetupStartRequest {
   redirectAfter?: string;
@@ -338,7 +403,7 @@ export interface AzureSpSetupExecutionRequestV1 {
   createdAt: string;
   selectedSubscriptionIds: string[];
   selectedPermissionInstanceKeys: string[];
-  billingExports?: AzureSpSetupExecuteRequest['billingExports'];
+  billingExportPlan?: AzureSpBillingExportExecutionPlan;
   cloudAccountName?: string;
   groupNames?: string[];
   readBitmask?: number;
@@ -390,6 +455,8 @@ export interface AzureSpSetupPermissionCapabilityCounts {
   skipped: number;
   notStarted: number;
   running: number;
+  needsAdminAction: number;
+  retrying: number;
 }
 
 export interface AzureSpSetupPermissionCapabilitySummary {
@@ -432,11 +499,36 @@ export interface AzureSpBillingExportStorageOption {
   location?: string;
   isFromCompatibleExistingExport: boolean;
   containerName?: string;
+  ownershipStatus?: 'owned' | 'exportReferenced';
+  discoverySource?: 'deterministicName' | 'ownershipTags' | 'compatibleExport';
 }
 
-export interface AzureSpBillingExportDetectedExport {
+export interface AzureSpBillingExportStorageRecommendation {
   subscriptionId: string;
-  exportScope?: string;
+  resourceGroupName: string;
+  storageAccountName: string;
+  location: string;
+  availableLocations: string[];
+  existingStorageAccountResourceId?: string;
+}
+
+/** Versioned storage identity shared by assisted and manual Azure onboarding. */
+export const AZURE_SP_BILLING_STORAGE_CONVENTION_V1 = {
+  version: 1,
+  namePrefix: 'billingexports',
+  candidateCount: 20,
+  defaultLocation: 'australiaeast',
+  purposeTagName: 'SpottoPurpose',
+  purposeTagValue: 'BillingExports',
+  tenantTagName: 'SpottoTenantId',
+  aliasTagName: 'spotto',
+  aliasTagValue: 'billing-exports',
+} as const;
+
+export interface AzureSpBillingExportDetectedExport {
+  scopeType: AzureSpBillingExportScopeType;
+  scope: string;
+  subscriptionId?: string;
   exportScopeLabel?: string;
   requiresBillingScopeReader?: boolean;
   dataset: AzureSpBillingExportDataset;
@@ -451,6 +543,60 @@ export interface AzureSpBillingExportDetectedExport {
   canBeReused?: boolean;
 }
 
+export interface AzureSpBillingExportTargetBase {
+  targetKey: string;
+  action: 'create' | 'reuseExisting';
+  scope: string;
+  scopeLabel?: string;
+  exportName: string;
+  selectedByDefault: boolean;
+  requiredForCompleteness: boolean;
+}
+
+export interface AzureSpBillingExportReuseTarget extends AzureSpBillingExportTargetBase {
+  action: 'reuseExisting';
+  scopeType: AzureSpBillingExportScopeType;
+  subscriptionId?: string;
+  dataset: AzureSpBillingExportDataset;
+  effectiveDefinitionType: AzureSpBillingExportEffectiveDefinitionType;
+  exportResourceId: string;
+  storageAccountResourceId: string;
+  containerName: string;
+  rootFolderPath?: string;
+}
+
+export interface AzureSpBillingExportSubscriptionCreateTarget extends AzureSpBillingExportTargetBase {
+  action: 'create';
+  scopeType: 'subscription';
+  subscriptionId: string;
+  dataset: 'ActualCost' | 'AmortizedCost';
+}
+
+export interface AzureSpBillingExportManagementGroupCreateTarget extends AzureSpBillingExportTargetBase {
+  action: 'create';
+  scopeType: 'managementGroup';
+  managementGroupId: string;
+  dataset: 'Usage';
+}
+
+export interface AzureSpBillingExportHierarchyCreateTarget extends AzureSpBillingExportTargetBase {
+  action: 'create';
+  scopeType: 'billingAccount' | 'billingProfile' | 'invoiceSection';
+  dataset: 'ActualCost' | 'AmortizedCost';
+}
+
+export type AzureSpBillingExportCreateTarget =
+  | AzureSpBillingExportSubscriptionCreateTarget
+  | AzureSpBillingExportManagementGroupCreateTarget
+  | AzureSpBillingExportHierarchyCreateTarget;
+
+export type AzureSpBillingExportTarget = AzureSpBillingExportReuseTarget | AzureSpBillingExportCreateTarget;
+
+export interface AzureSpBillingExportDiscoveryWarning {
+  code: 'discoveryUnavailable' | 'resultTruncated';
+  message: string;
+}
+
 export interface AzureSpBillingExportPlan {
   enabledByDefault: boolean;
   selectedByDefault: boolean;
@@ -460,21 +606,21 @@ export interface AzureSpBillingExportPlan {
   defaultLocation: 'australiaeast';
   detectedCompatibleExports: AzureSpBillingExportDetectedExport[];
   storageOptions: AzureSpBillingExportStorageOption[];
-  selectedMode?: AzureSpBillingExportMode;
-  selectedReuseDetectedExportResourceIds?: string[];
-  selectedStorageAccountResourceId?: string;
-  selectedContainerName?: string;
-  createStorage?: {
-    subscriptionId: string;
-    resourceGroupName: string;
-    location: string;
-    storageAccountName: string;
-    containerName: string;
-  };
+  storageRecommendations?: AzureSpBillingExportStorageRecommendation[];
+  discoveryComplete: boolean;
+  discoveryWarnings: AzureSpBillingExportDiscoveryWarning[];
+  targets: AzureSpBillingExportTarget[];
+  selection: AzureSpBillingExportSelection;
 }
 
+/** Immutable, resolved billing-export work stored in the execution snapshot. */
+export type AzureSpBillingExportExecutionPlan = Pick<AzureSpBillingExportPlan, 'selection' | 'targets'>;
+
 export interface AzureSpBillingExportResult {
-  subscriptionId: string;
+  targetKey: string;
+  scopeType: AzureSpBillingExportScopeType;
+  scope: string;
+  subscriptionId?: string;
   dataset?: AzureSpBillingExportDataset;
   effectiveDefinitionType?: AzureSpBillingExportEffectiveDefinitionType;
   exportKind: 'recurring' | 'backfill' | 'storage' | 'providerRegistration';
@@ -553,20 +699,7 @@ export interface AzureSpSetupPlanRequest {
   subscriptionIds: string[];
   selectedPermissionInstanceKeys?: string[];
   useTenantRootReader?: boolean;
-  billingExports?: {
-    enabled: boolean;
-    mode?: AzureSpBillingExportMode;
-    reuseDetectedExportResourceIds?: string[];
-    storageAccountResourceId?: string;
-    createStorage?: {
-      subscriptionId: string;
-      resourceGroupName: string;
-      location: string;
-      storageAccountName: string;
-      containerName: string;
-    };
-    containerName?: string;
-  };
+  billingExports?: AzureSpBillingExportSelection;
 }
 
 export interface AzureSpSetupPlanResponse extends AzureSpSetupStatusResponse {

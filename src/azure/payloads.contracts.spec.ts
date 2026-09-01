@@ -36,6 +36,7 @@ import type {
   AzureSpSetupMaintenanceRequestMessage,
   CloudAccountTenantSyncRequest,
   CloudAccountsBillingReconciliationRequestMessage,
+  CloudAccountsScheduledRefreshRequestMessage,
   CreatePolicyExemptionRequestMessage,
   PublicCloudAccountDto,
   ProcessPayload,
@@ -702,6 +703,48 @@ const billingReconciliationRequestMessage: CloudAccountsBillingReconciliationReq
 
 const baseBillingReconciliationRequestMessage: RequestMessage = billingReconciliationRequestMessage;
 
+const scheduledRefreshRequestMessage: CloudAccountsScheduledRefreshRequestMessage = {
+  entity: 'cloudaccounts',
+  action: 'refresh',
+  companyId: '*',
+  cloudAccountId: '*',
+  tenantId: '*',
+  clientId: '*',
+  source: 'scheduled',
+  requestId: 'refresh:scheduled:2026-08-30T12:00:00.000Z',
+};
+
+const scheduledComponentRefreshRequestMessage: CloudAccountsScheduledRefreshRequestMessage = {
+  ...scheduledRefreshRequestMessage,
+  action: 'refreshcomponents',
+  refreshComponents: ['billing', 'activities'],
+  requestId: 'refreshcomponents:scheduled:2026-08-30T16:30:00.000Z',
+};
+
+const baseScheduledRefreshRequestMessage: RequestMessage = scheduledRefreshRequestMessage;
+
+// requestId is optional for rollout compatibility: an older API emits the message without it.
+const { requestId: _removedScheduledRefreshRequestId, ...scheduledRefreshWithoutRequestId } = scheduledRefreshRequestMessage;
+const legacyScheduledRefreshRequestMessage: CloudAccountsScheduledRefreshRequestMessage = scheduledRefreshWithoutRequestId;
+
+const invalidScheduledRefreshAction: CloudAccountsScheduledRefreshRequestMessage = {
+  ...scheduledRefreshRequestMessage,
+  // @ts-expect-error Scheduled refresh uses the refresh or refreshcomponents action.
+  action: 'reconcile-billing',
+};
+
+const invalidScheduledRefreshCompanyWildcard: CloudAccountsScheduledRefreshRequestMessage = {
+  ...scheduledRefreshRequestMessage,
+  // @ts-expect-error The scheduled refresh command must not be scoped to one company.
+  companyId: 'comp-123',
+};
+
+const invalidScheduledRefreshSource: CloudAccountsScheduledRefreshRequestMessage = {
+  ...scheduledRefreshRequestMessage,
+  // @ts-expect-error Scheduled refresh messages are emitted by cron only.
+  source: 'manual',
+};
+
 const billingReconciliationSubscriptionMessage: BillingReconciliationSubscriptionMessage = {
   requestId: billingReconciliationRequestMessage.requestId,
   subscription,
@@ -963,3 +1006,10 @@ void invalidAzureSpSetupExecutionMessageWithBrokerId;
 void invalidAzureSpSetupExecutionSchemaVersion;
 void invalidAzureSpSetupMaintenanceSentinel;
 void invalidAzureSpSetupMaintenanceSchemaVersion;
+void scheduledRefreshRequestMessage;
+void scheduledComponentRefreshRequestMessage;
+void baseScheduledRefreshRequestMessage;
+void legacyScheduledRefreshRequestMessage;
+void invalidScheduledRefreshAction;
+void invalidScheduledRefreshCompanyWildcard;
+void invalidScheduledRefreshSource;

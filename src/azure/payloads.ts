@@ -127,6 +127,27 @@ export interface CloudAccountsBillingReconciliationRequestMessage extends Reques
   metadata: CloudAccountsBillingReconciliationRequestMetadata;
 }
 
+export type CloudAccountsScheduledRefreshAction = 'refresh' | 'refreshcomponents';
+
+/**
+ * Wildcard message emitted by the scheduled full-scan and component-refresh crons.
+ *
+ * `requestId` is derived from the cron scheduled time rather than the send time, so a
+ * redelivery of the same tick resolves to the same request identity. It is optional for
+ * rollout compatibility: when it is absent, cloud-engine falls back to its previous
+ * behaviour and per-subscription messages are published without a `messageId`.
+ */
+export interface CloudAccountsScheduledRefreshRequestMessage extends RequestMessage {
+  entity: 'cloudaccounts';
+  action: CloudAccountsScheduledRefreshAction;
+  companyId: '*';
+  cloudAccountId: '*';
+  tenantId: '*';
+  clientId: '*';
+  source: 'scheduled';
+  requestId?: string;
+}
+
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
 
 export interface ActionExecutionSource {

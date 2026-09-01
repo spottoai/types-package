@@ -10,8 +10,15 @@ import type {
   AzureSpSetupPhase,
   AzureSpSetupProvisioningStatus,
   AzureSpSetupReaderReadiness,
+  AzureSpSetupReaderReadinessSource,
   AzureSpSetupResult,
 } from './azureSpSetup';
+import type {
+  AzureBillingExportConfigurationInput,
+  AzureBillingExportConfigurationStatus,
+  AzureBillingExportDatasetType,
+  AzureBillingExportScopeType,
+} from './azureManualOnboarding';
 
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 
@@ -21,6 +28,7 @@ export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap'
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
 export type CloudAccountFirstSyncNotificationStatus = 'Pending' | 'Sending' | 'Sent' | 'Error';
+/** Scope vocabulary used by the legacy unversioned cloud-engine locator. */
 export type BillingExportLocatorScopeType = 'tenant' | 'billingAccount';
 export type AzureGdapRelationshipStatus = 'unknown' | 'created' | 'approvalPending' | 'active' | 'terminated' | 'expired';
 export type AzureGdapAccessAssignmentStatus = 'unknown' | 'pending' | 'active' | 'deleting' | 'deleted' | 'error';
@@ -258,6 +266,28 @@ export interface CloudAccountBillingExportLocator {
   actual?: BillingExportLocatorEntry;
   amortized?: BillingExportLocatorEntry;
 }
+
+/** Resolved storage locator for one source in the versioned cloud-account collection. */
+export interface BillingExportLocatorSource {
+  datasetType: AzureBillingExportDatasetType;
+  scopeType: AzureBillingExportScopeType;
+  scopePath: string;
+  exportName: string;
+  storageAccountName: string;
+  container: string;
+  rootFolderPath: string;
+}
+
+export const CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION = 1 as const;
+
+/** Preferred persisted locator shape for one or more Azure billing export sources. */
+export interface CloudAccountBillingExportLocatorV1 {
+  schemaVersion: typeof CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION;
+  sources: [BillingExportLocatorSource, ...BillingExportLocatorSource[]];
+}
+
+/** Accepts legacy persisted records while cloud-engine and API migrate to the source collection. */
+export type CloudAccountBillingExportLocatorConfiguration = CloudAccountBillingExportLocator | CloudAccountBillingExportLocatorV1;
 
 export const AZURE_SYNC_FEATURE_ORDER = [
   'activityMonitoring',
@@ -506,13 +536,31 @@ export interface AzureSpSetupCloudAccountFields {
   azureSpSetupLastResult?: AzureSpSetupResult;
   azureSpSetupLastAttemptedAt?: string;
   azureSpSetupSummaryJson?: string;
+  /** Internal count of billing-export locator sources persisted after bounding. */
+  azureSpSetupBillingExportLocatorSourceCount?: number;
+  /** Internal count of otherwise valid locator sources omitted by the durable bound. */
+  azureSpSetupBillingExportLocatorOmittedSourceCount?: number;
+  /** UTC time at which assisted onboarding last projected billing-export locators. */
+  azureSpSetupBillingExportLocatorUpdatedAt?: string;
+  /** Exact effective Reader evidence at the tenant-root management group for future-subscription inheritance. */
+  azureSpSetupTenantRootReaderReadiness?: AzureSpSetupReaderReadiness;
+  /** Exact management-group ARM scope that produced tenant-root Reader evidence. */
+  azureSpSetupTenantRootReaderScope?: string;
+  azureSpSetupTenantRootReaderSetupId?: string;
+  azureSpSetupTenantRootReaderExecutionId?: string;
+  azureSpSetupTenantRootReaderVerifiedAt?: string;
 }
 
 export interface AzureSpSetupSubscriptionReadinessFields {
   azureSpSetupReaderReadiness?: AzureSpSetupReaderReadiness;
+  azureSpSetupReaderReadinessSource?: AzureSpSetupReaderReadinessSource;
+  /** Exact scope from which the subscription Reader evidence was derived. */
+  azureSpSetupReadinessSourceScope?: string;
   azureSpSetupReadinessSetupId?: string;
   azureSpSetupReadinessExecutionId?: string;
   azureSpSetupReadinessVerifiedAt?: string;
+  /** UTC time of the most recent automatic inherited-Reader validation attempt. */
+  azureSpSetupReadinessLastAttemptedAt?: string;
   azureSpSetupReadinessErrorCode?: AzureSpSetupErrorCode;
 }
 
@@ -628,7 +676,7 @@ export interface CloudAccount
   /** Internal GDAP credential locator. Do not expose this field in public API DTOs. */
   gdapCredentialReference?: string;
   /** Internal manual billing export locator override. Do not expose this field in public API DTOs. */
-  billingExportLocator?: string | CloudAccountBillingExportLocator;
+  billingExportLocator?: string | CloudAccountBillingExportLocatorConfiguration;
 }
 
 export type PublicCloudAccountDto = Omit<
@@ -636,6 +684,13 @@ export type PublicCloudAccountDto = Omit<
   'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'
 > &
   AwsForbiddenCredentialFields & {
+    /** Public-safe billing export configuration status. */
+    billingExportConfigurationStatus?: AzureBillingExportConfigurationStatus;
+    /**
+     * Editable, credential-free billing export coordinates. Present only on an authorized
+     * single-account detail read for a caller with cloud-account management access.
+     */
+    billingExports?: AzureBillingExportConfigurationInput;
     /** Display-only masked preview of the stored read secret. Never contains the full secret value. */
     secretPreview?: string;
     /** Display-only masked preview of the stored write secret. Never contains the full secret value. */
@@ -711,7 +766,33 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
   status?: string;
   statusLabel?: string;
   error?: string;
+  /**
+   * Timestamp of the last terminal event for this subscription, successful or failed.
+   * This is not a success signal: an errored run advances it. Use `lastSuccessfulSyncAt`
+   * to reason about whether a sync actually succeeded.
+   */
   lastUpdated?: string;
+  /**
+   * ISO 8601 timestamp of the last run that reached terminal success for this subscription.
+   * Absent means no run has ever completed successfully. Advanced only on a `Completed`
+   * status with no error; never advanced by an errored, partial or skipped run.
+   *
+   * Named to match `AwsPublicCloudAccountFields.lastSuccessfulSyncAt` and
+   * `ProviderSyncProgressBase.lastSuccessfulSyncAt`, so the platform carries one
+   * convention for "last successful sync" across providers.
+   */
+  lastSuccessfulSyncAt?: string;
+  /**
+   * ISO 8601 timestamp of the last billing component run that completed successfully and
+   * materially advanced coverage. Absent means billing has never completed for this
+   * subscription. Not advanced on continuation, gap-fill or post-gap-fill budget
+   * exhaustion, partial-data completion, denied billing access, or a freshness-gate skip.
+   *
+   * Distinct from `lastSuccessfulSyncAt` because a run can reach terminal success with the
+   * billing component opted out, skipped or partial. Subscription dispatch ordering and the
+   * billing freshness gate key on this field, not on the run-level one.
+   */
+  lastSuccessfulBillingSyncAt?: string;
   hostname?: string;
   quotaId?: string;
   duration?: string;
