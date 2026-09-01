@@ -1,4 +1,23 @@
 import type { SubscriptionAccount } from './accounts';
+import type { AzureManualOnboardingBillingExportDiscoveryResult } from './azureManualOnboarding';
+/**
+ * Validation-only Azure service-principal input. Persistence metadata is
+ * intentionally excluded because a cloud account does not exist yet during onboarding.
+ */
+export interface CloudAccountValidationRequest {
+    companyId: string;
+    provider: 'Azure';
+    id: string;
+    name: string;
+    companyName?: string;
+    authMode?: 'servicePrincipal';
+    tenantId: string;
+    secret: string;
+    useWriteAccess?: boolean;
+    writeClientId?: string;
+    writeSecret?: string;
+    includeBillingExportDiscovery?: boolean;
+}
 export type SubscriptionValidationStatus = 'confirmed' | 'forbidden' | 'unauthorized' | 'throttled' | 'unavailable';
 export interface SubscriptionReadValidationResult {
     subscription: SubscriptionAccount;
@@ -39,6 +58,7 @@ export interface CloudAccountValidationResult {
     readAccess: CloudAccountReadAccessValidation;
     writeAccess?: CloudAccountWriteAccessValidation;
     capabilityChecks?: CloudAccountCapabilityValidationResult[];
+    billingExportDiscovery?: AzureManualOnboardingBillingExportDiscoveryResult;
 }
 export interface CloudAccountCapabilityValidationProgress {
     result: CloudAccountCapabilityValidationResult;
@@ -80,6 +100,10 @@ export type CloudAccountValidationStreamEvent = {
     event: 'writeAccessCompleted';
     message: string;
     writeAccess: CloudAccountWriteAccessValidation;
+} | {
+    event: 'billingExportDiscoveryCompleted';
+    message: string;
+    result: AzureManualOnboardingBillingExportDiscoveryResult;
 } | {
     event: 'completed';
     message: string;

@@ -71,6 +71,7 @@ __exportStar(require("./company"), exports);
 __exportStar(require("./customProperties"), exports);
 __exportStar(require("./scheduler"), exports);
 __exportStar(require("./ai"), exports);
+__exportStar(require("./environment"), exports);
 __exportStar(require("./events"), exports);
 __exportStar(require("./integrations"), exports);
 __exportStar(require("./identity"), exports);

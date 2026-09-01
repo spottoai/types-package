@@ -1,3 +1,4 @@
+export const CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION = 1;
 export const AZURE_SYNC_FEATURE_ORDER = [
     'activityMonitoring',
     'metrics',

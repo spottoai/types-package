@@ -1,1 +1,1 @@
-{"version":3,"file":"azureSpSetup.js","sourceRoot":"","sources":["../../src/accounts/azureSpSetup.ts"],"names":[],"mappings":""}
+{"version":3,"file":"azureSpSetup.js","sourceRoot":"","sources":["../../src/accounts/azureSpSetup.ts"],"names":[],"mappings":";;;AAoMA,4EAA4E;AAC/D,QAAA,yCAAyC,GAAG,GAAY,CAAC;AA6TtE,iFAAiF;AACpE,QAAA,sCAAsC,GAAG;IACpD,OAAO,EAAE,CAAC;IACV,UAAU,EAAE,gBAAgB;IAC5B,cAAc,EAAE,EAAE;IAClB,eAAe,EAAE,eAAe;IAChC,cAAc,EAAE,eAAe;IAC/B,eAAe,EAAE,gBAAgB;IACjC,aAAa,EAAE,gBAAgB;IAC/B,YAAY,EAAE,QAAQ;IACtB,aAAa,EAAE,iBAAiB;CACxB,CAAC"}

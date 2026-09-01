@@ -55,6 +55,7 @@ export * from './company/index.js';
 export * from './customProperties/index.js';
 export * from './scheduler/index.js';
 export * from './ai/index.js';
+export * from './environment/index.js';
 export * from './events/index.js';
 export * from './integrations/index.js';
 export * from './identity/index.js';

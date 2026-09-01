@@ -1,4 +1,5 @@
 /** Common AI interfaces shared between frontend and backend */
+import type { EnvironmentArtifactKindV1, EnvironmentScopeV1, EnvironmentSourceGenerationV1 } from '../environment/contracts';
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 export type RecommendationPillar = 'Cost Optimization' | 'Performance Efficiency' | 'Security' | 'Reliability' | 'Operational Excellence';
 export type RecommendationType = 'advisor' | 'custom' | 'aiGenerated';
@@ -298,7 +299,7 @@ export interface AIChatToolPolicySummary {
     approvalRequired: boolean;
     summary: string;
 }
-export type AIChatRetrievalSourceType = 'operational' | 'memory' | 'knowledge' | 'external';
+export type AIChatRetrievalSourceType = 'operational' | 'memory' | 'knowledge' | 'external' | 'environment';
 export interface AIChatSourcePolicySummary {
     sourceTypes: AIChatRetrievalSourceType[];
     externalSourceEnabled: boolean;
@@ -324,6 +325,16 @@ export interface AIChatMemoryMatch {
     summary: string;
     citationIds?: string[];
 }
+/** Client-safe environment evidence metadata; it intentionally excludes storage provenance and runtime handles. */
+export interface AIEnvironmentEvidenceMatch {
+    safeLabel: string;
+    portalRoute: string;
+    scope: EnvironmentScopeV1;
+    artifactKind: EnvironmentArtifactKindV1;
+    sourceGeneration: EnvironmentSourceGenerationV1;
+}
+/** Strictly validates the client-safe environment evidence shape. */
+export declare const isAIEnvironmentEvidenceMatch: (value: unknown) => value is AIEnvironmentEvidenceMatch;
 export interface AIChatEvidenceGroup {
     groupId: string;
     title: string;
@@ -343,6 +354,7 @@ export interface AIChatEvidenceCoverage {
     evidenceGroups: AIChatEvidenceGroup[];
     citationCoverage: AIChatCitationCoverage;
     memoryMatches?: AIChatMemoryMatch[];
+    environmentMatches?: AIEnvironmentEvidenceMatch[];
 }
 export interface AIChatRuntimeEvalSignals {
     observedLeadSpecialist?: string;
@@ -644,6 +656,7 @@ export interface AIChatSkillPackDescriptor {
 export interface AIChatToolDescriptor {
     toolName: string;
     source: 'internal' | 'mcp' | `mcp:${string}` | string;
+    retrievalSourceType?: AIChatRetrievalSourceType;
     providerId?: string;
     providerTitle?: string;
     providerCapabilities?: string[];

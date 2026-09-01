@@ -22,6 +22,10 @@ export interface CompanySubscription extends SubscriptionInfoBase {
     /** Azure Subscription ID */
     id: string;
 }
+/** Public company-subscription response with authoritative readiness. */
+export type CompanySubscriptionResponse = Omit<CompanySubscription, 'ready'> & {
+    ready: boolean;
+};
 export interface SubscriptionScope {
     companyId: string;
     id: string;
@@ -39,8 +43,13 @@ export interface SubscriptionScope {
     foundCurrency?: boolean;
     ready?: boolean;
     secureScore?: number;
+    secureScoreEvidence?: SecureScoreEvidence;
     totalCost?: number;
 }
+/** Public subscription-scope response with authoritative readiness. */
+export type SubscriptionScopeResponse = Omit<SubscriptionScope, 'ready'> & {
+    ready: boolean;
+};
 export interface SubscriptionSummary {
     companyId: string;
     tenantId: string;
