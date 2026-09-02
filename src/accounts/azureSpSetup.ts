@@ -180,6 +180,13 @@ export type AzureSpBillingExportScopeType =
   | 'partnerCustomer';
 export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost' | 'Usage';
 export type AzureSpBillingExportEffectiveDefinitionType = 'ActualCost' | 'Usage' | 'AmortizedCost';
+export type AzureSpBillingAgreementType =
+  | 'MicrosoftCustomerAgreement'
+  | 'MicrosoftPartnerAgreement'
+  | 'EnterpriseAgreement'
+  | 'MicrosoftOnlineServicesProgram'
+  | 'Other';
+export type AzureSpBillingRoleAssignmentMode = 'create' | 'createOrUpdate';
 export type AzureSpBillingExportResultStatus =
   | 'notStarted'
   | 'existing'
@@ -579,10 +586,23 @@ export interface AzureSpBillingExportManagementGroupCreateTarget extends AzureSp
   dataset: 'Usage';
 }
 
+/** Exact Microsoft Billing role work resolved before the immutable execution snapshot is signed. */
+export interface AzureSpBillingRoleAssignmentPlan {
+  agreementType: AzureSpBillingAgreementType;
+  assignmentMode: AzureSpBillingRoleAssignmentMode;
+  principalTenantId: string;
+  roleDefinitionId: string;
+  roleDefinitionName: string;
+}
+
 export interface AzureSpBillingExportHierarchyCreateTarget extends AzureSpBillingExportTargetBase {
   action: 'create';
   scopeType: 'billingAccount' | 'billingProfile' | 'invoiceSection';
   dataset: 'ActualCost' | 'AmortizedCost';
+  /** Missing on legacy snapshots; execution then fails closed to scoped administrator action. */
+  agreementType?: AzureSpBillingAgreementType;
+  /** Present only when planning resolved a supported agreement and export-capable exact-scope role. */
+  billingRoleAssignment?: AzureSpBillingRoleAssignmentPlan;
 }
 
 export type AzureSpBillingExportCreateTarget =

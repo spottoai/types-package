@@ -543,6 +543,14 @@ const billingProfileActualTarget: AzureSpBillingExportCreateTarget = {
   exportName: 'spotto-actual-daily',
   selectedByDefault: true,
   requiredForCompleteness: false,
+  agreementType: 'MicrosoftCustomerAgreement',
+  billingRoleAssignment: {
+    agreementType: 'MicrosoftCustomerAgreement',
+    assignmentMode: 'create',
+    principalTenantId: 'tenant-123',
+    roleDefinitionId: '/providers/Microsoft.Billing/billingAccounts/account-123/billingProfiles/profile-123/billingRoleDefinitions/contributor-role',
+    roleDefinitionName: 'Billing profile contributor',
+  },
 };
 
 const invalidDepartmentCreateTarget: AzureSpBillingExportCreateTarget = {

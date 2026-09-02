@@ -34,6 +34,7 @@
     "src/azure/recommendationTracks.contracts.spec.ts",
     "src/azure/recommendationSavingsDetails.contracts.spec.ts",
     "src/azure/savings.contracts.spec.ts",
+    "src/azure/storage-inventory.contracts.spec.ts",
     "src/azure/recommendationWorkflow.contracts.spec.ts",
     "src/azure/resourceOptimization.contracts.spec.ts",
     "src/azure/serviceRetirement.contracts.spec.ts",

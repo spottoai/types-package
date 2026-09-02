@@ -7,6 +7,28 @@ export type AccessPattern = 'hot' | 'cool' | 'cold' | 'archive' | 'unknown';
 export type AgeBucket = '0-30d' | '30-90d' | '90-180d' | '180-365d' | '365d+';
 export type TierName = 'hot' | 'cool' | 'cold' | 'archive';
 
+export type InventoryPricingSource = 'billing' | 'retail' | 'fallback' | 'unknown';
+
+export type InventoryAnalysisErrorCode =
+  | 'inventory_analysis_not_found'
+  | 'inventory_input_missing'
+  | 'inventory_manifest_missing'
+  | 'inventory_manifest_invalid'
+  | 'inventory_manifest_account_mismatch'
+  | 'inventory_manifest_empty'
+  | 'inventory_data_file_missing'
+  | 'inventory_analysis_failed';
+
+export type InventoryStorageAccountKind = 'Storage' | 'StorageV2' | 'BlobStorage' | 'BlockBlobStorage' | 'FileStorage' | 'unknown';
+
+export type InventoryStorageRedundancy = 'LRS' | 'ZRS' | 'GRS' | 'GZRS' | 'RA-GRS' | 'RA-GZRS' | 'unknown';
+
+export interface InventoryStorageAccountMetadata {
+  accountKind?: InventoryStorageAccountKind;
+  skuName?: string;
+  redundancy?: InventoryStorageRedundancy;
+}
+
 export interface InventoryUserContext {
   retentionDays?: number;
   canDeleteOld?: boolean;
@@ -40,13 +62,24 @@ export interface InventoryAnalysisResult {
   resourceId?: string;
   analyzedAt: string;
   inventorySource: InventorySource;
+  storageAccountMetadata?: InventoryStorageAccountMetadata;
+  tierTargets?: TierTargets;
+  thresholdPresets?: ThresholdPreset[];
   summary: {
     totalBlobs: number;
     totalBytes: number;
     analyzedBlobs?: number;
     lastScanTime?: string;
     tierBreakdown: Record<string, { count: number; bytes: number; percentage?: number }>;
-    ageBuckets: Record<AgeBucket | string, { count: number; bytes: number; percentage?: number }>;
+    ageBuckets: Record<
+      AgeBucket | string,
+      {
+        count: number;
+        bytes: number;
+        percentage?: number;
+        perType?: Record<BlobKind, { count: number; bytes: number }>;
+      }
+    >;
   };
   issues: InventoryIssue[];
   recommendations: InventoryRecommendation[];
@@ -75,12 +108,35 @@ export interface InventoryAnalysisResult {
     sampleSize?: number;
   };
   userContext?: InventoryUserContext;
+  warnings?: string[];
 }
 
 export interface InventoryAnalysisProgress {
   totalBlobs: number;
   processedBlobs: number;
   percentage: number;
+}
+
+export interface TierTargets {
+  hot: ScopeStat;
+  cool: ScopeStat;
+  cold: ScopeStat;
+  archive: ScopeStat;
+}
+
+export interface InventoryThresholds {
+  coolAfterDays: number;
+  coldAfterDays: number;
+  archiveAfterDays: number;
+  deleteAfterDays?: number;
+  allowDelete?: boolean;
+}
+
+export interface ThresholdPreset {
+  key: string;
+  label: string;
+  thresholds: InventoryThresholds;
+  tierTargets: TierTargets;
 }
 
 export interface InventoryAnalysisJob {
@@ -105,7 +161,9 @@ export interface InventoryAnalysisStatus {
   createdAt?: string;
   updatedAt?: string;
   completedAt?: string;
+  errorCode?: InventoryAnalysisErrorCode;
   errorMessage?: string;
+  errorDetails?: string;
   resultPath?: string;
   userContext?: InventoryUserContext;
   subscriptionId?: string;
@@ -122,6 +180,7 @@ export interface InventoryManifestFile {
 }
 
 export interface InventoryManifest {
+  endpoint?: string;
   files: InventoryManifestFile[];
 }
 
@@ -129,6 +188,9 @@ export interface BlobInventoryUploadResponse {
   jobId: string;
   status?: InventoryAnalysisStatus;
   resultPath?: string;
+  uploadId?: string;
+  analysisEnqueued?: boolean;
+  analysisError?: string;
 }
 
 export type InventoryAutomationStatus = 'disabled' | 'enabled' | 'warning' | 'error';
@@ -188,6 +250,8 @@ export interface DisableInventoryAutomationRequest {
 
 export interface InventoryCostSummary {
   currency?: string;
+  pricingSource?: InventoryPricingSource;
+  isEstimated?: boolean;
   rates?: Partial<Record<TierName, number>>;
   currentMonthly?: number;
   targetMonthly?: number;
