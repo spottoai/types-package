@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 import {
+  ENVIRONMENT_ARTIFACT_KINDS_V1,
   ENVIRONMENT_CONTRACT_LIMITS_V1,
+  ENVIRONMENT_DOCUMENT_NAMES_V1,
+  ENVIRONMENT_PILLARS_V1,
   buildEnvironmentLogicalArtifactReferenceV1,
   buildEnvironmentLogicalResourceReferenceV1,
   buildEnvironmentScopeQualifiedSubjectV1,
@@ -15,10 +18,11 @@ import {
   isEnvironmentLogicalArtifactReferenceV1,
   isEnvironmentLogicalResourceReferenceV1,
   isEnvironmentMoneyValueV1,
+  isEnvironmentPillarV1,
   isEnvironmentRunIdV1,
   isEnvironmentScopeV1,
   isEnvironmentSourceBindingV1,
-  isEnvironmentSubscriptionCostProjectionV1,
+  isEnvironmentSubscriptionProjectionV1,
   parseEnvironmentLogicalArtifactReferenceV1,
   parseEnvironmentLogicalResourceReferenceV1,
 } from '../dist/index.js';
@@ -43,6 +47,8 @@ const sourceBinding = {
   completedAt,
 };
 
+assert.deepEqual(ENVIRONMENT_PILLARS_V1, ['cost', 'security', 'governance', 'reliability', 'performance', 'operations']);
+assert.equal(ENVIRONMENT_DOCUMENT_NAMES_V1.length, 8);
 assert.equal(isEnvironmentScopeV1(scope), true);
 assert.equal(isEnvironmentScopeV1({ ...scope, future: true }), false, 'scope rejects unknown keys');
 assert.equal(isEnvironmentScopeV1({ ...scope, subscriptionId: '../subscription' }), true, 'logical source IDs remain opaque');
@@ -55,6 +61,8 @@ assert.equal(isEnvironmentSourceBindingV1({ ...sourceBinding, publicationId: 'a'
 assert.equal(isEnvironmentSourceBindingV1({ ...sourceBinding, publicationId: 'a'.repeat(257) }), false);
 assert.equal(isEnvironmentScopeV1({ ...scope, companyId: 'a'.repeat(2048) }), true);
 assert.equal(isEnvironmentScopeV1({ ...scope, companyId: 'a'.repeat(2049) }), false);
+for (const pillar of ENVIRONMENT_PILLARS_V1) assert.equal(isEnvironmentPillarV1(pillar), true);
+assert.equal(isEnvironmentPillarV1('sustainability'), false);
 
 assert.equal(isEnvironmentRunIdV1('550e8400-e29b-41d4-a716-446655440000'), true);
 for (const invalidRunId of ['.', '..', '../run', 'portal:run/1', 'C:\\run', 'https://storage/run', 'a'.repeat(129), '']) {
@@ -63,13 +71,15 @@ for (const invalidRunId of ['.', '..', '../run', 'portal:run/1', 'C:\\run', 'htt
 
 const subject = buildEnvironmentScopeQualifiedSubjectV1(scope);
 assert.equal(subject, '["azure-subscription","tenant-1","company-1","subscription-1"]');
-const artifactReference = buildEnvironmentLogicalArtifactReferenceV1('subscription-summary', subject);
-assert.deepEqual(parseEnvironmentLogicalArtifactReferenceV1(artifactReference), {
-  kind: 'artifact',
-  artifactKind: 'subscription-summary',
-  subject,
-});
-assert.equal(isEnvironmentLogicalArtifactReferenceV1(artifactReference), true);
+const artifactReferences = Object.fromEntries(
+  ENVIRONMENT_ARTIFACT_KINDS_V1.map(artifactKind => [artifactKind, buildEnvironmentLogicalArtifactReferenceV1(artifactKind, subject)])
+);
+for (const artifactKind of ENVIRONMENT_ARTIFACT_KINDS_V1) {
+  const reference = artifactReferences[artifactKind];
+  assert.deepEqual(parseEnvironmentLogicalArtifactReferenceV1(reference), { kind: 'artifact', artifactKind, subject });
+  assert.equal(isEnvironmentLogicalArtifactReferenceV1(reference), true);
+}
+const artifactReference = artifactReferences['subscription-summary'];
 assert.throws(() => buildEnvironmentLogicalArtifactReferenceV1('subscription-summary', '../storage/path'), /canonical/u);
 assert.equal(isEnvironmentLogicalArtifactReferenceV1(artifactReference.replace('subscription-summary', 'unknown-artifact')), false);
 assert.equal(isEnvironmentLogicalArtifactReferenceV1(`${artifactReference}=`), false, 'rejects padded base64url');
@@ -134,20 +144,47 @@ assert.equal(isEnvironmentCoverageStateV1({ status: 'unavailable', reason: 'Unav
 assert.equal(isEnvironmentCoverageStateV1({ status: 'complete', future: true }), false);
 
 const emptyList = { items: [], totalCount: 0, includedCount: 0, truncated: false };
+const completeCoverage = { status: 'complete' };
+const pillarRoutes = {
+  cost: '/company/company-1/cost-analysis',
+  security: '/company/company-1/recommendations',
+  governance: '/company/company-1/recommendations',
+  reliability: '/company/company-1/recommendations',
+  performance: '/company/company-1/recommendations',
+  operations: '/company/company-1/recommendations',
+};
+const pillars = Object.fromEntries(
+  ENVIRONMENT_PILLARS_V1.map(pillar => [
+    pillar,
+    {
+      pillar,
+      coverage: pillar === 'governance' ? { status: 'partial', reason: 'Independent governance sidecars are not bound.' } : completeCoverage,
+      findingCount: pillar === 'security' ? 1 : 0,
+      recommendationCount: 1,
+      affectedResourceCount: 1,
+      portalRoute: pillarRoutes[pillar],
+      ...(pillar === 'security' ? { score: { value: '72.5', maximum: '100', safeLabel: 'Secure score' } } : {}),
+      sourceReferences: [artifactReference],
+    },
+  ])
+);
 const projection = {
   schemaVersion: 1,
   scope,
   sourceBinding,
   generatedAt,
-  subscription: { safeLabel: 'Production', portalRoute: '/companies/company-1/subscriptions/subscription-1' },
+  subscription: { safeLabel: 'Production', portalRoute: '/company/company-1/dashboard' },
   sourceCoverage: {
+    completedViewSet: completeCoverage,
     subscriptionSummary: { status: 'complete', observedAt: completedAt },
-    resources: { status: 'complete' },
+    resources: completeCoverage,
     recommendations: { status: 'partial', reason: 'One source failed.' },
-    costs: { status: 'complete' },
-    savings: { status: 'complete' },
+    serviceRetirements: completeCoverage,
+    monitorAlerts: { status: 'not-collected', reason: 'Not requested.' },
+    pluginMetrics: { status: 'partial', reason: 'Some resource families do not expose supported metrics.' },
   },
-  costSummary: { observedCost, potentialSavings, resourceCount: 1, recommendationCount: 1 },
+  estateSummary: { resourceCount: 1, serviceFamilyCount: 1, locationCount: 1 },
+  costSummary: { observedCost, potentialSavings, costRecommendationCount: 1 },
   serviceFamilyRollups: {
     items: [
       {
@@ -164,29 +201,77 @@ const projection = {
   },
   estateCostRollups: emptyList,
   costDrivers: emptyList,
-  recommendations: emptyList,
+  pillars,
+  findings: {
+    items: [
+      {
+        findingId: 'security-score',
+        pillar: 'security',
+        kind: 'security-posture',
+        safeLabel: 'Secure score requires attention',
+        severity: 'high',
+        confidencePercentage: '90',
+        affectedResourceCount: 1,
+        portalRoute: '/company/company-1/recommendations',
+        resourceReferences: [resourceReference],
+        sourceReferences: [artifactReference],
+      },
+    ],
+    totalCount: 1,
+    includedCount: 1,
+    truncated: false,
+  },
+  recommendations: {
+    items: [
+      {
+        recommendationId: 'recommendation-1',
+        pillar: 'performance',
+        safeLabel: 'Enable autoscale',
+        portalRoute: '/company/company-1/recommendations',
+        impact: 'high',
+        effort: 'medium',
+        confidencePercentage: '90',
+        affectedResourceCount: 1,
+        resourceReferences: [resourceReference],
+        sourceReferences: [artifactReferences['subscription-recommendations']],
+      },
+    ],
+    totalCount: 1,
+    includedCount: 1,
+    truncated: false,
+  },
   changes: emptyList,
   warnings: emptyList,
   sourceReferences: [artifactReference, resourceReference],
 };
-assert.equal(isEnvironmentSubscriptionCostProjectionV1(projection), true);
-assert.equal(isEnvironmentSubscriptionCostProjectionV1({ ...projection, future: true }), false, 'projection rejects unknown keys');
+assert.equal(isEnvironmentSubscriptionProjectionV1(projection), true);
+assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, future: true }), false, 'projection rejects unknown keys');
 assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({
+  isEnvironmentSubscriptionProjectionV1({ ...projection, pillars: { ...pillars, security: { ...pillars.security, pillar: 'cost' } } }),
+  false,
+  'pillar map keys bind their discriminator'
+);
+const { operations: _removedPillar, ...missingPillar } = pillars;
+assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, pillars: missingPillar }), false, 'all pillars are mandatory');
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
     ...projection,
-    subscription: { ...projection.subscription, safeLabel: 'a'.repeat(513) },
+    recommendations: {
+      ...projection.recommendations,
+      items: [{ ...projection.recommendations.items[0], confidencePercentage: '100.1' }],
+    },
   }),
   false,
-  'safe labels reject cap plus one'
+  'confidence percentages cannot exceed 100'
 );
-assert.equal(isEnvironmentSubscriptionCostProjectionV1({ ...projection, generatedAt: '2026-08-28T23:59:59.999Z' }), false);
+assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, generatedAt: '2026-08-28T23:59:59.999Z' }), false);
 assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({ ...projection, scope: { ...scope, subscriptionId: 'subscription-2' } }),
+  isEnvironmentSubscriptionProjectionV1({ ...projection, scope: { ...scope, subscriptionId: 'subscription-2' } }),
   false,
   'projection scope must match source binding'
 );
 assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({
+  isEnvironmentSubscriptionProjectionV1({
     ...projection,
     serviceFamilyRollups: { ...projection.serviceFamilyRollups, includedCount: 0 },
   }),
@@ -194,7 +279,7 @@ assert.equal(
   'bounded list count must match its items'
 );
 assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({
+  isEnvironmentSubscriptionProjectionV1({
     ...projection,
     serviceFamilyRollups: { items: [], totalCount: 1, includedCount: 0, truncated: true },
   }),
@@ -202,24 +287,7 @@ assert.equal(
   'truncated lists require a logical continuation reference'
 );
 assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({
-    ...projection,
-    warnings: {
-      items: Array.from({ length: ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems + 1 }, (_, index) => ({
-        code: `warning-${index}`,
-        safeLabel: `Warning ${index}`,
-        sourceReferences: [],
-      })),
-      totalCount: ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems + 1,
-      includedCount: ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems + 1,
-      truncated: false,
-    },
-  }),
-  false,
-  'bounded lists reject cap plus one'
-);
-assert.equal(
-  isEnvironmentSubscriptionCostProjectionV1({
+  isEnvironmentSubscriptionProjectionV1({
     ...projection,
     subscription: JSON.parse('{"safeLabel":"Production","portalRoute":"/safe","__proto__":{"polluted":true}}'),
   }),
@@ -232,7 +300,7 @@ const oversizedProjection = {
     items: Array.from({ length: 50 }, (_, index) => ({
       code: `warning-${index}`,
       safeLabel: `Warning ${index}`,
-      detail: 'a'.repeat(4096),
+      detail: '😀'.repeat(4096),
       sourceReferences: [],
     })),
     totalCount: 50,
@@ -240,41 +308,30 @@ const oversizedProjection = {
     truncated: false,
   },
 };
-assert.equal(isEnvironmentSubscriptionCostProjectionV1(oversizedProjection), false, 'projection rejects its UTF-8 byte cap plus one');
+assert.equal(isEnvironmentSubscriptionProjectionV1(oversizedProjection), false, 'projection rejects its UTF-8 byte cap plus one');
 
-const descriptors = [
-  {
-    name: 'projection.json',
-    mediaType: 'application/json',
-    byteCount: 100,
-    contentSha256: 'a'.repeat(64),
-    approximateTokenCount: 25,
-  },
-  {
-    name: 'environment-index.md',
-    mediaType: 'text/markdown; charset=utf-8',
-    byteCount: 200,
-    contentSha256: 'b'.repeat(64),
-    approximateTokenCount: 50,
-  },
-  {
-    name: 'pillars/cost.md',
-    mediaType: 'text/markdown; charset=utf-8',
-    byteCount: 300,
-    contentSha256: 'c'.repeat(64),
-    approximateTokenCount: 75,
-  },
-];
+const descriptors = ENVIRONMENT_DOCUMENT_NAMES_V1.map((name, index) => ({
+  name,
+  mediaType: name === 'projection.json' ? 'application/json' : 'text/markdown; charset=utf-8',
+  byteCount: 100 + index,
+  contentSha256: `${index}`.repeat(64),
+  approximateTokenCount: 25,
+}));
 assert.equal(isEnvironmentDocumentDescriptorSetV1(descriptors), true);
-assert.equal(isEnvironmentDocumentDescriptorSetV1([...descriptors.slice(0, 2), descriptors[1]]), false);
+assert.equal(isEnvironmentDocumentDescriptorSetV1(descriptors.slice(0, -1)), false);
+assert.equal(isEnvironmentDocumentDescriptorSetV1([...descriptors.slice(0, -1), descriptors[1]]), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[0], future: true }), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[0], contentSha256: 'A'.repeat(64) }), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[1], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.environmentIndexBytes + 1 }), false);
-assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[2], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.costPillarBytes + 1 }), false);
-const expectedPreimage = `[["environment-index.md","${'b'.repeat(64)}"],["pillars/cost.md","${'c'.repeat(64)}"],["projection.json","${'a'.repeat(64)}"]]`;
+assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[2], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.pillarDocumentBytes + 1 }), false);
+const expectedPreimage = JSON.stringify(
+  descriptors
+    .map(descriptor => [descriptor.name, descriptor.contentSha256])
+    .sort((left, right) => left[0].localeCompare(right[0], 'en', { sensitivity: 'variant' }))
+);
 assert.equal(buildEnvironmentTreeDigestPreimageV1(descriptors), expectedPreimage);
 assert.equal(buildEnvironmentTreeDigestPreimageV1([...descriptors].reverse()), expectedPreimage, 'digest preimage is order-independent');
-assert.throws(() => buildEnvironmentTreeDigestPreimageV1(descriptors.slice(0, 2)));
+assert.throws(() => buildEnvironmentTreeDigestPreimageV1(descriptors.slice(0, -1)));
 
 const pointer = {
   schemaVersion: 1,
@@ -283,21 +340,21 @@ const pointer = {
   scope,
   sourceBinding,
   treeDigestSha256: 'd'.repeat(64),
-  fileCount: 3,
+  fileCount: ENVIRONMENT_DOCUMENT_NAMES_V1.length,
   generatedAt,
 };
 assert.equal(isEnvironmentCompiledGenerationPointerV1(pointer), true);
-assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, fileCount: 2 }), false);
+assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, fileCount: 3 }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, generatedAt: '2026-08-28T23:59:59.999Z' }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, environmentRunId: sourceBinding.publicationId }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, scope: { ...scope, companyId: 'company-2' } }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, storagePath: 'environment/runs/run-1' }), false);
 
 const safeEvidenceMatch = {
-  safeLabel: 'Production subscription cost summary',
-  portalRoute: '/companies/company-1/subscriptions/subscription-1/cost',
+  safeLabel: 'Production subscription environment',
+  portalRoute: '/company/company-1/dashboard',
   scope,
-  artifactKind: 'subscription-summary',
+  artifactKind: 'subscription-recommendations',
   sourceGeneration: {
     viewSetSchemaVersion: 1,
     publicationId: sourceBinding.publicationId,
@@ -322,7 +379,9 @@ assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, portalRoute: '
 
 const environmentEsm = await import('@spottoai/types-package/environment');
 const environmentCommonJs = createRequire(import.meta.url)('@spottoai/types-package/environment');
-assert.equal(typeof environmentEsm.buildEnvironmentTreeDigestPreimageV1, 'function', 'ESM environment subpath is exported');
-assert.equal(typeof environmentCommonJs.buildEnvironmentTreeDigestPreimageV1, 'function', 'CommonJS environment subpath is exported');
+assert.equal(typeof environmentEsm.isEnvironmentSubscriptionProjectionV1, 'function', 'ESM environment subpath is exported');
+assert.equal(typeof environmentCommonJs.isEnvironmentSubscriptionProjectionV1, 'function', 'CommonJS environment subpath is exported');
+assert.equal(environmentEsm.isEnvironmentSubscriptionCostProjectionV1, undefined, 'cost-only ESM validator is not retained');
+assert.equal(environmentCommonJs.isEnvironmentSubscriptionCostProjectionV1, undefined, 'cost-only CommonJS validator is not retained');
 
 process.stdout.write('Environment contract checks passed.\n');

@@ -1,9 +1,9 @@
-/** Phase-one environment-memory contract constants shared by producers and consumers. */
+/** Single pre-release multi-pillar environment contract shared by producers and consumers. */
 export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
   completedPointerBytes: 16 * 1024,
-  projectionBytes: 64 * 1024,
-  environmentIndexBytes: 4 * 1024,
-  costPillarBytes: 8 * 1024,
+  projectionBytes: 256 * 1024,
+  environmentIndexBytes: 8 * 1024,
+  pillarDocumentBytes: 8 * 1024,
   boundedListItems: 50,
   customerStringScalars: 4096,
   safeLabelScalars: 512,
@@ -11,15 +11,60 @@ export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
   environmentRunIdAsciiCharacters: 128,
   sourceIdentityScalars: 256,
   logicalReferencePayloadBytes: 4 * 1024,
-  validatedContainerDepth: 8,
+  validatedContainerDepth: 10,
 } as const);
 
-export const ENVIRONMENT_DOCUMENT_NAMES_V1 = ['projection.json', 'environment-index.md', 'pillars/cost.md'] as const;
+export const ENVIRONMENT_PILLARS_V1 = ['cost', 'security', 'governance', 'reliability', 'performance', 'operations'] as const;
 
-export const ENVIRONMENT_ARTIFACT_KINDS_V1 = ['subscription-summary', 'subscription-resources', 'subscription-recommendations'] as const;
+export const ENVIRONMENT_DOCUMENT_NAMES_V1 = [
+  'projection.json',
+  'environment-index.md',
+  'pillars/cost.md',
+  'pillars/security.md',
+  'pillars/governance.md',
+  'pillars/reliability.md',
+  'pillars/performance.md',
+  'pillars/operations.md',
+] as const;
 
+export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
+  'subscription-summary',
+  'subscription-resources',
+  'subscription-recommendations',
+  'subscription-service-retirements',
+  'subscription-monitor-alerts',
+  'subscription-system-tracks',
+  'subscription-metrics',
+] as const;
+
+export const ENVIRONMENT_FINDING_KINDS_V1 = [
+  'recommendation',
+  'security-posture',
+  'public-exposure',
+  'governance',
+  'compliance',
+  'service-retirement',
+  'data-protection',
+  'health',
+  'performance',
+  'scaling',
+  'operations',
+  'monitoring',
+  'topology',
+] as const;
+
+export const ENVIRONMENT_SEVERITIES_V1 = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'] as const;
+export const ENVIRONMENT_IMPACTS_V1 = ['high', 'medium', 'low', 'unknown'] as const;
+export const ENVIRONMENT_EFFORTS_V1 = ['high', 'medium', 'low', 'unknown'] as const;
+
+export type EnvironmentPillarV1 = (typeof ENVIRONMENT_PILLARS_V1)[number];
 export type EnvironmentDocumentNameV1 = (typeof ENVIRONMENT_DOCUMENT_NAMES_V1)[number];
+export type EnvironmentMarkdownDocumentNameV1 = Exclude<EnvironmentDocumentNameV1, 'projection.json'>;
 export type EnvironmentArtifactKindV1 = (typeof ENVIRONMENT_ARTIFACT_KINDS_V1)[number];
+export type EnvironmentFindingKindV1 = (typeof ENVIRONMENT_FINDING_KINDS_V1)[number];
+export type EnvironmentSeverityV1 = (typeof ENVIRONMENT_SEVERITIES_V1)[number];
+export type EnvironmentImpactV1 = (typeof ENVIRONMENT_IMPACTS_V1)[number];
+export type EnvironmentEffortV1 = (typeof ENVIRONMENT_EFFORTS_V1)[number];
 export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized';
 export type EnvironmentSavingsAdditivityV1 = 'additive' | 'scenario-non-additive';
 export type EnvironmentMoneyProvenanceV1 =
@@ -133,18 +178,25 @@ export interface EnvironmentSubscriptionSummaryV1 {
 }
 
 export interface EnvironmentSourceCoverageV1 {
+  completedViewSet: EnvironmentCoverageStateV1;
   subscriptionSummary: EnvironmentCoverageStateV1;
   resources: EnvironmentCoverageStateV1;
   recommendations: EnvironmentCoverageStateV1;
-  costs: EnvironmentCoverageStateV1;
-  savings: EnvironmentCoverageStateV1;
+  serviceRetirements: EnvironmentCoverageStateV1;
+  monitorAlerts: EnvironmentCoverageStateV1;
+  pluginMetrics: EnvironmentCoverageStateV1;
+}
+
+export interface EnvironmentEstateSummaryV1 {
+  resourceCount: number;
+  serviceFamilyCount: number;
+  locationCount: number;
 }
 
 export interface EnvironmentCostSummaryV1 {
   observedCost?: EnvironmentMoneyValueV1;
   potentialSavings?: EnvironmentMoneyValueV1;
-  resourceCount?: number;
-  recommendationCount?: number;
+  costRecommendationCount?: number;
 }
 
 export interface EnvironmentCostRollupV1 {
@@ -166,17 +218,61 @@ export interface EnvironmentCostDriverV1 {
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
-export interface EnvironmentCostRecommendationV1 {
-  recommendationId: string;
+export interface EnvironmentPillarScoreV1 {
+  value: string;
+  maximum: '100';
   safeLabel: string;
-  description?: string;
-  potentialSavings?: EnvironmentMoneyValueV1;
+}
+
+export interface EnvironmentPillarSummaryV1 {
+  pillar: EnvironmentPillarV1;
+  coverage: EnvironmentCoverageStateV1;
+  findingCount: number;
+  recommendationCount: number;
+  affectedResourceCount: number;
   portalRoute: string;
+  score?: EnvironmentPillarScoreV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
-export interface EnvironmentCostChangeV1 {
+export type EnvironmentPillarSummariesV1 = {
+  [Pillar in EnvironmentPillarV1]: EnvironmentPillarSummaryV1 & { pillar: Pillar };
+};
+
+export interface EnvironmentFindingV1 {
+  findingId: string;
+  pillar: EnvironmentPillarV1;
+  kind: EnvironmentFindingKindV1;
+  safeLabel: string;
+  severity: EnvironmentSeverityV1;
+  description?: string;
+  impact?: EnvironmentImpactV1;
+  effort?: EnvironmentEffortV1;
+  confidencePercentage?: string;
+  affectedResourceCount?: number;
+  portalRoute?: string;
+  resourceReferences: EnvironmentLogicalResourceReferenceV1[];
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentRecommendationV1 {
+  recommendationId: string;
+  pillar: EnvironmentPillarV1;
+  safeLabel: string;
+  portalRoute: string;
+  description?: string;
+  impact?: EnvironmentImpactV1;
+  effort?: EnvironmentEffortV1;
+  confidencePercentage?: string;
+  affectedResourceCount?: number;
+  potentialSavings?: EnvironmentMoneyValueV1;
+  resourceReferences: EnvironmentLogicalResourceReferenceV1[];
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentChangeV1 {
   key: string;
+  pillars: EnvironmentPillarV1[];
   safeLabel: string;
   description: string;
   direction: 'increase' | 'decrease' | 'unchanged' | 'unknown';
@@ -187,23 +283,27 @@ export interface EnvironmentCostChangeV1 {
 export interface EnvironmentProjectionWarningV1 {
   code: string;
   safeLabel: string;
+  pillar?: EnvironmentPillarV1;
   detail?: string;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
-export interface EnvironmentSubscriptionCostProjectionV1 {
+export interface EnvironmentSubscriptionProjectionV1 {
   schemaVersion: 1;
   scope: EnvironmentScopeV1;
   sourceBinding: EnvironmentSourceBindingV1;
   generatedAt: string;
   subscription: EnvironmentSubscriptionSummaryV1;
   sourceCoverage: EnvironmentSourceCoverageV1;
+  estateSummary: EnvironmentEstateSummaryV1;
   costSummary: EnvironmentCostSummaryV1;
   serviceFamilyRollups: EnvironmentBoundedListV1<EnvironmentCostRollupV1>;
   estateCostRollups: EnvironmentBoundedListV1<EnvironmentCostRollupV1>;
   costDrivers: EnvironmentBoundedListV1<EnvironmentCostDriverV1>;
-  recommendations: EnvironmentBoundedListV1<EnvironmentCostRecommendationV1>;
-  changes: EnvironmentBoundedListV1<EnvironmentCostChangeV1>;
+  pillars: EnvironmentPillarSummariesV1;
+  findings: EnvironmentBoundedListV1<EnvironmentFindingV1>;
+  recommendations: EnvironmentBoundedListV1<EnvironmentRecommendationV1>;
+  changes: EnvironmentBoundedListV1<EnvironmentChangeV1>;
   warnings: EnvironmentBoundedListV1<EnvironmentProjectionWarningV1>;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
@@ -217,7 +317,7 @@ export type EnvironmentDocumentDescriptorV1 =
       approximateTokenCount: number;
     }
   | {
-      name: 'environment-index.md' | 'pillars/cost.md';
+      name: EnvironmentMarkdownDocumentNameV1;
       mediaType: 'text/markdown; charset=utf-8';
       byteCount: number;
       contentSha256: string;
@@ -231,6 +331,6 @@ export interface EnvironmentCompiledGenerationPointerV1 {
   scope: EnvironmentScopeV1;
   sourceBinding: EnvironmentSourceBindingV1;
   treeDigestSha256: string;
-  fileCount: 3;
+  fileCount: (typeof ENVIRONMENT_DOCUMENT_NAMES_V1)['length'];
   generatedAt: string;
 }

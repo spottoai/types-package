@@ -2,21 +2,29 @@ import {
   ENVIRONMENT_ARTIFACT_KINDS_V1,
   ENVIRONMENT_CONTRACT_LIMITS_V1,
   ENVIRONMENT_DOCUMENT_NAMES_V1,
+  ENVIRONMENT_EFFORTS_V1,
+  ENVIRONMENT_FINDING_KINDS_V1,
+  ENVIRONMENT_IMPACTS_V1,
+  ENVIRONMENT_PILLARS_V1,
+  ENVIRONMENT_SEVERITIES_V1,
   type EnvironmentArtifactKindV1,
   type EnvironmentBoundedListV1,
+  type EnvironmentChangeV1,
   type EnvironmentCompiledGenerationPointerV1,
-  type EnvironmentCostChangeV1,
   type EnvironmentCostDriverV1,
-  type EnvironmentCostRecommendationV1,
   type EnvironmentCostRollupV1,
   type EnvironmentCoverageStateV1,
   type EnvironmentDocumentDescriptorV1,
+  type EnvironmentFindingV1,
   type EnvironmentMoneyValueV1,
+  type EnvironmentPillarSummaryV1,
+  type EnvironmentPillarV1,
   type EnvironmentProjectionWarningV1,
+  type EnvironmentRecommendationV1,
   type EnvironmentScopeV1,
   type EnvironmentSourceBindingV1,
   type EnvironmentSourceGenerationV1,
-  type EnvironmentSubscriptionCostProjectionV1,
+  type EnvironmentSubscriptionProjectionV1,
 } from './contracts.js';
 import {
   CURRENCY_PATTERN,
@@ -39,6 +47,11 @@ import { isEnvironmentLogicalEvidenceReferenceV1, isEnvironmentLogicalResourceRe
 
 const DOCUMENT_NAMES = new Set<string>(ENVIRONMENT_DOCUMENT_NAMES_V1);
 const ARTIFACT_KINDS = new Set<string>(ENVIRONMENT_ARTIFACT_KINDS_V1);
+const PILLARS = new Set<string>(ENVIRONMENT_PILLARS_V1);
+const FINDING_KINDS = new Set<string>(ENVIRONMENT_FINDING_KINDS_V1);
+const SEVERITIES = new Set<string>(ENVIRONMENT_SEVERITIES_V1);
+const IMPACTS = new Set<string>(ENVIRONMENT_IMPACTS_V1);
+const EFFORTS = new Set<string>(ENVIRONMENT_EFFORTS_V1);
 const MONEY_BASES = new Set<string>(['billed', 'amortized']);
 const MONEY_PROVENANCE = new Set<string>([
   'subscription-summary',
@@ -73,6 +86,17 @@ const isReferenceArray = (value: unknown): boolean =>
   value.length <= ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&
   value.every(isEnvironmentLogicalEvidenceReferenceV1) &&
   new Set(value).size === value.length;
+
+const isResourceReferenceArray = (value: unknown): boolean =>
+  Array.isArray(value) &&
+  value.length <= ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&
+  value.every(isEnvironmentLogicalResourceReferenceV1) &&
+  new Set(value).size === value.length;
+
+const isPercentage = (value: unknown): value is string => typeof value === 'string' && DECIMAL_PATTERN.test(value) && Number(value) <= 100;
+
+/** Validates one admitted environment pillar. */
+export const isEnvironmentPillarV1 = (value: unknown): value is EnvironmentPillarV1 => typeof value === 'string' && PILLARS.has(value);
 
 /** Validates the closed phase-one Azure subscription scope. */
 export const isEnvironmentScopeV1 = (value: unknown): value is EnvironmentScopeV1 =>
@@ -226,20 +250,86 @@ const isCostDriver = (value: unknown): value is EnvironmentCostDriverV1 =>
   (value.resourceReference === undefined || isEnvironmentLogicalResourceReferenceV1(value.resourceReference)) &&
   isReferenceArray(value.sourceReferences);
 
-const isRecommendation = (value: unknown): value is EnvironmentCostRecommendationV1 =>
+const isPillarScore = (value: unknown): boolean =>
   isRecord(value) &&
-  hasExactKeys(value, ['recommendationId', 'safeLabel', 'portalRoute', 'sourceReferences'], ['description', 'potentialSavings']) &&
+  hasExactKeys(value, ['value', 'maximum', 'safeLabel']) &&
+  isPercentage(value.value) &&
+  value.maximum === '100' &&
+  isSafeLabel(value.safeLabel);
+
+const isPillarSummary = (value: unknown): value is EnvironmentPillarSummaryV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['pillar', 'coverage', 'findingCount', 'recommendationCount', 'affectedResourceCount', 'portalRoute', 'sourceReferences'],
+    ['score']
+  ) &&
+  isEnvironmentPillarV1(value.pillar) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.findingCount) &&
+  isNonNegativeInteger(value.recommendationCount) &&
+  isNonNegativeInteger(value.affectedResourceCount) &&
+  isEnvironmentPortalRouteV1(value.portalRoute) &&
+  (value.score === undefined || isPillarScore(value.score)) &&
+  isReferenceArray(value.sourceReferences);
+
+const isPillarSummaries = (value: unknown): boolean =>
+  isRecord(value) &&
+  hasExactKeys(value, ENVIRONMENT_PILLARS_V1) &&
+  ENVIRONMENT_PILLARS_V1.every(pillar => isPillarSummary(value[pillar]) && value[pillar]?.pillar === pillar);
+
+const isFinding = (value: unknown): value is EnvironmentFindingV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['findingId', 'pillar', 'kind', 'safeLabel', 'severity', 'resourceReferences', 'sourceReferences'],
+    ['description', 'impact', 'effort', 'confidencePercentage', 'affectedResourceCount', 'portalRoute']
+  ) &&
+  isScopeIdentifier(value.findingId) &&
+  isEnvironmentPillarV1(value.pillar) &&
+  typeof value.kind === 'string' &&
+  FINDING_KINDS.has(value.kind) &&
+  isSafeLabel(value.safeLabel) &&
+  typeof value.severity === 'string' &&
+  SEVERITIES.has(value.severity) &&
+  (value.description === undefined || isCustomerString(value.description)) &&
+  (value.impact === undefined || (typeof value.impact === 'string' && IMPACTS.has(value.impact))) &&
+  (value.effort === undefined || (typeof value.effort === 'string' && EFFORTS.has(value.effort))) &&
+  (value.confidencePercentage === undefined || isPercentage(value.confidencePercentage)) &&
+  (value.affectedResourceCount === undefined || isNonNegativeInteger(value.affectedResourceCount)) &&
+  (value.portalRoute === undefined || isEnvironmentPortalRouteV1(value.portalRoute)) &&
+  isResourceReferenceArray(value.resourceReferences) &&
+  isReferenceArray(value.sourceReferences);
+
+const isRecommendation = (value: unknown): value is EnvironmentRecommendationV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['recommendationId', 'pillar', 'safeLabel', 'portalRoute', 'resourceReferences', 'sourceReferences'],
+    ['description', 'impact', 'effort', 'confidencePercentage', 'affectedResourceCount', 'potentialSavings']
+  ) &&
   isScopeIdentifier(value.recommendationId) &&
+  isEnvironmentPillarV1(value.pillar) &&
   isSafeLabel(value.safeLabel) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
   (value.description === undefined || isCustomerString(value.description)) &&
+  (value.impact === undefined || (typeof value.impact === 'string' && IMPACTS.has(value.impact))) &&
+  (value.effort === undefined || (typeof value.effort === 'string' && EFFORTS.has(value.effort))) &&
+  (value.confidencePercentage === undefined || isPercentage(value.confidencePercentage)) &&
+  (value.affectedResourceCount === undefined || isNonNegativeInteger(value.affectedResourceCount)) &&
   (value.potentialSavings === undefined || isSavingsMoney(value.potentialSavings)) &&
+  isResourceReferenceArray(value.resourceReferences) &&
   isReferenceArray(value.sourceReferences);
 
-const isCostChange = (value: unknown): value is EnvironmentCostChangeV1 =>
+const isChange = (value: unknown): value is EnvironmentChangeV1 =>
   isRecord(value) &&
-  hasExactKeys(value, ['key', 'safeLabel', 'description', 'direction', 'sourceReferences'], ['amount']) &&
+  hasExactKeys(value, ['key', 'pillars', 'safeLabel', 'description', 'direction', 'sourceReferences'], ['amount']) &&
   isGeneralKey(value.key) &&
+  Array.isArray(value.pillars) &&
+  value.pillars.length > 0 &&
+  value.pillars.length <= ENVIRONMENT_PILLARS_V1.length &&
+  value.pillars.every(isEnvironmentPillarV1) &&
+  new Set(value.pillars).size === value.pillars.length &&
   isSafeLabel(value.safeLabel) &&
   isCustomerString(value.description) &&
   typeof value.direction === 'string' &&
@@ -249,31 +339,42 @@ const isCostChange = (value: unknown): value is EnvironmentCostChangeV1 =>
 
 const isWarning = (value: unknown): value is EnvironmentProjectionWarningV1 =>
   isRecord(value) &&
-  hasExactKeys(value, ['code', 'safeLabel', 'sourceReferences'], ['detail']) &&
+  hasExactKeys(value, ['code', 'safeLabel', 'sourceReferences'], ['pillar', 'detail']) &&
   isGeneralKey(value.code) &&
   isSafeLabel(value.safeLabel) &&
+  (value.pillar === undefined || isEnvironmentPillarV1(value.pillar)) &&
   (value.detail === undefined || isCustomerString(value.detail)) &&
   isReferenceArray(value.sourceReferences);
 
 const isSourceCoverage = (value: unknown): boolean =>
   isRecord(value) &&
-  hasExactKeys(value, ['subscriptionSummary', 'resources', 'recommendations', 'costs', 'savings']) &&
-  isEnvironmentCoverageStateV1(value.subscriptionSummary) &&
-  isEnvironmentCoverageStateV1(value.resources) &&
-  isEnvironmentCoverageStateV1(value.recommendations) &&
-  isEnvironmentCoverageStateV1(value.costs) &&
-  isEnvironmentCoverageStateV1(value.savings);
+  hasExactKeys(value, [
+    'completedViewSet',
+    'subscriptionSummary',
+    'resources',
+    'recommendations',
+    'serviceRetirements',
+    'monitorAlerts',
+    'pluginMetrics',
+  ]) &&
+  Object.values(value).every(isEnvironmentCoverageStateV1);
+
+const isEstateSummary = (value: unknown): boolean =>
+  isRecord(value) &&
+  hasExactKeys(value, ['resourceCount', 'serviceFamilyCount', 'locationCount']) &&
+  isNonNegativeInteger(value.resourceCount) &&
+  isNonNegativeInteger(value.serviceFamilyCount) &&
+  isNonNegativeInteger(value.locationCount);
 
 const isCostSummary = (value: unknown): boolean =>
   isRecord(value) &&
-  hasExactKeys(value, [], ['observedCost', 'potentialSavings', 'resourceCount', 'recommendationCount']) &&
+  hasExactKeys(value, [], ['observedCost', 'potentialSavings', 'costRecommendationCount']) &&
   (value.observedCost === undefined || isObservedMoney(value.observedCost)) &&
   (value.potentialSavings === undefined || isSavingsMoney(value.potentialSavings)) &&
-  (value.resourceCount === undefined || isNonNegativeInteger(value.resourceCount)) &&
-  (value.recommendationCount === undefined || isNonNegativeInteger(value.recommendationCount));
+  (value.costRecommendationCount === undefined || isNonNegativeInteger(value.costRecommendationCount));
 
-/** Validates the strict, bounded phase-one subscription-cost projection. */
-export const isEnvironmentSubscriptionCostProjectionV1 = (value: unknown): value is EnvironmentSubscriptionCostProjectionV1 => {
+/** Validates the strict, bounded multi-pillar subscription environment projection. */
+export const isEnvironmentSubscriptionProjectionV1 = (value: unknown): value is EnvironmentSubscriptionProjectionV1 => {
   if (!hasSafeContainerShape(value) || !isRecord(value)) return false;
   if (
     !hasExactKeys(value, [
@@ -283,10 +384,13 @@ export const isEnvironmentSubscriptionCostProjectionV1 = (value: unknown): value
       'generatedAt',
       'subscription',
       'sourceCoverage',
+      'estateSummary',
       'costSummary',
       'serviceFamilyRollups',
       'estateCostRollups',
       'costDrivers',
+      'pillars',
+      'findings',
       'recommendations',
       'changes',
       'warnings',
@@ -303,12 +407,15 @@ export const isEnvironmentSubscriptionCostProjectionV1 = (value: unknown): value
     !isSafeLabel(value.subscription.safeLabel) ||
     !isEnvironmentPortalRouteV1(value.subscription.portalRoute) ||
     !isSourceCoverage(value.sourceCoverage) ||
+    !isEstateSummary(value.estateSummary) ||
     !isCostSummary(value.costSummary) ||
     !isBoundedList(value.serviceFamilyRollups, isCostRollup) ||
     !isBoundedList(value.estateCostRollups, isCostRollup) ||
     !isBoundedList(value.costDrivers, isCostDriver) ||
+    !isPillarSummaries(value.pillars) ||
+    !isBoundedList(value.findings, isFinding) ||
     !isBoundedList(value.recommendations, isRecommendation) ||
-    !isBoundedList(value.changes, isCostChange) ||
+    !isBoundedList(value.changes, isChange) ||
     !isBoundedList(value.warnings, isWarning) ||
     !isReferenceArray(value.sourceReferences)
   ) {
@@ -320,10 +427,10 @@ export const isEnvironmentSubscriptionCostProjectionV1 = (value: unknown): value
 const descriptorByteLimit = (name: string): number => {
   if (name === 'projection.json') return ENVIRONMENT_CONTRACT_LIMITS_V1.projectionBytes;
   if (name === 'environment-index.md') return ENVIRONMENT_CONTRACT_LIMITS_V1.environmentIndexBytes;
-  return ENVIRONMENT_CONTRACT_LIMITS_V1.costPillarBytes;
+  return ENVIRONMENT_CONTRACT_LIMITS_V1.pillarDocumentBytes;
 };
 
-/** Validates one descriptor from the exact V1 three-document allowlist. */
+/** Validates one descriptor from the exact V1 multi-pillar document allowlist. */
 export const isEnvironmentDocumentDescriptorV1 = (value: unknown): value is EnvironmentDocumentDescriptorV1 => {
   if (!isRecord(value) || !hasExactKeys(value, ['name', 'mediaType', 'byteCount', 'contentSha256', 'approximateTokenCount'])) return false;
   if (typeof value.name !== 'string' || !DOCUMENT_NAMES.has(value.name)) return false;
@@ -339,7 +446,7 @@ export const isEnvironmentDocumentDescriptorV1 = (value: unknown): value is Envi
   );
 };
 
-/** Validates that descriptors contain each allowlisted V1 document exactly once. */
+/** Validates that descriptors contain every allowlisted V1 document exactly once. */
 export const isEnvironmentDocumentDescriptorSetV1 = (value: unknown): value is EnvironmentDocumentDescriptorV1[] =>
   Array.isArray(value) &&
   value.length === ENVIRONMENT_DOCUMENT_NAMES_V1.length &&
@@ -360,7 +467,7 @@ export const isEnvironmentCompiledGenerationPointerV1 = (value: unknown): value 
     !scopesEqual(value.scope, value.sourceBinding.scope) ||
     typeof value.treeDigestSha256 !== 'string' ||
     !SHA256_PATTERN.test(value.treeDigestSha256) ||
-    value.fileCount !== 3 ||
+    value.fileCount !== ENVIRONMENT_DOCUMENT_NAMES_V1.length ||
     !isCanonicalUtcTimestamp(value.generatedAt) ||
     Date.parse(value.generatedAt) < Date.parse(value.sourceBinding.completedAt)
   ) {
@@ -379,7 +486,7 @@ export const isEnvironmentCompiledGenerationPointerV1 = (value: unknown): value 
   );
 };
 
-/** Validates the artifact kind without widening the closed V1 union. */
+/** Validates an artifact kind without widening the closed V1 union. */
 export const isEnvironmentArtifactKindV1 = (value: unknown): value is EnvironmentArtifactKindV1 =>
   typeof value === 'string' && ARTIFACT_KINDS.has(value);
 
