@@ -32,9 +32,12 @@ import type {
   AzureDelegatedTrialExtensionRequest,
   AzureDelegatedTrialExtensionResponse,
   AzureGdapSubscriptionMessage,
+  AzureGdapBillingReconciliationSubscriptionMessage,
+  AzureGdapCloudAccountTenantSyncRequestMessage,
   AzureSpSetupExecutionRequestMessage,
   AzureSpSetupMaintenanceRequestMessage,
   CloudAccountTenantSyncRequest,
+  CloudAccountTenantSyncRequestMessage,
   CloudAccountsBillingReconciliationRequestMessage,
   CloudAccountsScheduledRefreshRequestMessage,
   CreatePolicyExemptionRequestMessage,
@@ -270,6 +273,51 @@ const invalidGdapSubscriptionMessageWithAuthContextCredentialReference: AzureGda
   },
 };
 
+const gdapTenantSyncMessage: AzureGdapCloudAccountTenantSyncRequestMessage = {
+  entity: 'cloudaccount',
+  action: 'tenant-sync',
+  companyId: 'comp-123',
+  cloudAccountId: 'gdap-account-123',
+  tenantId: 'customer-tenant-123',
+  authMode: 'gdap',
+  customerTenantId: 'customer-tenant-123',
+  partnerTenantId: 'partner-tenant-123',
+  source: 'scheduled',
+};
+
+const invalidGdapTenantSyncMessageWithClientId: AzureGdapCloudAccountTenantSyncRequestMessage = {
+  ...gdapTenantSyncMessage,
+  // @ts-expect-error GDAP tenant sync must not treat the cloud account ID as an Azure client ID.
+  clientId: 'gdap-account-123',
+};
+
+const canonicalGdapTenantSyncMessage: CloudAccountTenantSyncRequestMessage = gdapTenantSyncMessage;
+
+// @ts-expect-error The canonical tenant-sync union must also forbid legacy client identity for GDAP.
+const invalidCanonicalGdapTenantSyncMessage: CloudAccountTenantSyncRequestMessage = {
+  ...gdapTenantSyncMessage,
+  clientId: 'gdap-account-123',
+};
+
+const gdapBillingReconciliationMessage: AzureGdapBillingReconciliationSubscriptionMessage = {
+  ...gdapSubscriptionMessage,
+  refreshComponents: ['billing'],
+  metadata: {
+    billingReconciliation: {
+      schemaVersion: 1,
+      trigger: 'scheduled',
+      policyVersion: 'closed-month-v1',
+      requestedMonths: ['2026-08'],
+    },
+  },
+};
+
+const invalidGdapBillingReconciliationMessageWithClientId: AzureGdapBillingReconciliationSubscriptionMessage = {
+  ...gdapBillingReconciliationMessage,
+  // @ts-expect-error GDAP billing work must not treat the cloud account ID as an Azure client ID.
+  clientId: 'gdap-account-123',
+};
+
 const subscriptionSyncRequest: SubscriptionSyncRequest = {
   tracing,
 };
@@ -288,6 +336,12 @@ void invalidGdapSubscriptionMessageWithToken;
 void invalidGdapSubscriptionMessageWithSecret;
 void invalidGdapSubscriptionMessageWithClientId;
 void invalidGdapSubscriptionMessageWithCredentialReference;
+void gdapTenantSyncMessage;
+void invalidGdapTenantSyncMessageWithClientId;
+void canonicalGdapTenantSyncMessage;
+void invalidCanonicalGdapTenantSyncMessage;
+void gdapBillingReconciliationMessage;
+void invalidGdapBillingReconciliationMessageWithClientId;
 void invalidGdapSubscriptionMessageWithAuthContextCredentialReference;
 void subscriptionSyncRequest;
 void tenantSyncRequest;
