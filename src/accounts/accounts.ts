@@ -38,6 +38,7 @@ export type AzureGdapCapabilityKey =
   | 'relationship'
   | 'accessAssignment'
   | 'appConsent'
+  | 'armAppConsent'
   | 'subscriptionDiscovery'
   | 'resourceInventory'
   | 'resourceGraph'
@@ -49,10 +50,30 @@ export type AzureGdapCapabilityKey =
   | 'scheduledScan';
 export type AzureGdapCapabilityStatusValue = 'ready' | 'degraded' | 'blocked' | 'unsupported' | 'notChecked';
 
+/** Stable remediation categories for GDAP capability failures. Provider response text must never be placed here. */
+export type AzureGdapCapabilityReasonCode =
+  | 'graph_consent_required'
+  | 'graph_token_interaction_required'
+  | 'graph_token_request_failed'
+  | 'graph_request_unauthorized'
+  | 'graph_request_forbidden'
+  | 'arm_consent_required'
+  | 'arm_token_interaction_required'
+  | 'arm_token_request_failed'
+  | 'arm_request_unauthorized'
+  | 'arm_request_forbidden'
+  | 'no_readable_subscriptions'
+  | 'microsoft_throttled'
+  | 'microsoft_unavailable'
+  | 'microsoft_timeout'
+  | 'microsoft_invalid_response'
+  | 'microsoft_client_configuration_invalid';
+
 export interface AzureGdapCapabilityStatus {
   key: AzureGdapCapabilityKey;
   status: AzureGdapCapabilityStatusValue;
   reason?: string;
+  reasonCode?: AzureGdapCapabilityReasonCode;
   checkedAt?: string;
   requiredRoles?: string[];
   requiredAzureRoles?: string[];

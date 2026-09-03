@@ -334,7 +334,12 @@ export type VmPricePerformanceComparisonEligibility =
 
 export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
 
+/** Basis for monetary VM price and savings fields, independent of applied-benefit evaluation. */
+export type VmPricePerformancePricingBasis = 'payg-retail' | 'spot-estimate';
+
 export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+
+export type VmReservationEvaluationStatus = 'complete' | 'incomplete' | 'unavailable';
 
 export type VmReservationCompatibilityReason =
   | 'same-flexibility-group-within-covered-units'
@@ -364,6 +369,13 @@ export interface VmReservationCoverageImpact {
   normalizedUnitsRequired?: number;
   normalizedUnitsCovered?: number;
   normalizedUnitsDelta?: number;
+}
+
+export interface VmReservationEvaluation {
+  /** Whether reservation compatibility was evaluated with sufficient evidence. */
+  status: VmReservationEvaluationStatus;
+  /** Stable machine-readable explanation when evaluation is incomplete or unavailable. */
+  reason?: string;
 }
 
 export interface VmPricePerformanceCatalogSource {
@@ -539,6 +551,8 @@ export interface VmPricePerformanceInsights {
   comparisonScope: 'same-region';
   /** Authority used for user-visible comparisons and recommendation semantics. */
   comparisonBasis?: VmPricePerformanceComparisonBasis;
+  /** Basis for displayed monetary values; reservation coverage remains an independent evaluation. */
+  pricingBasis?: VmPricePerformancePricingBasis;
   /** Subscription/display currency used for user-facing price fields when available. */
   displayCurrencyCode?: string;
   displayCurrencySymbol?: string;
@@ -553,6 +567,8 @@ export interface VmPricePerformanceInsights {
   current?: VmPricePerformanceSku;
   /** Present when current billing usage is covered by an active Reservation. */
   reservationCoverage?: VmReservationCoverageContext;
+  /** Completeness of the reservation-compatibility evaluation for this comparison. */
+  reservationEvaluation?: VmReservationEvaluation;
   /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
   currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
   /** Feature-compatible alternatives that are safe default candidates. */
