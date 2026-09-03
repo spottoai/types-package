@@ -135,5 +135,8 @@ export interface PortalAccessBootstrapResponse {
     catalogVersion: string;
     featureSets: PortalFeatureSetAccessSummary[];
     features: PortalFeatureAccessSummary[];
+    runtimeCapabilities: {
+        aiActivityLogAnalysisEnabled: boolean;
+    };
 }
 //# sourceMappingURL=access.d.ts.map
