@@ -21,8 +21,7 @@ const isCanonicalScopeQualifiedSubject = (value: string): boolean => {
     const parsed: unknown = JSON.parse(value);
     return (
       Array.isArray(parsed) &&
-      parsed.length === 4 &&
-      parsed[0] === 'azure-subscription' &&
+      ((parsed.length === 4 && parsed[0] === 'azure-subscription') || (parsed.length === 2 && parsed[0] === 'azure-tenant')) &&
       parsed
         .slice(1)
         .every(item => isBoundedString(item, ENVIRONMENT_CONTRACT_LIMITS_V1.scopeIdentifierScalars, { trimmed: true, controls: true })) &&

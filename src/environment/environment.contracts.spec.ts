@@ -1,10 +1,15 @@
 import type * as EnvironmentContracts from './index.js';
 import type {
   EnvironmentCompiledGenerationPointerV1,
+  EnvironmentCardinalityV1,
   EnvironmentDocumentDescriptorV1,
   EnvironmentLogicalArtifactReferenceV1,
   EnvironmentLogicalResourceReferenceV1,
+  EnvironmentMoneyValueV1,
+  EnvironmentRecommendationV1,
   EnvironmentSubscriptionProjectionV1,
+  EnvironmentTenantCompiledGenerationPointerV1,
+  EnvironmentTenantProjectionV1,
 } from './index.js';
 
 const scope = {
@@ -33,6 +38,7 @@ const resourceReference =
 
 const emptyList = { items: [], totalCount: 0, includedCount: 0, truncated: false };
 const completeCoverage = { status: 'complete' } as const;
+const exactAffectedResources = { basis: 'exact', value: 1 } as const;
 
 const projection = {
   schemaVersion: 1,
@@ -103,7 +109,7 @@ const projection = {
       coverage: completeCoverage,
       findingCount: 1,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: exactAffectedResources,
       portalRoute: '/company/company-1/cost-analysis',
       sourceReferences: [artifactReference],
     },
@@ -112,7 +118,7 @@ const projection = {
       coverage: completeCoverage,
       findingCount: 1,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: exactAffectedResources,
       portalRoute: '/company/company-1/recommendations',
       score: { value: '72.5', maximum: '100', safeLabel: 'Secure score' },
       sourceReferences: [artifactReference],
@@ -122,7 +128,7 @@ const projection = {
       coverage: { status: 'partial', reason: 'Compliance recommendations are available; independent governance sidecars are not bound.' },
       findingCount: 0,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: { basis: 'lower-bound', value: 1, reason: 'Only category-level overlap evidence is available.' },
       portalRoute: '/company/company-1/recommendations',
       sourceReferences: [artifactReference],
     },
@@ -131,7 +137,7 @@ const projection = {
       coverage: completeCoverage,
       findingCount: 1,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: exactAffectedResources,
       portalRoute: '/company/company-1/recommendations',
       sourceReferences: [artifactReference],
     },
@@ -140,7 +146,7 @@ const projection = {
       coverage: { status: 'partial', reason: 'Metrics are unavailable for some resource types.' },
       findingCount: 1,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: exactAffectedResources,
       portalRoute: '/company/company-1/recommendations',
       sourceReferences: [artifactReference],
     },
@@ -149,7 +155,7 @@ const projection = {
       coverage: completeCoverage,
       findingCount: 1,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources: { basis: 'unavailable', reason: 'The source does not identify distinct affected resources.' },
       portalRoute: '/company/company-1/recommendations',
       sourceReferences: [artifactReference],
     },
@@ -162,7 +168,7 @@ const projection = {
         kind: 'security-posture',
         safeLabel: 'Secure score requires attention',
         severity: 'high',
-        affectedResourceCount: 1,
+        affectedResources: exactAffectedResources,
         portalRoute: '/company/company-1/recommendations',
         resourceReferences: [resourceReference],
         sourceReferences: [artifactReference],
@@ -181,8 +187,7 @@ const projection = {
         portalRoute: '/company/company-1/recommendations',
         impact: 'high',
         effort: 'medium',
-        confidencePercentage: '90',
-        affectedResourceCount: 1,
+        affectedResources: exactAffectedResources,
         resourceReferences: [resourceReference],
         sourceReferences: [artifactReference],
       },
@@ -228,6 +233,28 @@ void projection;
 void descriptors;
 void pointer;
 
+const unknownMoney = {
+  amount: '125.40',
+  currencyCode: 'unknown',
+  basis: 'unknown',
+  period: 'unknown',
+  provenance: 'subscription-summary',
+} satisfies EnvironmentMoneyValueV1;
+
+// @ts-expect-error unavailable cardinality cannot claim a numeric value.
+const invalidUnavailableCardinality: EnvironmentCardinalityV1 = { basis: 'unavailable', value: 1, reason: 'Unavailable.' };
+
+const recommendationWithoutConfidence = projection.recommendations.items[0] satisfies EnvironmentRecommendationV1;
+const invalidRecommendationConfidence: EnvironmentRecommendationV1 = {
+  ...recommendationWithoutConfidence,
+  // @ts-expect-error environment recommendations no longer expose numeric confidence.
+  confidencePercentage: '90',
+};
+
+void unknownMoney;
+void invalidUnavailableCardinality;
+void invalidRecommendationConfidence;
+
 // @ts-expect-error The unpublished cost-only draft was replaced rather than versioned.
 type RemovedCostOnlyProjection = EnvironmentContracts.EnvironmentSubscriptionCostProjectionV1;
 
@@ -246,3 +273,57 @@ const invalidFileCount: EnvironmentCompiledGenerationPointerV1 = { ...pointer, f
 void (undefined as unknown as RemovedCostOnlyProjection);
 void invalidDescriptorName;
 void invalidFileCount;
+
+const tenantScope = { kind: 'azure-tenant', tenantId: 'tenant-1' } as const;
+const tenantSourceBinding = {
+  kind: 'azure-tenant-sync',
+  scope: tenantScope,
+  tenantSyncRunId: 'tenant-sync:run/1',
+  completedAt: '2026-08-29T00:00:00.000Z',
+} as const;
+const tenantEmptyList = { items: [], totalCount: 0, includedCount: 0, truncated: false };
+const tenantProjection = {
+  schemaVersion: 1,
+  scope: tenantScope,
+  sourceBinding: tenantSourceBinding,
+  generatedAt: '2026-08-29T00:00:01.000Z',
+  tenant: { safeLabel: 'Azure tenant' },
+  sourceCoverage: { tenantSync: completeCoverage, governance: completeCoverage, identity: completeCoverage, commitments: completeCoverage },
+  identitySummary: {
+    applicationCount: 0,
+    servicePrincipalCount: 0,
+    globalAdministratorCount: 0,
+    permanentGlobalAdministratorCount: 0,
+    eligibleGlobalAdministratorCount: 0,
+    mfaKnownGlobalAdministratorCount: 0,
+  },
+  governanceSummary: {
+    managementGroupCount: 0,
+    subscriptionCount: 0,
+    policyAssignmentCount: 0,
+    policyExemptionCount: 0,
+    roleAssignmentCount: 0,
+    privilegedAssignmentCount: 0,
+    customRoleCount: 0,
+    findingCount: 0,
+  },
+  commitmentSummary: { reservationCount: 0, savingsPlanCount: 0, expiringWithin90DaysCount: 0 },
+  globalAdministrators: tenantEmptyList,
+  governanceFindings: tenantEmptyList,
+  commitments: tenantEmptyList,
+  warnings: tenantEmptyList,
+  sourceReferences: [],
+} satisfies EnvironmentTenantProjectionV1;
+const tenantPointer = {
+  schemaVersion: 1,
+  status: 'completed',
+  environmentRunId: '550e8400-e29b-41d4-a716-446655440009',
+  scope: tenantScope,
+  sourceBinding: tenantSourceBinding,
+  treeDigestSha256: 'e'.repeat(64),
+  fileCount: 5,
+  generatedAt: '2026-08-29T00:00:01.000Z',
+} satisfies EnvironmentTenantCompiledGenerationPointerV1;
+
+void tenantProjection;
+void tenantPointer;

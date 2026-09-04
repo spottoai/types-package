@@ -2,6 +2,7 @@ import type {
   AIChatCanonicalStreamEvent,
   AIChatCanonicalStreamEventName,
   AIChatEvidenceCoverage,
+  AIChatGroundingSummary,
   AIChatRetrievalSourceType,
   AIChatToolDescriptor,
   AIChatDoneEvent,
@@ -17,22 +18,19 @@ const compatibleExistingSources: AIChatRetrievalSourceType[] = ['operational', '
 const environmentMatch: AIEnvironmentEvidenceMatch = {
   safeLabel: 'Production subscription environment',
   portalRoute: '/company/company-1/dashboard',
-  scope: {
-    kind: 'azure-subscription',
-    tenantId: 'tenant-1',
-    companyId: 'company-1',
-    subscriptionId: 'subscription-1',
-  },
   artifactKind: 'subscription-recommendations',
-  sourceGeneration: {
-    viewSetSchemaVersion: 1,
-    publicationId: 'publication-1',
-    portalRunId: 'portal:run/1',
-    pluginRunId: 'plugin:run/1',
-    economicsGenerationId: 'economics-1',
-    economicsFingerprint: 'source-fingerprint',
-    completedAt: '2026-08-29T00:00:00.000Z',
-  },
+  sourceCompletedAt: '2026-08-29T00:00:00.000Z',
+  coverageStatus: 'partial',
+  truncated: true,
+  citationIds: ['environment-call-1'],
+};
+
+const grounding: AIChatGroundingSummary = {
+  status: 'verified',
+  method: 'deterministic-citation-and-value',
+  totalClaimCount: 1,
+  verifiedClaimCount: 1,
+  claims: [{ claimId: 'claim-1', status: 'verified', citationIds: ['environment-call-1'] }],
 };
 
 const environmentCoverage: AIChatEvidenceCoverage = {
@@ -77,6 +75,7 @@ const terminalSnapshot: AIChatTerminalSnapshot = {
     },
   },
   answer: 'Completed answer',
+  grounding,
   contractOutput: {
     contract: 'customerDecisionBrief',
     value: {
@@ -120,12 +119,28 @@ const pageStartRequest: AIChatRunStartRequest = {
 const compatibilityDoneEvent: AIChatDoneEvent = {
   ...completedEvent,
   event: 'done',
+  grounding,
 };
 
 void canonicalEvent;
 void canonicalTerminalName;
 void pageStartRequest;
 void compatibilityDoneEvent;
+
+const invalidEnvironmentMatch: AIEnvironmentEvidenceMatch = {
+  ...environmentMatch,
+  // @ts-expect-error client-safe environment evidence cannot carry raw scope identities.
+  scope: { kind: 'azure-subscription', tenantId: 'tenant-1', companyId: 'company-1', subscriptionId: 'subscription-1' },
+};
+
+const invalidGroundingConfidence: AIChatGroundingSummary = {
+  ...grounding,
+  // @ts-expect-error deterministic grounding never exposes model confidence.
+  confidencePercentage: '100',
+};
+
+void invalidEnvironmentMatch;
+void invalidGroundingConfidence;
 
 // @ts-expect-error canonical streams must not use the deprecated done terminal.
 const invalidCanonicalTerminalName: AIChatCanonicalStreamEventName = 'done';

@@ -10,7 +10,9 @@ import {
   buildEnvironmentLogicalResourceReferenceV1,
   buildEnvironmentScopeQualifiedSubjectV1,
   buildEnvironmentTreeDigestPreimageV1,
+  isAIChatGroundingSummary,
   isAIEnvironmentEvidenceMatch,
+  isEnvironmentCardinalityV1,
   isEnvironmentCompiledGenerationPointerV1,
   isEnvironmentCoverageStateV1,
   isEnvironmentDocumentDescriptorSetV1,
@@ -25,6 +27,14 @@ import {
   isEnvironmentSubscriptionProjectionV1,
   parseEnvironmentLogicalArtifactReferenceV1,
   parseEnvironmentLogicalResourceReferenceV1,
+  ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1,
+  buildEnvironmentTenantScopeQualifiedSubjectV1,
+  buildEnvironmentTenantTreeDigestPreimageV1,
+  isEnvironmentTenantCompiledGenerationPointerV1,
+  isEnvironmentTenantDocumentDescriptorSetV1,
+  isEnvironmentTenantProjectionV1,
+  isEnvironmentTenantScopeV1,
+  isEnvironmentTenantSourceBindingV1,
 } from '../dist/index.js';
 
 const scope = {
@@ -123,16 +133,26 @@ const potentialSavings = {
   savingsAdditivity: 'scenario-non-additive',
 };
 assert.equal(isEnvironmentMoneyValueV1(observedCost), true);
+assert.equal(isEnvironmentMoneyValueV1({ ...observedCost, currencyCode: 'unknown', basis: 'unknown', period: 'unknown' }), true);
 for (const invalidMoney of [
   { ...observedCost, amount: 125.4 },
   { ...observedCost, amount: '01.00' },
   { ...observedCost, amount: '1e3' },
   { ...observedCost, amount: '-0.01' },
   { ...observedCost, currencyCode: 'nzd' },
+  { ...observedCost, currencyCode: 'UNKNOWN' },
+  { ...observedCost, basis: 'estimated' },
   { ...observedCost, future: true },
 ]) {
   assert.equal(isEnvironmentMoneyValueV1(invalidMoney), false);
 }
+
+assert.equal(isEnvironmentCardinalityV1({ basis: 'exact', value: 0 }), true);
+assert.equal(isEnvironmentCardinalityV1({ basis: 'lower-bound', value: 1, reason: 'Category overlap is unavailable.' }), true);
+assert.equal(isEnvironmentCardinalityV1({ basis: 'unavailable', reason: 'The source has no subject identifiers.' }), true);
+assert.equal(isEnvironmentCardinalityV1({ basis: 'unavailable', value: 1, reason: 'Contradictory.' }), false);
+assert.equal(isEnvironmentCardinalityV1({ basis: 'lower-bound', value: 1 }), false);
+assert.equal(isEnvironmentCardinalityV1({ basis: 'exact', value: 1, reason: 'Unexpected.' }), false);
 
 assert.equal(isEnvironmentCoverageStateV1({ status: 'complete' }), true);
 assert.equal(isEnvironmentCoverageStateV1({ status: 'partial', reason: 'One source failed.' }), true);
@@ -161,7 +181,8 @@ const pillars = Object.fromEntries(
       coverage: pillar === 'governance' ? { status: 'partial', reason: 'Independent governance sidecars are not bound.' } : completeCoverage,
       findingCount: pillar === 'security' ? 1 : 0,
       recommendationCount: 1,
-      affectedResourceCount: 1,
+      affectedResources:
+        pillar === 'governance' ? { basis: 'lower-bound', value: 1, reason: 'Category overlap is unavailable.' } : { basis: 'exact', value: 1 },
       portalRoute: pillarRoutes[pillar],
       ...(pillar === 'security' ? { score: { value: '72.5', maximum: '100', safeLabel: 'Secure score' } } : {}),
       sourceReferences: [artifactReference],
@@ -210,8 +231,7 @@ const projection = {
         kind: 'security-posture',
         safeLabel: 'Secure score requires attention',
         severity: 'high',
-        confidencePercentage: '90',
-        affectedResourceCount: 1,
+        affectedResources: { basis: 'exact', value: 1 },
         portalRoute: '/company/company-1/recommendations',
         resourceReferences: [resourceReference],
         sourceReferences: [artifactReference],
@@ -230,8 +250,7 @@ const projection = {
         portalRoute: '/company/company-1/recommendations',
         impact: 'high',
         effort: 'medium',
-        confidencePercentage: '90',
-        affectedResourceCount: 1,
+        affectedResources: { basis: 'exact', value: 1 },
         resourceReferences: [resourceReference],
         sourceReferences: [artifactReferences['subscription-recommendations']],
       },
@@ -256,13 +275,21 @@ assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, pillars: mis
 assert.equal(
   isEnvironmentSubscriptionProjectionV1({
     ...projection,
-    recommendations: {
-      ...projection.recommendations,
-      items: [{ ...projection.recommendations.items[0], confidencePercentage: '100.1' }],
+    recommendations: { ...projection.recommendations, items: [{ ...projection.recommendations.items[0], confidencePercentage: '90' }] },
+  }),
+  false,
+  'legacy environment confidence percentages are rejected'
+);
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    pillars: {
+      ...pillars,
+      security: { ...pillars.security, affectedResources: { basis: 'unavailable', value: 1, reason: 'Contradictory.' } },
     },
   }),
   false,
-  'confidence percentages cannot exceed 100'
+  'unavailable affected-resource cardinality cannot carry a value'
 );
 assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, generatedAt: '2026-08-28T23:59:59.999Z' }), false);
 assert.equal(
@@ -350,32 +377,257 @@ assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, environmentR
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, scope: { ...scope, companyId: 'company-2' } }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, storagePath: 'environment/runs/run-1' }), false);
 
+const tenantScope = { kind: 'azure-tenant', tenantId: 'tenant-1' };
+const tenantSourceBinding = {
+  kind: 'azure-tenant-sync',
+  scope: tenantScope,
+  tenantSyncRunId: 'tenant-sync:run/1',
+  completedAt,
+};
+const tenantSubject = buildEnvironmentTenantScopeQualifiedSubjectV1(tenantScope);
+const tenantGovernanceReference = buildEnvironmentLogicalArtifactReferenceV1('tenant-governance', tenantSubject);
+const tenantAccessReference = buildEnvironmentLogicalArtifactReferenceV1('tenant-governance-access', tenantSubject);
+const tenantReservationsReference = buildEnvironmentLogicalArtifactReferenceV1('tenant-reservations', tenantSubject);
+assert.equal(isEnvironmentTenantScopeV1(tenantScope), true);
+assert.equal(isEnvironmentTenantScopeV1({ ...tenantScope, companyId: 'company-1' }), false);
+assert.equal(isEnvironmentTenantSourceBindingV1(tenantSourceBinding), true);
+
+const emptyTenantList = { items: [], totalCount: 0, includedCount: 0, truncated: false };
+const tenantProjection = {
+  schemaVersion: 1,
+  scope: tenantScope,
+  sourceBinding: tenantSourceBinding,
+  generatedAt,
+  tenant: { safeLabel: 'Azure tenant' },
+  sourceCoverage: {
+    tenantSync: completeCoverage,
+    governance: completeCoverage,
+    identity: completeCoverage,
+    commitments: completeCoverage,
+  },
+  identitySummary: {
+    applicationCount: 4,
+    servicePrincipalCount: 7,
+    globalAdministratorCount: 2,
+    permanentGlobalAdministratorCount: 1,
+    eligibleGlobalAdministratorCount: 1,
+    mfaKnownGlobalAdministratorCount: 2,
+  },
+  governanceSummary: {
+    managementGroupCount: 2,
+    subscriptionCount: 3,
+    policyAssignmentCount: 5,
+    policyExemptionCount: 1,
+    roleAssignmentCount: 8,
+    privilegedAssignmentCount: 2,
+    customRoleCount: 1,
+    findingCount: 1,
+  },
+  commitmentSummary: { reservationCount: 2, savingsPlanCount: 1, expiringWithin90DaysCount: 1 },
+  globalAdministrators: {
+    items: [
+      {
+        principalId: 'principal-1',
+        safeLabel: 'Tenant administrator',
+        principalType: 'user',
+        assignmentModes: ['permanent'],
+        mfaStatus: 'mfa',
+        sourceReferences: [tenantAccessReference],
+      },
+    ],
+    totalCount: 1,
+    includedCount: 1,
+    truncated: false,
+  },
+  governanceFindings: {
+    items: [
+      {
+        findingId: 'finding-1',
+        safeLabel: 'Policy coverage requires attention',
+        severity: 'high',
+        category: 'policy',
+        scopeType: 'tenant',
+        sourceReferences: [tenantGovernanceReference],
+      },
+    ],
+    totalCount: 1,
+    includedCount: 1,
+    truncated: false,
+  },
+  commitments: emptyTenantList,
+  warnings: emptyTenantList,
+  sourceReferences: [tenantGovernanceReference, tenantAccessReference, tenantReservationsReference],
+};
+assert.equal(isEnvironmentTenantProjectionV1(tenantProjection), true);
+assert.equal(isEnvironmentTenantProjectionV1({ ...tenantProjection, future: true }), false);
+
+const tenantDescriptors = ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1.map((name, index) => ({
+  name,
+  mediaType: name === 'projection.json' ? 'application/json' : 'text/markdown; charset=utf-8',
+  byteCount: 100 + index,
+  contentSha256: `${index + 1}`.repeat(64),
+  approximateTokenCount: 25,
+}));
+assert.equal(isEnvironmentTenantDocumentDescriptorSetV1(tenantDescriptors), true);
+const tenantTreeDigestPreimage = buildEnvironmentTenantTreeDigestPreimageV1(tenantDescriptors);
+assert.equal(buildEnvironmentTenantTreeDigestPreimageV1([...tenantDescriptors].reverse()), tenantTreeDigestPreimage);
+const tenantPointer = {
+  schemaVersion: 1,
+  status: 'completed',
+  environmentRunId: '550e8400-e29b-41d4-a716-446655440009',
+  scope: tenantScope,
+  sourceBinding: tenantSourceBinding,
+  treeDigestSha256: 'e'.repeat(64),
+  fileCount: ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1.length,
+  generatedAt,
+};
+assert.equal(isEnvironmentTenantCompiledGenerationPointerV1(tenantPointer), true);
+assert.equal(isEnvironmentTenantCompiledGenerationPointerV1({ ...tenantPointer, fileCount: 8 }), false);
+
 const safeEvidenceMatch = {
   safeLabel: 'Production subscription environment',
   portalRoute: '/company/company-1/dashboard',
-  scope,
   artifactKind: 'subscription-recommendations',
-  sourceGeneration: {
-    viewSetSchemaVersion: 1,
-    publicationId: sourceBinding.publicationId,
-    portalRunId: sourceBinding.portalRunId,
-    pluginRunId: sourceBinding.pluginRunId,
-    economicsGenerationId: sourceBinding.economicsGenerationId,
-    economicsFingerprint: sourceBinding.economicsFingerprint,
-    completedAt,
-  },
+  sourceCompletedAt: completedAt,
+  coverageStatus: 'partial',
+  truncated: true,
+  citationIds: ['environment-call-1'],
 };
 assert.deepEqual(Object.keys(JSON.parse(JSON.stringify(safeEvidenceMatch))).sort(), [
   'artifactKind',
+  'citationIds',
+  'coverageStatus',
   'portalRoute',
   'safeLabel',
-  'scope',
-  'sourceGeneration',
+  'sourceCompletedAt',
+  'truncated',
 ]);
 assert.equal(isAIEnvironmentEvidenceMatch(safeEvidenceMatch), true);
 assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, storagePath: 'environment/runs/run-1' }), false);
+assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, scope }), false);
+assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, sourceGeneration: sourceBinding }), false);
 assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, portalRoute: '//evil.example/path' }), false);
 assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, portalRoute: '/companies/../admin' }), false);
+assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, sourceCompletedAt: 'yesterday' }), false);
+assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, coverageStatus: 'healthy' }), false);
+assert.equal(isAIEnvironmentEvidenceMatch({ ...safeEvidenceMatch, citationIds: [] }), false);
+
+const verifiedGrounding = {
+  status: 'verified',
+  method: 'deterministic-citation-and-value',
+  totalClaimCount: 1,
+  verifiedClaimCount: 1,
+  claims: [{ claimId: 'claim-1', status: 'verified', citationIds: ['environment-call-1'] }],
+};
+assert.equal(isAIChatGroundingSummary(verifiedGrounding), true);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'unverified',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 1,
+    verifiedClaimCount: 0,
+    claims: [{ claimId: 'claim-1', status: 'unverified', citationIds: [], reasonCode: 'grounding.missing-citation' }],
+    reasonCode: 'grounding.missing-citation',
+  }),
+  true
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'unverified',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 0,
+    verifiedClaimCount: 0,
+    claims: [],
+    reasonCode: 'grounding.claim-extraction-failed',
+  }),
+  true
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'unverified',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 2,
+    verifiedClaimCount: 1,
+    claims: [
+      { claimId: 'claim-1', status: 'verified', citationIds: ['environment-call-1'] },
+      { claimId: 'claim-2', status: 'unverified', citationIds: [], reasonCode: 'grounding.value-mismatch' },
+    ],
+    reasonCode: 'grounding.value-mismatch',
+  }),
+  true
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'not-required',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 0,
+    verifiedClaimCount: 0,
+    claims: [],
+    reasonCode: 'grounding.not-required',
+  }),
+  true
+);
+assert.equal(isAIChatGroundingSummary({ ...verifiedGrounding, verifiedClaimCount: 0 }), false);
+assert.equal(isAIChatGroundingSummary({ ...verifiedGrounding, confidencePercentage: 100 }), false);
+assert.equal(isAIChatGroundingSummary({ ...verifiedGrounding, reasonCode: 'grounding.value-mismatch' }), false);
+assert.equal(
+  isAIChatGroundingSummary({ ...verifiedGrounding, claims: [...verifiedGrounding.claims, verifiedGrounding.claims[0]], totalClaimCount: 2 }),
+  false
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'not-required',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 1,
+    verifiedClaimCount: 1,
+    claims: verifiedGrounding.claims,
+    reasonCode: 'grounding.not-required',
+  }),
+  false
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    ...verifiedGrounding,
+    claims: [{ claimId: 'claim-1', status: 'verified', citationIds: [] }],
+  }),
+  false
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    ...verifiedGrounding,
+    totalClaimCount: 129,
+    verifiedClaimCount: 129,
+    claims: Array.from({ length: 129 }, (_, index) => ({
+      claimId: `claim-${index}`,
+      status: 'verified',
+      citationIds: [`citation-${index}`],
+    })),
+  }),
+  false,
+  'grounding claim lists are bounded'
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    ...verifiedGrounding,
+    claims: [
+      {
+        claimId: 'claim-1',
+        status: 'verified',
+        citationIds: Array.from({ length: 33 }, (_, index) => `citation-${index}`),
+      },
+    ],
+  }),
+  false,
+  'claim citation lists are bounded'
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    ...verifiedGrounding,
+    claims: [{ claimId: 'claim-1', status: 'verified', citationIds: ['citation-1', 'citation-1'] }],
+  }),
+  false,
+  'claim citation identifiers are unique'
+);
 
 const environmentEsm = await import('@spottoai/types-package/environment');
 const environmentCommonJs = createRequire(import.meta.url)('@spottoai/types-package/environment');

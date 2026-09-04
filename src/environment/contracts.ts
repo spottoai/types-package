@@ -35,6 +35,12 @@ export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
   'subscription-monitor-alerts',
   'subscription-system-tracks',
   'subscription-metrics',
+  'tenant-governance',
+  'tenant-governance-access',
+  'tenant-reservations',
+  'tenant-savings-plans',
+  'tenant-applications',
+  'tenant-service-principals',
 ] as const;
 
 export const ENVIRONMENT_FINDING_KINDS_V1 = [
@@ -65,7 +71,7 @@ export type EnvironmentFindingKindV1 = (typeof ENVIRONMENT_FINDING_KINDS_V1)[num
 export type EnvironmentSeverityV1 = (typeof ENVIRONMENT_SEVERITIES_V1)[number];
 export type EnvironmentImpactV1 = (typeof ENVIRONMENT_IMPACTS_V1)[number];
 export type EnvironmentEffortV1 = (typeof ENVIRONMENT_EFFORTS_V1)[number];
-export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized';
+export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized' | 'unknown';
 export type EnvironmentSavingsAdditivityV1 = 'additive' | 'scenario-non-additive';
 export type EnvironmentMoneyProvenanceV1 =
   | 'subscription-summary'
@@ -172,6 +178,27 @@ export interface EnvironmentBoundedListV1<T> {
   continuationReference?: EnvironmentLogicalEvidenceReferenceV1;
 }
 
+export interface EnvironmentExactCardinalityV1 {
+  basis: 'exact';
+  value: number;
+  reason?: never;
+}
+
+export interface EnvironmentLowerBoundCardinalityV1 {
+  basis: 'lower-bound';
+  value: number;
+  reason: string;
+}
+
+export interface EnvironmentUnavailableCardinalityV1 {
+  basis: 'unavailable';
+  value?: never;
+  reason: string;
+}
+
+/** Evidence-aware count that cannot present a lower bound as an exact distinct total. */
+export type EnvironmentCardinalityV1 = EnvironmentExactCardinalityV1 | EnvironmentLowerBoundCardinalityV1 | EnvironmentUnavailableCardinalityV1;
+
 export interface EnvironmentSubscriptionSummaryV1 {
   safeLabel: string;
   portalRoute: string;
@@ -229,7 +256,7 @@ export interface EnvironmentPillarSummaryV1 {
   coverage: EnvironmentCoverageStateV1;
   findingCount: number;
   recommendationCount: number;
-  affectedResourceCount: number;
+  affectedResources: EnvironmentCardinalityV1;
   portalRoute: string;
   score?: EnvironmentPillarScoreV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
@@ -248,8 +275,7 @@ export interface EnvironmentFindingV1 {
   description?: string;
   impact?: EnvironmentImpactV1;
   effort?: EnvironmentEffortV1;
-  confidencePercentage?: string;
-  affectedResourceCount?: number;
+  affectedResources?: EnvironmentCardinalityV1;
   portalRoute?: string;
   resourceReferences: EnvironmentLogicalResourceReferenceV1[];
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
@@ -263,8 +289,7 @@ export interface EnvironmentRecommendationV1 {
   description?: string;
   impact?: EnvironmentImpactV1;
   effort?: EnvironmentEffortV1;
-  confidencePercentage?: string;
-  affectedResourceCount?: number;
+  affectedResources?: EnvironmentCardinalityV1;
   potentialSavings?: EnvironmentMoneyValueV1;
   resourceReferences: EnvironmentLogicalResourceReferenceV1[];
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];

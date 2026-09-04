@@ -1,14 +1,8 @@
 /** Common AI interfaces shared between frontend and backend */
 
-import type { EnvironmentArtifactKindV1, EnvironmentScopeV1, EnvironmentSourceGenerationV1 } from '../environment/contracts';
-import { hasExactKeys, isRecord } from '../environment/internal';
-import {
-  isEnvironmentArtifactKindV1,
-  isEnvironmentPortalRouteV1,
-  isEnvironmentSafeLabelV1,
-  isEnvironmentScopeV1,
-  isEnvironmentSourceGenerationV1,
-} from '../environment/validation';
+import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
+
+export * from './grounding.js';
 
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 
@@ -472,25 +466,6 @@ export interface AIChatMemoryMatch {
   citationIds?: string[];
 }
 
-/** Client-safe environment evidence metadata; it intentionally excludes storage provenance and runtime handles. */
-export interface AIEnvironmentEvidenceMatch {
-  safeLabel: string;
-  portalRoute: string;
-  scope: EnvironmentScopeV1;
-  artifactKind: EnvironmentArtifactKindV1;
-  sourceGeneration: EnvironmentSourceGenerationV1;
-}
-
-/** Strictly validates the client-safe environment evidence shape. */
-export const isAIEnvironmentEvidenceMatch = (value: unknown): value is AIEnvironmentEvidenceMatch =>
-  isRecord(value) &&
-  hasExactKeys(value, ['safeLabel', 'portalRoute', 'scope', 'artifactKind', 'sourceGeneration']) &&
-  isEnvironmentSafeLabelV1(value.safeLabel) &&
-  isEnvironmentPortalRouteV1(value.portalRoute) &&
-  isEnvironmentScopeV1(value.scope) &&
-  isEnvironmentArtifactKindV1(value.artifactKind) &&
-  isEnvironmentSourceGenerationV1(value.sourceGeneration);
-
 export interface AIChatEvidenceGroup {
   groupId: string;
   title: string;
@@ -953,6 +928,7 @@ export interface AIChatFinalSnapshot {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
@@ -981,6 +957,7 @@ export interface AIChatAuditArtifact {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
@@ -1126,6 +1103,7 @@ export interface AIChatTerminalSnapshot {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
@@ -1344,6 +1322,7 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;

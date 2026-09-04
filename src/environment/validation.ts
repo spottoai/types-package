@@ -9,6 +9,7 @@ import {
   ENVIRONMENT_SEVERITIES_V1,
   type EnvironmentArtifactKindV1,
   type EnvironmentBoundedListV1,
+  type EnvironmentCardinalityV1,
   type EnvironmentChangeV1,
   type EnvironmentCompiledGenerationPointerV1,
   type EnvironmentCostDriverV1,
@@ -52,7 +53,7 @@ const FINDING_KINDS = new Set<string>(ENVIRONMENT_FINDING_KINDS_V1);
 const SEVERITIES = new Set<string>(ENVIRONMENT_SEVERITIES_V1);
 const IMPACTS = new Set<string>(ENVIRONMENT_IMPACTS_V1);
 const EFFORTS = new Set<string>(ENVIRONMENT_EFFORTS_V1);
-const MONEY_BASES = new Set<string>(['billed', 'amortized']);
+const MONEY_BASES = new Set<string>(['billed', 'amortized', 'unknown']);
 const MONEY_PROVENANCE = new Set<string>([
   'subscription-summary',
   'subscription-resources',
@@ -170,7 +171,7 @@ export const isEnvironmentMoneyValueV1 = (value: unknown): value is EnvironmentM
   typeof value.amount === 'string' &&
   DECIMAL_PATTERN.test(value.amount) &&
   typeof value.currencyCode === 'string' &&
-  CURRENCY_PATTERN.test(value.currencyCode) &&
+  (value.currencyCode === 'unknown' || CURRENCY_PATTERN.test(value.currencyCode)) &&
   typeof value.basis === 'string' &&
   MONEY_BASES.has(value.basis) &&
   isBoundedString(value.period, ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars, { trimmed: true, controls: true }) &&
@@ -257,18 +258,33 @@ const isPillarScore = (value: unknown): boolean =>
   value.maximum === '100' &&
   isSafeLabel(value.safeLabel);
 
+/** Validates exact, lower-bound, and unavailable count evidence without ambiguous totals. */
+export const isEnvironmentCardinalityV1 = (value: unknown): value is EnvironmentCardinalityV1 => {
+  if (!isRecord(value) || typeof value.basis !== 'string') return false;
+  if (value.basis === 'exact') {
+    return hasExactKeys(value, ['basis', 'value']) && isNonNegativeInteger(value.value);
+  }
+  if (value.basis === 'lower-bound') {
+    return hasExactKeys(value, ['basis', 'value', 'reason']) && isNonNegativeInteger(value.value) && isSafeLabel(value.reason);
+  }
+  if (value.basis === 'unavailable') {
+    return hasExactKeys(value, ['basis', 'reason']) && isSafeLabel(value.reason);
+  }
+  return false;
+};
+
 const isPillarSummary = (value: unknown): value is EnvironmentPillarSummaryV1 =>
   isRecord(value) &&
   hasExactKeys(
     value,
-    ['pillar', 'coverage', 'findingCount', 'recommendationCount', 'affectedResourceCount', 'portalRoute', 'sourceReferences'],
+    ['pillar', 'coverage', 'findingCount', 'recommendationCount', 'affectedResources', 'portalRoute', 'sourceReferences'],
     ['score']
   ) &&
   isEnvironmentPillarV1(value.pillar) &&
   isEnvironmentCoverageStateV1(value.coverage) &&
   isNonNegativeInteger(value.findingCount) &&
   isNonNegativeInteger(value.recommendationCount) &&
-  isNonNegativeInteger(value.affectedResourceCount) &&
+  isEnvironmentCardinalityV1(value.affectedResources) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
   (value.score === undefined || isPillarScore(value.score)) &&
   isReferenceArray(value.sourceReferences);
@@ -283,7 +299,7 @@ const isFinding = (value: unknown): value is EnvironmentFindingV1 =>
   hasExactKeys(
     value,
     ['findingId', 'pillar', 'kind', 'safeLabel', 'severity', 'resourceReferences', 'sourceReferences'],
-    ['description', 'impact', 'effort', 'confidencePercentage', 'affectedResourceCount', 'portalRoute']
+    ['description', 'impact', 'effort', 'affectedResources', 'portalRoute']
   ) &&
   isScopeIdentifier(value.findingId) &&
   isEnvironmentPillarV1(value.pillar) &&
@@ -295,8 +311,7 @@ const isFinding = (value: unknown): value is EnvironmentFindingV1 =>
   (value.description === undefined || isCustomerString(value.description)) &&
   (value.impact === undefined || (typeof value.impact === 'string' && IMPACTS.has(value.impact))) &&
   (value.effort === undefined || (typeof value.effort === 'string' && EFFORTS.has(value.effort))) &&
-  (value.confidencePercentage === undefined || isPercentage(value.confidencePercentage)) &&
-  (value.affectedResourceCount === undefined || isNonNegativeInteger(value.affectedResourceCount)) &&
+  (value.affectedResources === undefined || isEnvironmentCardinalityV1(value.affectedResources)) &&
   (value.portalRoute === undefined || isEnvironmentPortalRouteV1(value.portalRoute)) &&
   isResourceReferenceArray(value.resourceReferences) &&
   isReferenceArray(value.sourceReferences);
@@ -306,7 +321,7 @@ const isRecommendation = (value: unknown): value is EnvironmentRecommendationV1 
   hasExactKeys(
     value,
     ['recommendationId', 'pillar', 'safeLabel', 'portalRoute', 'resourceReferences', 'sourceReferences'],
-    ['description', 'impact', 'effort', 'confidencePercentage', 'affectedResourceCount', 'potentialSavings']
+    ['description', 'impact', 'effort', 'affectedResources', 'potentialSavings']
   ) &&
   isScopeIdentifier(value.recommendationId) &&
   isEnvironmentPillarV1(value.pillar) &&
@@ -315,8 +330,7 @@ const isRecommendation = (value: unknown): value is EnvironmentRecommendationV1 
   (value.description === undefined || isCustomerString(value.description)) &&
   (value.impact === undefined || (typeof value.impact === 'string' && IMPACTS.has(value.impact))) &&
   (value.effort === undefined || (typeof value.effort === 'string' && EFFORTS.has(value.effort))) &&
-  (value.confidencePercentage === undefined || isPercentage(value.confidencePercentage)) &&
-  (value.affectedResourceCount === undefined || isNonNegativeInteger(value.affectedResourceCount)) &&
+  (value.affectedResources === undefined || isEnvironmentCardinalityV1(value.affectedResources)) &&
   (value.potentialSavings === undefined || isSavingsMoney(value.potentialSavings)) &&
   isResourceReferenceArray(value.resourceReferences) &&
   isReferenceArray(value.sourceReferences);
