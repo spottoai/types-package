@@ -179,14 +179,19 @@ export interface CreatePolicyExemptionRequestMessage extends RequestMessage, Cre
   byUserId: string;
 }
 
-export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
+export interface NonGdapCloudAccountTenantSyncRequestMessage extends RequestMessage {
   entity: 'cloudaccount' | 'cloudaccounts';
   action: 'tenant-sync';
+  authMode?: Exclude<CloudAccountAuthMode, 'gdap'>;
   byUserId?: string;
   source: CloudAccountTenantSyncSource;
   correlationId?: string;
   runId?: string;
 }
+
+export type CloudAccountTenantSyncRequestMessage =
+  | NonGdapCloudAccountTenantSyncRequestMessage
+  | AzureGdapCloudAccountTenantSyncRequestMessage;
 
 export interface SubscriptionMessage {
   authToken?: string;
@@ -267,10 +272,57 @@ export interface AzureGdapSubscriptionMessage
   customerTenantId: string;
   partnerTenantId: string;
   authorityTenantId?: string;
+  authToken?: never;
+  authClientId?: never;
+  authClientSecret?: never;
+  authTenantId?: never;
   clientId?: never;
   principalClientId?: never;
   credentialReference?: never;
   authContext?: AzureGdapQueueAuthContext;
+}
+
+/**
+ * Queue-safe GDAP request identity. Credentials and Azure application IDs are
+ * resolved inside cloud-engine from the persisted authorization profile.
+ */
+export interface AzureGdapRequestMessage
+  extends Omit<
+    RequestMessage,
+    | 'clientId'
+    | 'authMode'
+    | 'customerTenantId'
+    | 'authorityTenantId'
+    | 'partnerTenantId'
+    | 'principalClientId'
+    | 'credentialReference'
+    | 'authContext'
+  > {
+  authMode: 'gdap';
+  customerTenantId: string;
+  authorityTenantId?: string;
+  partnerTenantId: string;
+  clientId?: never;
+  principalClientId?: never;
+  credentialReference?: never;
+  authContext?: AzureGdapQueueAuthContext;
+}
+
+export interface AzureGdapCloudAccountTenantSyncRequestMessage extends AzureGdapRequestMessage {
+  entity: 'cloudaccount' | 'cloudaccounts';
+  action: 'tenant-sync';
+  byUserId?: string;
+  source: CloudAccountTenantSyncSource;
+  correlationId?: string;
+  runId?: string;
+}
+
+export interface AzureGdapBillingReconciliationSubscriptionMessage extends AzureGdapSubscriptionMessage {
+  requestId?: string;
+  refreshComponents: ['billing'];
+  metadata: Record<string, unknown> & {
+    billingReconciliation: BillingReconciliationWorkMetadata;
+  };
 }
 
 export type AzureGuestAccessAuthFlow = 'azurePowerShellDeviceCode';

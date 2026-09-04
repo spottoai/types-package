@@ -15,15 +15,15 @@ const environmentSource: AIChatRetrievalSourceType = 'environment';
 const compatibleExistingSources: AIChatRetrievalSourceType[] = ['operational', 'memory', 'knowledge', 'external'];
 
 const environmentMatch: AIEnvironmentEvidenceMatch = {
-  safeLabel: 'Production subscription cost summary',
-  portalRoute: '/companies/company-1/subscriptions/subscription-1/cost',
+  safeLabel: 'Production subscription environment',
+  portalRoute: '/company/company-1/dashboard',
   scope: {
     kind: 'azure-subscription',
     tenantId: 'tenant-1',
     companyId: 'company-1',
     subscriptionId: 'subscription-1',
   },
-  artifactKind: 'subscription-summary',
+  artifactKind: 'subscription-recommendations',
   sourceGeneration: {
     viewSetSchemaVersion: 1,
     publicationId: 'publication-1',

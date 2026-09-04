@@ -141,9 +141,16 @@ const gdapValidationStatus: AzureGdapValidationStatus = 'degraded';
 const invalidGuestAccessScanSchedulingMode: AzureGuestAccessScanSchedulingMode = 'daily';
 
 const gdapCapabilityStatus: AzureGdapCapabilityStatus = {
-  key: 'partnerAuthorization',
-  status: 'ready',
+  key: 'armAppConsent',
+  status: 'blocked',
+  reasonCode: 'arm_consent_required',
   checkedAt: '2026-06-11T00:00:00.000Z',
+};
+
+const gdapClientConfigurationStatus: AzureGdapCapabilityStatus = {
+  key: 'appConsent',
+  status: 'blocked',
+  reasonCode: 'microsoft_client_configuration_invalid',
 };
 
 const gdapCloudAccountMetadata: AzureGdapCloudAccountMetadata = {
@@ -1027,6 +1034,7 @@ void guestAccessStatusReason;
 void invalidGuestAccessScanSchedulingMode;
 void gdapValidationStatus;
 void gdapCapabilityStatus;
+void gdapClientConfigurationStatus;
 void gdapCloudAccountMetadata;
 void gdapCloudAccount;
 void gdapAuthorizationProfileSummary;
