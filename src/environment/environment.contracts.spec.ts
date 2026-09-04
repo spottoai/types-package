@@ -3,6 +3,7 @@ import type {
   EnvironmentDocumentDescriptorV1,
   EnvironmentLogicalArtifactReferenceV1,
   EnvironmentLogicalResourceReferenceV1,
+  EnvironmentSourceBindingV1,
   EnvironmentSubscriptionCostProjectionV1,
 } from './index.js';
 
@@ -25,6 +26,19 @@ const sourceBinding = {
   completedAt: '2026-08-29T00:00:00.000Z',
 } as const;
 
+const publishedSourceBinding = {
+  kind: 'azure-subscription-view-set',
+  viewSetSchemaVersion: 3,
+  scope,
+  publicationId: 'publication:2',
+  portalRunId: 'portal:run/2',
+  pluginRunId: 'plugin:run/2',
+  compositeDependencyDigest: 'a'.repeat(64),
+  sourceRevision: 2,
+  policyRevision: 1,
+  completedAt: '2026-08-29T00:00:00.000Z',
+} as const;
+
 const artifactReference =
   'spotto://artifact/v1/subscription-summary/WyJhenVyZS1zdWJzY3JpcHRpb24iLCJ0ZW5hbnQtMSIsImNvbXBhbnktMSIsInN1YnNjcmlwdGlvbi0xIl0' as EnvironmentLogicalArtifactReferenceV1;
 const resourceReference =
@@ -40,12 +54,15 @@ const projection = {
     portalRoute: '/companies/company-1/subscriptions/subscription-1',
   },
   sourceCoverage: {
+    completedViewSet: { status: 'complete' },
     subscriptionSummary: { status: 'complete', observedAt: '2026-08-29T00:00:00.000Z' },
     resources: { status: 'complete' },
     recommendations: { status: 'partial', reason: 'Some recommendation sources were unavailable.' },
-    costs: { status: 'complete' },
-    savings: { status: 'complete' },
+    serviceRetirements: { status: 'complete' },
+    monitorAlerts: { status: 'not-collected', reason: 'Not requested.' },
+    pluginMetrics: { status: 'complete' },
   },
+  estateSummary: { resourceCount: 1, serviceFamilyCount: 1, locationCount: 1 },
   costSummary: {
     observedCost: {
       amount: '125.40',
@@ -62,8 +79,7 @@ const projection = {
       provenance: 'savings-aggregate',
       savingsAdditivity: 'scenario-non-additive',
     },
-    resourceCount: 1,
-    recommendationCount: 1,
+    costRecommendationCount: 1,
   },
   serviceFamilyRollups: {
     items: [
@@ -87,6 +103,21 @@ const projection = {
   },
   estateCostRollups: { items: [], totalCount: 0, includedCount: 0, truncated: false },
   costDrivers: { items: [], totalCount: 0, includedCount: 0, truncated: false },
+  pillars: Object.fromEntries(
+    ['cost', 'security', 'governance', 'reliability', 'performance', 'operations'].map(pillar => [
+      pillar,
+      {
+        pillar,
+        coverage: { status: 'complete' },
+        findingCount: 0,
+        recommendationCount: 0,
+        affectedResourceCount: 0,
+        portalRoute: `/subscriptions/subscription-1/${pillar}`,
+        sourceReferences: [],
+      },
+    ]),
+  ) as unknown as EnvironmentSubscriptionCostProjectionV1['pillars'],
+  findings: { items: [], totalCount: 0, includedCount: 0, truncated: false },
   recommendations: { items: [], totalCount: 0, includedCount: 0, truncated: false },
   changes: { items: [], totalCount: 0, includedCount: 0, truncated: false },
   warnings: { items: [], totalCount: 0, includedCount: 0, truncated: false },
@@ -115,6 +146,13 @@ const descriptors: EnvironmentDocumentDescriptorV1[] = [
     contentSha256: 'c'.repeat(64),
     approximateTokenCount: 25,
   },
+  ...(['security', 'governance', 'reliability', 'performance', 'operations'] as const).map(name => ({
+    name: `pillars/${name}.md` as const,
+    mediaType: 'text/markdown; charset=utf-8' as const,
+    byteCount: 100,
+    contentSha256: 'd'.repeat(64),
+    approximateTokenCount: 25,
+  })),
 ];
 
 const pointer = {
@@ -124,25 +162,22 @@ const pointer = {
   scope,
   sourceBinding,
   treeDigestSha256: 'd'.repeat(64),
-  fileCount: 3,
+  fileCount: 8,
   generatedAt: '2026-08-29T00:00:01.000Z',
 } satisfies EnvironmentCompiledGenerationPointerV1;
 
 void projection;
 void descriptors;
 void pointer;
+void (publishedSourceBinding satisfies EnvironmentSourceBindingV1);
 
 const invalidDescriptorName: EnvironmentDocumentDescriptorV1 = {
   // @ts-expect-error V1 has an exact document-name allowlist.
-  name: 'pillars/security.md',
+  name: 'pillars/finance.md',
   mediaType: 'text/markdown; charset=utf-8',
   byteCount: 1,
   contentSha256: 'a'.repeat(64),
   approximateTokenCount: 1,
 };
 
-// @ts-expect-error completed V1 pointers always publish exactly three files.
-const invalidFileCount: EnvironmentCompiledGenerationPointerV1 = { ...pointer, fileCount: 2 };
-
 void invalidDescriptorName;
-void invalidFileCount;

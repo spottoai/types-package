@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 
 import {
   ENVIRONMENT_CONTRACT_LIMITS_V1,
+  ENVIRONMENT_DOCUMENT_NAMES_V1,
   buildEnvironmentLogicalArtifactReferenceV1,
   buildEnvironmentLogicalResourceReferenceV1,
   buildEnvironmentScopeQualifiedSubjectV1,
@@ -42,11 +43,24 @@ const sourceBinding = {
   economicsFingerprint: 'sha256:source-owned/fingerprint',
   completedAt,
 };
+const publishedSourceBinding = {
+  kind: 'azure-subscription-view-set',
+  viewSetSchemaVersion: 3,
+  scope,
+  publicationId: 'publication:2/source',
+  portalRunId: 'portal:run/2',
+  pluginRunId: 'plugin:run/2',
+  compositeDependencyDigest: 'a'.repeat(64),
+  sourceRevision: 2,
+  policyRevision: 1,
+  completedAt,
+};
 
 assert.equal(isEnvironmentScopeV1(scope), true);
 assert.equal(isEnvironmentScopeV1({ ...scope, future: true }), false, 'scope rejects unknown keys');
 assert.equal(isEnvironmentScopeV1({ ...scope, subscriptionId: '../subscription' }), true, 'logical source IDs remain opaque');
 assert.equal(isEnvironmentSourceBindingV1(sourceBinding), true, 'source identities preserve colons and slashes');
+assert.equal(isEnvironmentSourceBindingV1(publishedSourceBinding), true, 'V1 environment projections bind to the published V3 view-set authority');
 assert.equal(isEnvironmentSourceBindingV1({ ...sourceBinding, manifestPath: 'runs/source/manifest.json' }), false);
 assert.equal(isEnvironmentSourceBindingV1({ ...sourceBinding, publicationId: ' publication-1' }), false);
 assert.equal(isEnvironmentSourceBindingV1({ ...sourceBinding, portalRunId: 'portal\u0000run' }), false);
@@ -141,13 +155,16 @@ const projection = {
   generatedAt,
   subscription: { safeLabel: 'Production', portalRoute: '/companies/company-1/subscriptions/subscription-1' },
   sourceCoverage: {
+    completedViewSet: { status: 'complete' },
     subscriptionSummary: { status: 'complete', observedAt: completedAt },
     resources: { status: 'complete' },
     recommendations: { status: 'partial', reason: 'One source failed.' },
-    costs: { status: 'complete' },
-    savings: { status: 'complete' },
+    serviceRetirements: { status: 'complete' },
+    monitorAlerts: { status: 'not-collected', reason: 'Not requested.' },
+    pluginMetrics: { status: 'complete' },
   },
-  costSummary: { observedCost, potentialSavings, resourceCount: 1, recommendationCount: 1 },
+  estateSummary: { resourceCount: 1, serviceFamilyCount: 1, locationCount: 1 },
+  costSummary: { observedCost, potentialSavings, costRecommendationCount: 1 },
   serviceFamilyRollups: {
     items: [
       {
@@ -164,6 +181,21 @@ const projection = {
   },
   estateCostRollups: emptyList,
   costDrivers: emptyList,
+  pillars: Object.fromEntries(
+    ['cost', 'security', 'governance', 'reliability', 'performance', 'operations'].map(pillar => [
+      pillar,
+      {
+        pillar,
+        coverage: { status: 'complete' },
+        findingCount: 0,
+        recommendationCount: 0,
+        affectedResourceCount: 0,
+        portalRoute: `/subscriptions/subscription-1/${pillar}`,
+        sourceReferences: [],
+      },
+    ]),
+  ),
+  findings: emptyList,
   recommendations: emptyList,
   changes: emptyList,
   warnings: emptyList,
@@ -228,6 +260,20 @@ assert.equal(
 );
 const oversizedProjection = {
   ...projection,
+  recommendations: {
+    items: Array.from({ length: 50 }, (_, index) => ({
+      recommendationId: `recommendation-${index}`,
+      pillar: 'cost',
+      safeLabel: `Recommendation ${index}`,
+      portalRoute: `/recommendations/${index}`,
+      description: 'b'.repeat(4096),
+      resourceReferences: [],
+      sourceReferences: [],
+    })),
+    totalCount: 50,
+    includedCount: 50,
+    truncated: false,
+  },
   warnings: {
     items: Array.from({ length: 50 }, (_, index) => ({
       code: `warning-${index}`,
@@ -242,36 +288,22 @@ const oversizedProjection = {
 };
 assert.equal(isEnvironmentSubscriptionCostProjectionV1(oversizedProjection), false, 'projection rejects its UTF-8 byte cap plus one');
 
-const descriptors = [
-  {
-    name: 'projection.json',
-    mediaType: 'application/json',
-    byteCount: 100,
-    contentSha256: 'a'.repeat(64),
-    approximateTokenCount: 25,
-  },
-  {
-    name: 'environment-index.md',
-    mediaType: 'text/markdown; charset=utf-8',
-    byteCount: 200,
-    contentSha256: 'b'.repeat(64),
-    approximateTokenCount: 50,
-  },
-  {
-    name: 'pillars/cost.md',
-    mediaType: 'text/markdown; charset=utf-8',
-    byteCount: 300,
-    contentSha256: 'c'.repeat(64),
-    approximateTokenCount: 75,
-  },
-];
+const descriptors = ENVIRONMENT_DOCUMENT_NAMES_V1.map((name, index) => ({
+  name,
+  mediaType: name === 'projection.json' ? 'application/json' : 'text/markdown; charset=utf-8',
+  byteCount: 100 + index,
+  contentSha256: String(index + 1).repeat(64),
+  approximateTokenCount: 25,
+}));
 assert.equal(isEnvironmentDocumentDescriptorSetV1(descriptors), true);
 assert.equal(isEnvironmentDocumentDescriptorSetV1([...descriptors.slice(0, 2), descriptors[1]]), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[0], future: true }), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[0], contentSha256: 'A'.repeat(64) }), false);
 assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[1], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.environmentIndexBytes + 1 }), false);
-assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[2], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.costPillarBytes + 1 }), false);
-const expectedPreimage = `[["environment-index.md","${'b'.repeat(64)}"],["pillars/cost.md","${'c'.repeat(64)}"],["projection.json","${'a'.repeat(64)}"]]`;
+assert.equal(isEnvironmentDocumentDescriptorV1({ ...descriptors[2], byteCount: ENVIRONMENT_CONTRACT_LIMITS_V1.pillarDocumentBytes + 1 }), false);
+const expectedPreimage = JSON.stringify(
+  descriptors.map(({ name, contentSha256 }) => [name, contentSha256]).sort(([left], [right]) => left.localeCompare(right)),
+);
 assert.equal(buildEnvironmentTreeDigestPreimageV1(descriptors), expectedPreimage);
 assert.equal(buildEnvironmentTreeDigestPreimageV1([...descriptors].reverse()), expectedPreimage, 'digest preimage is order-independent');
 assert.throws(() => buildEnvironmentTreeDigestPreimageV1(descriptors.slice(0, 2)));
@@ -283,11 +315,11 @@ const pointer = {
   scope,
   sourceBinding,
   treeDigestSha256: 'd'.repeat(64),
-  fileCount: 3,
+  fileCount: 8,
   generatedAt,
 };
 assert.equal(isEnvironmentCompiledGenerationPointerV1(pointer), true);
-assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, fileCount: 2 }), false);
+assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, fileCount: 7 }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, generatedAt: '2026-08-28T23:59:59.999Z' }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, environmentRunId: sourceBinding.publicationId }), false);
 assert.equal(isEnvironmentCompiledGenerationPointerV1({ ...pointer, scope: { ...scope, companyId: 'company-2' } }), false);
