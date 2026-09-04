@@ -72,6 +72,9 @@ export interface SupersessionRef {
   disposition: 'fully-superseded' | 'partially-superseded';
 }
 
+/** Why an estimated monetary component is present instead of provider billing evidence. */
+export type CostEstimateReason = 'billing-lag' | 'billing-unavailable-sponsorship' | 'other';
+
 /** Composition for one billed or amortized basis. */
 export interface CostBasisComposition {
   basis: CostBasis;
@@ -79,7 +82,7 @@ export interface CostBasisComposition {
   estimated: ComponentState;
   combined: ComponentAvailability;
   status: 'actual-only' | 'actual-plus-estimated' | 'estimated-only' | 'unavailable';
-  estimateReason?: 'billing-lag' | 'billing-unavailable-sponsorship' | 'other';
+  estimateReason?: CostEstimateReason;
   estimateMethodRef?: string;
   estimateConfidence?: 'high' | 'medium' | 'low' | 'unknown';
   uncertaintyRef?: string;

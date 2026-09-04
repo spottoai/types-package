@@ -1,6 +1,7 @@
 import type { ProviderName, ProviderScope } from '../common/provider.js';
 import type { BenefitCostBasis, BenefitScope, BenefitType, IBenefitCoverageBreakdownEntry, IBenefitUtilization, IBenefitWeightedUtilizationAggregate } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline.js';
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
 export type CommitmentsCommitmentFamily = 'compute-reservation' | 'compute-savings-plan' | 'app-service-reservation' | 'managed-disk-reservation' | 'blob-storage-reserved-capacity' | 'adls-reserved-capacity' | 'azure-files-reservation' | 'redis-reserved-capacity' | 'sql-reserved-capacity' | 'mysql-reserved-capacity' | 'postgresql-reserved-capacity' | 'mariadb-reserved-capacity' | 'cosmos-db-reserved-capacity' | 'azure-openai-provisioned-throughput-reservation' | 'generic-reservation';
 export type CommitmentsSourceKind = 'azure-native' | 'aws-native' | 'spotto-derived' | 'fallback-heuristic' | 'manual' | 'unknown';
@@ -193,6 +194,11 @@ export interface CommitmentsResourceCoverageItem {
     benefitIds: string[];
     benefitNames: string[];
     basis?: BenefitCostBasis;
+    /** Charge-source policy applied to every monetary coverage field on this row. */
+    chargeInclusionPolicyRef?: FinancialChargeInclusionPolicyRefV2;
+    /** Partial means unknown-source monetary evidence was withheld from this row. */
+    chargeSelectionStatus?: 'available' | 'partial';
+    withheldUnknownCost?: number;
     coveredQuantity?: number;
     eligibleQuantity?: number;
     coveredCost?: number;

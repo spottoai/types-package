@@ -22,6 +22,7 @@ import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
 import type { FinancialSavingsQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
+import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceCoverage.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -445,6 +446,17 @@ export interface RecommendationWithResources {
   savingsAggregationPolicy?: CostSavingsAggregationPolicy;
 }
 
+export interface RecommendationLifecycleStateProjectionV1 {
+  recommendationId: string;
+  scope: 'resource' | 'providerScope';
+  resourceId?: string;
+  providerScopeId: string;
+  status: 'Active' | 'Prioritized' | 'Dismissed' | 'Archived' | 'Implementing' | 'Implemented' | 'Failed';
+  statusStartAt?: string;
+  statusEndAt?: string;
+  updatedAt?: string;
+}
+
 /**
  * Contextual links from one recommendation row to other resources.
  * Used to model "this disk belongs to that VM" style associations
@@ -514,7 +526,7 @@ export interface RecommendationResource {
   /** Billed spend for this recommendation resource when the billed basis is available. */
   spend?: number;
   /** Amortized spend for this recommendation resource when the amortized basis is available. */
-  spendAmortized?: number;
+  spendAmortized?: number | null;
   /** Spend basis used to calculate this recommendation resource's savings. */
   savingsBasis?: CostSavingsSpendBasis;
   optimizationProfile?: ResourceSimpleOptimizationProfile;
@@ -541,6 +553,8 @@ export interface RecommendationResource {
 
 export interface RecommendationsView extends AzurePortalVersionedArtifact {
   recommendations: RecommendationWithResources[];
+  /** Company-scoped workflow state joined by the API; immutable portal artifacts remain company-neutral. */
+  lifecycleStates?: RecommendationLifecycleStateProjectionV1[];
   securityImpactDetails?: SecurityImpact[];
   subscriptionSecurityStatus?: SubscriptionSecurityStatus;
   /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
@@ -559,6 +573,8 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
   /** API-selected non-monetary membership; composed into query totals only by the UI Financial Domain/shared Kernel. */
   financialSavingsQuerySelection?: FinancialSavingsQuerySelectionV1;
+  /** API-projected, generation-bound evidence qualification; never a monetary authority. */
+  financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
 }
 
 export interface ResourceId {

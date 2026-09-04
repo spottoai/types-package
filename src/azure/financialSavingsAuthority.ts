@@ -1,5 +1,5 @@
 import type { ArtifactGeneration } from '../common/artifactGeneration';
-import type { AvailableOwnerFinancialScopeBaselineV2 } from './financialScopeBaseline';
+import type { AvailableOwnerFinancialScopeBaselineV2, FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
 
 export const FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1 = 1 as const;
 export const FINANCIAL_SAVINGS_AUTHORITY_CONTRACT_VERSION_V1 = 'financial-savings-authority/v1' as const;
@@ -217,6 +217,8 @@ export interface PartialFinancialSavingsCoordinateV1
 export interface UnavailableFinancialSavingsCoordinateV1 {
   status: 'unavailable';
   coordinateId: string;
+  /** Exact requested policy when emitted inside a bounded resource projection. */
+  chargeInclusionPolicyRef?: FinancialChargeInclusionPolicyRefV2;
   currentAggregateBaselineId?: string;
   unavailableReason: FinancialSavingsUnavailableReasonV1;
 }
@@ -243,6 +245,8 @@ export type FinancialSavingsAuthorityIdentityPreimageV1 = Omit<FinancialSavingsA
 export interface AvailableFinancialSavingsResourceCoordinateV1 {
   status: 'available';
   coordinateId: string;
+  /** Exact policy applied to canonical allocation money. Absent only on pre-policy V1 artifacts. */
+  chargeInclusionPolicyRef?: FinancialChargeInclusionPolicyRefV2;
   currentAggregateBaselineId: string;
   accountingCurrencyCode: string;
   minorUnitScale: number;

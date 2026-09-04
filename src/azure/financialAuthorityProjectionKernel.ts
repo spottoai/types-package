@@ -8,6 +8,12 @@ import {
   type FinancialSavingsAuthorityV1,
   type FinancialSavingsResourceProjectionV1,
 } from './financialSavingsAuthority';
+import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
+  resolveFinancialChargeInclusionPolicyV1,
+} from './financialChargeComposition';
+import { classifyFinancialSavingsAllocationForPolicyV1 } from './financialSavingsChargePolicyKernel';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
 
 const normalize = (value: string): string => value.trim().toLowerCase().replace(/\/+$/, '');
 
@@ -95,7 +101,8 @@ export const projectFinancialAuthorityResourceV1 = (
 export const projectFinancialSavingsResourceV1 = (
   savingsAuthority: FinancialSavingsAuthorityV1,
   financialProjection: FinancialAuthorityResourceProjectionV1,
-  financialAuthority?: FinancialAuthorityViewV1
+  financialAuthority?: FinancialAuthorityViewV1,
+  chargeInclusionPolicyRef: FinancialChargeInclusionPolicyRefV2 = AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef
 ): FinancialSavingsResourceProjectionV1 => {
   if (
     savingsAuthority.financialAuthorityId !== financialProjection.authorityId ||
@@ -103,6 +110,9 @@ export const projectFinancialSavingsResourceV1 = (
     savingsAuthority.artifactGeneration.generatedAt !== financialProjection.artifactGeneration.generatedAt
   ) {
     throw new TypeError('Financial savings authority is not bound to the resource Financial Authority projection.');
+  }
+  if (!resolveFinancialChargeInclusionPolicyV1(chargeInclusionPolicyRef)) {
+    throw new TypeError('Financial savings resource charge-inclusion policy is not registered.');
   }
   if (
     financialAuthority !== undefined &&
@@ -127,24 +137,83 @@ export const projectFinancialSavingsResourceV1 = (
   const coordinates = financialProjection.coordinates.map(financialCoordinate => {
     const coordinate = savingsByCoordinateId.get(financialCoordinate.coordinateId);
     if (!coordinate) throw new TypeError('Financial savings coordinate is missing.');
-    if (coordinate.status === 'unavailable') return { ...coordinate };
+    if (coordinate.status === 'unavailable') return { ...coordinate, chargeInclusionPolicyRef };
 
-    const resourceContributions = coordinate.resourceContributions.filter(
+    const resourceAllocations = coordinate.allocations.filter(
+      allocation => normalize(allocation.ownerScopeId) === normalizedScopeId
+    );
+    const sourceResourceContributions = coordinate.resourceContributions.filter(
       contribution => normalize(contribution.ownerScopeId) === normalizedScopeId
     );
-    if (resourceContributions.length > 1) throw new TypeError('Financial savings resource contribution is ambiguous.');
-    const recommendationContributions = coordinate.recommendationContributions.filter(
-      contribution => normalize(contribution.ownerScopeId) === normalizedScopeId
+    if (sourceResourceContributions.length > 1) {
+      throw new TypeError('Financial savings resource contribution is ambiguous.');
+    }
+    const sourceRecommendationSavings = coordinate.recommendationContributions
+      .filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId)
+      .reduce((total, contribution) => {
+        const next = total + contribution.savingsMinorUnits;
+        if (!Number.isSafeInteger(next)) {
+          throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+        }
+        return next;
+      }, 0);
+    if ((sourceResourceContributions[0]?.savingsMinorUnits ?? 0) !== sourceRecommendationSavings) {
+      throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
+    }
+    const policyUnavailableScenarioIds = new Set<string>();
+    const chargeCompositionByBaselineId = new Map(
+      financialCoordinate.chargeComposition
+        ? [[financialCoordinate.chargeComposition.baselineId, financialCoordinate.chargeComposition] as const]
+        : []
     );
-    const resourceContribution = resourceContributions[0];
+    const selectedAllocations = resourceAllocations.filter(allocation => {
+      if (
+        chargeInclusionPolicyRef.policyId === AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyId &&
+        chargeInclusionPolicyRef.policyDigest === AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyDigest
+      ) return true;
+      const disposition = classifyFinancialSavingsAllocationForPolicyV1(
+        chargeCompositionByBaselineId,
+        allocation,
+        chargeInclusionPolicyRef
+      );
+      if (disposition === 'unavailable') policyUnavailableScenarioIds.add(allocation.scenarioId);
+      return disposition === 'included';
+    });
+    const allocationsByRecommendation = new Map<string, typeof selectedAllocations>();
+    for (const allocation of selectedAllocations) {
+      const current = allocationsByRecommendation.get(allocation.recommendationId) ?? [];
+      current.push(allocation);
+      allocationsByRecommendation.set(allocation.recommendationId, current);
+    }
+    const recommendationContributions = [...allocationsByRecommendation.entries()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([recommendationId, allocations]) => {
+        const savingsMinorUnits = allocations.reduce((total, allocation) => {
+          const next = total + allocation.savingsMinorUnits;
+          if (!Number.isSafeInteger(next)) {
+            throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+          }
+          return next;
+        }, 0);
+        return {
+          ownerScopeId: normalizedScopeId,
+          recommendationId,
+          allocationIds: allocations.map(allocation => allocation.allocationId) as [string, ...string[]],
+          savingsMinorUnits,
+        };
+      });
     const recommendationSavings = recommendationContributions.reduce((total, contribution) => {
       const next = total + contribution.savingsMinorUnits;
       if (!Number.isSafeInteger(next)) throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
       return next;
     }, 0);
-    if ((resourceContribution?.savingsMinorUnits ?? 0) !== recommendationSavings) {
-      throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
-    }
+    const resourceContribution = selectedAllocations.length
+      ? {
+          ownerScopeId: normalizedScopeId,
+          allocationIds: selectedAllocations.map(allocation => allocation.allocationId) as [string, ...string[]],
+          savingsMinorUnits: recommendationSavings,
+        }
+      : undefined;
 
     const unavailableActivationIds = new Set(
       coordinate.status === 'partial'
@@ -155,7 +224,7 @@ export const projectFinancialSavingsResourceV1 = (
     if (financialAuthority !== undefined && !authorityCoordinate) {
       throw new TypeError('Full Financial Authority coordinate is missing for the resource projection.');
     }
-    const unavailableScenarioIds = [...unavailableActivationIds]
+    const unavailableScenarioIds = [...new Set([...unavailableActivationIds, ...policyUnavailableScenarioIds])]
       .filter(scenarioId => {
         if (!authorityCoordinate) {
           // Without the full authority there is no proof that an absent target
@@ -171,6 +240,7 @@ export const projectFinancialSavingsResourceV1 = (
       .sort();
     const composed = {
       coordinateId: coordinate.coordinateId,
+      chargeInclusionPolicyRef,
       currentAggregateBaselineId: coordinate.currentAggregateBaselineId,
       accountingCurrencyCode: coordinate.accountingCurrencyCode,
       minorUnitScale: coordinate.minorUnitScale,

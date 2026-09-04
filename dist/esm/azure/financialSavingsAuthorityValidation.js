@@ -2,6 +2,7 @@ import { sha256Utf8 } from '../common/sha256.js';
 import { FINANCIAL_SAVINGS_AUTHORITY_CONTRACT_VERSION_V1, FINANCIAL_SAVINGS_AUTHORITY_SCHEMA_VERSION_V1, } from './financialSavingsAuthority.js';
 import { validateFinancialEligibilityAssessmentV1, validateFinancialEligibilityBaselineV1, } from './financialEligibilityAssessmentValidation.js';
 import { validateFinancialSavingsCoordinateEnvelopeV1 } from './financialSavingsCoordinateValidation.js';
+import { isFinancialChargeInclusionPolicyRefV1 } from './financialChargeCompositionValidation.js';
 import { canonicalizeFinancialSavingsJsonValue, hasExactFinancialSavingsFields, haveSameFinancialSavingsSet, isFinancialSavingsHash, isFinancialSavingsIdentity, isFinancialSavingsIsoInstant, isFinancialSavingsMinorUnits, isFinancialSavingsRecord, sumFinancialSavingsMinorUnits, } from './financialSavingsAuthorityValidationPrimitives.js';
 export { canonicalizeFinancialEligibilityAssessmentIdentityV1, createFinancialEligibilityAssessmentIdV1, } from './financialEligibilityAssessmentValidation.js';
 export { canonicalizeFinancialSavingsActivationIdentityV1, canonicalizeFinancialSavingsAllocationIdentityV1, canonicalizeFinancialSavingsDenominatorIdentityV1, createFinancialSavingsActivationIdV1, createFinancialSavingsAllocationIdV1, createFinancialSavingsDenominatorIdV1, } from './financialSavingsCoordinateValidation.js';
@@ -149,8 +150,9 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
     if (!isFinancialSavingsRecord(value) || !isFinancialSavingsHash(value.coordinateId))
         return false;
     if (value.status === 'unavailable') {
-        return (hasExactFinancialSavingsFields(value, ['status', 'coordinateId', 'unavailableReason'], ['currentAggregateBaselineId']) &&
+        return (hasExactFinancialSavingsFields(value, ['status', 'coordinateId', 'unavailableReason'], ['currentAggregateBaselineId', 'chargeInclusionPolicyRef']) &&
             (value.currentAggregateBaselineId === undefined || isFinancialSavingsHash(value.currentAggregateBaselineId)) &&
+            (value.chargeInclusionPolicyRef === undefined || isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef)) &&
             typeof value.unavailableReason === 'string' &&
             RESOURCE_PROJECTION_UNAVAILABLE_REASONS.has(value.unavailableReason));
     }
@@ -167,8 +169,9 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
         'roundingMode',
         'recommendationContributions',
         ...(partial ? ['unavailableScenarioIds'] : []),
-    ], ['resourceContribution']) ||
+    ], ['resourceContribution', 'chargeInclusionPolicyRef']) ||
         !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
+        (value.chargeInclusionPolicyRef !== undefined && !isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef)) ||
         typeof value.accountingCurrencyCode !== 'string' ||
         !RESOURCE_PROJECTION_CURRENCY.test(value.accountingCurrencyCode) ||
         !Number.isSafeInteger(value.minorUnitScale) ||

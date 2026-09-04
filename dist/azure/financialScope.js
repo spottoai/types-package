@@ -15,6 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./financialScopeEvidence"), exports);
+__exportStar(require("./financialEvidenceCoverage"), exports);
 __exportStar(require("./financialScopeBaseline"), exports);
 __exportStar(require("./financialScopeBaselineIdentity"), exports);
 __exportStar(require("./financialScopeBaselineValidation"), exports);

@@ -3,6 +3,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.projectFinancialSavingsResourceV1 = exports.projectFinancialAuthorityResourceV1 = void 0;
 const financialAuthorityView_1 = require("./financialAuthorityView");
 const financialSavingsAuthority_1 = require("./financialSavingsAuthority");
+const financialChargeComposition_1 = require("./financialChargeComposition");
+const financialSavingsChargePolicyKernel_1 = require("./financialSavingsChargePolicyKernel");
 const normalize = (value) => value.trim().toLowerCase().replace(/\/+$/, '');
 /** Derives one compact, non-additive resource view from a validated canonical authority. */
 const projectFinancialAuthorityResourceV1 = (authority, resourceType, scopeId) => {
@@ -77,11 +79,14 @@ const projectFinancialAuthorityResourceV1 = (authority, resourceType, scopeId) =
 };
 exports.projectFinancialAuthorityResourceV1 = projectFinancialAuthorityResourceV1;
 /** Derives the matching compact savings view for one canonical resource owner. */
-const projectFinancialSavingsResourceV1 = (savingsAuthority, financialProjection, financialAuthority) => {
+const projectFinancialSavingsResourceV1 = (savingsAuthority, financialProjection, financialAuthority, chargeInclusionPolicyRef = financialChargeComposition_1.AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef) => {
     if (savingsAuthority.financialAuthorityId !== financialProjection.authorityId ||
         savingsAuthority.artifactGeneration.runId !== financialProjection.artifactGeneration.runId ||
         savingsAuthority.artifactGeneration.generatedAt !== financialProjection.artifactGeneration.generatedAt) {
         throw new TypeError('Financial savings authority is not bound to the resource Financial Authority projection.');
+    }
+    if (!(0, financialChargeComposition_1.resolveFinancialChargeInclusionPolicyV1)(chargeInclusionPolicyRef)) {
+        throw new TypeError('Financial savings resource charge-inclusion policy is not registered.');
     }
     if (financialAuthority !== undefined &&
         (financialAuthority.authorityId !== financialProjection.authorityId ||
@@ -102,21 +107,73 @@ const projectFinancialSavingsResourceV1 = (savingsAuthority, financialProjection
         if (!coordinate)
             throw new TypeError('Financial savings coordinate is missing.');
         if (coordinate.status === 'unavailable')
-            return { ...coordinate };
-        const resourceContributions = coordinate.resourceContributions.filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId);
-        if (resourceContributions.length > 1)
+            return { ...coordinate, chargeInclusionPolicyRef };
+        const resourceAllocations = coordinate.allocations.filter(allocation => normalize(allocation.ownerScopeId) === normalizedScopeId);
+        const sourceResourceContributions = coordinate.resourceContributions.filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId);
+        if (sourceResourceContributions.length > 1) {
             throw new TypeError('Financial savings resource contribution is ambiguous.');
-        const recommendationContributions = coordinate.recommendationContributions.filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId);
-        const resourceContribution = resourceContributions[0];
+        }
+        const sourceRecommendationSavings = coordinate.recommendationContributions
+            .filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId)
+            .reduce((total, contribution) => {
+            const next = total + contribution.savingsMinorUnits;
+            if (!Number.isSafeInteger(next)) {
+                throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+            }
+            return next;
+        }, 0);
+        if ((sourceResourceContributions[0]?.savingsMinorUnits ?? 0) !== sourceRecommendationSavings) {
+            throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
+        }
+        const policyUnavailableScenarioIds = new Set();
+        const chargeCompositionByBaselineId = new Map(financialCoordinate.chargeComposition
+            ? [[financialCoordinate.chargeComposition.baselineId, financialCoordinate.chargeComposition]]
+            : []);
+        const selectedAllocations = resourceAllocations.filter(allocation => {
+            if (chargeInclusionPolicyRef.policyId === financialChargeComposition_1.AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyId &&
+                chargeInclusionPolicyRef.policyDigest === financialChargeComposition_1.AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyDigest)
+                return true;
+            const disposition = (0, financialSavingsChargePolicyKernel_1.classifyFinancialSavingsAllocationForPolicyV1)(chargeCompositionByBaselineId, allocation, chargeInclusionPolicyRef);
+            if (disposition === 'unavailable')
+                policyUnavailableScenarioIds.add(allocation.scenarioId);
+            return disposition === 'included';
+        });
+        const allocationsByRecommendation = new Map();
+        for (const allocation of selectedAllocations) {
+            const current = allocationsByRecommendation.get(allocation.recommendationId) ?? [];
+            current.push(allocation);
+            allocationsByRecommendation.set(allocation.recommendationId, current);
+        }
+        const recommendationContributions = [...allocationsByRecommendation.entries()]
+            .sort(([left], [right]) => left.localeCompare(right))
+            .map(([recommendationId, allocations]) => {
+            const savingsMinorUnits = allocations.reduce((total, allocation) => {
+                const next = total + allocation.savingsMinorUnits;
+                if (!Number.isSafeInteger(next)) {
+                    throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+                }
+                return next;
+            }, 0);
+            return {
+                ownerScopeId: normalizedScopeId,
+                recommendationId,
+                allocationIds: allocations.map(allocation => allocation.allocationId),
+                savingsMinorUnits,
+            };
+        });
         const recommendationSavings = recommendationContributions.reduce((total, contribution) => {
             const next = total + contribution.savingsMinorUnits;
             if (!Number.isSafeInteger(next))
                 throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
             return next;
         }, 0);
-        if ((resourceContribution?.savingsMinorUnits ?? 0) !== recommendationSavings) {
-            throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
-        }
+        const resourceContribution = selectedAllocations.length
+            ? {
+                ownerScopeId: normalizedScopeId,
+                allocationIds: selectedAllocations.map(allocation => allocation.allocationId),
+                savingsMinorUnits: recommendationSavings,
+            }
+            : undefined;
         const unavailableActivationIds = new Set(coordinate.status === 'partial'
             ? coordinate.activations.filter(activation => activation.result === 'unavailable').map(activation => activation.scenarioId)
             : []);
@@ -124,7 +181,7 @@ const projectFinancialSavingsResourceV1 = (savingsAuthority, financialProjection
         if (financialAuthority !== undefined && !authorityCoordinate) {
             throw new TypeError('Full Financial Authority coordinate is missing for the resource projection.');
         }
-        const unavailableScenarioIds = [...unavailableActivationIds]
+        const unavailableScenarioIds = [...new Set([...unavailableActivationIds, ...policyUnavailableScenarioIds])]
             .filter(scenarioId => {
             if (!authorityCoordinate) {
                 // Without the full authority there is no proof that an absent target
@@ -138,6 +195,7 @@ const projectFinancialSavingsResourceV1 = (savingsAuthority, financialProjection
             .sort();
         const composed = {
             coordinateId: coordinate.coordinateId,
+            chargeInclusionPolicyRef,
             currentAggregateBaselineId: coordinate.currentAggregateBaselineId,
             accountingCurrencyCode: coordinate.accountingCurrencyCode,
             minorUnitScale: coordinate.minorUnitScale,

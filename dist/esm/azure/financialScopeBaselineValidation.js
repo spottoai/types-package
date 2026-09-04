@@ -9,6 +9,7 @@ const MAX_SOURCE_KIND_LENGTH = 128;
 const MAX_IDENTITY_LENGTH = 256;
 const SHA256_ID = /^sha256:[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ESTIMATE_REASONS = new Set(['billing-lag', 'billing-unavailable-sponsorship', 'other']);
 const EVIDENCE_ROLES = new Set([
     'billing',
     'billing-currency-declaration',
@@ -225,9 +226,9 @@ const isCommonBaseline = (value) => value.schemaVersion === FINANCIAL_SCOPE_BASE
     (value.requestedCurrencyCode === undefined || (typeof value.requestedCurrencyCode === 'string' && CURRENCY.test(value.requestedCurrencyCode))) &&
     typeof value.assessmentId === 'string' &&
     SHA256_ID.test(value.assessmentId);
-const isComponent = (value, scopeId, coverageIds, accountingCurrencyCode) => {
+const isComponent = (value, scopeId, coverageIds, accountingCurrencyCode, estimateLens) => {
     if (!isRecord(value) ||
-        !hasExactFields(value, ['componentId', 'billableIdentity', 'ownerScopeId', 'chargeClassification', 'amount', 'evidenceRefIds', 'coverageIds'], ['quantity', 'effectiveRate']) ||
+        !hasExactFields(value, ['componentId', 'billableIdentity', 'ownerScopeId', 'chargeClassification', 'amount', 'evidenceRefIds', 'coverageIds'], ['estimateReason', 'quantity', 'effectiveRate']) ||
         typeof value.componentId !== 'string' ||
         !SHA256_ID.test(value.componentId) ||
         !isBoundedIdentity(value.billableIdentity) ||
@@ -235,6 +236,8 @@ const isComponent = (value, scopeId, coverageIds, accountingCurrencyCode) => {
         typeof value.chargeClassification !== 'string' ||
         !CHARGE_CLASSIFICATIONS.has(value.chargeClassification) ||
         !isCanonicalExactMoney({ amount: value.amount, currencyCode: 'AUD' }) ||
+        (value.estimateReason !== undefined && (typeof value.estimateReason !== 'string' || !ESTIMATE_REASONS.has(value.estimateReason))) ||
+        (estimateLens === 'actual-only' && value.estimateReason !== undefined) ||
         !isHashArray(value.evidenceRefIds) ||
         !isHashArray(value.coverageIds) ||
         !value.coverageIds.every(id => coverageIds.has(id))) {
@@ -313,7 +316,7 @@ const isIdentityPreimage = (value) => {
             return false;
         }
         const coverageIds = new Set(value.period.coverage.map(item => item.coverageId));
-        return (value.components.every(component => isComponent(component, String(value.scopeId), coverageIds, String(value.accountingCurrency.currencyCode))) && new Set(value.components.map(component => component.componentId)).size === value.components.length);
+        return (value.components.every(component => isComponent(component, String(value.scopeId), coverageIds, String(value.accountingCurrency.currencyCode), value.estimateLens)) && new Set(value.components.map(component => component.componentId)).size === value.components.length);
     }
     return (value.baselineKind === 'aggregate' &&
         AGGREGATE_SCOPE_KINDS.has(String(value.scopeKind)) &&

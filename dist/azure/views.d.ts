@@ -15,6 +15,7 @@ import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, SavingsLifecycleFreshnessV1 } from './savings.js';
 import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView.js';
 import type { CurrentSpendCompositionV1 } from './financialDataflow.js';
+import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceCoverage.js';
 import type { FinancialSavingsAuthorityV1, FinancialSavingsResourceProjectionV1 } from './financialSavingsAuthority.js';
 import type { FinancialSavingsResourceQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -38,6 +39,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
      * budget, resource-row, or retail-price fields.
      */
     financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+    /** API-projected, generation-bound evidence qualification; never a monetary authority. */
+    financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
     advisorScore?: AdvisorScoreSummary;
     healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -67,6 +70,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     financialSavingsResourceQuerySelection?: FinancialSavingsResourceQuerySelectionV1;
     /** Bounded subscription current-spend compositions produced from the same conformed authority generation. */
     financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+    /** API-projected, generation-bound evidence qualification; never a monetary authority. */
+    financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
 }
 /**
  * Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
@@ -100,19 +105,19 @@ export interface AzureResourcePortalItem {
     spend: number;
     /**
      * Total amortized spend over the rolling 30-day window.
-     * Absent when the artifact has no complete amortized-basis evidence; consumers
+     * Null or absent when the artifact has no complete amortized-basis evidence; consumers
      * must not substitute billed spend. Use `composition.amortized` for the typed
      * availability reason when a cost composition is present.
      */
-    spendAmortized?: number;
+    spendAmortized?: number | null;
     /** Billing-backed portion of spend over the last 30 days */
     spendActual?: number;
     /** Billing-backed portion of amortized spend over the last 30 days */
-    spendAmortizedActual?: number;
+    spendAmortizedActual?: number | null;
     /** Estimated portion of spend over the last 30 days */
     spendEstimated?: number;
     /** Estimated portion of amortized spend over the last 30 days */
-    spendAmortizedEstimated?: number;
+    spendAmortizedEstimated?: number | null;
     /** Number of covered days in the fixed 30-day spend window */
     coverageDays?: number;
     /** Source of spend value */
@@ -239,11 +244,11 @@ export interface AzureResourcePluginItem {
     /** Billing-backed portion of cost total */
     spendActual?: number;
     /** Billing-backed portion of amortized cost total */
-    spendAmortizedActual?: number;
+    spendAmortizedActual?: number | null;
     /** Estimated portion of cost total */
     spendEstimated?: number;
     /** Estimated portion of amortized cost total */
-    spendAmortizedEstimated?: number;
+    spendAmortizedEstimated?: number | null;
     /** Source of cost value */
     costSource?: SpendDataSource;
     /** Confidence for cost source attribution */
@@ -289,9 +294,9 @@ export interface AzureResourcePluginItemDetailed {
     recommendationDecisionContexts?: RecommendationDecisionContext[];
     cost?: CostSummaryDetails;
     spendActual?: number;
-    spendAmortizedActual?: number;
+    spendAmortizedActual?: number | null;
     spendEstimated?: number;
-    spendAmortizedEstimated?: number;
+    spendAmortizedEstimated?: number | null;
     costSource?: SpendDataSource;
     costSourceConfidence?: 'high' | 'unknown';
     costSourceDetail?: string;
@@ -317,6 +322,8 @@ export interface AzureResourcePluginItemDetailed {
     financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
     /** Mutable lifecycle freshness gate applied by the authorized API read. */
     savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
+    /** API-projected, generation-bound evidence qualification; never a monetary authority. */
+    financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
     /** Generic compute hosting model alternatives, including cross-platform options. */
     computeAlternatives?: ComputeAlternativesInsights;
 }
@@ -732,7 +739,7 @@ export interface AzurePluginResourceLite {
     /** Total spend over the last 30 days */
     spend: number;
     /** Total amortized spend over the last 30 days */
-    amortizedSpend: number;
+    amortizedSpend: number | null;
     recommendations: AzureRecommendationLite[];
     /** Spotto recommendations */
     customRecommendations: AzureRecommendationLite[];
@@ -1054,9 +1061,9 @@ export interface AzureRecommendationResourceEvidenceEntry {
     recommendation: Recommendation;
     resources: AzureRecommendationResourceEvidenceResource[];
 }
-/** Evidence preserves unavailable amortized spend as absent instead of fabricating actual cost. */
+/** Evidence preserves unavailable amortized spend as null or absent instead of fabricating actual cost. */
 export type AzureRecommendationResourceEvidenceResource = Omit<RecommendationResource, 'spendAmortized'> & {
-    spendAmortized?: number;
+    spendAmortized?: number | null;
 };
 export interface AzureRecommendationResourceEvidenceDocument {
     schemaVersion: 1;

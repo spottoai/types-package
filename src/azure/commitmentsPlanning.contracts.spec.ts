@@ -1,4 +1,5 @@
 import {
+  AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1,
   ProviderName,
   ProviderScopeType,
   type AwsCommitmentsInventoryItem,
@@ -37,6 +38,18 @@ const baseView = {
   pricingContext: { source: 'unknown' },
   termStrategy: [],
 } satisfies CommitmentsPlanningView;
+
+const marketplaceExcludedCoverage = {
+  resourceId: '/subscriptions/subscription-123/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1',
+  benefitIds: ['reservation-123'],
+  benefitNames: ['Production reservation'],
+  coveredCost: 120,
+  currency: 'AUD',
+  basis: 'actual',
+  chargeInclusionPolicyRef: AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1.policyRef,
+  chargeSelectionStatus: 'partial',
+  withheldUnknownCost: 10,
+} satisfies CommitmentsPlanningView['resourceCoverage'][number];
 
 const legacyAzureView = {
   ...baseView,
@@ -279,6 +292,7 @@ const invalidBenefitScope = {
 } satisfies CommitmentsInventoryItem;
 
 void [
+  marketplaceExcludedCoverage,
   legacyAzureView,
   extendedLegacyAzureView,
   invalidProviderlessStrictView,

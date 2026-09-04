@@ -1,5 +1,13 @@
-import { AZURE_BILLED_ALL_CHARGES_POLICY_V1 } from './financialChargeComposition';
+import {
+  AZURE_BILLED_ALL_CHARGES_POLICY_V1,
+  resolveFinancialChargeInclusionPolicyV1,
+} from './financialChargeComposition';
+import { selectFinancialChargesV1 } from './financialChargeCompositionValidation';
+import { formatExactDecimalValue, sumCanonicalDecimals } from '../common/exactDecimal';
 import type { AzureResourcesView } from './views';
+import type { FinancialAuthorityCoordinateV1 } from './financialAuthorityView';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
+import { classifyFinancialSavingsAllocationForPolicyV1 } from './financialSavingsChargePolicyKernel';
 import {
   FINANCIAL_SAVINGS_SURFACE_PROJECTION_CONTRACT_VERSION_V1,
   FINANCIAL_SAVINGS_SURFACE_PROJECTION_SCHEMA_VERSION_V1,
@@ -34,6 +42,29 @@ const exactMinorUnitSum = (values: readonly number[]): number => {
     throw new FinancialSavingsSurfaceProjectionError('Financial savings surface contribution exceeds the safe integer boundary');
   }
   return Number(sum);
+};
+
+const samePolicy = (left: FinancialChargeInclusionPolicyRefV2, right: FinancialChargeInclusionPolicyRefV2): boolean =>
+  left.policyId === right.policyId && left.policyDigest === right.policyDigest;
+
+const selectAggregateForPolicy = (
+  financialCoordinate: FinancialAuthorityCoordinateV1,
+  policyRef: FinancialChargeInclusionPolicyRefV2,
+  chargeCompositionByBaselineId: ReadonlyMap<string, FinancialAuthorityCoordinateV1['chargeCompositions'][number]>
+): string | undefined => {
+  if (financialCoordinate.aggregateBaseline.status !== 'available') return undefined;
+  if (samePolicy(policyRef, AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef)) {
+    return financialCoordinate.aggregateBaseline.total.amount;
+  }
+  if (financialCoordinate.aggregateBaseline.baselineKind !== 'aggregate') return undefined;
+  const memberIds = new Set(financialCoordinate.aggregateBaseline.memberBaselineIds);
+  const compositions = [...memberIds]
+    .map(memberId => chargeCompositionByBaselineId.get(memberId))
+    .filter((composition): composition is NonNullable<typeof composition> => composition !== undefined);
+  if (compositions.length !== memberIds.size) return undefined;
+  const selections = compositions.map(composition => selectFinancialChargesV1(composition, policyRef));
+  if (selections.some(selection => selection.status !== 'available')) return undefined;
+  return formatExactDecimalValue(sumCanonicalDecimals(selections.map(selection => selection.includedAmount)));
 };
 
 const projectLifecycleBindings = (
@@ -276,7 +307,8 @@ export const projectFinancialSavingsSurfaceResourceQueryV1 = (
  */
 export const buildFinancialSavingsSurfaceProjectionV1 = (
   resourcesView: AzureResourcesView,
-  surface: FinancialSavingsSurfaceV1
+  surface: FinancialSavingsSurfaceV1,
+  chargeInclusionPolicyRef: FinancialChargeInclusionPolicyRefV2 = AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef
 ): FinancialSavingsSurfaceProjectionV1 => {
   const authority = resourcesView.financialAuthority;
   const savingsAuthority = resourcesView.financialSavingsAuthority;
@@ -287,6 +319,9 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
     !sameGeneration(authority.artifactGeneration, savingsAuthority.artifactGeneration)
   ) {
     throw new FinancialSavingsSurfaceProjectionError('Financial savings authority generation or identity binding is invalid');
+  }
+  if (!resolveFinancialChargeInclusionPolicyV1(chargeInclusionPolicyRef)) {
+    throw new FinancialSavingsSurfaceProjectionError('Financial savings charge-inclusion policy is not registered');
   }
 
   const financialCoordinateById = new Map(authority.coordinates.map(coordinate => [coordinate.coordinateId, coordinate]));
@@ -302,6 +337,12 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
     );
   }
 
+  const projectedAllocations: Array<{
+    allocationId: string;
+    ownerScopeId: string;
+    recommendationId: string;
+    savingsMinorUnits: number;
+  }> = [];
   const coordinates = authority.coordinates.map((financialCoordinate): FinancialSavingsSurfaceCoordinateEnvelopeV1 => {
     const savingsCoordinate = savingsCoordinateById.get(financialCoordinate.coordinateId);
     if (!savingsCoordinate) {
@@ -313,7 +354,7 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
       period: financialCoordinate.period,
       costBasis: financialCoordinate.costBasis,
       estimateLens: financialCoordinate.estimateLens,
-      chargeInclusionPolicyRef: AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef,
+      chargeInclusionPolicyRef,
       ...(financialCoordinate.requestedCurrencyCode === undefined
         ? {}
         : { requestedCurrencyCode: financialCoordinate.requestedCurrencyCode }),
@@ -325,16 +366,23 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
       return { ...common, status: 'unavailable', unavailableReason: savingsCoordinate.unavailableReason };
     }
     const currentAggregate = financialCoordinate.aggregateBaseline;
+    const chargeCompositions = financialCoordinate.chargeCompositions ?? [];
+    const chargeCompositionByBaselineId = new Map(
+      chargeCompositions.map(composition => [composition.baselineId, composition])
+    );
+    const selectedCurrentAggregate =
+      chargeCompositionByBaselineId.size === chargeCompositions.length
+        ? selectAggregateForPolicy(financialCoordinate, chargeInclusionPolicyRef, chargeCompositionByBaselineId)
+        : undefined;
     if (
       currentAggregate.status !== 'available' ||
       currentAggregate.baselineId !== savingsCoordinate.currentAggregateBaselineId ||
-      currentAggregate.total.currencyCode !== savingsCoordinate.accountingCurrencyCode
+      currentAggregate.total.currencyCode !== savingsCoordinate.accountingCurrencyCode ||
+      selectedCurrentAggregate === undefined
     ) {
-      throw new FinancialSavingsSurfaceProjectionError(
-        `Financial savings coordinate ${financialCoordinate.coordinateId} has no matching available current aggregate baseline`
-      );
+      return { ...common, status: 'unavailable', unavailableReason: 'allocation-unavailable' };
     }
-    const unavailableRecommendationIds =
+    const sourceUnavailableRecommendationIds =
       savingsCoordinate.status === 'partial'
         ? Array.from(
             new Set(
@@ -344,20 +392,37 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
             )
           ).sort()
         : [];
+    const policyUnavailableRecommendationIds = new Set<string>();
+    const selectedAllocations = samePolicy(chargeInclusionPolicyRef, AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef)
+      ? savingsCoordinate.allocations
+      : savingsCoordinate.allocations.filter(allocation => {
+          const disposition = classifyFinancialSavingsAllocationForPolicyV1(
+            chargeCompositionByBaselineId,
+            allocation,
+            chargeInclusionPolicyRef
+          );
+          if (disposition === 'unavailable') policyUnavailableRecommendationIds.add(allocation.recommendationId);
+          return disposition === 'included';
+        });
+    projectedAllocations.push(...selectedAllocations);
+    const unavailableRecommendationIds = [
+      ...new Set([...sourceUnavailableRecommendationIds, ...policyUnavailableRecommendationIds]),
+    ].sort();
+    const recommendationContributions = projectRecommendationContributions(selectedAllocations);
     const composed = {
       ...common,
       currentAggregateBaselineId: savingsCoordinate.currentAggregateBaselineId,
-      currentAggregate: { ...currentAggregate.total },
+      currentAggregate: { amount: selectedCurrentAggregate, currencyCode: currentAggregate.total.currencyCode },
       accountingCurrencyCode: savingsCoordinate.accountingCurrencyCode,
       minorUnitScale: savingsCoordinate.minorUnitScale,
       roundingMode: savingsCoordinate.roundingMode,
-      recommendationContributions: projectRecommendationContributions(savingsCoordinate.allocations),
+      recommendationContributions,
       aggregate: {
-        allocationIds: [...savingsCoordinate.aggregate.allocationIds],
-        savingsMinorUnits: savingsCoordinate.aggregate.savingsMinorUnits,
+        allocationIds: recommendationContributions.flatMap(contribution => contribution.allocationIds),
+        savingsMinorUnits: exactMinorUnitSum(recommendationContributions.map(contribution => contribution.savingsMinorUnits)),
       },
     };
-    return savingsCoordinate.status === 'partial'
+    return unavailableRecommendationIds.length > 0
       ? {
           ...composed,
           status: 'partial',
@@ -367,7 +432,7 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
   }) as [FinancialSavingsSurfaceCoordinateEnvelopeV1, ...FinancialSavingsSurfaceCoordinateEnvelopeV1[]];
 
   const lifecycleBindings = projectLifecycleBindings(
-    savingsAuthority.coordinates.flatMap(coordinate => (coordinate.status === 'unavailable' ? [] : coordinate.allocations))
+    projectedAllocations
   );
 
   const identity: FinancialSavingsSurfaceProjectionIdentityPreimageV1 = {

@@ -4,7 +4,7 @@ export type RelationshipSnapshotEdgeKind = 'contains' | 'depends_on';
 
 export interface RelationshipSnapshotCostOverlay {
   spend30d?: number;
-  spend30dAmortized?: number;
+  spend30dAmortized?: number | null;
 }
 
 export interface RelationshipSnapshotNodeData {

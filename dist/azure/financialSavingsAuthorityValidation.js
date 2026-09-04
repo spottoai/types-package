@@ -5,6 +5,7 @@ const sha256_1 = require("../common/sha256");
 const financialSavingsAuthority_1 = require("./financialSavingsAuthority");
 const financialEligibilityAssessmentValidation_1 = require("./financialEligibilityAssessmentValidation");
 const financialSavingsCoordinateValidation_1 = require("./financialSavingsCoordinateValidation");
+const financialChargeCompositionValidation_1 = require("./financialChargeCompositionValidation");
 const financialSavingsAuthorityValidationPrimitives_1 = require("./financialSavingsAuthorityValidationPrimitives");
 var financialEligibilityAssessmentValidation_2 = require("./financialEligibilityAssessmentValidation");
 Object.defineProperty(exports, "canonicalizeFinancialEligibilityAssessmentIdentityV1", { enumerable: true, get: function () { return financialEligibilityAssessmentValidation_2.canonicalizeFinancialEligibilityAssessmentIdentityV1; } });
@@ -163,8 +164,9 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
     if (!(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsRecord)(value) || !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.coordinateId))
         return false;
     if (value.status === 'unavailable') {
-        return ((0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['status', 'coordinateId', 'unavailableReason'], ['currentAggregateBaselineId']) &&
+        return ((0, financialSavingsAuthorityValidationPrimitives_1.hasExactFinancialSavingsFields)(value, ['status', 'coordinateId', 'unavailableReason'], ['currentAggregateBaselineId', 'chargeInclusionPolicyRef']) &&
             (value.currentAggregateBaselineId === undefined || (0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.currentAggregateBaselineId)) &&
+            (value.chargeInclusionPolicyRef === undefined || (0, financialChargeCompositionValidation_1.isFinancialChargeInclusionPolicyRefV1)(value.chargeInclusionPolicyRef)) &&
             typeof value.unavailableReason === 'string' &&
             RESOURCE_PROJECTION_UNAVAILABLE_REASONS.has(value.unavailableReason));
     }
@@ -181,8 +183,9 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
         'roundingMode',
         'recommendationContributions',
         ...(partial ? ['unavailableScenarioIds'] : []),
-    ], ['resourceContribution']) ||
+    ], ['resourceContribution', 'chargeInclusionPolicyRef']) ||
         !(0, financialSavingsAuthorityValidationPrimitives_1.isFinancialSavingsHash)(value.currentAggregateBaselineId) ||
+        (value.chargeInclusionPolicyRef !== undefined && !(0, financialChargeCompositionValidation_1.isFinancialChargeInclusionPolicyRefV1)(value.chargeInclusionPolicyRef)) ||
         typeof value.accountingCurrencyCode !== 'string' ||
         !RESOURCE_PROJECTION_CURRENCY.test(value.accountingCurrencyCode) ||
         !Number.isSafeInteger(value.minorUnitScale) ||

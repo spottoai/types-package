@@ -1,4 +1,4 @@
-import type { CostBasis, EstimateLens } from './costComposition';
+import type { CostBasis, CostEstimateReason, EstimateLens } from './costComposition';
 import type { FinancialEvidenceAssessmentSummaryV1, FinancialEvidenceIntervalV1, FinancialScopeKindV2 } from './financialScopeEvidence';
 
 export const FINANCIAL_SCOPE_BASELINE_SCHEMA_VERSION_V2 = 2 as const;
@@ -84,6 +84,8 @@ export interface FinancialOwnerBaselineComponentV2 {
   ownerScopeId: string;
   chargeClassification: FinancialChargeClassificationV2;
   amount: string;
+  /** Present only when this coordinate contains estimated money. */
+  estimateReason?: CostEstimateReason;
   evidenceRefIds: [string, ...string[]];
   coverageIds: [string, ...string[]];
   quantity?: { amount: string; unit: string };

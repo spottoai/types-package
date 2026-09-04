@@ -10,7 +10,13 @@ import type { CostComposition } from './costComposition.js';
 
 export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 
-export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
+export type SpendDataSource =
+  | 'billing'
+  | 'estimated_billing_run_rate'
+  | 'estimated_metrics_pricing'
+  | 'estimated_sku_pricing'
+  | 'blended'
+  | 'none';
 
 export interface SubscriptionSummaryLite {
   companyId: string;
@@ -65,7 +71,11 @@ export interface SubscriptionSummary {
   displayName: string;
   properties?: SubscriptionProperties;
   recommendationSummary: RecommendationSummary[];
-  savings: SavingsPotential;
+  /**
+   * Legacy compatibility projection. Omitted when its calculation is unavailable;
+   * current consumers must use the generation-bound Financial Savings projection.
+   */
+  savings?: SavingsPotential;
   totalRetailCost: number;
   spendingLimit: boolean;
   budgets: Budget[];
@@ -123,13 +133,13 @@ export interface SubscriptionStats {
   resourcesByLocation: ResourceByLocation[];
   resourcesByType: ResourcesByType[];
   spend30Days?: number;
-  spend30DaysAmortized?: number;
+  spend30DaysAmortized?: number | null;
   spendPrevious30Days?: number;
-  spendPrevious30DaysAmortized?: number;
+  spendPrevious30DaysAmortized?: number | null;
   spend7Days?: number;
-  spend7DaysAmortized?: number;
+  spend7DaysAmortized?: number | null;
   spendPrevious7Days?: number;
-  spendPrevious7DaysAmortized?: number;
+  spendPrevious7DaysAmortized?: number | null;
   /** Source of spend30Days after billing-first + estimation fallback reconciliation */
   spend30DaysSource?: SpendDataSource;
   /** Source of spend30DaysAmortized after billing-first + estimation fallback reconciliation */
@@ -139,15 +149,15 @@ export interface SubscriptionStats {
   /** Billing-backed (actual) portion of spend30Days */
   spend30DaysActual?: number;
   /** Billing-backed (actual) portion of spend30DaysAmortized */
-  spend30DaysAmortizedActual?: number;
+  spend30DaysAmortizedActual?: number | null;
   /** Estimated-only portion of spend30Days */
   spend30DaysEstimated?: number;
   /** Estimated-only portion of spend30DaysAmortized */
-  spend30DaysAmortizedEstimated?: number;
+  spend30DaysAmortizedEstimated?: number | null;
   /** Billing-only portion of spend30Days */
   spend30DaysBilling?: number;
   /** Billing-only portion of spend30DaysAmortized */
-  spend30DaysAmortizedBilling?: number;
+  spend30DaysAmortizedBilling?: number | null;
   /** Breakdown of estimated fallback by estimator source */
   spend30DaysEstimatedSourceBreakdown?: {
     billing: number;

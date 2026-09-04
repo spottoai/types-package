@@ -13,6 +13,7 @@ import {
   type FinancialEligibilityValidationContextV1,
 } from './financialEligibilityAssessmentValidation';
 import { validateFinancialSavingsCoordinateEnvelopeV1 } from './financialSavingsCoordinateValidation';
+import { isFinancialChargeInclusionPolicyRefV1 } from './financialChargeCompositionValidation';
 import type { FinancialEvidenceReferenceV1 } from './financialScopeEvidence';
 import {
   canonicalizeFinancialSavingsJsonValue,
@@ -234,9 +235,10 @@ const isSavingsResourceCoordinate = (value: unknown, scopeId: string): boolean =
       hasExactFinancialSavingsFields(
         value,
         ['status', 'coordinateId', 'unavailableReason'],
-        ['currentAggregateBaselineId']
+        ['currentAggregateBaselineId', 'chargeInclusionPolicyRef']
       ) &&
       (value.currentAggregateBaselineId === undefined || isFinancialSavingsHash(value.currentAggregateBaselineId)) &&
+      (value.chargeInclusionPolicyRef === undefined || isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef)) &&
       typeof value.unavailableReason === 'string' &&
       RESOURCE_PROJECTION_UNAVAILABLE_REASONS.has(value.unavailableReason)
     );
@@ -259,9 +261,10 @@ const isSavingsResourceCoordinate = (value: unknown, scopeId: string): boolean =
         'recommendationContributions',
         ...(partial ? ['unavailableScenarioIds'] : []),
       ],
-      ['resourceContribution']
+      ['resourceContribution', 'chargeInclusionPolicyRef']
     ) ||
     !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
+    (value.chargeInclusionPolicyRef !== undefined && !isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef)) ||
     typeof value.accountingCurrencyCode !== 'string' ||
     !RESOURCE_PROJECTION_CURRENCY.test(value.accountingCurrencyCode) ||
     !Number.isSafeInteger(value.minorUnitScale) ||

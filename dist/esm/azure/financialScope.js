@@ -1,4 +1,5 @@
 export * from './financialScopeEvidence.js';
+export * from './financialEvidenceCoverage.js';
 export * from './financialScopeBaseline.js';
 export * from './financialScopeBaselineIdentity.js';
 export * from './financialScopeBaselineValidation.js';

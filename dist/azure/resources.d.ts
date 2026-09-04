@@ -5,28 +5,28 @@ export interface ResourcesByType {
     /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
     spendBilling?: number;
     /** amortized variant of spendBilling */
-    spendBillingAmortized?: number;
+    spendBillingAmortized?: number | null;
     /** previous-window baseline aligned with spendBilling semantics */
     spendPreviousBilling?: number;
-    spendPreviousBillingAmortized?: number;
+    spendPreviousBillingAmortized?: number | null;
     /** total spend over the last 30 days */
     spend30Days?: number;
-    spend30DaysAmortized?: number;
+    spend30DaysAmortized?: number | null;
     /** billing-backed portion of the rolling 30-day billed and amortized baselines */
     spend30DaysActual?: number;
-    spend30DaysAmortizedActual?: number;
+    spend30DaysAmortizedActual?: number | null;
     /** estimated-only portion of the rolling 30-day billed and amortized baselines */
     spend30DaysEstimated?: number;
-    spend30DaysAmortizedEstimated?: number;
+    spend30DaysAmortizedEstimated?: number | null;
     /** total spend over the previous 30 days */
     spendPrevious30Days?: number;
-    spendPrevious30DaysAmortized?: number;
+    spendPrevious30DaysAmortized?: number | null;
     /** total spend over the last 7 days */
     spend7Days?: number;
-    spend7DaysAmortized?: number;
+    spend7DaysAmortized?: number | null;
     /** total spend over the previous 7 days */
     spendPrevious7Days?: number;
-    spendPrevious7DaysAmortized?: number;
+    spendPrevious7DaysAmortized?: number | null;
 }
 export interface ResourceByLocation {
     location: string;
@@ -34,28 +34,28 @@ export interface ResourceByLocation {
     /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
     spendBilling?: number;
     /** amortized variant of spendBilling */
-    spendBillingAmortized?: number;
+    spendBillingAmortized?: number | null;
     /** previous-window baseline aligned with spendBilling semantics */
     spendPreviousBilling?: number;
-    spendPreviousBillingAmortized?: number;
+    spendPreviousBillingAmortized?: number | null;
     /** total spend over the last 30 days */
     spend30Days?: number;
-    spend30DaysAmortized?: number;
+    spend30DaysAmortized?: number | null;
     /** billing-backed portion of the rolling 30-day billed and amortized baselines */
     spend30DaysActual?: number;
-    spend30DaysAmortizedActual?: number;
+    spend30DaysAmortizedActual?: number | null;
     /** estimated-only portion of the rolling 30-day billed and amortized baselines */
     spend30DaysEstimated?: number;
-    spend30DaysAmortizedEstimated?: number;
+    spend30DaysAmortizedEstimated?: number | null;
     /** total spend over the previous 30 days */
     spendPrevious30Days?: number;
-    spendPrevious30DaysAmortized?: number;
+    spendPrevious30DaysAmortized?: number | null;
     /** total spend over the last 7 days */
     spend7Days?: number;
-    spend7DaysAmortized?: number;
+    spend7DaysAmortized?: number | null;
     /** total spend over the previous 7 days */
     spendPrevious7Days?: number;
-    spendPrevious7DaysAmortized?: number;
+    spendPrevious7DaysAmortized?: number | null;
 }
 export interface ResourceTypeReference {
     type: string;

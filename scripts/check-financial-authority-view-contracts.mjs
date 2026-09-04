@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   AZURE_BILLED_ALL_CHARGES_POLICY_V1,
+  AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1,
   canonicalizeFinancialEvidenceAssessmentIdentityV1,
   canonicalizeFinancialEvidenceBundleIdentityV1,
   canonicalizeFinancialProjectionIdentityV1,
@@ -1463,6 +1464,26 @@ assert.equal(
   isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1(boundedSavingsProjection, boundedFinancialProjection),
   true,
   'bounded savings and current-spend resource projections bind one-to-one'
+);
+const excludedMarketplaceBoundedSavingsProjection = projectFinancialSavingsResourceV1(
+  availableSavingsAuthority,
+  boundedFinancialProjection,
+  projectedAuthority,
+  AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1.policyRef
+);
+assert.equal(
+  isFinancialSavingsResourceProjectionV1(excludedMarketplaceBoundedSavingsProjection),
+  true,
+  'bounded resource savings supports a registered Marketplace-excluded projection'
+);
+assert.deepEqual(
+  excludedMarketplaceBoundedSavingsProjection.coordinates
+    .filter(coordinate => coordinate.status !== 'unavailable')
+    .map(coordinate => coordinate.chargeInclusionPolicyRef),
+  excludedMarketplaceBoundedSavingsProjection.coordinates
+    .filter(coordinate => coordinate.status !== 'unavailable')
+    .map(() => AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1.policyRef),
+  'bounded resource savings records the exact policy applied to allocation money'
 );
 const invalidBoundedSavingsProjection = structuredClone(boundedSavingsProjection);
 if (invalidBoundedSavingsProjection.coordinates[0].status !== 'unavailable') {

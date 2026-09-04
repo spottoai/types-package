@@ -1,4 +1,5 @@
 export * from './financialScopeEvidence';
+export * from './financialEvidenceCoverage';
 export * from './financialScopeBaseline';
 export * from './financialScopeBaselineIdentity';
 export * from './financialScopeBaselineValidation';

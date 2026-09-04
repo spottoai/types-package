@@ -30,6 +30,7 @@ const MAX_SOURCE_KIND_LENGTH = 128;
 const MAX_IDENTITY_LENGTH = 256;
 const SHA256_ID = /^sha256:[0-9a-f]{64}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const ESTIMATE_REASONS = new Set(['billing-lag', 'billing-unavailable-sponsorship', 'other']);
 const EVIDENCE_ROLES = new Set([
   'billing',
   'billing-currency-declaration',
@@ -287,14 +288,15 @@ const isComponent = (
   value: unknown,
   scopeId: string,
   coverageIds: Set<string>,
-  accountingCurrencyCode: string
+  accountingCurrencyCode: string,
+  estimateLens: unknown
 ): value is FinancialOwnerBaselineComponentV2 => {
   if (
     !isRecord(value) ||
     !hasExactFields(
       value,
       ['componentId', 'billableIdentity', 'ownerScopeId', 'chargeClassification', 'amount', 'evidenceRefIds', 'coverageIds'],
-      ['quantity', 'effectiveRate']
+      ['estimateReason', 'quantity', 'effectiveRate']
     ) ||
     typeof value.componentId !== 'string' ||
     !SHA256_ID.test(value.componentId) ||
@@ -303,6 +305,8 @@ const isComponent = (
     typeof value.chargeClassification !== 'string' ||
     !CHARGE_CLASSIFICATIONS.has(value.chargeClassification) ||
     !isCanonicalExactMoney({ amount: value.amount, currencyCode: 'AUD' }) ||
+    (value.estimateReason !== undefined && (typeof value.estimateReason !== 'string' || !ESTIMATE_REASONS.has(value.estimateReason))) ||
+    (estimateLens === 'actual-only' && value.estimateReason !== undefined) ||
     !isHashArray(value.evidenceRefIds) ||
     !isHashArray(value.coverageIds) ||
     !value.coverageIds.every(id => coverageIds.has(id))
@@ -393,7 +397,13 @@ const isIdentityPreimage = (value: unknown): value is FinancialScopeBaselineIden
     const coverageIds = new Set((value.period as FinancialBaselinePeriodV2).coverage.map(item => item.coverageId));
     return (
       value.components.every(component =>
-        isComponent(component, String(value.scopeId), coverageIds, String((value.accountingCurrency as JsonRecord).currencyCode))
+        isComponent(
+          component,
+          String(value.scopeId),
+          coverageIds,
+          String((value.accountingCurrency as JsonRecord).currencyCode),
+          value.estimateLens
+        )
       ) && new Set(value.components.map(component => component.componentId)).size === value.components.length
     );
   }

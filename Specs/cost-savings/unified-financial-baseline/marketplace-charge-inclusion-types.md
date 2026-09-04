@@ -13,6 +13,10 @@ Required contracts are `FinancialChargeSourceV1`, `FinancialChargeRecurrenceV1`,
 
 The shared Kernel accepts owner/residual baselines plus matching charge compositions. It rejects aggregate-only filtering, mixed policies, missing/multiple compositions, component drift, currency/basis/lens/period mismatch, and non-reconciliation. Unknown source is included by all-charge and withheld with a partial result by excluding-Marketplace. Analytics points distinguish total observed, forecast-eligible, one-time, and unknown recurrence.
 
+Financial Savings surface and bounded-resource projections apply the same registered policy to canonical allocation evidence. An allocation is included only when every affected billable component is included by the policy, excluded only when every affected component is excluded, and unavailable when the component set is missing, unknown, or crosses included/excluded sources. The Kernel never apportions one reconciled Savings delta across charge sources. A Marketplace-only allocation is omitted from the excluded projection; a mixed-source allocation makes that Recommendation partial; unknown-source current spend makes the policy-bound coordinate unavailable.
+
+Cost Tree transport carries `chargeContext` for the current-period contribution and `chargeContextPrevious` for the comparison-period contribution. They are independent evidence. A consumer cannot reuse current source classification for non-zero previous money when the comparison context is absent.
+
 The shared display Kernel binds an immutable daily analytics input to one exact current-spend composition and projects last 7 days, rolling 30 days, rolling 90 days, and trailing 12 calendar months. It owns exact-decimal totals, known-day averages, UTC calendar boundaries, partial current-month handling, missing-history reason codes, and available/partial/unavailable state. Consumers may convert the exact result for chart rendering but may not recalculate the money.
 
 Acceptance is the parent golden corpus, focused contract tests, negative mutations, packed exports, and browser/Node byte parity.

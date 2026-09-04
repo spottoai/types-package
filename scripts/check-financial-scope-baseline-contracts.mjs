@@ -290,9 +290,27 @@ const resignOwnerIdentity = value => {
   const { status: _status, baselineId: _baselineId, total: _total, reconciliation: _reconciliation, ...identity } = value;
   value.baselineId = `sha256:${createHash('sha256').update(canonicalizeValidatedFinancialScopeBaselineIdentityV2(identity)).digest('hex')}`;
 };
+const estimatedOwner = structuredClone(owner);
+estimatedOwner.estimateLens = 'estimates-only';
+estimatedOwner.components[0].estimateReason = 'billing-unavailable-sponsorship';
+resignOwnerIdentity(estimatedOwner);
+assert.equal(
+  isFinancialScopeBaselineEnvelopeV2(estimatedOwner),
+  true,
+  'An estimated owner baseline preserves its bounded estimate reason.'
+);
 rejectOwner(value => {
   value.baselineId = `sha256:${'f'.repeat(64)}`;
 }, 'A forged owner baseline ID must fail closed.');
+rejectOwner(value => {
+  value.components[0].estimateReason = 'billing-unavailable-sponsorship';
+  resignOwnerIdentity(value);
+}, 'An actual-only component cannot claim an estimate reason.');
+rejectOwner(value => {
+  value.estimateLens = 'estimates-only';
+  value.components[0].estimateReason = 'unsupported';
+  resignOwnerIdentity(value);
+}, 'An estimated component cannot carry an unknown estimate reason.');
 rejectOwner(value => {
   value.components[0].ownerScopeId = '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm-2';
 }, 'A component cannot be owned by another scope.');

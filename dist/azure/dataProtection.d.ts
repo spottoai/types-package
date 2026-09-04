@@ -37,12 +37,12 @@ export interface DataProtectionBillingMeterEvidence {
     serviceTier?: string;
     resourceGuid?: string;
     cost?: number;
-    costAmortized?: number;
+    costAmortized?: number | null;
     date?: number;
 }
 export interface DataProtectionCostAmount {
     amount?: number;
-    amortizedAmount?: number;
+    amortizedAmount?: number | null;
     scope: DataProtectionBackupCostScope;
     confidence: DataProtectionCostConfidence;
     sourceArtifactPath: typeof DATA_PROTECTION_BILLING_SOURCE_FILE;
@@ -86,7 +86,7 @@ export interface DataProtectionVaultCostSummary {
     currencyCode?: string;
     currencySymbol?: string;
     actualCostLast30Days?: number;
-    actualAmortizedCostLast30Days?: number;
+    actualAmortizedCostLast30Days?: number | null;
     allocatedCostLast30Days?: number;
     allocationRule?: DataProtectionCostAllocationRule;
     confidence: DataProtectionCostConfidence;
@@ -101,7 +101,7 @@ export interface DataProtectionCostSummary {
     };
     totals: {
         actualCostLast30Days?: number;
-        actualAmortizedCostLast30Days?: number;
+        actualAmortizedCostLast30Days?: number | null;
         allocatedCostLast30Days?: number;
         estimatedMonthlyCostForUnprotected?: number;
     };

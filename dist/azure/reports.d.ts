@@ -21,9 +21,9 @@ export interface DecompositionTreeNode {
     /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
     name: string;
     cost: number;
-    costAmortized?: number;
+    costAmortized?: number | null;
     costPrevious?: number;
-    costAmortizedPrevious?: number;
+    costAmortizedPrevious?: number | null;
     /** e.g., 80.5 (for 80.5%) */
     percentageOfTotal: number;
     /** Absolute change from previous period */
@@ -33,9 +33,9 @@ export interface DecompositionTreeNode {
     children?: DecompositionTreeNode[];
     /** Total spend at this level (for percentage calculation) */
     totalSpend?: number;
-    totalSpendAmortized?: number;
+    totalSpendAmortized?: number | null;
     totalSpendPrevious?: number;
-    totalSpendAmortizedPrevious?: number;
+    totalSpendAmortizedPrevious?: number | null;
     displayName?: string;
     nodePath?: string;
     expanded?: boolean;
@@ -59,7 +59,10 @@ export interface DecompositionTreeNode {
     tags?: Record<string, string>;
     spottoTags?: Tags;
     resourceId?: string;
+    /** Billing-source facts for the current period represented by cost. */
     chargeContext?: BillingChargeContext;
+    /** Billing-source facts for the comparison period represented by costPrevious. */
+    chargeContextPrevious?: BillingChargeContext;
     resourceLifecycle?: ResourceLifecycleContext;
     composition?: CostComposition;
 }
@@ -75,7 +78,7 @@ export interface MeterDetail {
     /** 12.721536 */
     cost: number;
     /** 12.721536 */
-    costAmortized?: number;
+    costAmortized?: number | null;
     /** cost / quantity = rate per unit */
     unitCost?: number;
 }
@@ -90,9 +93,9 @@ export interface DecompositionTree {
     };
     lastUpdated: string;
     totalSpend: number;
-    totalSpendAmortized?: number;
+    totalSpendAmortized?: number | null;
     totalSpendPrevious?: number;
-    totalSpendAmortizedPrevious?: number;
+    totalSpendAmortizedPrevious?: number | null;
     currency: string;
     /** Optional display symbol paired with currency evidence; never defaulted when unknown. */
     currencySymbol?: string;
@@ -249,9 +252,9 @@ export interface DecompositionTreeSummary {
     currency?: string;
     currencySymbol?: string;
     totalSpend?: number;
-    totalSpendAmortized?: number;
+    totalSpendAmortized?: number | null;
     totalSpendPrevious?: number;
-    totalSpendAmortizedPrevious?: number;
+    totalSpendAmortizedPrevious?: number | null;
     version?: string;
     entries: DecompositionTreeEntry[];
     lastUpdated: string;

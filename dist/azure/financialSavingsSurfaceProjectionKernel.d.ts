@@ -1,4 +1,5 @@
 import type { AzureResourcesView } from './views';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
 import { type FinancialSavingsSurfaceProjectionV1, type FinancialSavingsSurfaceV1 } from './financialSavingsSurfaceProjection';
 export declare class FinancialSavingsSurfaceProjectionError extends Error {
     constructor(message: string);
@@ -10,5 +11,5 @@ export declare const projectFinancialSavingsSurfaceResourceQueryV1: (source: Fin
  * It partitions canonical allocation amounts for display and never recalculates
  * scenario economics from legacy recommendation or resource fields.
  */
-export declare const buildFinancialSavingsSurfaceProjectionV1: (resourcesView: AzureResourcesView, surface: FinancialSavingsSurfaceV1) => FinancialSavingsSurfaceProjectionV1;
+export declare const buildFinancialSavingsSurfaceProjectionV1: (resourcesView: AzureResourcesView, surface: FinancialSavingsSurfaceV1, chargeInclusionPolicyRef?: FinancialChargeInclusionPolicyRefV2) => FinancialSavingsSurfaceProjectionV1;
 //# sourceMappingURL=financialSavingsSurfaceProjectionKernel.d.ts.map

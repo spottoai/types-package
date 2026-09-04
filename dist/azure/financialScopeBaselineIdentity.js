@@ -90,6 +90,7 @@ const canonicalComponent = (component) => ({
     ownerScopeId: component.ownerScopeId,
     chargeClassification: component.chargeClassification,
     amount: component.amount,
+    ...(component.estimateReason === undefined ? {} : { estimateReason: component.estimateReason }),
     evidenceRefIds: [...component.evidenceRefIds].sort(compareCodePoints),
     coverageIds: [...component.coverageIds].sort(compareCodePoints),
     ...(component.quantity === undefined ? {} : { quantity: component.quantity }),

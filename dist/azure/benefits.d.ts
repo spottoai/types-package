@@ -142,7 +142,7 @@ export interface IEffectiveSavingsRateSummary {
     windowEnd?: string;
     odeCost?: number;
     actualCost?: number;
-    amortizedCost?: number;
+    amortizedCost?: number | null;
     esrPercent?: number;
     odeSource?: OdeSource;
     esrStatus?: EsrStatus;

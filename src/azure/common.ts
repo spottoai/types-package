@@ -13,7 +13,7 @@ export interface MonthSummaryEntry {
   /** sum of actual cost for the month */
   cost?: number;
   /** sum of costAmortized for the month */
-  costAmortized?: number;
+  costAmortized?: number | null;
   /** YYYY-MM format - start date of billing period */
   startDate?: string;
   /** YYYY-MM format - end date of billing period */
@@ -29,13 +29,13 @@ export interface ResourceCostType {
   /** Actual cost, when available (e.g. 100). */
   cost?: number;
   /** Amortized cost, when available (e.g. 100). */
-  costAmortized?: number;
+  costAmortized?: number | null;
   /** Optional classification for non-usage cost shown in dashboards. */
   costKind?: 'usage' | 'commitment-purchase' | 'mixed';
   /** Portion of cost attributable to commitment purchases such as RI or savings plan orders. */
   commitmentPurchaseCost?: number;
   /** Portion of amortized cost attributable to commitment purchases such as RI or savings plan orders. */
-  commitmentPurchaseCostAmortized?: number;
+  commitmentPurchaseCostAmortized?: number | null;
 }
 
 export interface MonthSummary {
@@ -50,11 +50,11 @@ export interface DailySummaryEntry {
   /** sum of actual cost for the day */
   cost?: number;
   /** sum of costAmortized for the day */
-  costAmortized?: number;
+  costAmortized?: number | null;
   /** Portion of the day's cost attributable to commitment purchases such as RI or savings plan orders. */
   commitmentPurchaseCost?: number;
   /** Portion of the day's amortized cost attributable to commitment purchases such as RI or savings plan orders. */
-  commitmentPurchaseCostAmortized?: number;
+  commitmentPurchaseCostAmortized?: number | null;
   /** Top resources by cost */
   resourceTypes: ResourceCostType[];
   composition?: CostComposition;

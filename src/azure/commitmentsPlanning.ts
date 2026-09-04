@@ -8,6 +8,7 @@ import type {
   IBenefitWeightedUtilizationAggregate,
 } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
+import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline.js';
 
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
 
@@ -266,6 +267,11 @@ export interface CommitmentsResourceCoverageItem {
   benefitIds: string[];
   benefitNames: string[];
   basis?: BenefitCostBasis;
+  /** Charge-source policy applied to every monetary coverage field on this row. */
+  chargeInclusionPolicyRef?: FinancialChargeInclusionPolicyRefV2;
+  /** Partial means unknown-source monetary evidence was withheld from this row. */
+  chargeSelectionStatus?: 'available' | 'partial';
+  withheldUnknownCost?: number;
   coveredQuantity?: number;
   eligibleQuantity?: number;
   coveredCost?: number;

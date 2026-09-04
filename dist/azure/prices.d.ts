@@ -1,7 +1,7 @@
 import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
-import type { CostBasis, CostComposition } from './costComposition.js';
+import type { CostBasis, CostComposition, CostEstimateReason } from './costComposition.js';
 export type ResourceCostSource = SpendDataSource;
 export type CostSourceConfidence = 'high' | 'unknown';
 /** Calendar used to interpret a financial date-only value. */
@@ -25,9 +25,9 @@ export interface CostDetails {
     /** the total amount spend on the resource over the previous 30 days */
     totalSpend30DaysPrevious?: number;
     /** the total amount spend on the resource over the last 30 days, taking into account reserved instances and savings plans */
-    totalSpend30DaysAmortized?: number;
+    totalSpend30DaysAmortized?: number | null;
     /** the total amount spend on the resource over the previous 30 days, taking into account reserved instances and savings plans */
-    totalSpend30DaysAmortizedPrevious?: number;
+    totalSpend30DaysAmortizedPrevious?: number | null;
     retailPrices?: AzurePrice[];
 }
 export type BusinessHoursEstimateSource = 'company-business-hours' | 'fallback-business-hours-only';
@@ -101,9 +101,9 @@ export interface CostSummaryDetails {
     /** Total cost in the previous 30 days */
     totalPrevious?: number;
     /** Last 30 days, taking into account reserved instances and savings plans */
-    amortizedTotal?: number;
+    amortizedTotal?: number | null;
     /** Total cost in the previous 30 days, taking into account reserved instances and savings plans */
-    amortizedTotalPrevious?: number;
+    amortizedTotalPrevious?: number | null;
     /** Explicit previous-period evidence state by basis; absence means legacy/unknown. */
     previousPeriodAvailability?: Partial<Record<CostBasis, {
         status: 'available';
@@ -151,8 +151,8 @@ export interface AzureResourceCostPeriodsCatalog {
 export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
     resourceId: string;
     total: number;
-    /** Omitted when the period lacks complete amortized-basis evidence. */
-    amortizedTotal?: number;
+    /** Null or omitted when the period lacks complete amortized-basis evidence. */
+    amortizedTotal?: number | null;
     items: ResourceCostSummary[];
     billingActualThroughDate?: number;
     estimationCutoffStartDate?: number;
@@ -188,8 +188,8 @@ export interface ResourceCostSummary {
     /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range */
     spend: number;
     /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range, taking into account reserved instances and savings plans */
-    /** Omitted when this row lacks amortized-basis evidence. */
-    spendAmortized?: number;
+    /** Null or omitted when this row lacks amortized-basis evidence. */
+    spendAmortized?: number | null;
     /** e.g. 217.21 (rounded to 2 decimal places) */
     quantity: number;
     /**
@@ -228,9 +228,10 @@ export interface ResourceCostSummary {
     costSourceDetail?: string;
     spendActual?: number;
     spendEstimated?: number;
-    spendAmortizedActual?: number;
-    spendAmortizedEstimated?: number;
+    spendAmortizedActual?: number | null;
+    spendAmortizedEstimated?: number | null;
     /** Explainability metadata for estimated/blended rows */
+    estimateReason?: CostEstimateReason;
     estimationMethod?: string;
     estimatedDaysSource?: 'metrics' | 'ma7' | 'ma14' | 'ma' | string;
     pricingSource?: 'billing' | 'retail' | 'manual' | string;
@@ -391,7 +392,7 @@ export interface ResourceSpend {
     /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
     cost: number;
     /** the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account) */
-    costAmortized?: number;
+    costAmortized?: number | null;
     quantity: number;
     date?: number;
     /** Calendar basis for a date-only row. New derived rows should provide this. */
@@ -411,6 +412,8 @@ export interface ResourceSpend {
     serviceName: string;
     /** Azure Cost Management publisher classification, for example Marketplace. */
     publisherType?: string;
+    /** Why this row is estimated instead of backed by provider billing evidence. */
+    estimateReason?: CostEstimateReason;
     meter: string;
     partNumber?: string;
     serviceTier: string;
@@ -447,6 +450,6 @@ export interface AzureRetailPricingEvidence {
 export interface MiscCost {
     spendSummary?: ResourceSpend[];
     totalSpend30Days?: number;
-    totalSpend30DaysAmortized?: number;
+    totalSpend30DaysAmortized?: number | null;
 }
 //# sourceMappingURL=prices.d.ts.map

@@ -19,6 +19,7 @@ const node: DecompositionTreeNode = {
   percentageOfTotal: 100,
   totalSpend: 613.2,
   chargeContext: marketplaceCharge,
+  chargeContextPrevious: { source: 'azure', cadence: 'daily' },
   resourceLifecycle: lifecycle,
 };
 
