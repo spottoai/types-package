@@ -1,8 +1,16 @@
 /** Common AI interfaces shared between frontend and backend */
 
 import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
+import type {
+  AIChatWorkspaceArtifact,
+  AIChatWorkspaceArtifactDataMode,
+  AIChatWorkspaceArtifactFailureReason,
+  AIChatWorkspaceArtifactKind,
+  AIChatWorkspaceArtifactPlacement,
+} from './workspaceArtifacts.js';
 
 export * from './grounding.js';
+export * from './workspaceArtifacts.js';
 
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 
@@ -1107,6 +1115,8 @@ export interface AIChatTerminalSnapshot {
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+  /** Optional while pre-workspace producers and consumers drain. */
+  workspaceArtifacts?: AIChatWorkspaceArtifact[];
 }
 
 /**
@@ -1136,6 +1146,9 @@ export type AIChatCanonicalStreamEventName =
   | 'formatterCompleted'
   | 'message'
   | 'citation'
+  | 'artifactStarted'
+  | 'artifactCompleted'
+  | 'artifactFailed'
   | 'error'
   | 'ping';
 
@@ -1293,6 +1306,27 @@ export interface AIChatCitationEvent extends AIChatStreamEventBase {
   citation: AIChatCitation;
 }
 
+export interface AIChatWorkspaceArtifactStartedEvent extends AIChatStreamEventBase {
+  event: 'artifactStarted';
+  artifactId: string;
+  kind: AIChatWorkspaceArtifactKind;
+  dataMode: AIChatWorkspaceArtifactDataMode;
+  title: string;
+  placement: AIChatWorkspaceArtifactPlacement;
+}
+
+export interface AIChatWorkspaceArtifactCompletedEvent extends AIChatStreamEventBase {
+  event: 'artifactCompleted';
+  artifactId: string;
+  artifact: AIChatWorkspaceArtifact;
+}
+
+export interface AIChatWorkspaceArtifactFailedEvent extends AIChatStreamEventBase {
+  event: 'artifactFailed';
+  artifactId: string;
+  reasonCode: AIChatWorkspaceArtifactFailureReason;
+}
+
 export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
   event: 'runCompleted';
   run: AIChatRunState;
@@ -1364,6 +1398,9 @@ export type AIChatCanonicalStreamEvent =
   | AIChatFormatterCompletedEvent
   | AIChatMessageEvent
   | AIChatCitationEvent
+  | AIChatWorkspaceArtifactStartedEvent
+  | AIChatWorkspaceArtifactCompletedEvent
+  | AIChatWorkspaceArtifactFailedEvent
   | AIChatErrorEvent
   | AIChatPingEvent;
 

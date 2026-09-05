@@ -9,6 +9,7 @@
     "src/accounts/azureManualOnboarding.contracts.spec.ts",
     "src/accounts/azureSpSetup.contracts.spec.ts",
     "src/ai/ai.contracts.spec.ts",
+    "src/ai/workspaceArtifacts.contracts.spec.ts",
     "src/aws/aws.contracts.spec.ts",
     "src/aws/estates.contracts.spec.ts",
     "src/aws/organizationCommitments.contracts.spec.ts",
