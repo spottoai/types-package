@@ -8,6 +8,7 @@ import {
   ENVIRONMENT_PILLARS_V1,
   buildEnvironmentLogicalArtifactReferenceV1,
   buildEnvironmentLogicalResourceReferenceV1,
+  deriveEnvironmentAzureResourceTypeV1,
   buildEnvironmentScopeQualifiedSubjectV1,
   buildEnvironmentTreeDigestPreimageV1,
   isAIChatGroundingSummary,
@@ -102,17 +103,32 @@ assert.throws(
   'logical references reject decoded payloads over 4 KiB'
 );
 
-const resourceId = '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1';
+const resourceId = '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Web/serverFarms/plan-1';
 const resourceReference = buildEnvironmentLogicalResourceReferenceV1(resourceId);
 assert.deepEqual(parseEnvironmentLogicalResourceReferenceV1(resourceReference), { kind: 'resource', resourceId });
 assert.equal(isEnvironmentLogicalResourceReferenceV1(resourceReference), true);
+assert.equal(deriveEnvironmentAzureResourceTypeV1(resourceId), 'microsoft.web/serverfarms');
+assert.equal(
+  deriveEnvironmentAzureResourceTypeV1(
+    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Storage/storageAccounts/providers/blobServices/default'
+  ),
+  'microsoft.storage/storageaccounts/blobservices',
+  'a resource name equal to providers is not treated as an extension-resource boundary'
+);
+assert.equal(
+  deriveEnvironmentAzureResourceTypeV1(
+    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1/providers/Microsoft.Insights/diagnosticSettings/default'
+  ),
+  'microsoft.insights/diagnosticsettings',
+  'an extension-resource provider boundary selects the extension resource type'
+);
 for (const invalidResourceId of [
   '../resource',
   'C:\\resource',
   `${resourceId}?sig=secret`,
   `${resourceId}#fragment`,
   `${resourceId}%2fsecret`,
-  resourceId.replace('/vm-1', '/..'),
+  resourceId.replace('/plan-1', '/..'),
 ]) {
   assert.throws(() => buildEnvironmentLogicalResourceReferenceV1(invalidResourceId));
 }
@@ -301,6 +317,17 @@ assert.equal(
   }),
   false,
   'affected Azure resource types must be canonical lower-case values'
+);
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    recommendations: {
+      ...projection.recommendations,
+      items: [{ ...projection.recommendations.items[0], affectedResourceTypes: ['microsoft.compute/virtualmachines'] }],
+    },
+  }),
+  false,
+  'affected Azure resource types must exactly match resource references'
 );
 assert.equal(
   isEnvironmentSubscriptionProjectionV1({

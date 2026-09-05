@@ -18,6 +18,7 @@ import {
   type EnvironmentDocumentDescriptorV1,
   type EnvironmentFindingV1,
   type EnvironmentMoneyValueV1,
+  type EnvironmentLogicalResourceReferenceV1,
   type EnvironmentPillarSummaryV1,
   type EnvironmentPillarV1,
   type EnvironmentProjectionWarningV1,
@@ -44,7 +45,12 @@ import {
   isSourceIdentity,
   utf8ByteLength,
 } from './internal.js';
-import { isEnvironmentLogicalEvidenceReferenceV1, isEnvironmentLogicalResourceReferenceV1 } from './references.js';
+import {
+  deriveEnvironmentAzureResourceTypeV1,
+  isEnvironmentLogicalEvidenceReferenceV1,
+  isEnvironmentLogicalResourceReferenceV1,
+  parseEnvironmentLogicalResourceReferenceV1,
+} from './references.js';
 
 const DOCUMENT_NAMES = new Set<string>(ENVIRONMENT_DOCUMENT_NAMES_V1);
 const ARTIFACT_KINDS = new Set<string>(ENVIRONMENT_ARTIFACT_KINDS_V1);
@@ -88,7 +94,7 @@ const isReferenceArray = (value: unknown): boolean =>
   value.every(isEnvironmentLogicalEvidenceReferenceV1) &&
   new Set(value).size === value.length;
 
-const isResourceReferenceArray = (value: unknown): boolean =>
+const isResourceReferenceArray = (value: unknown): value is EnvironmentLogicalResourceReferenceV1[] =>
   Array.isArray(value) &&
   value.length <= ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&
   value.every(isEnvironmentLogicalResourceReferenceV1) &&
@@ -106,6 +112,20 @@ const isAzureResourceTypeArray = (value: unknown): value is string[] =>
   ) &&
   new Set(value).size === value.length &&
   value.every((item, index) => index === 0 || value[index - 1]! < item);
+
+const resourceTypesMatchReferences = (resourceTypes: readonly string[], resourceReferences: readonly unknown[]): boolean => {
+  const derivedTypes = Array.from(
+    new Set(
+      resourceReferences.flatMap(reference => {
+        const parsed = parseEnvironmentLogicalResourceReferenceV1(reference);
+        if (parsed === null) return [];
+        const resourceType = deriveEnvironmentAzureResourceTypeV1(parsed.resourceId);
+        return resourceType === null ? [] : [resourceType];
+      })
+    )
+  ).sort();
+  return derivedTypes.length === resourceTypes.length && derivedTypes.every((resourceType, index) => resourceTypes[index] === resourceType);
+};
 
 const isPercentage = (value: unknown): value is string => typeof value === 'string' && DECIMAL_PATTERN.test(value) && Number(value) <= 100;
 
@@ -348,6 +368,7 @@ const isRecommendation = (value: unknown): value is EnvironmentRecommendationV1 
   (value.affectedResources === undefined || isEnvironmentCardinalityV1(value.affectedResources)) &&
   (value.potentialSavings === undefined || isSavingsMoney(value.potentialSavings)) &&
   isResourceReferenceArray(value.resourceReferences) &&
+  resourceTypesMatchReferences(value.affectedResourceTypes, value.resourceReferences) &&
   isReferenceArray(value.sourceReferences);
 
 const isChange = (value: unknown): value is EnvironmentChangeV1 =>

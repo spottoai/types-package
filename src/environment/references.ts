@@ -189,6 +189,45 @@ export const parseEnvironmentLogicalResourceReferenceV1 = (value: unknown): Pars
   return { kind: 'resource', resourceId };
 };
 
+/**
+ * Derives the canonical Azure resource type from a canonical ARM resource ID.
+ * Resource names are consumed structurally, so a resource named `providers`
+ * cannot be mistaken for an extension-resource provider boundary.
+ */
+export const deriveEnvironmentAzureResourceTypeV1 = (canonicalAzureResourceId: string): string | null => {
+  if (!isCanonicalAzureResourceId(canonicalAzureResourceId)) return null;
+
+  const segments = canonicalAzureResourceId.toLowerCase().split('/').filter(Boolean);
+  const firstProviderIndex = segments.indexOf('providers');
+  if (firstProviderIndex < 0) return null;
+
+  let providerIndex = firstProviderIndex;
+  let namespace = segments[providerIndex + 1];
+  let typeSegments: string[] = [];
+  let index = providerIndex + 2;
+
+  while (namespace && index < segments.length) {
+    const typeOrProviderMarker = segments[index];
+    if (!typeOrProviderMarker) return null;
+
+    if (typeOrProviderMarker === 'providers') {
+      providerIndex = index;
+      namespace = segments[providerIndex + 1];
+      typeSegments = [];
+      index = providerIndex + 2;
+      continue;
+    }
+
+    typeSegments.push(typeOrProviderMarker);
+    if (segments[index + 1] === undefined) return null;
+    index += 2;
+  }
+
+  if (!namespace || typeSegments.length === 0) return null;
+  const resourceType = `${namespace}/${typeSegments.join('/')}`;
+  return [...resourceType].length <= ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars ? resourceType : null;
+};
+
 /** Parses either closed V1 logical evidence-reference kind. */
 export const parseEnvironmentLogicalEvidenceReferenceV1 = (value: unknown): ParsedEnvironmentLogicalEvidenceReferenceV1 | null =>
   parseEnvironmentLogicalArtifactReferenceV1(value) ?? parseEnvironmentLogicalResourceReferenceV1(value);
