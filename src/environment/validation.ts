@@ -94,6 +94,19 @@ const isResourceReferenceArray = (value: unknown): boolean =>
   value.every(isEnvironmentLogicalResourceReferenceV1) &&
   new Set(value).size === value.length;
 
+const AZURE_RESOURCE_TYPE_PATTERN = /^[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*(?:\/[a-z0-9][a-z0-9._-]*)*$/u;
+
+const isAzureResourceTypeArray = (value: unknown): value is string[] =>
+  Array.isArray(value) &&
+  value.length <= ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&
+  value.every(
+    item =>
+      isBoundedString(item, ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars, { trimmed: true, controls: true }) &&
+      AZURE_RESOURCE_TYPE_PATTERN.test(item)
+  ) &&
+  new Set(value).size === value.length &&
+  value.every((item, index) => index === 0 || value[index - 1]! < item);
+
 const isPercentage = (value: unknown): value is string => typeof value === 'string' && DECIMAL_PATTERN.test(value) && Number(value) <= 100;
 
 /** Validates one admitted environment pillar. */
@@ -320,12 +333,14 @@ const isRecommendation = (value: unknown): value is EnvironmentRecommendationV1 
   isRecord(value) &&
   hasExactKeys(
     value,
-    ['recommendationId', 'pillar', 'safeLabel', 'portalRoute', 'resourceReferences', 'sourceReferences'],
+    ['recommendationId', 'pillar', 'safeLabel', 'technicalName', 'affectedResourceTypes', 'portalRoute', 'resourceReferences', 'sourceReferences'],
     ['description', 'impact', 'effort', 'affectedResources', 'potentialSavings']
   ) &&
   isScopeIdentifier(value.recommendationId) &&
   isEnvironmentPillarV1(value.pillar) &&
   isSafeLabel(value.safeLabel) &&
+  isSafeLabel(value.technicalName) &&
+  isAzureResourceTypeArray(value.affectedResourceTypes) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
   (value.description === undefined || isCustomerString(value.description)) &&
   (value.impact === undefined || (typeof value.impact === 'string' && IMPACTS.has(value.impact))) &&

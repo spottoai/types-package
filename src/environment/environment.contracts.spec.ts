@@ -184,6 +184,8 @@ const projection = {
         recommendationId: 'recommendation-1',
         pillar: 'performance',
         safeLabel: 'Enable autoscale',
+        technicalName: 'Enable autoscale for eligible App Service plans',
+        affectedResourceTypes: ['microsoft.web/serverfarms'],
         portalRoute: '/company/company-1/recommendations',
         impact: 'high',
         effort: 'medium',

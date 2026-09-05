@@ -247,6 +247,8 @@ const projection = {
         recommendationId: 'recommendation-1',
         pillar: 'performance',
         safeLabel: 'Enable autoscale',
+        technicalName: 'Enable autoscale for eligible App Service plans',
+        affectedResourceTypes: ['microsoft.web/serverfarms'],
         portalRoute: '/company/company-1/recommendations',
         impact: 'high',
         effort: 'medium',
@@ -279,6 +281,26 @@ assert.equal(
   }),
   false,
   'legacy environment confidence percentages are rejected'
+);
+const { technicalName: _missingTechnicalName, ...recommendationWithoutTechnicalName } = projection.recommendations.items[0];
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    recommendations: { ...projection.recommendations, items: [recommendationWithoutTechnicalName] },
+  }),
+  false,
+  'recommendations require the canonical technical name'
+);
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    recommendations: {
+      ...projection.recommendations,
+      items: [{ ...projection.recommendations.items[0], affectedResourceTypes: ['Microsoft.Web/serverfarms'] }],
+    },
+  }),
+  false,
+  'affected Azure resource types must be canonical lower-case values'
 );
 assert.equal(
   isEnvironmentSubscriptionProjectionV1({

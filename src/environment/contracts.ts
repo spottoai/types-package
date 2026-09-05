@@ -284,7 +284,12 @@ export interface EnvironmentFindingV1 {
 export interface EnvironmentRecommendationV1 {
   recommendationId: string;
   pillar: EnvironmentPillarV1;
+  /** Customer-facing outcome or action label. */
   safeLabel: string;
+  /** Canonical source recommendation name used for precise technical retrieval and explanation. */
+  technicalName: string;
+  /** Canonical lower-case Azure resource types affected by the admitted resource subjects. */
+  affectedResourceTypes: string[];
   portalRoute: string;
   description?: string;
   impact?: EnvironmentImpactV1;
