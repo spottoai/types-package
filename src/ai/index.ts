@@ -824,12 +824,23 @@ export interface AIChatProgressEntry {
 
 export type AIChatApprovalState = 'pending' | 'approved' | 'rejected' | 'consumed' | 'expired' | 'completed' | 'failed';
 
+export interface AIChatApprovalActionPreview {
+  /** Normalized tool arguments as the server will execute them; credentials redacted, recipients and destinations visible. */
+  arguments: Record<string, unknown>;
+  /** The exact payload hash bound to this challenge; the server matches it before executing. */
+  payloadHash?: string;
+  /** True when the arguments were too large to show in full. */
+  truncated?: boolean;
+}
+
 export interface AIChatApprovalRecord {
   runId: string;
   challengeId: string;
   state: AIChatApprovalState;
   actionSummary: string;
   actionType?: string;
+  /** What the approver is actually approving. Present on approvalRequired/runPaused events. */
+  actionPreview?: AIChatApprovalActionPreview;
   requiredRole: string;
   riskLevel: 'low' | 'medium' | 'high';
   idempotencyKey: string;
@@ -1081,6 +1092,45 @@ export interface AIChatConversationFeedbackUpdateResponse {
   updatedAt: string;
 }
 
+/** Maximum length of the optional free-text comment attached to per-turn feedback. */
+export const AI_CHAT_TURN_FEEDBACK_COMMENT_MAX_LENGTH = 1000;
+
+/**
+ * Number of per-turn feedback records retained on a conversation. The conversation blob stays the
+ * authoritative record, so the newest records win once the bound is reached.
+ */
+export const AI_CHAT_TURN_FEEDBACK_MAX_RECORDS = 200;
+
+/**
+ * Durable per-question feedback for a single answered turn (review finding U-12).
+ *
+ * `turnId` is the public identifier used by the mutation endpoint and by the Portal, while
+ * `questionIndex` is the zero-based index of the user message the turn answered and `responseId`
+ * is retained as internal mapping metadata for transcript reconciliation.
+ */
+export interface AIChatTurnFeedback {
+  turnId: string;
+  questionIndex: number;
+  responseId?: string;
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+  submittedAt: string;
+  updatedAt: string;
+}
+
+export interface AIChatTurnFeedbackUpdateRequest {
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+}
+
+export interface AIChatTurnFeedbackUpdateResponse {
+  conversationId: string;
+  turnId: string;
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+  updatedAt: string;
+}
+
 export interface AIChatUsage {
   promptTokens: number;
   completionTokens: number;
@@ -1222,11 +1272,20 @@ export interface AIChatRoutingStartedEvent extends AIChatStreamEventBase {
 export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
   event: 'routingCompleted';
   path: AIOrchestrationPath;
-  confidence: number;
+  /**
+   * @deprecated Numeric routing confidence is no longer emitted on the client lane
+   * (architecture decision 16 - visible verified grounding without numeric confidence).
+   * It remains on the persisted orchestration artifacts and the audit artifact.
+   */
+  confidence?: number;
   domains?: AIRouterDomainScore[];
   missingInputs: string[];
   reasonCode?: AIReasonCode;
   whyThisPath?: string;
+  /**
+   * @deprecated No longer emitted on the client lane; kept for backwards compatibility with
+   * clients that still read it.
+   */
   analysisConfidence?: number;
   needsRetrieval?: boolean;
   selectedSkillPackIds?: AIChatSkillId[];

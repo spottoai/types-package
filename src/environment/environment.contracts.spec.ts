@@ -329,3 +329,52 @@ const tenantPointer = {
 
 void tenantProjection;
 void tenantPointer;
+
+// E-9: additive money semantics and the optional structured detail sections.
+const blendedObservedCost = {
+  amount: '19194.83',
+  currencyCode: 'NZD',
+  basis: 'amortized',
+  period: '2026-08-07/2026-09-05',
+  provenance: 'subscription-summary',
+  spendSource: 'blended',
+  spendSourceConfidence: 'unknown',
+  composition: { billingBacked: 1893652, estimated: 25831, minorUnitScale: 2, currencyCode: 'NZD' },
+} satisfies EnvironmentMoneyValueV1;
+const projectedSavings = {
+  amount: '314.20',
+  currencyCode: 'NZD',
+  basis: 'unknown',
+  period: 'monthly',
+  provenance: 'cost-savings-summary',
+  savingsAdditivity: 'scenario-non-additive',
+  savingsBasis: {
+    projection: 'projected-monthly',
+    observedPeriod: 'mixed_stable_and_legacy',
+    stableWindow: '2026-08-07/2026-09-02',
+    containsLegacySavings: true,
+  },
+} satisfies EnvironmentMoneyValueV1;
+// @ts-expect-error the spend-source union is closed.
+const invalidSpendSource: EnvironmentMoneyValueV1 = { ...blendedObservedCost, spendSource: 'billing-and-estimated' };
+// @ts-expect-error the savings projection union is closed.
+const invalidSavingsProjection: EnvironmentMoneyValueV1 = { ...projectedSavings, savingsBasis: { projection: 'annualised' } };
+
+const detailProjection = {
+  ...projection,
+  tagCoverage: {
+    coverage: completeCoverage,
+    resourceCount: 247,
+    taggedResourceCount: 131,
+    untaggedResourceCount: 116,
+    distinctTagKeyCount: 18,
+    topTagKeys: { items: [{ key: 'environment_class', safeLabel: 'environment_class', count: 125 }], totalCount: 18, includedCount: 1, truncated: true, continuationReference: artifactReference },
+    sourceReferences: [artifactReference],
+  },
+} satisfies EnvironmentSubscriptionProjectionV1;
+
+void blendedObservedCost;
+void projectedSavings;
+void invalidSpendSource;
+void invalidSavingsProjection;
+void detailProjection;

@@ -5,6 +5,12 @@ export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
   environmentIndexBytes: 8 * 1024,
   pillarDocumentBytes: 8 * 1024,
   boundedListItems: 50,
+  /**
+   * Row cap for the optional structured detail sections. Deliberately far below
+   * `boundedListItems`: the core lists already consume most of the projection byte budget,
+   * and a detail section is a summary, not an inventory.
+   */
+  sectionListItems: 10,
   customerStringScalars: 4096,
   safeLabelScalars: 512,
   scopeIdentifierScalars: 2048,
@@ -35,6 +41,9 @@ export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
   'subscription-monitor-alerts',
   'subscription-system-tracks',
   'subscription-metrics',
+  // API-issued evidence kind: a bounded projection of one compiled `projection.json` detail section
+  // (commitments, budgets, idle resources, ...). Never emitted by the compiler as a source reference.
+  'subscription-projection',
   'tenant-governance',
   'tenant-governance-access',
   'tenant-reservations',
@@ -119,6 +128,35 @@ export interface ParsedEnvironmentLogicalResourceReferenceV1 {
 
 export type ParsedEnvironmentLogicalEvidenceReferenceV1 = ParsedEnvironmentLogicalArtifactReferenceV1 | ParsedEnvironmentLogicalResourceReferenceV1;
 
+/** Whether an observed amount is billing-backed, estimated, or a blend of both. */
+export type EnvironmentSpendSourceV1 = 'billing' | 'estimated' | 'blended';
+
+export type EnvironmentSpendSourceConfidenceV1 = 'high' | 'medium' | 'low' | 'unknown';
+
+/** Producer projection rule behind a savings amount. */
+export type EnvironmentSavingsProjectionV1 = 'projected-monthly' | 'observed-period' | 'unknown';
+
+/**
+ * Split of one observed amount into its billing-backed and estimated parts. Minor units
+ * keep the split exact: `billingBacked / 10 ** minorUnitScale` is the major-unit amount.
+ */
+export interface EnvironmentMoneyCompositionV1 {
+  billingBacked: number;
+  estimated: number;
+  minorUnitScale: number;
+  currencyCode: string;
+}
+
+/** Canonical basis a savings amount was computed on, as published by the producer. */
+export interface EnvironmentSavingsBasisV1 {
+  projection: EnvironmentSavingsProjectionV1;
+  /** Producer observation-period label, for example `mixed_stable_and_legacy`. */
+  observedPeriod?: string;
+  /** Stable billing window the savings were computed over, `YYYY-MM-DD/YYYY-MM-DD`. */
+  stableWindow?: string;
+  containsLegacySavings?: boolean;
+}
+
 export interface EnvironmentMoneyValueV1 {
   amount: string;
   currencyCode: string;
@@ -126,6 +164,12 @@ export interface EnvironmentMoneyValueV1 {
   period: string;
   provenance: EnvironmentMoneyProvenanceV1;
   savingsAdditivity?: EnvironmentSavingsAdditivityV1;
+  /** Observed money only: how the producer sourced the amount. */
+  spendSource?: EnvironmentSpendSourceV1;
+  spendSourceConfidence?: EnvironmentSpendSourceConfidenceV1;
+  composition?: EnvironmentMoneyCompositionV1;
+  /** Savings money only: the producer projection rule and window behind the amount. */
+  savingsBasis?: EnvironmentSavingsBasisV1;
 }
 
 interface EnvironmentCoverageBaseV1 {
@@ -318,6 +362,136 @@ export interface EnvironmentProjectionWarningV1 {
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
+/** One labelled tally used by the optional detail sections. */
+export interface EnvironmentLabeledCountV1 {
+  key: string;
+  safeLabel: string;
+  count: number;
+}
+
+/** One named subject a detail section points at, with an optional canonical reference. */
+export interface EnvironmentSubjectReferenceV1 {
+  key: string;
+  safeLabel: string;
+  detail?: string;
+  resourceReference?: EnvironmentLogicalResourceReferenceV1;
+}
+
+export interface EnvironmentCommitmentPurchaseOptionV1 {
+  key: string;
+  safeLabel: string;
+  termMonths?: number;
+  estimatedMonthlySavings?: EnvironmentMoneyValueV1;
+}
+
+export interface EnvironmentCommitmentCoverageRowV1 {
+  key: string;
+  safeLabel: string;
+  detail?: string;
+  benefitLabels: string[];
+  resourceReference?: EnvironmentLogicalResourceReferenceV1;
+}
+
+/** Reservation and savings-plan utilisation, expiry, purchase and coverage evidence. */
+export interface EnvironmentCommitmentsSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  benefitCount?: number;
+  utilizationPercent30Day?: string;
+  utilizationPercent7Day?: string;
+  expiredCount?: number;
+  expiring90DayCount?: number;
+  expiring180DayCount?: number;
+  purchaseOptions: EnvironmentBoundedListV1<EnvironmentCommitmentPurchaseOptionV1>;
+  benefitCoverage: EnvironmentBoundedListV1<EnvironmentCommitmentCoverageRowV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentBudgetV1 {
+  key: string;
+  safeLabel: string;
+  period?: string;
+  amount?: EnvironmentMoneyValueV1;
+  currentSpend?: EnvironmentMoneyValueV1;
+  forecastSpend?: EnvironmentMoneyValueV1;
+  consumedPercent?: string;
+}
+
+export interface EnvironmentBudgetSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  budgets: EnvironmentBoundedListV1<EnvironmentBudgetV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Orphaned or idle resources named as their own finding class. */
+export interface EnvironmentIdleResourceSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  recommendationCount: number;
+  resourceCount: number;
+  monthlyWaste?: EnvironmentMoneyValueV1;
+  subjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentPublicIpExposureSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalCount: number;
+  assignedCount?: number;
+  unassignedCount?: number;
+  basicSkuCount?: number;
+  httpsExposedCount?: number;
+  rdpExposedCount?: number;
+  sshExposedCount?: number;
+  exposedSubjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  remediationOptions: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Key Vault metadata inspection coverage, including an authorization gap. */
+export interface EnvironmentSecretStoreCoverageSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  vaultCount: number;
+  inspectedVaultCount: number;
+  reasons: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentTagCoverageSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  resourceCount: number;
+  taggedResourceCount: number;
+  untaggedResourceCount: number;
+  distinctTagKeyCount: number;
+  topTagKeys: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentChangeSignalSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  windowDays: number;
+  changeCount: number;
+  materialChangeCount?: number;
+  securityRelevantCount?: number;
+  topOperations: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentHealthEventV1 {
+  key: string;
+  safeLabel: string;
+  severity: EnvironmentSeverityV1;
+  eventType?: string;
+  startedAt?: string;
+}
+
+export interface EnvironmentHealthEventSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalCount: number;
+  activeCount: number;
+  resolvedCount: number;
+  activeEvents: EnvironmentBoundedListV1<EnvironmentHealthEventV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
 export interface EnvironmentSubscriptionProjectionV1 {
   schemaVersion: 1;
   scope: EnvironmentScopeV1;
@@ -335,6 +509,19 @@ export interface EnvironmentSubscriptionProjectionV1 {
   recommendations: EnvironmentBoundedListV1<EnvironmentRecommendationV1>;
   changes: EnvironmentBoundedListV1<EnvironmentChangeV1>;
   warnings: EnvironmentBoundedListV1<EnvironmentProjectionWarningV1>;
+  /**
+   * Optional structured detail sections. Each is present only when the compiler admitted
+   * the source that carries it, and each states its own coverage so a consumer never reads
+   * an absent section as an empty estate.
+   */
+  commitments?: EnvironmentCommitmentsSectionV1;
+  budgets?: EnvironmentBudgetSectionV1;
+  idleResources?: EnvironmentIdleResourceSectionV1;
+  publicIpExposure?: EnvironmentPublicIpExposureSectionV1;
+  secretStoreCoverage?: EnvironmentSecretStoreCoverageSectionV1;
+  tagCoverage?: EnvironmentTagCoverageSectionV1;
+  changeSignals?: EnvironmentChangeSignalSectionV1;
+  healthEvents?: EnvironmentHealthEventSectionV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 

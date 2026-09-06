@@ -163,6 +163,38 @@ for (const invalidMoney of [
   assert.equal(isEnvironmentMoneyValueV1(invalidMoney), false);
 }
 
+// E-9: observed money may carry the producer spend-source semantics; savings money may carry
+// the producer savings basis. Both are additive and both stay on the side of money they
+// describe.
+const blendedObservedCost = {
+  ...observedCost,
+  spendSource: 'blended',
+  spendSourceConfidence: 'unknown',
+  composition: { billingBacked: 1893652, estimated: 25831, minorUnitScale: 2, currencyCode: 'NZD' },
+};
+const projectedSavings = {
+  ...potentialSavings,
+  savingsBasis: {
+    projection: 'projected-monthly',
+    observedPeriod: 'mixed_stable_and_legacy',
+    stableWindow: '2026-08-07/2026-09-02',
+    containsLegacySavings: true,
+  },
+};
+assert.equal(isEnvironmentMoneyValueV1(blendedObservedCost), true);
+assert.equal(isEnvironmentMoneyValueV1(projectedSavings), true);
+assert.equal(isEnvironmentMoneyValueV1({ ...observedCost, spendSource: 'estimated' }), true);
+for (const invalidSemantics of [
+  { ...blendedObservedCost, spendSource: 'billing-and-estimated' },
+  { ...blendedObservedCost, spendSourceConfidence: 'certain' },
+  { ...blendedObservedCost, composition: { ...blendedObservedCost.composition, currencyCode: 'USD' } },
+  { ...blendedObservedCost, composition: { ...blendedObservedCost.composition, billingBacked: 1893652.5 } },
+  { ...blendedObservedCost, composition: { billingBacked: 1, estimated: 1, minorUnitScale: 2 } },
+  { ...projectedSavings, savingsBasis: { projection: 'annualised' } },
+  { ...projectedSavings, savingsBasis: { projection: 'projected-monthly', stableWindow: '2026-08-07' } },
+]) {
+  assert.equal(isEnvironmentMoneyValueV1(invalidSemantics), false);
+}
 assert.equal(isEnvironmentCardinalityV1({ basis: 'exact', value: 0 }), true);
 assert.equal(isEnvironmentCardinalityV1({ basis: 'lower-bound', value: 1, reason: 'Category overlap is unavailable.' }), true);
 assert.equal(isEnvironmentCardinalityV1({ basis: 'unavailable', reason: 'The source has no subject identifiers.' }), true);
@@ -283,6 +315,126 @@ const projection = {
 };
 assert.equal(isEnvironmentSubscriptionProjectionV1(projection), true);
 assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, future: true }), false, 'projection rejects unknown keys');
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    costSummary: { ...projection.costSummary, observedCost: { ...blendedObservedCost, savingsBasis: projectedSavings.savingsBasis } },
+  }),
+  false,
+  'observed money never carries a savings basis'
+);
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    costSummary: { ...projection.costSummary, potentialSavings: { ...projectedSavings, spendSource: 'blended' } },
+  }),
+  false,
+  'savings money never carries a spend source'
+);
+
+
+// Optional detail sections: additive, self-describing, and bounded by their own row cap.
+const sectionList = items => ({ items, totalCount: items.length, includedCount: items.length, truncated: false });
+const detailSections = {
+  commitments: {
+    coverage: { status: 'partial', reason: 'Commitment planning sidecar: savings-plan inventory was unavailable.' },
+    benefitCount: 8,
+    utilizationPercent30Day: '98.56',
+    expiredCount: 43,
+    expiring90DayCount: 2,
+    purchaseOptions: sectionList([
+      { key: 'sp-1', safeLabel: 'Savings Plan P3Y hourly commitment', termMonths: 36, estimatedMonthlySavings: potentialSavings },
+    ]),
+    benefitCoverage: sectionList([
+      { key: 'vm-1', safeLabel: 'vm-1', detail: 'microsoft.compute/virtualmachines', benefitLabels: ['VM_RI_2026-01'], resourceReference },
+    ]),
+    sourceReferences: [],
+  },
+  budgets: {
+    coverage: { status: 'complete' },
+    budgets: sectionList([
+      { key: '2026-09', safeLabel: '2026-09-01 ~ 2026-09-30', period: '2026-09-01/2026-09-30', amount: observedCost, consumedPercent: '12.3' },
+    ]),
+    sourceReferences: [artifactReference],
+  },
+  idleResources: {
+    coverage: { status: 'complete' },
+    recommendationCount: 1,
+    resourceCount: 6,
+    monthlyWaste: potentialSavings,
+    subjects: sectionList([{ key: 'natgw-1', safeLabel: 'natgw-1', resourceReference }]),
+    sourceReferences: [artifactReference],
+  },
+  publicIpExposure: {
+    coverage: { status: 'complete' },
+    totalCount: 6,
+    httpsExposedCount: 3,
+    exposedSubjects: sectionList([{ key: 'pip-1', safeLabel: 'pip-1', detail: 'exposed https' }]),
+    remediationOptions: sectionList([{ key: 'front_with_app_gateway_waf', safeLabel: 'front_with_app_gateway_waf', count: 3 }]),
+    sourceReferences: [],
+  },
+  secretStoreCoverage: {
+    coverage: { status: 'unavailable', reason: 'Key Vault object metadata could not be listed for 15 of 15 vaults.' },
+    vaultCount: 15,
+    inspectedVaultCount: 0,
+    reasons: sectionList([{ key: 'metadata-list-not-authorized', safeLabel: 'metadata-list-not-authorized', count: 15 }]),
+    sourceReferences: [],
+  },
+  tagCoverage: {
+    coverage: { status: 'complete' },
+    resourceCount: 247,
+    taggedResourceCount: 131,
+    untaggedResourceCount: 116,
+    distinctTagKeyCount: 18,
+    topTagKeys: sectionList([{ key: 'environment_class', safeLabel: 'environment_class', count: 125 }]),
+    sourceReferences: [artifactReference],
+  },
+  changeSignals: {
+    coverage: { status: 'complete' },
+    windowDays: 30,
+    changeCount: 1038,
+    materialChangeCount: 415,
+    securityRelevantCount: 637,
+    topOperations: sectionList([{ key: 'List Storage Account Keys', safeLabel: 'List Storage Account Keys', count: 183 }]),
+    sourceReferences: [],
+  },
+  healthEvents: {
+    coverage: { status: 'complete' },
+    totalCount: 59,
+    activeCount: 25,
+    resolvedCount: 34,
+    activeEvents: sectionList([
+      { key: '9Q5T-8LZ', safeLabel: 'Network connectivity advisory', severity: 'medium', eventType: 'HealthAdvisory', startedAt: '2026-08-11T17:07:57.547Z' },
+    ]),
+    sourceReferences: [artifactReference],
+  },
+};
+assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, ...detailSections }), true, 'detail sections are additive');
+for (const [key, value] of Object.entries(detailSections)) {
+  assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, [key]: value }), true, `${key} validates on its own`);
+  assert.equal(isEnvironmentSubscriptionProjectionV1({ ...projection, [key]: { ...value, future: true } }), false, `${key} rejects unknown keys`);
+}
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    tagCoverage: { ...detailSections.tagCoverage, untaggedResourceCount: 0 },
+  }),
+  false,
+  'tag coverage counts must reconcile with the resource total'
+);
+const overCapRows = Array.from({ length: ENVIRONMENT_CONTRACT_LIMITS_V1.sectionListItems + 1 }, (_value, index) => ({
+  key: `operation-${index}`,
+  safeLabel: `Operation ${index}`,
+  count: 1,
+}));
+assert.equal(
+  isEnvironmentSubscriptionProjectionV1({
+    ...projection,
+    changeSignals: { ...detailSections.changeSignals, topOperations: sectionList(overCapRows) },
+  }),
+  false,
+  'detail sections are bounded by the section row cap'
+);
 assert.equal(
   isEnvironmentSubscriptionProjectionV1({ ...projection, pillars: { ...pillars, security: { ...pillars.security, pillar: 'cost' } } }),
   false,

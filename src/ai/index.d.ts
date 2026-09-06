@@ -1005,11 +1005,20 @@ export interface AIChatRoutingStartedEvent extends AIChatStreamEventBase {
 export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
   event: 'routingCompleted';
   path: AIOrchestrationPath;
-  confidence: number;
+  /**
+   * @deprecated Numeric routing confidence is no longer emitted on the client lane
+   * (architecture decision 16 - visible verified grounding without numeric confidence).
+   * It remains on the persisted orchestration artifacts and the audit artifact.
+   */
+  confidence?: number;
   domains?: AIRouterDomainScore[];
   missingInputs: string[];
   reasonCode?: AIReasonCode;
   whyThisPath?: string;
+  /**
+   * @deprecated No longer emitted on the client lane; kept for backwards compatibility with
+   * clients that still read it.
+   */
   analysisConfidence?: number;
   needsRetrieval?: boolean;
   selectedSkillPackIds?: AIChatSkillId[];

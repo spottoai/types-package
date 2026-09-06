@@ -1,10 +1,10 @@
 import type { AICustomerDecisionBriefOutput, AIChatRetrievalSourceType } from './index.js';
 
-export type AIChatWorkspaceArtifactKind = 'metricGroup' | 'chart' | 'table' | 'document' | 'resourceList' | 'decisionBrief';
+export type AIChatWorkspaceArtifactKind = 'metricGroup' | 'chart' | 'table' | 'document' | 'resourceList' | 'decisionBrief' | 'kpi';
 
 export type AIChatWorkspaceArtifactDataMode = 'snapshot' | 'liveView' | 'snapshotWithLiveRefresh';
 
-export type AIChatWorkspacePresentation = 'metricGroup' | 'bar' | 'line' | 'area' | 'table' | 'resourceList' | 'decisionBrief';
+export type AIChatWorkspacePresentation = 'metricGroup' | 'bar' | 'line' | 'area' | 'table' | 'resourceList' | 'decisionBrief' | 'kpi';
 
 export type AIChatWorkspaceTimeRangePreset = 'P7D' | 'P30D' | 'P90D' | 'P180D' | 'P1Y' | 'currentBillingPeriod' | 'previousBillingPeriod';
 
@@ -44,15 +44,60 @@ export const AI_CHAT_WORKSPACE_CAPABILITIES = [
     presentations: ['line', 'area', 'bar'],
     dataModes: ['liveView', 'snapshotWithLiveRefresh'],
   },
+  /**
+   * Generic views are server-produced snapshots over an authorized tool result already held by the
+   * turn. They have no live recipe and no endpoint binding: the API builds the payload from the same
+   * shaped tool output that grounded the answer, so the model never selects data, endpoint or shape.
+   */
+  {
+    viewId: 'genericTable',
+    version: 1,
+    artifactKind: 'table',
+    presentations: ['table'],
+    dataModes: ['snapshot'],
+  },
+  {
+    viewId: 'genericBarChart',
+    version: 1,
+    artifactKind: 'chart',
+    presentations: ['bar'],
+    dataModes: ['snapshot'],
+  },
+  {
+    viewId: 'genericLineChart',
+    version: 1,
+    artifactKind: 'chart',
+    presentations: ['line'],
+    dataModes: ['snapshot'],
+  },
+  {
+    viewId: 'genericKpi',
+    version: 1,
+    artifactKind: 'kpi',
+    presentations: ['kpi'],
+    dataModes: ['snapshot'],
+  },
 ] as const;
+
+export const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = ['genericTable', 'genericBarChart', 'genericLineChart', 'genericKpi'] as const;
 
 export type AIChatWorkspaceCapability = (typeof AI_CHAT_WORKSPACE_CAPABILITIES)[number];
 export type AIChatWorkspaceViewId = AIChatWorkspaceCapability['viewId'];
+export type AIChatWorkspaceGenericViewId = (typeof AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS)[number];
+/** View ids that resolve to a registered live-data recipe. Generic snapshot views never do. */
+export type AIChatWorkspaceLiveViewId = Exclude<AIChatWorkspaceViewId, AIChatWorkspaceGenericViewId>;
 export type AIChatWorkspaceCapabilityVersion = AIChatWorkspaceCapability['version'];
+
+/** Immutable identity of the registry view that produced an artifact, pinned by both registries. */
+export interface AIChatWorkspaceArtifactViewIdentity {
+  viewId: AIChatWorkspaceViewId;
+  version: 1;
+}
 
 export interface AIChatWorkspaceArtifactIntent {
   schemaVersion: 1;
-  viewId: AIChatWorkspaceViewId;
+  /** Generic snapshot views are never requestable: the API produces them from its own tool results. */
+  viewId: AIChatWorkspaceLiveViewId;
   presentationHint?: AIChatWorkspacePresentation;
   subjectRefs: string[];
   requestedMeasureKeys?: string[];
@@ -112,11 +157,11 @@ export interface AIChatWorkspaceViewPresentationMap {
   'azure.resource.metrics': 'line' | 'area' | 'bar';
 }
 
-export type AIChatWorkspaceResolvedBinding = AIChatWorkspaceViewBindingMap[AIChatWorkspaceViewId];
+export type AIChatWorkspaceResolvedBinding = AIChatWorkspaceViewBindingMap[AIChatWorkspaceLiveViewId];
 
 export type AIChatWorkspaceRefreshMode = 'manual' | 'onOpen';
 
-interface AIChatWorkspaceLiveViewRecipeBase<ViewId extends AIChatWorkspaceViewId> {
+interface AIChatWorkspaceLiveViewRecipeBase<ViewId extends AIChatWorkspaceLiveViewId> {
   viewId: ViewId;
   version: 1;
   presentation: AIChatWorkspaceViewPresentationMap[ViewId];
@@ -125,8 +170,8 @@ interface AIChatWorkspaceLiveViewRecipeBase<ViewId extends AIChatWorkspaceViewId
 }
 
 export type AIChatWorkspaceLiveViewRecipe = {
-  [ViewId in AIChatWorkspaceViewId]: AIChatWorkspaceLiveViewRecipeBase<ViewId>;
-}[AIChatWorkspaceViewId];
+  [ViewId in AIChatWorkspaceLiveViewId]: AIChatWorkspaceLiveViewRecipeBase<ViewId>;
+}[AIChatWorkspaceLiveViewId];
 
 export type AIChatWorkspaceCoverage = 'complete' | 'partial' | 'unavailable' | 'stale' | 'not-collected';
 
@@ -191,9 +236,13 @@ export interface AIChatWorkspaceMetricGroupPayload {
 
 export interface AIChatWorkspaceChartPoint {
   x: string | number;
-  y: number;
+  /** `null` is a gap (no observation for that x); renderers break the line rather than drawing zero. */
+  y: number | null;
   citationIds?: string[];
 }
+
+/** Money basis vocabulary shared by KPI tiles, chart value axes and table money columns (WP-G). */
+export type AIChatWorkspaceMoneyBasis = 'billed' | 'amortized' | 'projected' | 'estimated' | 'stable-savings';
 
 export interface AIChatWorkspaceChartSeries {
   key: string;
@@ -215,15 +264,55 @@ export type AIChatWorkspaceChartAnnotation =
 
 export interface AIChatWorkspaceChartPayload {
   chartType: 'bar' | 'line' | 'area';
+  /** 1..8 series; more than one series is a multi-series chart (grouped, or stacked when `stacked`). */
   series: AIChatWorkspaceChartSeries[];
   xAxis: AIChatWorkspaceChartAxis;
   yAxis: AIChatWorkspaceChartAxis;
+  /** Bars only. */
   stacked?: boolean;
   annotations?: AIChatWorkspaceChartAnnotation[];
+  /** WP-G value presentation, additive to the axis descriptors. */
+  valueUnit?: string;
+  valueFormat?: 'money' | 'number' | 'percent';
+  currencyCode?: string;
+  basis?: AIChatWorkspaceMoneyBasis;
+  xAxisLabel?: string;
+  yAxisLabel?: string;
+}
+
+/** WP-G KPI row: 1..6 tiles of server-computed values with optional server-decided deltas. */
+export type AIChatWorkspaceKpiValue =
+  | { kind: 'money'; amount: string; currencyCode: string; basis: AIChatWorkspaceMoneyBasis }
+  | { kind: 'number'; value: number; unit?: string }
+  | { kind: 'percent'; value: number }
+  | { kind: 'text'; text: string };
+
+export interface AIChatWorkspaceKpiDelta {
+  value: number;
+  kind: 'absolute' | 'percent';
+  direction: 'up' | 'down' | 'flat';
+  /** Server decides from the measure's polarity: spend up is bad, secure score up is good. */
+  sentiment: 'good' | 'bad' | 'neutral';
+  period: string;
+}
+
+export interface AIChatWorkspaceKpiTile {
+  id: string;
+  label: string;
+  value: AIChatWorkspaceKpiValue;
+  delta?: AIChatWorkspaceKpiDelta;
+  caption?: string;
+  link?: AIChatWorkspaceLink;
+}
+
+export interface AIChatWorkspaceKpiPayload {
+  tiles: AIChatWorkspaceKpiTile[];
 }
 
 export type AIChatWorkspaceTableColumnType = 'string' | 'number' | 'currency' | 'date' | 'resource';
 export type AIChatWorkspaceTableCell = string | number | null;
+
+export type AIChatWorkspaceTableColumnKind = 'text' | 'number' | 'money' | 'percent' | 'date' | 'link';
 
 export interface AIChatWorkspaceTableColumn {
   key: string;
@@ -231,6 +320,11 @@ export interface AIChatWorkspaceTableColumn {
   type: AIChatWorkspaceTableColumnType;
   align?: 'start' | 'center' | 'end';
   currencyCode?: string;
+  /** WP-G presentation kind; `type` stays for older renderers. */
+  kind?: AIChatWorkspaceTableColumnKind;
+  basis?: AIChatWorkspaceMoneyBasis;
+  /** Default true for number/money/percent/date columns, false for text unless set. */
+  sortable?: boolean;
 }
 
 export interface AIChatWorkspaceTablePayload {
@@ -238,6 +332,16 @@ export interface AIChatWorkspaceTablePayload {
   rows: Array<Record<string, AIChatWorkspaceTableCell>>;
   totals?: Record<string, AIChatWorkspaceTableCell>;
   sort?: { key: string; direction: 'ascending' | 'descending' };
+  /** WP-G initial sort applied by the renderer; `columnId` is a column key. */
+  defaultSort?: { columnId: string; direction: 'asc' | 'desc' };
+  /** Total rows in the source when `rows` was capped, so the renderer can say "showing N of M". */
+  totalRowCount?: number;
+  /**
+   * Parallel to `rows`. Each entry lists the `links` keys that apply to that row, so a table row can
+   * offer the same server-constructed internal/external navigation a resource list already does.
+   * Keys that are absent from `links` are ignored by the renderer.
+   */
+  rowLinks?: string[][];
 }
 
 export type AIChatWorkspaceDocumentBlock =
@@ -280,6 +384,11 @@ export interface AIChatWorkspaceArtifactBase {
   turnId: string;
   kind: AIChatWorkspaceArtifactKind;
   dataMode: AIChatWorkspaceArtifactDataMode;
+  /**
+   * Registry view that produced this artifact. Optional while older producers drain; required in
+   * practice for snapshot-only artifacts so replay and the client registry can pin `viewId@version`.
+   */
+  view?: AIChatWorkspaceArtifactViewIdentity;
   title: string;
   subtitle?: string;
   createdAt: string;
@@ -296,7 +405,8 @@ type AIChatWorkspaceSnapshotContent =
   | { kind: 'table'; snapshot: { payload: AIChatWorkspaceTablePayload } }
   | { kind: 'document'; snapshot: { payload: AIChatWorkspaceDocumentPayload } }
   | { kind: 'resourceList'; snapshot: { payload: AIChatWorkspaceResourceListPayload } }
-  | { kind: 'decisionBrief'; snapshot: { payload: AIChatWorkspaceDecisionBriefPayload } };
+  | { kind: 'decisionBrief'; snapshot: { payload: AIChatWorkspaceDecisionBriefPayload } }
+  | { kind: 'kpi'; snapshot: { payload: AIChatWorkspaceKpiPayload } };
 
 type AIChatWorkspaceChartRecipe = Extract<
   AIChatWorkspaceLiveViewRecipe,

@@ -9,15 +9,31 @@ import {
   ENVIRONMENT_SEVERITIES_V1,
   type EnvironmentArtifactKindV1,
   type EnvironmentBoundedListV1,
+  type EnvironmentBudgetSectionV1,
+  type EnvironmentBudgetV1,
   type EnvironmentCardinalityV1,
+  type EnvironmentChangeSignalSectionV1,
   type EnvironmentChangeV1,
+  type EnvironmentCommitmentCoverageRowV1,
+  type EnvironmentCommitmentPurchaseOptionV1,
+  type EnvironmentCommitmentsSectionV1,
   type EnvironmentCompiledGenerationPointerV1,
   type EnvironmentCostDriverV1,
   type EnvironmentCostRollupV1,
   type EnvironmentCoverageStateV1,
   type EnvironmentDocumentDescriptorV1,
   type EnvironmentFindingV1,
+  type EnvironmentHealthEventSectionV1,
+  type EnvironmentHealthEventV1,
+  type EnvironmentIdleResourceSectionV1,
+  type EnvironmentLabeledCountV1,
+  type EnvironmentMoneyCompositionV1,
   type EnvironmentMoneyValueV1,
+  type EnvironmentPublicIpExposureSectionV1,
+  type EnvironmentSavingsBasisV1,
+  type EnvironmentSecretStoreCoverageSectionV1,
+  type EnvironmentSubjectReferenceV1,
+  type EnvironmentTagCoverageSectionV1,
   type EnvironmentLogicalResourceReferenceV1,
   type EnvironmentPillarSummaryV1,
   type EnvironmentPillarV1,
@@ -68,6 +84,10 @@ const MONEY_PROVENANCE = new Set<string>([
   'recommendation',
 ]);
 const SAVINGS_ADDITIVITY = new Set<string>(['additive', 'scenario-non-additive']);
+const SPEND_SOURCES = new Set<string>(['billing', 'estimated', 'blended']);
+const SPEND_SOURCE_CONFIDENCES = new Set<string>(['high', 'medium', 'low', 'unknown']);
+const SAVINGS_PROJECTIONS = new Set<string>(['projected-monthly', 'observed-period', 'unknown']);
+const DATE_WINDOW_PATTERN = /^\d{4}-\d{2}-\d{2}\/\d{4}-\d{2}-\d{2}$/u;
 const CHANGE_DIRECTIONS = new Set<string>(['increase', 'decrease', 'unchanged', 'unknown']);
 
 const scopesEqual = (left: EnvironmentScopeV1, right: EnvironmentScopeV1): boolean =>
@@ -197,10 +217,40 @@ export const isEnvironmentRunIdV1 = (value: unknown): value is string =>
   value !== '..' &&
   ENVIRONMENT_RUN_ID_PATTERN.test(value);
 
+const isMoneyComposition = (value: unknown, currencyCode: unknown): value is EnvironmentMoneyCompositionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['billingBacked', 'estimated', 'minorUnitScale', 'currencyCode']) &&
+  isNonNegativeInteger(value.billingBacked) &&
+  isNonNegativeInteger(value.estimated) &&
+  isNonNegativeInteger(value.minorUnitScale) &&
+  (value.minorUnitScale as number) <= 6 &&
+  typeof value.currencyCode === 'string' &&
+  (value.currencyCode === 'unknown' || CURRENCY_PATTERN.test(value.currencyCode)) &&
+  value.currencyCode === currencyCode;
+
+/** Validates the producer projection rule and window behind a savings amount. */
+export const isEnvironmentSavingsBasisV1 = (value: unknown): value is EnvironmentSavingsBasisV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['projection'], ['observedPeriod', 'stableWindow', 'containsLegacySavings']) &&
+  typeof value.projection === 'string' &&
+  SAVINGS_PROJECTIONS.has(value.projection) &&
+  (value.observedPeriod === undefined || isSafeLabel(value.observedPeriod)) &&
+  (value.stableWindow === undefined || (typeof value.stableWindow === 'string' && DATE_WINDOW_PATTERN.test(value.stableWindow))) &&
+  (value.containsLegacySavings === undefined || typeof value.containsLegacySavings === 'boolean');
+
 /** Validates canonical decimal money with explicit currency, basis, period, and provenance. */
 export const isEnvironmentMoneyValueV1 = (value: unknown): value is EnvironmentMoneyValueV1 =>
   isRecord(value) &&
-  hasExactKeys(value, ['amount', 'currencyCode', 'basis', 'period', 'provenance'], ['savingsAdditivity']) &&
+  hasExactKeys(
+    value,
+    ['amount', 'currencyCode', 'basis', 'period', 'provenance'],
+    ['savingsAdditivity', 'spendSource', 'spendSourceConfidence', 'composition', 'savingsBasis']
+  ) &&
+  (value.spendSource === undefined || (typeof value.spendSource === 'string' && SPEND_SOURCES.has(value.spendSource))) &&
+  (value.spendSourceConfidence === undefined ||
+    (typeof value.spendSourceConfidence === 'string' && SPEND_SOURCE_CONFIDENCES.has(value.spendSourceConfidence))) &&
+  (value.composition === undefined || isMoneyComposition(value.composition, value.currencyCode)) &&
+  (value.savingsBasis === undefined || isEnvironmentSavingsBasisV1(value.savingsBasis)) &&
   typeof value.amount === 'string' &&
   DECIMAL_PATTERN.test(value.amount) &&
   typeof value.currencyCode === 'string' &&
@@ -213,10 +263,13 @@ export const isEnvironmentMoneyValueV1 = (value: unknown): value is EnvironmentM
   (value.savingsAdditivity === undefined || (typeof value.savingsAdditivity === 'string' && SAVINGS_ADDITIVITY.has(value.savingsAdditivity)));
 
 const isObservedMoney = (value: unknown): value is EnvironmentMoneyValueV1 =>
-  isEnvironmentMoneyValueV1(value) && value.savingsAdditivity === undefined;
+  isEnvironmentMoneyValueV1(value) && value.savingsAdditivity === undefined && value.savingsBasis === undefined;
 
 const isSavingsMoney = (value: unknown): value is EnvironmentMoneyValueV1 =>
-  isEnvironmentMoneyValueV1(value) && value.savingsAdditivity !== undefined;
+  isEnvironmentMoneyValueV1(value) &&
+  value.savingsAdditivity !== undefined &&
+  value.spendSource === undefined &&
+  value.composition === undefined;
 
 /** Validates the closed coverage-state union and state-specific freshness rules. */
 export const isEnvironmentCoverageStateV1 = (value: unknown): value is EnvironmentCoverageStateV1 => {
@@ -423,29 +476,200 @@ const isCostSummary = (value: unknown): boolean =>
   (value.potentialSavings === undefined || isSavingsMoney(value.potentialSavings)) &&
   (value.costRecommendationCount === undefined || isNonNegativeInteger(value.costRecommendationCount));
 
+const SECTION_ITEMS = ENVIRONMENT_CONTRACT_LIMITS_V1.sectionListItems;
+
+const isSectionList = <T>(value: unknown, itemValidator: (item: unknown) => item is T): value is EnvironmentBoundedListV1<T> =>
+  isBoundedList(value, itemValidator) && value.items.length <= SECTION_ITEMS;
+
+const isSectionCount = (value: unknown): boolean => value === undefined || isNonNegativeInteger(value);
+
+const isLabeledCount = (value: unknown): value is EnvironmentLabeledCountV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel', 'count']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  isNonNegativeInteger(value.count);
+
+const isSubjectReference = (value: unknown): value is EnvironmentSubjectReferenceV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel'], ['detail', 'resourceReference']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  (value.detail === undefined || isCustomerString(value.detail)) &&
+  (value.resourceReference === undefined || isEnvironmentLogicalResourceReferenceV1(value.resourceReference));
+
+const isCommitmentPurchaseOption = (value: unknown): value is EnvironmentCommitmentPurchaseOptionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel'], ['termMonths', 'estimatedMonthlySavings']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  isSectionCount(value.termMonths) &&
+  (value.estimatedMonthlySavings === undefined || isSavingsMoney(value.estimatedMonthlySavings));
+
+const isCommitmentCoverageRow = (value: unknown): value is EnvironmentCommitmentCoverageRowV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel', 'benefitLabels'], ['detail', 'resourceReference']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  Array.isArray(value.benefitLabels) &&
+  value.benefitLabels.length <= SECTION_ITEMS &&
+  value.benefitLabels.every(isSafeLabel) &&
+  (value.detail === undefined || isCustomerString(value.detail)) &&
+  (value.resourceReference === undefined || isEnvironmentLogicalResourceReferenceV1(value.resourceReference));
+
+const isCommitmentsSection = (value: unknown): value is EnvironmentCommitmentsSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['coverage', 'purchaseOptions', 'benefitCoverage', 'sourceReferences'],
+    ['benefitCount', 'utilizationPercent30Day', 'utilizationPercent7Day', 'expiredCount', 'expiring90DayCount', 'expiring180DayCount']
+  ) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isSectionCount(value.benefitCount) &&
+  (value.utilizationPercent30Day === undefined || isPercentage(value.utilizationPercent30Day)) &&
+  (value.utilizationPercent7Day === undefined || isPercentage(value.utilizationPercent7Day)) &&
+  isSectionCount(value.expiredCount) &&
+  isSectionCount(value.expiring90DayCount) &&
+  isSectionCount(value.expiring180DayCount) &&
+  isSectionList(value.purchaseOptions, isCommitmentPurchaseOption) &&
+  isSectionList(value.benefitCoverage, isCommitmentCoverageRow) &&
+  isReferenceArray(value.sourceReferences);
+
+const isBudget = (value: unknown): value is EnvironmentBudgetV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel'], ['period', 'amount', 'currentSpend', 'forecastSpend', 'consumedPercent']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  (value.period === undefined || isSafeLabel(value.period)) &&
+  (value.amount === undefined || isObservedMoney(value.amount)) &&
+  (value.currentSpend === undefined || isObservedMoney(value.currentSpend)) &&
+  (value.forecastSpend === undefined || isObservedMoney(value.forecastSpend)) &&
+  (value.consumedPercent === undefined || (typeof value.consumedPercent === 'string' && DECIMAL_PATTERN.test(value.consumedPercent)));
+
+const isBudgetSection = (value: unknown): value is EnvironmentBudgetSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['coverage', 'budgets', 'sourceReferences']) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isSectionList(value.budgets, isBudget) &&
+  isReferenceArray(value.sourceReferences);
+
+const isIdleResourceSection = (value: unknown): value is EnvironmentIdleResourceSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['coverage', 'recommendationCount', 'resourceCount', 'subjects', 'sourceReferences'], ['monthlyWaste']) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.recommendationCount) &&
+  isNonNegativeInteger(value.resourceCount) &&
+  (value.monthlyWaste === undefined || isSavingsMoney(value.monthlyWaste)) &&
+  isSectionList(value.subjects, isSubjectReference) &&
+  isReferenceArray(value.sourceReferences);
+
+const isPublicIpExposureSection = (value: unknown): value is EnvironmentPublicIpExposureSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['coverage', 'totalCount', 'exposedSubjects', 'remediationOptions', 'sourceReferences'],
+    ['assignedCount', 'unassignedCount', 'basicSkuCount', 'httpsExposedCount', 'rdpExposedCount', 'sshExposedCount']
+  ) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.totalCount) &&
+  [value.assignedCount, value.unassignedCount, value.basicSkuCount, value.httpsExposedCount, value.rdpExposedCount, value.sshExposedCount].every(
+    isSectionCount
+  ) &&
+  isSectionList(value.exposedSubjects, isSubjectReference) &&
+  isSectionList(value.remediationOptions, isLabeledCount) &&
+  isReferenceArray(value.sourceReferences);
+
+const isSecretStoreCoverageSection = (value: unknown): value is EnvironmentSecretStoreCoverageSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['coverage', 'vaultCount', 'inspectedVaultCount', 'reasons', 'sourceReferences']) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.vaultCount) &&
+  isNonNegativeInteger(value.inspectedVaultCount) &&
+  isSectionList(value.reasons, isLabeledCount) &&
+  isReferenceArray(value.sourceReferences);
+
+const isTagCoverageSection = (value: unknown): value is EnvironmentTagCoverageSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, [
+    'coverage',
+    'resourceCount',
+    'taggedResourceCount',
+    'untaggedResourceCount',
+    'distinctTagKeyCount',
+    'topTagKeys',
+    'sourceReferences',
+  ]) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.resourceCount) &&
+  isNonNegativeInteger(value.taggedResourceCount) &&
+  isNonNegativeInteger(value.untaggedResourceCount) &&
+  isNonNegativeInteger(value.distinctTagKeyCount) &&
+  (value.taggedResourceCount as number) + (value.untaggedResourceCount as number) === value.resourceCount &&
+  isSectionList(value.topTagKeys, isLabeledCount) &&
+  isReferenceArray(value.sourceReferences);
+
+const isChangeSignalSection = (value: unknown): value is EnvironmentChangeSignalSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(
+    value,
+    ['coverage', 'windowDays', 'changeCount', 'topOperations', 'sourceReferences'],
+    ['materialChangeCount', 'securityRelevantCount']
+  ) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.windowDays) &&
+  isNonNegativeInteger(value.changeCount) &&
+  isSectionCount(value.materialChangeCount) &&
+  isSectionCount(value.securityRelevantCount) &&
+  isSectionList(value.topOperations, isLabeledCount) &&
+  isReferenceArray(value.sourceReferences);
+
+const isHealthEvent = (value: unknown): value is EnvironmentHealthEventV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['key', 'safeLabel', 'severity'], ['eventType', 'startedAt']) &&
+  isGeneralKey(value.key) &&
+  isSafeLabel(value.safeLabel) &&
+  typeof value.severity === 'string' &&
+  SEVERITIES.has(value.severity) &&
+  (value.eventType === undefined || isSafeLabel(value.eventType)) &&
+  (value.startedAt === undefined || isCanonicalUtcTimestamp(value.startedAt));
+
+const isHealthEventSection = (value: unknown): value is EnvironmentHealthEventSectionV1 =>
+  isRecord(value) &&
+  hasExactKeys(value, ['coverage', 'totalCount', 'activeCount', 'resolvedCount', 'activeEvents', 'sourceReferences']) &&
+  isEnvironmentCoverageStateV1(value.coverage) &&
+  isNonNegativeInteger(value.totalCount) &&
+  isNonNegativeInteger(value.activeCount) &&
+  isNonNegativeInteger(value.resolvedCount) &&
+  isSectionList(value.activeEvents, isHealthEvent) &&
+  isReferenceArray(value.sourceReferences);
+
 /** Validates the strict, bounded multi-pillar subscription environment projection. */
 export const isEnvironmentSubscriptionProjectionV1 = (value: unknown): value is EnvironmentSubscriptionProjectionV1 => {
   if (!hasSafeContainerShape(value) || !isRecord(value)) return false;
   if (
-    !hasExactKeys(value, [
-      'schemaVersion',
-      'scope',
-      'sourceBinding',
-      'generatedAt',
-      'subscription',
-      'sourceCoverage',
-      'estateSummary',
-      'costSummary',
-      'serviceFamilyRollups',
-      'estateCostRollups',
-      'costDrivers',
-      'pillars',
-      'findings',
-      'recommendations',
-      'changes',
-      'warnings',
-      'sourceReferences',
-    ]) ||
+    !hasExactKeys(
+      value,
+      [
+        'schemaVersion',
+        'scope',
+        'sourceBinding',
+        'generatedAt',
+        'subscription',
+        'sourceCoverage',
+        'estateSummary',
+        'costSummary',
+        'serviceFamilyRollups',
+        'estateCostRollups',
+        'costDrivers',
+        'pillars',
+        'findings',
+        'recommendations',
+        'changes',
+        'warnings',
+        'sourceReferences',
+      ],
+      ['commitments', 'budgets', 'idleResources', 'publicIpExposure', 'secretStoreCoverage', 'tagCoverage', 'changeSignals', 'healthEvents']
+    ) ||
     value.schemaVersion !== 1 ||
     !isEnvironmentScopeV1(value.scope) ||
     !isEnvironmentSourceBindingV1(value.sourceBinding) ||
@@ -467,6 +691,14 @@ export const isEnvironmentSubscriptionProjectionV1 = (value: unknown): value is 
     !isBoundedList(value.recommendations, isRecommendation) ||
     !isBoundedList(value.changes, isChange) ||
     !isBoundedList(value.warnings, isWarning) ||
+    (value.commitments !== undefined && !isCommitmentsSection(value.commitments)) ||
+    (value.budgets !== undefined && !isBudgetSection(value.budgets)) ||
+    (value.idleResources !== undefined && !isIdleResourceSection(value.idleResources)) ||
+    (value.publicIpExposure !== undefined && !isPublicIpExposureSection(value.publicIpExposure)) ||
+    (value.secretStoreCoverage !== undefined && !isSecretStoreCoverageSection(value.secretStoreCoverage)) ||
+    (value.tagCoverage !== undefined && !isTagCoverageSection(value.tagCoverage)) ||
+    (value.changeSignals !== undefined && !isChangeSignalSection(value.changeSignals)) ||
+    (value.healthEvents !== undefined && !isHealthEventSection(value.healthEvents)) ||
     !isReferenceArray(value.sourceReferences)
   ) {
     return false;
