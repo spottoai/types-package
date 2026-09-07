@@ -4,7 +4,16 @@ export type AIChatWorkspaceArtifactKind = 'metricGroup' | 'chart' | 'table' | 'd
 
 export type AIChatWorkspaceArtifactDataMode = 'snapshot' | 'liveView' | 'snapshotWithLiveRefresh';
 
-export type AIChatWorkspacePresentation = 'metricGroup' | 'bar' | 'line' | 'area' | 'table' | 'resourceList' | 'decisionBrief' | 'kpi';
+export type AIChatWorkspacePresentation =
+  | 'metricGroup'
+  | 'bar'
+  | 'line'
+  | 'area'
+  | 'table'
+  | 'resourceList'
+  | 'decisionBrief'
+  | 'kpi'
+  | 'report';
 
 export type AIChatWorkspaceTimeRangePreset = 'P7D' | 'P30D' | 'P90D' | 'P180D' | 'P1Y' | 'currentBillingPeriod' | 'previousBillingPeriod';
 
@@ -45,6 +54,81 @@ export const AI_CHAT_WORKSPACE_CAPABILITIES = [
     dataModes: ['liveView', 'snapshotWithLiveRefresh'],
   },
   /**
+   * Report strategies are fixed, reviewed Portal renderers over existing report-domain loaders and
+   * pure models. The model selects only the strategy, an authorized subject reference and a title;
+   * it never supplies report data, markup, endpoint names or URLs.
+   */
+  {
+    viewId: 'security.landscape',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'cost.changeWaterfall',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'changes.recent',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'cost.analysis',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'cost.tree',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'commitments.planning',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'licensing.hybridBenefit',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'governance.posture',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'backups.posture',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  {
+    viewId: 'retirement.tracker',
+    version: 1,
+    artifactKind: 'document',
+    presentations: ['report'],
+    dataModes: ['liveView'],
+  },
+  /**
    * Generic views are server-produced snapshots over an authorized tool result already held by the
    * turn. They have no live recipe and no endpoint binding: the API builds the payload from the same
    * shaped tool output that grounded the answer, so the model never selects data, endpoint or shape.
@@ -80,10 +164,23 @@ export const AI_CHAT_WORKSPACE_CAPABILITIES = [
 ] as const;
 
 export const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = ['genericTable', 'genericBarChart', 'genericLineChart', 'genericKpi'] as const;
+export const AI_CHAT_REPORT_STRATEGY_IDS = [
+  'security.landscape@1',
+  'cost.changeWaterfall@1',
+  'changes.recent@1',
+  'cost.analysis@1',
+  'cost.tree@1',
+  'commitments.planning@1',
+  'licensing.hybridBenefit@1',
+  'governance.posture@1',
+  'backups.posture@1',
+  'retirement.tracker@1',
+] as const;
 
 export type AIChatWorkspaceCapability = (typeof AI_CHAT_WORKSPACE_CAPABILITIES)[number];
 export type AIChatWorkspaceViewId = AIChatWorkspaceCapability['viewId'];
 export type AIChatWorkspaceGenericViewId = (typeof AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS)[number];
+export type AIChatReportStrategyId = (typeof AI_CHAT_REPORT_STRATEGY_IDS)[number];
 /** View ids that resolve to a registered live-data recipe. Generic snapshot views never do. */
 export type AIChatWorkspaceLiveViewId = Exclude<AIChatWorkspaceViewId, AIChatWorkspaceGenericViewId>;
 export type AIChatWorkspaceCapabilityVersion = AIChatWorkspaceCapability['version'];
@@ -98,6 +195,8 @@ export interface AIChatWorkspaceArtifactIntent {
   schemaVersion: 1;
   /** Generic snapshot views are never requestable: the API produces them from its own tool results. */
   viewId: AIChatWorkspaceLiveViewId;
+  /** Question-shaped plain text only. The server validates and carries it; renderers never interpret it as markup. */
+  title?: string;
   presentationHint?: AIChatWorkspacePresentation;
   subjectRefs: string[];
   requestedMeasureKeys?: string[];
@@ -141,12 +240,35 @@ export interface AIChatWorkspaceResourceMetricsBinding {
   timeRange: Extract<AIChatWorkspaceTimeRangePreset, 'P7D' | 'P30D' | 'P90D'>;
 }
 
+type AIChatWorkspaceReportStrategyBindingBase<StrategyId extends AIChatReportStrategyId> = {
+  bindingKind: 'reportStrategy';
+  strategyId: StrategyId;
+  companyId: string;
+  subscriptionIds: string[];
+};
+
+export type AIChatWorkspaceReportStrategyBinding<StrategyId extends AIChatReportStrategyId = AIChatReportStrategyId> =
+  AIChatWorkspaceReportStrategyBindingBase<StrategyId> &
+    (StrategyId extends 'changes.recent@1'
+      ? { requestedTimeRange?: Extract<AIChatWorkspaceTimeRangePreset, 'P7D' | 'P30D' | 'P90D'> }
+      : { requestedTimeRange?: never });
+
 export interface AIChatWorkspaceViewBindingMap {
   'azure.security.secureScoreTrend': AIChatWorkspaceSecureScoreTrendBinding;
   'azure.cost.subscriptionSpendTrend': AIChatWorkspaceSubscriptionSpendTrendBinding;
   'azure.serviceRetirement.upcoming': AIChatWorkspaceUpcomingRetirementsBinding;
   'azure.governance.complianceSummary': AIChatWorkspaceComplianceSummaryBinding;
   'azure.resource.metrics': AIChatWorkspaceResourceMetricsBinding;
+  'security.landscape': AIChatWorkspaceReportStrategyBinding<'security.landscape@1'>;
+  'cost.changeWaterfall': AIChatWorkspaceReportStrategyBinding<'cost.changeWaterfall@1'>;
+  'changes.recent': AIChatWorkspaceReportStrategyBinding<'changes.recent@1'>;
+  'cost.analysis': AIChatWorkspaceReportStrategyBinding<'cost.analysis@1'>;
+  'cost.tree': AIChatWorkspaceReportStrategyBinding<'cost.tree@1'>;
+  'commitments.planning': AIChatWorkspaceReportStrategyBinding<'commitments.planning@1'>;
+  'licensing.hybridBenefit': AIChatWorkspaceReportStrategyBinding<'licensing.hybridBenefit@1'>;
+  'governance.posture': AIChatWorkspaceReportStrategyBinding<'governance.posture@1'>;
+  'backups.posture': AIChatWorkspaceReportStrategyBinding<'backups.posture@1'>;
+  'retirement.tracker': AIChatWorkspaceReportStrategyBinding<'retirement.tracker@1'>;
 }
 
 export interface AIChatWorkspaceViewPresentationMap {
@@ -155,6 +277,16 @@ export interface AIChatWorkspaceViewPresentationMap {
   'azure.serviceRetirement.upcoming': 'table';
   'azure.governance.complianceSummary': 'metricGroup';
   'azure.resource.metrics': 'line' | 'area' | 'bar';
+  'security.landscape': 'report';
+  'cost.changeWaterfall': 'report';
+  'changes.recent': 'report';
+  'cost.analysis': 'report';
+  'cost.tree': 'report';
+  'commitments.planning': 'report';
+  'licensing.hybridBenefit': 'report';
+  'governance.posture': 'report';
+  'backups.posture': 'report';
+  'retirement.tracker': 'report';
 }
 
 export type AIChatWorkspaceResolvedBinding = AIChatWorkspaceViewBindingMap[AIChatWorkspaceLiveViewId];
@@ -414,6 +546,22 @@ type AIChatWorkspaceChartRecipe = Extract<
 >;
 type AIChatWorkspaceTableRecipe = Extract<AIChatWorkspaceLiveViewRecipe, { viewId: 'azure.serviceRetirement.upcoming' }>;
 type AIChatWorkspaceMetricGroupRecipe = Extract<AIChatWorkspaceLiveViewRecipe, { viewId: 'azure.governance.complianceSummary' }>;
+type AIChatWorkspaceReportStrategyRecipe = Extract<
+  AIChatWorkspaceLiveViewRecipe,
+  {
+    viewId:
+      | 'security.landscape'
+      | 'cost.changeWaterfall'
+      | 'changes.recent'
+      | 'cost.analysis'
+      | 'cost.tree'
+      | 'commitments.planning'
+      | 'licensing.hybridBenefit'
+      | 'governance.posture'
+      | 'backups.posture'
+      | 'retirement.tracker';
+  }
+>;
 
 export type AIChatWorkspaceSnapshotArtifact = AIChatWorkspaceArtifactBase & { dataMode: 'snapshot' } & AIChatWorkspaceSnapshotContent;
 
@@ -422,6 +570,7 @@ export type AIChatWorkspaceLiveViewArtifact = AIChatWorkspaceArtifactBase &
     | { kind: 'chart'; dataMode: 'liveView'; liveView: AIChatWorkspaceChartRecipe }
     | { kind: 'table'; dataMode: 'liveView'; liveView: AIChatWorkspaceTableRecipe }
     | { kind: 'metricGroup'; dataMode: 'liveView'; liveView: AIChatWorkspaceMetricGroupRecipe }
+    | { kind: 'document'; dataMode: 'liveView'; liveView: AIChatWorkspaceReportStrategyRecipe }
   );
 
 export type AIChatWorkspaceSnapshotWithLiveRefreshArtifact = AIChatWorkspaceArtifactBase &

@@ -39,6 +39,7 @@ export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
   'subscription-recommendations',
   'subscription-service-retirements',
   'subscription-monitor-alerts',
+  'subscription-data-protection',
   'subscription-system-tracks',
   'subscription-metrics',
   // API-issued evidence kind: a bounded projection of one compiled `projection.json` detail section
@@ -492,6 +493,34 @@ export interface EnvironmentHealthEventSectionV1 {
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
+/** Bounded backup and recovery posture from the generation-bound data-protection report. */
+export interface EnvironmentDataProtectionSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalResourcesEvaluated: number;
+  protectedCount: number;
+  notProtectedCount: number;
+  unknownCount: number;
+  failedCount: number;
+  staleCount: number;
+  workloadCoverage: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  findingCounts: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  atRiskSubjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Defender for Cloud Secure Score, including movement from the prior stored generation. */
+export interface EnvironmentSecureScoreSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  value: string;
+  maximum: '100';
+  previousValue?: string;
+  delta?: string;
+  currentScore?: string;
+  maxScore?: string;
+  assessedResourceCount?: number;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
 export interface EnvironmentSubscriptionProjectionV1 {
   schemaVersion: 1;
   scope: EnvironmentScopeV1;
@@ -522,6 +551,8 @@ export interface EnvironmentSubscriptionProjectionV1 {
   tagCoverage?: EnvironmentTagCoverageSectionV1;
   changeSignals?: EnvironmentChangeSignalSectionV1;
   healthEvents?: EnvironmentHealthEventSectionV1;
+  dataProtection?: EnvironmentDataProtectionSectionV1;
+  secureScore?: EnvironmentSecureScoreSectionV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 

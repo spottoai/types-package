@@ -11,7 +11,7 @@ import {
   type AIChatWorkspaceViewId,
 } from '../index';
 
-const capabilityCount: 9 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
+const capabilityCount: 12 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
 const viewId: AIChatWorkspaceViewId = 'azure.cost.subscriptionSpendTrend';
 
 const costRecipe: AIChatWorkspaceLiveViewRecipe = {
@@ -26,6 +26,19 @@ const costRecipe: AIChatWorkspaceLiveViewRecipe = {
     costBasis: 'amortized',
   },
   refresh: 'manual',
+};
+
+const securityLandscapeRecipe: AIChatWorkspaceLiveViewRecipe = {
+  viewId: 'security.landscape',
+  version: 1,
+  presentation: 'report',
+  binding: {
+    bindingKind: 'reportStrategy',
+    strategyId: 'security.landscape@1',
+    companyId: 'company-1',
+    subscriptionIds: ['subscription-1'],
+  },
+  refresh: 'onOpen',
 };
 
 const costArtifact: AIChatWorkspaceArtifact = {
@@ -249,6 +262,7 @@ const typedTableArtifact: AIChatWorkspaceArtifact = {
 };
 
 void capabilityCount;
+void securityLandscapeRecipe;
 void canonicalEvents;
 void terminalSnapshot;
 void intent;
