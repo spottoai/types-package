@@ -17,6 +17,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 /** Main entry point - export all interfaces from this package */
 __exportStar(require("./azure/common"), exports);
 __exportStar(require("./azure/costComposition"), exports);
+__exportStar(require("./azure/financialChargePolicy"), exports);
 __exportStar(require("./azure/activityLogs"), exports);
 __exportStar(require("./azure/activityLogAnalysis"), exports);
 __exportStar(require("./azure/activityLogAnalysisValidation"), exports);

@@ -13,6 +13,7 @@ import type { CostComposition, EstimateLens } from './costComposition.js';
 import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
+import type { AzureChargeableSavingsV1, AzurePolicyBoundSavingsAggregateV1, AzureProviderScopeFinancialChargeSpendBreakdownV1, AzureResourceFinancialChargeSpendBreakdownV1 } from './financialChargePolicy.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -25,6 +26,12 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     costSavingsSummary?: CostSavingsSummary;
     /** Authoritative additive savings total for this complete dashboard scope. */
     savingsAggregate?: SavingsAggregateV2;
+    /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+    formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+    /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+    chargeableSavings?: AzureChargeableSavingsV1;
+    /** Rolling 30-day source partition for Azure-native default and explicit all-charge invoice views. */
+    financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
     advisorScore?: AdvisorScoreSummary;
     healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -44,6 +51,12 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     costSavingsSummary?: CostSavingsSummary;
     /** Authoritative additive savings total for this complete resource scope. */
     savingsAggregate?: SavingsAggregateV2;
+    /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+    formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+    /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+    chargeableSavings?: AzureChargeableSavingsV1;
+    /** Rolling page spend partition used to include or exclude Marketplace charges. */
+    financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
 }
 /**
  * Note that many properties will not exist and is only specified here if it's custom, the rest of the properties will be looked up
@@ -75,6 +88,8 @@ export interface AzureResourcePortalItem {
     location: string;
     /** Total spend over the last 30 days */
     spend: number;
+    /** Rolling resource spend partition used to include or exclude Marketplace charges. */
+    financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
     /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
     spendAmortized: number;
     /** Billing-backed portion of spend over the last 30 days */
@@ -284,7 +299,10 @@ export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y'
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
 export type VmPricePerformanceComparisonEligibility = 'default' | 'excluded-tier' | 'excluded-burstable' | 'excluded-low-confidence' | 'unavailable-in-subscription' | 'feature-trade-off' | string;
 export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
+/** Basis for monetary VM price and savings fields, independent of applied-benefit evaluation. */
+export type VmPricePerformancePricingBasis = 'payg-retail' | 'spot-estimate';
 export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+export type VmReservationEvaluationStatus = 'complete' | 'incomplete' | 'unavailable';
 export type VmReservationCompatibilityReason = 'same-flexibility-group-within-covered-units' | 'same-flexibility-group-exceeds-covered-units' | 'different-flexibility-group' | 'instance-flexibility-disabled' | 'missing-instance-flexibility-setting' | 'missing-flexibility-evidence' | string;
 export interface VmReservationCoverageContext {
     benefitType: 'reservation';
@@ -304,6 +322,12 @@ export interface VmReservationCoverageImpact {
     normalizedUnitsRequired?: number;
     normalizedUnitsCovered?: number;
     normalizedUnitsDelta?: number;
+}
+export interface VmReservationEvaluation {
+    /** Whether reservation compatibility was evaluated with sufficient evidence. */
+    status: VmReservationEvaluationStatus;
+    /** Stable machine-readable explanation when evaluation is incomplete or unavailable. */
+    reason?: string;
 }
 export interface VmPricePerformanceCatalogSource {
     /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
@@ -464,6 +488,8 @@ export interface VmPricePerformanceInsights {
     comparisonScope: 'same-region';
     /** Authority used for user-visible comparisons and recommendation semantics. */
     comparisonBasis?: VmPricePerformanceComparisonBasis;
+    /** Basis for displayed monetary values; reservation coverage remains an independent evaluation. */
+    pricingBasis?: VmPricePerformancePricingBasis;
     /** Subscription/display currency used for user-facing price fields when available. */
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
@@ -478,6 +504,8 @@ export interface VmPricePerformanceInsights {
     current?: VmPricePerformanceSku;
     /** Present when current billing usage is covered by an active Reservation. */
     reservationCoverage?: VmReservationCoverageContext;
+    /** Completeness of the reservation-compatibility evaluation for this comparison. */
+    reservationEvaluation?: VmReservationEvaluation;
     /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
     currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */

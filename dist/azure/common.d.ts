@@ -1,4 +1,21 @@
 import type { CostComposition } from './costComposition.js';
+import { type AzureProviderScopeFinancialChargeSpendBreakdownV1 } from './financialChargePolicy.js';
+/**
+ * Non-authoritative daily/month display projection. It inherits period and
+ * currency from the containing summary entry. Formal reports and billing must
+ * use `financialChargeSpend` when present, never these major-unit fields.
+ */
+export interface AzureNativeFinancialSummaryV1 {
+    contractVersion: 'azure-native-financial-summary/v1';
+    policyRef: 'azure-cloud-services-excluding-marketplace/v1';
+    status: 'complete' | 'partial';
+    cost?: number;
+    costAmortized?: number;
+    financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
+    resourceTypes: ResourceCostType[];
+}
+/** Exact validator for one Azure-native daily/month display projection. */
+export declare const isAzureNativeFinancialSummaryV1: (value: unknown) => value is AzureNativeFinancialSummaryV1;
 export interface AzureLocation {
     /** e.g. "eastus" */
     name: string;
@@ -18,6 +35,8 @@ export interface MonthSummaryEntry {
     endDate?: string;
     /** Top resources by cost */
     resourceTypes: ResourceCostType[];
+    /** Azure-native-only projection for ordinary customer financial views. */
+    azureNativeFinancialSummary?: AzureNativeFinancialSummaryV1;
     composition?: CostComposition;
 }
 export interface ResourceCostType {
@@ -52,6 +71,8 @@ export interface DailySummaryEntry {
     commitmentPurchaseCostAmortized?: number;
     /** Top resources by cost */
     resourceTypes: ResourceCostType[];
+    /** Azure-native-only projection for ordinary customer financial views. */
+    azureNativeFinancialSummary?: AzureNativeFinancialSummaryV1;
     composition?: CostComposition;
 }
 export interface DailySummary {

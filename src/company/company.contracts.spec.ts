@@ -28,6 +28,7 @@ const trialCompany: Company = {
 const companyWithHierarchy: Company = {
   ...standardCompany,
   rootCompanyId: 'comp-root-123',
+  classification: 'container',
 };
 
 const businessHours: CompanyBusinessHours = {

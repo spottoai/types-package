@@ -144,15 +144,44 @@ const proseBearingLegacyFallback = {
   artifactSource: 'legacy-transition',
 };
 const { billingGenerationId: _internalGenerationId, ...publicBusinessData } = legacyBusinessPayload;
+const financialChargeCoverage = {
+  contractVersion: 'financial-charge-policy/v1',
+  policyRef: 'azure-cloud-services-excluding-marketplace/v1',
+  coordinate: {
+    generationId: legacyBusinessPayload.billingGenerationId,
+    providerName: 'azure',
+    providerScopeId: legacyBusinessPayload.subscriptionId,
+    basis: 'amortized',
+    period: { startDate: '2026-08-01', endDateExclusive: '2026-09-01' },
+    currencyCode: legacyBusinessPayload.currencyCode,
+    minorUnitScale: 2,
+  },
+  status: 'complete',
+  sourceTotals: {
+    allChargeMinorUnits: 0,
+    azureNativeMinorUnits: 0,
+    marketplaceMinorUnits: 0,
+    unknownMinorUnits: 0,
+    unknownAbsoluteMinorUnits: 0,
+    rowCount: 0,
+    azureNativeRowCount: 0,
+    marketplaceRowCount: 0,
+    unknownRowCount: 0,
+    unknownNonZeroRowCount: 0,
+  },
+  unknownObjects: [],
+};
 const currentPublicResponse = {
   schemaVersion: 1,
   dataState: 'current',
+  financialChargeCoverage,
   ...publicBusinessData,
 };
 const noActivityPublicResponse = {
   schemaVersion: 1,
   subscriptionId: legacyBusinessPayload.subscriptionId,
   dataState: 'no-activity',
+  financialChargeCoverage,
 };
 
 assert.equal(isBillingCostAnalysisPublicResponse(currentPublicResponse), true, 'public response accepts current business data');
@@ -161,7 +190,17 @@ assert.equal(
   true,
   'public response accepts previous verified business data'
 );
+assert.equal(
+  isBillingCostAnalysisPublicResponse({ ...currentPublicResponse, dataState: 'partial' }),
+  true,
+  'public response accepts partial business data with policy evidence'
+);
 assert.equal(isBillingCostAnalysisPublicResponse(noActivityPublicResponse), true, 'public response accepts no-activity state');
+assert.equal(
+  isBillingCostAnalysisPublicResponse({ ...currentPublicResponse, financialChargeCoverage: undefined }),
+  false,
+  'public response requires Marketplace-exclusion coverage'
+);
 for (const internalField of [
   'billingGenerationId',
   'ownership',
