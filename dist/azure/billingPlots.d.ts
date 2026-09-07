@@ -3,6 +3,7 @@
  */
 import { type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { type BillingCompletedArtifactPublicationDecision, type BillingPartialArtifactPublicationDecision } from './billingArtifactEvidence.js';
+import { type AzureFinancialChargeCoverageV1 } from './financialChargePolicy.js';
 export type { BillingArtifactPublicationDecision, BillingCompletedArtifactPublicationDecision, BillingPartialArtifactPublicationDecision, } from './billingArtifactEvidence.js';
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
@@ -250,19 +251,22 @@ export interface BillingCostAnalysisMetadata {
     forecastPeriodEnd?: number;
 }
 /** Customer-readable billing data states; internal publication states are deliberately excluded. */
-export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'previous-verified' | 'no-activity';
+export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'partial' | 'previous-verified' | 'no-activity';
 /** Business fields that may cross the customer API boundary. */
 export type BillingCostAnalysisPublicBusinessData = Omit<BillingCostAnalysisMetadata, 'billingGenerationId'>;
 /** Customer response containing financial chart and anomaly data. */
 export type BillingCostAnalysisPublicDataResponse = BillingCostAnalysisPublicBusinessData & {
     schemaVersion: 1;
     dataState: Exclude<BillingCostAnalysisPublicDataState, 'no-activity'>;
+    /** Marketplace-exclusion evidence for the costs in this response. */
+    financialChargeCoverage: AzureFinancialChargeCoverageV1;
 };
 /** Customer response indicating that the checked billing scope contained no activity. */
 export interface BillingCostAnalysisPublicNoActivityResponse {
     schemaVersion: 1;
     subscriptionId: string;
     dataState: 'no-activity';
+    financialChargeCoverage: AzureFinancialChargeCoverageV1;
 }
 /** Successful customer-facing billing response with no internal authority or diagnostic fields. */
 export type BillingCostAnalysisPublicResponse = BillingCostAnalysisPublicDataResponse | BillingCostAnalysisPublicNoActivityResponse;
@@ -274,6 +278,8 @@ interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata 
     revision: ArtifactRevisionVector;
     inputManifestDigest: string;
     outputBindingDigest: string;
+    /** Additive policy evidence. Older immutable V2 generations may omit it. */
+    financialChargeCoverage?: AzureFinancialChargeCoverageV1;
 }
 export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base & ({
     artifactState: BillingCompletedCostAnalysisDocumentState;

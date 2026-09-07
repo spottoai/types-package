@@ -1,3 +1,4 @@
+import type { PortalActivityLogClassification } from './activityLogAnalysis';
 export declare const PORTAL_ACTIVITY_LOG_SCHEMA_VERSION: "2026-05-02.change-monitoring-v1";
 export declare const PORTAL_ACTIVITY_LOG_FILE: "activity-logs.json";
 export type PortalActivityLogActorType = 'user' | 'servicePrincipal' | 'managedIdentity' | 'platform' | 'unknown';
@@ -14,6 +15,12 @@ export interface PortalActivityLogSource {
     healthCount: number;
     suppressedCount: number;
     latestRawTimestamp?: string;
+    classification?: {
+        taxonomyVersion: PortalActivityLogClassification['taxonomyVersion'];
+        classifiedRetainedEventCount: number;
+        unclassifiedRetainedEventCount: number;
+        state: 'complete' | 'partial' | 'unavailable';
+    };
 }
 export interface PortalActivityLogEntry {
     /**
@@ -52,6 +59,7 @@ export interface PortalActivityLogEntry {
     isSecuritySensitive: boolean;
     isPlatformEvent: boolean;
     importance: PortalActivityLogImportance;
+    classification?: PortalActivityLogClassification;
 }
 export interface PortalActivityLogSuppressedSummary {
     reason: PortalActivityLogSuppressionReason;

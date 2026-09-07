@@ -545,6 +545,10 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete recommendation scope. */
   savingsAggregate?: SavingsAggregateV2;
+  /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+  formalFinancialAuthority?: import('./financialChargePolicy.js').AzurePolicyBoundSavingsAggregateV1;
+  /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+  chargeableSavings?: import('./financialChargePolicy.js').AzureChargeableSavingsV1;
 }
 
 export interface ResourceId {

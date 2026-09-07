@@ -27,6 +27,7 @@ import type {
   CloudAccountFirstSyncNotificationStatus,
   CloudAccountSyncFeatureOptOutsUpdateRequest,
   PublicCloudAccountDto,
+  ScheduledScanSlot,
   SyncProgressIssue,
   SubscriptionAccount,
   SubscriptionInfoBase,
@@ -761,6 +762,40 @@ const subscriptionAccountWithSecureScoreEvidence: SubscriptionAccount = {
   ...subscriptionAccountWithSyncFeatureOptOuts,
   secureScore: 0,
   secureScoreEvidence: availableZeroSecureScoreEvidence,
+};
+
+const firstScheduledScanSlot: ScheduledScanSlot = 0;
+const lastScheduledScanSlot: ScheduledScanSlot = 11;
+
+// @ts-expect-error Scheduled scan slots cannot be less than zero.
+const invalidNegativeScheduledScanSlot: ScheduledScanSlot = -1;
+
+// @ts-expect-error Scheduled scan slots cannot exceed eleven.
+const invalidHighScheduledScanSlot: ScheduledScanSlot = 12;
+
+const subscriptionInfoBaseWithScheduledScanSlot: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  scheduledScanSlot: firstScheduledScanSlot,
+};
+
+const subscriptionAccountWithScheduledScanSlot: SubscriptionAccount = {
+  ...subscriptionAccountWithSyncFeatureOptOuts,
+  id: 'sub-scheduled',
+  companyId: 'comp-123',
+  scheduledScanSlot: lastScheduledScanSlot,
+};
+
+const companySubscriptionWithScheduledScanSlot: CompanySubscription = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  id: 'sub-scheduled',
+  companyId: 'comp-123',
+  scheduledScanSlot: firstScheduledScanSlot,
+};
+
+const invalidScheduledScanSlotType: SubscriptionInfoBase = {
+  ...subscriptionInfoBaseWithSyncFeatureOptOuts,
+  // @ts-expect-error Scheduled scan slots are numeric values.
+  scheduledScanSlot: '0',
 };
 
 const subscriptionInfoBaseWithCompletionTimestamps: SubscriptionInfoBase = {

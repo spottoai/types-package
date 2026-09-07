@@ -1,7 +1,10 @@
 /** Main entry point - export all interfaces from this package */
 export * from './azure/common';
 export * from './azure/costComposition';
+export * from './azure/financialChargePolicy';
 export * from './azure/activityLogs';
+export * from './azure/activityLogAnalysis';
+export * from './azure/activityLogAnalysisValidation';
 export * from './azure/budgets';
 export * from './azure/billingGeneration';
 export * from './azure/billingArtifactGeneration';

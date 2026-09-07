@@ -34,6 +34,7 @@ import {
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
+import type { AzureChargeableSavingsV1, AzurePolicyBoundSavingsAggregateV1 } from './financialChargePolicy.js';
 import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -48,6 +49,10 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete dashboard scope. */
   savingsAggregate?: SavingsAggregateV2;
+  /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+  formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+  /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+  chargeableSavings?: AzureChargeableSavingsV1;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -69,6 +74,10 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete resource scope. */
   savingsAggregate?: SavingsAggregateV2;
+  /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+  formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+  /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+  chargeableSavings?: AzureChargeableSavingsV1;
 }
 
 /**

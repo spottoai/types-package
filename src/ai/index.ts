@@ -170,6 +170,18 @@ type AIChatDegradedReasonCode =
   | 'AI_MCP_PARTIAL_FAILURE'
   | 'AI_TOOL_TIMEOUT'
   | 'AI_TOOL_PARTIAL_FAILURE'
+  /** A tool result was withheld or summarised because it exceeded the model-visible size budget; no tool failed. */
+  | 'AI_TOOL_RESULT_COMPACTED'
+  /** An analysis role (specialist, critic, synthesis) ran past its model-call timeout; no tool failed. */
+  | 'AI_SPECIALIST_TIMEOUT'
+  /** The interactive analysis turn budget was exhausted; the answer was finished from the results so far. */
+  | 'AI_ANALYSIS_BUDGET_EXHAUSTED'
+  /** The model refused the request as larger than its context; the turn retried with a compacted request. */
+  | 'AI_MODEL_CONTEXT_EXCEEDED'
+  /** The provider failed while generating (Azure "model produced invalid content" / server_error); retried with a compacted request. */
+  | 'AI_MODEL_INVALID_OUTPUT'
+  /** One model call of the generic loop ran past its wall-clock timeout; retried with a compacted request. */
+  | 'AI_MODEL_CALL_TIMEOUT'
   | 'AI_DEGRADED_NO_PATH';
 
 type AIChatOrchestrationReasonCode =
@@ -388,12 +400,28 @@ export interface AIPlannerWorkItem {
   priority: AIPlannerPriority;
 }
 
+/**
+ * Filter intent for a planned retrieval step: when the step's result comes back capped or
+ * withheld, the retrieval executor issues `query_tool_result` over the held complete result with
+ * this query (same grammar as the tool, without `callId`).
+ */
+export interface AIRetrievalStepQuery {
+  path?: string;
+  where?: Array<{ field: string; op: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'startsWith' | 'in' | 'exists'; value?: unknown }>;
+  search?: string;
+  fields?: string[];
+  sort?: { field: string; direction?: 'asc' | 'desc' };
+  limit?: number;
+  offset?: number;
+}
+
 export interface AIPlannerRetrievalStep {
   retrievalId: string;
   toolName: string;
   purpose: string;
   arguments: Record<string, unknown>;
   required: boolean;
+  query?: AIRetrievalStepQuery;
 }
 
 export interface AIPlannerOutput {
@@ -1421,12 +1449,41 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   collaborationRun?: AIChatCollaborationRun;
 }
 
+/** Secret-free record of the provider failure behind a failed turn (status, provider code, bounded message, stage, route, elapsed). */
+export interface AIChatProviderErrorDiagnostics {
+  status?: number;
+  providerCode?: string;
+  message?: string;
+  stage?: string;
+  route?: string;
+  elapsedMs?: number;
+  requestId?: string;
+}
+
+/** The failure context a failed turn carries on its terminal `error` event (additive; also persisted with the turn). */
+export interface AIChatFailureContext {
+  stage?: string;
+  reasonCode?: string;
+  terminalOutcomeCode?: string;
+  completionReason?: string;
+  retryable?: boolean;
+  toolName?: string;
+  callId?: string;
+  errorCode?: string;
+  capturedAt?: string;
+  providerError?: AIChatProviderErrorDiagnostics;
+}
+
 export interface AIChatErrorEvent extends AIChatStreamEventBase {
   event: 'error';
   run: AIChatRunState;
   code: string;
   message: string;
   retryable: boolean;
+  /** Machine reason code for the failure (mirrors `code` when the failure has one). */
+  reasonCode?: string;
+  /** Diagnosable failure context: stage, route and the provider error behind it. */
+  failureContext?: AIChatFailureContext;
 }
 
 export interface AIChatPingEvent extends AIChatStreamEventBase {

@@ -1,4 +1,5 @@
 import { Tags } from '../tags';
+import type { AzureFinancialChargeCoverageV1, AzureFinancialChargePolicyRefV1 } from './financialChargePolicy.js';
 export interface DecompositionTreeNode {
     /** e.g., "Resource Group A", "Storage", "Standard Page Blob v2", "Storage Account", "mystorageaccount" */
     name: string;
@@ -54,6 +55,19 @@ export interface DecompositionTree {
     currency: string;
     currencySymbol: string;
     version?: string;
+    formalFinancialProjection?: DecompositionTreeFinancialProjectionV1;
+}
+export interface DecompositionTreeFinancialProjectionV1 {
+    contractVersion: 'financial-charge-policy/v1';
+    financialChargePolicyRef: AzureFinancialChargePolicyRefV1;
+    financialChargeSource: 'azure-native';
+    financialChargeCoverage: AzureFinancialChargeCoverageV1;
+    comparisonFinancialChargeCoverage: AzureFinancialChargeCoverageV1;
+    root: DecompositionTreeNode;
+    totalSpend: number;
+    totalSpendAmortized?: number;
+    totalSpendPrevious?: number;
+    totalSpendAmortizedPrevious?: number;
 }
 export interface EstimationTree extends DecompositionTree {
     dataSource: 'estimated' | 'blended' | 'actual' | 'metrics_pricing';

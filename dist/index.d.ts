@@ -1,7 +1,10 @@
 /** Main entry point - export all interfaces from this package */
 export * from './azure/common';
 export * from './azure/costComposition';
+export * from './azure/financialChargePolicy';
 export * from './azure/activityLogs';
+export * from './azure/activityLogAnalysis';
+export * from './azure/activityLogAnalysisValidation';
 export * from './azure/budgets';
 export * from './azure/billingGeneration';
 export * from './azure/billingArtifactGeneration';
@@ -43,6 +46,7 @@ export * from './azure/storage-inventory';
 export * from './azure/governance';
 export * from './azure/publicIpAddresses';
 export * from './azure/workManagement';
+export * from './azure/vmPatchManagement';
 export * from './aws';
 export * from './accounts';
 export * from './assessments';
@@ -53,6 +57,7 @@ export * from './company';
 export * from './customProperties';
 export * from './scheduler';
 export * from './ai';
+export * from './environment';
 export * from './events';
 export * from './integrations';
 export * from './identity';
