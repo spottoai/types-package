@@ -1,9 +1,69 @@
 import type { CostBasis } from './costComposition.js';
+import type { MoneyUnavailableReason } from './costComposition.js';
 import type { SavingsAggregateV2 } from './savings.js';
 export declare const AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1: "azure-cloud-services-excluding-marketplace/v1";
 export type AzureFinancialChargePolicyRefV1 = typeof AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1;
 export type AzureFinancialChargeSourceV1 = 'azure-native' | 'marketplace' | 'unknown';
 export type AzureFinancialChargeSourceUnknownReasonV1 = 'publisher-type-missing' | 'publisher-type-unsupported' | 'publisher-type-unrecognized';
+/** One rolling-spend basis split by billing-backed and estimated provenance. */
+export type AzureFinancialChargeSpendBasisTotalsV1 = {
+    status: 'available';
+    totalMinorUnits: number;
+    billingBackedMinorUnits: number;
+    estimatedMinorUnits: number;
+} | {
+    status: 'unavailable';
+    reasonCode: MoneyUnavailableReason;
+};
+/** Billed and amortized projections for one financial charge source. */
+export interface AzureFinancialChargeSpendSourceTotalsV1 {
+    billed: AzureFinancialChargeSpendBasisTotalsV1;
+    amortized: AzureFinancialChargeSpendBasisTotalsV1;
+}
+/** Subject whose rolling spend is represented by the breakdown. */
+export type AzureFinancialChargeSpendSubjectV1 = {
+    kind: 'provider-scope';
+    providerScopeId: string;
+} | {
+    kind: 'resource';
+    providerScopeId: string;
+    resourceId: string;
+};
+/** Evidence that keeps material unknown rows distinct from their signed net. */
+export interface AzureFinancialChargeUnknownMaterialV1 {
+    nonZeroRowCount: number;
+    billedAbsoluteMinorUnits: number;
+    amortizedAbsoluteMinorUnits: number;
+}
+/**
+ * Rolling resource-page spend partition. This deliberately remains separate from
+ * the fixed formal-report coordinate because its period follows the page's
+ * rolling cost window.
+ */
+export interface AzureFinancialChargeSpendBreakdownV1<TSubject extends AzureFinancialChargeSpendSubjectV1 = AzureFinancialChargeSpendSubjectV1> {
+    contractVersion: 'financial-charge-spend/v1';
+    policyRef: AzureFinancialChargePolicyRefV1;
+    generationId: string;
+    subject: TSubject;
+    period: {
+        startDate: string;
+        endDateExclusive: string;
+    };
+    currencyCode: string;
+    minorUnitScale: number;
+    status: 'complete' | 'partial';
+    allCharge: AzureFinancialChargeSpendSourceTotalsV1;
+    azureNative: AzureFinancialChargeSpendSourceTotalsV1;
+    marketplace: AzureFinancialChargeSpendSourceTotalsV1;
+    unknown: AzureFinancialChargeSpendSourceTotalsV1;
+    unknownMaterial: AzureFinancialChargeUnknownMaterialV1;
+}
+export type AzureProviderScopeFinancialChargeSpendBreakdownV1 = AzureFinancialChargeSpendBreakdownV1<Extract<AzureFinancialChargeSpendSubjectV1, {
+    kind: 'provider-scope';
+}>>;
+export type AzureResourceFinancialChargeSpendBreakdownV1 = AzureFinancialChargeSpendBreakdownV1<Extract<AzureFinancialChargeSpendSubjectV1, {
+    kind: 'resource';
+}>>;
 /** Publisher evidence retained from the provider billing source before financial classification. */
 export type AzurePublisherTypeEvidenceV1 = {
     status: 'available';
@@ -136,6 +196,12 @@ export interface AzureCompanyChargeableSavingsResponseV1 {
     scopeResults: AzureCompanyChargeableSavingsScopeResultV1[];
     companyTotal: AzureCompanyChargeableSavingsTotalV1;
 }
+/** Exact validator for one rolling all-charge/Azure-native/Marketplace/unknown partition. */
+export declare const isAzureFinancialChargeSpendBreakdownV1: (value: unknown) => value is AzureFinancialChargeSpendBreakdownV1;
+export declare const isAzureProviderScopeFinancialChargeSpendBreakdownV1: (value: unknown) => value is AzureProviderScopeFinancialChargeSpendBreakdownV1;
+export declare const isAzureResourceFinancialChargeSpendBreakdownV1: (value: unknown) => value is AzureResourceFinancialChargeSpendBreakdownV1;
+/** Validates both the resource-level shape and its binding to the enclosing resource ID. */
+export declare const isAzureResourceFinancialChargeSpendBreakdownForResourceV1: (value: unknown, resourceId: string) => value is AzureResourceFinancialChargeSpendBreakdownV1;
 /** Exact validator for publisher evidence retained from an Azure billing source. */
 export declare const isAzurePublisherTypeEvidenceV1: (value: unknown) => value is AzurePublisherTypeEvidenceV1;
 /** Exact validator for the authoritative classification of one billing component. */

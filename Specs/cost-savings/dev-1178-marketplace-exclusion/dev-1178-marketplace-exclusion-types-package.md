@@ -1,6 +1,6 @@
 Status: approved
 Approved: Yes — user approved implementation on 2026-09-07
-Iterations: 1
+Iterations: 3
 Last updated: 2026-09-07
 Owner: Platform
 Repo: types-package
@@ -13,7 +13,7 @@ Related contracts: `src/azure/prices.ts`, `src/azure/savings.ts`, `src/azure/bil
 
 ## Summary
 
-Define dependency-free, versioned contracts for Marketplace-excluded formal-report financial projections, unknown charge objects and the billing-facing maximum monthly potential savings result. The package describes and validates contracts; it performs no I/O, hashing or financial classification.
+Define dependency-free, versioned contracts for Marketplace-excluded formal-report financial projections, rolling Resources-page source spend, unknown charge objects and the billing-facing maximum monthly potential savings result. The package describes and validates contracts; it performs no I/O, hashing or financial classification.
 
 ## Scope
 
@@ -23,6 +23,8 @@ In scope:
 - Define the fixed Marketplace-excluding policy identity.
 - Define tri-state financial charge source and typed unknown reasons.
 - Define report coverage and complete unknown-object entries.
+- Define a rolling billed/amortized and billing-backed/estimated spend partition for all-charge, Azure-native, Marketplace and unknown sources at subscription and resource level, with explicit basis availability and resource subject binding.
+- Define policy-bound Azure-native interactive projections for dashboard rolling/period/daily/type/location financial values without changing legacy all-charge fields.
 - Bind savings and billing-chart outputs to policy, generation, scope, period, basis and currency.
 - Define a non-partial chargeable-savings availability union.
 - Add exact validators/canonicalization helpers and exports.
@@ -43,9 +45,11 @@ Out of scope:
 ## Success Criteria
 
 - Consumers can distinguish all-charge evidence from `azure-cloud-services-excluding-marketplace/v1` projections.
-- Unknown entries require name, type, cost coordinate and a stable object/component identity.
+- Resources consumers can switch between all-charge and Azure-native rolling spend without inferring source from resource type or name.
+- Dashboard, history and selector consumers can choose the Azure-native projection for the same financial coordinate while Budget/Cost Alert consumers can explicitly retain all-charge values.
+- Unknown entries require name, type, cost coordinate and a stable object/component identity; signed-zero unknown rows remain material through absolute-cost and row-count evidence.
 - Chargeable savings cannot represent a partial monetary value.
-- Validators reject unknown policy refs, mixed coordinates, unsafe integers, missing required object fields and `available` results with partial coverage.
+- Validators reject unknown policy refs, mixed coordinates, unsafe inputs or intermediate sums, nonexistent calendar dates, missing required object fields and `available` results with partial coverage.
 - Existing `SavingsAggregateV2` consumers remain source-compatible during staged rollout.
 
 ## Assumptions and Constraints
@@ -123,7 +127,7 @@ Key links:
 
 ## Test Strategy
 
-- Unit/contract: known Azure, Marketplace, mixed, unknown, signed refund/credit, zero-only unknown, missing identity, mixed currency/basis/period and unsafe minor units.
+- Unit/contract: known Azure, Marketplace, mixed, unknown, signed refund/credit, signed-zero material unknown, unavailable basis, missing identity, mixed currency/basis/period, invalid calendar dates and unsafe minor-unit sums.
 - Integration: compile representative producer and consumer fixtures against packed output.
 - E2E: N/A in this compile-time-only repo.
 - Coverage target: 80% for new validator branches, with mutation-style invalid fixtures for every required field.

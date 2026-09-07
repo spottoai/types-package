@@ -1,4 +1,55 @@
 import type { CostComposition } from './costComposition.js';
+import {
+  isAzureProviderScopeFinancialChargeSpendBreakdownV1,
+  type AzureProviderScopeFinancialChargeSpendBreakdownV1,
+} from './financialChargePolicy.js';
+
+/**
+ * Non-authoritative daily/month display projection. It inherits period and
+ * currency from the containing summary entry. Formal reports and billing must
+ * use `financialChargeSpend` when present, never these major-unit fields.
+ */
+export interface AzureNativeFinancialSummaryV1 {
+  contractVersion: 'azure-native-financial-summary/v1';
+  policyRef: 'azure-cloud-services-excluding-marketplace/v1';
+  status: 'complete' | 'partial';
+  cost?: number;
+  costAmortized?: number;
+  financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
+  resourceTypes: ResourceCostType[];
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
+const hasExactFields = (value: Record<string, unknown>, required: readonly string[], optional: readonly string[] = []): boolean => {
+  const allowed = new Set([...required, ...optional]);
+  return required.every(field => Object.prototype.hasOwnProperty.call(value, field)) && Object.keys(value).every(field => allowed.has(field));
+};
+const isOptionalFiniteNumber = (value: unknown): value is number | undefined =>
+  value === undefined || (typeof value === 'number' && Number.isFinite(value));
+const isResourceCostType = (value: unknown): value is ResourceCostType =>
+  isRecord(value) &&
+  hasExactFields(value, ['name'], ['cost', 'costAmortized', 'costKind', 'commitmentPurchaseCost', 'commitmentPurchaseCostAmortized']) &&
+  typeof value.name === 'string' &&
+  value.name.length > 0 &&
+  value.name === value.name.trim() &&
+  isOptionalFiniteNumber(value.cost) &&
+  isOptionalFiniteNumber(value.costAmortized) &&
+  isOptionalFiniteNumber(value.commitmentPurchaseCost) &&
+  isOptionalFiniteNumber(value.commitmentPurchaseCostAmortized) &&
+  (value.costKind === undefined || value.costKind === 'usage' || value.costKind === 'commitment-purchase' || value.costKind === 'mixed');
+
+/** Exact validator for one Azure-native daily/month display projection. */
+export const isAzureNativeFinancialSummaryV1 = (value: unknown): value is AzureNativeFinancialSummaryV1 =>
+  isRecord(value) &&
+  hasExactFields(value, ['contractVersion', 'policyRef', 'status', 'resourceTypes'], ['cost', 'costAmortized', 'financialChargeSpend']) &&
+  value.contractVersion === 'azure-native-financial-summary/v1' &&
+  value.policyRef === 'azure-cloud-services-excluding-marketplace/v1' &&
+  (value.status === 'complete' || value.status === 'partial') &&
+  isOptionalFiniteNumber(value.cost) &&
+  isOptionalFiniteNumber(value.costAmortized) &&
+  (value.financialChargeSpend === undefined || isAzureProviderScopeFinancialChargeSpendBreakdownV1(value.financialChargeSpend)) &&
+  Array.isArray(value.resourceTypes) &&
+  value.resourceTypes.every(isResourceCostType);
 
 export interface AzureLocation {
   /** e.g. "eastus" */
@@ -20,6 +71,8 @@ export interface MonthSummaryEntry {
   endDate?: string;
   /** Top resources by cost */
   resourceTypes: ResourceCostType[];
+  /** Azure-native-only projection for ordinary customer financial views. */
+  azureNativeFinancialSummary?: AzureNativeFinancialSummaryV1;
   composition?: CostComposition;
 }
 
@@ -57,6 +110,8 @@ export interface DailySummaryEntry {
   commitmentPurchaseCostAmortized?: number;
   /** Top resources by cost */
   resourceTypes: ResourceCostType[];
+  /** Azure-native-only projection for ordinary customer financial views. */
+  azureNativeFinancialSummary?: AzureNativeFinancialSummaryV1;
   composition?: CostComposition;
 }
 

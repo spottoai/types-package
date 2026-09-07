@@ -509,6 +509,8 @@ export interface RecommendationResource {
   };
   spend: number;
   spendAmortized: number;
+  /** Rolling 30-day source partition used to present proved Azure-native resource spend. */
+  financialChargeSpend?: import('./financialChargePolicy.js').AzureResourceFinancialChargeSpendBreakdownV1;
   /** Spend basis used to calculate this recommendation resource's savings. */
   savingsBasis?: CostSavingsSpendBasis;
   optimizationProfile?: ResourceSimpleOptimizationProfile;

@@ -34,7 +34,12 @@ import {
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2 } from './savings.js';
-import type { AzureChargeableSavingsV1, AzurePolicyBoundSavingsAggregateV1 } from './financialChargePolicy.js';
+import type {
+  AzureChargeableSavingsV1,
+  AzurePolicyBoundSavingsAggregateV1,
+  AzureProviderScopeFinancialChargeSpendBreakdownV1,
+  AzureResourceFinancialChargeSpendBreakdownV1,
+} from './financialChargePolicy.js';
 import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -53,6 +58,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
   /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
   chargeableSavings?: AzureChargeableSavingsV1;
+  /** Rolling 30-day source partition for Azure-native default and explicit all-charge invoice views. */
+  financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -78,6 +85,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
   /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
   chargeableSavings?: AzureChargeableSavingsV1;
+  /** Rolling page spend partition used to include or exclude Marketplace charges. */
+  financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
 }
 
 /**
@@ -110,6 +119,8 @@ export interface AzureResourcePortalItem {
   location: string;
   /** Total spend over the last 30 days */
   spend: number;
+  /** Rolling resource spend partition used to include or exclude Marketplace charges. */
+  financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
   /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
   spendAmortized: number;
   /** Billing-backed portion of spend over the last 30 days */
