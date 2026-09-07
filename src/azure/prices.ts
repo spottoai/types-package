@@ -2,6 +2,7 @@ import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
 import type { CostComposition } from './costComposition.js';
+import type { AzureFinancialChargeClassificationV1 } from './financialChargePolicy.js';
 
 export type ResourceCostSource = SpendDataSource;
 
@@ -209,6 +210,8 @@ export interface ResourceCostSummary {
   resourceName?: string;
   /** Azure resource type */
   resourceType?: string;
+  /** Authoritative billing-source classification retained from the contributing charge row. */
+  financialChargeClassification?: AzureFinancialChargeClassificationV1;
   savingsRange?: SavingsRange;
   /** Reference to the recommendation that this target cost is associated with */
   recommendationId?: string;
@@ -408,6 +411,16 @@ export interface ResourceSpend {
   serviceName: string;
   /** Azure Cost Management publisher classification, for example Marketplace. */
   publisherType?: string;
+  /** Publisher display name retained from billing evidence when supplied. */
+  publisherName?: string;
+  /** Product or offer name retained from billing evidence when supplied. */
+  productName?: string;
+  /** Resource type supplied by billing evidence when available. */
+  resourceType?: string;
+  /** Explicit availability of publisher evidence; absence means a legacy row. */
+  publisherTypeEvidence?: import('./financialChargePolicy.js').AzurePublisherTypeEvidenceV1;
+  /** Authoritative per-component financial source classification applied by Cloud Engine. */
+  financialChargeClassification?: import('./financialChargePolicy.js').AzureFinancialChargeClassificationV1;
   meter: string;
   partNumber?: string;
   serviceTier: string;

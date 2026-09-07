@@ -24,6 +24,7 @@
     "src/azure/dev1135LatestContracts.contracts.spec.ts",
     "src/azure/costComposition.contracts.spec.ts",
     "src/azure/financialCorrectness.contracts.spec.ts",
+    "src/azure/financialChargePolicy.contracts.spec.ts",
     "src/azure/commitmentsPlanning.contracts.spec.ts",
     "src/azure/governance.contracts.spec.ts",
     "src/azure/azureViewSet.contracts.spec.ts",

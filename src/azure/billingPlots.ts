@@ -11,6 +11,10 @@ import {
   type BillingCompletedArtifactPublicationDecision,
   type BillingPartialArtifactPublicationDecision,
 } from './billingArtifactEvidence.js';
+import {
+  isAzureFinancialChargeCoverageV1,
+  type AzureFinancialChargeCoverageV1,
+} from './financialChargePolicy.js';
 
 export type {
   BillingArtifactPublicationDecision,
@@ -285,7 +289,7 @@ export interface BillingCostAnalysisMetadata {
 }
 
 /** Customer-readable billing data states; internal publication states are deliberately excluded. */
-export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'previous-verified' | 'no-activity';
+export type BillingCostAnalysisPublicDataState = 'current' | 'stale' | 'partial' | 'previous-verified' | 'no-activity';
 
 /** Business fields that may cross the customer API boundary. */
 export type BillingCostAnalysisPublicBusinessData = Omit<BillingCostAnalysisMetadata, 'billingGenerationId'>;
@@ -294,6 +298,8 @@ export type BillingCostAnalysisPublicBusinessData = Omit<BillingCostAnalysisMeta
 export type BillingCostAnalysisPublicDataResponse = BillingCostAnalysisPublicBusinessData & {
   schemaVersion: 1;
   dataState: Exclude<BillingCostAnalysisPublicDataState, 'no-activity'>;
+  /** Marketplace-exclusion evidence for the costs in this response. */
+  financialChargeCoverage: AzureFinancialChargeCoverageV1;
 };
 
 /** Customer response indicating that the checked billing scope contained no activity. */
@@ -301,6 +307,7 @@ export interface BillingCostAnalysisPublicNoActivityResponse {
   schemaVersion: 1;
   subscriptionId: string;
   dataState: 'no-activity';
+  financialChargeCoverage: AzureFinancialChargeCoverageV1;
 }
 
 /** Successful customer-facing billing response with no internal authority or diagnostic fields. */
@@ -315,6 +322,8 @@ interface BillingCostAnalysisMetadataV2Base extends BillingCostAnalysisMetadata 
   revision: ArtifactRevisionVector;
   inputManifestDigest: string;
   outputBindingDigest: string;
+  /** Additive policy evidence. Older immutable V2 generations may omit it. */
+  financialChargeCoverage?: AzureFinancialChargeCoverageV1;
 }
 
 export type BillingCostAnalysisMetadataV2 = BillingCostAnalysisMetadataV2Base &
@@ -485,6 +494,40 @@ const allowedBillingCostAnalysisFields = (
   allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
   allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
   allowChildren(value, 'ownership', 'revision', 'artifactEvidence', 'chartData', 'anomalies');
+  if (isRecord(value.financialChargeCoverage)) {
+    const coverage = value.financialChargeCoverage;
+    allowControl(value, 'financialChargeCoverage');
+    allowChildren(value, 'financialChargeCoverage');
+    allowControl(coverage, 'contractVersion', 'policyRef', 'status', 'coordinate', 'sourceTotals', 'unknownObjects');
+    allowText(coverage, 'contractVersion', 'policyRef', 'status');
+    allowChildren(coverage, 'coordinate', 'sourceTotals', 'unknownObjects');
+    if (isRecord(coverage.coordinate)) {
+      allowControl(
+        coverage.coordinate,
+        'generationId',
+        'providerName',
+        'providerScopeId',
+        'basis',
+        'period',
+        'currencyCode',
+        'minorUnitScale'
+      );
+      allowText(coverage.coordinate, 'generationId', 'providerName', 'providerScopeId', 'basis', 'currencyCode');
+      allowChildren(coverage.coordinate, 'period');
+      if (isRecord(coverage.coordinate.period)) {
+        allowText(coverage.coordinate.period, 'startDate', 'endDateExclusive');
+      }
+    }
+    if (isRecord(coverage.sourceTotals)) allowControl(coverage.sourceTotals, ...Object.keys(coverage.sourceTotals));
+    if (Array.isArray(coverage.unknownObjects)) {
+      for (const item of coverage.unknownObjects) {
+        if (!isRecord(item)) continue;
+        allowControl(item, ...Object.keys(item));
+        allowText(item, 'objectKey', 'name', 'resourceType', 'resourceId', 'billableComponentKey');
+        allowTextArray(item, 'reasonCodes');
+      }
+    }
+  }
   if (validationBranch !== 'business-v1') allowControl(value, 'artifactState');
   if (validationBranch === 'legacy-fallback') allowControl(value, 'artifactSource');
   allowDigest(value, 'inputManifestDigest');
@@ -764,11 +807,12 @@ const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
 
-const BILLING_PUBLIC_DATA_STATES = new Set<string>(['current', 'stale', 'previous-verified']);
+const BILLING_PUBLIC_DATA_STATES = new Set<string>(['current', 'partial', 'stale', 'previous-verified']);
 const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
   'schemaVersion',
   'subscriptionId',
   'dataState',
+  'financialChargeCoverage',
   'chartData',
   'anomalies',
   'currencyCode',
@@ -778,7 +822,7 @@ const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
   'forecastRemaining',
   'forecastPeriodEnd',
 ]);
-const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState']);
+const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState', 'financialChargeCoverage']);
 
 const hasOnlyFields = (value: Record<string, unknown>, allowedFields: ReadonlySet<string>): boolean =>
   Object.keys(value).every(field => allowedFields.has(field));
@@ -797,13 +841,20 @@ export const isBillingCostAnalysisPublicResponse = (value: unknown): value is Bi
     return false;
   }
   if (value.dataState === 'no-activity') {
-    return hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS);
+    return (
+      hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS) &&
+      isAzureFinancialChargeCoverageV1(value.financialChargeCoverage) &&
+      value.financialChargeCoverage.coordinate.providerScopeId === value.subscriptionId
+    );
   }
   return (
     BILLING_PUBLIC_DATA_STATES.has(value.dataState) &&
     hasOnlyFields(value, BILLING_PUBLIC_BUSINESS_FIELDS) &&
     !containsForbiddenBillingCostAnalysisControlData(value, 'business-v1') &&
-    hasValidBillingCostAnalysisPublicBusinessFields(value)
+    hasValidBillingCostAnalysisPublicBusinessFields(value) &&
+    isAzureFinancialChargeCoverageV1(value.financialChargeCoverage) &&
+    value.financialChargeCoverage.coordinate.providerScopeId === value.subscriptionId &&
+    value.financialChargeCoverage.coordinate.currencyCode === value.currencyCode
   );
 };
 
@@ -839,6 +890,15 @@ export const isBillingCostAnalysisMetadataV2 = (value: unknown): value is Billin
     return false;
   }
   if (!hasValidBillingCostAnalysisBusinessFields(value)) return false;
+  if (
+    value.financialChargeCoverage !== undefined &&
+    (!isAzureFinancialChargeCoverageV1(value.financialChargeCoverage) ||
+      value.financialChargeCoverage.coordinate.generationId !== value.billingGenerationId ||
+      value.financialChargeCoverage.coordinate.providerScopeId !== value.subscriptionId ||
+      value.financialChargeCoverage.coordinate.currencyCode !== value.currencyCode)
+  ) {
+    return false;
+  }
   if (
     !hasValidMetadataEvidenceState(
       value.artifactState,
