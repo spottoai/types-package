@@ -8,6 +8,7 @@ const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
 const billingArtifactEvidence_js_1 = require("./billingArtifactEvidence.js");
+const financialChargePolicy_js_1 = require("./financialChargePolicy.js");
 const LEGACY_FALLBACK_FORBIDDEN_OWN_FIELDS = [
     'schemaVersion',
     'ownership',
@@ -136,6 +137,33 @@ const allowedBillingCostAnalysisFields = (value, validationBranch) => {
     allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
     allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
     allowChildren(value, 'ownership', 'revision', 'artifactEvidence', 'chartData', 'anomalies');
+    if (isRecord(value.financialChargeCoverage)) {
+        const coverage = value.financialChargeCoverage;
+        allowControl(value, 'financialChargeCoverage');
+        allowChildren(value, 'financialChargeCoverage');
+        allowControl(coverage, 'contractVersion', 'policyRef', 'status', 'coordinate', 'sourceTotals', 'unknownObjects');
+        allowText(coverage, 'contractVersion', 'policyRef', 'status');
+        allowChildren(coverage, 'coordinate', 'sourceTotals', 'unknownObjects');
+        if (isRecord(coverage.coordinate)) {
+            allowControl(coverage.coordinate, 'generationId', 'providerName', 'providerScopeId', 'basis', 'period', 'currencyCode', 'minorUnitScale');
+            allowText(coverage.coordinate, 'generationId', 'providerName', 'providerScopeId', 'basis', 'currencyCode');
+            allowChildren(coverage.coordinate, 'period');
+            if (isRecord(coverage.coordinate.period)) {
+                allowText(coverage.coordinate.period, 'startDate', 'endDateExclusive');
+            }
+        }
+        if (isRecord(coverage.sourceTotals))
+            allowControl(coverage.sourceTotals, ...Object.keys(coverage.sourceTotals));
+        if (Array.isArray(coverage.unknownObjects)) {
+            for (const item of coverage.unknownObjects) {
+                if (!isRecord(item))
+                    continue;
+                allowControl(item, ...Object.keys(item));
+                allowText(item, 'objectKey', 'name', 'resourceType', 'resourceId', 'billableComponentKey');
+                allowTextArray(item, 'reasonCodes');
+            }
+        }
+    }
     if (validationBranch !== 'business-v1')
         allowControl(value, 'artifactState');
     if (validationBranch === 'legacy-fallback')
@@ -387,11 +415,12 @@ const hasValidBillingCostAnalysisBusinessFields = (value) => {
         return false;
     return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
 };
-const BILLING_PUBLIC_DATA_STATES = new Set(['current', 'stale', 'previous-verified']);
+const BILLING_PUBLIC_DATA_STATES = new Set(['current', 'partial', 'stale', 'previous-verified']);
 const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
     'schemaVersion',
     'subscriptionId',
     'dataState',
+    'financialChargeCoverage',
     'chartData',
     'anomalies',
     'currencyCode',
@@ -401,7 +430,7 @@ const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
     'forecastRemaining',
     'forecastPeriodEnd',
 ]);
-const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState']);
+const BILLING_PUBLIC_NO_ACTIVITY_FIELDS = new Set(['schemaVersion', 'subscriptionId', 'dataState', 'financialChargeCoverage']);
 const hasOnlyFields = (value, allowedFields) => Object.keys(value).every(field => allowedFields.has(field));
 const hasValidBillingCostAnalysisPublicBusinessFields = (value) => {
     if (!isPathSegment(value.subscriptionId))
@@ -420,12 +449,17 @@ const isBillingCostAnalysisPublicResponse = (value) => {
         return false;
     }
     if (value.dataState === 'no-activity') {
-        return hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS);
+        return (hasOnlyFields(value, BILLING_PUBLIC_NO_ACTIVITY_FIELDS) &&
+            (0, financialChargePolicy_js_1.isAzureFinancialChargeCoverageV1)(value.financialChargeCoverage) &&
+            value.financialChargeCoverage.coordinate.providerScopeId === value.subscriptionId);
     }
     return (BILLING_PUBLIC_DATA_STATES.has(value.dataState) &&
         hasOnlyFields(value, BILLING_PUBLIC_BUSINESS_FIELDS) &&
         !containsForbiddenBillingCostAnalysisControlData(value, 'business-v1') &&
-        hasValidBillingCostAnalysisPublicBusinessFields(value));
+        hasValidBillingCostAnalysisPublicBusinessFields(value) &&
+        (0, financialChargePolicy_js_1.isAzureFinancialChargeCoverageV1)(value.financialChargeCoverage) &&
+        value.financialChargeCoverage.coordinate.providerScopeId === value.subscriptionId &&
+        value.financialChargeCoverage.coordinate.currencyCode === value.currencyCode);
 };
 exports.isBillingCostAnalysisPublicResponse = isBillingCostAnalysisPublicResponse;
 const isBillingCostAnalysisBusinessPayloadForBranch = (value, validationBranch) => !containsForbiddenBillingCostAnalysisControlData(value, validationBranch) &&
@@ -459,6 +493,13 @@ const isBillingCostAnalysisMetadataV2 = (value) => {
     }
     if (!hasValidBillingCostAnalysisBusinessFields(value))
         return false;
+    if (value.financialChargeCoverage !== undefined &&
+        (!(0, financialChargePolicy_js_1.isAzureFinancialChargeCoverageV1)(value.financialChargeCoverage) ||
+            value.financialChargeCoverage.coordinate.generationId !== value.billingGenerationId ||
+            value.financialChargeCoverage.coordinate.providerScopeId !== value.subscriptionId ||
+            value.financialChargeCoverage.coordinate.currencyCode !== value.currencyCode)) {
+        return false;
+    }
     if (!hasValidMetadataEvidenceState(value.artifactState, value.artifactEvidence, value.billingGenerationId, value.inputManifestDigest, value.chartData, value.anomalies)) {
         return false;
     }

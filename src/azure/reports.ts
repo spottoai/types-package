@@ -1,6 +1,7 @@
 import { Tags } from '../tags';
 import type { CostDateBasis } from './prices';
 import type { CostComposition } from './costComposition.js';
+import type { AzureFinancialChargeCoverageV1, AzureFinancialChargePolicyRefV1 } from './financialChargePolicy.js';
 
 export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
 
@@ -104,6 +105,24 @@ export interface DecompositionTree {
   currencySymbol: string;
   version?: string;
   composition?: CostComposition;
+  /**
+   * Separate cost tree used by newly generated formal customer exports. The
+   * ordinary root remains the all-charge Azure reconciliation view.
+   */
+  formalFinancialProjection?: DecompositionTreeFinancialProjectionV1;
+}
+
+export interface DecompositionTreeFinancialProjectionV1 {
+  contractVersion: 'financial-charge-policy/v1';
+  financialChargePolicyRef: AzureFinancialChargePolicyRefV1;
+  financialChargeSource: 'azure-native';
+  financialChargeCoverage: AzureFinancialChargeCoverageV1;
+  comparisonFinancialChargeCoverage: AzureFinancialChargeCoverageV1;
+  root: DecompositionTreeNode;
+  totalSpend: number;
+  totalSpendAmortized?: number;
+  totalSpendPrevious?: number;
+  totalSpendAmortizedPrevious?: number;
 }
 
 // EstimationTree with DecompositionTree, adding estimation/blending related fields
