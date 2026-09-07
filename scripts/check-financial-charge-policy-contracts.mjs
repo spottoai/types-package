@@ -6,6 +6,10 @@ import {
   isAzureCompanyChargeableSavingsResponseV1,
   isAzureFinancialChargeClassificationV1,
   isAzureFinancialChargeCoverageV1,
+  isAzureFinancialChargeSpendBreakdownV1,
+  isAzureNativeFinancialSummaryV1,
+  isAzureNativeSubscriptionFinancialStatsV1,
+  isAzureResourceFinancialChargeSpendBreakdownForResourceV1,
   isAzurePolicyBoundSavingsAggregateV1,
   isAzurePublisherTypeEvidenceV1,
 } from '../dist/index.js';
@@ -103,6 +107,59 @@ const availableChargeableSavings = {
   chargeableMaxSavingsMinorUnits: 2_000,
 };
 
+const rollingSpendBreakdown = {
+  contractVersion: 'financial-charge-spend/v1',
+  policyRef: AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1,
+  generationId: coordinate.generationId,
+  subject: { kind: 'provider-scope', providerScopeId: coordinate.providerScopeId },
+  period: {
+    startDate: '2026-08-08',
+    endDateExclusive: '2026-09-07',
+  },
+  currencyCode: coordinate.currencyCode,
+  minorUnitScale: coordinate.minorUnitScale,
+  status: 'partial',
+  allCharge: {
+    billed: { status: 'available', totalMinorUnits: 17_000, billingBackedMinorUnits: 15_000, estimatedMinorUnits: 2_000 },
+    amortized: { status: 'available', totalMinorUnits: 16_000, billingBackedMinorUnits: 14_000, estimatedMinorUnits: 2_000 },
+  },
+  azureNative: {
+    billed: { status: 'available', totalMinorUnits: 10_000, billingBackedMinorUnits: 9_000, estimatedMinorUnits: 1_000 },
+    amortized: { status: 'available', totalMinorUnits: 9_500, billingBackedMinorUnits: 8_500, estimatedMinorUnits: 1_000 },
+  },
+  marketplace: {
+    billed: { status: 'available', totalMinorUnits: 5_000, billingBackedMinorUnits: 4_000, estimatedMinorUnits: 1_000 },
+    amortized: { status: 'available', totalMinorUnits: 4_500, billingBackedMinorUnits: 3_500, estimatedMinorUnits: 1_000 },
+  },
+  unknown: {
+    billed: { status: 'available', totalMinorUnits: 2_000, billingBackedMinorUnits: 2_000, estimatedMinorUnits: 0 },
+    amortized: { status: 'available', totalMinorUnits: 2_000, billingBackedMinorUnits: 2_000, estimatedMinorUnits: 0 },
+  },
+  unknownMaterial: { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 2_000, amortizedAbsoluteMinorUnits: 2_000 },
+};
+
+const azureNativeFinancialSummary = {
+  contractVersion: 'azure-native-financial-summary/v1',
+  policyRef: AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1,
+  status: 'partial',
+  cost: 100,
+  costAmortized: 95,
+  financialChargeSpend: rollingSpendBreakdown,
+  resourceTypes: [{ name: 'Virtual Machines', cost: 100, costAmortized: 95 }],
+};
+
+const azureNativeSubscriptionFinancialStats = {
+  contractVersion: 'azure-native-subscription-financial-stats/v1',
+  policyRef: AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1,
+  status: 'partial',
+  financialChargeSpend: rollingSpendBreakdown,
+  resourcesByLocation: [],
+  resourcesByType: [],
+  spend30Days: 100,
+  spend30DaysBillingBacked: 90,
+  spend30DaysEstimated: 10,
+};
+
 assert.equal(isAzurePublisherTypeEvidenceV1({ status: 'available', publisherType: 'Marketplace', publisherName: 'Nerdio' }), true);
 assert.equal(isAzurePublisherTypeEvidenceV1({ status: 'unavailable', reasonCode: 'publisher-type-unsupported' }), true);
 assert.equal(isAzurePublisherTypeEvidenceV1({ status: 'unavailable', reasonCode: 'publisher-type-unrecognized' }), false);
@@ -120,6 +177,187 @@ assert.equal(
   isAzureFinancialChargeClassificationV1({ source: 'azure-native', publisherType: 'Marketplace' }),
   false,
   'classification cannot contradict normalized publisher evidence'
+);
+
+assert.equal(isAzureFinancialChargeSpendBreakdownV1(rollingSpendBreakdown), true);
+assert.equal(isAzureNativeFinancialSummaryV1(azureNativeFinancialSummary), true);
+assert.equal(isAzureNativeSubscriptionFinancialStatsV1(azureNativeSubscriptionFinancialStats), true);
+assert.equal(
+  isAzureNativeFinancialSummaryV1({
+    ...azureNativeFinancialSummary,
+    resourceTypes: [{ name: 'Virtual Machines', cost: Number.NaN }],
+  }),
+  false,
+  'daily/month Azure-native display projections reject non-finite money'
+);
+assert.equal(
+  isAzureNativeSubscriptionFinancialStatsV1({
+    ...azureNativeSubscriptionFinancialStats,
+    spend30Days: Number.POSITIVE_INFINITY,
+  }),
+  false,
+  'subscription Azure-native display projections reject non-finite money'
+);
+const resourceBreakdown = {
+  ...rollingSpendBreakdown,
+  subject: {
+    kind: 'resource',
+    providerScopeId: coordinate.providerScopeId,
+    resourceId: '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1',
+  },
+};
+assert.equal(
+  isAzureResourceFinancialChargeSpendBreakdownForResourceV1(
+    resourceBreakdown,
+    '/SUBSCRIPTIONS/SUBSCRIPTION-1/RESOURCEGROUPS/RG/PROVIDERS/MICROSOFT.COMPUTE/VIRTUALMACHINES/VM-1/'
+  ),
+  true,
+  'resource subject matching is case-insensitive and ignores trailing slashes'
+);
+assert.equal(
+  isAzureResourceFinancialChargeSpendBreakdownForResourceV1(
+    resourceBreakdown,
+    '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-2'
+  ),
+  false,
+  'resource rolling spend must bind to the enclosing resource ID'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    subject: { kind: 'resource', providerScopeId: coordinate.providerScopeId, resourceId: ' ' },
+  }),
+  false,
+  'resource rolling spend requires a non-empty resource subject'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    allCharge: {
+      ...rollingSpendBreakdown.allCharge,
+      billed: { ...rollingSpendBreakdown.allCharge.billed, totalMinorUnits: 16_999 },
+    },
+  }),
+  false,
+  'rolling spend source partitions must reconcile to all-charge spend'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({ ...rollingSpendBreakdown, status: 'complete' }),
+  false,
+  'rolling spend with material unknown charges cannot claim complete coverage'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    status: 'complete',
+    unknown: {
+      billed: { status: 'available', totalMinorUnits: 0, billingBackedMinorUnits: 0, estimatedMinorUnits: 0 },
+      amortized: { status: 'available', totalMinorUnits: 0, billingBackedMinorUnits: 0, estimatedMinorUnits: 0 },
+    },
+    unknownMaterial: { nonZeroRowCount: 2, billedAbsoluteMinorUnits: 4_000, amortizedAbsoluteMinorUnits: 4_000 },
+  }),
+  false,
+  'signed-zero material unknown rows cannot claim complete coverage'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    status: 'partial',
+    unknown: {
+      billed: { status: 'available', totalMinorUnits: 0, billingBackedMinorUnits: 0, estimatedMinorUnits: 0 },
+      amortized: { status: 'available', totalMinorUnits: 0, billingBackedMinorUnits: 0, estimatedMinorUnits: 0 },
+    },
+    unknownMaterial: { nonZeroRowCount: 0, billedAbsoluteMinorUnits: 0, amortizedAbsoluteMinorUnits: 0 },
+  }),
+  false,
+  'partial rolling coverage requires material unknown evidence'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    period: { startDate: '2026-02-30', endDateExclusive: '2026-03-02' },
+  }),
+  false,
+  'rolling coverage rejects normalized but nonexistent calendar dates'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    allCharge: {
+      ...rollingSpendBreakdown.allCharge,
+      billed: {
+        status: 'available',
+        totalMinorUnits: Number.MAX_SAFE_INTEGER - 1,
+        billingBackedMinorUnits: Number.MAX_SAFE_INTEGER - 1,
+        estimatedMinorUnits: 0,
+      },
+    },
+    azureNative: {
+      ...rollingSpendBreakdown.azureNative,
+      billed: {
+        status: 'available',
+        totalMinorUnits: Number.MAX_SAFE_INTEGER,
+        billingBackedMinorUnits: Number.MAX_SAFE_INTEGER,
+        estimatedMinorUnits: 0,
+      },
+    },
+    marketplace: {
+      ...rollingSpendBreakdown.marketplace,
+      billed: { status: 'available', totalMinorUnits: 2, billingBackedMinorUnits: 2, estimatedMinorUnits: 0 },
+    },
+    unknown: {
+      ...rollingSpendBreakdown.unknown,
+      billed: { status: 'available', totalMinorUnits: -2, billingBackedMinorUnits: -2, estimatedMinorUnits: 0 },
+    },
+    unknownMaterial: { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 2, amortizedAbsoluteMinorUnits: 2_000 },
+  }),
+  false,
+  'rolling source reconciliation rejects unsafe intermediate sums'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    azureNative: {
+      ...rollingSpendBreakdown.azureNative,
+      billed: { ...rollingSpendBreakdown.azureNative.billed, estimatedMinorUnits: 999 },
+    },
+  }),
+  false,
+  'each source total must equal billing-backed plus estimated spend'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    allCharge: {
+      ...rollingSpendBreakdown.allCharge,
+      amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' },
+    },
+    azureNative: {
+      ...rollingSpendBreakdown.azureNative,
+      amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' },
+    },
+    marketplace: {
+      ...rollingSpendBreakdown.marketplace,
+      amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' },
+    },
+    unknown: {
+      ...rollingSpendBreakdown.unknown,
+      amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' },
+    },
+  }),
+  true,
+  'missing amortized evidence is explicit and does not require a fabricated zero'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...rollingSpendBreakdown,
+    unknown: {
+      ...rollingSpendBreakdown.unknown,
+      amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' },
+    },
+  }),
+  false,
+  'one source cannot silently lose a basis while the all-charge partition remains available'
 );
 
 assert.equal(isAzureFinancialChargeCoverageV1(completeCoverage), true);

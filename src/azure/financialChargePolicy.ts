@@ -1,4 +1,5 @@
 import type { CostBasis } from './costComposition.js';
+import type { MoneyUnavailableReason } from './costComposition.js';
 import type { SavingsAggregateV2 } from './savings.js';
 
 export const AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 = 'azure-cloud-services-excluding-marketplace/v1' as const;
@@ -6,6 +7,76 @@ export const AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 = 'azure-c
 export type AzureFinancialChargePolicyRefV1 = typeof AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1;
 export type AzureFinancialChargeSourceV1 = 'azure-native' | 'marketplace' | 'unknown';
 export type AzureFinancialChargeSourceUnknownReasonV1 = 'publisher-type-missing' | 'publisher-type-unsupported' | 'publisher-type-unrecognized';
+
+/** One rolling-spend basis split by billing-backed and estimated provenance. */
+export type AzureFinancialChargeSpendBasisTotalsV1 =
+  | {
+      status: 'available';
+      totalMinorUnits: number;
+      billingBackedMinorUnits: number;
+      estimatedMinorUnits: number;
+    }
+  | {
+      status: 'unavailable';
+      reasonCode: MoneyUnavailableReason;
+    };
+
+/** Billed and amortized projections for one financial charge source. */
+export interface AzureFinancialChargeSpendSourceTotalsV1 {
+  billed: AzureFinancialChargeSpendBasisTotalsV1;
+  amortized: AzureFinancialChargeSpendBasisTotalsV1;
+}
+
+/** Subject whose rolling spend is represented by the breakdown. */
+export type AzureFinancialChargeSpendSubjectV1 =
+  | {
+      kind: 'provider-scope';
+      providerScopeId: string;
+    }
+  | {
+      kind: 'resource';
+      providerScopeId: string;
+      resourceId: string;
+    };
+
+/** Evidence that keeps material unknown rows distinct from their signed net. */
+export interface AzureFinancialChargeUnknownMaterialV1 {
+  nonZeroRowCount: number;
+  billedAbsoluteMinorUnits: number;
+  amortizedAbsoluteMinorUnits: number;
+}
+
+/**
+ * Rolling resource-page spend partition. This deliberately remains separate from
+ * the fixed formal-report coordinate because its period follows the page's
+ * rolling cost window.
+ */
+export interface AzureFinancialChargeSpendBreakdownV1<TSubject extends AzureFinancialChargeSpendSubjectV1 = AzureFinancialChargeSpendSubjectV1> {
+  contractVersion: 'financial-charge-spend/v1';
+  policyRef: AzureFinancialChargePolicyRefV1;
+  generationId: string;
+  subject: TSubject;
+  period: {
+    startDate: string;
+    endDateExclusive: string;
+  };
+  currencyCode: string;
+  minorUnitScale: number;
+  status: 'complete' | 'partial';
+  allCharge: AzureFinancialChargeSpendSourceTotalsV1;
+  azureNative: AzureFinancialChargeSpendSourceTotalsV1;
+  marketplace: AzureFinancialChargeSpendSourceTotalsV1;
+  unknown: AzureFinancialChargeSpendSourceTotalsV1;
+  unknownMaterial: AzureFinancialChargeUnknownMaterialV1;
+}
+
+export type AzureProviderScopeFinancialChargeSpendBreakdownV1 = AzureFinancialChargeSpendBreakdownV1<
+  Extract<AzureFinancialChargeSpendSubjectV1, { kind: 'provider-scope' }>
+>;
+
+export type AzureResourceFinancialChargeSpendBreakdownV1 = AzureFinancialChargeSpendBreakdownV1<
+  Extract<AzureFinancialChargeSpendSubjectV1, { kind: 'resource' }>
+>;
 
 /** Publisher evidence retained from the provider billing source before financial classification. */
 export type AzurePublisherTypeEvidenceV1 =
@@ -196,8 +267,160 @@ const isNonEmptyTrimmedString = (value: unknown): value is string => typeof valu
 const isSafeInteger = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value);
 const isNonNegativeSafeInteger = (value: unknown): value is number => isSafeInteger(value) && value >= 0;
 
-const isIsoDate = (value: unknown): value is string =>
-  typeof value === 'string' && ISO_DATE_PATTERN.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`));
+const isIsoDate = (value: unknown): value is string => {
+  if (typeof value !== 'string' || !ISO_DATE_PATTERN.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.getUTCFullYear() === year && parsed.getUTCMonth() + 1 === month && parsed.getUTCDate() === day;
+};
+
+const MONEY_UNAVAILABLE_REASONS = new Set<string>(['billing-unavailable', 'not-produced', 'currency-unresolved', 'coverage-unproven']);
+
+const checkedSafeIntegerSum = (values: readonly number[]): number | undefined => {
+  let total = 0;
+  for (const value of values) {
+    const nextTotal = total + value;
+    if (!Number.isSafeInteger(nextTotal)) return undefined;
+    total = nextTotal;
+  }
+  return total;
+};
+
+const isSpendBasisTotals = (value: unknown): value is AzureFinancialChargeSpendBasisTotalsV1 => {
+  if (!isRecord(value)) return false;
+  if (value.status === 'unavailable') {
+    return hasExactFields(value, ['status', 'reasonCode']) && typeof value.reasonCode === 'string' && MONEY_UNAVAILABLE_REASONS.has(value.reasonCode);
+  }
+  if (
+    value.status !== 'available' ||
+    !hasExactFields(value, ['status', 'totalMinorUnits', 'billingBackedMinorUnits', 'estimatedMinorUnits']) ||
+    !isSafeInteger(value.totalMinorUnits) ||
+    !isSafeInteger(value.billingBackedMinorUnits) ||
+    !isSafeInteger(value.estimatedMinorUnits)
+  ) {
+    return false;
+  }
+  return checkedSafeIntegerSum([value.billingBackedMinorUnits, value.estimatedMinorUnits]) === value.totalMinorUnits;
+};
+
+const isSpendSourceTotals = (value: unknown): value is AzureFinancialChargeSpendSourceTotalsV1 =>
+  isRecord(value) && hasExactFields(value, ['billed', 'amortized']) && isSpendBasisTotals(value.billed) && isSpendBasisTotals(value.amortized);
+
+const isSpendSubject = (value: unknown): value is AzureFinancialChargeSpendSubjectV1 => {
+  if (!isRecord(value) || (value.kind !== 'provider-scope' && value.kind !== 'resource')) return false;
+  if (value.kind === 'provider-scope') {
+    return hasExactFields(value, ['kind', 'providerScopeId']) && isNonEmptyTrimmedString(value.providerScopeId);
+  }
+  return (
+    hasExactFields(value, ['kind', 'providerScopeId', 'resourceId']) &&
+    isNonEmptyTrimmedString(value.providerScopeId) &&
+    isNonEmptyTrimmedString(value.resourceId)
+  );
+};
+
+const isUnknownMaterial = (value: unknown): value is AzureFinancialChargeUnknownMaterialV1 =>
+  isRecord(value) &&
+  hasExactFields(value, ['nonZeroRowCount', 'billedAbsoluteMinorUnits', 'amortizedAbsoluteMinorUnits']) &&
+  isNonNegativeSafeInteger(value.nonZeroRowCount) &&
+  isNonNegativeSafeInteger(value.billedAbsoluteMinorUnits) &&
+  isNonNegativeSafeInteger(value.amortizedAbsoluteMinorUnits);
+
+/** Exact validator for one rolling all-charge/Azure-native/Marketplace/unknown partition. */
+export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is AzureFinancialChargeSpendBreakdownV1 => {
+  if (
+    !isRecord(value) ||
+    !hasExactFields(value, [
+      'contractVersion',
+      'policyRef',
+      'generationId',
+      'subject',
+      'period',
+      'currencyCode',
+      'minorUnitScale',
+      'status',
+      'allCharge',
+      'azureNative',
+      'marketplace',
+      'unknown',
+      'unknownMaterial',
+    ]) ||
+    value.contractVersion !== 'financial-charge-spend/v1' ||
+    value.policyRef !== AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 ||
+    !isNonEmptyTrimmedString(value.generationId) ||
+    !isSpendSubject(value.subject) ||
+    !isRecord(value.period) ||
+    !hasExactFields(value.period, ['startDate', 'endDateExclusive']) ||
+    !isIsoDate(value.period.startDate) ||
+    !isIsoDate(value.period.endDateExclusive) ||
+    value.period.startDate >= value.period.endDateExclusive ||
+    typeof value.currencyCode !== 'string' ||
+    !ISO_CURRENCY_PATTERN.test(value.currencyCode) ||
+    !isNonNegativeSafeInteger(value.minorUnitScale) ||
+    value.minorUnitScale > 6 ||
+    (value.status !== 'complete' && value.status !== 'partial') ||
+    !isSpendSourceTotals(value.allCharge) ||
+    !isSpendSourceTotals(value.azureNative) ||
+    !isSpendSourceTotals(value.marketplace) ||
+    !isSpendSourceTotals(value.unknown) ||
+    !isUnknownMaterial(value.unknownMaterial)
+  ) {
+    return false;
+  }
+
+  const breakdown = value as unknown as AzureFinancialChargeSpendBreakdownV1;
+  const sources = [breakdown.azureNative, breakdown.marketplace, breakdown.unknown];
+  for (const basis of ['billed', 'amortized'] as const) {
+    const partitions = [breakdown.allCharge[basis], ...sources.map(source => source[basis])];
+    if (!partitions.every(partition => partition.status === partitions[0].status)) return false;
+    if (partitions[0].status === 'unavailable') continue;
+    for (const key of ['totalMinorUnits', 'billingBackedMinorUnits', 'estimatedMinorUnits'] as const) {
+      const sourceValues = sources.map(source => {
+        const sourceBasis = source[basis];
+        return sourceBasis.status === 'available' ? sourceBasis[key] : undefined;
+      });
+      if (sourceValues.some(sourceValue => sourceValue === undefined)) return false;
+      const sourceTotal = checkedSafeIntegerSum(sourceValues as number[]);
+      const allChargeBasis = breakdown.allCharge[basis];
+      if (sourceTotal === undefined || allChargeBasis.status !== 'available' || allChargeBasis[key] !== sourceTotal) return false;
+    }
+  }
+
+  const materialUnknown = breakdown.unknownMaterial.nonZeroRowCount > 0;
+  if (materialUnknown) {
+    if (breakdown.status !== 'partial') return false;
+    if (breakdown.unknownMaterial.billedAbsoluteMinorUnits === 0 && breakdown.unknownMaterial.amortizedAbsoluteMinorUnits === 0) return false;
+  } else if (
+    breakdown.status !== 'complete' ||
+    breakdown.unknownMaterial.billedAbsoluteMinorUnits !== 0 ||
+    breakdown.unknownMaterial.amortizedAbsoluteMinorUnits !== 0
+  ) {
+    return false;
+  }
+
+  const unknownAbsoluteByBasis = {
+    billed: breakdown.unknownMaterial.billedAbsoluteMinorUnits,
+    amortized: breakdown.unknownMaterial.amortizedAbsoluteMinorUnits,
+  };
+  return (['billed', 'amortized'] as const).every(basis => {
+    const unknownBasis = breakdown.unknown[basis];
+    return unknownBasis.status === 'unavailable' || Math.abs(unknownBasis.totalMinorUnits) <= unknownAbsoluteByBasis[basis];
+  });
+};
+
+export const isAzureProviderScopeFinancialChargeSpendBreakdownV1 = (value: unknown): value is AzureProviderScopeFinancialChargeSpendBreakdownV1 =>
+  isAzureFinancialChargeSpendBreakdownV1(value) && value.subject.kind === 'provider-scope';
+
+export const isAzureResourceFinancialChargeSpendBreakdownV1 = (value: unknown): value is AzureResourceFinancialChargeSpendBreakdownV1 =>
+  isAzureFinancialChargeSpendBreakdownV1(value) && value.subject.kind === 'resource';
+
+/** Validates both the resource-level shape and its binding to the enclosing resource ID. */
+export const isAzureResourceFinancialChargeSpendBreakdownForResourceV1 = (
+  value: unknown,
+  resourceId: string
+): value is AzureResourceFinancialChargeSpendBreakdownV1 =>
+  isNonEmptyTrimmedString(resourceId) &&
+  isAzureResourceFinancialChargeSpendBreakdownV1(value) &&
+  value.subject.resourceId.toLowerCase().replace(/\/+$/u, '') === resourceId.toLowerCase().replace(/\/+$/u, '');
 
 const areStringArraysEqual = (left: string[], right: string[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);
