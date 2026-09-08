@@ -13,11 +13,10 @@ import type { CostComposition, EstimateLens } from './costComposition.js';
 import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, SavingsLifecycleFreshnessV1 } from './savings.js';
-import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView.js';
-import type { CurrentSpendCompositionV1 } from './financialDataflow.js';
 import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceCoverage.js';
-import type { FinancialSavingsAuthorityV1, FinancialSavingsResourceProjectionV1 } from './financialSavingsAuthority.js';
 import type { FinancialSavingsResourceQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
+import type { FinancialCurrentSpendSurfaceProjectionV1 } from './financialCurrentSpendSurfaceProjection.js';
+import type { FinancialResourceSurfaceProjectionV1 } from './financialResourceSurfaceProjection.js';
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     subscription: SubscriptionSummary;
     timestamp: string;
@@ -33,12 +32,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
     savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
     /** Compact generation-bound projection of the canonical Resources financial savings authority. */
     financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
-    /**
-     * Producer-owned subscription current-spend compositions for the dashboard.
-     * Consumers select an exact coordinate and never rebuild spend from summary,
-     * budget, resource-row, or retail-price fields.
-     */
-    financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+    /** Bounded exact current-spend display projection. */
+    financialCurrentSpendProjection?: FinancialCurrentSpendSurfaceProjectionV1;
     /** API-projected, generation-bound evidence qualification; never a monetary authority. */
     financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
     advisorScore?: AdvisorScoreSummary;
@@ -60,16 +55,14 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
     costSavingsSummary?: CostSavingsSummary;
     /** Authoritative additive savings total for this complete resource scope. */
     savingsAggregate?: SavingsAggregateV2;
-    /** Single generation-bound financial authority for vertically migrated resource scopes. */
-    financialAuthority?: FinancialAuthorityViewV1;
-    /** Savings authority bound one-to-one to the financial authority coordinates. */
-    financialSavingsAuthority?: FinancialSavingsAuthorityV1;
     /** Compact generation-bound projection used by the UI Financial Domain. */
     financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
     /** API-selected non-monetary allocation membership for a filtered resource result. */
     financialSavingsResourceQuerySelection?: FinancialSavingsResourceQuerySelectionV1;
-    /** Bounded subscription current-spend compositions produced from the same conformed authority generation. */
-    financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+    /** Bounded exact current-spend display projection. */
+    financialCurrentSpendProjection?: FinancialCurrentSpendSurfaceProjectionV1;
+    /** Bounded resource display values with one shared coordinate catalogue. */
+    financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
     /** API-projected, generation-bound evidence qualification; never a monetary authority. */
     financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
 }
@@ -163,10 +156,6 @@ export interface AzureResourcePortalItem {
     optimizationProfile?: ResourceSimpleOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
-    /** Resource-scoped, non-additive projection from the canonical conformed Financial Authority. */
-    financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
-    /** Resource-scoped, non-additive projection from the matching conformed savings authority. */
-    financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
     /** Current Azure Resource Health availability status for this resource, when available. */
     resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
@@ -316,10 +305,14 @@ export interface AzureResourcePluginItemDetailed {
     optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
-    /** Resource-scoped, non-additive projection from the canonical Portal financial authority. */
-    financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
-    /** Resource-scoped, non-additive projection from the matching Portal savings authority. */
-    financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
+    /** Compact resource display values selected from the subscription projection by the API. */
+    financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
+    /**
+     * Subscription-scoped compact savings projection used by the UI Financial
+     * Domain to select this resource's exact allocation membership. This is not
+     * a legacy per-resource monetary projection and must remain producer-owned.
+     */
+    financialSavingsSurfaceProjection?: FinancialSavingsSurfaceProjectionV1;
     /** Mutable lifecycle freshness gate applied by the authorized API read. */
     savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
     /** API-projected, generation-bound evidence qualification; never a monetary authority. */
@@ -337,7 +330,10 @@ export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y'
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
 export type VmPricePerformanceComparisonEligibility = 'default' | 'excluded-tier' | 'excluded-burstable' | 'excluded-low-confidence' | 'unavailable-in-subscription' | 'feature-trade-off' | string;
 export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
+/** Basis for monetary VM price and savings fields, independent of applied-benefit evaluation. */
+export type VmPricePerformancePricingBasis = 'payg-retail' | 'spot-estimate';
 export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
+export type VmReservationEvaluationStatus = 'complete' | 'incomplete' | 'unavailable';
 export type VmReservationCompatibilityReason = 'same-flexibility-group-within-covered-units' | 'same-flexibility-group-exceeds-covered-units' | 'different-flexibility-group' | 'instance-flexibility-disabled' | 'missing-instance-flexibility-setting' | 'missing-flexibility-evidence' | string;
 export interface VmReservationCoverageContext {
     benefitType: 'reservation';
@@ -357,6 +353,12 @@ export interface VmReservationCoverageImpact {
     normalizedUnitsRequired?: number;
     normalizedUnitsCovered?: number;
     normalizedUnitsDelta?: number;
+}
+export interface VmReservationEvaluation {
+    /** Whether reservation compatibility was evaluated with sufficient evidence. */
+    status: VmReservationEvaluationStatus;
+    /** Stable machine-readable explanation when evaluation is incomplete or unavailable. */
+    reason?: string;
 }
 export interface VmPricePerformanceCatalogSource {
     /** Lowercase static lookup file, e.g. `vm-usd-australiaeast.csv`. */
@@ -540,6 +542,8 @@ export interface VmPricePerformanceInsights {
     comparisonScope: 'same-region';
     /** Authority used for user-visible comparisons and recommendation semantics. */
     comparisonBasis?: VmPricePerformanceComparisonBasis;
+    /** Basis for displayed monetary values; reservation coverage remains an independent evaluation. */
+    pricingBasis?: VmPricePerformancePricingBasis;
     /** Subscription/display currency used for user-facing price fields when available. */
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
@@ -554,6 +558,8 @@ export interface VmPricePerformanceInsights {
     current?: VmPricePerformanceSku;
     /** Present when current billing usage is covered by an active Reservation. */
     reservationCoverage?: VmReservationCoverageContext;
+    /** Completeness of the reservation-compatibility evaluation for this comparison. */
+    reservationEvaluation?: VmReservationEvaluation;
     /** Current VM/VMSS configuration facts used to decide whether lost SKU capabilities are material. */
     currentRuntimeSettings?: VmPricePerformanceCurrentRuntimeSettings;
     /** Feature-compatible alternatives that are safe default candidates. */
@@ -972,6 +978,8 @@ export interface PublishedViewManifestV4 extends CompletedViewManifestV2Requeste
     revision: EpochFreeViewRevision;
     compositeDependencyDigest: string;
     publicationDecision: ArtifactPublicationDecision;
+    /** Public projection contracts applied to every declared artifact before immutable publication. */
+    publicProjectionContracts?: string[];
     completedAt: string;
 }
 export type AnyCompletedViewManifest = CompletedViewManifest | CompletedViewManifestV2 | CompletedViewManifestV3;

@@ -120,7 +120,15 @@ export interface PublicCostComposition {
     billed: PublicCostBasisComposition;
     amortized: PublicCostBasisComposition;
 }
+/** Declares that a published artifact contains public, rather than authority, cost compositions. */
+export declare const PUBLIC_COST_COMPOSITION_PROJECTION_CONTRACT_V1: "public-cost-composition/v1";
 /** Exact dependency-free validator for the public cost-composition boundary. */
 export declare const isPublicCostComposition: (value: unknown) => value is PublicCostComposition;
+/** Projects one authority composition to its exact customer-safe representation. */
+export declare const projectPublicCostCompositionV1: (composition: CostComposition | PublicCostComposition, lens?: EstimateLens) => PublicCostComposition;
+/** Recursively removes authority/evidence fields from every cost composition in a JSON document. */
+export declare const projectPublicCostCompositionsV1: <T>(document: T) => T;
+/** Applies a display lens to authority or already-public compositions without reconstructing money. */
+export declare const applyPublicCostCompositionEstimateLensV1: <T>(document: T, lens: EstimateLens) => T;
 export {};
 //# sourceMappingURL=costComposition.d.ts.map

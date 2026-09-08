@@ -25,6 +25,8 @@ export type AzureSpBillingExportMode = 'skip' | 'reuseExisting' | 'useExistingSt
 export type AzureSpBillingExportScopeType = 'subscription' | 'managementGroup' | 'billingAccount' | 'billingProfile' | 'invoiceSection' | 'department' | 'enrollmentAccount' | 'partnerCustomer';
 export type AzureSpBillingExportDataset = 'ActualCost' | 'AmortizedCost' | 'Usage';
 export type AzureSpBillingExportEffectiveDefinitionType = 'ActualCost' | 'Usage' | 'AmortizedCost';
+export type AzureSpBillingAgreementType = 'MicrosoftCustomerAgreement' | 'MicrosoftPartnerAgreement' | 'EnterpriseAgreement' | 'MicrosoftOnlineServicesProgram' | 'Other';
+export type AzureSpBillingRoleAssignmentMode = 'create' | 'createOrUpdate';
 export type AzureSpBillingExportResultStatus = 'notStarted' | 'existing' | 'created' | 'updated' | 'createdRunQueued' | 'queued' | 'requeued' | 'failed' | 'unavailable' | 'skipped';
 export type AzureSpBillingExportTargetKeyList = [string, ...string[]];
 /** Maximum subscriptions accepted by one assisted Azure setup execution. */
@@ -365,10 +367,22 @@ export interface AzureSpBillingExportManagementGroupCreateTarget extends AzureSp
     managementGroupId: string;
     dataset: 'Usage';
 }
+/** Exact Microsoft Billing role work resolved before the immutable execution snapshot is signed. */
+export interface AzureSpBillingRoleAssignmentPlan {
+    agreementType: AzureSpBillingAgreementType;
+    assignmentMode: AzureSpBillingRoleAssignmentMode;
+    principalTenantId: string;
+    roleDefinitionId: string;
+    roleDefinitionName: string;
+}
 export interface AzureSpBillingExportHierarchyCreateTarget extends AzureSpBillingExportTargetBase {
     action: 'create';
     scopeType: 'billingAccount' | 'billingProfile' | 'invoiceSection';
     dataset: 'ActualCost' | 'AmortizedCost';
+    /** Missing on legacy snapshots; execution then fails closed to scoped administrator action. */
+    agreementType?: AzureSpBillingAgreementType;
+    /** Present only when planning resolved a supported agreement and export-capable exact-scope role. */
+    billingRoleAssignment?: AzureSpBillingRoleAssignmentPlan;
 }
 export type AzureSpBillingExportCreateTarget = AzureSpBillingExportSubscriptionCreateTarget | AzureSpBillingExportManagementGroupCreateTarget | AzureSpBillingExportHierarchyCreateTarget;
 export type AzureSpBillingExportTarget = AzureSpBillingExportReuseTarget | AzureSpBillingExportCreateTarget;

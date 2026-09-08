@@ -245,8 +245,6 @@ export const projectFinancialSavingsSurfaceResourceQueryV1 = (source, allocation
 export const buildFinancialSavingsSurfaceProjectionV1 = (resourcesView, surface, chargeInclusionPolicyRef = AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef) => {
     const authority = resourcesView.financialAuthority;
     const savingsAuthority = resourcesView.financialSavingsAuthority;
-    if (!authority || !savingsAuthority)
-        throw new FinancialSavingsSurfaceProjectionError('Financial savings authority is unavailable');
     if (authority.authorityId !== savingsAuthority.financialAuthorityId ||
         !sameGeneration(resourcesView.artifactGeneration, authority.artifactGeneration) ||
         !sameGeneration(authority.artifactGeneration, savingsAuthority.artifactGeneration)) {

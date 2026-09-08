@@ -8,3 +8,5 @@ export var RecommendationCategory;
     RecommendationCategory["OperationalExcellence"] = "OperationalExcellence";
     RecommendationCategory["OperationalExcellenceAlternative"] = "Operational Excellence";
 })(RecommendationCategory || (RecommendationCategory = {}));
+export const RECOMMENDATION_LIFECYCLE_OVERLAY_SCHEMA_VERSION_V2 = 2;
+export const RECOMMENDATION_LIFECYCLE_OVERLAY_CONTRACT_VERSION_V2 = 'recommendation-lifecycle-overlay/v2';

@@ -251,8 +251,18 @@ export interface AvailableFinancialSavingsResourceCoordinateV1 {
   accountingCurrencyCode: string;
   minorUnitScale: number;
   roundingMode: 'half-away-from-zero';
+  /** Additive contribution owned by this resource. */
   resourceContribution?: FinancialSavingsResourceContributionV1;
+  /** Additive recommendation attribution owned by this resource. */
   recommendationContributions: FinancialSavingsOwnerRecommendationContributionV1[];
+  /**
+   * Canonical contributions owned by members of this resource's non-additive
+   * display rollup. Consumers may display them with this resource, but must
+   * deduplicate by owner when aggregating multiple resource rows.
+   */
+  displayMemberResourceContributions?: FinancialSavingsResourceContributionV1[];
+  /** Recommendation attribution paired with displayMemberResourceContributions. */
+  displayMemberRecommendationContributions?: FinancialSavingsOwnerRecommendationContributionV1[];
 }
 
 /** Proven resource contributions retained with explicit scenario gaps. */
@@ -267,7 +277,7 @@ export type FinancialSavingsResourceCoordinateEnvelopeV1 =
   | PartialFinancialSavingsResourceCoordinateV1
   | UnavailableFinancialSavingsCoordinateV1;
 
-/** Compact, non-additive API projection for one canonical savings owner. */
+/** Compact resource projection with one canonical owner and optional non-additive display members. */
 export interface FinancialSavingsResourceProjectionV1 {
   contractVersion: typeof FINANCIAL_SAVINGS_RESOURCE_PROJECTION_CONTRACT_VERSION_V1;
   savingsAuthorityId: string;

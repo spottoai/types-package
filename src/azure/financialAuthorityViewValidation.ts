@@ -684,7 +684,12 @@ const isResourceProjectionCoordinate = (
         'displayRollups',
         'projections',
       ],
-      ['requestedCurrencyCode', 'chargeComposition']
+      [
+        'requestedCurrencyCode',
+        'displayMemberBaselines',
+        'chargeComposition',
+        'displayMemberChargeCompositions',
+      ]
     ) ||
     !isHash(value.coordinateId) ||
     (value.periodRole !== 'current' && value.periodRole !== 'previous') ||
@@ -695,7 +700,15 @@ const isResourceProjectionCoordinate = (
     !ESTIMATE_LENSES.has(value.estimateLens) ||
     (value.requestedCurrencyCode !== undefined && (typeof value.requestedCurrencyCode !== 'string' || !CURRENCY.test(value.requestedCurrencyCode))) ||
     !isFinancialScopeBaselineEnvelopeV2(value.ownerBaseline) ||
+    (value.displayMemberBaselines !== undefined &&
+      (!Array.isArray(value.displayMemberBaselines) ||
+        value.displayMemberBaselines.length > 20_000 ||
+        !value.displayMemberBaselines.every(isFinancialScopeBaselineEnvelopeV2))) ||
     (value.chargeComposition !== undefined && !isFinancialChargeCompositionV1(value.chargeComposition)) ||
+    (value.displayMemberChargeCompositions !== undefined &&
+      (!Array.isArray(value.displayMemberChargeCompositions) ||
+        value.displayMemberChargeCompositions.length > 20_000 ||
+        !value.displayMemberChargeCompositions.every(isFinancialChargeCompositionV1))) ||
     !Array.isArray(value.componentDescriptors) ||
     value.componentDescriptors.length > 20_000 ||
     !value.componentDescriptors.every(isFinancialAuthorityComponentDescriptorV1) ||
@@ -710,6 +723,8 @@ const isResourceProjectionCoordinate = (
 
   const coordinate = value as unknown as FinancialAuthorityResourceCoordinateV1;
   const baseline = coordinate.ownerBaseline;
+  const displayMemberBaselines = coordinate.displayMemberBaselines ?? [];
+  const displayMemberChargeCompositions = coordinate.displayMemberChargeCompositions ?? [];
   const assessment = assessmentById.get(baseline.assessmentId);
   if (
     normalizeScopeId(baseline.scopeId) !== projection.scopeId ||
@@ -733,7 +748,9 @@ const isResourceProjectionCoordinate = (
   }
   if (baseline.status !== 'available' || baseline.baselineKind !== 'owner') {
     return (
+      displayMemberBaselines.length === 0 &&
       coordinate.chargeComposition === undefined &&
+      displayMemberChargeCompositions.length === 0 &&
       coordinate.componentDescriptors.length === 0 &&
       coordinate.displayRollups.length === 0 &&
       coordinate.projections.every(projectionValue => normalizeScopeId(projectionValue.scopeId) === projection.scopeId) &&
@@ -742,6 +759,54 @@ const isResourceProjectionCoordinate = (
   }
   if (baseline.scopeKind !== 'canonical-resource-owner' && baseline.scopeKind !== 'composite-resource') return false;
   if (!bundleIds.has(baseline.evidenceBundleId) || assessment.evidenceBundleId !== baseline.evidenceBundleId) return false;
+  const availableDisplayMemberBaselines = displayMemberBaselines.filter(
+    (candidate): candidate is Extract<FinancialScopeBaselineEnvelopeV2, { status: 'available'; baselineKind: 'owner' }> =>
+      candidate.status === 'available' && candidate.baselineKind === 'owner'
+  );
+  if (availableDisplayMemberBaselines.length !== displayMemberBaselines.length) return false;
+  const projectedBaselines = [baseline, ...availableDisplayMemberBaselines];
+  if (
+    new Set(projectedBaselines.map(candidate => candidate.baselineId)).size !== projectedBaselines.length ||
+    displayMemberBaselines.some(candidate => {
+      if (
+        candidate.status !== 'available' ||
+        candidate.baselineKind !== 'owner' ||
+        (candidate.scopeKind !== 'canonical-resource-owner' && candidate.scopeKind !== 'composite-resource') ||
+        candidate.costBasis !== coordinate.costBasis ||
+        candidate.estimateLens !== coordinate.estimateLens ||
+        periodText(candidate.period) !== periodText(coordinate.period) ||
+        candidate.requestedCurrencyCode !== coordinate.requestedCurrencyCode ||
+        candidate.total.currencyCode !== baseline.total.currencyCode ||
+        !isSameProviderAccountSet(candidate.providerAccountRefs, projection.providerAccountRefs) ||
+        !bundleIds.has(candidate.evidenceBundleId)
+      ) return true;
+      const candidateAssessment = assessmentById.get(candidate.assessmentId);
+      return (
+        !candidateAssessment ||
+        candidateAssessment.request.scopeId !== candidate.scopeId ||
+        candidateAssessment.request.scopeKind !== candidate.scopeKind ||
+        candidateAssessment.result !== candidate.status ||
+        candidateAssessment.evidenceBundleId !== candidate.evidenceBundleId
+      );
+    })
+  ) return false;
+  const compositions = [coordinate.chargeComposition, ...displayMemberChargeCompositions];
+  if (compositions.some(candidate => candidate === undefined)) return false;
+  const compositionByBaselineId = new Map(compositions.map(candidate => [candidate!.baselineId, candidate!]));
+  if (compositions.length !== projectedBaselines.length || compositionByBaselineId.size !== projectedBaselines.length) return false;
+  for (const projectedBaseline of projectedBaselines) {
+    const composition = compositionByBaselineId.get(projectedBaseline.baselineId);
+    if (
+      !composition ||
+      composition.baselineId !== projectedBaseline.baselineId ||
+      normalizeScopeId(composition.ownerScopeId) !== normalizeScopeId(projectedBaseline.scopeId) ||
+      periodText(composition.period) !== periodText(projectedBaseline.period) ||
+      composition.costBasis !== projectedBaseline.costBasis ||
+      composition.estimateLens !== projectedBaseline.estimateLens ||
+      composition.accountingCurrencyCode !== projectedBaseline.total.currencyCode ||
+      composition.reconciliation.sourceTotal !== projectedBaseline.total.amount
+    ) return false;
+  }
   const composition = coordinate.chargeComposition;
   if (
     !composition ||
@@ -755,7 +820,12 @@ const isResourceProjectionCoordinate = (
   )
     return false;
 
-  const componentKeys = new Set(baseline.components.map(component => `${baseline.baselineId}\u0000${component.componentId}`));
+  const componentKeys = new Set(
+    projectedBaselines.flatMap(projectedBaseline =>
+      projectedBaseline.components.map(component => `${projectedBaseline.baselineId}\u0000${component.componentId}`)
+    )
+  );
+  const ownerComponentKeys = new Set(baseline.components.map(component => `${baseline.baselineId}\u0000${component.componentId}`));
   const descriptorKeys = coordinate.componentDescriptors.map(descriptor => `${descriptor.baselineId}\u0000${descriptor.componentId}`);
   if (
     descriptorKeys.length !== componentKeys.size ||
@@ -773,9 +843,11 @@ const isResourceProjectionCoordinate = (
     rollup.members.map(member => `${member.baselineId}\u0000${member.componentId}`)
   );
   return (
-    rolledUpKeys.length === componentKeys.size &&
+    ownerComponentKeys.size > 0 &&
     new Set(rolledUpKeys).size === rolledUpKeys.length &&
     rolledUpKeys.every(key => componentKeys.has(key)) &&
+    [...ownerComponentKeys].every(key => rolledUpKeys.includes(key)) &&
+    [...componentKeys].every(key => rolledUpKeys.includes(key)) &&
     new Set(coordinate.projections.map(projectionValue => projectionValue.scenarioId)).size === coordinate.projections.length
   );
 };
@@ -832,13 +904,19 @@ export const isFinancialAuthorityResourceProjectionV1 = (value: unknown): value 
   const projection = value as unknown as FinancialAuthorityResourceProjectionV1;
   const bundleIds = new Set(projection.evidenceBundles.map(bundle => bundle.bundleId));
   const assessmentById = new Map(projection.evidenceAssessments.map(assessment => [assessment.assessmentId, assessment]));
+  const projectedScopeIds = new Set([
+    projection.scopeId,
+    ...projection.coordinates.flatMap(coordinate =>
+      (coordinate.displayMemberBaselines ?? []).map(baseline => normalizeScopeId(baseline.scopeId))
+    ),
+  ]);
   if (bundleIds.size !== projection.evidenceBundles.length || assessmentById.size !== projection.evidenceAssessments.length) return false;
   if (
     projection.evidenceAssessments.some(
       assessment =>
         (assessment.evidenceBundleId !== undefined && !bundleIds.has(assessment.evidenceBundleId)) ||
         !isSameProviderAccountSet(assessment.request.providerAccountRefs, projection.providerAccountRefs) ||
-        normalizeScopeId(assessment.request.scopeId) !== projection.scopeId
+        !projectedScopeIds.has(normalizeScopeId(assessment.request.scopeId))
     ) ||
     !projection.coordinates.every(coordinate => isResourceProjectionCoordinate(coordinate, projection, assessmentById, bundleIds)) ||
     new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size !== projection.coordinates.length

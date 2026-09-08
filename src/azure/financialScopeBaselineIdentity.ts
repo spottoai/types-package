@@ -110,8 +110,18 @@ const canonicalComponent = (component: FinancialOwnerBaselineComponentV2): Recor
   ...(component.estimateReason === undefined ? {} : { estimateReason: component.estimateReason }),
   evidenceRefIds: [...component.evidenceRefIds].sort(compareCodePoints),
   coverageIds: [...component.coverageIds].sort(compareCodePoints),
-  ...(component.quantity === undefined ? {} : { quantity: component.quantity }),
-  ...(component.effectiveRate === undefined ? {} : { effectiveRate: component.effectiveRate }),
+  ...(component.quantity === undefined
+    ? {}
+    : { quantity: { amount: component.quantity.amount, unit: component.quantity.unit } }),
+  ...(component.effectiveRate === undefined
+    ? {}
+    : {
+        effectiveRate: {
+          amount: component.effectiveRate.amount,
+          unit: component.effectiveRate.unit,
+          currencyCode: component.effectiveRate.currencyCode,
+        },
+      }),
 });
 
 /** Canonical UTF-8 text for a validated owner or aggregate baseline identity. */
@@ -140,7 +150,10 @@ export const canonicalizeValidatedFinancialScopeBaselineIdentityV2 = (value: Fin
         evidenceRefIds: [...value.accountingCurrency.evidenceRefIds].sort(compareCodePoints),
         ...(value.accountingCurrency.fxEvidenceRefId === undefined ? {} : { fxEvidenceRefId: value.accountingCurrency.fxEvidenceRefId }),
       },
-      chargeInclusionPolicyRef: value.chargeInclusionPolicyRef,
+      chargeInclusionPolicyRef: {
+        policyId: value.chargeInclusionPolicyRef.policyId,
+        policyDigest: value.chargeInclusionPolicyRef.policyDigest,
+      },
       components: [...value.components].sort((left, right) => compareCodePoints(left.componentId, right.componentId)).map(canonicalComponent),
     });
   }
@@ -148,6 +161,12 @@ export const canonicalizeValidatedFinancialScopeBaselineIdentityV2 = (value: Fin
     ...common,
     accountingCurrencyCode: value.accountingCurrencyCode,
     memberBaselineIds: [...value.memberBaselineIds].sort(compareCodePoints),
-    compatibility: value.compatibility,
+    compatibility: {
+      period: value.compatibility.period,
+      costBasis: value.compatibility.costBasis,
+      estimateLens: value.compatibility.estimateLens,
+      accountingCurrency: value.compatibility.accountingCurrency,
+      membership: value.compatibility.membership,
+    },
   });
 };

@@ -571,7 +571,12 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
             'componentDescriptors',
             'displayRollups',
             'projections',
-        ], ['requestedCurrencyCode', 'chargeComposition']) ||
+        ], [
+            'requestedCurrencyCode',
+            'displayMemberBaselines',
+            'chargeComposition',
+            'displayMemberChargeCompositions',
+        ]) ||
         !isHash(value.coordinateId) ||
         (value.periodRole !== 'current' && value.periodRole !== 'previous') ||
         !(0, financialScopeBaselineValidation_1.isFinancialBaselinePeriodV2)(value.period) ||
@@ -581,7 +586,15 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         !ESTIMATE_LENSES.has(value.estimateLens) ||
         (value.requestedCurrencyCode !== undefined && (typeof value.requestedCurrencyCode !== 'string' || !CURRENCY.test(value.requestedCurrencyCode))) ||
         !(0, financialScopeBaselineValidation_1.isFinancialScopeBaselineEnvelopeV2)(value.ownerBaseline) ||
+        (value.displayMemberBaselines !== undefined &&
+            (!Array.isArray(value.displayMemberBaselines) ||
+                value.displayMemberBaselines.length > 20000 ||
+                !value.displayMemberBaselines.every(financialScopeBaselineValidation_1.isFinancialScopeBaselineEnvelopeV2))) ||
         (value.chargeComposition !== undefined && !(0, financialChargeCompositionValidation_1.isFinancialChargeCompositionV1)(value.chargeComposition)) ||
+        (value.displayMemberChargeCompositions !== undefined &&
+            (!Array.isArray(value.displayMemberChargeCompositions) ||
+                value.displayMemberChargeCompositions.length > 20000 ||
+                !value.displayMemberChargeCompositions.every(financialChargeCompositionValidation_1.isFinancialChargeCompositionV1))) ||
         !Array.isArray(value.componentDescriptors) ||
         value.componentDescriptors.length > 20000 ||
         !value.componentDescriptors.every(financialDisplayRollupValidation_1.isFinancialAuthorityComponentDescriptorV1) ||
@@ -594,6 +607,8 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         return false;
     const coordinate = value;
     const baseline = coordinate.ownerBaseline;
+    const displayMemberBaselines = coordinate.displayMemberBaselines ?? [];
+    const displayMemberChargeCompositions = coordinate.displayMemberChargeCompositions ?? [];
     const assessment = assessmentById.get(baseline.assessmentId);
     if (normalizeScopeId(baseline.scopeId) !== projection.scopeId ||
         baseline.costBasis !== coordinate.costBasis ||
@@ -613,7 +628,9 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         return false;
     }
     if (baseline.status !== 'available' || baseline.baselineKind !== 'owner') {
-        return (coordinate.chargeComposition === undefined &&
+        return (displayMemberBaselines.length === 0 &&
+            coordinate.chargeComposition === undefined &&
+            displayMemberChargeCompositions.length === 0 &&
             coordinate.componentDescriptors.length === 0 &&
             coordinate.displayRollups.length === 0 &&
             coordinate.projections.every(projectionValue => normalizeScopeId(projectionValue.scopeId) === projection.scopeId) &&
@@ -623,6 +640,49 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         return false;
     if (!bundleIds.has(baseline.evidenceBundleId) || assessment.evidenceBundleId !== baseline.evidenceBundleId)
         return false;
+    const availableDisplayMemberBaselines = displayMemberBaselines.filter((candidate) => candidate.status === 'available' && candidate.baselineKind === 'owner');
+    if (availableDisplayMemberBaselines.length !== displayMemberBaselines.length)
+        return false;
+    const projectedBaselines = [baseline, ...availableDisplayMemberBaselines];
+    if (new Set(projectedBaselines.map(candidate => candidate.baselineId)).size !== projectedBaselines.length ||
+        displayMemberBaselines.some(candidate => {
+            if (candidate.status !== 'available' ||
+                candidate.baselineKind !== 'owner' ||
+                (candidate.scopeKind !== 'canonical-resource-owner' && candidate.scopeKind !== 'composite-resource') ||
+                candidate.costBasis !== coordinate.costBasis ||
+                candidate.estimateLens !== coordinate.estimateLens ||
+                periodText(candidate.period) !== periodText(coordinate.period) ||
+                candidate.requestedCurrencyCode !== coordinate.requestedCurrencyCode ||
+                candidate.total.currencyCode !== baseline.total.currencyCode ||
+                !isSameProviderAccountSet(candidate.providerAccountRefs, projection.providerAccountRefs) ||
+                !bundleIds.has(candidate.evidenceBundleId))
+                return true;
+            const candidateAssessment = assessmentById.get(candidate.assessmentId);
+            return (!candidateAssessment ||
+                candidateAssessment.request.scopeId !== candidate.scopeId ||
+                candidateAssessment.request.scopeKind !== candidate.scopeKind ||
+                candidateAssessment.result !== candidate.status ||
+                candidateAssessment.evidenceBundleId !== candidate.evidenceBundleId);
+        }))
+        return false;
+    const compositions = [coordinate.chargeComposition, ...displayMemberChargeCompositions];
+    if (compositions.some(candidate => candidate === undefined))
+        return false;
+    const compositionByBaselineId = new Map(compositions.map(candidate => [candidate.baselineId, candidate]));
+    if (compositions.length !== projectedBaselines.length || compositionByBaselineId.size !== projectedBaselines.length)
+        return false;
+    for (const projectedBaseline of projectedBaselines) {
+        const composition = compositionByBaselineId.get(projectedBaseline.baselineId);
+        if (!composition ||
+            composition.baselineId !== projectedBaseline.baselineId ||
+            normalizeScopeId(composition.ownerScopeId) !== normalizeScopeId(projectedBaseline.scopeId) ||
+            periodText(composition.period) !== periodText(projectedBaseline.period) ||
+            composition.costBasis !== projectedBaseline.costBasis ||
+            composition.estimateLens !== projectedBaseline.estimateLens ||
+            composition.accountingCurrencyCode !== projectedBaseline.total.currencyCode ||
+            composition.reconciliation.sourceTotal !== projectedBaseline.total.amount)
+            return false;
+    }
     const composition = coordinate.chargeComposition;
     if (!composition ||
         composition.baselineId !== baseline.baselineId ||
@@ -633,7 +693,8 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         composition.accountingCurrencyCode !== baseline.total.currencyCode ||
         composition.reconciliation.sourceTotal !== baseline.total.amount)
         return false;
-    const componentKeys = new Set(baseline.components.map(component => `${baseline.baselineId}\u0000${component.componentId}`));
+    const componentKeys = new Set(projectedBaselines.flatMap(projectedBaseline => projectedBaseline.components.map(component => `${projectedBaseline.baselineId}\u0000${component.componentId}`)));
+    const ownerComponentKeys = new Set(baseline.components.map(component => `${baseline.baselineId}\u0000${component.componentId}`));
     const descriptorKeys = coordinate.componentDescriptors.map(descriptor => `${descriptor.baselineId}\u0000${descriptor.componentId}`);
     if (descriptorKeys.length !== componentKeys.size ||
         new Set(descriptorKeys).size !== descriptorKeys.length ||
@@ -643,9 +704,11 @@ const isResourceProjectionCoordinate = (value, projection, assessmentById, bundl
         coordinate.projections.some(projectionValue => normalizeScopeId(projectionValue.scopeId) !== projection.scopeId))
         return false;
     const rolledUpKeys = coordinate.displayRollups.flatMap(rollup => rollup.members.map(member => `${member.baselineId}\u0000${member.componentId}`));
-    return (rolledUpKeys.length === componentKeys.size &&
+    return (ownerComponentKeys.size > 0 &&
         new Set(rolledUpKeys).size === rolledUpKeys.length &&
         rolledUpKeys.every(key => componentKeys.has(key)) &&
+        [...ownerComponentKeys].every(key => rolledUpKeys.includes(key)) &&
+        [...componentKeys].every(key => rolledUpKeys.includes(key)) &&
         new Set(coordinate.projections.map(projectionValue => projectionValue.scenarioId)).size === coordinate.projections.length);
 };
 /** Strictly validates one bounded, non-additive resource projection without requiring the full authority ledger. */
@@ -697,11 +760,15 @@ const isFinancialAuthorityResourceProjectionV1 = (value) => {
     const projection = value;
     const bundleIds = new Set(projection.evidenceBundles.map(bundle => bundle.bundleId));
     const assessmentById = new Map(projection.evidenceAssessments.map(assessment => [assessment.assessmentId, assessment]));
+    const projectedScopeIds = new Set([
+        projection.scopeId,
+        ...projection.coordinates.flatMap(coordinate => (coordinate.displayMemberBaselines ?? []).map(baseline => normalizeScopeId(baseline.scopeId))),
+    ]);
     if (bundleIds.size !== projection.evidenceBundles.length || assessmentById.size !== projection.evidenceAssessments.length)
         return false;
     if (projection.evidenceAssessments.some(assessment => (assessment.evidenceBundleId !== undefined && !bundleIds.has(assessment.evidenceBundleId)) ||
         !isSameProviderAccountSet(assessment.request.providerAccountRefs, projection.providerAccountRefs) ||
-        normalizeScopeId(assessment.request.scopeId) !== projection.scopeId) ||
+        !projectedScopeIds.has(normalizeScopeId(assessment.request.scopeId))) ||
         !projection.coordinates.every(coordinate => isResourceProjectionCoordinate(coordinate, projection, assessmentById, bundleIds)) ||
         new Set(projection.coordinates.map(coordinate => coordinate.coordinateId)).size !== projection.coordinates.length)
         return false;

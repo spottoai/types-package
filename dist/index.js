@@ -37,6 +37,7 @@ __exportStar(require("./azure/dataProtection"), exports);
 __exportStar(require("./azure/prices"), exports);
 __exportStar(require("./azure/relationships"), exports);
 __exportStar(require("./azure/recommendations"), exports);
+__exportStar(require("./azure/recommendationLifecycleOverlayValidation"), exports);
 __exportStar(require("./azure/recommendationTracks"), exports);
 __exportStar(require("./azure/recommendationAudit"), exports);
 __exportStar(require("./azure/recommendationWorkflow"), exports);

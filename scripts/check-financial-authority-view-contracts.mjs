@@ -1442,6 +1442,217 @@ assert.equal(
   true,
   'bounded resource authority projection passes strict semantic validation'
 );
+
+const diskId = '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/disks/vm-1-data';
+const diskAssessment = assessmentFor('canonical-resource-owner', diskId);
+const diskAmountByLens = { 'actual-only': '40', 'actual-plus-estimated': '50', 'estimates-only': '10' };
+const aggregateAmountByLens = { 'actual-only': '548', 'actual-plus-estimated': '660.85', 'estimates-only': '112.85' };
+const aggregateMemberAmountByLens = { 'actual-only': '540', 'actual-plus-estimated': '650.85', 'estimates-only': '110.85' };
+const crossOwnerCoordinates = authority.coordinates.map(sourceCoordinate => {
+  const sourceOwner = sourceCoordinate.ownerBaselines[0];
+  const diskAmount = diskAmountByLens[sourceCoordinate.estimateLens];
+  const diskComponent = {
+    ...sourceOwner.components[0],
+    componentId: hash(`disk-component-${sourceCoordinate.estimateLens}`),
+    billableIdentity: 'azure:compute:disk:data',
+    ownerScopeId: diskId,
+    amount: diskAmount,
+  };
+  delete diskComponent.quantity;
+  delete diskComponent.effectiveRate;
+  const diskIdentity = {
+    ...sourceOwner,
+    scopeId: diskId,
+    assessmentId: diskAssessment.assessmentId,
+    components: [diskComponent],
+  };
+  delete diskIdentity.status;
+  delete diskIdentity.baselineId;
+  delete diskIdentity.total;
+  delete diskIdentity.reconciliation;
+  const diskBaseline = makeOwner(diskIdentity, diskAmount);
+  const primaryDiskRollupIdentity = {
+    displayScopeId: diskId,
+    purpose: 'cost-composition',
+    additivity: 'non-additive',
+    displayLabel: 'Storage',
+    displayLabelSource: 'service-name',
+    members: [{ baselineId: diskBaseline.baselineId, componentId: diskComponent.componentId }],
+  };
+  const vmDiskRollupIdentity = { ...primaryDiskRollupIdentity, displayScopeId: vmId };
+  const diskDescriptor = {
+    baselineId: diskBaseline.baselineId,
+    componentId: diskComponent.componentId,
+    displayLabel: 'P30 LRS Disk',
+    displayLabelSource: 'meter-name',
+    serviceName: 'Storage',
+    meterName: 'P30 LRS Disk',
+    productName: 'Azure Managed Disks',
+    unitOfMeasure: '1 Month',
+    evidenceRefIds: [...diskComponent.evidenceRefIds],
+  };
+  const aggregateIdentityWithDisk = {
+    ...sourceCoordinate.aggregateBaseline,
+    memberBaselineIds: [sourceOwner.baselineId, diskBaseline.baselineId, sourceCoordinate.residualBaseline.baselineId],
+  };
+  delete aggregateIdentityWithDisk.status;
+  delete aggregateIdentityWithDisk.baselineId;
+  delete aggregateIdentityWithDisk.total;
+  delete aggregateIdentityWithDisk.reconciliation;
+  const aggregateBaseline = {
+    ...aggregateIdentityWithDisk,
+    status: 'available',
+    baselineId: hash(canonicalizeFinancialScopeBaselineIdentityV2(aggregateIdentityWithDisk)),
+    total: { amount: aggregateAmountByLens[sourceCoordinate.estimateLens], currencyCode: 'AUD' },
+    reconciliation: {
+      status: 'reconciled',
+      memberTotal: aggregateMemberAmountByLens[sourceCoordinate.estimateLens],
+      residualTotal: sourceCoordinate.residualBaseline.total.amount,
+      difference: '0',
+    },
+  };
+  const identity = {
+    ...sourceCoordinate,
+    ownerBaselines: [sourceOwner, diskBaseline],
+    aggregateBaseline,
+    chargeCompositions: [...sourceCoordinate.chargeCompositions, chargeCompositionFor(diskBaseline)],
+    componentDescriptors: [...sourceCoordinate.componentDescriptors, diskDescriptor],
+    displayRollups: [
+      ...sourceCoordinate.displayRollups,
+      { ...primaryDiskRollupIdentity, displayRollupId: createFinancialDisplayRollupIdV1(primaryDiskRollupIdentity) },
+      { ...vmDiskRollupIdentity, displayRollupId: createFinancialDisplayRollupIdV1(vmDiskRollupIdentity) },
+    ],
+  };
+  delete identity.coordinateId;
+  return { ...identity, coordinateId: createFinancialAuthorityCoordinateIdV1(identity) };
+});
+const crossOwnerAuthorityIdentity = {
+  ...authorityIdentity,
+  scopeCoverage: [
+    ...authorityIdentity.scopeCoverage,
+    { resourceType: 'microsoft.compute/disks', financialRole: 'owner', scopeIds: [diskId] },
+  ],
+  evidenceAssessments: [...authorityIdentity.evidenceAssessments, diskAssessment],
+  coordinates: crossOwnerCoordinates,
+};
+const crossOwnerAuthority = {
+  ...crossOwnerAuthorityIdentity,
+  authorityId: createFinancialAuthorityViewIdV1(crossOwnerAuthorityIdentity),
+};
+assert.equal(isFinancialAuthorityViewV1(crossOwnerAuthority), true, 'valid authority permits a VM display rollup over its disk owner');
+const crossOwnerProjection = projectFinancialAuthorityResourceV1(
+  crossOwnerAuthority,
+  'microsoft.compute/virtualmachines',
+  vmId
+);
+assert.equal(crossOwnerProjection.coordinates[0].displayMemberBaselines?.[0]?.scopeId, diskId);
+assert.equal(crossOwnerProjection.coordinates[0].displayMemberChargeCompositions?.length, 1);
+assert.equal(
+  isFinancialAuthorityResourceProjectionV1(crossOwnerProjection),
+  true,
+  'bounded VM projection preserves referenced disk-owner baselines without changing ownership'
+);
+const crossOwnerSavingsAuthority = {
+  savingsAuthorityId: hash('cross-owner-savings-authority'),
+  financialAuthorityId: crossOwnerAuthority.authorityId,
+  artifactGeneration: crossOwnerAuthority.artifactGeneration,
+  eligibilityBaselines: [],
+  eligibilityAssessments: [],
+  coordinates: crossOwnerAuthority.coordinates.map((coordinate, index) => {
+    if (index !== 0) {
+      return {
+        status: 'unavailable',
+        coordinateId: coordinate.coordinateId,
+        currentAggregateBaselineId: coordinate.aggregateBaseline.baselineId,
+        unavailableReason: 'projection-unavailable',
+      };
+    }
+    const diskBaseline = coordinate.ownerBaselines.find(candidate => candidate.scopeId === diskId);
+    assert.ok(diskBaseline?.status === 'available' && diskBaseline.baselineKind === 'owner');
+    const diskComponent = diskBaseline.components[0];
+    assert.ok(diskComponent);
+    const diskAllocationId = hash('cross-owner-disk-allocation');
+    return {
+      status: 'available',
+      coordinateId: coordinate.coordinateId,
+      currentAggregateBaselineId: coordinate.aggregateBaseline.baselineId,
+      accountingCurrencyCode: 'AUD',
+      minorUnitScale: 2,
+      roundingMode: 'half-away-from-zero',
+      scenarioCoverage: {
+        status: 'complete',
+        evidenceRefId: scenarioCoverageEvidenceReference.evidenceRefId,
+        scenarioIds: ['disk-rightsize'],
+      },
+      activations: [],
+      allocations: [
+        {
+          allocationId: diskAllocationId,
+          ownerScopeId: diskId,
+          billableComponentIds: [diskComponent.componentId],
+          scenarioId: 'disk-rightsize',
+          recommendationId: 'compute-disks_rightsize',
+          baselineId: diskBaseline.baselineId,
+          projectionId: hash('cross-owner-disk-projection'),
+          denominatorId: hash('cross-owner-disk-denominator'),
+          eligibility: { kind: 'not-applicable' },
+          activationId: hash('cross-owner-disk-activation'),
+          savingsMinorUnits: 12_345,
+        },
+      ],
+      resourceContributions: [{ ownerScopeId: diskId, allocationIds: [diskAllocationId], savingsMinorUnits: 12_345 }],
+      recommendationContributions: [
+        {
+          ownerScopeId: diskId,
+          recommendationId: 'compute-disks_rightsize',
+          allocationIds: [diskAllocationId],
+          savingsMinorUnits: 12_345,
+        },
+      ],
+      aggregate: { allocationIds: [diskAllocationId], savingsMinorUnits: 12_345 },
+    };
+  }),
+};
+const crossOwnerSavingsProjection = projectFinancialSavingsResourceV1(
+  crossOwnerSavingsAuthority,
+  crossOwnerProjection,
+  crossOwnerAuthority
+);
+assert.deepEqual(
+  crossOwnerSavingsProjection.coordinates[0].displayMemberResourceContributions,
+  [{ ownerScopeId: diskId, allocationIds: [hash('cross-owner-disk-allocation')], savingsMinorUnits: 12_345 }],
+  'bounded VM savings projection preserves the attached disk owner as a non-additive display member'
+);
+assert.deepEqual(
+  crossOwnerSavingsProjection.coordinates[0].displayMemberRecommendationContributions?.map(contribution => ({
+    ownerScopeId: contribution.ownerScopeId,
+    recommendationId: contribution.recommendationId,
+    savingsMinorUnits: contribution.savingsMinorUnits,
+  })),
+  [{ ownerScopeId: diskId, recommendationId: 'compute-disks_rightsize', savingsMinorUnits: 12_345 }],
+  'bounded VM savings projection preserves display-member recommendation attribution'
+);
+assert.equal(
+  isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1(crossOwnerSavingsProjection, crossOwnerProjection),
+  true,
+  'bounded VM savings display members remain bound to its Financial Authority display rollup'
+);
+const invalidDisplayMemberSavings = structuredClone(crossOwnerSavingsProjection);
+invalidDisplayMemberSavings.coordinates[0].displayMemberRecommendationContributions[0].savingsMinorUnits += 1;
+assert.equal(
+  isFinancialSavingsResourceProjectionV1(invalidDisplayMemberSavings),
+  false,
+  'bounded savings rejects display-member recommendation totals that do not reconcile to the canonical owner contribution'
+);
+const unboundDisplayMemberSavings = structuredClone(crossOwnerSavingsProjection);
+unboundDisplayMemberSavings.coordinates[0].displayMemberResourceContributions[0].ownerScopeId = `${diskId}/other`;
+unboundDisplayMemberSavings.coordinates[0].displayMemberRecommendationContributions[0].ownerScopeId = `${diskId}/other`;
+assert.equal(isFinancialSavingsResourceProjectionV1(unboundDisplayMemberSavings), true);
+assert.equal(
+  isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1(unboundDisplayMemberSavings, crossOwnerProjection),
+  false,
+  'bounded savings rejects a display owner absent from the Financial Authority display rollup'
+);
 const invalidBoundedFinancialProjection = structuredClone(boundedFinancialProjection);
 invalidBoundedFinancialProjection.coordinates[0].chargeComposition.ownerScopeId = `${vmId}/other`;
 assert.equal(

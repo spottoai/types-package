@@ -34,14 +34,10 @@ import {
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
 import type { ArtifactDescriptor } from '../common/artifactGeneration.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, SavingsLifecycleFreshnessV1 } from './savings.js';
-import type { FinancialAuthorityResourceProjectionV1, FinancialAuthorityViewV1 } from './financialAuthorityView.js';
-import type { CurrentSpendCompositionV1 } from './financialDataflow.js';
 import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceCoverage.js';
-import type { FinancialSavingsAuthorityV1, FinancialSavingsResourceProjectionV1 } from './financialSavingsAuthority.js';
-import type {
-  FinancialSavingsResourceQuerySelectionV1,
-  FinancialSavingsSurfaceProjectionV1,
-} from './financialSavingsSurfaceProjection.js';
+import type { FinancialSavingsResourceQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
+import type { FinancialCurrentSpendSurfaceProjectionV1 } from './financialCurrentSpendSurfaceProjection.js';
+import type { FinancialResourceSurfaceProjectionV1 } from './financialResourceSurfaceProjection.js';
 import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -59,12 +55,8 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
   /** Compact generation-bound projection of the canonical Resources financial savings authority. */
   financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
-  /**
-   * Producer-owned subscription current-spend compositions for the dashboard.
-   * Consumers select an exact coordinate and never rebuild spend from summary,
-   * budget, resource-row, or retail-price fields.
-   */
-  financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+  /** Bounded exact current-spend display projection. */
+  financialCurrentSpendProjection?: FinancialCurrentSpendSurfaceProjectionV1;
   /** API-projected, generation-bound evidence qualification; never a monetary authority. */
   financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
   advisorScore?: AdvisorScoreSummary;
@@ -88,16 +80,14 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   costSavingsSummary?: CostSavingsSummary;
   /** Authoritative additive savings total for this complete resource scope. */
   savingsAggregate?: SavingsAggregateV2;
-  /** Single generation-bound financial authority for vertically migrated resource scopes. */
-  financialAuthority?: FinancialAuthorityViewV1;
-  /** Savings authority bound one-to-one to the financial authority coordinates. */
-  financialSavingsAuthority?: FinancialSavingsAuthorityV1;
   /** Compact generation-bound projection used by the UI Financial Domain. */
   financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
   /** API-selected non-monetary allocation membership for a filtered resource result. */
   financialSavingsResourceQuerySelection?: FinancialSavingsResourceQuerySelectionV1;
-  /** Bounded subscription current-spend compositions produced from the same conformed authority generation. */
-  financialCurrentSpendCompositions?: CurrentSpendCompositionV1[];
+  /** Bounded exact current-spend display projection. */
+  financialCurrentSpendProjection?: FinancialCurrentSpendSurfaceProjectionV1;
+  /** Bounded resource display values with one shared coordinate catalogue. */
+  financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
   /** API-projected, generation-bound evidence qualification; never a monetary authority. */
   financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
 }
@@ -192,10 +182,6 @@ export interface AzureResourcePortalItem {
   optimizationProfile?: ResourceSimpleOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
-  /** Resource-scoped, non-additive projection from the canonical conformed Financial Authority. */
-  financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
-  /** Resource-scoped, non-additive projection from the matching conformed savings authority. */
-  financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
   /** Current Azure Resource Health availability status for this resource, when available. */
   resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
 }
@@ -353,10 +339,14 @@ export interface AzureResourcePluginItemDetailed {
   optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
-  /** Resource-scoped, non-additive projection from the canonical Portal financial authority. */
-  financialAuthorityProjection?: FinancialAuthorityResourceProjectionV1;
-  /** Resource-scoped, non-additive projection from the matching Portal savings authority. */
-  financialSavingsProjection?: FinancialSavingsResourceProjectionV1;
+  /** Compact resource display values selected from the subscription projection by the API. */
+  financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
+  /**
+   * Subscription-scoped compact savings projection used by the UI Financial
+   * Domain to select this resource's exact allocation membership. This is not
+   * a legacy per-resource monetary projection and must remain producer-owned.
+   */
+  financialSavingsSurfaceProjection?: FinancialSavingsSurfaceProjectionV1;
   /** Mutable lifecycle freshness gate applied by the authorized API read. */
   savingsLifecycleFreshness?: SavingsLifecycleFreshnessV1;
   /** API-projected, generation-bound evidence qualification; never a monetary authority. */
@@ -380,13 +370,7 @@ export type VmPricePerformancePurchaseOption = 'payg' | 'devtest' | 'reserved1y'
 export type VmPricePerformanceBenchmarkConfidence = 'low' | 'medium' | 'high' | 'unknown';
 
 export type VmPricePerformanceComparisonEligibility =
-  | 'default'
-  | 'excluded-tier'
-  | 'excluded-burstable'
-  | 'excluded-low-confidence'
-  | 'unavailable-in-subscription'
-  | 'feature-trade-off'
-  | string;
+  'default' | 'excluded-tier' | 'excluded-burstable' | 'excluded-low-confidence' | 'unavailable-in-subscription' | 'feature-trade-off' | string;
 
 export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
 
@@ -687,24 +671,10 @@ export type ComputeAlternativeCostBasis = 'observed' | 'retail' | 'scenario' | '
 export type ComputeAlternativeOsType = 'windows' | 'linux' | 'mixed' | 'unknown';
 
 export type ComputeAlternativeScalingModel =
-  | 'fixed'
-  | 'manual'
-  | 'autoscale'
-  | 'event-driven'
-  | 'scale-to-zero'
-  | 'always-ready'
-  | 'node-pool'
-  | 'unknown'
-  | string;
+  'fixed' | 'manual' | 'autoscale' | 'event-driven' | 'scale-to-zero' | 'always-ready' | 'node-pool' | 'unknown' | string;
 
 export type ComputeAlternativeMigrationEffort =
-  | 'configuration'
-  | 'redeploy'
-  | 'runtime-migration'
-  | 'containerization'
-  | 'application-refactor'
-  | 'architecture-redesign'
-  | 'unknown';
+  'configuration' | 'redeploy' | 'runtime-migration' | 'containerization' | 'application-refactor' | 'architecture-redesign' | 'unknown';
 
 export type ComputeAlternativeSeverity = 'info' | 'warning' | 'blocking' | 'unknown' | string;
 
@@ -1149,6 +1119,8 @@ export interface PublishedViewManifestV4 extends CompletedViewManifestV2Requeste
   revision: EpochFreeViewRevision;
   compositeDependencyDigest: string;
   publicationDecision: ArtifactPublicationDecision;
+  /** Public projection contracts applied to every declared artifact before immutable publication. */
+  publicProjectionContracts?: string[];
   completedAt: string;
 }
 
@@ -1374,6 +1346,14 @@ const isViewArtifactDescriptor = (value: unknown, runId: string, runReference: s
   isSha256(value.sha256);
 
 const isPublishedViewCoverage = (value: unknown): value is PublishedViewCoverage => value === 'complete' || value === 'partial';
+
+const hasValidPublicProjectionContracts = (value: unknown): boolean =>
+  value === undefined ||
+  (Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= 32 &&
+    value.every(contract => isStrictNonEmptyString(contract) && contract.length <= 128) &&
+    new Set(value).size === value.length);
 
 const isProjectedSectionPathForArtifact = (value: unknown, artifactPath: string): value is string => {
   if (!isStrictNonEmptyString(value)) return false;
@@ -1632,7 +1612,8 @@ export const isPublishedViewManifestV4 = (value: unknown): value is PublishedVie
     !isSha256(value.compositeDependencyDigest) ||
     !isStrictCanonicalIsoTimestamp(value.completedAt) ||
     !isArtifactPublicationDecision(value.publicationDecision) ||
-    !hasPublishedViewDecisionBounds(value.publicationDecision)
+    !hasPublishedViewDecisionBounds(value.publicationDecision) ||
+    !hasValidPublicProjectionContracts(value.publicProjectionContracts)
   ) {
     return false;
   }

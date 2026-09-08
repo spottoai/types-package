@@ -21,6 +21,7 @@ export * from './azure/dataProtection';
 export * from './azure/prices';
 export * from './azure/relationships';
 export * from './azure/recommendations';
+export * from './azure/recommendationLifecycleOverlayValidation';
 export * from './azure/recommendationTracks';
 export * from './azure/recommendationAudit';
 export * from './azure/recommendationWorkflow';

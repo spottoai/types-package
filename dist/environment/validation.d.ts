@@ -1,11 +1,13 @@
-import { type EnvironmentArtifactKindV1, type EnvironmentCompiledGenerationPointerV1, type EnvironmentCoverageStateV1, type EnvironmentDocumentDescriptorV1, type EnvironmentMoneyValueV1, type EnvironmentScopeV1, type EnvironmentSourceBindingV1, type EnvironmentSourceGenerationV1, type EnvironmentSubscriptionCostProjectionV1 } from './contracts.js';
+import { type EnvironmentArtifactKindV1, type EnvironmentCompiledGenerationPointerV1, type EnvironmentPillarV1, type EnvironmentCoverageStateV1, type EnvironmentDocumentDescriptorV1, type EnvironmentMoneyValueV1, type EnvironmentScopeV1, type EnvironmentSourceBindingV1, type EnvironmentSourceGenerationV1, type EnvironmentSubscriptionCostProjectionV1, type EnvironmentSubscriptionProjectionV1 } from './contracts.js';
 /** Validates a bounded, local Portal route suitable for client-visible evidence. */
 export declare const isEnvironmentPortalRouteV1: (value: unknown) => value is string;
+/** Validates one admitted environment pillar. */
+export declare const isEnvironmentPillarV1: (value: unknown) => value is EnvironmentPillarV1;
 /** Validates the closed phase-one Azure subscription scope. */
 export declare const isEnvironmentScopeV1: (value: unknown) => value is EnvironmentScopeV1;
 /** Validates the client-safe identity of one authoritative source generation. */
 export declare const isEnvironmentSourceGenerationV1: (value: unknown) => value is EnvironmentSourceGenerationV1;
-/** Validates a byte-preserving binding to an authoritative CompletedAzureViewSetV1. */
+/** Validates a byte-preserving binding to a supported authoritative Azure view set. */
 export declare const isEnvironmentSourceBindingV1: (value: unknown) => value is EnvironmentSourceBindingV1;
 /** Validates a storage-safe environment run identity independently from source identities. */
 export declare const isEnvironmentRunIdV1: (value: unknown) => value is string;
@@ -13,11 +15,13 @@ export declare const isEnvironmentRunIdV1: (value: unknown) => value is string;
 export declare const isEnvironmentMoneyValueV1: (value: unknown) => value is EnvironmentMoneyValueV1;
 /** Validates the closed coverage-state union and state-specific freshness rules. */
 export declare const isEnvironmentCoverageStateV1: (value: unknown) => value is EnvironmentCoverageStateV1;
-/** Validates the strict, bounded phase-one subscription-cost projection. */
+/** Validates the strict, bounded multi-pillar subscription environment projection. */
+export declare const isEnvironmentSubscriptionProjectionV1: (value: unknown) => value is EnvironmentSubscriptionProjectionV1;
+/** Compatibility validator name retained during the pre-release multi-pillar migration. */
 export declare const isEnvironmentSubscriptionCostProjectionV1: (value: unknown) => value is EnvironmentSubscriptionCostProjectionV1;
-/** Validates one descriptor from the exact V1 three-document allowlist. */
+/** Validates one descriptor from the exact V1 multi-pillar document allowlist. */
 export declare const isEnvironmentDocumentDescriptorV1: (value: unknown) => value is EnvironmentDocumentDescriptorV1;
-/** Validates that descriptors contain each allowlisted V1 document exactly once. */
+/** Validates that descriptors contain every allowlisted V1 document exactly once. */
 export declare const isEnvironmentDocumentDescriptorSetV1: (value: unknown) => value is EnvironmentDocumentDescriptorV1[];
 /** Validates an atomically visible completed environment-generation pointer. */
 export declare const isEnvironmentCompiledGenerationPointerV1: (value: unknown) => value is EnvironmentCompiledGenerationPointerV1;

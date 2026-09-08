@@ -116,6 +116,12 @@ const isViewArtifactDescriptor = (value, runId, runReference = runId) => isRecor
     isNonNegativeSafeInteger(value.byteLength) &&
     isSha256(value.sha256);
 const isPublishedViewCoverage = (value) => value === 'complete' || value === 'partial';
+const hasValidPublicProjectionContracts = (value) => value === undefined ||
+    (Array.isArray(value) &&
+        value.length > 0 &&
+        value.length <= 32 &&
+        value.every(contract => isStrictNonEmptyString(contract) && contract.length <= 128) &&
+        new Set(value).size === value.length);
 const isProjectedSectionPathForArtifact = (value, artifactPath) => {
     if (!isStrictNonEmptyString(value))
         return false;
@@ -366,7 +372,8 @@ export const isPublishedViewManifestV4 = (value) => {
         !isSha256(value.compositeDependencyDigest) ||
         !isStrictCanonicalIsoTimestamp(value.completedAt) ||
         !isArtifactPublicationDecision(value.publicationDecision) ||
-        !hasPublishedViewDecisionBounds(value.publicationDecision)) {
+        !hasPublishedViewDecisionBounds(value.publicationDecision) ||
+        !hasValidPublicProjectionContracts(value.publicProjectionContracts)) {
         return false;
     }
     return (isPublishedDecisionForCoverage(value.publicationDecision, value.coverage) &&

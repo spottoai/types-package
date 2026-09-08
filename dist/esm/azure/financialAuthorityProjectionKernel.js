@@ -21,7 +21,20 @@ export const projectFinancialAuthorityResourceV1 = (authority, resourceType, sco
         if (ownerBaseline.status === 'available' && ownerBaseline.baselineKind === 'owner' && !chargeComposition) {
             throw new TypeError('Financial authority resource charge composition is missing.');
         }
-        const displayRollups = coordinate.displayRollups.filter(rollup => normalize(rollup.displayScopeId) === normalizedScopeId);
+        const displayRollups = (coordinate.displayRollups ?? []).filter(rollup => normalize(rollup.displayScopeId) === normalizedScopeId);
+        const displayMemberBaselineIds = new Set(displayRollups.flatMap(rollup => rollup.members.map(member => member.baselineId)).filter(baselineId => baselineId !== ownerBaseline.baselineId));
+        const displayMemberBaselines = coordinate.ownerBaselines.filter(baseline => baseline.status === 'available' &&
+            baseline.baselineKind === 'owner' &&
+            displayMemberBaselineIds.has(baseline.baselineId));
+        if (displayMemberBaselines.length !== displayMemberBaselineIds.size) {
+            throw new TypeError('Financial authority resource display member baseline is missing.');
+        }
+        const displayMemberChargeCompositions = (coordinate.chargeCompositions ?? []).filter(composition => displayMemberBaselineIds.has(composition.baselineId));
+        if (displayMemberBaselines.some(baseline => baseline.status === 'available' &&
+            baseline.baselineKind === 'owner' &&
+            !displayMemberChargeCompositions.some(composition => composition.baselineId === baseline.baselineId))) {
+            throw new TypeError('Financial authority resource display member charge composition is missing.');
+        }
         const displayMemberships = new Set(displayRollups.flatMap(rollup => rollup.members.map(member => `${member.baselineId}\u0000${member.componentId}`)));
         return {
             coordinateId: coordinate.coordinateId,
@@ -31,8 +44,10 @@ export const projectFinancialAuthorityResourceV1 = (authority, resourceType, sco
             estimateLens: coordinate.estimateLens,
             ...(coordinate.requestedCurrencyCode === undefined ? {} : { requestedCurrencyCode: coordinate.requestedCurrencyCode }),
             ownerBaseline,
+            ...(displayMemberBaselines.length === 0 ? {} : { displayMemberBaselines }),
             ...(chargeComposition === undefined ? {} : { chargeComposition }),
-            componentDescriptors: coordinate.componentDescriptors.filter(descriptor => displayMemberships.has(`${descriptor.baselineId}\u0000${descriptor.componentId}`)),
+            ...(displayMemberChargeCompositions.length === 0 ? {} : { displayMemberChargeCompositions }),
+            componentDescriptors: (coordinate.componentDescriptors ?? []).filter(descriptor => displayMemberships.has(`${descriptor.baselineId}\u0000${descriptor.componentId}`)),
             displayRollups,
             projections: coordinate.projections.filter(projection => normalize(projection.scopeId) === normalizedScopeId),
         };
@@ -46,6 +61,11 @@ export const projectFinancialAuthorityResourceV1 = (authority, resourceType, sco
         assessmentIds.add(coordinate.ownerBaseline.assessmentId);
         if (coordinate.ownerBaseline.status === 'available' && coordinate.ownerBaseline.baselineKind === 'owner') {
             bundleIds.add(coordinate.ownerBaseline.evidenceBundleId);
+        }
+        for (const baseline of coordinate.displayMemberBaselines ?? []) {
+            assessmentIds.add(baseline.assessmentId);
+            if (baseline.status === 'available' && baseline.baselineKind === 'owner')
+                bundleIds.add(baseline.evidenceBundleId);
         }
         coordinate.projections.forEach(projection => {
             if (projection.targetAssessmentId)
@@ -104,27 +124,38 @@ export const projectFinancialSavingsResourceV1 = (savingsAuthority, financialPro
             throw new TypeError('Financial savings coordinate is missing.');
         if (coordinate.status === 'unavailable')
             return { ...coordinate, chargeInclusionPolicyRef };
-        const resourceAllocations = coordinate.allocations.filter(allocation => normalize(allocation.ownerScopeId) === normalizedScopeId);
-        const sourceResourceContributions = coordinate.resourceContributions.filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId);
-        if (sourceResourceContributions.length > 1) {
-            throw new TypeError('Financial savings resource contribution is ambiguous.');
-        }
-        const sourceRecommendationSavings = coordinate.recommendationContributions
-            .filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId)
-            .reduce((total, contribution) => {
-            const next = total + contribution.savingsMinorUnits;
-            if (!Number.isSafeInteger(next)) {
-                throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+        const displayOwnerScopeIds = new Set((financialCoordinate.displayMemberBaselines ?? []).map(baseline => normalize(baseline.scopeId)));
+        displayOwnerScopeIds.delete(normalizedScopeId);
+        const selectedOwnerScopeIds = new Set([normalizedScopeId, ...displayOwnerScopeIds]);
+        const resourceAllocations = coordinate.allocations.filter(allocation => selectedOwnerScopeIds.has(normalize(allocation.ownerScopeId)));
+        const sourceResourceContributions = coordinate.resourceContributions.filter(contribution => selectedOwnerScopeIds.has(normalize(contribution.ownerScopeId)));
+        const sourceResourceContributionByOwner = new Map();
+        for (const contribution of sourceResourceContributions) {
+            const ownerScopeId = normalize(contribution.ownerScopeId);
+            if (sourceResourceContributionByOwner.has(ownerScopeId)) {
+                throw new TypeError('Financial savings resource contribution is ambiguous.');
             }
-            return next;
-        }, 0);
-        if ((sourceResourceContributions[0]?.savingsMinorUnits ?? 0) !== sourceRecommendationSavings) {
-            throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
+            sourceResourceContributionByOwner.set(ownerScopeId, contribution);
+        }
+        for (const ownerScopeId of selectedOwnerScopeIds) {
+            const sourceRecommendationSavings = coordinate.recommendationContributions
+                .filter(contribution => normalize(contribution.ownerScopeId) === ownerScopeId)
+                .reduce((total, contribution) => {
+                const next = total + contribution.savingsMinorUnits;
+                if (!Number.isSafeInteger(next)) {
+                    throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
+                }
+                return next;
+            }, 0);
+            if ((sourceResourceContributionByOwner.get(ownerScopeId)?.savingsMinorUnits ?? 0) !== sourceRecommendationSavings) {
+                throw new TypeError('Financial savings recommendation contributions do not reconcile to the resource contribution.');
+            }
         }
         const policyUnavailableScenarioIds = new Set();
-        const chargeCompositionByBaselineId = new Map(financialCoordinate.chargeComposition
-            ? [[financialCoordinate.chargeComposition.baselineId, financialCoordinate.chargeComposition]]
-            : []);
+        const chargeCompositionByBaselineId = new Map([
+            ...(financialCoordinate.chargeComposition ? [financialCoordinate.chargeComposition] : []),
+            ...(financialCoordinate.displayMemberChargeCompositions ?? []),
+        ].map(composition => [composition.baselineId, composition]));
         const selectedAllocations = resourceAllocations.filter(allocation => {
             if (chargeInclusionPolicyRef.policyId === AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyId &&
                 chargeInclusionPolicyRef.policyDigest === AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef.policyDigest)
@@ -136,13 +167,17 @@ export const projectFinancialSavingsResourceV1 = (savingsAuthority, financialPro
         });
         const allocationsByRecommendation = new Map();
         for (const allocation of selectedAllocations) {
-            const current = allocationsByRecommendation.get(allocation.recommendationId) ?? [];
+            const key = `${normalize(allocation.ownerScopeId)}\u0000${allocation.recommendationId}`;
+            const current = allocationsByRecommendation.get(key) ?? [];
             current.push(allocation);
-            allocationsByRecommendation.set(allocation.recommendationId, current);
+            allocationsByRecommendation.set(key, current);
         }
-        const recommendationContributions = [...allocationsByRecommendation.entries()]
+        const allRecommendationContributions = [...allocationsByRecommendation.entries()]
             .sort(([left], [right]) => left.localeCompare(right))
-            .map(([recommendationId, allocations]) => {
+            .map(([, allocations]) => {
+            const firstAllocation = allocations[0];
+            if (!firstAllocation)
+                throw new TypeError('Financial savings recommendation contribution has no allocation.');
             const savingsMinorUnits = allocations.reduce((total, allocation) => {
                 const next = total + allocation.savingsMinorUnits;
                 if (!Number.isSafeInteger(next)) {
@@ -151,25 +186,35 @@ export const projectFinancialSavingsResourceV1 = (savingsAuthority, financialPro
                 return next;
             }, 0);
             return {
-                ownerScopeId: normalizedScopeId,
-                recommendationId,
+                ownerScopeId: normalize(firstAllocation.ownerScopeId),
+                recommendationId: firstAllocation.recommendationId,
                 allocationIds: allocations.map(allocation => allocation.allocationId),
                 savingsMinorUnits,
             };
         });
-        const recommendationSavings = recommendationContributions.reduce((total, contribution) => {
-            const next = total + contribution.savingsMinorUnits;
-            if (!Number.isSafeInteger(next))
-                throw new TypeError('Financial savings recommendation contribution overflows safe minor units.');
-            return next;
-        }, 0);
-        const resourceContribution = selectedAllocations.length
-            ? {
-                ownerScopeId: normalizedScopeId,
-                allocationIds: selectedAllocations.map(allocation => allocation.allocationId),
-                savingsMinorUnits: recommendationSavings,
-            }
-            : undefined;
+        const recommendationContributions = allRecommendationContributions.filter(contribution => normalize(contribution.ownerScopeId) === normalizedScopeId);
+        const displayMemberRecommendationContributions = allRecommendationContributions.filter(contribution => displayOwnerScopeIds.has(normalize(contribution.ownerScopeId)));
+        const buildResourceContribution = (ownerScopeId) => {
+            const allocations = selectedAllocations.filter(allocation => normalize(allocation.ownerScopeId) === ownerScopeId);
+            if (allocations.length === 0)
+                return undefined;
+            const savingsMinorUnits = allocations.reduce((total, allocation) => {
+                const next = total + allocation.savingsMinorUnits;
+                if (!Number.isSafeInteger(next))
+                    throw new TypeError('Financial savings resource contribution overflows safe minor units.');
+                return next;
+            }, 0);
+            return {
+                ownerScopeId,
+                allocationIds: allocations.map(allocation => allocation.allocationId),
+                savingsMinorUnits,
+            };
+        };
+        const resourceContribution = buildResourceContribution(normalizedScopeId);
+        const displayMemberResourceContributions = [...displayOwnerScopeIds]
+            .sort()
+            .map(buildResourceContribution)
+            .filter((contribution) => contribution !== undefined);
         const unavailableActivationIds = new Set(coordinate.status === 'partial'
             ? coordinate.activations.filter(activation => activation.result === 'unavailable').map(activation => activation.scenarioId)
             : []);
@@ -185,8 +230,7 @@ export const projectFinancialSavingsResourceV1 = (savingsAuthority, financialPro
                 return true;
             }
             const scenarioProjections = authorityCoordinate.projections.filter(projection => projection.scenarioId === scenarioId);
-            return (scenarioProjections.length === 0 ||
-                scenarioProjections.some(projection => normalize(projection.scopeId) === normalizedScopeId));
+            return scenarioProjections.length === 0 || scenarioProjections.some(projection => selectedOwnerScopeIds.has(normalize(projection.scopeId)));
         })
             .sort();
         const composed = {
@@ -198,6 +242,8 @@ export const projectFinancialSavingsResourceV1 = (savingsAuthority, financialPro
             roundingMode: coordinate.roundingMode,
             ...(resourceContribution === undefined ? {} : { resourceContribution }),
             recommendationContributions,
+            ...(displayMemberResourceContributions.length === 0 ? {} : { displayMemberResourceContributions }),
+            ...(displayMemberRecommendationContributions.length === 0 ? {} : { displayMemberRecommendationContributions }),
         };
         return unavailableScenarioIds.length > 0
             ? { ...composed, status: 'partial', unavailableScenarioIds: unavailableScenarioIds }

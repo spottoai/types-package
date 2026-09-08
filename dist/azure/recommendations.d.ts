@@ -16,6 +16,7 @@ import type { CostComposition, EstimateLens } from './costComposition.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
 import type { FinancialSavingsQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceCoverage.js';
+import type { FinancialResourceSurfaceProjectionV1 } from './financialResourceSurfaceProjection.js';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -405,6 +406,46 @@ export interface RecommendationLifecycleStateProjectionV1 {
     statusEndAt?: string;
     updatedAt?: string;
 }
+export declare const RECOMMENDATION_LIFECYCLE_OVERLAY_SCHEMA_VERSION_V2: 2;
+export declare const RECOMMENDATION_LIFECYCLE_OVERLAY_CONTRACT_VERSION_V2: "recommendation-lifecycle-overlay/v2";
+export interface RecommendationLifecycleOverlayStateV2 {
+    recommendationId: string;
+    scope: 'resource' | 'providerScope';
+    resourceId?: string;
+    status: RecommendationLifecycleStateProjectionV1['status'];
+    statusStartAt?: string;
+    statusEndAt?: string;
+    updatedAt: string;
+    revision: string;
+}
+interface RecommendationLifecycleOverlayCommonV2 {
+    schemaVersion: typeof RECOMMENDATION_LIFECYCLE_OVERLAY_SCHEMA_VERSION_V2;
+    contractVersion: typeof RECOMMENDATION_LIFECYCLE_OVERLAY_CONTRACT_VERSION_V2;
+    overlayId: string;
+    companyId: string;
+    provider: 'azure';
+    providerScopeId: string;
+    revision: string;
+    generatedAt: string;
+}
+export interface CompleteRecommendationLifecycleOverlayV2 extends RecommendationLifecycleOverlayCommonV2 {
+    status: 'complete';
+    states: RecommendationLifecycleOverlayStateV2[];
+    reasonCodes?: never;
+}
+export interface PartialRecommendationLifecycleOverlayV2 extends RecommendationLifecycleOverlayCommonV2 {
+    status: 'partial';
+    states: RecommendationLifecycleOverlayStateV2[];
+    reasonCodes: [string, ...string[]];
+}
+export interface UnavailableRecommendationLifecycleOverlayV2 extends RecommendationLifecycleOverlayCommonV2 {
+    status: 'unavailable';
+    states: [];
+    reasonCodes: [string, ...string[]];
+}
+/** Company/provider-scope control evidence. This document deliberately owns no money. */
+export type RecommendationLifecycleOverlayV2 = CompleteRecommendationLifecycleOverlayV2 | PartialRecommendationLifecycleOverlayV2 | UnavailableRecommendationLifecycleOverlayV2;
+export type RecommendationLifecycleOverlayIdentityPreimageV2 = RecommendationLifecycleOverlayV2 extends infer Overlay ? Overlay extends RecommendationLifecycleOverlayV2 ? Omit<Overlay, 'overlayId'> : never : never;
 /**
  * Contextual links from one recommendation row to other resources.
  * Used to model "this disk belongs to that VM" style associations
@@ -509,6 +550,8 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
     savingsLifecycleFreshness?: import('./savings.js').SavingsLifecycleFreshnessV1;
     /** Compact generation-bound projection of the canonical Resources financial savings authority. */
     financialSavingsProjection?: FinancialSavingsSurfaceProjectionV1;
+    /** Compact resource spend/scenario values used by recommendation filters and detail context. */
+    financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
     /** API-selected non-monetary membership; composed into query totals only by the UI Financial Domain/shared Kernel. */
     financialSavingsQuerySelection?: FinancialSavingsQuerySelectionV1;
     /** API-projected, generation-bound evidence qualification; never a monetary authority. */
@@ -776,4 +819,5 @@ export interface ConnectWiseTicketMetadata extends ConnectWiseRoutingFields {
     ticketId: ConnectWiseId;
     ticketUrl?: string;
 }
+export {};
 //# sourceMappingURL=recommendations.d.ts.map

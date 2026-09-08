@@ -558,6 +558,20 @@ const viewSetCases = [
 const publishedViewManifestCases = [
   ['valid complete V4 published manifest', publishedCompleteViewManifest, true],
   ['valid partial V4 published manifest', publishedPartialViewManifest, true],
+  [
+    'V4 accepts a bounded public projection contract declaration',
+    { ...publishedCompleteViewManifest, publicProjectionContracts: ['public-cost-composition/v1'] },
+    true,
+  ],
+  [
+    'V4 rejects duplicate public projection contracts',
+    {
+      ...publishedCompleteViewManifest,
+      publicProjectionContracts: ['public-cost-composition/v1', 'public-cost-composition/v1'],
+    },
+    false,
+  ],
+  ['V4 rejects an empty public projection contract', { ...publishedCompleteViewManifest, publicProjectionContracts: [''] }, false],
   ['known-version additive V4 fields', { ...publishedPartialViewManifest, future: { producer: 'next-version' } }, true],
   ['V4 rejects an artifact alias under an unknown field', publishedViewManifestWithSharedArtifactAlias, false],
   ['V4 rejects an exact clientSecret field', { ...publishedPartialViewManifest, future: { clientSecret: 'secret-example' } }, false],

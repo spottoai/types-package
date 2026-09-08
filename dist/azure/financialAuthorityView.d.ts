@@ -67,8 +67,17 @@ export interface FinancialAuthorityResourceCoordinateV1 {
     costBasis: CostBasis;
     estimateLens: EstimateLens;
     requestedCurrencyCode?: string;
+    /** The canonical additive owner for this resource scope. */
     ownerBaseline: FinancialScopeBaselineEnvelopeV2;
+    /**
+     * Other canonical owners referenced by this resource's non-additive display
+     * rollups. These baselines remain independently owned and must never be added
+     * to a subscription aggregate through this projection.
+     */
+    displayMemberBaselines?: FinancialScopeBaselineEnvelopeV2[];
     chargeComposition?: FinancialChargeCompositionV1;
+    /** Charge partitions for displayMemberBaselines, keyed by baselineId. */
+    displayMemberChargeCompositions?: FinancialChargeCompositionV1[];
     componentDescriptors: FinancialAuthorityComponentDescriptorV1[];
     displayRollups: FinancialDisplayRollupV1[];
     projections: FinancialProjectionEnvelopeV1[];

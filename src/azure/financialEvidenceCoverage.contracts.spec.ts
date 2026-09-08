@@ -54,3 +54,10 @@ const resourceDetailCoverage: Pick<AzureResourcePluginItemDetailed, 'financialEv
 if (resourceDetailCoverage.financialEvidenceCoverage !== projection) {
   throw new Error('Resource detail financial evidence coverage contract was not preserved.');
 }
+
+const resourceDetailSavingsSurface: Pick<AzureResourcePluginItemDetailed, 'financialSavingsSurfaceProjection'> = {
+  financialSavingsSurfaceProjection: undefined,
+};
+if (resourceDetailSavingsSurface.financialSavingsSurfaceProjection !== undefined) {
+  throw new Error('Resource detail compact savings surface contract was not preserved.');
+}

@@ -169,7 +169,12 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
         'roundingMode',
         'recommendationContributions',
         ...(partial ? ['unavailableScenarioIds'] : []),
-    ], ['resourceContribution', 'chargeInclusionPolicyRef']) ||
+    ], [
+        'resourceContribution',
+        'chargeInclusionPolicyRef',
+        'displayMemberResourceContributions',
+        'displayMemberRecommendationContributions',
+    ]) ||
         !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
         (value.chargeInclusionPolicyRef !== undefined && !isFinancialChargeInclusionPolicyRefV1(value.chargeInclusionPolicyRef)) ||
         typeof value.accountingCurrencyCode !== 'string' ||
@@ -182,6 +187,20 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
         !Array.isArray(value.recommendationContributions) ||
         value.recommendationContributions.length > 20000 ||
         !value.recommendationContributions.every(contribution => isRecommendationContribution(contribution, scopeId)) ||
+        (value.displayMemberResourceContributions !== undefined &&
+            (!Array.isArray(value.displayMemberResourceContributions) ||
+                value.displayMemberResourceContributions.length === 0 ||
+                value.displayMemberResourceContributions.length > 20000 ||
+                !value.displayMemberResourceContributions.every(contribution => isFinancialSavingsRecord(contribution) &&
+                    isResourceContribution(contribution, normalizeResourceScope(String(contribution.ownerScopeId))) &&
+                    normalizeResourceScope(String(contribution.ownerScopeId)) !== scopeId))) ||
+        (value.displayMemberRecommendationContributions !== undefined &&
+            (!Array.isArray(value.displayMemberRecommendationContributions) ||
+                value.displayMemberRecommendationContributions.length === 0 ||
+                value.displayMemberRecommendationContributions.length > 20000 ||
+                !value.displayMemberRecommendationContributions.every(contribution => isFinancialSavingsRecord(contribution) &&
+                    isRecommendationContribution(contribution, normalizeResourceScope(String(contribution.ownerScopeId))) &&
+                    normalizeResourceScope(String(contribution.ownerScopeId)) !== scopeId))) ||
         (partial &&
             (!Array.isArray(value.unavailableScenarioIds) ||
                 value.unavailableScenarioIds.length === 0 ||
@@ -193,13 +212,37 @@ const isSavingsResourceCoordinate = (value, scopeId) => {
     const allocationIds = value.recommendationContributions.flatMap(contribution => contribution.allocationIds);
     const contributionSum = sumFinancialSavingsMinorUnits(value.recommendationContributions.map(contribution => contribution.savingsMinorUnits));
     const resourceContribution = value.resourceContribution;
-    return (new Set(recommendationIds).size === recommendationIds.length &&
+    const primaryValid = new Set(recommendationIds).size === recommendationIds.length &&
         new Set(allocationIds).size === allocationIds.length &&
         contributionSum !== undefined &&
         (resourceContribution === undefined
             ? allocationIds.length === 0 && contributionSum === 0
             : haveSameFinancialSavingsSet(allocationIds, resourceContribution.allocationIds) &&
-                contributionSum === resourceContribution.savingsMinorUnits));
+                contributionSum === resourceContribution.savingsMinorUnits);
+    if (!primaryValid)
+        return false;
+    const displayResourceContributions = (value.displayMemberResourceContributions ?? []);
+    const displayRecommendationContributions = (value.displayMemberRecommendationContributions ?? []);
+    const displayResourceByOwner = new Map(displayResourceContributions.map(contribution => [normalizeResourceScope(contribution.ownerScopeId), contribution]));
+    if (displayResourceByOwner.size !== displayResourceContributions.length)
+        return false;
+    const displayRecommendationKeys = displayRecommendationContributions.map(contribution => `${normalizeResourceScope(contribution.ownerScopeId)}\u0000${contribution.recommendationId}`);
+    if (new Set(displayRecommendationKeys).size !== displayRecommendationKeys.length)
+        return false;
+    const displayAllocationIds = displayRecommendationContributions.flatMap(contribution => contribution.allocationIds);
+    if (new Set(displayAllocationIds).size !== displayAllocationIds.length ||
+        displayAllocationIds.some(allocationId => allocationIds.includes(allocationId)))
+        return false;
+    for (const [ownerScopeId, contribution] of displayResourceByOwner) {
+        const recommendations = displayRecommendationContributions.filter(candidate => normalizeResourceScope(candidate.ownerScopeId) === ownerScopeId);
+        const recommendationAllocationIds = recommendations.flatMap(candidate => candidate.allocationIds);
+        const recommendationSavings = sumFinancialSavingsMinorUnits(recommendations.map(candidate => candidate.savingsMinorUnits));
+        if (recommendationSavings === undefined ||
+            recommendationSavings !== contribution.savingsMinorUnits ||
+            !haveSameFinancialSavingsSet(recommendationAllocationIds, contribution.allocationIds))
+            return false;
+    }
+    return displayRecommendationContributions.every(contribution => displayResourceByOwner.has(normalizeResourceScope(contribution.ownerScopeId)));
 };
 /** Strict structural and arithmetic validation for one bounded resource savings projection. */
 export const isFinancialSavingsResourceProjectionV1 = (value) => {
@@ -234,9 +277,22 @@ export const isFinancialSavingsResourceProjectionBoundToFinancialProjectionV1 = 
     if (!isFinancialSavingsResourceProjectionV1(value))
         return false;
     const financialCoordinateIds = financialProjection.coordinates.map(coordinate => coordinate.coordinateId);
+    const displayOwnerScopeIdsByCoordinate = new Map(financialProjection.coordinates.map(coordinate => [
+        coordinate.coordinateId,
+        new Set((coordinate.displayMemberBaselines ?? []).map(baseline => normalizeResourceScope(baseline.scopeId))),
+    ]));
     return (value.financialAuthorityId === financialProjection.authorityId &&
         normalizeResourceScope(value.scopeId) === normalizeResourceScope(financialProjection.scopeId) &&
         value.artifactGeneration.runId === financialProjection.artifactGeneration.runId &&
         value.artifactGeneration.generatedAt === financialProjection.artifactGeneration.generatedAt &&
-        haveSameFinancialSavingsSet(value.coordinates.map(coordinate => coordinate.coordinateId), financialCoordinateIds));
+        haveSameFinancialSavingsSet(value.coordinates.map(coordinate => coordinate.coordinateId), financialCoordinateIds) &&
+        value.coordinates.every(coordinate => {
+            if (coordinate.status === 'unavailable')
+                return true;
+            const allowedDisplayOwners = displayOwnerScopeIdsByCoordinate.get(coordinate.coordinateId);
+            if (!allowedDisplayOwners)
+                return false;
+            return ((coordinate.displayMemberResourceContributions ?? []).every(contribution => allowedDisplayOwners.has(normalizeResourceScope(contribution.ownerScopeId))) &&
+                (coordinate.displayMemberRecommendationContributions ?? []).every(contribution => allowedDisplayOwners.has(normalizeResourceScope(contribution.ownerScopeId))));
+        }));
 };

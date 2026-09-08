@@ -160,6 +160,17 @@ const owner = {
 assert.equal(isFinancialScopeBaselineEnvelopeV2(owner), true);
 assert.equal(isFinancialScopeBaselineEnvelopeFromAzureEntry(owner), true);
 
+const sortJsonObjectKeys = value => {
+  if (Array.isArray(value)) return value.map(sortJsonObjectKeys);
+  if (value === null || typeof value !== 'object') return value;
+  return Object.fromEntries(Object.keys(value).sort().map(key => [key, sortJsonObjectKeys(value[key])]));
+};
+assert.equal(
+  canonicalizeFinancialScopeBaselineIdentityV2(ownerIdentity),
+  canonicalizeFinancialScopeBaselineIdentityV2(sortJsonObjectKeys(ownerIdentity)),
+  'Owner baseline identity must survive canonical immutable JSON object-key ordering.'
+);
+
 const aggregateIdentity = {
   schemaVersion: 2,
   contractVersion: 'financial-scope-baseline/v2',
@@ -190,6 +201,11 @@ const aggregate = {
   reconciliation: { status: 'reconciled', memberTotal: '600.85', residualTotal: '0', difference: '0' },
 };
 assert.equal(isFinancialScopeBaselineEnvelopeV2(aggregate), true);
+assert.equal(
+  canonicalizeFinancialScopeBaselineIdentityV2(aggregateIdentity),
+  canonicalizeFinancialScopeBaselineIdentityV2(sortJsonObjectKeys(aggregateIdentity)),
+  'Aggregate baseline identity must survive canonical immutable JSON object-key ordering.'
+);
 
 const unavailable = {
   schemaVersion: 2,

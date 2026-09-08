@@ -21,6 +21,7 @@ export * from './azure/dataProtection.js';
 export * from './azure/prices.js';
 export * from './azure/relationships.js';
 export * from './azure/recommendations.js';
+export * from './azure/recommendationLifecycleOverlayValidation.js';
 export * from './azure/recommendationTracks.js';
 export * from './azure/recommendationAudit.js';
 export * from './azure/recommendationWorkflow.js';

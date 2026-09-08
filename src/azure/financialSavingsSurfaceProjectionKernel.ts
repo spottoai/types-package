@@ -5,7 +5,8 @@ import {
 import { selectFinancialChargesV1 } from './financialChargeCompositionValidation';
 import { formatExactDecimalValue, sumCanonicalDecimals } from '../common/exactDecimal';
 import type { AzureResourcesView } from './views';
-import type { FinancialAuthorityCoordinateV1 } from './financialAuthorityView';
+import type { FinancialAuthorityCoordinateV1, FinancialAuthorityViewV1 } from './financialAuthorityView';
+import type { FinancialSavingsAuthorityV1 } from './financialSavingsAuthority';
 import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline';
 import { classifyFinancialSavingsAllocationForPolicyV1 } from './financialSavingsChargePolicyKernel';
 import {
@@ -30,6 +31,16 @@ export class FinancialSavingsSurfaceProjectionError extends Error {
     this.name = 'FinancialSavingsSurfaceProjectionError';
   }
 }
+
+/**
+ * Private projection input used while a producer still holds the full authority
+ * in memory. Full authorities are deliberately not part of persisted Resources
+ * views; only the bounded surface projection crosses the artifact boundary.
+ */
+export type FinancialSavingsSurfaceProjectionSourceV1 = Pick<AzureResourcesView, 'artifactGeneration'> & {
+  financialAuthority: FinancialAuthorityViewV1;
+  financialSavingsAuthority: FinancialSavingsAuthorityV1;
+};
 
 const sameGeneration = (
   left: { runId: string; generatedAt: string } | undefined,
@@ -306,13 +317,12 @@ export const projectFinancialSavingsSurfaceResourceQueryV1 = (
  * scenario economics from legacy recommendation or resource fields.
  */
 export const buildFinancialSavingsSurfaceProjectionV1 = (
-  resourcesView: AzureResourcesView,
+  resourcesView: FinancialSavingsSurfaceProjectionSourceV1,
   surface: FinancialSavingsSurfaceV1,
   chargeInclusionPolicyRef: FinancialChargeInclusionPolicyRefV2 = AZURE_BILLED_ALL_CHARGES_POLICY_V1.policyRef
 ): FinancialSavingsSurfaceProjectionV1 => {
   const authority = resourcesView.financialAuthority;
   const savingsAuthority = resourcesView.financialSavingsAuthority;
-  if (!authority || !savingsAuthority) throw new FinancialSavingsSurfaceProjectionError('Financial savings authority is unavailable');
   if (
     authority.authorityId !== savingsAuthority.financialAuthorityId ||
     !sameGeneration(resourcesView.artifactGeneration, authority.artifactGeneration) ||
