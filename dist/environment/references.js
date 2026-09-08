@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isEnvironmentLogicalEvidenceReferenceV1 = exports.isEnvironmentLogicalResourceReferenceV1 = exports.isEnvironmentLogicalArtifactReferenceV1 = exports.parseEnvironmentLogicalEvidenceReferenceV1 = exports.parseEnvironmentLogicalResourceReferenceV1 = exports.buildEnvironmentLogicalResourceReferenceV1 = exports.parseEnvironmentLogicalArtifactReferenceV1 = exports.buildEnvironmentLogicalArtifactReferenceV1 = void 0;
+exports.isEnvironmentLogicalEvidenceReferenceV1 = exports.isEnvironmentLogicalResourceReferenceV1 = exports.isEnvironmentLogicalArtifactReferenceV1 = exports.parseEnvironmentLogicalEvidenceReferenceV1 = exports.deriveEnvironmentAzureResourceTypeV1 = exports.parseEnvironmentLogicalResourceReferenceV1 = exports.buildEnvironmentLogicalResourceReferenceV1 = exports.parseEnvironmentLogicalArtifactReferenceV1 = exports.buildEnvironmentLogicalArtifactReferenceV1 = void 0;
 const contracts_js_1 = require("./contracts.js");
 const internal_js_1 = require("./internal.js");
 const BASE64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
@@ -11,8 +11,7 @@ const isCanonicalScopeQualifiedSubject = (value) => {
     try {
         const parsed = JSON.parse(value);
         return (Array.isArray(parsed) &&
-            parsed.length === 4 &&
-            parsed[0] === 'azure-subscription' &&
+            ((parsed.length === 4 && parsed[0] === 'azure-subscription') || (parsed.length === 2 && parsed[0] === 'azure-tenant')) &&
             parsed
                 .slice(1)
                 .every(item => (0, internal_js_1.isBoundedString)(item, contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.scopeIdentifierScalars, { trimmed: true, controls: true })) &&
@@ -191,6 +190,44 @@ const parseEnvironmentLogicalResourceReferenceV1 = (value) => {
     return { kind: 'resource', resourceId };
 };
 exports.parseEnvironmentLogicalResourceReferenceV1 = parseEnvironmentLogicalResourceReferenceV1;
+/**
+ * Derives the canonical Azure resource type from a canonical ARM resource ID.
+ * Resource names are consumed structurally, so a resource named `providers`
+ * cannot be mistaken for an extension-resource provider boundary.
+ */
+const deriveEnvironmentAzureResourceTypeV1 = (canonicalAzureResourceId) => {
+    if (!isCanonicalAzureResourceId(canonicalAzureResourceId))
+        return null;
+    const segments = canonicalAzureResourceId.toLowerCase().split('/').filter(Boolean);
+    const firstProviderIndex = segments.indexOf('providers');
+    if (firstProviderIndex < 0)
+        return null;
+    let providerIndex = firstProviderIndex;
+    let namespace = segments[providerIndex + 1];
+    let typeSegments = [];
+    let index = providerIndex + 2;
+    while (namespace && index < segments.length) {
+        const typeOrProviderMarker = segments[index];
+        if (!typeOrProviderMarker)
+            return null;
+        if (typeOrProviderMarker === 'providers') {
+            providerIndex = index;
+            namespace = segments[providerIndex + 1];
+            typeSegments = [];
+            index = providerIndex + 2;
+            continue;
+        }
+        typeSegments.push(typeOrProviderMarker);
+        if (segments[index + 1] === undefined)
+            return null;
+        index += 2;
+    }
+    if (!namespace || typeSegments.length === 0)
+        return null;
+    const resourceType = `${namespace}/${typeSegments.join('/')}`;
+    return [...resourceType].length <= contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars ? resourceType : null;
+};
+exports.deriveEnvironmentAzureResourceTypeV1 = deriveEnvironmentAzureResourceTypeV1;
 /** Parses either closed V1 logical evidence-reference kind. */
 const parseEnvironmentLogicalEvidenceReferenceV1 = (value) => (0, exports.parseEnvironmentLogicalArtifactReferenceV1)(value) ?? (0, exports.parseEnvironmentLogicalResourceReferenceV1)(value);
 exports.parseEnvironmentLogicalEvidenceReferenceV1 = parseEnvironmentLogicalEvidenceReferenceV1;

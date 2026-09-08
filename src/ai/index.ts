@@ -1,14 +1,17 @@
 /** Common AI interfaces shared between frontend and backend */
 
-import type { EnvironmentArtifactKindV1, EnvironmentScopeV1, EnvironmentSourceGenerationV1 } from '../environment/contracts';
-import { hasExactKeys, isRecord } from '../environment/internal';
-import {
-  isEnvironmentArtifactKindV1,
-  isEnvironmentPortalRouteV1,
-  isEnvironmentSafeLabelV1,
-  isEnvironmentScopeV1,
-  isEnvironmentSourceGenerationV1,
-} from '../environment/validation';
+import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
+import type {
+  AIChatWorkspaceArtifact,
+  AIChatWorkspaceArtifactDataMode,
+  AIChatWorkspaceArtifactFailureReason,
+  AIChatWorkspaceArtifactKind,
+  AIChatWorkspaceArtifactPlacement,
+} from './workspaceArtifacts.js';
+
+export * from './grounding.js';
+export * from './conversationHistory.js';
+export * from './workspaceArtifacts.js';
 
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 
@@ -168,6 +171,18 @@ type AIChatDegradedReasonCode =
   | 'AI_MCP_PARTIAL_FAILURE'
   | 'AI_TOOL_TIMEOUT'
   | 'AI_TOOL_PARTIAL_FAILURE'
+  /** A tool result was withheld or summarised because it exceeded the model-visible size budget; no tool failed. */
+  | 'AI_TOOL_RESULT_COMPACTED'
+  /** An analysis role (specialist, critic, synthesis) ran past its model-call timeout; no tool failed. */
+  | 'AI_SPECIALIST_TIMEOUT'
+  /** The interactive analysis turn budget was exhausted; the answer was finished from the results so far. */
+  | 'AI_ANALYSIS_BUDGET_EXHAUSTED'
+  /** The model refused the request as larger than its context; the turn retried with a compacted request. */
+  | 'AI_MODEL_CONTEXT_EXCEEDED'
+  /** The provider failed while generating (Azure "model produced invalid content" / server_error); retried with a compacted request. */
+  | 'AI_MODEL_INVALID_OUTPUT'
+  /** One model call of the generic loop ran past its wall-clock timeout; retried with a compacted request. */
+  | 'AI_MODEL_CALL_TIMEOUT'
   | 'AI_DEGRADED_NO_PATH';
 
 type AIChatOrchestrationReasonCode =
@@ -386,12 +401,28 @@ export interface AIPlannerWorkItem {
   priority: AIPlannerPriority;
 }
 
+/**
+ * Filter intent for a planned retrieval step: when the step's result comes back capped or
+ * withheld, the retrieval executor issues `query_tool_result` over the held complete result with
+ * this query (same grammar as the tool, without `callId`).
+ */
+export interface AIRetrievalStepQuery {
+  path?: string;
+  where?: Array<{ field: string; op: 'eq' | 'ne' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'startsWith' | 'in' | 'exists'; value?: unknown }>;
+  search?: string;
+  fields?: string[];
+  sort?: { field: string; direction?: 'asc' | 'desc' };
+  limit?: number;
+  offset?: number;
+}
+
 export interface AIPlannerRetrievalStep {
   retrievalId: string;
   toolName: string;
   purpose: string;
   arguments: Record<string, unknown>;
   required: boolean;
+  query?: AIRetrievalStepQuery;
 }
 
 export interface AIPlannerOutput {
@@ -471,25 +502,6 @@ export interface AIChatMemoryMatch {
   summary: string;
   citationIds?: string[];
 }
-
-/** Client-safe environment evidence metadata; it intentionally excludes storage provenance and runtime handles. */
-export interface AIEnvironmentEvidenceMatch {
-  safeLabel: string;
-  portalRoute: string;
-  scope: EnvironmentScopeV1;
-  artifactKind: EnvironmentArtifactKindV1;
-  sourceGeneration: EnvironmentSourceGenerationV1;
-}
-
-/** Strictly validates the client-safe environment evidence shape. */
-export const isAIEnvironmentEvidenceMatch = (value: unknown): value is AIEnvironmentEvidenceMatch =>
-  isRecord(value) &&
-  hasExactKeys(value, ['safeLabel', 'portalRoute', 'scope', 'artifactKind', 'sourceGeneration']) &&
-  isEnvironmentSafeLabelV1(value.safeLabel) &&
-  isEnvironmentPortalRouteV1(value.portalRoute) &&
-  isEnvironmentScopeV1(value.scope) &&
-  isEnvironmentArtifactKindV1(value.artifactKind) &&
-  isEnvironmentSourceGenerationV1(value.sourceGeneration);
 
 export interface AIChatEvidenceGroup {
   groupId: string;
@@ -841,12 +853,23 @@ export interface AIChatProgressEntry {
 
 export type AIChatApprovalState = 'pending' | 'approved' | 'rejected' | 'consumed' | 'expired' | 'completed' | 'failed';
 
+export interface AIChatApprovalActionPreview {
+  /** Normalized tool arguments as the server will execute them; credentials redacted, recipients and destinations visible. */
+  arguments: Record<string, unknown>;
+  /** The exact payload hash bound to this challenge; the server matches it before executing. */
+  payloadHash?: string;
+  /** True when the arguments were too large to show in full. */
+  truncated?: boolean;
+}
+
 export interface AIChatApprovalRecord {
   runId: string;
   challengeId: string;
   state: AIChatApprovalState;
   actionSummary: string;
   actionType?: string;
+  /** What the approver is actually approving. Present on approvalRequired/runPaused events. */
+  actionPreview?: AIChatApprovalActionPreview;
   requiredRole: string;
   riskLevel: 'low' | 'medium' | 'high';
   idempotencyKey: string;
@@ -953,6 +976,7 @@ export interface AIChatFinalSnapshot {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
@@ -981,6 +1005,7 @@ export interface AIChatAuditArtifact {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
@@ -1096,6 +1121,45 @@ export interface AIChatConversationFeedbackUpdateResponse {
   updatedAt: string;
 }
 
+/** Maximum length of the optional free-text comment attached to per-turn feedback. */
+export const AI_CHAT_TURN_FEEDBACK_COMMENT_MAX_LENGTH = 1000;
+
+/**
+ * Number of per-turn feedback records retained on a conversation. The conversation blob stays the
+ * authoritative record, so the newest records win once the bound is reached.
+ */
+export const AI_CHAT_TURN_FEEDBACK_MAX_RECORDS = 200;
+
+/**
+ * Durable per-question feedback for a single answered turn (review finding U-12).
+ *
+ * `turnId` is the public identifier used by the mutation endpoint and by the Portal, while
+ * `questionIndex` is the zero-based index of the user message the turn answered and `responseId`
+ * is retained as internal mapping metadata for transcript reconciliation.
+ */
+export interface AIChatTurnFeedback {
+  turnId: string;
+  questionIndex: number;
+  responseId?: string;
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+  submittedAt: string;
+  updatedAt: string;
+}
+
+export interface AIChatTurnFeedbackUpdateRequest {
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+}
+
+export interface AIChatTurnFeedbackUpdateResponse {
+  conversationId: string;
+  turnId: string;
+  feedback: AIChatConversationFeedback | null;
+  comment?: string;
+  updatedAt: string;
+}
+
 export interface AIChatUsage {
   promptTokens: number;
   completionTokens: number;
@@ -1126,9 +1190,12 @@ export interface AIChatTerminalSnapshot {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+  /** Optional while pre-workspace producers and consumers drain. */
+  workspaceArtifacts?: AIChatWorkspaceArtifact[];
 }
 
 /**
@@ -1158,6 +1225,9 @@ export type AIChatCanonicalStreamEventName =
   | 'formatterCompleted'
   | 'message'
   | 'citation'
+  | 'artifactStarted'
+  | 'artifactCompleted'
+  | 'artifactFailed'
   | 'error'
   | 'ping';
 
@@ -1231,11 +1301,20 @@ export interface AIChatRoutingStartedEvent extends AIChatStreamEventBase {
 export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
   event: 'routingCompleted';
   path: AIOrchestrationPath;
-  confidence: number;
+  /**
+   * @deprecated Numeric routing confidence is no longer emitted on the client lane
+   * (architecture decision 16 - visible verified grounding without numeric confidence).
+   * It remains on the persisted orchestration artifacts and the audit artifact.
+   */
+  confidence?: number;
   domains?: AIRouterDomainScore[];
   missingInputs: string[];
   reasonCode?: AIReasonCode;
   whyThisPath?: string;
+  /**
+   * @deprecated No longer emitted on the client lane; kept for backwards compatibility with
+   * clients that still read it.
+   */
   analysisConfidence?: number;
   needsRetrieval?: boolean;
   selectedSkillPackIds?: AIChatSkillId[];
@@ -1315,6 +1394,27 @@ export interface AIChatCitationEvent extends AIChatStreamEventBase {
   citation: AIChatCitation;
 }
 
+export interface AIChatWorkspaceArtifactStartedEvent extends AIChatStreamEventBase {
+  event: 'artifactStarted';
+  artifactId: string;
+  kind: AIChatWorkspaceArtifactKind;
+  dataMode: AIChatWorkspaceArtifactDataMode;
+  title: string;
+  placement: AIChatWorkspaceArtifactPlacement;
+}
+
+export interface AIChatWorkspaceArtifactCompletedEvent extends AIChatStreamEventBase {
+  event: 'artifactCompleted';
+  artifactId: string;
+  artifact: AIChatWorkspaceArtifact;
+}
+
+export interface AIChatWorkspaceArtifactFailedEvent extends AIChatStreamEventBase {
+  event: 'artifactFailed';
+  artifactId: string;
+  reasonCode: AIChatWorkspaceArtifactFailureReason;
+}
+
 export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
   event: 'runCompleted';
   run: AIChatRunState;
@@ -1344,9 +1444,35 @@ export interface AIChatDoneEvent extends AIChatStreamEventBase {
   sourcePolicySummary?: AIChatSourcePolicySummary;
   queuedPrompt?: AIChatQueuedPromptState;
   evidenceCoverage?: AIChatEvidenceCoverage;
+  grounding?: AIChatGroundingSummary;
   reconnectState?: AIChatReconnectState;
   degradedState?: AIChatDegradedState;
   collaborationRun?: AIChatCollaborationRun;
+}
+
+/** Secret-free record of the provider failure behind a failed turn (status, provider code, bounded message, stage, route, elapsed). */
+export interface AIChatProviderErrorDiagnostics {
+  status?: number;
+  providerCode?: string;
+  message?: string;
+  stage?: string;
+  route?: string;
+  elapsedMs?: number;
+  requestId?: string;
+}
+
+/** The failure context a failed turn carries on its terminal `error` event (additive; also persisted with the turn). */
+export interface AIChatFailureContext {
+  stage?: string;
+  reasonCode?: string;
+  terminalOutcomeCode?: string;
+  completionReason?: string;
+  retryable?: boolean;
+  toolName?: string;
+  callId?: string;
+  errorCode?: string;
+  capturedAt?: string;
+  providerError?: AIChatProviderErrorDiagnostics;
 }
 
 export interface AIChatErrorEvent extends AIChatStreamEventBase {
@@ -1355,6 +1481,10 @@ export interface AIChatErrorEvent extends AIChatStreamEventBase {
   code: string;
   message: string;
   retryable: boolean;
+  /** Machine reason code for the failure (mirrors `code` when the failure has one). */
+  reasonCode?: string;
+  /** Diagnosable failure context: stage, route and the provider error behind it. */
+  failureContext?: AIChatFailureContext;
 }
 
 export interface AIChatPingEvent extends AIChatStreamEventBase {
@@ -1385,6 +1515,9 @@ export type AIChatCanonicalStreamEvent =
   | AIChatFormatterCompletedEvent
   | AIChatMessageEvent
   | AIChatCitationEvent
+  | AIChatWorkspaceArtifactStartedEvent
+  | AIChatWorkspaceArtifactCompletedEvent
+  | AIChatWorkspaceArtifactFailedEvent
   | AIChatErrorEvent
   | AIChatPingEvent;
 

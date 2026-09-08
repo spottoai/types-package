@@ -5,6 +5,12 @@ export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
     environmentIndexBytes: 8 * 1024,
     pillarDocumentBytes: 8 * 1024,
     boundedListItems: 50,
+    /**
+     * Row cap for the optional structured detail sections. Deliberately far below
+     * `boundedListItems`: the core lists already consume most of the projection byte budget,
+     * and a detail section is a summary, not an inventory.
+     */
+    sectionListItems: 10,
     customerStringScalars: 4096,
     safeLabelScalars: 512,
     scopeIdentifierScalars: 2048,
@@ -30,8 +36,18 @@ export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
     'subscription-recommendations',
     'subscription-service-retirements',
     'subscription-monitor-alerts',
+    'subscription-data-protection',
     'subscription-system-tracks',
     'subscription-metrics',
+    // API-issued evidence kind: a bounded projection of one compiled `projection.json` detail section
+    // (commitments, budgets, idle resources, ...). Never emitted by the compiler as a source reference.
+    'subscription-projection',
+    'tenant-governance',
+    'tenant-governance-access',
+    'tenant-reservations',
+    'tenant-savings-plans',
+    'tenant-applications',
+    'tenant-service-principals',
 ];
 export const ENVIRONMENT_FINDING_KINDS_V1 = [
     'recommendation',

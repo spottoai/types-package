@@ -5,6 +5,12 @@ export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
   environmentIndexBytes: 8 * 1024,
   pillarDocumentBytes: 8 * 1024,
   boundedListItems: 50,
+  /**
+   * Row cap for the optional structured detail sections. Deliberately far below
+   * `boundedListItems`: the core lists already consume most of the projection byte budget,
+   * and a detail section is a summary, not an inventory.
+   */
+  sectionListItems: 10,
   customerStringScalars: 4096,
   safeLabelScalars: 512,
   scopeIdentifierScalars: 2048,
@@ -15,6 +21,7 @@ export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
 } as const);
 
 export const ENVIRONMENT_PILLARS_V1 = ['cost', 'security', 'governance', 'reliability', 'performance', 'operations'] as const;
+
 export const ENVIRONMENT_DOCUMENT_NAMES_V1 = [
   'projection.json',
   'environment-index.md',
@@ -32,9 +39,20 @@ export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
   'subscription-recommendations',
   'subscription-service-retirements',
   'subscription-monitor-alerts',
+  'subscription-data-protection',
   'subscription-system-tracks',
   'subscription-metrics',
+  // API-issued evidence kind: a bounded projection of one compiled `projection.json` detail section
+  // (commitments, budgets, idle resources, ...). Never emitted by the compiler as a source reference.
+  'subscription-projection',
+  'tenant-governance',
+  'tenant-governance-access',
+  'tenant-reservations',
+  'tenant-savings-plans',
+  'tenant-applications',
+  'tenant-service-principals',
 ] as const;
+
 export const ENVIRONMENT_FINDING_KINDS_V1 = [
   'recommendation',
   'security-posture',
@@ -50,6 +68,7 @@ export const ENVIRONMENT_FINDING_KINDS_V1 = [
   'monitoring',
   'topology',
 ] as const;
+
 export const ENVIRONMENT_SEVERITIES_V1 = ['critical', 'high', 'medium', 'low', 'informational', 'unknown'] as const;
 export const ENVIRONMENT_IMPACTS_V1 = ['high', 'medium', 'low', 'unknown'] as const;
 export const ENVIRONMENT_EFFORTS_V1 = ['high', 'medium', 'low', 'unknown'] as const;
@@ -62,7 +81,7 @@ export type EnvironmentFindingKindV1 = (typeof ENVIRONMENT_FINDING_KINDS_V1)[num
 export type EnvironmentSeverityV1 = (typeof ENVIRONMENT_SEVERITIES_V1)[number];
 export type EnvironmentImpactV1 = (typeof ENVIRONMENT_IMPACTS_V1)[number];
 export type EnvironmentEffortV1 = (typeof ENVIRONMENT_EFFORTS_V1)[number];
-export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized';
+export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized' | 'unknown';
 export type EnvironmentSavingsAdditivityV1 = 'additive' | 'scenario-non-additive';
 export type EnvironmentMoneyProvenanceV1 =
   | 'subscription-summary'
@@ -78,7 +97,7 @@ export interface EnvironmentScopeV1 {
   subscriptionId: string;
 }
 
-export interface EnvironmentCompletedSourceGenerationV1 {
+export interface EnvironmentSourceGenerationV1 {
   viewSetSchemaVersion: 1;
   publicationId: string;
   portalRunId: string;
@@ -88,23 +107,10 @@ export interface EnvironmentCompletedSourceGenerationV1 {
   completedAt: string;
 }
 
-export interface EnvironmentPublishedSourceGenerationV1 {
-  viewSetSchemaVersion: 3;
-  publicationId: string;
-  portalRunId: string;
-  pluginRunId: string;
-  compositeDependencyDigest: string;
-  sourceRevision: number;
-  policyRevision: number;
-  completedAt: string;
-}
-
-export type EnvironmentSourceGenerationV1 = EnvironmentCompletedSourceGenerationV1 | EnvironmentPublishedSourceGenerationV1;
-
-export type EnvironmentSourceBindingV1 = EnvironmentSourceGenerationV1 & {
+export interface EnvironmentSourceBindingV1 extends EnvironmentSourceGenerationV1 {
   kind: 'azure-subscription-view-set';
   scope: EnvironmentScopeV1;
-};
+}
 
 export type EnvironmentLogicalArtifactReferenceV1 = `spotto://artifact/v1/${EnvironmentArtifactKindV1}/${string}`;
 export type EnvironmentLogicalResourceReferenceV1 = `spotto://resource/v1/${string}`;
@@ -123,6 +129,35 @@ export interface ParsedEnvironmentLogicalResourceReferenceV1 {
 
 export type ParsedEnvironmentLogicalEvidenceReferenceV1 = ParsedEnvironmentLogicalArtifactReferenceV1 | ParsedEnvironmentLogicalResourceReferenceV1;
 
+/** Whether an observed amount is billing-backed, estimated, or a blend of both. */
+export type EnvironmentSpendSourceV1 = 'billing' | 'estimated' | 'blended';
+
+export type EnvironmentSpendSourceConfidenceV1 = 'high' | 'medium' | 'low' | 'unknown';
+
+/** Producer projection rule behind a savings amount. */
+export type EnvironmentSavingsProjectionV1 = 'projected-monthly' | 'observed-period' | 'unknown';
+
+/**
+ * Split of one observed amount into its billing-backed and estimated parts. Minor units
+ * keep the split exact: `billingBacked / 10 ** minorUnitScale` is the major-unit amount.
+ */
+export interface EnvironmentMoneyCompositionV1 {
+  billingBacked: number;
+  estimated: number;
+  minorUnitScale: number;
+  currencyCode: string;
+}
+
+/** Canonical basis a savings amount was computed on, as published by the producer. */
+export interface EnvironmentSavingsBasisV1 {
+  projection: EnvironmentSavingsProjectionV1;
+  /** Producer observation-period label, for example `mixed_stable_and_legacy`. */
+  observedPeriod?: string;
+  /** Stable billing window the savings were computed over, `YYYY-MM-DD/YYYY-MM-DD`. */
+  stableWindow?: string;
+  containsLegacySavings?: boolean;
+}
+
 export interface EnvironmentMoneyValueV1 {
   amount: string;
   currencyCode: string;
@@ -130,6 +165,12 @@ export interface EnvironmentMoneyValueV1 {
   period: string;
   provenance: EnvironmentMoneyProvenanceV1;
   savingsAdditivity?: EnvironmentSavingsAdditivityV1;
+  /** Observed money only: how the producer sourced the amount. */
+  spendSource?: EnvironmentSpendSourceV1;
+  spendSourceConfidence?: EnvironmentSpendSourceConfidenceV1;
+  composition?: EnvironmentMoneyCompositionV1;
+  /** Savings money only: the producer projection rule and window behind the amount. */
+  savingsBasis?: EnvironmentSavingsBasisV1;
 }
 
 interface EnvironmentCoverageBaseV1 {
@@ -181,6 +222,27 @@ export interface EnvironmentBoundedListV1<T> {
   truncated: boolean;
   continuationReference?: EnvironmentLogicalEvidenceReferenceV1;
 }
+
+export interface EnvironmentExactCardinalityV1 {
+  basis: 'exact';
+  value: number;
+  reason?: never;
+}
+
+export interface EnvironmentLowerBoundCardinalityV1 {
+  basis: 'lower-bound';
+  value: number;
+  reason: string;
+}
+
+export interface EnvironmentUnavailableCardinalityV1 {
+  basis: 'unavailable';
+  value?: never;
+  reason: string;
+}
+
+/** Evidence-aware count that cannot present a lower bound as an exact distinct total. */
+export type EnvironmentCardinalityV1 = EnvironmentExactCardinalityV1 | EnvironmentLowerBoundCardinalityV1 | EnvironmentUnavailableCardinalityV1;
 
 export interface EnvironmentSubscriptionSummaryV1 {
   safeLabel: string;
@@ -239,7 +301,7 @@ export interface EnvironmentPillarSummaryV1 {
   coverage: EnvironmentCoverageStateV1;
   findingCount: number;
   recommendationCount: number;
-  affectedResourceCount: number;
+  affectedResources: EnvironmentCardinalityV1;
   portalRoute: string;
   score?: EnvironmentPillarScoreV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
@@ -258,8 +320,7 @@ export interface EnvironmentFindingV1 {
   description?: string;
   impact?: EnvironmentImpactV1;
   effort?: EnvironmentEffortV1;
-  confidencePercentage?: string;
-  affectedResourceCount?: number;
+  affectedResources?: EnvironmentCardinalityV1;
   portalRoute?: string;
   resourceReferences: EnvironmentLogicalResourceReferenceV1[];
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
@@ -268,13 +329,17 @@ export interface EnvironmentFindingV1 {
 export interface EnvironmentRecommendationV1 {
   recommendationId: string;
   pillar: EnvironmentPillarV1;
+  /** Customer-facing outcome or action label. */
   safeLabel: string;
+  /** Canonical source recommendation name used for precise technical retrieval and explanation. */
+  technicalName: string;
+  /** Canonical lower-case Azure resource types affected by the admitted resource subjects. */
+  affectedResourceTypes: string[];
   portalRoute: string;
   description?: string;
   impact?: EnvironmentImpactV1;
   effort?: EnvironmentEffortV1;
-  confidencePercentage?: string;
-  affectedResourceCount?: number;
+  affectedResources?: EnvironmentCardinalityV1;
   potentialSavings?: EnvironmentMoneyValueV1;
   resourceReferences: EnvironmentLogicalResourceReferenceV1[];
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
@@ -298,6 +363,164 @@ export interface EnvironmentProjectionWarningV1 {
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
+/** One labelled tally used by the optional detail sections. */
+export interface EnvironmentLabeledCountV1 {
+  key: string;
+  safeLabel: string;
+  count: number;
+}
+
+/** One named subject a detail section points at, with an optional canonical reference. */
+export interface EnvironmentSubjectReferenceV1 {
+  key: string;
+  safeLabel: string;
+  detail?: string;
+  resourceReference?: EnvironmentLogicalResourceReferenceV1;
+}
+
+export interface EnvironmentCommitmentPurchaseOptionV1 {
+  key: string;
+  safeLabel: string;
+  termMonths?: number;
+  estimatedMonthlySavings?: EnvironmentMoneyValueV1;
+}
+
+export interface EnvironmentCommitmentCoverageRowV1 {
+  key: string;
+  safeLabel: string;
+  detail?: string;
+  benefitLabels: string[];
+  resourceReference?: EnvironmentLogicalResourceReferenceV1;
+}
+
+/** Reservation and savings-plan utilisation, expiry, purchase and coverage evidence. */
+export interface EnvironmentCommitmentsSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  benefitCount?: number;
+  utilizationPercent30Day?: string;
+  utilizationPercent7Day?: string;
+  expiredCount?: number;
+  expiring90DayCount?: number;
+  expiring180DayCount?: number;
+  purchaseOptions: EnvironmentBoundedListV1<EnvironmentCommitmentPurchaseOptionV1>;
+  benefitCoverage: EnvironmentBoundedListV1<EnvironmentCommitmentCoverageRowV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentBudgetV1 {
+  key: string;
+  safeLabel: string;
+  period?: string;
+  amount?: EnvironmentMoneyValueV1;
+  currentSpend?: EnvironmentMoneyValueV1;
+  forecastSpend?: EnvironmentMoneyValueV1;
+  consumedPercent?: string;
+}
+
+export interface EnvironmentBudgetSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  budgets: EnvironmentBoundedListV1<EnvironmentBudgetV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Orphaned or idle resources named as their own finding class. */
+export interface EnvironmentIdleResourceSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  recommendationCount: number;
+  resourceCount: number;
+  monthlyWaste?: EnvironmentMoneyValueV1;
+  subjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentPublicIpExposureSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalCount: number;
+  assignedCount?: number;
+  unassignedCount?: number;
+  basicSkuCount?: number;
+  httpsExposedCount?: number;
+  rdpExposedCount?: number;
+  sshExposedCount?: number;
+  exposedSubjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  remediationOptions: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Key Vault metadata inspection coverage, including an authorization gap. */
+export interface EnvironmentSecretStoreCoverageSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  vaultCount: number;
+  inspectedVaultCount: number;
+  reasons: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentTagCoverageSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  resourceCount: number;
+  taggedResourceCount: number;
+  untaggedResourceCount: number;
+  distinctTagKeyCount: number;
+  topTagKeys: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentChangeSignalSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  windowDays: number;
+  changeCount: number;
+  materialChangeCount?: number;
+  securityRelevantCount?: number;
+  topOperations: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+export interface EnvironmentHealthEventV1 {
+  key: string;
+  safeLabel: string;
+  severity: EnvironmentSeverityV1;
+  eventType?: string;
+  startedAt?: string;
+}
+
+export interface EnvironmentHealthEventSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalCount: number;
+  activeCount: number;
+  resolvedCount: number;
+  activeEvents: EnvironmentBoundedListV1<EnvironmentHealthEventV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Bounded backup and recovery posture from the generation-bound data-protection report. */
+export interface EnvironmentDataProtectionSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  totalResourcesEvaluated: number;
+  protectedCount: number;
+  notProtectedCount: number;
+  unknownCount: number;
+  failedCount: number;
+  staleCount: number;
+  workloadCoverage: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  findingCounts: EnvironmentBoundedListV1<EnvironmentLabeledCountV1>;
+  atRiskSubjects: EnvironmentBoundedListV1<EnvironmentSubjectReferenceV1>;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
+/** Defender for Cloud Secure Score, including movement from the prior stored generation. */
+export interface EnvironmentSecureScoreSectionV1 {
+  coverage: EnvironmentCoverageStateV1;
+  value: string;
+  maximum: '100';
+  previousValue?: string;
+  delta?: string;
+  currentScore?: string;
+  maxScore?: string;
+  assessedResourceCount?: number;
+  sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
+}
+
 export interface EnvironmentSubscriptionProjectionV1 {
   schemaVersion: 1;
   scope: EnvironmentScopeV1;
@@ -315,11 +538,23 @@ export interface EnvironmentSubscriptionProjectionV1 {
   recommendations: EnvironmentBoundedListV1<EnvironmentRecommendationV1>;
   changes: EnvironmentBoundedListV1<EnvironmentChangeV1>;
   warnings: EnvironmentBoundedListV1<EnvironmentProjectionWarningV1>;
+  /**
+   * Optional structured detail sections. Each is present only when the compiler admitted
+   * the source that carries it, and each states its own coverage so a consumer never reads
+   * an absent section as an empty estate.
+   */
+  commitments?: EnvironmentCommitmentsSectionV1;
+  budgets?: EnvironmentBudgetSectionV1;
+  idleResources?: EnvironmentIdleResourceSectionV1;
+  publicIpExposure?: EnvironmentPublicIpExposureSectionV1;
+  secretStoreCoverage?: EnvironmentSecretStoreCoverageSectionV1;
+  tagCoverage?: EnvironmentTagCoverageSectionV1;
+  changeSignals?: EnvironmentChangeSignalSectionV1;
+  healthEvents?: EnvironmentHealthEventSectionV1;
+  dataProtection?: EnvironmentDataProtectionSectionV1;
+  secureScore?: EnvironmentSecureScoreSectionV1;
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
-
-/** Compatibility name retained for existing financial-only consumers during the pre-release migration. */
-export type EnvironmentSubscriptionCostProjectionV1 = EnvironmentSubscriptionProjectionV1;
 
 export type EnvironmentDocumentDescriptorV1 =
   | {

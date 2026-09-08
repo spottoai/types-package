@@ -18,4 +18,5 @@ __exportStar(require("./contracts.js"), exports);
 __exportStar(require("./references.js"), exports);
 __exportStar(require("./validation.js"), exports);
 __exportStar(require("./canonicalization.js"), exports);
+__exportStar(require("./tenant.js"), exports);
 //# sourceMappingURL=index.js.map

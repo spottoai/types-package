@@ -1,11 +1,11 @@
 /** Common AI interfaces shared between frontend and backend */
-import { hasExactKeys, isRecord } from '../environment/internal.js';
-import { isEnvironmentArtifactKindV1, isEnvironmentPortalRouteV1, isEnvironmentSafeLabelV1, isEnvironmentScopeV1, isEnvironmentSourceGenerationV1, } from '../environment/validation.js';
-/** Strictly validates the client-safe environment evidence shape. */
-export const isAIEnvironmentEvidenceMatch = (value) => isRecord(value) &&
-    hasExactKeys(value, ['safeLabel', 'portalRoute', 'scope', 'artifactKind', 'sourceGeneration']) &&
-    isEnvironmentSafeLabelV1(value.safeLabel) &&
-    isEnvironmentPortalRouteV1(value.portalRoute) &&
-    isEnvironmentScopeV1(value.scope) &&
-    isEnvironmentArtifactKindV1(value.artifactKind) &&
-    isEnvironmentSourceGenerationV1(value.sourceGeneration);
+export * from './grounding.js';
+export * from './conversationHistory.js';
+export * from './workspaceArtifacts.js';
+/** Maximum length of the optional free-text comment attached to per-turn feedback. */
+export const AI_CHAT_TURN_FEEDBACK_COMMENT_MAX_LENGTH = 1000;
+/**
+ * Number of per-turn feedback records retained on a conversation. The conversation blob stays the
+ * authoritative record, so the newest records win once the bound is reached.
+ */
+export const AI_CHAT_TURN_FEEDBACK_MAX_RECORDS = 200;

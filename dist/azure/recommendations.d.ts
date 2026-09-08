@@ -507,6 +507,8 @@ export interface RecommendationResource {
     spend?: number;
     /** Amortized spend for this recommendation resource when the amortized basis is available. */
     spendAmortized?: number | null;
+    /** Rolling 30-day source partition used to present proved Azure-native resource spend. */
+    financialChargeSpend?: import('./financialChargePolicy.js').AzureResourceFinancialChargeSpendBreakdownV1;
     /** Spend basis used to calculate this recommendation resource's savings. */
     savingsBasis?: CostSavingsSpendBasis;
     optimizationProfile?: ResourceSimpleOptimizationProfile;
@@ -556,6 +558,10 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
     financialSavingsQuerySelection?: FinancialSavingsQuerySelectionV1;
     /** API-projected, generation-bound evidence qualification; never a monetary authority. */
     financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
+    /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+    formalFinancialAuthority?: import('./financialChargePolicy.js').AzurePolicyBoundSavingsAggregateV1;
+    /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+    chargeableSavings?: import('./financialChargePolicy.js').AzureChargeableSavingsV1;
 }
 export interface ResourceId {
     id: string;

@@ -7,6 +7,12 @@ export declare const parseEnvironmentLogicalArtifactReferenceV1: (value: unknown
 export declare const buildEnvironmentLogicalResourceReferenceV1: (canonicalAzureResourceId: string) => EnvironmentLogicalResourceReferenceV1;
 /** Parses a V1 logical resource reference into a canonical Azure resource ID. */
 export declare const parseEnvironmentLogicalResourceReferenceV1: (value: unknown) => ParsedEnvironmentLogicalResourceReferenceV1 | null;
+/**
+ * Derives the canonical Azure resource type from a canonical ARM resource ID.
+ * Resource names are consumed structurally, so a resource named `providers`
+ * cannot be mistaken for an extension-resource provider boundary.
+ */
+export declare const deriveEnvironmentAzureResourceTypeV1: (canonicalAzureResourceId: string) => string | null;
 /** Parses either closed V1 logical evidence-reference kind. */
 export declare const parseEnvironmentLogicalEvidenceReferenceV1: (value: unknown) => ParsedEnvironmentLogicalEvidenceReferenceV1 | null;
 /** Returns true when a value is a canonical V1 logical artifact reference. */

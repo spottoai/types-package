@@ -10,6 +10,7 @@ import type { AzureBillingExportConfigurationInput, AzureBillingExportConfigurat
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 /** Azure compatibility alias for the provider-neutral environment classification. */
 export type SubscriptionType = EnvironmentType;
+export type ScheduledScanSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
 export type CloudAccountTenantSyncStatus = 'Idle' | 'Requested' | 'Processing' | 'Completed' | 'Error';
@@ -630,6 +631,8 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
     totalCost?: number;
     billingItems?: number;
     activityItems?: number;
+    /** Hour within each twelve-hour UTC cycle when the scheduled scan is dispatched. */
+    scheduledScanSlot?: ScheduledScanSlot;
     eventId?: string;
     readBitmask?: number;
     syncProgress?: SubscriptionSyncProgress | string | null;

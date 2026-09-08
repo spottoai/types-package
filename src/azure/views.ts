@@ -38,6 +38,12 @@ import type { FinancialEvidenceCoverageProjectionV1 } from './financialEvidenceC
 import type { FinancialSavingsResourceQuerySelectionV1, FinancialSavingsSurfaceProjectionV1 } from './financialSavingsSurfaceProjection.js';
 import type { FinancialCurrentSpendSurfaceProjectionV1 } from './financialCurrentSpendSurfaceProjection.js';
 import type { FinancialResourceSurfaceProjectionV1 } from './financialResourceSurfaceProjection.js';
+import type {
+  AzureChargeableSavingsV1,
+  AzurePolicyBoundSavingsAggregateV1,
+  AzureProviderScopeFinancialChargeSpendBreakdownV1,
+  AzureResourceFinancialChargeSpendBreakdownV1,
+} from './financialChargePolicy.js';
 import { encodeArtifactRunReferenceV1, isRawArtifactRunIdV1 } from './artifactRunReference.js';
 
 export interface AzureDashboardView extends AzurePortalVersionedArtifact {
@@ -59,6 +65,12 @@ export interface AzureDashboardView extends AzurePortalVersionedArtifact {
   financialCurrentSpendProjection?: FinancialCurrentSpendSurfaceProjectionV1;
   /** API-projected, generation-bound evidence qualification; never a monetary authority. */
   financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
+  /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+  formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+  /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+  chargeableSavings?: AzureChargeableSavingsV1;
+  /** Rolling 30-day source partition for Azure-native default and explicit all-charge invoice views. */
+  financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
   advisorScore?: AdvisorScoreSummary;
   healthEvents?: AzurePortalHealthEventsSummary;
 }
@@ -90,6 +102,12 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
   financialResourceProjection?: FinancialResourceSurfaceProjectionV1;
   /** API-projected, generation-bound evidence qualification; never a monetary authority. */
   financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
+  /** Fixed Marketplace-excluding authority for newly generated formal financial reports. */
+  formalFinancialAuthority?: AzurePolicyBoundSavingsAggregateV1;
+  /** Strict billing input; unavailable rather than numeric when source coverage is partial. */
+  chargeableSavings?: AzureChargeableSavingsV1;
+  /** Rolling page spend partition used to include or exclude Marketplace charges. */
+  financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
 }
 
 /**
@@ -129,6 +147,8 @@ export interface AzureResourcePortalItem {
    * availability reason when a cost composition is present.
    */
   spendAmortized?: number | null;
+  /** Rolling resource spend partition used to include or exclude Marketplace charges. */
+  financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
   /** Billing-backed portion of spend over the last 30 days */
   spendActual?: number;
   /** Billing-backed portion of amortized spend over the last 30 days */

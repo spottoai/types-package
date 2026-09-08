@@ -60,6 +60,7 @@ export interface Company {
   parentId?: string;
   parentCompanyName?: string;
   hasChildren?: boolean;
+  classification?: CompanyClassification;
   rootCompanyId?: string;
   parentIntegrationSettings?: ParentIntegrationSettings[];
   companyLifecycle?: CompanyLifecycle;

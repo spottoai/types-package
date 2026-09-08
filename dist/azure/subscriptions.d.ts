@@ -7,6 +7,7 @@ import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
 import type { CostComposition } from './costComposition.js';
+import { type AzureProviderScopeFinancialChargeSpendBreakdownV1 } from './financialChargePolicy.js';
 export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 export type SpendDataSource = 'billing' | 'estimated_billing_run_rate' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
 export interface SubscriptionSummaryLite {
@@ -100,6 +101,34 @@ export interface ResourceInventoryStats {
     /** Discovered resource IDs intentionally excluded from customer-visible inventory. */
     excludedResourceCount: number;
 }
+/**
+ * Non-authoritative dashboard display projection. The major-unit fields and
+ * group arrays inherit period/currency from the containing subscription view.
+ * Billing and formal reports must use `financialChargeSpend` when present.
+ */
+export interface AzureNativeSubscriptionFinancialStatsV1 {
+    contractVersion: 'azure-native-subscription-financial-stats/v1';
+    policyRef: 'azure-cloud-services-excluding-marketplace/v1';
+    /** Partial means material rows with unknown publisher provenance were excluded. */
+    status: 'complete' | 'partial';
+    financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
+    resourcesByLocation: ResourceByLocation[];
+    resourcesByType: ResourcesByType[];
+    spend30Days?: number;
+    spend30DaysAmortized?: number;
+    spendPrevious30Days?: number;
+    spendPrevious30DaysAmortized?: number;
+    spend7Days?: number;
+    spend7DaysAmortized?: number;
+    spendPrevious7Days?: number;
+    spendPrevious7DaysAmortized?: number;
+    spend30DaysBillingBacked?: number;
+    spend30DaysAmortizedBillingBacked?: number;
+    spend30DaysEstimated?: number;
+    spend30DaysAmortizedEstimated?: number;
+}
+/** Exact top-level validator for the dashboard Azure-native display projection. */
+export declare const isAzureNativeSubscriptionFinancialStatsV1: (value: unknown) => value is AzureNativeSubscriptionFinancialStatsV1;
 export interface SubscriptionStats {
     /** Total unique customer-visible resources for resourcesTotalBasis. */
     resourcesTotal: number;
@@ -114,6 +143,8 @@ export interface SubscriptionStats {
     recommendationsCustom: RecommendationStats;
     resourcesByLocation: ResourceByLocation[];
     resourcesByType: ResourcesByType[];
+    /** Default customer financial view; Marketplace and unknown charges are excluded. */
+    azureNativeFinancialStats?: AzureNativeSubscriptionFinancialStatsV1;
     spend30Days?: number;
     spend30DaysAmortized?: number | null;
     spendPrevious30Days?: number;

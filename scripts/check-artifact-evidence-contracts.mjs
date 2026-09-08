@@ -34,7 +34,10 @@ import {
 
 const corpusBytes = await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url));
 const contractCorpus = JSON.parse(corpusBytes.toString('utf8'));
-const corpusDigest = createHash('sha256').update(corpusBytes).digest('hex');
+// Git may materialize this JSON fixture with CRLF on Windows. Pin the logical
+// corpus content rather than the checkout's platform-specific line endings.
+const normalizedCorpusText = corpusBytes.toString('utf8').replace(/\r\n/gu, '\n');
+const corpusDigest = createHash('sha256').update(normalizedCorpusText, 'utf8').digest('hex');
 const EXPECTED_CORPUS_SHA256 = '508cb1bfb27ec89e1b99fbada05e91bffe8d4c84174492760b647fd7311d5f5a';
 const EXPECTED_CORPUS_CASE_COUNT = 351;
 const EXPECTED_CORPUS_MUTATION_COUNT = 436;
