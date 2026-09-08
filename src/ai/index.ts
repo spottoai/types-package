@@ -10,6 +10,7 @@ import type {
 } from './workspaceArtifacts.js';
 
 export * from './grounding.js';
+export * from './conversationHistory.js';
 export * from './workspaceArtifacts.js';
 
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
