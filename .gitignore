@@ -95,6 +95,8 @@ jspm_packages/
 samples/
 
 specs/*
+!Specs/alerts/
+!Specs/alerts/*.md
 !Specs/data-quality/
 !Specs/data-quality/dev-1036-artifact-evidence-generation-types-package.md
 !Specs/cost-savings/

@@ -13,9 +13,15 @@ export const QUICK_ALERT_TYPES = ['credentialExpiry', 'benefitExpiry', 'serviceR
 export type QuickAlertType = (typeof QUICK_ALERT_TYPES)[number];
 export type QuickAlertCategory = 'other';
 
-export type QuickAlertTemplateId = 'credential-expiry-30d' | 'benefit-expiry-30d' | 'benefit-expiry-7d' | 'service-retirement-30d' | 'backup-failure';
+export type QuickAlertTemplateId =
+  | 'credential-expiry-30d'
+  | 'cloud-account-credential-expiry-30d'
+  | 'benefit-expiry-30d'
+  | 'benefit-expiry-7d'
+  | 'service-retirement-30d'
+  | 'backup-failure';
 
-export type QuickAlertSource = 'serviceRetirement' | 'commitmentsPlanning' | 'dataProtection';
+export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection';
 
 export type QuickAlertBenefitType = 'reservation' | 'savingsPlan';
 
@@ -27,6 +33,12 @@ interface QuickAlertCriteriaBase<TKind extends QuickAlertType, TSource extends Q
 
 export interface CredentialExpiryAlertCriteria extends QuickAlertCriteriaBase<'credentialExpiry', 'serviceRetirement', 'credential-expiry-30d'> {
   lookaheadDays: number;
+}
+
+export interface CloudAccountCredentialExpiryAlertCriteria
+  extends QuickAlertCriteriaBase<'credentialExpiry', 'cloudAccounts', 'cloud-account-credential-expiry-30d'> {
+  lookaheadDays: number;
+  alertWhenExpiryUnknown?: boolean;
 }
 
 export interface BenefitExpiryAlertCriteria
@@ -46,6 +58,7 @@ export interface BackupFailureAlertCriteria extends QuickAlertCriteriaBase<'back
 
 export type QuickAlertCriteria =
   | CredentialExpiryAlertCriteria
+  | CloudAccountCredentialExpiryAlertCriteria
   | BenefitExpiryAlertCriteria
   | ServiceRetirementAlertCriteria
   | BackupFailureAlertCriteria;
@@ -60,6 +73,11 @@ export interface QuickAlertSummary {
   objectId?: string;
   objectName?: string;
   subscriptionId?: string;
+  cloudAccountId?: string;
+  cloudAccountName?: string;
+  credentialRole?: 'readServicePrincipal' | 'writeServicePrincipal' | 'readWriteServicePrincipal';
+  expiryState?: 'expiring' | 'expired' | 'expiryUnknown';
+  expiryBasis?: 'cloudAccountMetadata';
   expiresAt?: string;
   workloadType?: string;
 }
@@ -78,7 +96,12 @@ export type QuickAlertDefinition = {
   [TType in QuickAlertType]: QuickAlertDefinitionFor<TType>;
 }[QuickAlertType];
 
-type EditableQuickAlertCriteria<TType extends QuickAlertType> = Omit<QuickAlertCriteriaFor<TType>, 'kind' | 'source' | 'templateId'>;
+type EditableQuickAlertCriteria<TType extends QuickAlertType> =
+  QuickAlertCriteriaFor<TType> extends infer TCriteria
+    ? TCriteria extends QuickAlertCriteria
+      ? Omit<TCriteria, 'kind' | 'source' | 'templateId'>
+      : never
+    : never;
 
 export type QuickAlertDefinitionUpdateInput = {
   [TType in QuickAlertType]: UpdateAlertDefinitionInput<QuickAlertDefinitionFor<TType>, EditableQuickAlertCriteria<TType>>;
