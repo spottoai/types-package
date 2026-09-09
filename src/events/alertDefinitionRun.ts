@@ -22,4 +22,8 @@ export interface AlertDefinitionRunState {
   lastScopeResolvedAt?: string;
   lastScopeSubscriptionIdsCount?: number;
   lastScopeSubscriptionIdsSample?: string[];
+  lastScopeCloudAccountIdsCount?: number;
+  lastScopeCloudAccountIdsSample?: string[];
+  lastSourceCoverageStatus?: 'complete' | 'partial';
+  lastSourceFailedItemCount?: number;
 }

@@ -1,4 +1,6 @@
-import type { AlertDefinitionCreateInput, AlertDefinitionUpdateInput, QuickAlertCriteria } from '../src/events/quickAlerts';
+import type { AlertDefinitionRunState } from '../src/events/alertDefinitionRun';
+import type { BaseAlertScope } from '../src/events/baseAlert';
+import type { AlertDefinitionCreateInput, AlertDefinitionUpdateInput, QuickAlertCriteria, QuickAlertSummary } from '../src/events/quickAlerts';
 
 const credentialExpiry = {
   kind: 'credentialExpiry',
@@ -6,6 +8,59 @@ const credentialExpiry = {
   templateId: 'credential-expiry-30d',
   lookaheadDays: 30,
 } satisfies QuickAlertCriteria;
+
+const cloudAccountCredentialExpiry = {
+  kind: 'credentialExpiry',
+  source: 'cloudAccounts',
+  templateId: 'cloud-account-credential-expiry-30d',
+  lookaheadDays: 30,
+  alertWhenExpiryUnknown: true,
+} satisfies QuickAlertCriteria;
+
+const cloudAccountScope = {
+  cloudAccountIds: ['account-1'],
+} satisfies BaseAlertScope;
+
+const cloudAccountSummary = {
+  summaryText: 'Spotto read credential expires soon',
+  matchedItemCount: 1,
+  source: 'cloudAccounts',
+  templateId: 'cloud-account-credential-expiry-30d',
+  cloudAccountId: 'account-1',
+  cloudAccountName: 'Production Azure',
+  credentialRole: 'readServicePrincipal',
+  expiryState: 'expiring',
+  expiryBasis: 'cloudAccountMetadata',
+  expiresAt: '2026-10-01T00:00:00.000Z',
+} satisfies QuickAlertSummary;
+
+const cloudAccountRunState = {
+  companyId: 'company-1',
+  definitionId: 'definition-1',
+  lastScopeCloudAccountIdsCount: 1,
+  lastScopeCloudAccountIdsSample: ['account-1'],
+  lastSourceCoverageStatus: 'partial',
+  lastSourceFailedItemCount: 1,
+} satisfies AlertDefinitionRunState;
+
+const cloudAccountDefinition = {
+  name: 'Cloud Account credential expires soon',
+  enabled: true,
+  category: 'other',
+  type: 'credentialExpiry',
+  scope: cloudAccountScope,
+  criteria: cloudAccountCredentialExpiry,
+} satisfies AlertDefinitionCreateInput;
+
+const cloudAccountDefinitionUpdate = {
+  name: 'Cloud Account credential expiry',
+  enabled: true,
+  scope: cloudAccountScope,
+  criteria: {
+    lookaheadDays: 14,
+    alertWhenExpiryUnknown: false,
+  },
+} satisfies AlertDefinitionUpdateInput;
 
 const benefitExpiry = {
   kind: 'benefitExpiry',
@@ -91,6 +146,12 @@ const invalidBenefitRule: QuickAlertCriteria = {
 
 void [
   credentialExpiry,
+  cloudAccountCredentialExpiry,
+  cloudAccountScope,
+  cloudAccountSummary,
+  cloudAccountRunState,
+  cloudAccountDefinition,
+  cloudAccountDefinitionUpdate,
   benefitExpiry,
   serviceRetirement,
   backupFailure,
