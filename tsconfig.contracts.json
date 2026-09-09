@@ -53,6 +53,7 @@
     "src/environment/environment.contracts.spec.ts",
     "src/identity/microsoftSignInAdminConsent.contracts.spec.ts",
     "src/portfolio/portfolioProjections.contracts.spec.ts",
+    "src/scheduler/scheduler.contracts.spec.ts",
     "tests/**/*.ts"
   ],
   "exclude": ["node_modules", "dist"]
