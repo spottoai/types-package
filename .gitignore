@@ -102,3 +102,6 @@ specs/*
 !Specs/cost-savings/resource-recommendation-savings-details/resource-recommendation-savings-details-types-package.md
 !Specs/portfolio/
 !Specs/portfolio/*.md
+!Specs/scheduler/
+!Specs/scheduler/dev-863-bastion-scheduled-availability/
+!Specs/scheduler/dev-863-bastion-scheduled-availability/dev-863-bastion-scheduled-availability-types.md
