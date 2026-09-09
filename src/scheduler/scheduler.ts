@@ -1,3 +1,9 @@
+import type {
+  BastionAvailabilityWeeklyScheduleDefinition,
+  BastionAvailabilityWeeklyScheduleWriteRequest,
+  BastionScheduleRun,
+} from './bastionSchedule';
+
 export type ScheduleTargetType =
   | 'recommendation-action'
   | 'resource-operation'
@@ -20,7 +26,8 @@ export type ScheduleDefinitionClass = 'atomic' | 'composite';
 export type ScheduleDefinitionType =
   | 'recommendation-action'
   | 'resource-operation'
-  | 'vm-runtime-weekly';
+  | 'vm-runtime-weekly'
+  | 'bastion-availability-weekly';
 
 export type ResourceScheduleGroupType = 'resource-schedule-definition';
 
@@ -88,7 +95,7 @@ export interface ScheduleHistoryItem {
   message?: string;
 }
 
-export interface SchedulerBatchRunItem {
+export interface SchedulerBatchRunItemBase {
   scheduleId: string;
   scheduleRunId: string;
   scheduleName?: string;
@@ -98,14 +105,8 @@ export interface SchedulerBatchRunItem {
   providerScopeId: string;
   cloudAccountId?: string;
   resourceId?: string;
-  selectedResourceIds?: string[];
-  recommendationId?: string;
-  operation?: string;
-  actionDefinitionId?: string;
-  recommendationAction?: string;
   definitionId?: string;
   definitionClass?: ScheduleDefinitionClass;
-  definitionType?: ScheduleDefinitionType;
   scheduleGroupId?: string;
   scheduleGroupType?: ResourceScheduleGroupType;
   compiledRuleId?: string;
@@ -114,6 +115,23 @@ export interface SchedulerBatchRunItem {
   createdByUserId?: string;
   updatedByUserId?: string;
 }
+
+export interface NonBastionSchedulerBatchRunItem
+  extends SchedulerBatchRunItemBase {
+  selectedResourceIds?: string[];
+  recommendationId?: string;
+  operation?: string;
+  actionDefinitionId?: string;
+  recommendationAction?: string;
+  definitionType?: Exclude<
+    ScheduleDefinitionType,
+    'bastion-availability-weekly'
+  >;
+}
+
+export type SchedulerBatchRunItem =
+  | NonBastionSchedulerBatchRunItem
+  | BastionScheduleRun;
 
 export interface SchedulerBatchQueueMessage {
   batchId: string;
@@ -261,7 +279,8 @@ export interface VmRuntimeWeeklyScheduleDefinition
 
 export type ResourceScheduleDefinition =
   | AtomicResourceScheduleDefinition
-  | VmRuntimeWeeklyScheduleDefinition;
+  | VmRuntimeWeeklyScheduleDefinition
+  | BastionAvailabilityWeeklyScheduleDefinition;
 
 export interface ResourceScheduleListResponse {
   results: ResourceScheduleDefinition[];
@@ -320,4 +339,5 @@ export interface VmRuntimeWeeklyScheduleWriteRequest {
 
 export type ResourceScheduleDefinitionWriteRequest =
   | AtomicResourceScheduleWriteRequest
-  | VmRuntimeWeeklyScheduleWriteRequest;
+  | VmRuntimeWeeklyScheduleWriteRequest
+  | BastionAvailabilityWeeklyScheduleWriteRequest;
