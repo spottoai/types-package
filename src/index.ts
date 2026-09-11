@@ -30,6 +30,8 @@ export * from './azure/recommendationState';
 export * from './azure/regulatoryCompliance';
 export * from './azure/resources';
 export * from './azure/reports';
+export * from './azure/reportEvidence';
+export * from './azure/reportEvidenceValidation';
 export * from './azure/reportingTemplates';
 export * from './azure/reviewChecklist';
 export * from './azure/advisorScore';

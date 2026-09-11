@@ -96,6 +96,29 @@ const CHANGE_DIRECTIONS = new Set<string>(['increase', 'decrease', 'unchanged', 
 const scopesEqual = (left: EnvironmentScopeV1, right: EnvironmentScopeV1): boolean =>
   left.kind === right.kind && left.tenantId === right.tenantId && left.companyId === right.companyId && left.subscriptionId === right.subscriptionId;
 
+const isScopedEnvironmentDetailRoute = (value: string): boolean => {
+  const match =
+    /^\/company\/([A-Za-z0-9_-]+)\/(dashboard|resources|recommendations|cost-analysis|commitments-planning|security|tags|backups|health|perimeter-insights|change-monitoring)(?:\/([^/?#]+))?(?:\?subscriptions=([A-Za-z0-9_-]+))?$/u.exec(
+      value
+    );
+  if (!match) return false;
+  const [, , page, subject, subscriptionId] = match;
+  if (!subject) return Boolean(subscriptionId);
+  try {
+    const decoded = decodeURIComponent(subject);
+    // Decode once only. Encoded separators are permitted solely inside an ARM ID,
+    // never in the company, page, subscription selection or recommendation ID.
+    if (encodeURIComponent(decoded) !== subject || /[%\\?#\u0000-\u001f\u007f-\u009f]/u.test(decoded)) return false;
+    if (decoded.split('/').some(segment => segment === '.' || segment === '..')) return false;
+    if (page === 'recommendations') return Boolean(subscriptionId) && /^[A-Za-z0-9_~.-]+$/u.test(decoded);
+    if (page !== 'resources') return false;
+    const resource = /^\/subscriptions\/([A-Za-z0-9_-]+)\/resourcegroups\/[^/]+\/providers\/[^/]+\/.+/iu.exec(decoded);
+    return Boolean(resource && (!subscriptionId || resource[1].toLowerCase() === subscriptionId.toLowerCase()));
+  } catch {
+    return false;
+  }
+};
+
 /** Validates a bounded, local Portal route suitable for client-visible evidence. */
 export const isEnvironmentPortalRouteV1 = (value: unknown): value is string =>
   isBoundedString(value, ENVIRONMENT_CONTRACT_LIMITS_V1.customerStringScalars, { trimmed: true, controls: true }) &&
@@ -103,10 +126,9 @@ export const isEnvironmentPortalRouteV1 = (value: unknown): value is string =>
   !value.startsWith('//') &&
   !value.includes('\\') &&
   !value.includes('://') &&
-  !value.includes('?') &&
   !value.includes('#') &&
-  !value.includes('%') &&
-  value.split('/').every(segment => segment !== '.' && segment !== '..');
+  ((!value.includes('?') && !value.includes('%') && value.split('/').every(segment => segment !== '.' && segment !== '..')) ||
+    isScopedEnvironmentDetailRoute(value));
 
 const isGeneralKey = (value: unknown): value is string =>
   isBoundedString(value, ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars, { trimmed: true, controls: true });

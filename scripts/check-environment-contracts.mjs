@@ -26,6 +26,7 @@ import {
   isEnvironmentScopeV1,
   isEnvironmentSourceBindingV1,
   isEnvironmentSubscriptionProjectionV1,
+  isEnvironmentPortalRouteV1,
   parseEnvironmentLogicalArtifactReferenceV1,
   parseEnvironmentLogicalResourceReferenceV1,
   ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1,
@@ -44,6 +45,28 @@ const scope = {
   companyId: 'company-1',
   subscriptionId: 'subscription-1',
 };
+
+const resourceRoute =
+  '/company/company-1/resources/' + encodeURIComponent('/subscriptions/sub-1/resourcegroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1');
+for (const route of [
+  resourceRoute,
+  '/company/company-1/recommendations/rec-1?subscriptions=sub-1',
+  '/company/company-1/dashboard?subscriptions=sub-1',
+]) {
+  assert.equal(isEnvironmentPortalRouteV1(route), true, route);
+}
+for (const route of [
+  '//evil.example/resources',
+  '/company/company-1/dashboard?token=secret',
+  '/company/company-1/dashboard?subscriptions=sub-1&subscriptions=sub-2',
+  '/company/company-1/dashboard?subscriptions=sub-1#other',
+  '/company/company-1/recommendations/%2E%2E?subscriptions=sub-1',
+  '/company/company-1/recommendations/%252Fusers?subscriptions=sub-1',
+  '/company/company%2F2/dashboard?subscriptions=sub-1',
+  resourceRoute + '?subscriptions=foreign',
+  '/company/company-1/resources/' + encodeURIComponent('/subscriptions/sub-1/resourcegroups/../providers/X/Y/Z'),
+])
+  assert.equal(isEnvironmentPortalRouteV1(route), false, route);
 const completedAt = '2026-08-29T00:00:00.000Z';
 const generatedAt = '2026-08-29T00:00:01.000Z';
 const sourceBinding = {
@@ -332,7 +355,6 @@ assert.equal(
   'savings money never carries a spend source'
 );
 
-
 // Optional detail sections: additive, self-describing, and bounded by their own row cap.
 const sectionList = items => ({ items, totalCount: items.length, includedCount: items.length, truncated: false });
 const detailSections = {
@@ -404,7 +426,13 @@ const detailSections = {
     activeCount: 25,
     resolvedCount: 34,
     activeEvents: sectionList([
-      { key: '9Q5T-8LZ', safeLabel: 'Network connectivity advisory', severity: 'medium', eventType: 'HealthAdvisory', startedAt: '2026-08-11T17:07:57.547Z' },
+      {
+        key: '9Q5T-8LZ',
+        safeLabel: 'Network connectivity advisory',
+        severity: 'medium',
+        eventType: 'HealthAdvisory',
+        startedAt: '2026-08-11T17:07:57.547Z',
+      },
     ]),
     sourceReferences: [artifactReference],
   },
