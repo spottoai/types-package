@@ -1,4 +1,6 @@
 import type {
+  AIChatAnswerDraftEvent,
+  AIChatAnswerDraftResetEvent,
   AIChatCanonicalStreamEvent,
   AIChatCanonicalStreamEventName,
   AIChatEvidenceCoverage,
@@ -167,3 +169,44 @@ const invalidPageStartRequest: AIChatRunStartRequest = {
 void invalidCanonicalTerminalName;
 void invalidCompletedEvent;
 void invalidPageStartRequest;
+
+const answerDraftEvent: AIChatAnswerDraftEvent = {
+  event: 'answerDraft',
+  sequence: 4,
+  conversationId: 'conversation-1',
+  runId: 'run-1',
+  turnId: 'turn-1',
+  timestamp: '2026-09-11T00:00:00.000Z',
+  delta: 'Six workloads are unprotected',
+};
+
+const answerDraftResetEvent: AIChatAnswerDraftResetEvent = {
+  ...answerDraftEvent,
+  event: 'answerDraftReset',
+  reason: 'toolCall',
+};
+
+const canonicalDraftEvents: AIChatCanonicalStreamEvent[] = [answerDraftEvent, answerDraftResetEvent];
+const canonicalDraftNames: AIChatCanonicalStreamEventName[] = ['answerDraft', 'answerDraftReset'];
+
+void canonicalDraftEvents;
+void canonicalDraftNames;
+
+const invalidDraftResetReason: AIChatAnswerDraftResetEvent = {
+  ...answerDraftResetEvent,
+  // @ts-expect-error draft reset reasons are a closed set.
+  reason: 'superseded',
+};
+
+// @ts-expect-error an answer draft carries only a plain-text delta.
+const invalidDraftWithoutDelta: AIChatAnswerDraftEvent = {
+  event: 'answerDraft',
+  sequence: 5,
+  conversationId: 'conversation-1',
+  runId: 'run-1',
+  turnId: 'turn-1',
+  timestamp: '2026-09-11T00:00:00.000Z',
+};
+
+void invalidDraftResetReason;
+void invalidDraftWithoutDelta;

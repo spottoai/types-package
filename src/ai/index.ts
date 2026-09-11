@@ -1224,6 +1224,8 @@ export type AIChatCanonicalStreamEventName =
   | 'formatterStarted'
   | 'formatterCompleted'
   | 'message'
+  | 'answerDraft'
+  | 'answerDraftReset'
   | 'citation'
   | 'artifactStarted'
   | 'artifactCompleted'
@@ -1389,6 +1391,32 @@ export interface AIChatMessageEvent extends AIChatStreamEventBase {
   delta: string;
 }
 
+/**
+ * Provisional answer text streamed while the model is still writing the answer.
+ *
+ * A draft is not authoritative: it has not been formatted, claim-verified or persisted, so clients render
+ * it as escaped plain text, visibly marked as a draft, and never parse it. The first `message` delta or any
+ * terminal or pausing event (`runCompleted`, `runPaused`, `error`) supersedes it. Clients that do not
+ * recognize the event ignore it.
+ */
+export interface AIChatAnswerDraftEvent extends AIChatStreamEventBase {
+  event: 'answerDraft';
+  /** Plain-text fragment appended to the current draft. */
+  delta: string;
+}
+
+/**
+ * Why the current draft was discarded: the drafted text was preamble before a tool call (`toolCall`), or
+ * the provider response failed before it completed (`error`).
+ */
+export type AIChatAnswerDraftResetReason = 'toolCall' | 'error';
+
+/** Discards the current answer draft. Later `answerDraft` deltas start a new draft. */
+export interface AIChatAnswerDraftResetEvent extends AIChatStreamEventBase {
+  event: 'answerDraftReset';
+  reason: AIChatAnswerDraftResetReason;
+}
+
 export interface AIChatCitationEvent extends AIChatStreamEventBase {
   event: 'citation';
   citation: AIChatCitation;
@@ -1514,6 +1542,8 @@ export type AIChatCanonicalStreamEvent =
   | AIChatFormatterStartedEvent
   | AIChatFormatterCompletedEvent
   | AIChatMessageEvent
+  | AIChatAnswerDraftEvent
+  | AIChatAnswerDraftResetEvent
   | AIChatCitationEvent
   | AIChatWorkspaceArtifactStartedEvent
   | AIChatWorkspaceArtifactCompletedEvent
