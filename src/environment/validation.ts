@@ -51,6 +51,7 @@ import {
   DECIMAL_PATTERN,
   ENVIRONMENT_RUN_ID_PATTERN,
   SHA256_PATTERN,
+  hasControlCharacter,
   hasExactKeys,
   hasSafeContainerShape,
   isBoundedString,
@@ -108,7 +109,7 @@ const isScopedEnvironmentDetailRoute = (value: string): boolean => {
     const decoded = decodeURIComponent(subject);
     // Decode once only. Encoded separators are permitted solely inside an ARM ID,
     // never in the company, page, subscription selection or recommendation ID.
-    if (encodeURIComponent(decoded) !== subject || /[%\\?#\u0000-\u001f\u007f-\u009f]/u.test(decoded)) return false;
+    if (encodeURIComponent(decoded) !== subject || /[%\\?#]/u.test(decoded) || hasControlCharacter(decoded)) return false;
     if (decoded.split('/').some(segment => segment === '.' || segment === '..')) return false;
     if (page === 'recommendations') return Boolean(subscriptionId) && /^[A-Za-z0-9_~.-]+$/u.test(decoded);
     if (page !== 'resources') return false;
