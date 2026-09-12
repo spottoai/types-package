@@ -9,6 +9,10 @@ export const REPORT_EVIDENCE_LIMITS = {
   complianceAssessments: 2000,
   activityDays: 400,
   recommendationResources: 2,
+  resourceCatalogue: 2000,
+  totalRecommendationResourceRows: 10000,
+  inventoryCatalogue: 2000,
+  healthCatalogue: 2000,
   summaryDimensions: 25,
   summaryRows: 20,
   topRecommendationIds: 20,
@@ -94,6 +98,8 @@ export interface ReportCompactRecommendation {
     securityImpactDetails?: { controlName?: string; controlDisplayName?: string };
   };
   resources: ReportCompactRecommendationResource[];
+  /** Complete compact detail when omittedCount is zero; resources remains the overview sample. */
+  resourceCatalogue?: ReportBoundedRows<ReportCompactRecommendationResource>;
   resourcesCount: number;
   omittedResourceCount: number;
   savings?: { minAmount?: number; maxAmount?: number };
@@ -183,12 +189,25 @@ export interface ReportInventoryResourceRow {
 }
 
 export interface ReportInventoryProjection {
+  /** Classification inputs preserve native and Spotto tags separately. */
+  resourceCatalogue?: ReportBoundedRows<ReportInventoryCatalogueResource>;
   totalResources: number;
   untaggedResourceCount: number;
   untaggedExamples: ReportBoundedRows<ReportResourceExample>;
   snapshots: ReportBoundedRows<ReportSnapshotRow>;
   appliedTagCosts: ReportBoundedRows<ReportAppliedTagCostRow>;
   topSpendResources: ReportBoundedRows<ReportInventoryResourceRow>;
+}
+
+export interface ReportInventoryCatalogueResource extends ReportCompactRecommendationResource {
+  createdTime?: number;
+  tags?: Record<string, string>;
+  spottoTags?: Record<string, { v: string; a: number }>;
+  /** Only the current SKU and selected performance-uplift alternative are retained. */
+  vmPricePerformance?: {
+    current: ReportProjectionRecord;
+    alternatives: ReportProjectionRecord[];
+  };
 }
 
 export interface ReportPrivilegedAccessRow {
@@ -271,6 +290,8 @@ export interface ReportDataProtectionProjection extends ReportProjectionRecord {
 }
 
 export interface ReportResourceHealthProjection {
+  eventCatalogue?: ReportBoundedRows<ReportProjectionRecord>;
+  availabilityCatalogue?: ReportBoundedRows<ReportProjectionRecord>;
   events: ReportProjectionRecord & { events: ReportBoundedRows<ReportProjectionRecord> };
   availabilityStatuses: ReportProjectionRecord & { statuses: ReportBoundedRows<ReportProjectionRecord> };
 }

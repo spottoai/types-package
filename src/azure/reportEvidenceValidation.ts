@@ -1,3 +1,4 @@
+import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation';
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
@@ -50,90 +51,6 @@ export const isReportSecureScoreEvidence = (value: unknown): value is SecureScor
   )
     return false;
   return true;
-};
-
-const isCompactRecommendationResource = (value: unknown): boolean =>
-  isRecord(value) &&
-  isString(value.id) &&
-  ['name', 'type', 'resourceGroup', 'location', 'currency', 'currencySymbol'].every(key => isOptionalString(value[key])) &&
-  ['spend', 'spendAmortized'].every(key => isOptionalFiniteNumber(value[key])) &&
-  (value.savings === undefined ||
-    (isRecord(value.savings) && isOptionalFiniteNumber(value.savings.minAmount) && isOptionalFiniteNumber(value.savings.maxAmount)));
-
-const isCompactRecommendation = (value: unknown): value is ReportCompactRecommendation => {
-  if (!isRecord(value) || !isRecord(value.recommendation) || !Array.isArray(value.resources)) return false;
-  const recommendation = value.recommendation;
-  const assessment = recommendation.securityAssessmentSummary;
-  if (
-    assessment !== undefined &&
-    (!isRecord(assessment) ||
-      !isCount(assessment.unhealthyCount) ||
-      !isCount(assessment.totalCount) ||
-      assessment.unhealthyCount > assessment.totalCount)
-  )
-    return false;
-  if (
-    recommendation.securityImpactDetails !== undefined &&
-    (!isRecord(recommendation.securityImpactDetails) ||
-      !hasOptionalStrings(recommendation.securityImpactDetails, ['controlName', 'controlDisplayName']))
-  )
-    return false;
-  if (
-    !isString(recommendation.id) ||
-    !isString(recommendation.title) ||
-    recommendation.resolved === true ||
-    !isCount(value.resourcesCount) ||
-    !isCount(value.omittedResourceCount) ||
-    value.resources.length > REPORT_EVIDENCE_LIMITS.recommendationResources ||
-    !value.resources.every(isCompactRecommendationResource) ||
-    value.resourcesCount !== value.resources.length + value.omittedResourceCount
-  ) {
-    return false;
-  }
-  if (
-    !hasOptionalStrings(recommendation, [
-      'name',
-      'headline',
-      'plainSummary',
-      'bottomLine',
-      'description',
-      'remediation',
-      'impactReason',
-      'effortReason',
-      'potentialBenefits',
-      'considerations',
-      'technicalPlaybook',
-      'category',
-      'subCategory',
-      'impact',
-      'effort',
-      'severity',
-      'risk',
-      'priority',
-      'priorityLabel',
-      'priorityTier',
-      'manualPriority',
-      'costImpactUnit',
-    ]) ||
-    !hasOptionalNumbers(recommendation, [
-      'effortHours',
-      'costImpact',
-      'potentialMonthlySavings',
-      'confidencePercentage',
-      'adjustedScore',
-      'finalScore',
-      'normalizedScore',
-    ]) ||
-    !isOptionalBoolean(recommendation.resolved) ||
-    !isOptionalBoolean(recommendation.reportingTextTruncated) ||
-    !hasOptionalStrings(value, ['currency', 'currencySymbol'])
-  ) {
-    return false;
-  }
-  return (
-    value.savings === undefined ||
-    (isRecord(value.savings) && isOptionalFiniteNumber(value.savings.minAmount) && isOptionalFiniteNumber(value.savings.maxAmount))
-  );
 };
 
 const isCostSavingsCategory = (value: unknown): value is JsonRecord =>
@@ -241,6 +158,9 @@ const isInventory = (value: unknown): boolean =>
   isCount(value.totalResources) &&
   isCount(value.untaggedResourceCount) &&
   value.untaggedResourceCount <= value.totalResources &&
+  (value.resourceCatalogue === undefined ||
+    (isBoundedRows(value.resourceCatalogue, REPORT_EVIDENCE_LIMITS.inventoryCatalogue, isInventoryCatalogueResource) &&
+      value.resourceCatalogue.totalCount === value.totalResources)) &&
   isBoundedRows(value.untaggedExamples, REPORT_EVIDENCE_LIMITS.detailRows, isResourceExample) &&
   isBoundedRows(value.snapshots, REPORT_EVIDENCE_LIMITS.detailRows, isSnapshot) &&
   isBoundedRows(value.appliedTagCosts, REPORT_EVIDENCE_LIMITS.detailRows, isAppliedTagCost) &&
@@ -338,6 +258,10 @@ const isReportingProjection = (value: unknown): boolean => {
     return false;
   }
   const patch = value.patchManagement;
+  const resourceRows = [value.recommendations, value.recommendationCatalogue]
+    .flatMap(collection => (collection as ReportBoundedRows<ReportCompactRecommendation> | undefined)?.rows ?? [])
+    .reduce((total, row) => total + (row.resourceCatalogue?.rows.length ?? 0), 0);
+  if (resourceRows > REPORT_EVIDENCE_LIMITS.totalRecommendationResourceRows) return false;
   const protection = value.dataProtection;
   const health = value.resourceHealth;
   const uptime = value.serverUptime;
@@ -350,10 +274,15 @@ const isReportingProjection = (value: unknown): boolean => {
     isProjectionRows(protection.items) &&
     isProjectionRows(protection.issues) &&
     isRecord(health) &&
+    (health.eventCatalogue === undefined || isBoundedRows(health.eventCatalogue, REPORT_EVIDENCE_LIMITS.healthCatalogue, isRecord)) &&
+    (health.availabilityCatalogue === undefined || isBoundedRows(health.availabilityCatalogue, REPORT_EVIDENCE_LIMITS.healthCatalogue, isRecord)) &&
     isRecord(health.events) &&
     isProjectionRows(health.events.events) &&
+    (health.eventCatalogue === undefined || health.eventCatalogue.totalCount === (health.events.events as ReportBoundedRows<unknown>).totalCount) &&
     isRecord(health.availabilityStatuses) &&
     isProjectionRows(health.availabilityStatuses.statuses) &&
+    (health.availabilityCatalogue === undefined ||
+      health.availabilityCatalogue.totalCount === (health.availabilityStatuses.statuses as ReportBoundedRows<unknown>).totalCount) &&
     isRecord(uptime) &&
     ['workspaces', 'gaps', 'servers'].every(key => isProjectionRows(uptime[key])) &&
     isRecord(publicIps) &&

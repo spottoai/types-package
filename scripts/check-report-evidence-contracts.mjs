@@ -216,6 +216,36 @@ const activityDay = {
 };
 populationPack.reporting.activity.dailySummary = { totalCount: 1, omittedCount: 0, rows: [activityDay] };
 assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
+const cataloguePack = structuredClone(populationPack);
+cataloguePack.reporting.recommendationCatalogue.rows[0].resourceCatalogue = emptyRows();
+cataloguePack.reporting.inventory.resourceCatalogue = emptyRows();
+cataloguePack.reporting.resourceHealth.eventCatalogue = emptyRows();
+cataloguePack.reporting.resourceHealth.availabilityCatalogue = emptyRows();
+assert.equal(isSubscriptionReportEvidencePack(cataloguePack), true);
+for (const mutate of [
+  pack => {
+    pack.reporting.resourceHealth.eventCatalogue = rows([{ id: 'unmatched-event' }]);
+  },
+  pack => {
+    pack.reporting.resourceHealth.availabilityCatalogue = rows([{ id: 'unmatched-status' }]);
+  },
+  pack => {
+    pack.reporting.recommendationCatalogue.rows[0].resourceCatalogue = rows([{ id: 'vm' }]);
+  },
+  pack => {
+    pack.reporting.inventory.resourceCatalogue = rows([{ id: 'vm', tags: { Owner: 42 } }]);
+  },
+  pack => {
+    pack.reporting.resourceHealth.eventCatalogue = rows(Array.from({ length: 2001 }, () => ({})));
+  },
+  pack => {
+    pack.reporting.resourceHealth.availabilityCatalogue.omittedCount = -1;
+  },
+]) {
+  const invalid = structuredClone(cataloguePack);
+  mutate(invalid);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'Malformed report catalogue rejected');
+}
 populationPack.reporting.recommendationCatalogue.rows[0].recommendation.securityAssessmentSummary = { unhealthyCount: 2, totalCount: 3 };
 populationPack.reporting.recommendationCatalogue.rows[0].recommendation.reportingTextTruncated = true;
 assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
