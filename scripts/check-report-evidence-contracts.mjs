@@ -151,7 +151,112 @@ const tenantPack = {
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
 assert.equal(isSubscriptionReportHistory(history), true);
+for (const evidence of [
+  {
+    status: 'available',
+    percentage: 11.7,
+    currentScore: 5.03,
+    maxScore: 43,
+    weight: 529,
+    assessedResourceCount: 100,
+    observedAt: '2026-08-31T00:00:00.000Z',
+  },
+  { status: 'available', percentage: 0 },
+  { status: 'unavailable' },
+  { status: 'stale', percentage: 13 },
+]) {
+  const scoreHistory = structuredClone(history);
+  scoreHistory.periods[0].metrics.secureScoreEvidence = evidence;
+  assert.equal(isSubscriptionReportHistory(scoreHistory), true);
+  const scorePack = structuredClone(subscriptionPack);
+  scorePack.reporting.dashboard = { subscription: { properties: { secureScoreEvidence: evidence } } };
+  assert.equal(isSubscriptionReportEvidencePack(scorePack), true);
+}
+for (const evidence of [
+  { status: 'unknown' },
+  { status: 'available', percentage: 101 },
+  { status: 'available', percentage: -1 },
+  { status: 'available', weight: -1 },
+  { status: 'available', currentScore: 44, maxScore: 43 },
+  { status: 'available', assessedResourceCount: 1.5 },
+  { status: 'available', observedAt: 'not-a-date' },
+]) {
+  const scoreHistory = structuredClone(history);
+  scoreHistory.periods[0].metrics.secureScoreEvidence = evidence;
+  assert.equal(isSubscriptionReportHistory(scoreHistory), false);
+  const scorePack = structuredClone(subscriptionPack);
+  scorePack.reporting.dashboard = { subscription: { properties: { secureScoreEvidence: evidence } } };
+  assert.equal(isSubscriptionReportEvidencePack(scorePack), false);
+}
 assert.equal(isTenantReportEvidencePack(tenantPack), true);
+
+const populationPack = structuredClone(subscriptionPack);
+populationPack.reporting.recommendations = rows([
+  { recommendation: { id: 'security-1', title: 'Improve security' }, resources: [], resourcesCount: 0, omittedResourceCount: 0 },
+]);
+const populationPortfolio = populationPack.reporting.recommendationPortfolio;
+populationPortfolio.sourceRecommendationCount = populationPortfolio.activeRecommendationCount = 1;
+populationPortfolio.byCategory = { uncategorized: 1 };
+populationPortfolio.byImpact.Unknown = populationPortfolio.byEffort.Unknown = 1;
+populationPortfolio.impactEffortMatrix.find(row => row.impact === 'Unknown' && row.effort === 'Unknown').count = 1;
+populationPack.reporting.recommendationCatalogue = structuredClone(populationPack.reporting.recommendations);
+populationPack.reporting.governance.complianceAssessments = {
+  totalCount: 1,
+  omittedCount: 0,
+  rows: [{ assessmentKey: 'a'.repeat(64), policyDefinitionDisplayName: 'Storage control', nonCompliantResourceCount: 40 }],
+};
+const activityDay = {
+  date: '2026-08-31',
+  visibleEvents: 100,
+  materialChanges: 25,
+  securitySensitive: 12,
+  healthEvents: 75,
+  failedEvents: 2,
+  highFindingCount: 5,
+};
+populationPack.reporting.activity.dailySummary = { totalCount: 1, omittedCount: 0, rows: [activityDay] };
+assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
+populationPack.reporting.recommendationCatalogue.rows[0].recommendation.securityAssessmentSummary = { unhealthyCount: 2, totalCount: 3 };
+populationPack.reporting.recommendationCatalogue.rows[0].recommendation.reportingTextTruncated = true;
+assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
+for (const mutate of [
+  value => {
+    value.reporting.recommendationCatalogue.rows[0].recommendation.reportingTextTruncated = 'true';
+  },
+  value => {
+    value.reporting.recommendationCatalogue.rows[0].recommendation.securityAssessmentSummary.unhealthyCount = 4;
+  },
+  value => {
+    value.reporting.recommendationCatalogue.rows[0].recommendation.securityImpactDetails = { controlName: 42 };
+  },
+  value => {
+    value.reporting.recommendationCatalogue.totalCount += 1;
+    value.reporting.recommendationCatalogue.omittedCount += 1;
+  },
+  value => {
+    value.reporting.governance.complianceAssessments.rows[0].nonCompliantResourceCount = -1;
+  },
+  value => {
+    value.reporting.governance.complianceAssessments.rows[0].assessmentKey = 'truncated-display-label';
+  },
+  value => {
+    value.reporting.activity.dailySummary.rows[0].date = '2026-02-30';
+  },
+  value => {
+    value.reporting.activity.dailySummary.rows[0].failedEvents = 101;
+  },
+  value => {
+    value.reporting.activity.dailySummary.rows.push(activityDay);
+    value.reporting.activity.dailySummary.totalCount = 2;
+  },
+  value => {
+    value.reporting.activity.dailySummary = { totalCount: 401, omittedCount: 0, rows: Array.from({ length: 401 }, () => activityDay) };
+  },
+]) {
+  const invalidPopulation = structuredClone(populationPack);
+  mutate(invalidPopulation);
+  assert.equal(isSubscriptionReportEvidencePack(invalidPopulation), false);
+}
 
 const rejectSubscription = mutate => {
   const value = structuredClone(subscriptionPack);

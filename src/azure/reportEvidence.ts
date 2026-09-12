@@ -1,9 +1,13 @@
 import type { CostSavingsSummaryBasis } from './views';
 import type { TenantMfaEnforcementStatus } from './governance';
+import type { SecureScoreEvidence } from './secureScore';
 
 export const REPORT_EVIDENCE_LIMITS = {
   detailRows: 50,
   currentRecommendations: 90,
+  recommendationCatalogue: 2000,
+  complianceAssessments: 2000,
+  activityDays: 400,
   recommendationResources: 2,
   summaryDimensions: 25,
   summaryRows: 20,
@@ -77,6 +81,8 @@ export interface ReportCompactRecommendation {
     priorityTier?: string;
     manualPriority?: string;
     resolved?: boolean;
+    /** Editorial source text was clipped; consumers must not infer a theme from incomplete context. */
+    reportingTextTruncated?: boolean;
     costImpact?: number;
     costImpactUnit?: string;
     potentialMonthlySavings?: number;
@@ -84,6 +90,8 @@ export interface ReportCompactRecommendation {
     adjustedScore?: number;
     finalScore?: number;
     normalizedScore?: number;
+    securityAssessmentSummary?: { unhealthyCount: number; totalCount: number };
+    securityImpactDetails?: { controlName?: string; controlDisplayName?: string };
   };
   resources: ReportCompactRecommendationResource[];
   resourcesCount: number;
@@ -201,9 +209,23 @@ export interface ReportGovernanceProjection extends ReportProjectionRecord {
   rbacSummary: ReportProjectionRecord;
   globalAdministratorSummary: ReportProjectionRecord;
   complianceRows: ReportBoundedRows<ReportProjectionRecord>;
+  /** Complete control aggregates, computed before any resource-detail sampling. */
+  complianceAssessments?: ReportBoundedRows<ReportComplianceAssessment>;
   privilegedAccessRows: ReportBoundedRows<ReportPrivilegedAccessRow>;
   findings: ReportBoundedRows<ReportProjectionRecord>;
   limitations: ReportBoundedRows<ReportProjectionRecord>;
+}
+
+export interface ReportComplianceAssessment {
+  /** SHA-256 of full semantic control identity, before display-label truncation. */
+  assessmentKey?: string;
+  policySetDisplayName?: string;
+  policyAssignmentDisplayName?: string;
+  policyDefinitionReferenceId?: string;
+  policyDefinitionDisplayName?: string;
+  resourceType?: string;
+  effect?: string;
+  nonCompliantResourceCount: number;
 }
 
 export interface ReportCommitmentInventorySummary {
@@ -264,16 +286,33 @@ export interface ReportPublicIpProjection extends ReportProjectionRecord {
 }
 
 export interface ReportActivityProjection extends ReportProjectionRecord {
+  dailySummary?: ReportBoundedRows<ReportActivityDailySummary>;
+  undatedSummary?: ReportActivityCounts;
   changes: ReportBoundedRows<ReportProjectionRecord>;
   security: ReportBoundedRows<ReportProjectionRecord>;
   health: ReportBoundedRows<ReportProjectionRecord>;
   suppressed: ReportBoundedRows<ReportProjectionRecord>;
 }
 
+export interface ReportActivityCounts {
+  visibleEvents: number;
+  materialChanges: number;
+  securitySensitive: number;
+  healthEvents: number;
+  failedEvents: number;
+  highFindingCount: number;
+}
+
+export interface ReportActivityDailySummary extends ReportActivityCounts {
+  date: string;
+}
+
 export interface SubscriptionReportingProjection {
   dashboard: ReportProjectionRecord;
   recommendationPortfolio: ReportRecommendationPortfolio;
   recommendations: ReportBoundedRows<ReportCompactRecommendation>;
+  /** Section selection uses this catalogue; the smaller recommendations collection is an overview sample. */
+  recommendationCatalogue?: ReportBoundedRows<ReportCompactRecommendation>;
   serviceRetirements: ReportBoundedRows<ReportProjectionRecord>;
   inventory: ReportInventoryProjection;
   governance: ReportGovernanceProjection;
@@ -409,6 +448,7 @@ export interface SubscriptionReportHistoryMetrics {
   currency?: string;
   currencySymbol?: string;
   secureScore?: number;
+  secureScoreEvidence?: SecureScoreEvidence;
   advisorScore?: number;
   spend30Days?: number;
   spend30DaysAmortized?: number;

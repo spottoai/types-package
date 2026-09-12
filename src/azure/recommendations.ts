@@ -350,6 +350,10 @@ export interface Recommendation {
   /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
   resolved?: boolean;
   securityAssessmentStatuses?: SecurityAssessmentStatus[];
+  /** Complete assessment counts retained by compact report evidence. */
+  securityAssessmentSummary?: { unhealthyCount: number; totalCount: number };
+  /** Reporting projection clipped editorial context; use the source finding instead of an inferred theme. */
+  reportingTextTruncated?: boolean;
   /** Deprecated fields, kept for compatibility */
   solution?: string;
   source?: string;

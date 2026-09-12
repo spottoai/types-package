@@ -36,6 +36,21 @@ import {
   isTagCoverage,
   type JsonRecord,
 } from './reportEvidenceValidationHelpers';
+import type { SecureScoreEvidence } from './secureScore';
+
+export const isReportSecureScoreEvidence = (value: unknown): value is SecureScoreEvidence => {
+  if (!isRecord(value) || !['available', 'unavailable', 'stale'].includes(value.status as string)) return false;
+  if (
+    !hasOptionalNumbers(value, ['percentage', 'currentScore', 'maxScore', 'weight']) ||
+    (value.percentage !== undefined && ((value.percentage as number) < 0 || (value.percentage as number) > 100)) ||
+    ['currentScore', 'maxScore', 'weight'].some(key => value[key] !== undefined && (value[key] as number) < 0) ||
+    (isFiniteNumber(value.currentScore) && isFiniteNumber(value.maxScore) && value.currentScore > value.maxScore) ||
+    (value.assessedResourceCount !== undefined && !isCount(value.assessedResourceCount)) ||
+    (value.observedAt !== undefined && !isDateTime(value.observedAt))
+  )
+    return false;
+  return true;
+};
 
 const isCompactRecommendationResource = (value: unknown): boolean =>
   isRecord(value) &&
@@ -48,6 +63,21 @@ const isCompactRecommendationResource = (value: unknown): boolean =>
 const isCompactRecommendation = (value: unknown): value is ReportCompactRecommendation => {
   if (!isRecord(value) || !isRecord(value.recommendation) || !Array.isArray(value.resources)) return false;
   const recommendation = value.recommendation;
+  const assessment = recommendation.securityAssessmentSummary;
+  if (
+    assessment !== undefined &&
+    (!isRecord(assessment) ||
+      !isCount(assessment.unhealthyCount) ||
+      !isCount(assessment.totalCount) ||
+      assessment.unhealthyCount > assessment.totalCount)
+  )
+    return false;
+  if (
+    recommendation.securityImpactDetails !== undefined &&
+    (!isRecord(recommendation.securityImpactDetails) ||
+      !hasOptionalStrings(recommendation.securityImpactDetails, ['controlName', 'controlDisplayName']))
+  )
+    return false;
   if (
     !isString(recommendation.id) ||
     !isString(recommendation.title) ||
@@ -95,6 +125,7 @@ const isCompactRecommendation = (value: unknown): value is ReportCompactRecommen
       'normalizedScore',
     ]) ||
     !isOptionalBoolean(recommendation.resolved) ||
+    !isOptionalBoolean(recommendation.reportingTextTruncated) ||
     !hasOptionalStrings(value, ['currency', 'currencySymbol'])
   ) {
     return false;
@@ -228,6 +259,23 @@ const isGovernance = (value: unknown): boolean =>
   (value.coverage === undefined || isRecord(value.coverage)) &&
   hasRequiredRecords(value, ['policySummary', 'rbacSummary', 'globalAdministratorSummary']) &&
   isProjectionRows(value.complianceRows) &&
+  (value.complianceAssessments === undefined ||
+    isBoundedRows(
+      value.complianceAssessments,
+      REPORT_EVIDENCE_LIMITS.complianceAssessments,
+      (row): row is JsonRecord =>
+        isRecord(row) &&
+        isCount(row.nonCompliantResourceCount) &&
+        (row.assessmentKey === undefined || (typeof row.assessmentKey === 'string' && /^[a-f0-9]{64}$/.test(row.assessmentKey))) &&
+        hasOptionalStrings(row, [
+          'policySetDisplayName',
+          'policyAssignmentDisplayName',
+          'policyDefinitionReferenceId',
+          'policyDefinitionDisplayName',
+          'resourceType',
+          'effect',
+        ])
+    )) &&
   isBoundedRows(value.privilegedAccessRows, REPORT_EVIDENCE_LIMITS.detailRows, isPrivilegedAccess) &&
   isProjectionRows(value.findings) &&
   isProjectionRows(value.limitations);
@@ -272,10 +320,16 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
 
 const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
+  const subscription = isRecord(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
+  const properties = subscription && isRecord(subscription.properties) ? subscription.properties : undefined;
+  if (properties?.secureScoreEvidence !== undefined && !isReportSecureScoreEvidence(properties.secureScoreEvidence)) return false;
   if (
     !isBoundedRows(value.recommendations, REPORT_EVIDENCE_LIMITS.currentRecommendations, isCompactRecommendation) ||
     (value.recommendations as ReportBoundedRows<ReportCompactRecommendation>).totalCount !==
       (value.recommendationPortfolio as JsonRecord).activeRecommendationCount ||
+    (value.recommendationCatalogue !== undefined &&
+      (!isBoundedRows(value.recommendationCatalogue, REPORT_EVIDENCE_LIMITS.recommendationCatalogue, isCompactRecommendation) ||
+        value.recommendationCatalogue.totalCount !== (value.recommendationPortfolio as JsonRecord).activeRecommendationCount)) ||
     !isProjectionRows(value.serviceRetirements) ||
     !isInventory(value.inventory) ||
     !isGovernance(value.governance) ||
@@ -305,9 +359,26 @@ const isReportingProjection = (value: unknown): boolean => {
     isRecord(publicIps) &&
     isProjectionRows(publicIps.items) &&
     isRecord(activity) &&
+    (activity.dailySummary === undefined ||
+      (isBoundedRows(activity.dailySummary, REPORT_EVIDENCE_LIMITS.activityDays, isActivityDailySummary) &&
+        new Set(activity.dailySummary.rows.map(row => row.date)).size === activity.dailySummary.rows.length)) &&
+    (activity.undatedSummary === undefined || isActivityCounts(activity.undatedSummary)) &&
     ['changes', 'security', 'health', 'suppressed'].every(key => isProjectionRows(activity[key]))
   );
 };
+
+const isActivityCounts = (value: unknown): value is import('./reportEvidence').ReportActivityCounts =>
+  isRecord(value) &&
+  ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => isCount(value[key])) &&
+  ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => (value[key] as number) <= (value.visibleEvents as number));
+
+const isActivityDailySummary = (value: unknown): value is import('./reportEvidence').ReportActivityDailySummary =>
+  isActivityCounts(value) &&
+  isRecord(value) &&
+  isString(value.date) &&
+  /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
+  Number.isFinite(Date.parse(value.date)) &&
+  new Date(value.date).toISOString().slice(0, 10) === value.date;
 
 export const isSubscriptionReportEvidencePack = (value: unknown): value is SubscriptionReportEvidencePack => {
   if (!isRecord(value) || !isDateTime(value.generatedAt)) {
@@ -373,6 +444,7 @@ const isHistoryMetrics = (value: unknown): value is SubscriptionReportHistoryMet
   isRecord(value) &&
   hasOptionalStrings(value, ['subscriptionName', 'currency', 'currencySymbol']) &&
   hasOptionalNumbers(value, ['secureScore', 'advisorScore', 'spend30Days', 'spend30DaysAmortized']) &&
+  (value.secureScoreEvidence === undefined || isReportSecureScoreEvidence(value.secureScoreEvidence)) &&
   isCount(value.resourceCount) &&
   isCount(value.recommendationCount) &&
   isCount(value.impactedResourceCount) &&
