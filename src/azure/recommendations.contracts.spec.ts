@@ -4,7 +4,10 @@ import type {
   RecommendationActionRequest,
   RecommendationActionMetadata,
   RecommendationActionRequiredPermissions,
+  RecommendationEvidenceHint,
   RecommendationEffortEstimates,
+  RecommendationMetricEvidenceHint,
+  ResourceScopedRecommendation,
 } from './recommendations';
 import { RecommendationCategory } from './recommendations';
 
@@ -245,6 +248,47 @@ const recommendationWithAction: Recommendation = {
   action: recommendationAction,
 };
 
+const vmssCpuEvidenceHint: RecommendationMetricEvidenceHint = {
+  schemaVersion: 1,
+  kind: 'metric',
+  id: 'vmss-cpu-utilization',
+  resourceId: '/subscriptions/sub-dev/resourceGroups/rg-dev/providers/Microsoft.Compute/virtualMachineScaleSets/vmss-dev',
+  plotName: 'percentagecpu',
+  metricName: 'Percentage CPU',
+  sourceCollection: 'cpu-utilization',
+  metricNamespace: 'Microsoft.Compute/virtualMachineScaleSets',
+  aggregation: 'Average',
+  purpose: 'sizing',
+  preferredWindow: {
+    duration: 'P30D',
+  },
+  statistics: ['average', 'p95', 'maximum'],
+  thresholds: [
+    {
+      value: 40,
+      unit: 'percent',
+      label: 'Proceed only while p95 CPU remains below 40%',
+      role: 'gate',
+    },
+  ],
+  display: {
+    mode: 'inline-chart',
+    title: 'CPU utilization',
+    description: 'Utilization evidence supporting the proposed VM scale set capacity.',
+  },
+};
+
+const resourceScopedRecommendationWithEvidence: ResourceScopedRecommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-vmss-right-size',
+  evidenceHints: [vmssCpuEvidenceHint],
+};
+
+const legacyResourceScopedRecommendationWithoutEvidence: ResourceScopedRecommendation = {
+  ...recommendationWithEffortEstimates,
+  id: 'rec-resource-scoped-legacy',
+};
+
 void effortEstimates;
 void recommendationWithEffortEstimates;
 void legacyRecommendationWithoutEffortEstimates;
@@ -254,6 +298,9 @@ void hddRetirementRenderData;
 void recommendationWithRenderStrategy;
 void recommendationAction;
 void recommendationWithAction;
+void vmssCpuEvidenceHint;
+void resourceScopedRecommendationWithEvidence;
+void legacyResourceScopedRecommendationWithoutEvidence;
 
 const missingEnterpriseProfile: RecommendationEffortEstimates = {
   // @ts-expect-error enterprise profile is required.
@@ -333,6 +380,36 @@ const invalidActionPermissionScope: RecommendationActionRequiredPermissions = {
   scope: 'managementGroup',
 };
 
+const invalidEvidenceHintVersion: RecommendationEvidenceHint = {
+  ...vmssCpuEvidenceHint,
+  // @ts-expect-error metric evidence hint schema version must be supported.
+  schemaVersion: 2,
+};
+
+const invalidEvidenceHintPurpose: RecommendationMetricEvidenceHint = {
+  ...vmssCpuEvidenceHint,
+  // @ts-expect-error metric evidence purpose must use a supported decision role.
+  purpose: 'observability',
+};
+
+const invalidEvidenceThresholdRole: RecommendationMetricEvidenceHint = {
+  ...vmssCpuEvidenceHint,
+  thresholds: [
+    {
+      value: 40,
+      label: 'Unsupported threshold role',
+      // @ts-expect-error thresholds distinguish targets, gates and hard limits.
+      role: 'warning',
+    },
+  ],
+};
+
+const invalidEvidenceStatistic: RecommendationMetricEvidenceHint = {
+  ...vmssCpuEvidenceHint,
+  // @ts-expect-error only statistics supported by recommendation evidence are accepted.
+  statistics: ['median'],
+};
+
 void missingEnterpriseProfile;
 void invalidBreakdownShape;
 void invalidBulkProfileField;
@@ -340,3 +417,7 @@ void invalidHddCurrentStorageTier;
 void invalidActionRiskLevel;
 void invalidActionPermissionProvider;
 void invalidActionPermissionScope;
+void invalidEvidenceHintVersion;
+void invalidEvidenceHintPurpose;
+void invalidEvidenceThresholdRole;
+void invalidEvidenceStatistic;

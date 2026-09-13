@@ -1,6 +1,7 @@
 import type { CostSavingsSummaryBasis } from './views';
 import type { TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
+import type { ReportDailySpend } from './reportDailySpend';
 
 export const REPORT_EVIDENCE_LIMITS = {
   detailRows: 50,
@@ -330,6 +331,8 @@ export interface ReportActivityDailySummary extends ReportActivityCounts {
 
 export interface SubscriptionReportingProjection {
   dashboard: ReportProjectionRecord;
+  /** Optional on older packs. Missing or incomplete coverage must not become zero spend. */
+  dailySpend?: ReportDailySpend;
   recommendationPortfolio: ReportRecommendationPortfolio;
   recommendations: ReportBoundedRows<ReportCompactRecommendation>;
   /** Section selection uses this catalogue; the smaller recommendations collection is an overview sample. */

@@ -356,4 +356,186 @@ oversizedTenant.globalAdmins.principals = {
 };
 assert.equal(isTenantReportEvidencePack(oversizedTenant), false);
 
+const dailySpend = {
+  startDate: '2026-08-01',
+  endDate: '2026-08-02',
+  dateBasis: 'billing-calendar',
+  currency: 'NZD',
+  generatedAt: '2026-09-12T00:00:00.000Z',
+  sourceObservedAt: '2026-09-11T00:00:00.000Z',
+  freshness: 'current',
+  coverage: {
+    billed: { status: 'complete', coveredDayCount: 2 },
+    amortized: { status: 'partial', coveredDayCount: 1 },
+  },
+  entries: [
+    { date: '2026-08-01', cost: 0, costAmortized: -2.5 },
+    { date: '2026-08-02', cost: 10.25 },
+  ],
+};
+const packWithDailySpend = value => ({ ...subscriptionPack, reporting: { ...subscriptionPack.reporting, dailySpend: value } });
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(dailySpend)), true);
+for (const [label, mutate] of [
+  [
+    'false completeness',
+    v => {
+      v.coverage.amortized.status = 'complete';
+    },
+  ],
+  [
+    'duplicate date',
+    v => {
+      v.entries[1].date = v.entries[0].date;
+    },
+  ],
+  [
+    'invalid calendar date',
+    v => {
+      v.entries[0].date = '2026-02-30';
+    },
+  ],
+  [
+    'non-finite cost',
+    v => {
+      v.entries[0].cost = Infinity;
+    },
+  ],
+  [
+    'null amount',
+    v => {
+      v.entries[0].cost = null;
+    },
+  ],
+  [
+    'string amount',
+    v => {
+      v.entries[0].cost = '0';
+    },
+  ],
+  [
+    'empty amount row',
+    v => {
+      v.entries[0] = { date: '2026-08-01' };
+    },
+  ],
+  [
+    'out of order',
+    v => {
+      v.entries.reverse();
+    },
+  ],
+  [
+    'out of window',
+    v => {
+      v.entries[1].date = '2026-08-03';
+    },
+  ],
+  [
+    'invalid window',
+    v => {
+      v.endDate = '2026-07-31';
+    },
+  ],
+  [
+    'unbounded window',
+    v => {
+      v.endDate = '2027-08-01';
+    },
+  ],
+  [
+    'currency mismatch',
+    v => {
+      v.currency = 'USD';
+    },
+  ],
+  [
+    'invalid currency',
+    v => {
+      v.currency = 'nzd';
+    },
+  ],
+  [
+    'wrong date basis',
+    v => {
+      v.dateBasis = 'utc';
+    },
+  ],
+  [
+    'missing observation',
+    v => {
+      delete v.sourceObservedAt;
+    },
+  ],
+  [
+    'future observation',
+    v => {
+      v.sourceObservedAt = '2026-10-01T00:00:00Z';
+    },
+  ],
+  [
+    'missing freshness',
+    v => {
+      delete v.freshness;
+    },
+  ],
+  [
+    'false unavailability',
+    v => {
+      v.freshness = 'unavailable';
+    },
+  ],
+  [
+    'invalid coverage count',
+    v => {
+      v.coverage.billed.coveredDayCount = 1;
+    },
+  ],
+]) {
+  const invalid = structuredClone(dailySpend);
+  mutate(invalid);
+  assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(invalid)), false, label);
+}
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(null)), false);
+const unavailableDaily = {
+  ...dailySpend,
+  sourceObservedAt: undefined,
+  freshness: 'unavailable',
+  entries: [],
+  coverage: { billed: { status: 'unavailable', coveredDayCount: 0 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+};
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(unavailableDaily)), true);
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend({ ...dailySpend, freshness: 'stale' })), true);
+const { isReportDailySpend } = await import('../dist/index.js');
+const esmDaily = await import('../dist/esm/entries/root.js');
+assert.equal(esmDaily.isReportDailySpend(dailySpend), true, 'ESM runtime export');
+assert.equal(isReportDailySpend(dailySpend), true, 'CJS runtime export');
+const fullWindow = {
+  ...dailySpend,
+  startDate: '2026-07-01',
+  endDate: '2026-09-30',
+  coverage: { billed: { status: 'complete', coveredDayCount: 92 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: Array.from({ length: 92 }, (_, index) => ({ date: new Date(Date.UTC(2026, 6, 1 + index)).toISOString().slice(0, 10), cost: 0 })),
+};
+assert.equal(isReportDailySpend(fullWindow), true, '92-day boundary and absent amortized evidence');
+assert.equal(isReportDailySpend({ ...fullWindow, endDate: '2026-10-01' }), false, '93-day window');
+assert.equal(isReportDailySpend({ ...fullWindow, entries: [...fullWindow.entries, fullWindow.entries[0]] }), false, '93 rows');
+const leapDay = {
+  ...dailySpend,
+  startDate: '2024-02-29',
+  endDate: '2024-02-29',
+  coverage: { billed: { status: 'complete', coveredDayCount: 1 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: [{ date: '2024-02-29', cost: -10 }],
+};
+assert.equal(isReportDailySpend(leapDay), true, 'leap day and credit');
+assert.equal(isReportDailySpend({ ...leapDay, generatedAt: '2026-02-30T00:00:00Z' }), false);
+assert.equal(isReportDailySpend({ ...leapDay, generatedAt: '2026-09-12T24:00:00Z' }), false);
+const augustGap = {
+  ...dailySpend,
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  entries: Array.from({ length: 18 }, (_, index) => ({ date: `2026-08-${14 + index}`, cost: 1 })),
+  coverage: { billed: { status: 'partial', coveredDayCount: 18 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+};
+assert.equal(isReportDailySpend(augustGap), true, 'EROAD-shaped missing first 13 August days');
+assert.equal(isReportDailySpend({ ...augustGap, coverage: { ...augustGap.coverage, billed: { status: 'complete', coveredDayCount: 31 } } }), false);
 console.log('Report evidence contract checks passed.');

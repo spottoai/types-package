@@ -32,6 +32,8 @@ export * from './azure/resources';
 export * from './azure/reports';
 export * from './azure/reportEvidence';
 export * from './azure/reportEvidenceValidation';
+export * from './azure/reportDailySpend';
+export * from './azure/reportDailySpendValidation';
 export * from './azure/reportingTemplates';
 export * from './azure/reviewChecklist';
 export * from './azure/advisorScore';

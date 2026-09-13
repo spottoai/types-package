@@ -1,4 +1,5 @@
 import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation';
+import { isReportDailySpend } from './reportDailySpendValidation';
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
@@ -240,6 +241,7 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
 
 const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
+  if (value.dailySpend !== undefined && !isReportDailySpend(value.dailySpend)) return false;
   const subscription = isRecord(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
   const properties = subscription && isRecord(subscription.properties) ? subscription.properties : undefined;
   if (properties?.secureScoreEvidence !== undefined && !isReportSecureScoreEvidence(properties.secureScoreEvidence)) return false;
@@ -351,6 +353,8 @@ export const isSubscriptionReportEvidencePack = (value: unknown): value is Subsc
   ) {
     return false;
   }
+  const dailySpend = (value.reporting as SubscriptionReportEvidencePack['reporting']).dailySpend;
+  if (dailySpend && value.scope.currency !== undefined && dailySpend.currency !== value.scope.currency) return false;
   return (
     value.reliability.relationshipGraph === undefined ||
     (isRecord(value.reliability.relationshipGraph) &&

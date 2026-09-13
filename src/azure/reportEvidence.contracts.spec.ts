@@ -7,6 +7,22 @@ import {
   type SubscriptionReportingProjection,
   type TenantReportEvidencePack,
 } from './reportEvidence';
+import { isReportDailySpend, type ReportDailySpend } from '../index';
+
+const dailySpend: ReportDailySpend = {
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  dateBasis: 'billing-calendar',
+  currency: 'NZD',
+  generatedAt: '2026-09-12T00:00:00.000Z',
+  freshness: 'unavailable',
+  coverage: { billed: { status: 'unavailable', coveredDayCount: 0 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: [],
+};
+const dailyProjection: Pick<SubscriptionReportingProjection, 'dailySpend'> = { dailySpend };
+const legacyDailyProjection: Pick<SubscriptionReportingProjection, 'dailySpend'> = {};
+const dailyValidation: boolean = isReportDailySpend(dailyProjection.dailySpend);
+void [dailyValidation, legacyDailyProjection];
 
 const rows = <T>(values: T[] = []): ReportBoundedRows<T> => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const projectedRows = rows<ReportProjectionRecord>();

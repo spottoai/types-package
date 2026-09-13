@@ -21,6 +21,7 @@ import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type { MetricAggregationType } from './metrics.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
   Performance = 'Performance',
@@ -488,9 +489,71 @@ export interface ResourceRecommendationSavingsDetails {
   };
 }
 
+export type RecommendationMetricEvidencePurpose = 'eligibility' | 'sizing' | 'validation' | 'risk' | 'cost-driver';
+
+export type RecommendationMetricEvidenceStatistic = 'average' | 'p95' | 'p99' | 'maximum' | 'minimum';
+
+export type RecommendationMetricEvidenceThresholdRole = 'target' | 'gate' | 'limit';
+
+export type RecommendationMetricEvidenceDisplayMode = 'inline-chart' | 'stat-strip';
+
+export interface RecommendationMetricEvidenceWindow {
+  /** ISO-8601 timestamp when the producer requires a fixed evidence window. */
+  start?: string;
+  /** ISO-8601 timestamp when the producer requires a fixed evidence window. */
+  end?: string;
+  /** ISO-8601 duration, such as P30D, when a relative window is sufficient. */
+  duration?: string;
+}
+
+export interface RecommendationMetricEvidenceThreshold {
+  value: number;
+  unit?: string;
+  label: string;
+  role: RecommendationMetricEvidenceThresholdRole;
+}
+
+export interface RecommendationMetricEvidenceDisplay {
+  mode: RecommendationMetricEvidenceDisplayMode;
+  title?: string;
+  description?: string;
+}
+
+/**
+ * Logical reference to metric evidence already available for one resource.
+ * It intentionally contains no time-series samples, storage URLs or authorization data.
+ */
+export interface RecommendationMetricEvidenceHint {
+  schemaVersion: 1;
+  kind: 'metric';
+  /** Stable identity for this hint within the recommendation. */
+  id: string;
+  /** Canonical Azure resource ID used to prevent cross-resource resolution. */
+  resourceId: string;
+  /** Preferred exact match for an existing MetricPlot.name when one is stable. */
+  plotName?: string;
+  /** Semantic metric identity used by the resolver and displayed to the user. */
+  metricName: string;
+  /** Collected metric group used to disambiguate repeated Azure metric names. */
+  sourceCollection?: string;
+  /** Azure Monitor metric namespace when available. */
+  metricNamespace?: string;
+  aggregation: MetricAggregationType;
+  purpose: RecommendationMetricEvidencePurpose;
+  preferredWindow?: RecommendationMetricEvidenceWindow;
+  statistics?: RecommendationMetricEvidenceStatistic[];
+  thresholds?: RecommendationMetricEvidenceThreshold[];
+  display?: RecommendationMetricEvidenceDisplay;
+}
+
+/** Versioned evidence-reference union; additional evidence kinds can be added without changing metric hints. */
+export type RecommendationEvidenceHint = RecommendationMetricEvidenceHint;
+
 /** A recommendation carrying a financial scenario scoped to one detailed resource artifact. */
 export interface ResourceScopedRecommendation extends Recommendation {
   savingsDetails?: ResourceRecommendationSavingsDetails;
+  /** Optional logical references to evidence already present in this resource's detail artifacts. */
+  evidenceHints?: RecommendationEvidenceHint[];
 }
 
 export interface RecommendationResource {
