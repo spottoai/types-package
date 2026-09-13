@@ -2,6 +2,7 @@ import type { CostSavingsSummaryBasis } from './views';
 import type { TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
 import type { ReportDailySpend } from './reportDailySpend';
+import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 
 export const REPORT_EVIDENCE_LIMITS = {
   detailRows: 50,
@@ -57,6 +58,8 @@ export interface ReportCompactRecommendationResource {
   currency?: string;
   currencySymbol?: string;
   savings?: { minAmount?: number; maxAmount?: number };
+  /** Pricing basis of savings, independent of the resource's billed/amortized spend values. */
+  savingsBasis?: ReportSavingsBasis;
 }
 
 export interface ReportCompactRecommendation {
@@ -104,6 +107,8 @@ export interface ReportCompactRecommendation {
   resourcesCount: number;
   omittedResourceCount: number;
   savings?: { minAmount?: number; maxAmount?: number };
+  /** Mixed/unknown basis is not evidence of a cash saving; never infer a basis from the amount. */
+  savingsBasis?: ReportSavingsBasis;
   currency?: string;
   currencySymbol?: string;
 }
@@ -112,6 +117,7 @@ export type ReportImpactBand = 'High' | 'Medium' | 'Low' | 'Unknown';
 export type ReportEffortBand = 'Low' | 'Medium' | 'High' | 'Unknown';
 
 export interface ReportCostSavingsCategory {
+  savingsBasis?: ReportSavingsBasis;
   key: string;
   label: string;
   recommendationCount: number;
@@ -123,6 +129,7 @@ export interface ReportCostSavingsCategory {
 }
 
 export interface ReportCostSavingsProjection {
+  savingsBasis?: ReportSavingsBasis;
   currency: string;
   currencySymbol?: string;
   contributingRecommendationCount: number;
@@ -330,6 +337,8 @@ export interface ReportActivityDailySummary extends ReportActivityCounts {
 }
 
 export interface SubscriptionReportingProjection {
+  /** Explicit cost bases and source components; preferred over unqualified legacy dashboard totals. */
+  spend?: ReportSpendProjection;
   dashboard: ReportProjectionRecord;
   /** Optional on older packs. Missing or incomplete coverage must not become zero spend. */
   dailySpend?: ReportDailySpend;
@@ -454,6 +463,7 @@ export interface SubscriptionReportEvidencePack {
 }
 
 export interface ReportRecommendationFingerprint {
+  savingsBasis?: ReportSavingsBasis;
   id: string;
   title: string;
   category?: string;

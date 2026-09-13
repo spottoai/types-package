@@ -34,6 +34,8 @@ export * from './azure/reportEvidence';
 export * from './azure/reportEvidenceValidation';
 export * from './azure/reportDailySpend';
 export * from './azure/reportDailySpendValidation';
+export * from './azure/reportSpend';
+export { isReportSpendAmounts, isReportSpendProjection, isReportSavingsBasis } from './azure/reportSpendValidation';
 export * from './azure/reportingTemplates';
 export * from './azure/reviewChecklist';
 export * from './azure/advisorScore';

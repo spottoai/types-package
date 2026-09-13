@@ -1,20 +1,9 @@
 import { REPORT_DAILY_SPEND_MAX_DAYS, type ReportDailySpend } from './reportDailySpend';
 import { isCount, isFiniteNumber, isRecord } from './reportEvidenceValidationHelpers';
+import { hasReportSpendValue, isReportSpendAmounts } from './reportSpendValidation';
+import { isReportCalendarDate as isCalendarDate, isReportUtcTimestamp as isUtcTimestamp } from './reportSpendValidationHelpers';
 
 const DAY_MS = 86_400_000;
-
-const isCalendarDate = (value: unknown): value is string => {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const time = Date.parse(`${value}T00:00:00.000Z`);
-  return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === value;
-};
-
-const isUtcTimestamp = (value: unknown): value is string =>
-  typeof value === 'string' &&
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value) &&
-  isCalendarDate(value.slice(0, 10)) &&
-  Number.isFinite(Date.parse(value)) &&
-  new Date(value).toISOString() === (value.length === 20 ? value.replace('Z', '.000Z') : value);
 
 const isCoverage = (value: unknown, covered: number, expected: number): boolean => {
   const status = covered === expected ? 'complete' : covered === 0 ? 'unavailable' : 'partial';
@@ -56,11 +45,24 @@ export const isReportDailySpend = (value: unknown): value is ReportDailySpend =>
       entry.date <= previousDate ||
       entry.date < value.startDate ||
       entry.date > value.endDate ||
-      (entry.cost === undefined && entry.costAmortized === undefined) ||
+      (entry.cost === undefined && entry.costAmortized === undefined && entry.financials === undefined) ||
       (entry.cost !== undefined && !isFiniteNumber(entry.cost)) ||
       (entry.costAmortized !== undefined && !isFiniteNumber(entry.costAmortized))
     )
       return false;
+    if (entry.financials !== undefined) {
+      if (!isReportSpendAmounts(entry.financials, value.currency, value.generatedAt) || !hasReportSpendValue(entry.financials)) return false;
+      for (const [basis, field] of [
+        ['billed', 'cost'],
+        ['amortized', 'costAmortized'],
+      ] as const) {
+        const actual = entry.financials.composition[basis].actual.availability;
+        const complete = entry.financials.coverage[basis].actual === 'complete';
+        if (actual.status === 'available' && complete) {
+          if (entry[field] !== Number(actual.component.amount)) return false;
+        } else if (entry[field] !== undefined) return false;
+      }
+    }
     previousDate = entry.date;
     if (entry.cost !== undefined) billedDays++;
     if (entry.costAmortized !== undefined) amortizedDays++;

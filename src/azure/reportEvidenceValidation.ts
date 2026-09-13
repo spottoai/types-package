@@ -1,5 +1,6 @@
 import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation';
 import { isReportDailySpend } from './reportDailySpendValidation';
+import { isReportSavingsBasis, isReportSpendProjection } from './reportSpendValidation';
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
@@ -56,6 +57,7 @@ export const isReportSecureScoreEvidence = (value: unknown): value is SecureScor
 
 const isCostSavingsCategory = (value: unknown): value is JsonRecord =>
   isRecord(value) &&
+  (value.savingsBasis === undefined || isReportSavingsBasis(value.savingsBasis)) &&
   isString(value.key) &&
   isString(value.label) &&
   isCount(value.recommendationCount) &&
@@ -113,7 +115,12 @@ const isRecommendationPortfolio = (value: unknown): boolean => {
     return false;
   }
   if (value.costSavings === undefined) return true;
-  if (!isRecord(value.costSavings) || !isString(value.costSavings.currency) || !isCount(value.costSavings.contributingRecommendationCount)) {
+  if (
+    !isRecord(value.costSavings) ||
+    !isString(value.costSavings.currency) ||
+    !isCount(value.costSavings.contributingRecommendationCount) ||
+    (value.costSavings.savingsBasis !== undefined && !isReportSavingsBasis(value.costSavings.savingsBasis))
+  ) {
     return false;
   }
   const monthly = value.costSavings.monthly;
@@ -242,6 +249,7 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
 const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
   if (value.dailySpend !== undefined && !isReportDailySpend(value.dailySpend)) return false;
+  if (value.spend !== undefined && !isReportSpendProjection(value.spend)) return false;
   const subscription = isRecord(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
   const properties = subscription && isRecord(subscription.properties) ? subscription.properties : undefined;
   if (properties?.secureScoreEvidence !== undefined && !isReportSecureScoreEvidence(properties.secureScoreEvidence)) return false;
@@ -355,6 +363,14 @@ export const isSubscriptionReportEvidencePack = (value: unknown): value is Subsc
   }
   const dailySpend = (value.reporting as SubscriptionReportEvidencePack['reporting']).dailySpend;
   if (dailySpend && value.scope.currency !== undefined && dailySpend.currency !== value.scope.currency) return false;
+  const spend = (value.reporting as SubscriptionReportEvidencePack['reporting']).spend;
+  if (
+    spend &&
+    ((value.scope.currency !== undefined && spend.currency !== value.scope.currency) ||
+      (dailySpend && spend.currency !== dailySpend.currency) ||
+      Date.parse(spend.generatedAt) > Date.parse(value.generatedAt))
+  )
+    return false;
   return (
     value.reliability.relationshipGraph === undefined ||
     (isRecord(value.reliability.relationshipGraph) &&
@@ -364,6 +380,7 @@ export const isSubscriptionReportEvidencePack = (value: unknown): value is Subsc
 
 const isRecommendationFingerprint = (value: unknown): value is ReportRecommendationFingerprint =>
   isRecord(value) &&
+  (value.savingsBasis === undefined || isReportSavingsBasis(value.savingsBasis)) &&
   isString(value.id) &&
   isString(value.title) &&
   hasOptionalStrings(value, ['category', 'impact', 'severity', 'currency']) &&
