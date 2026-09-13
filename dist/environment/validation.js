@@ -27,16 +27,41 @@ const SAVINGS_PROJECTIONS = new Set(['projected-monthly', 'observed-period', 'un
 const DATE_WINDOW_PATTERN = /^\d{4}-\d{2}-\d{2}\/\d{4}-\d{2}-\d{2}$/u;
 const CHANGE_DIRECTIONS = new Set(['increase', 'decrease', 'unchanged', 'unknown']);
 const scopesEqual = (left, right) => left.kind === right.kind && left.tenantId === right.tenantId && left.companyId === right.companyId && left.subscriptionId === right.subscriptionId;
+const isScopedEnvironmentDetailRoute = (value) => {
+    const match = /^\/company\/([A-Za-z0-9_-]+)\/(dashboard|resources|recommendations|cost-analysis|commitments-planning|security|tags|backups|health|perimeter-insights|change-monitoring)(?:\/([^/?#]+))?(?:\?subscriptions=([A-Za-z0-9_-]+))?$/u.exec(value);
+    if (!match)
+        return false;
+    const [, , page, subject, subscriptionId] = match;
+    if (!subject)
+        return Boolean(subscriptionId);
+    try {
+        const decoded = decodeURIComponent(subject);
+        // Decode once only. Encoded separators are permitted solely inside an ARM ID,
+        // never in the company, page, subscription selection or recommendation ID.
+        if (encodeURIComponent(decoded) !== subject || /[%\\?#]/u.test(decoded) || (0, internal_js_1.hasControlCharacter)(decoded))
+            return false;
+        if (decoded.split('/').some(segment => segment === '.' || segment === '..'))
+            return false;
+        if (page === 'recommendations')
+            return Boolean(subscriptionId) && /^[A-Za-z0-9_~.-]+$/u.test(decoded);
+        if (page !== 'resources')
+            return false;
+        const resource = /^\/subscriptions\/([A-Za-z0-9_-]+)\/resourcegroups\/[^/]+\/providers\/[^/]+\/.+/iu.exec(decoded);
+        return Boolean(resource && (!subscriptionId || resource[1].toLowerCase() === subscriptionId.toLowerCase()));
+    }
+    catch {
+        return false;
+    }
+};
 /** Validates a bounded, local Portal route suitable for client-visible evidence. */
 const isEnvironmentPortalRouteV1 = (value) => (0, internal_js_1.isBoundedString)(value, contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.customerStringScalars, { trimmed: true, controls: true }) &&
     value.startsWith('/') &&
     !value.startsWith('//') &&
     !value.includes('\\') &&
     !value.includes('://') &&
-    !value.includes('?') &&
     !value.includes('#') &&
-    !value.includes('%') &&
-    value.split('/').every(segment => segment !== '.' && segment !== '..');
+    ((!value.includes('?') && !value.includes('%') && value.split('/').every(segment => segment !== '.' && segment !== '..')) ||
+        isScopedEnvironmentDetailRoute(value));
 exports.isEnvironmentPortalRouteV1 = isEnvironmentPortalRouteV1;
 const isGeneralKey = (value) => (0, internal_js_1.isBoundedString)(value, contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars, { trimmed: true, controls: true });
 const isReferenceArray = (value) => Array.isArray(value) &&

@@ -1,0 +1,385 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isTenantReportEvidencePack = exports.isSubscriptionReportHistory = exports.isSubscriptionReportEvidencePack = exports.isReportSecureScoreEvidence = void 0;
+const reportEvidenceCatalogueValidation_1 = require("./reportEvidenceCatalogueValidation");
+const reportEvidence_1 = require("./reportEvidence");
+const reportEvidenceValidationHelpers_1 = require("./reportEvidenceValidationHelpers");
+const isReportSecureScoreEvidence = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !['available', 'unavailable', 'stale'].includes(value.status))
+        return false;
+    if (!(0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value, ['percentage', 'currentScore', 'maxScore', 'weight']) ||
+        (value.percentage !== undefined && (value.percentage < 0 || value.percentage > 100)) ||
+        ['currentScore', 'maxScore', 'weight'].some(key => value[key] !== undefined && value[key] < 0) ||
+        ((0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value.currentScore) && (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value.maxScore) && value.currentScore > value.maxScore) ||
+        (value.assessedResourceCount !== undefined && !(0, reportEvidenceValidationHelpers_1.isCount)(value.assessedResourceCount)) ||
+        (value.observedAt !== undefined && !(0, reportEvidenceValidationHelpers_1.isDateTime)(value.observedAt)))
+        return false;
+    return true;
+};
+exports.isReportSecureScoreEvidence = isReportSecureScoreEvidence;
+const isCostSavingsCategory = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.key) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.label) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.recommendationCount) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.resourceCount) &&
+    ['currentMonthlyCost', 'potentialMonthlyCost', 'minimumMonthlySavings', 'maximumMonthlySavings'].every(key => (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value[key]));
+const hasRequiredCountKeys = (value, keys) => (0, reportEvidenceValidationHelpers_1.isCountRecord)(value) && keys.every(key => Object.prototype.hasOwnProperty.call(value, key));
+const isRecommendationPortfolio = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value))
+        return false;
+    const impactBands = new Set(['High', 'Medium', 'Low', 'Unknown']);
+    const effortBands = new Set(['Low', 'Medium', 'High', 'Unknown']);
+    if (!(0, reportEvidenceValidationHelpers_1.isCount)(value.sourceRecommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.activeRecommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.resolvedRecommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.highImpactCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.quickWinCount) ||
+        value.sourceRecommendationCount !== value.activeRecommendationCount + value.resolvedRecommendationCount ||
+        value.highImpactCount > value.activeRecommendationCount ||
+        value.quickWinCount > value.activeRecommendationCount ||
+        !(0, reportEvidenceValidationHelpers_1.isCountRecord)(value.byCategory) ||
+        !hasRequiredCountKeys(value.byImpact, ['High', 'Medium', 'Low', 'Unknown']) ||
+        !hasRequiredCountKeys(value.byEffort, ['Low', 'Medium', 'High', 'Unknown']) ||
+        (0, reportEvidenceValidationHelpers_1.countTotal)(value.byCategory) !== value.activeRecommendationCount ||
+        (0, reportEvidenceValidationHelpers_1.countTotal)(value.byImpact) !== value.activeRecommendationCount ||
+        (0, reportEvidenceValidationHelpers_1.countTotal)(value.byEffort) !== value.activeRecommendationCount ||
+        !Array.isArray(value.impactEffortMatrix) ||
+        value.impactEffortMatrix.length !== 16 ||
+        !value.impactEffortMatrix.every(row => (0, reportEvidenceValidationHelpers_1.isRecord)(row) &&
+            (0, reportEvidenceValidationHelpers_1.isString)(row.impact) &&
+            impactBands.has(row.impact) &&
+            (0, reportEvidenceValidationHelpers_1.isString)(row.effort) &&
+            effortBands.has(row.effort) &&
+            (0, reportEvidenceValidationHelpers_1.isCount)(row.count)) ||
+        new Set(value.impactEffortMatrix.map(row => `${row.impact}|${row.effort}`)).size !== 16 ||
+        value.impactEffortMatrix.reduce((total, row) => total + row.count, 0) !== value.activeRecommendationCount ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.affectedResources) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.affectedResources.count) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.affectedResources.identifiedCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.affectedResources.largestReportedRecommendationCount) ||
+        (value.affectedResources.basis !== 'exact' && value.affectedResources.basis !== 'lower-bound')) {
+        return false;
+    }
+    if (value.affectedResources.count < value.affectedResources.identifiedCount ||
+        value.affectedResources.count < value.affectedResources.largestReportedRecommendationCount ||
+        (value.affectedResources.basis === 'exact' && value.affectedResources.count !== value.affectedResources.identifiedCount)) {
+        return false;
+    }
+    if (value.costSavings === undefined)
+        return true;
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.costSavings) || !(0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.currency) || !(0, reportEvidenceValidationHelpers_1.isCount)(value.costSavings.contributingRecommendationCount)) {
+        return false;
+    }
+    const monthly = value.costSavings.monthly;
+    const annual = value.costSavings.annual;
+    return ((0, reportEvidenceValidationHelpers_1.isRecord)(monthly) &&
+        ['currentCost', 'potentialCost', 'minimumSavings', 'maximumSavings'].every(key => (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(monthly[key])) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(annual) &&
+        (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(annual.minimumSavings) &&
+        (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(annual.maximumSavings) &&
+        (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.costSavings.categories, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isCostSavingsCategory) &&
+        (0, reportEvidenceValidationHelpers_1.isOptionalString)(value.costSavings.currencySymbol) &&
+        (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(monthly.minimumSavingsPercent) &&
+        (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(monthly.maximumSavingsPercent) &&
+        (value.costSavings.basis === undefined ||
+            ((0, reportEvidenceValidationHelpers_1.isRecord)(value.costSavings.basis) &&
+                (0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.basis.categoryScope) &&
+                (0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.basis.projection) &&
+                (0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.basis.observedPeriod) &&
+                typeof value.costSavings.basis.excludesEstimatedRows === 'boolean' &&
+                (0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.basis.appliesTo) &&
+                typeof value.costSavings.basis.containsLegacySavings === 'boolean')));
+};
+const isResourceExample = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) && (0, reportEvidenceValidationHelpers_1.isString)(value.name) && (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['type', 'resourceGroup', 'location']);
+const isSnapshot = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) && (0, reportEvidenceValidationHelpers_1.isString)(value.name) && (0, reportEvidenceValidationHelpers_1.isOptionalString)(value.resourceGroup) && (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.createdTime);
+const isAppliedTagCost = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) && (0, reportEvidenceValidationHelpers_1.isString)(value.tagKey) && (0, reportEvidenceValidationHelpers_1.isString)(value.tagValue) && (0, reportEvidenceValidationHelpers_1.isCount)(value.resourceCount) && (0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value.spend30Days);
+const isInventoryResource = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.id) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['name', 'type', 'resourceGroup', 'location']) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value, ['spend30Days', 'spend30DaysAmortized', 'createdTime']);
+const isInventory = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.totalResources) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.untaggedResourceCount) &&
+    value.untaggedResourceCount <= value.totalResources &&
+    (value.resourceCatalogue === undefined ||
+        ((0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.resourceCatalogue, reportEvidence_1.REPORT_EVIDENCE_LIMITS.inventoryCatalogue, reportEvidenceCatalogueValidation_1.isInventoryCatalogueResource) &&
+            value.resourceCatalogue.totalCount === value.totalResources)) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.untaggedExamples, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isResourceExample) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.snapshots, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isSnapshot) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.appliedTagCosts, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isAppliedTagCost) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.topSpendResources, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isInventoryResource);
+const isPrivilegedAccess = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.principalId) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.displayName) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.roleName) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['userPrincipalName', 'scope', 'scopeType', 'lastLogonDate', 'mfaStatus']);
+const isGovernance = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalString)(value.generatedAt) &&
+    (value.coverage === undefined || (0, reportEvidenceValidationHelpers_1.isRecord)(value.coverage)) &&
+    (0, reportEvidenceValidationHelpers_1.hasRequiredRecords)(value, ['policySummary', 'rbacSummary', 'globalAdministratorSummary']) &&
+    (0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.complianceRows) &&
+    (value.complianceAssessments === undefined ||
+        (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.complianceAssessments, reportEvidence_1.REPORT_EVIDENCE_LIMITS.complianceAssessments, (row) => (0, reportEvidenceValidationHelpers_1.isRecord)(row) &&
+            (0, reportEvidenceValidationHelpers_1.isCount)(row.nonCompliantResourceCount) &&
+            (row.assessmentKey === undefined || (typeof row.assessmentKey === 'string' && /^[a-f0-9]{64}$/.test(row.assessmentKey))) &&
+            (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(row, [
+                'policySetDisplayName',
+                'policyAssignmentDisplayName',
+                'policyDefinitionReferenceId',
+                'policyDefinitionDisplayName',
+                'resourceType',
+                'effect',
+            ]))) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.privilegedAccessRows, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isPrivilegedAccess) &&
+    (0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.findings) &&
+    (0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.limitations);
+const isCommitments = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !(0, reportEvidenceValidationHelpers_1.isRecord)(value.inventorySummary) || !(0, reportEvidenceValidationHelpers_1.isCountRecord)(value.inventorySummary.statusCounts))
+        return false;
+    if (!(0, reportEvidenceValidationHelpers_1.isCount)(value.inventorySummary.totalCount) || !(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.inventory, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, isCommitmentInventoryRow)) {
+        return false;
+    }
+    if (value.inventorySummary.totalCount !== value.inventory.totalCount ||
+        (0, reportEvidenceValidationHelpers_1.countTotal)(value.inventorySummary.statusCounts) !== value.inventorySummary.totalCount) {
+        return false;
+    }
+    return ['coverage', 'obsoleteCandidates', 'reallocationOpportunities', 'purchaseRecommendations', 'renewals'].every(key => (0, reportEvidenceValidationHelpers_1.isProjectionRows)(value[key]));
+};
+function isCommitmentInventoryRow(value) {
+    return ((0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+        (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, [
+            'id',
+            'benefitType',
+            'type',
+            'displayName',
+            'status',
+            'expiryDate',
+            'skuName',
+            'skuDescription',
+            'location',
+            'term',
+        ]) &&
+        (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value, ['daysToExpiry', 'reservedQuantity']) &&
+        (0, reportEvidenceValidationHelpers_1.isOptionalBoolean)(value.renew) &&
+        (value.annualCommittedCost === undefined || (0, reportEvidenceValidationHelpers_1.isRecord)(value.annualCommittedCost)) &&
+        (value.doNotRenewAnnualImpact === undefined || (0, reportEvidenceValidationHelpers_1.isRecord)(value.doNotRenewAnnualImpact)));
+}
+const isReportingProjection = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !(0, reportEvidenceValidationHelpers_1.isRecord)(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio))
+        return false;
+    const subscription = (0, reportEvidenceValidationHelpers_1.isRecord)(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
+    const properties = subscription && (0, reportEvidenceValidationHelpers_1.isRecord)(subscription.properties) ? subscription.properties : undefined;
+    if (properties?.secureScoreEvidence !== undefined && !(0, exports.isReportSecureScoreEvidence)(properties.secureScoreEvidence))
+        return false;
+    if (!(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.recommendations, reportEvidence_1.REPORT_EVIDENCE_LIMITS.currentRecommendations, reportEvidenceCatalogueValidation_1.isCompactRecommendation) ||
+        value.recommendations.totalCount !==
+            value.recommendationPortfolio.activeRecommendationCount ||
+        (value.recommendationCatalogue !== undefined &&
+            (!(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.recommendationCatalogue, reportEvidence_1.REPORT_EVIDENCE_LIMITS.recommendationCatalogue, reportEvidenceCatalogueValidation_1.isCompactRecommendation) ||
+                value.recommendationCatalogue.totalCount !== value.recommendationPortfolio.activeRecommendationCount)) ||
+        !(0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.serviceRetirements) ||
+        !isInventory(value.inventory) ||
+        !isGovernance(value.governance) ||
+        !isCommitments(value.commitmentsPlanning)) {
+        return false;
+    }
+    const patch = value.patchManagement;
+    const resourceRows = [value.recommendations, value.recommendationCatalogue]
+        .flatMap(collection => collection?.rows ?? [])
+        .reduce((total, row) => total + (row.resourceCatalogue?.rows.length ?? 0), 0);
+    if (resourceRows > reportEvidence_1.REPORT_EVIDENCE_LIMITS.totalRecommendationResourceRows)
+        return false;
+    const protection = value.dataProtection;
+    const health = value.resourceHealth;
+    const uptime = value.serverUptime;
+    const publicIps = value.publicIpAddresses;
+    const activity = value.activity;
+    return ((0, reportEvidenceValidationHelpers_1.isRecord)(patch) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(patch.machines) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(protection) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(protection.items) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(protection.issues) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(health) &&
+        (health.eventCatalogue === undefined || (0, reportEvidenceValidationHelpers_1.isBoundedRows)(health.eventCatalogue, reportEvidence_1.REPORT_EVIDENCE_LIMITS.healthCatalogue, reportEvidenceValidationHelpers_1.isRecord)) &&
+        (health.availabilityCatalogue === undefined || (0, reportEvidenceValidationHelpers_1.isBoundedRows)(health.availabilityCatalogue, reportEvidence_1.REPORT_EVIDENCE_LIMITS.healthCatalogue, reportEvidenceValidationHelpers_1.isRecord)) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(health.events) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(health.events.events) &&
+        (health.eventCatalogue === undefined || health.eventCatalogue.totalCount === health.events.events.totalCount) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(health.availabilityStatuses) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(health.availabilityStatuses.statuses) &&
+        (health.availabilityCatalogue === undefined ||
+            health.availabilityCatalogue.totalCount === health.availabilityStatuses.statuses.totalCount) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(uptime) &&
+        ['workspaces', 'gaps', 'servers'].every(key => (0, reportEvidenceValidationHelpers_1.isProjectionRows)(uptime[key])) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(publicIps) &&
+        (0, reportEvidenceValidationHelpers_1.isProjectionRows)(publicIps.items) &&
+        (0, reportEvidenceValidationHelpers_1.isRecord)(activity) &&
+        (activity.dailySummary === undefined ||
+            ((0, reportEvidenceValidationHelpers_1.isBoundedRows)(activity.dailySummary, reportEvidence_1.REPORT_EVIDENCE_LIMITS.activityDays, isActivityDailySummary) &&
+                new Set(activity.dailySummary.rows.map(row => row.date)).size === activity.dailySummary.rows.length)) &&
+        (activity.undatedSummary === undefined || isActivityCounts(activity.undatedSummary)) &&
+        ['changes', 'security', 'health', 'suppressed'].every(key => (0, reportEvidenceValidationHelpers_1.isProjectionRows)(activity[key])));
+};
+const isActivityCounts = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => (0, reportEvidenceValidationHelpers_1.isCount)(value[key])) &&
+    ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => value[key] <= value.visibleEvents);
+const isActivityDailySummary = (value) => isActivityCounts(value) &&
+    (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.date) &&
+    /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
+    Number.isFinite(Date.parse(value.date)) &&
+    new Date(value.date).toISOString().slice(0, 10) === value.date;
+const isSubscriptionReportEvidencePack = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !(0, reportEvidenceValidationHelpers_1.isDateTime)(value.generatedAt)) {
+        return false;
+    }
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.generation) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.scope) ||
+        !(0, reportEvidenceValidationHelpers_1.isString)(value.scope.subscriptionId) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.coverage) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.coverage.sourceFiles) ||
+        !(0, reportEvidenceValidationHelpers_1.isStringArray)(value.coverage.gaps) ||
+        !Object.values(value.coverage.sourceFiles).every(reportEvidenceValidationHelpers_1.isSourceFileStatus) ||
+        !(0, reportEvidenceValidationHelpers_1.isResourceSummary)(value.estate) ||
+        !(0, reportEvidenceValidationHelpers_1.isCostSummary)(value.cost) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecommendationSummary)(value.recommendations) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.security) ||
+        !(0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.security.secureScore) ||
+        (value.security.governance !== undefined &&
+            (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.security.governance) || !(0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.security.governance.findingCount))) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.reliability) ||
+        !(0, reportEvidenceValidationHelpers_1.isRetirementSummary)(value.reliability.serviceRetirements) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.reliability.recommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.commitments) ||
+        !(0, reportEvidenceValidationHelpers_1.isCommitmentExpirySummary)(value.commitments.expiries) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.performance) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.performance.recommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isStringArray)(value.performance.topRecommendationIds) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.operationalExcellence) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.operationalExcellence.recommendationCount) ||
+        !(0, reportEvidenceValidationHelpers_1.isTagCoverage)(value.operationalExcellence.tagCoverage) ||
+        !isReportingProjection(value.reporting) ||
+        !Array.isArray(value.evidence) ||
+        !value.evidence.every(reportEvidenceValidationHelpers_1.isEvidenceReference)) {
+        return false;
+    }
+    if (!(0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value.generation, ['sourceRunId', 'sourceGeneratedAt']) ||
+        !(0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value.scope, ['companyId', 'tenantId', 'displayName', 'currency', 'currencySymbol'])) {
+        return false;
+    }
+    return (value.reliability.relationshipGraph === undefined ||
+        ((0, reportEvidenceValidationHelpers_1.isRecord)(value.reliability.relationshipGraph) &&
+            (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value.reliability.relationshipGraph, ['totalNodes', 'totalEdges', 'unresolvedCount', 'buildMs'])));
+};
+exports.isSubscriptionReportEvidencePack = isSubscriptionReportEvidencePack;
+const isRecommendationFingerprint = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.id) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.title) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['category', 'impact', 'severity', 'currency']) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalBoolean)(value.resolved) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.affectedResourceCount) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.potentialMonthlySavings) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.maximumMonthlySavings) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.costImpact);
+const isHistoryMetrics = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['subscriptionName', 'currency', 'currencySymbol']) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value, ['secureScore', 'advisorScore', 'spend30Days', 'spend30DaysAmortized']) &&
+    (value.secureScoreEvidence === undefined || (0, exports.isReportSecureScoreEvidence)(value.secureScoreEvidence)) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.resourceCount) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.recommendationCount) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.impactedResourceCount) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.securityRecommendationCount) &&
+    (0, reportEvidenceValidationHelpers_1.isCount)(value.securityImpactedResourceCount) &&
+    value.securityRecommendationCount <= value.recommendationCount &&
+    value.securityImpactedResourceCount <= value.impactedResourceCount &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.maximumMonthlySavings);
+const isSubscriptionReportHistory = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) ||
+        !(0, reportEvidenceValidationHelpers_1.isString)(value.subscriptionId) ||
+        !(0, reportEvidenceValidationHelpers_1.isDateTime)(value.generatedAt) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.retention) ||
+        value.retention.maxPeriods !== reportEvidence_1.REPORT_EVIDENCE_LIMITS.historyPeriods ||
+        !Array.isArray(value.periods) ||
+        value.periods.length > reportEvidence_1.REPORT_EVIDENCE_LIMITS.historyPeriods) {
+        return false;
+    }
+    const periods = new Set();
+    for (const period of value.periods) {
+        if (!(0, reportEvidenceValidationHelpers_1.isRecord)(period) ||
+            !(0, reportEvidenceValidationHelpers_1.isString)(period.period) ||
+            !/^\d{4}-(0[1-9]|1[0-2])$/u.test(period.period) ||
+            periods.has(period.period) ||
+            !(0, reportEvidenceValidationHelpers_1.isString)(period.sourceRunId) ||
+            !(0, reportEvidenceValidationHelpers_1.isDateTime)(period.sourceGeneratedAt) ||
+            !isHistoryMetrics(period.metrics) ||
+            !(0, reportEvidenceValidationHelpers_1.isBoundedRows)(period.recommendations, reportEvidence_1.REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint)) {
+            return false;
+        }
+        if (period.recommendations.omittedCount === 0 &&
+            period.metrics.recommendationCount !== period.recommendations.rows.filter(row => row.resolved !== true).length) {
+            return false;
+        }
+        periods.add(period.period);
+    }
+    return true;
+};
+exports.isSubscriptionReportHistory = isSubscriptionReportHistory;
+const isTenantMfaSummary = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || typeof value.countsAreLowerBounds !== 'boolean' || !(0, reportEvidenceValidationHelpers_1.isRecord)(value.enforcement))
+        return false;
+    const enforcement = value.enforcement;
+    const enforcementKeys = ['enforced', 'conditionallyEnforced', 'notEnforced', 'unknown'];
+    if (!(0, reportEvidenceValidationHelpers_1.isCount)(value.enumeratedUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.activeUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.disabledUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.assessedActiveUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.enforcementKnownUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.enforcementUnknownUsers) ||
+        !(0, reportEvidenceValidationHelpers_1.isOptionalString)(value.assessmentState) ||
+        !['mfaCapableUsers', 'notMfaCapableUsers', 'unknownRegistrationUsers'].every(key => value[key] === undefined || (0, reportEvidenceValidationHelpers_1.isCount)(value[key])) ||
+        Object.keys(enforcement).some(key => !enforcementKeys.includes(key)) ||
+        !enforcementKeys.every(key => (0, reportEvidenceValidationHelpers_1.isCount)(enforcement[key]))) {
+        return false;
+    }
+    return (value.enumeratedUsers === value.assessedActiveUsers + value.disabledUsers &&
+        value.activeUsers === value.enforcementKnownUsers + value.enforcementUnknownUsers &&
+        value.activeUsers === (0, reportEvidenceValidationHelpers_1.countTotal)(enforcement) &&
+        value.enforcementUnknownUsers === enforcement.unknown &&
+        (value.countsAreLowerBounds || value.assessedActiveUsers === value.activeUsers));
+};
+const isTenantCoverage = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    Object.values(value).every(section => (0, reportEvidenceValidationHelpers_1.isRecord)(section) &&
+        (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(section, ['state', 'source', 'reason', 'message', 'lastAttemptedAt', 'lastSuccessfulAt']) &&
+        (section.requiredPermissions === undefined || (0, reportEvidenceValidationHelpers_1.isStringArray)(section.requiredPermissions)) &&
+        (!Array.isArray(section.requiredPermissions) || section.requiredPermissions.length <= 10) &&
+        (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(section.maximumSourceLagHours));
+const isTenantPrincipal = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.principalId) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.principalType) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.assignmentSource) &&
+    (0, reportEvidenceValidationHelpers_1.isStringArray)(value.assignmentModes) &&
+    value.assignmentModes.length <= 4 &&
+    typeof value.isPimBacked === 'boolean' &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.lastActivatedEvidence) &&
+    (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['displayName', 'userPrincipalName', 'mfaStatus', 'lastActivatedAt']) &&
+    (0, reportEvidenceValidationHelpers_1.isOptionalBoolean)(value.accountEnabled);
+const isTenantReportEvidencePack = (value) => {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) ||
+        !(0, reportEvidenceValidationHelpers_1.isDateTime)(value.generatedAt) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.scope) ||
+        !(0, reportEvidenceValidationHelpers_1.isString)(value.scope.tenantId) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.mfa) ||
+        (value.mfa.summary !== undefined && !isTenantMfaSummary(value.mfa.summary)) ||
+        (value.mfa.tenantPolicy !== undefined && !(0, reportEvidenceValidationHelpers_1.isRecord)(value.mfa.tenantPolicy)) ||
+        (value.mfa.coverage !== undefined && !isTenantCoverage(value.mfa.coverage)) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.globalAdmins) ||
+        !(0, reportEvidenceValidationHelpers_1.isRecord)(value.globalAdmins.summary) ||
+        !isTenantCoverage(value.globalAdmins.coverage) ||
+        !(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.globalAdmins.warnings, reportEvidence_1.REPORT_EVIDENCE_LIMITS.tenantGlobalAdministrators, reportEvidenceValidationHelpers_1.isRecord) ||
+        !(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.globalAdmins.principals, reportEvidence_1.REPORT_EVIDENCE_LIMITS.tenantGlobalAdministrators, isTenantPrincipal)) {
+        return false;
+    }
+    return true;
+};
+exports.isTenantReportEvidencePack = isTenantReportEvidencePack;
+//# sourceMappingURL=reportEvidenceValidation.js.map

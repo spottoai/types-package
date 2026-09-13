@@ -1,0 +1,27 @@
+import { type ReportBoundedRows } from './reportEvidence';
+export type JsonRecord = Record<string, unknown>;
+export declare const isRecord: (value: unknown) => value is JsonRecord;
+export declare const isString: (value: unknown) => value is string;
+export declare const isOptionalString: (value: unknown) => boolean;
+export declare const isFiniteNumber: (value: unknown) => value is number;
+export declare const isOptionalFiniteNumber: (value: unknown) => boolean;
+export declare const isOptionalBoolean: (value: unknown) => boolean;
+export declare const isCount: (value: unknown) => value is number;
+export declare const isDateTime: (value: unknown) => value is string;
+export declare const isStringArray: (value: unknown) => value is string[];
+export declare const isCountRecord: (value: unknown) => value is Record<string, number>;
+export declare const countTotal: (value: Record<string, number>) => number;
+export declare const hasOptionalStrings: (value: JsonRecord, keys: readonly string[]) => boolean;
+export declare const hasOptionalNumbers: (value: JsonRecord, keys: readonly string[]) => boolean;
+export declare const isBoundedRows: <T>(value: unknown, limit: number, isRow: (row: unknown) => row is T) => value is ReportBoundedRows<T>;
+export declare const isProjectionRows: (value: unknown, limit?: 50) => boolean;
+export declare const hasRequiredRecords: (value: JsonRecord, keys: readonly string[]) => boolean;
+export declare const isSourceFileStatus: (value: unknown) => boolean;
+export declare const isTagCoverage: (value: unknown) => boolean;
+export declare const isResourceSummary: (value: unknown) => boolean;
+export declare const isCostSummary: (value: unknown) => boolean;
+export declare const isRecommendationSummary: (value: unknown) => boolean;
+export declare const isRetirementSummary: (value: unknown) => boolean;
+export declare const isCommitmentExpirySummary: (value: unknown) => boolean;
+export declare const isEvidenceReference: (value: unknown) => boolean;
+//# sourceMappingURL=reportEvidenceValidationHelpers.d.ts.map

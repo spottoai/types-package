@@ -955,7 +955,7 @@ export interface AIChatTerminalSnapshot {
 /**
  * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.
  */
-export type AIChatCanonicalStreamEventName = 'runStarted' | 'runStatus' | 'runPaused' | 'runResumed' | 'runCompleted' | 'scopeResolved' | 'pageSnapshotBuilt' | 'toolAffordanceBuilt' | 'routingStarted' | 'routingCompleted' | 'planCreated' | 'planUpdated' | 'commentary' | 'progressUpdate' | 'toolCall' | 'toolResult' | 'toolError' | 'approvalRequired' | 'approvalStateChanged' | 'formatterStarted' | 'formatterCompleted' | 'message' | 'citation' | 'artifactStarted' | 'artifactCompleted' | 'artifactFailed' | 'error' | 'ping';
+export type AIChatCanonicalStreamEventName = 'runStarted' | 'runStatus' | 'runPaused' | 'runResumed' | 'runCompleted' | 'runFailed' | 'scopeResolved' | 'pageSnapshotBuilt' | 'toolAffordanceBuilt' | 'routingStarted' | 'routingCompleted' | 'planCreated' | 'planUpdated' | 'commentary' | 'progressUpdate' | 'guardrailTriggered' | 'toolCall' | 'toolResult' | 'toolError' | 'approvalRequired' | 'approvalStateChanged' | 'formatterStarted' | 'formatterCompleted' | 'message' | 'answerDraft' | 'answerDraftReset' | 'citation' | 'artifactStarted' | 'artifactCompleted' | 'artifactFailed' | 'error' | 'ping' | 'turnDiagnostics';
 /**
  * Legacy terminal event accepted only during the runCompleted migration.
  * New producers and protocol assertions must use AIChatCanonicalStreamEventName.
@@ -988,6 +988,14 @@ export interface AIChatRunPausedEvent extends AIChatStreamEventBase {
     approval?: AIChatApprovalRecord;
     pendingApprovals?: AIChatApprovalRecord[];
     reconnectState?: AIChatReconnectState;
+}
+/**
+ * The active run failed. Sent immediately before the terminal `error` event when the conversation has an
+ * active run to mark failed, so clients can update run state before the error is shown.
+ */
+export interface AIChatRunFailedEvent extends AIChatStreamEventBase {
+    event: 'runFailed';
+    run: AIChatRunState;
 }
 export interface AIChatRunResumedEvent extends AIChatStreamEventBase {
     event: 'runResumed';
@@ -1026,6 +1034,11 @@ export interface AIChatRoutingCompletedEvent extends AIChatStreamEventBase {
     reasonCode?: AIReasonCode;
     whyThisPath?: string;
     /**
+     * Pre-routing latency readout. Present only when turn diagnostics are enabled (local and dev API hosts,
+     * or `AI_CHAT_TURN_DIAGNOSTICS=true`). Content-free.
+     */
+    diagnostics?: AIChatRoutingDiagnostics;
+    /**
      * @deprecated No longer emitted on the client lane; kept for backwards compatibility with
      * clients that still read it.
      */
@@ -1053,20 +1066,46 @@ export interface AIChatProgressUpdateEvent extends AIChatStreamEventBase {
 export interface AIChatToolCallEvent extends AIChatStreamEventBase {
     event: 'toolCall';
     callId: string;
+    /** Customer-facing tool display name. */
     toolName: string;
+    /** Registered tool name (for example `environment_read`). Use it for state keys and tool-specific handling. */
+    canonicalToolName?: string;
     arguments: Record<string, unknown>;
 }
 export interface AIChatToolResultEvent extends AIChatStreamEventBase {
     event: 'toolResult';
     callId: string;
+    /** Customer-facing tool display name. */
     toolName: string;
+    /** Registered tool name (for example `environment_read`). Use it for state keys and tool-specific handling. */
+    canonicalToolName?: string;
     result: AIChatToolExecutionResult;
 }
 export interface AIChatToolErrorEvent extends AIChatStreamEventBase {
     event: 'toolError';
     callId: string;
+    /** Customer-facing tool display name. */
     toolName: string;
+    /** Registered tool name (for example `environment_read`). Use it for state keys and tool-specific handling. */
+    canonicalToolName?: string;
     error: AIChatToolExecutionError;
+}
+/** Where a guardrail decision was taken. */
+export type AIChatGuardrailStage = 'input' | 'toolResult' | 'output';
+/** What the guardrail did: let the content through, block the request, redact content, or replace the answer with a safe fallback. */
+export type AIChatGuardrailAction = 'allow' | 'block' | 'redact' | 'fallback';
+/**
+ * A guardrail changed the turn: an input was blocked, untrusted or unsafe content was withheld, or the
+ * answer was replaced with a fallback. `message` is customer-safe and never repeats the blocked content.
+ */
+export interface AIChatGuardrailTriggeredEvent extends AIChatStreamEventBase {
+    event: 'guardrailTriggered';
+    stage: AIChatGuardrailStage;
+    action: AIChatGuardrailAction;
+    /** Machine category, for example `prompt_injection`, `internal_state_disclosure` or `unsupported_mutation_claim`. */
+    category: string;
+    reasonCode?: string;
+    message: string;
 }
 export interface AIChatApprovalRequiredEvent extends AIChatStreamEventBase {
     event: 'approvalRequired';
@@ -1089,6 +1128,32 @@ export interface AIChatFormatterCompletedEvent extends AIChatStreamEventBase {
 export interface AIChatMessageEvent extends AIChatStreamEventBase {
     event: 'message';
     delta: string;
+}
+/**
+ * Provisional answer text streamed while the model is still writing the answer.
+ *
+ * A draft is not authoritative: it has not been formatted, claim-verified or persisted, so clients render
+ * it as escaped plain text, visibly marked as a draft, and never parse it. Producers release only answer
+ * prose that has passed the output guardrail rules, never structured output or evidence handles. The first `message` delta or any
+ * terminal or pausing event (`runCompleted`, `runPaused`, `error`) supersedes it. Clients that do not
+ * recognize the event ignore it.
+ */
+export interface AIChatAnswerDraftEvent extends AIChatStreamEventBase {
+    event: 'answerDraft';
+    /** Plain-text fragment appended to the current draft. */
+    delta: string;
+}
+/**
+ * Why the current draft was discarded: the drafted text was preamble before a tool call (`toolCall`), the
+ * provider response failed before it completed (`error`), or the drafted text matched an output guardrail
+ * rule, so the final answer will be a guardrail fallback (`outputGuardrail`). Text matching the rule is
+ * never sent as a draft; the reset withdraws the prose drafted before it.
+ */
+export type AIChatAnswerDraftResetReason = 'toolCall' | 'error' | 'outputGuardrail';
+/** Discards the current answer draft. Later `answerDraft` deltas start a new draft. */
+export interface AIChatAnswerDraftResetEvent extends AIChatStreamEventBase {
+    event: 'answerDraftReset';
+    reason: AIChatAnswerDraftResetReason;
 }
 export interface AIChatCitationEvent extends AIChatStreamEventBase {
     event: 'citation';
@@ -1182,7 +1247,94 @@ export interface AIChatErrorEvent extends AIChatStreamEventBase {
 export interface AIChatPingEvent extends AIChatStreamEventBase {
     event: 'ping';
 }
-export type AIChatCanonicalStreamEvent = AIChatRunStartedEvent | AIChatRunStatusEvent | AIChatRunPausedEvent | AIChatRunResumedEvent | AIChatRunCompletedEvent | AIChatScopeResolvedEvent | AIChatPageSnapshotBuiltEvent | AIChatToolAffordanceBuiltEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatPlanCreatedEvent | AIChatPlanUpdatedEvent | AIChatCommentaryEvent | AIChatProgressUpdateEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatApprovalRequiredEvent | AIChatApprovalStateChangedEvent | AIChatFormatterStartedEvent | AIChatFormatterCompletedEvent | AIChatMessageEvent | AIChatCitationEvent | AIChatWorkspaceArtifactStartedEvent | AIChatWorkspaceArtifactCompletedEvent | AIChatWorkspaceArtifactFailedEvent | AIChatErrorEvent | AIChatPingEvent;
+/** Outcome of one provider model call. */
+export type AIChatModelCallStatus = 'ok' | 'error' | 'aborted' | 'incomplete' | 'interrupted';
+/**
+ * Content-free timing and token record for one provider model call in a turn. Times are milliseconds; start
+ * times are measured from request receipt.
+ */
+export interface AIChatModelCallRecord {
+    /** `guardrail`, `planner`, `specialist:<domain>`, `synthesis`, `synthesisRepair`, `critic`, `generic`, `default`, ... */
+    stage: string;
+    model?: string;
+    /** Reasoning effort requested by Spotto (`omitted` when none was sent). */
+    requestedEffort?: string;
+    /** Reasoning effort the provider reports it used. */
+    effectiveEffort?: string;
+    startedAtMs: number;
+    elapsedMs: number;
+    /** Time to provider response headers. */
+    headersMs?: number;
+    /** Time to the first output text delta (streamed calls). */
+    firstTextMs?: number;
+    /** Generic loop only: time from the previous boundary (loop start or previous call end, including tool execution) to `response.created`. */
+    beforeCreatedMs?: number;
+    /** Provider-reported processing time, when returned. */
+    providerProcessingMs?: number;
+    streamed: boolean;
+    status: AIChatModelCallStatus;
+    httpStatus?: number;
+    attempts?: number;
+    maxOutputTokens?: number;
+    inputTokens?: number;
+    cachedInputTokens?: number;
+    outputTokens?: number;
+    reasoningTokens?: number;
+    providerRegion?: string;
+}
+/** Summed model-call counters for one stage or for the whole turn. */
+export interface AIChatLatencyTotals {
+    calls: number;
+    elapsedMs: number;
+    inputTokens: number;
+    cachedInputTokens: number;
+    outputTokens: number;
+    reasoningTokens: number;
+}
+/** Content-free annotation value recorded on a turn's latency ledger (for example the routing decision or continuity mode). */
+export type AIChatLatencyAnnotationValue = string | number | boolean | string[];
+/**
+ * Content-free latency summary of one chat turn: phase marks, per-stage totals and per-call records. Carried
+ * by `turnDiagnostics` and persisted with the turn (`timings.latency` in the turn sidecar).
+ */
+export interface AIChatTurnLatencySummary {
+    /** Epoch milliseconds of request receipt. */
+    originEpochMs: number;
+    /** Milliseconds from request receipt to when the summary was taken. */
+    capturedAtMs: number;
+    /** First occurrence of each named phase or stream event, in milliseconds from request receipt (for example `runStarted`, `message`). */
+    marks: Record<string, number>;
+    /** Totals per stage; all `specialist:<domain>` calls are summed under `specialists`. */
+    stages: Record<string, AIChatLatencyTotals>;
+    totals: AIChatLatencyTotals;
+    modelCalls: AIChatModelCallRecord[];
+    /** Model calls not recorded because the per-turn record limit was reached. */
+    modelCallsTruncated?: number;
+    annotations?: Record<string, AIChatLatencyAnnotationValue>;
+}
+/** Pre-routing subset of the latency summary carried on `routingCompleted` when turn diagnostics are enabled. */
+export interface AIChatRoutingDiagnostics {
+    marks: Record<string, number>;
+    modelCalls: AIChatModelCallRecord[];
+    annotations?: Record<string, AIChatLatencyAnnotationValue>;
+}
+/** Turn latency summary plus the turn context needed to read it. */
+export interface AIChatTurnDiagnostics extends AIChatTurnLatencySummary {
+    /** Host name of the model provider endpoint (never a key or full URL). */
+    providerHost?: string;
+    routePath?: AIOrchestrationPath;
+    responseMode?: AIChatResolvedResponseMode;
+    chatMode?: AIChatMode;
+}
+/**
+ * Developer diagnostics for the turn, sent once immediately before the terminal event. Emitted only on local
+ * and dev API hosts, or when `AI_CHAT_TURN_DIAGNOSTICS=true`; production clients must not depend on it.
+ */
+export interface AIChatTurnDiagnosticsEvent extends AIChatStreamEventBase {
+    event: 'turnDiagnostics';
+    diagnostics: AIChatTurnDiagnostics;
+}
+export type AIChatCanonicalStreamEvent = AIChatRunStartedEvent | AIChatRunStatusEvent | AIChatRunPausedEvent | AIChatRunResumedEvent | AIChatRunCompletedEvent | AIChatRunFailedEvent | AIChatScopeResolvedEvent | AIChatPageSnapshotBuiltEvent | AIChatToolAffordanceBuiltEvent | AIChatRoutingStartedEvent | AIChatRoutingCompletedEvent | AIChatPlanCreatedEvent | AIChatPlanUpdatedEvent | AIChatCommentaryEvent | AIChatProgressUpdateEvent | AIChatGuardrailTriggeredEvent | AIChatToolCallEvent | AIChatToolResultEvent | AIChatToolErrorEvent | AIChatApprovalRequiredEvent | AIChatApprovalStateChangedEvent | AIChatFormatterStartedEvent | AIChatFormatterCompletedEvent | AIChatMessageEvent | AIChatAnswerDraftEvent | AIChatAnswerDraftResetEvent | AIChatCitationEvent | AIChatWorkspaceArtifactStartedEvent | AIChatWorkspaceArtifactCompletedEvent | AIChatWorkspaceArtifactFailedEvent | AIChatErrorEvent | AIChatPingEvent | AIChatTurnDiagnosticsEvent;
 /**
  * Includes the deprecated done event so clients can parse streams during the
  * migration. Use AIChatCanonicalStreamEvent for producers and contract gates.

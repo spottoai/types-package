@@ -1,5 +1,5 @@
 import { ENVIRONMENT_ARTIFACT_KINDS_V1, ENVIRONMENT_CONTRACT_LIMITS_V1, ENVIRONMENT_DOCUMENT_NAMES_V1, ENVIRONMENT_EFFORTS_V1, ENVIRONMENT_FINDING_KINDS_V1, ENVIRONMENT_IMPACTS_V1, ENVIRONMENT_PILLARS_V1, ENVIRONMENT_SEVERITIES_V1, } from './contracts.js';
-import { CURRENCY_PATTERN, DECIMAL_PATTERN, ENVIRONMENT_RUN_ID_PATTERN, SHA256_PATTERN, hasExactKeys, hasSafeContainerShape, isBoundedString, isCanonicalUtcTimestamp, isCustomerString, isNonNegativeInteger, isRecord, isSafeLabel, isScopeIdentifier, isSourceIdentity, utf8ByteLength, } from './internal.js';
+import { CURRENCY_PATTERN, DECIMAL_PATTERN, ENVIRONMENT_RUN_ID_PATTERN, SHA256_PATTERN, hasControlCharacter, hasExactKeys, hasSafeContainerShape, isBoundedString, isCanonicalUtcTimestamp, isCustomerString, isNonNegativeInteger, isRecord, isSafeLabel, isScopeIdentifier, isSourceIdentity, utf8ByteLength, } from './internal.js';
 import { deriveEnvironmentAzureResourceTypeV1, isEnvironmentLogicalEvidenceReferenceV1, isEnvironmentLogicalResourceReferenceV1, parseEnvironmentLogicalResourceReferenceV1, } from './references.js';
 const DOCUMENT_NAMES = new Set(ENVIRONMENT_DOCUMENT_NAMES_V1);
 const SIGNED_DECIMAL_PATTERN = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/u;
@@ -24,16 +24,41 @@ const SAVINGS_PROJECTIONS = new Set(['projected-monthly', 'observed-period', 'un
 const DATE_WINDOW_PATTERN = /^\d{4}-\d{2}-\d{2}\/\d{4}-\d{2}-\d{2}$/u;
 const CHANGE_DIRECTIONS = new Set(['increase', 'decrease', 'unchanged', 'unknown']);
 const scopesEqual = (left, right) => left.kind === right.kind && left.tenantId === right.tenantId && left.companyId === right.companyId && left.subscriptionId === right.subscriptionId;
+const isScopedEnvironmentDetailRoute = (value) => {
+    const match = /^\/company\/([A-Za-z0-9_-]+)\/(dashboard|resources|recommendations|cost-analysis|commitments-planning|security|tags|backups|health|perimeter-insights|change-monitoring)(?:\/([^/?#]+))?(?:\?subscriptions=([A-Za-z0-9_-]+))?$/u.exec(value);
+    if (!match)
+        return false;
+    const [, , page, subject, subscriptionId] = match;
+    if (!subject)
+        return Boolean(subscriptionId);
+    try {
+        const decoded = decodeURIComponent(subject);
+        // Decode once only. Encoded separators are permitted solely inside an ARM ID,
+        // never in the company, page, subscription selection or recommendation ID.
+        if (encodeURIComponent(decoded) !== subject || /[%\\?#]/u.test(decoded) || hasControlCharacter(decoded))
+            return false;
+        if (decoded.split('/').some(segment => segment === '.' || segment === '..'))
+            return false;
+        if (page === 'recommendations')
+            return Boolean(subscriptionId) && /^[A-Za-z0-9_~.-]+$/u.test(decoded);
+        if (page !== 'resources')
+            return false;
+        const resource = /^\/subscriptions\/([A-Za-z0-9_-]+)\/resourcegroups\/[^/]+\/providers\/[^/]+\/.+/iu.exec(decoded);
+        return Boolean(resource && (!subscriptionId || resource[1].toLowerCase() === subscriptionId.toLowerCase()));
+    }
+    catch {
+        return false;
+    }
+};
 /** Validates a bounded, local Portal route suitable for client-visible evidence. */
 export const isEnvironmentPortalRouteV1 = (value) => isBoundedString(value, ENVIRONMENT_CONTRACT_LIMITS_V1.customerStringScalars, { trimmed: true, controls: true }) &&
     value.startsWith('/') &&
     !value.startsWith('//') &&
     !value.includes('\\') &&
     !value.includes('://') &&
-    !value.includes('?') &&
     !value.includes('#') &&
-    !value.includes('%') &&
-    value.split('/').every(segment => segment !== '.' && segment !== '..');
+    ((!value.includes('?') && !value.includes('%') && value.split('/').every(segment => segment !== '.' && segment !== '..')) ||
+        isScopedEnvironmentDetailRoute(value));
 const isGeneralKey = (value) => isBoundedString(value, ENVIRONMENT_CONTRACT_LIMITS_V1.safeLabelScalars, { trimmed: true, controls: true });
 const isReferenceArray = (value) => Array.isArray(value) &&
     value.length <= ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&

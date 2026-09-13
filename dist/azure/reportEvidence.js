@@ -1,0 +1,24 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.REPORT_EVIDENCE_LIMITS = void 0;
+exports.REPORT_EVIDENCE_LIMITS = {
+    detailRows: 50,
+    currentRecommendations: 90,
+    recommendationCatalogue: 2000,
+    complianceAssessments: 2000,
+    activityDays: 400,
+    recommendationResources: 2,
+    resourceCatalogue: 2000,
+    totalRecommendationResourceRows: 10000,
+    inventoryCatalogue: 2000,
+    healthCatalogue: 2000,
+    summaryDimensions: 25,
+    summaryRows: 20,
+    topRecommendationIds: 20,
+    topRecommendationIdsPerPillar: 5,
+    upcomingEvents: 20,
+    historyPeriods: 13,
+    historyRecommendations: 90,
+    tenantGlobalAdministrators: 50,
+};
+//# sourceMappingURL=reportEvidence.js.map

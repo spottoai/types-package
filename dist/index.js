@@ -48,6 +48,8 @@ __exportStar(require("./azure/recommendationState"), exports);
 __exportStar(require("./azure/regulatoryCompliance"), exports);
 __exportStar(require("./azure/resources"), exports);
 __exportStar(require("./azure/reports"), exports);
+__exportStar(require("./azure/reportEvidence"), exports);
+__exportStar(require("./azure/reportEvidenceValidation"), exports);
 __exportStar(require("./azure/reportingTemplates"), exports);
 __exportStar(require("./azure/reviewChecklist"), exports);
 __exportStar(require("./azure/advisorScore"), exports);

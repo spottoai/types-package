@@ -32,6 +32,8 @@ export * from './azure/recommendationState.js';
 export * from './azure/regulatoryCompliance.js';
 export * from './azure/resources.js';
 export * from './azure/reports.js';
+export * from './azure/reportEvidence.js';
+export * from './azure/reportEvidenceValidation.js';
 export * from './azure/reportingTemplates.js';
 export * from './azure/reviewChecklist.js';
 export * from './azure/advisorScore.js';
