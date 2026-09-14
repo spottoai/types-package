@@ -15,6 +15,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./bastionSchedule"), exports);
+__exportStar(require("./bastionScheduleProfile"), exports);
 __exportStar(require("./bastionScheduleValidation"), exports);
 __exportStar(require("./scheduler"), exports);
 //# sourceMappingURL=index.js.map

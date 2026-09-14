@@ -9,7 +9,7 @@ export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'non
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
-export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsAppliedScopeType = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'payer' | 'management-group' | 'shared' | 'unknown';
 export interface CommitmentsAppliedScopeProperties {
     subscriptionId?: string;
     resourceGroupId?: string;
@@ -362,7 +362,7 @@ export interface CommitmentsVendorRecommendation {
     impactedResources?: CommitmentsResourceReference[];
     linkedCommitmentIds?: string[];
 }
-export type CommitmentsPurchaseRecommendationScope = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'management-group' | 'shared' | 'unknown';
+export type CommitmentsPurchaseRecommendationScope = 'single-resource-group' | 'single-subscription' | 'linked-account' | 'payer' | 'management-group' | 'shared' | 'unknown';
 export type CommitmentsPurchaseRecommendationCoverageState = 'uncovered' | 'partially-covered' | 'covered' | 'unknown';
 export interface CommitmentsPurchaseRecommendationTermOption {
     termMonths: number;

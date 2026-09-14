@@ -10,6 +10,7 @@ export interface BaseAlertTag {
 }
 export interface BaseAlertScope {
     subscriptionIds?: string[];
+    cloudAccountIds?: string[];
     tags?: BaseAlertTag[];
     tagMatch?: TagMatchMode;
 }

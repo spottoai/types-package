@@ -40,6 +40,9 @@ export interface AwsRoleOnboardingBundle extends AwsForbiddenCredentialFields {
     /** Optional policy used for billing definition, storage, and KMS access. */
     billingAccessPolicyName?: 'SpottoBillingExportRead';
     billingAccessPolicy?: AwsIamPolicyDocument;
+    /** Optional customer-managed policy for organization commitments evidence. */
+    commitmentsAccessPolicyName?: 'SpottoCommitmentsPlanning';
+    commitmentsAccessPolicy?: AwsIamPolicyDocument;
     /** Complete customer-facing artifact suitable for direct copy or download. */
     instructionsMarkdown: string;
 }

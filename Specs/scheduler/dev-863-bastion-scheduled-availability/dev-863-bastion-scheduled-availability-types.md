@@ -2,10 +2,10 @@
 
 ## Metadata
 
-Status: draft
-Approved: No
-Iterations: 2
-Last updated: 2026-09-09
+Status: implementation
+Approved: Yes
+Iterations: 3
+Last updated: 2026-09-10
 Repo: types-package
 Domain: scheduler
 Parent spec: core/specs/scheduler/dev-863-bastion-scheduled-availability/dev-863-bastion-scheduled-availability.md
@@ -24,11 +24,12 @@ In scope:
 - Bastion remove/restore compiled-run metadata.
 - Bastion-specific readiness, control, status, reason-code, pause, and restore-now DTOs.
 - Dependency-free exact-field validators for externally received Bastion DTOs.
+- One dependency-free normalizer for the supported Azure Bastion scheduling profile boundary shared by API readiness and cloud-engine remove/recovery checks.
 
 Out of scope:
 
 - resource-strategy-weekly, capability catalogs, strategy maturity, or generic strategy configuration.
-- Snapshot bodies, physical storage paths, lease/state rows, dependency manifests, ARM operation URLs, SDK clients, or runtime business logic.
+- Snapshot bodies, physical storage paths, lease/state rows, dependency manifests, ARM operation URLs, SDK clients, network calls, authorization checks, or storage behavior.
 - Removing or changing existing VM and atomic contracts.
 
 ## Deferred Ideas
@@ -43,6 +44,7 @@ Out of scope:
 - Bastion queue runs form an exact discriminated union: remove requires definitionRevision, controlGeneration, and scheduledForUtc; restore requires definitionRevision and scheduledForUtc and forbids action/storage authority.
 - The shared control/status projections reveal only coordination and recovery state; they cannot contain snapshot content, physical storage paths, session identities, dependency bodies, or ARM continuation data.
 - API, cloud-engine, and UI compile against the same exported wire DTOs without local duplicate request definitions.
+- Basic, Standard, and public-IP Premium profile projections normalize identically for API and cloud-engine; Developer, private-only Premium, session-recording Premium, invalid scale, malformed dependency, and undeclared-field projections fail closed.
 
 ## Assumptions and Constraints
 
@@ -53,7 +55,9 @@ Out of scope:
 - Constraint: the fixed version 1 restoreLeadMinutes value is 30 and is applied by API when compiling each access-window start; callers cannot send or override it.
 - Constraint: the only accepted version 1 acknowledgementVersion is bastion-delete-recreate-v1.
 - Constraint: all new union members are additive and optional on pre-existing schedule run shapes; Bastion validators make them mandatory only for Bastion runs.
-- Constraint: types-package performs structural validation only and owns no vendor policy or storage behavior.
+- Constraint: types-package performs dependency-free structural validation and owns the exact supported-profile contract, but owns no Azure I/O, authorization, hashing, scheduling, or storage behavior.
+- Constraint: Bastion, public-IP, and subnet references must be complete ARM resource IDs in the same subscription; query/fragment-bearing and cross-subscription references fail closed.
+- Constraint: the already-published `1.0.2-beta.407` does not contain the new runtime export. The repository workflow owns the next prerelease bump (expected `1.0.2-beta.408`); consumers update manifests and lockfiles only after it is published.
 
 ## Cross-Repo Touchpoints
 
@@ -62,6 +66,7 @@ Out of scope:
 - Cloud-engine validates the run DTO again and publishes BastionAvailabilityStatusV1.
 - API returns the shared readiness/status/restore response DTOs.
 - UI imports wire DTOs from types-package and maps them into local view models.
+- API and cloud-engine import `readSupportedBastionScheduleProfileV1`; neither keeps a second SKU/feature parser.
 
 ## Canonical Contract Shapes
 
@@ -80,6 +85,7 @@ Out of scope:
 - BastionAvailabilityStatusV1: schemaVersion 1, companyId, resourceId, definitionId, definitionRevision, phase, lastOperation, lastResult, optional reasonCode, optional snapshotCapturedAtUtc, restoreAvailable, and updatedAtUtc.
 - BastionPauseResponse: status paused or pause-pending, resourceId, controlGeneration, and requestedAtUtc.
 - BastionRestoreNowResponse: accepted, scheduleRunId, resourceId, and requestedAtUtc.
+- BastionScheduleSupportedProfileV1: normalized Basic/Standard/public-IP Premium SKU, location, optional zones, scale units, supported feature flags, tags, IP configuration name, public-IP/subnet/virtual-network IDs, and source ETag. Basic requires scale 2; Standard/Premium require scale 2-50; private-only and session recording must be false.
 
 ## Local Recon
 
@@ -109,9 +115,9 @@ Out of scope:
    Done: every canonical example has a deterministic accept/reject result; remove without definitionRevision/controlGeneration/scheduledForUtc and restore without definitionRevision/scheduledForUtc are rejected; restore remains valid without controlGeneration; callers cannot set restore timing or operation authority; existing exported names retain their meaning.
 3. Verify package and consumer compatibility.
    Files: generated dist/scheduler output and package metadata only when required by the repository workflow.
-   Action: build the package, inspect exports, run the package dry-run, then compile API, cloud-engine, and UI against local types. Do not publish the package.
+   Action: build the package, inspect exports, run the package dry-run, then compile API, cloud-engine, and UI against local types. Leave package versioning to the repository prerelease workflow and do not publish without explicit authorization.
    Verify: npm run test, npm run build, and npm pack --dry-run, followed by each consumer local-types check.
-   Done: package output contains the new ESM/CJS declarations, all four repos compile, and no dependency or version publication has occurred.
+   Done: package output contains the new ESM/CJS declarations, the next prerelease is ready to be produced by the repository workflow, consumers are verified locally where their existing baselines permit, and no publication has occurred.
 
 ## Goal-Backward Must-Haves
 
@@ -169,3 +175,4 @@ Key links:
 
 - Iteration 1 replaces the generic resource-strategy contract with a Bastion-specific additive contract and defines exact minimum wire shapes.
 - Iteration 2 replaces caller-authored restore/remove rules with accessWindows and server-owned lead time; separates definitionRevision from controlGeneration; adds bounded pause/status reasons and exact security/input limits without exposing physical coordination state.
+- Iteration 3 adds the approved shared, dependency-free supported-profile normalizer for Basic, Standard, and eligible public-IP Premium while keeping Azure calls, permissions, snapshots, and persistence out of the package.

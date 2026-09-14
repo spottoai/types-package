@@ -123,8 +123,8 @@ function localTimeToMinutes(value) {
     if (typeof value !== 'string' || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)) {
         return undefined;
     }
-    const [hours, minutes] = value.split(':').map(Number);
-    return hours * 60 + minutes;
+    const [hours, minutes] = value.split(':');
+    return Number(hours) * 60 + Number(minutes);
 }
 function isUniqueBoundedStringArray(value, minimumLength, maximumLength) {
     if (!Array.isArray(value) ||
@@ -264,10 +264,10 @@ function isBastionAvailabilityWeeklyScheduleDefinition(value) {
 function isBastionScheduleRun(value) {
     if (!isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) ||
         !isPlainRecord(value) ||
-        (value.compiledOperation !== 'remove' && value.compiledOperation !== 'restore')) {
+        (value['compiledOperation'] !== 'remove' && value['compiledOperation'] !== 'restore')) {
         return false;
     }
-    const requiredFields = [
+    const commonRequiredFields = [
         'scheduleId',
         'scheduleRunId',
         'targetType',
@@ -283,8 +283,10 @@ function isBastionScheduleRun(value) {
         'compiledOperation',
         'definitionRevision',
         'scheduledForUtc',
-        ...(value.compiledOperation === 'remove' ? ['controlGeneration'] : []),
     ];
+    const requiredFields = value['compiledOperation'] === 'remove'
+        ? [...commonRequiredFields, 'controlGeneration']
+        : commonRequiredFields;
     if (!hasExactFields(value, requiredFields, [
         'scheduleName',
         'scheduleGroupId',

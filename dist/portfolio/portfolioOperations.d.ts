@@ -140,7 +140,7 @@ export interface PortfolioMonthEndSummary {
     incomplete: number;
     unavailable: number;
 }
-export type PortfolioExpiryKind = 'service-principal' | 'cloud-account-credential' | 'application-secret' | 'application-certificate' | 'reservation' | 'savings-plan' | 'service-retirement' | 'service-expiry';
+export type PortfolioExpiryKind = 'service-principal' | 'cloud-account-credential' | 'application-secret' | 'application-certificate' | 'key-vault-secret' | 'key-vault-key' | 'key-vault-certificate' | 'reservation' | 'savings-plan' | 'service-retirement' | 'service-expiry';
 export type PortfolioExpiryStatus = 'expired' | 'expiring' | 'active';
 export type PortfolioExpirySortField = 'customerName' | 'kind' | 'name' | 'expiryDate' | 'daysToExpiry';
 export interface PortfolioExpiryRow {

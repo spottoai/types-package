@@ -9,6 +9,7 @@ import {
   isBastionScheduleControlV1,
   isBastionScheduleReadinessV1,
   isBastionScheduleRun,
+  readSupportedBastionScheduleProfileV1,
 } from '../dist/scheduler/index.js';
 
 const resourceId = '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Network/bastionHosts/bastion-1';
@@ -293,5 +294,151 @@ const hostileProxy = new Proxy(
 );
 assert.doesNotThrow(() => isBastionAvailabilityWeeklyScheduleWriteRequest(hostileProxy));
 assert.equal(isBastionAvailabilityWeeklyScheduleWriteRequest(hostileProxy), false);
+
+const publicIpId = '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Network/publicIPAddresses/pip-1';
+const subnetId = '/subscriptions/sub-123/resourceGroups/rg-1/providers/Microsoft.Network/virtualNetworks/vnet-1/subnets/AzureBastionSubnet';
+const buildBastionResource = (skuName, scaleUnits) => ({
+  id: resourceId,
+  type: 'Microsoft.Network/bastionHosts',
+  etag: 'W/"etag-1"',
+  location: 'AustraliaEast',
+  tags: { environment: 'test' },
+  sku: { name: skuName },
+  properties: {
+    provisioningState: 'Succeeded',
+    scaleUnits,
+    disableCopyPaste: false,
+    enableFileCopy: false,
+    enableIpConnect: false,
+    enableShareableLink: false,
+    enableTunneling: false,
+    enableKerberos: false,
+    enableSessionRecording: false,
+    enablePrivateOnlyBastion: false,
+    ipConfigurations: [
+      {
+        name: 'ip-configuration',
+        properties: {
+          provisioningState: 'Succeeded',
+          privateIPAllocationMethod: 'Dynamic',
+          publicIPAddress: { id: publicIpId },
+          subnet: { id: subnetId },
+        },
+      },
+    ],
+  },
+});
+
+assert.deepEqual(readSupportedBastionScheduleProfileV1(buildBastionResource('Basic', 2), resourceId.toLowerCase()), {
+  skuName: 'Basic',
+  location: 'australiaeast',
+  scaleUnits: 2,
+  disableCopyPaste: false,
+  enableFileCopy: false,
+  enableIpConnect: false,
+  enableShareableLink: false,
+  enableTunneling: false,
+  enableKerberos: false,
+  enableSessionRecording: false,
+  enablePrivateOnlyBastion: false,
+  tags: { environment: 'test' },
+  ipConfigurationName: 'ip-configuration',
+  publicIpId: publicIpId.toLowerCase(),
+  subnetId: subnetId.toLowerCase(),
+  virtualNetworkId: '/subscriptions/sub-123/resourcegroups/rg-1/providers/microsoft.network/virtualnetworks/vnet-1',
+  sourceEtag: 'W/"etag-1"',
+});
+
+const standardResource = buildBastionResource('Standard', 5);
+standardResource.properties.disableCopyPaste = true;
+standardResource.properties.enableFileCopy = true;
+standardResource.properties.enableIpConnect = true;
+standardResource.properties.enableShareableLink = true;
+standardResource.properties.enableTunneling = true;
+standardResource.properties.enableKerberos = true;
+assert.deepEqual(readSupportedBastionScheduleProfileV1(standardResource, resourceId.toLowerCase()), {
+  skuName: 'Standard',
+  location: 'australiaeast',
+  scaleUnits: 5,
+  disableCopyPaste: true,
+  enableFileCopy: true,
+  enableIpConnect: true,
+  enableShareableLink: true,
+  enableTunneling: true,
+  enableKerberos: true,
+  enableSessionRecording: false,
+  enablePrivateOnlyBastion: false,
+  tags: { environment: 'test' },
+  ipConfigurationName: 'ip-configuration',
+  publicIpId: publicIpId.toLowerCase(),
+  subnetId: subnetId.toLowerCase(),
+  virtualNetworkId: '/subscriptions/sub-123/resourcegroups/rg-1/providers/microsoft.network/virtualnetworks/vnet-1',
+  sourceEtag: 'W/"etag-1"',
+});
+
+const premiumResource = buildBastionResource('Premium', 3);
+premiumResource.zones = ['3', '1', '2'];
+assert.deepEqual(readSupportedBastionScheduleProfileV1(premiumResource, resourceId.toLowerCase())?.zones, ['1', '2', '3']);
+
+assert.equal(readSupportedBastionScheduleProfileV1(buildBastionResource('Standard', 2), resourceId.toLowerCase())?.scaleUnits, 2);
+assert.equal(readSupportedBastionScheduleProfileV1(buildBastionResource('Premium', 50), resourceId.toLowerCase())?.scaleUnits, 50);
+
+for (const unsupportedResource of [
+  buildBastionResource('Developer', 2),
+  buildBastionResource('Basic', 1),
+  buildBastionResource('Basic', 3),
+  { ...buildBastionResource('Standard', 1) },
+  { ...buildBastionResource('Standard', 51) },
+]) {
+  assert.equal(readSupportedBastionScheduleProfileV1(unsupportedResource, resourceId.toLowerCase()), undefined);
+}
+
+const sessionRecordingResource = buildBastionResource('Premium', 2);
+sessionRecordingResource.properties.enableSessionRecording = true;
+assert.equal(readSupportedBastionScheduleProfileV1(sessionRecordingResource, resourceId.toLowerCase()), undefined);
+
+const standardSessionRecordingResource = buildBastionResource('Standard', 2);
+standardSessionRecordingResource.properties.enableSessionRecording = true;
+assert.equal(readSupportedBastionScheduleProfileV1(standardSessionRecordingResource, resourceId.toLowerCase()), undefined);
+
+const privateOnlyResource = buildBastionResource('Premium', 2);
+privateOnlyResource.properties.enablePrivateOnlyBastion = true;
+assert.equal(readSupportedBastionScheduleProfileV1(privateOnlyResource, resourceId.toLowerCase()), undefined);
+
+const standardPrivateOnlyResource = buildBastionResource('Standard', 2);
+standardPrivateOnlyResource.properties.enablePrivateOnlyBastion = true;
+assert.equal(readSupportedBastionScheduleProfileV1(standardPrivateOnlyResource, resourceId.toLowerCase()), undefined);
+
+const basicAdvancedFeatureResource = buildBastionResource('Basic', 2);
+basicAdvancedFeatureResource.properties.enableTunneling = true;
+assert.equal(readSupportedBastionScheduleProfileV1(basicAdvancedFeatureResource, resourceId.toLowerCase()), undefined);
+
+const fractionalScaleResource = buildBastionResource('Standard', 2.5);
+assert.equal(readSupportedBastionScheduleProfileV1(fractionalScaleResource, resourceId.toLowerCase()), undefined);
+
+const missingPublicIpResource = buildBastionResource('Premium', 2);
+delete missingPublicIpResource.properties.ipConfigurations[0].properties.publicIPAddress;
+assert.equal(readSupportedBastionScheduleProfileV1(missingPublicIpResource, resourceId.toLowerCase()), undefined);
+
+const crossSubscriptionDependencyResource = buildBastionResource('Standard', 2);
+crossSubscriptionDependencyResource.properties.ipConfigurations[0].properties.publicIPAddress.id =
+  crossSubscriptionDependencyResource.properties.ipConfigurations[0].properties.publicIPAddress.id.replace(
+    '/subscriptions/sub-123/',
+    '/subscriptions/sub-999/'
+  );
+assert.equal(readSupportedBastionScheduleProfileV1(crossSubscriptionDependencyResource, resourceId.toLowerCase()), undefined);
+
+const queryInjectedDependencyResource = buildBastionResource('Standard', 2);
+queryInjectedDependencyResource.properties.ipConfigurations[0].properties.subnet.id += '?api-version=attacker-selected';
+assert.equal(readSupportedBastionScheduleProfileV1(queryInjectedDependencyResource, resourceId.toLowerCase()), undefined);
+
+const malformedDependencyResource = buildBastionResource('Standard', 2);
+malformedDependencyResource.properties.ipConfigurations[0].properties.publicIPAddress.id =
+  malformedDependencyResource.properties.ipConfigurations[0].properties.publicIPAddress.id.replace('/resourceGroups/', '//resourceGroups/');
+assert.equal(readSupportedBastionScheduleProfileV1(malformedDependencyResource, resourceId.toLowerCase()), undefined);
+
+const unknownFieldResource = buildBastionResource('Standard', 2);
+unknownFieldResource.properties.unknownFutureField = true;
+assert.equal(readSupportedBastionScheduleProfileV1(unknownFieldResource, resourceId.toLowerCase()), undefined);
 
 console.log('Bastion schedule public contract checks passed.');

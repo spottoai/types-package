@@ -3,7 +3,7 @@ export declare const AWS_COMMAND_SCHEMA_VERSION: 1;
 /** Canonical provider wire value for AWS commands. */
 export declare const AWS_COMMAND_PROVIDER: "aws";
 /** Entities handled by AWS estate orchestration. */
-export declare const AWS_COMMAND_ENTITIES: readonly ["estate", "account", "billing-source"];
+export declare const AWS_COMMAND_ENTITIES: readonly ["estate", "account", "billing-source", "organization-commitments"];
 /** Actions supported across AWS estate orchestration commands. */
 export declare const AWS_COMMAND_ACTIONS: readonly ["reconcile", "refresh", "delete"];
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
@@ -29,6 +29,11 @@ export type AwsCommandForbiddenConfigurationFields = AwsForbiddenCredentialField
     externalId?: never;
     billingExport?: never;
     manifest?: never;
+    organizationId?: never;
+    managementAccountId?: never;
+    payerAccountId?: never;
+    accountIds?: never;
+    membership?: never;
 };
 /** Common secret-free envelope shared by every AWS orchestration command. */
 export interface AwsCommandBase extends AwsCommandForbiddenConfigurationFields {
@@ -79,6 +84,12 @@ export interface AwsBillingSourceRefreshCommand extends AwsCommandBase {
     estateId: string;
     billingSourceId: string;
 }
+/** Starts the dedicated commitments refresh for one desired organization estate. */
+export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase {
+    entity: 'organization-commitments';
+    action: 'refresh';
+    estateId: string;
+}
 /** Complete command union consumed by the dedicated AWS orchestration ingress. */
-export type AwsCommand = AwsEstateReconcileCommand | AwsEstateDeleteCommand | AwsAccountRefreshCommand | AwsAccountDeleteCommand | AwsBillingSourceRefreshCommand;
+export type AwsCommand = AwsEstateReconcileCommand | AwsEstateDeleteCommand | AwsAccountRefreshCommand | AwsAccountDeleteCommand | AwsBillingSourceRefreshCommand | AwsOrganizationCommitmentsRefreshCommand;
 //# sourceMappingURL=requests.d.ts.map
