@@ -1,4 +1,5 @@
-import type { CostSavingsSummaryBasis } from './views';
+import type { CostSavingsSummaryBasis, CostSavingsAggregationPolicy } from './views';
+import type { PortfolioSavingsContributionV2, ScenarioSavingsPotentialV2 } from './savings';
 import type { TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
 import type { ReportDailySpend } from './reportDailySpend';
@@ -49,6 +50,12 @@ export interface ReportEvidenceReference {
 }
 
 export interface ReportCompactRecommendationResource {
+  /** Exact producer allocation; standalone resource savings must not be added as portfolio value. */
+  portfolioContribution?: PortfolioSavingsContributionV2;
+  scenarioSavings?: ScenarioSavingsPotentialV2;
+  savingsOwnerResourceId?: string;
+  billableComponentKey?: string;
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   id: string;
   name?: string;
   type?: string;
@@ -64,6 +71,11 @@ export interface ReportCompactRecommendationResource {
 }
 
 export interface ReportCompactRecommendation {
+  portfolioContribution?: PortfolioSavingsContributionV2;
+  scenarioSavings?: ScenarioSavingsPotentialV2;
+  savingsOwnerResourceId?: string;
+  billableComponentKey?: string;
+  savingsAggregationPolicy?: CostSavingsAggregationPolicy;
   recommendation: {
     id: string;
     name?: string;

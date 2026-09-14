@@ -600,3 +600,41 @@ const augustGap = {
 assert.equal(isReportDailySpend(augustGap), true, 'EROAD-shaped missing first 13 August days');
 assert.equal(isReportDailySpend({ ...augustGap, coverage: { ...augustGap.coverage, billed: { status: 'complete', coveredDayCount: 31 } } }), false);
 console.log('Report evidence contract checks passed.');
+
+const contribution = {
+  semantics: 'portfolio-contribution',
+  allocationIds: ['allocation-1'],
+  range: { currency: 'NZD', minorUnitScale: 2, currentMonthlyMinorUnits: 10000, minSavingsMinorUnits: 2000, maxSavingsMinorUnits: 4000 },
+};
+const contributionPack = structuredClone(cataloguePack);
+Object.assign(contributionPack.reporting.recommendationCatalogue.rows[0], {
+  portfolioContribution: contribution,
+  savingsOwnerResourceId: '/resources/' + 'a'.repeat(500),
+  billableComponentKey: 'compute',
+  savingsAggregationPolicy: 'owner-component',
+});
+assert.equal(isSubscriptionReportEvidencePack(contributionPack), true, 'canonical contribution and untruncated owner identity');
+for (const mutate of [
+  row => {
+    row.portfolioContribution.allocationIds.push('allocation-1');
+  },
+  row => {
+    row.portfolioContribution.range.minorUnitScale = 7;
+  },
+  row => {
+    row.portfolioContribution.range.maxSavingsMinorUnits = 10001;
+  },
+  row => {
+    row.portfolioContribution.range.minSavingsMinorUnits = -1;
+  },
+  row => {
+    row.savingsAggregationPolicy = 'add-everything';
+  },
+  row => {
+    row.savingsOwnerResourceId = 123;
+  },
+]) {
+  const invalid = structuredClone(contributionPack);
+  mutate(invalid.reporting.recommendationCatalogue.rows[0]);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'reject invalid savings metadata');
+}
