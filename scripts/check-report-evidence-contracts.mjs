@@ -638,3 +638,10 @@ for (const mutate of [
   mutate(invalid.reporting.recommendationCatalogue.rows[0]);
   assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'reject invalid savings metadata');
 }
+
+const { isReportScenarioSavings } = await import('../dist/index.js');
+assert.equal(
+  isReportScenarioSavings({ semantics: 'standalone-scenario', range: contribution.range, combinationPolicy: { toString: null } }),
+  false,
+  'malformed policy never invokes input coercion'
+);
