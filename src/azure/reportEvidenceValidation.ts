@@ -219,6 +219,7 @@ const isCommitments = (value: unknown): boolean => {
   ) {
     return false;
   }
+  if (value.resourceCoverage !== undefined && !isProjectionRows(value.resourceCoverage)) return false;
   return ['coverage', 'obsoleteCandidates', 'reallocationOpportunities', 'purchaseRecommendations', 'renewals'].every(key =>
     isProjectionRows(value[key])
   );
@@ -298,6 +299,9 @@ const isReportingProjection = (value: unknown): boolean => {
     isRecord(publicIps) &&
     isProjectionRows(publicIps.items) &&
     isRecord(activity) &&
+    (activity.monthlyFindings === undefined ||
+      (isBoundedRows(activity.monthlyFindings, REPORT_EVIDENCE_LIMITS.activityMonths, isActivityMonthlyFindings) &&
+        new Set(activity.monthlyFindings.rows.map(row => row.month)).size === activity.monthlyFindings.rows.length)) &&
     (activity.dailySummary === undefined ||
       (isBoundedRows(activity.dailySummary, REPORT_EVIDENCE_LIMITS.activityDays, isActivityDailySummary) &&
         new Set(activity.dailySummary.rows.map(row => row.date)).size === activity.dailySummary.rows.length)) &&
@@ -310,6 +314,24 @@ const isActivityCounts = (value: unknown): value is import('./reportEvidence').R
   isRecord(value) &&
   ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => isCount(value[key])) &&
   ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => (value[key] as number) <= (value.visibleEvents as number));
+
+const isActivityMonthlyFindings = (value: unknown): value is import('./reportEvidence').ReportActivityMonthlyFindings =>
+  isRecord(value) &&
+  isString(value.month) &&
+  /^\d{4}-(0[1-9]|1[0-2])$/.test(value.month) &&
+  isBoundedRows(
+    value.findings,
+    REPORT_EVIDENCE_LIMITS.detailRows,
+    (row): row is JsonRecord =>
+      isRecord(row) &&
+      isDateTime(row.eventTimestamp) &&
+      new Date(row.eventTimestamp as string).toISOString().slice(0, 7) === value.month &&
+      (row.importance === undefined || isString(row.importance)) &&
+      (row.status === undefined || isString(row.status)) &&
+      ((typeof row.importance === 'string' && row.importance.toLowerCase() === 'high') ||
+        row.isSecuritySensitive === true ||
+        (typeof row.status === 'string' && row.status.toLowerCase() === 'failed'))
+  );
 
 const isActivityDailySummary = (value: unknown): value is import('./reportEvidence').ReportActivityDailySummary =>
   isActivityCounts(value) &&

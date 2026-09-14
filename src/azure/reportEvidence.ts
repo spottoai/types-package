@@ -10,6 +10,7 @@ export const REPORT_EVIDENCE_LIMITS = {
   recommendationCatalogue: 2000,
   complianceAssessments: 2000,
   activityDays: 400,
+  activityMonths: 13,
   recommendationResources: 2,
   resourceCatalogue: 2000,
   totalRecommendationResourceRows: 10000,
@@ -21,7 +22,7 @@ export const REPORT_EVIDENCE_LIMITS = {
   topRecommendationIdsPerPillar: 5,
   upcomingEvents: 20,
   historyPeriods: 13,
-  historyRecommendations: 90,
+  historyRecommendations: 2000,
   tenantGlobalAdministrators: 50,
 } as const;
 
@@ -279,6 +280,7 @@ export interface ReportCommitmentInventoryRow {
 }
 
 export interface ReportCommitmentsProjection extends ReportProjectionRecord {
+  resourceCoverage?: ReportBoundedRows<ReportProjectionRecord>;
   inventorySummary: ReportCommitmentInventorySummary;
   inventory: ReportBoundedRows<ReportCommitmentInventoryRow>;
   coverage: ReportBoundedRows<ReportProjectionRecord>;
@@ -315,12 +317,19 @@ export interface ReportPublicIpProjection extends ReportProjectionRecord {
 }
 
 export interface ReportActivityProjection extends ReportProjectionRecord {
+  /** Period-specific high findings, retained before the current global detail samples. */
+  monthlyFindings?: ReportBoundedRows<ReportActivityMonthlyFindings>;
   dailySummary?: ReportBoundedRows<ReportActivityDailySummary>;
   undatedSummary?: ReportActivityCounts;
   changes: ReportBoundedRows<ReportProjectionRecord>;
   security: ReportBoundedRows<ReportProjectionRecord>;
   health: ReportBoundedRows<ReportProjectionRecord>;
   suppressed: ReportBoundedRows<ReportProjectionRecord>;
+}
+
+export interface ReportActivityMonthlyFindings {
+  month: string;
+  findings: ReportBoundedRows<ReportProjectionRecord>;
 }
 
 export interface ReportActivityCounts {
