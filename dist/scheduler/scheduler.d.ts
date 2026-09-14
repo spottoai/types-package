@@ -1,3 +1,4 @@
+import type { BastionAvailabilityWeeklyScheduleDefinition, BastionAvailabilityWeeklyScheduleWriteRequest, BastionScheduleRun } from './bastionSchedule';
 export type ScheduleTargetType = 'recommendation-action' | 'resource-operation' | 'provider-scope-operation';
 export type ScheduleSelectorType = 'single-resource' | 'selected-resources' | 'provider-scope';
 export type ScheduleType = 'once' | 'recurring';
@@ -5,7 +6,7 @@ export type ScheduleStatus = 'active' | 'paused';
 export type ScheduleRunStatus = 'success' | 'dispatch-failed' | 'dispatching';
 export type ScheduleHistoryEventType = 'dispatch-succeeded' | 'dispatch-failed';
 export type ScheduleDefinitionClass = 'atomic' | 'composite';
-export type ScheduleDefinitionType = 'recommendation-action' | 'resource-operation' | 'vm-runtime-weekly';
+export type ScheduleDefinitionType = 'recommendation-action' | 'resource-operation' | 'vm-runtime-weekly' | 'bastion-availability-weekly';
 export type ResourceScheduleGroupType = 'resource-schedule-definition';
 export interface ScheduleTargetBase {
     companyId: string;
@@ -66,7 +67,7 @@ export interface ScheduleHistoryItem {
     providerScopeId: string;
     message?: string;
 }
-export interface SchedulerBatchRunItem {
+export interface SchedulerBatchRunItemBase {
     scheduleId: string;
     scheduleRunId: string;
     scheduleName?: string;
@@ -76,14 +77,8 @@ export interface SchedulerBatchRunItem {
     providerScopeId: string;
     cloudAccountId?: string;
     resourceId?: string;
-    selectedResourceIds?: string[];
-    recommendationId?: string;
-    operation?: string;
-    actionDefinitionId?: string;
-    recommendationAction?: string;
     definitionId?: string;
     definitionClass?: ScheduleDefinitionClass;
-    definitionType?: ScheduleDefinitionType;
     scheduleGroupId?: string;
     scheduleGroupType?: ResourceScheduleGroupType;
     compiledRuleId?: string;
@@ -92,6 +87,15 @@ export interface SchedulerBatchRunItem {
     createdByUserId?: string;
     updatedByUserId?: string;
 }
+export interface NonBastionSchedulerBatchRunItem extends SchedulerBatchRunItemBase {
+    selectedResourceIds?: string[];
+    recommendationId?: string;
+    operation?: string;
+    actionDefinitionId?: string;
+    recommendationAction?: string;
+    definitionType?: Exclude<ScheduleDefinitionType, 'bastion-availability-weekly'>;
+}
+export type SchedulerBatchRunItem = NonBastionSchedulerBatchRunItem | BastionScheduleRun;
 export interface SchedulerBatchQueueMessage {
     batchId: string;
     companyId: string;
@@ -212,7 +216,7 @@ export interface VmRuntimeWeeklyScheduleDefinition extends ResourceScheduleDefin
     targetResourceType: 'Microsoft.Compute/virtualMachines';
     configuration: VmRuntimeWeeklyConfiguration;
 }
-export type ResourceScheduleDefinition = AtomicResourceScheduleDefinition | VmRuntimeWeeklyScheduleDefinition;
+export type ResourceScheduleDefinition = AtomicResourceScheduleDefinition | VmRuntimeWeeklyScheduleDefinition | BastionAvailabilityWeeklyScheduleDefinition;
 export interface ResourceScheduleListResponse {
     results: ResourceScheduleDefinition[];
     continuation?: {
@@ -259,5 +263,5 @@ export interface VmRuntimeWeeklyScheduleWriteRequest {
     executionPolicy?: ResourceScheduleExecutionPolicy;
     configuration: VmRuntimeWeeklyConfiguration;
 }
-export type ResourceScheduleDefinitionWriteRequest = AtomicResourceScheduleWriteRequest | VmRuntimeWeeklyScheduleWriteRequest;
+export type ResourceScheduleDefinitionWriteRequest = AtomicResourceScheduleWriteRequest | VmRuntimeWeeklyScheduleWriteRequest | BastionAvailabilityWeeklyScheduleWriteRequest;
 //# sourceMappingURL=scheduler.d.ts.map

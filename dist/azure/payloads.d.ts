@@ -100,6 +100,25 @@ export interface CloudAccountsBillingReconciliationRequestMessage extends Reques
     source: 'scheduled';
     metadata: CloudAccountsBillingReconciliationRequestMetadata;
 }
+export type CloudAccountsScheduledRefreshAction = 'refresh' | 'refreshcomponents';
+/**
+ * Wildcard message emitted by the scheduled full-scan and component-refresh crons.
+ *
+ * `requestId` is derived from the cron scheduled time rather than the send time, so a
+ * redelivery of the same tick resolves to the same request identity. It is optional for
+ * rollout compatibility: when it is absent, cloud-engine falls back to its previous
+ * behaviour and per-subscription messages are published without a `messageId`.
+ */
+export interface CloudAccountsScheduledRefreshRequestMessage extends RequestMessage {
+    entity: 'cloudaccounts';
+    action: CloudAccountsScheduledRefreshAction;
+    companyId: '*';
+    cloudAccountId: '*';
+    tenantId: '*';
+    clientId: '*';
+    source: 'scheduled';
+    requestId?: string;
+}
 export type ActionExecutionSourceKind = 'manual' | 'schedule' | 'system';
 export interface ActionExecutionSource {
     kind: ActionExecutionSourceKind;
@@ -127,14 +146,16 @@ export interface CreatePolicyExemptionRequestMessage extends RequestMessage, Cre
     eventId: string;
     byUserId: string;
 }
-export interface CloudAccountTenantSyncRequestMessage extends RequestMessage {
+export interface NonGdapCloudAccountTenantSyncRequestMessage extends RequestMessage {
     entity: 'cloudaccount' | 'cloudaccounts';
     action: 'tenant-sync';
+    authMode?: Exclude<CloudAccountAuthMode, 'gdap'>;
     byUserId?: string;
     source: CloudAccountTenantSyncSource;
     correlationId?: string;
     runId?: string;
 }
+export type CloudAccountTenantSyncRequestMessage = NonGdapCloudAccountTenantSyncRequestMessage | AzureGdapCloudAccountTenantSyncRequestMessage;
 export interface SubscriptionMessage {
     authToken?: string;
     authClientId?: string;
@@ -189,10 +210,43 @@ export interface AzureGdapSubscriptionMessage extends Omit<SubscriptionMessage, 
     customerTenantId: string;
     partnerTenantId: string;
     authorityTenantId?: string;
+    authToken?: never;
+    authClientId?: never;
+    authClientSecret?: never;
+    authTenantId?: never;
     clientId?: never;
     principalClientId?: never;
     credentialReference?: never;
     authContext?: AzureGdapQueueAuthContext;
+}
+/**
+ * Queue-safe GDAP request identity. Credentials and Azure application IDs are
+ * resolved inside cloud-engine from the persisted authorization profile.
+ */
+export interface AzureGdapRequestMessage extends Omit<RequestMessage, 'clientId' | 'authMode' | 'customerTenantId' | 'authorityTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference' | 'authContext'> {
+    authMode: 'gdap';
+    customerTenantId: string;
+    authorityTenantId?: string;
+    partnerTenantId: string;
+    clientId?: never;
+    principalClientId?: never;
+    credentialReference?: never;
+    authContext?: AzureGdapQueueAuthContext;
+}
+export interface AzureGdapCloudAccountTenantSyncRequestMessage extends AzureGdapRequestMessage {
+    entity: 'cloudaccount' | 'cloudaccounts';
+    action: 'tenant-sync';
+    byUserId?: string;
+    source: CloudAccountTenantSyncSource;
+    correlationId?: string;
+    runId?: string;
+}
+export interface AzureGdapBillingReconciliationSubscriptionMessage extends AzureGdapSubscriptionMessage {
+    requestId?: string;
+    refreshComponents: ['billing'];
+    metadata: Record<string, unknown> & {
+        billingReconciliation: BillingReconciliationWorkMetadata;
+    };
 }
 export type AzureGuestAccessAuthFlow = 'azurePowerShellDeviceCode';
 export interface AzureGuestAccessDeviceCodeResponse {

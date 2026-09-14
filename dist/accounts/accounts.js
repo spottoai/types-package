@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SUBSCRIPTION_SYNC_STEP_ORDER = exports.getAzureSyncFeatureIdsForScope = exports.getAzureSyncFeatureOptions = exports.sortAzureSyncFeatureIds = exports.isAzureSyncFeatureSupportedInScope = exports.getAzureSyncFeatureMetadata = exports.isAzureSyncFeatureId = exports.AZURE_SYNC_FEATURE_METADATA = exports.AZURE_SYNC_FEATURE_ORDER = void 0;
+exports.SUBSCRIPTION_SYNC_STEP_ORDER = exports.getAzureSyncFeatureIdsForScope = exports.getAzureSyncFeatureOptions = exports.sortAzureSyncFeatureIds = exports.isAzureSyncFeatureSupportedInScope = exports.getAzureSyncFeatureMetadata = exports.isAzureSyncFeatureId = exports.AZURE_SYNC_FEATURE_METADATA = exports.AZURE_SYNC_FEATURE_ORDER = exports.CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION = void 0;
+exports.CLOUD_ACCOUNT_BILLING_EXPORT_LOCATOR_SCHEMA_VERSION = 1;
 exports.AZURE_SYNC_FEATURE_ORDER = [
     'activityMonitoring',
     'metrics',
