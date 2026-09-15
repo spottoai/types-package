@@ -8,7 +8,9 @@ export declare enum WritePermission {
     /** Permission to enable storage inventory reports on storage accounts */
     StorageInventory = 2,// 2
     /** Permission to create scoped Azure Policy exemptions */
-    PolicyExemptions = 4
+    PolicyExemptions = 4,// 4
+    /** Permission to run approved resource scheduling capabilities */
+    ResourceScheduling = 8
 }
 /**
  * Metadata for a write permission
@@ -27,6 +29,8 @@ export interface WritePermissionMetadata {
     documentationUrl?: string;
     /** URL to script generator for creating custom roles */
     scriptGeneratorUrl?: string;
+    /** Identifies permissions whose provider grants come from an immutable multi-group manifest. */
+    permissionManifestKind?: 'resource-scheduling';
 }
 /**
  * Permission metadata array

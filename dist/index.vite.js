@@ -14,6 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.isReportSavingsBasis = exports.isReportSpendProjection = exports.isReportSpendAmounts = void 0;
 /** Dev-only Vite entrypoint that avoids stale sibling .js files under src/. */
 __exportStar(require("./azure/common"), exports);
 __exportStar(require("./azure/activityLogs"), exports);
@@ -34,6 +35,15 @@ __exportStar(require("./azure/recommendationWorkflow"), exports);
 __exportStar(require("./azure/recommendationState"), exports);
 __exportStar(require("./azure/resources"), exports);
 __exportStar(require("./azure/reports"), exports);
+__exportStar(require("./azure/reportEvidence"), exports);
+__exportStar(require("./azure/reportEvidenceValidation"), exports);
+__exportStar(require("./azure/reportDailySpend"), exports);
+__exportStar(require("./azure/reportDailySpendValidation"), exports);
+__exportStar(require("./azure/reportSpend"), exports);
+var reportSpendValidation_1 = require("./azure/reportSpendValidation");
+Object.defineProperty(exports, "isReportSpendAmounts", { enumerable: true, get: function () { return reportSpendValidation_1.isReportSpendAmounts; } });
+Object.defineProperty(exports, "isReportSpendProjection", { enumerable: true, get: function () { return reportSpendValidation_1.isReportSpendProjection; } });
+Object.defineProperty(exports, "isReportSavingsBasis", { enumerable: true, get: function () { return reportSpendValidation_1.isReportSavingsBasis; } });
 __exportStar(require("./azure/reportingTemplates"), exports);
 __exportStar(require("./azure/reviewChecklist"), exports);
 __exportStar(require("./azure/advisorScore"), exports);

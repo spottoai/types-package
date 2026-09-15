@@ -15,6 +15,7 @@ const azureSpSetupCloudEngineFixturePath = join(packageRoot, 'tests', 'fixtures'
 const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-sp-setup-ui.consumer.ts.fixture');
 const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
 const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narrow-aws-runtime.consumer.ts.fixture');
+const resourceStrategySchedulerFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-strategy-scheduler.consumer.ts.fixture');
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
@@ -380,6 +381,7 @@ try {
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
   await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
+  await copyFile(resourceStrategySchedulerFixturePath, join(consumerRoot, 'resource-strategy-scheduler.consumer.ts'));
 
   run(
     npmCommand,
@@ -410,6 +412,7 @@ try {
       'artifact-evidence.consumer.ts',
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
+      'resource-strategy-scheduler.consumer.ts',
     ],
     consumerRoot
   );
@@ -484,8 +487,25 @@ try {
     ],
     consumerRoot
   );
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import root from '@spottoai/types-package'; import * as scheduler from '@spottoai/types-package/scheduler'; if (typeof root.isResourceStrategyWeeklyScheduleWriteRequest !== 'function' || typeof scheduler.isResourceStrategyWeeklyScheduleWriteRequest !== 'function' || !Array.isArray(scheduler.WEEKLY_AVAILABILITY_FIXTURES_V1) || 'isBastionAvailabilityWeeklyScheduleDefinition' in scheduler) process.exit(1);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const root = require('@spottoai/types-package'); const scheduler = require('@spottoai/types-package/scheduler'); if (typeof root.isResourceStrategyWeeklyScheduleWriteRequest !== 'function' || typeof scheduler.isResourceStrategyWeeklyScheduleWriteRequest !== 'function' || !Array.isArray(scheduler.WEEKLY_AVAILABILITY_FIXTURES_V1) || 'isBastionAvailabilityWeeklyScheduleDefinition' in scheduler) process.exit(1);",
+    ],
+    consumerRoot
+  );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow runtime plus API/cloud-engine/UI consumers verified.\n');
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler consumer fixture verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
