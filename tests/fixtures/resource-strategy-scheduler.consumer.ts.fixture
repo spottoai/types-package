@@ -1,8 +1,10 @@
 import {
   WEEKLY_AVAILABILITY_FIXTURES_V1,
   isResourceSchedulePermissionManifestConsent,
+  isResourceStrategyWeeklyScheduleSuggestion,
   isResourceStrategyWeeklyScheduleWriteRequest,
   type ResourceSchedulePermissionManifestConsent,
+  type ResourceStrategyWeeklyScheduleSuggestion,
   type ResourceStrategyWeeklyScheduleWriteRequest,
 } from '@spottoai/types-package/scheduler';
 
@@ -25,8 +27,15 @@ const consent: ResourceSchedulePermissionManifestConsent = {
   orderedGrantGroupHashes: ['sha256:group'],
 };
 
+const suggestion: ResourceStrategyWeeklyScheduleSuggestion = {
+  definitionType: 'resource-strategy-weekly',
+  capability: definition.capability,
+  rules: definition.rules,
+};
+
 if (
   !isResourceStrategyWeeklyScheduleWriteRequest(definition) ||
+  !isResourceStrategyWeeklyScheduleSuggestion(suggestion) ||
   !isResourceSchedulePermissionManifestConsent(consent) ||
   WEEKLY_AVAILABILITY_FIXTURES_V1.length === 0
 ) {

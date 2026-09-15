@@ -141,6 +141,29 @@ export interface ResourceStrategyWeeklyRule {
   desiredStateAtLocal: string;
   parameters?: Record<string, unknown>;
 }
+export interface ResourceStrategyWeeklyScheduleSuggestion {
+  definitionType: 'resource-strategy-weekly';
+  capability: ResourceSchedulingCapabilityRef;
+  providerScopeId?: never;
+  cloudAccountId?: never;
+  resourceId?: never;
+  name?: never;
+  timezone?: never;
+  initialMode?: never;
+  notificationPolicyId?: never;
+  notes?: never;
+  defaultParameters?: Record<string, unknown>;
+  rules: ResourceStrategyWeeklyRule[];
+  busyPolicy?: {
+    mode: 'skip' | 'wait-until-deadline' | 'force';
+    maxDelayMinutes?: number;
+  };
+  blackoutDatesLocal?: string[];
+  activeFromUtc?: string;
+  activeUntilUtc?: string;
+  acknowledgementVersion?: string;
+  firstExecutionAcknowledgementVersion?: string;
+}
 export interface ResourceStrategyWeeklyScheduleWriteRequest {
   definitionType: 'resource-strategy-weekly';
   providerScopeId: string;
@@ -215,16 +238,7 @@ export interface ScheduledResourceTransitionV1 {
   correlationId: string;
 }
 export type ResourceSchedulingLifecycleState =
-  | 'unknown'
-  | 'normal'
-  | 'reducing'
-  | 'reduced'
-  | 'restoring'
-  | 'reduce-failed'
-  | 'restore-failed'
-  | 'drifted'
-  | 'target-missing'
-  | 'stranded';
+  'unknown' | 'normal' | 'reducing' | 'reduced' | 'restoring' | 'reduce-failed' | 'restore-failed' | 'drifted' | 'target-missing' | 'stranded';
 export type ResourceSchedulingRunPhase = 'queued' | 'leased' | 'preflight' | 'capturing-baseline' | 'executing' | 'polling' | 'verifying';
 export type ResourceSchedulingRunOutcome = 'succeeded' | 'no-op' | 'skipped' | 'blocked' | 'failed' | 'superseded' | 'expired';
 export interface ResourceSchedulingExecutionProjection {
@@ -293,11 +307,7 @@ export interface ResourceScheduleScenarioMoneyProjection extends Omit<ResourceSc
 }
 export type ResourceSchedulePreviewAvailability = 'available' | 'unavailable';
 export type ResourceSchedulePreviewUnavailableReason =
-  | 'missing-evidence'
-  | 'stale-evidence'
-  | 'mixed-currency'
-  | 'unsupported'
-  | 'calculation-failed';
+  'missing-evidence' | 'stale-evidence' | 'mixed-currency' | 'unsupported' | 'calculation-failed';
 export interface ResourceSchedulePreviewRequest {
   draft: ResourceStrategyWeeklyScheduleWriteRequest;
   draftHash: string;
@@ -340,7 +350,7 @@ interface ResourceSchedulingOpportunityBase {
   cloudAccountId?: string;
   resourceId: string;
   capability: ResourceSchedulingCapabilityRef;
-  suggestedDefinition?: ResourceStrategyWeeklyScheduleWriteRequest;
+  suggestedDefinition?: ResourceStrategyWeeklyScheduleSuggestion;
   observedAtUtc: string;
 }
 export type ResourceSchedulingOpportunity = ResourceSchedulingOpportunityBase &

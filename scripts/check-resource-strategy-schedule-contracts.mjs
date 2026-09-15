@@ -478,7 +478,12 @@ const opportunity = {
   cloudAccountId: 'account-1',
   resourceId,
   capability: capabilityRef,
-  suggestedDefinition: writeRequest,
+  suggestedDefinition: {
+    definitionType: 'resource-strategy-weekly',
+    capability: capabilityRef,
+    rules: writeRequest.rules,
+    busyPolicy: { mode: 'skip' },
+  },
   projectionAvailability: 'available',
   projection: aggregate,
   observedAtUtc: timestamp,
@@ -488,9 +493,48 @@ assert.equal(scheduler.isResourceSchedulingOpportunity({ ...opportunity, schedul
 assert.equal(
   scheduler.isResourceSchedulingOpportunity({
     ...opportunity,
-    suggestedDefinition: { ...writeRequest, resourceId: `${resourceId}-other` },
+    suggestedDefinition: writeRequest,
   }),
   false
+);
+assert.equal(scheduler.isResourceStrategyWeeklyScheduleSuggestion(opportunity.suggestedDefinition), true);
+assert.equal(scheduler.isResourceStrategyWeeklyScheduleSuggestion(writeRequest), false);
+const hostileRules = [...opportunity.suggestedDefinition.rules];
+const hostileRulesPrototype = Object.create(Array.prototype);
+Object.defineProperties(hostileRulesPrototype, {
+  every: {
+    get() {
+      throw new Error('untrusted array prototype');
+    },
+  },
+  map: {
+    get() {
+      throw new Error('untrusted array prototype');
+    },
+  },
+});
+Object.setPrototypeOf(hostileRules, hostileRulesPrototype);
+const suggestionWithHostileRules = {
+  ...opportunity.suggestedDefinition,
+  rules: hostileRules,
+};
+assert.doesNotThrow(() => scheduler.isResourceStrategyWeeklyScheduleSuggestion(suggestionWithHostileRules));
+assert.equal(scheduler.isResourceStrategyWeeklyScheduleSuggestion(suggestionWithHostileRules), false);
+assert.equal(
+  scheduler.isResourceStrategyWeeklyScheduleSuggestion({
+    ...opportunity.suggestedDefinition,
+    activeFromUtc: '2026-09-15T00:00:00.500Z',
+    activeUntilUtc: '2026-09-15T00:00:00Z',
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceStrategyWeeklyScheduleSuggestion({
+    ...opportunity.suggestedDefinition,
+    activeFromUtc: '2026-09-15T00:00:00Z',
+    activeUntilUtc: '2026-09-15T00:00:00.500Z',
+  }),
+  true
 );
 
 for (const forbiddenParameterKey of ['actionRef', 'workflowRef', 'permissionSetRef', 'selectorRef', 'baseline', 'requestTemplate']) {

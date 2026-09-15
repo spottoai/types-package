@@ -126,6 +126,29 @@ export interface ResourceStrategyWeeklyRule {
     desiredStateAtLocal: string;
     parameters?: Record<string, unknown>;
 }
+export interface ResourceStrategyWeeklyScheduleSuggestion {
+    definitionType: 'resource-strategy-weekly';
+    capability: ResourceSchedulingCapabilityRef;
+    providerScopeId?: never;
+    cloudAccountId?: never;
+    resourceId?: never;
+    name?: never;
+    timezone?: never;
+    initialMode?: never;
+    notificationPolicyId?: never;
+    notes?: never;
+    defaultParameters?: Record<string, unknown>;
+    rules: ResourceStrategyWeeklyRule[];
+    busyPolicy?: {
+        mode: 'skip' | 'wait-until-deadline' | 'force';
+        maxDelayMinutes?: number;
+    };
+    blackoutDatesLocal?: string[];
+    activeFromUtc?: string;
+    activeUntilUtc?: string;
+    acknowledgementVersion?: string;
+    firstExecutionAcknowledgementVersion?: string;
+}
 export interface ResourceStrategyWeeklyScheduleWriteRequest {
     definitionType: 'resource-strategy-weekly';
     providerScopeId: string;
@@ -308,7 +331,7 @@ interface ResourceSchedulingOpportunityBase {
     cloudAccountId?: string;
     resourceId: string;
     capability: ResourceSchedulingCapabilityRef;
-    suggestedDefinition?: ResourceStrategyWeeklyScheduleWriteRequest;
+    suggestedDefinition?: ResourceStrategyWeeklyScheduleSuggestion;
     observedAtUtc: string;
 }
 export type ResourceSchedulingOpportunity = ResourceSchedulingOpportunityBase & ({

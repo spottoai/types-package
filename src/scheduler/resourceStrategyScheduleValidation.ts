@@ -6,6 +6,7 @@ import {
   type ResourceSchedulingExecutionProjection,
   type ResourceStrategyScheduleCommand,
   type ResourceStrategyWeeklyRule,
+  type ResourceStrategyWeeklyScheduleSuggestion,
   type ResourceStrategyWeeklyScheduleListResponse,
   type ResourceStrategyWeeklyScheduleProjection,
   type ResourceStrategyWeeklyScheduleWriteRequest,
@@ -42,6 +43,64 @@ function isWeeklyRule(value: unknown): value is ResourceStrategyWeeklyRule {
     isTime(value.desiredStateAtLocal) &&
     (value.parameters === undefined || isBoundedParameters(value.parameters))
   );
+}
+export function isResourceStrategyWeeklyScheduleSuggestion(value: unknown): value is ResourceStrategyWeeklyScheduleSuggestion {
+  if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !isRecord(value) || containsForbiddenKey(value))
+    return false;
+  if (
+    !hasOnlyKeys(value, [
+      'definitionType',
+      'capability',
+      'defaultParameters',
+      'rules',
+      'busyPolicy',
+      'blackoutDatesLocal',
+      'activeFromUtc',
+      'activeUntilUtc',
+      'acknowledgementVersion',
+      'firstExecutionAcknowledgementVersion',
+    ]) ||
+    value.definitionType !== 'resource-strategy-weekly' ||
+    !isCapabilityRef(value.capability) ||
+    (value.defaultParameters !== undefined && !isBoundedParameters(value.defaultParameters)) ||
+    !Array.isArray(value.rules) ||
+    value.rules.length === 0 ||
+    value.rules.length > RESOURCE_STRATEGY_CONTRACT_LIMITS.rules ||
+    !value.rules.every(isWeeklyRule) ||
+    new Set(value.rules.map(rule => rule.ruleId)).size !== value.rules.length ||
+    !isOptionalBoundedString(value.acknowledgementVersion, 200) ||
+    !isOptionalBoundedString(value.firstExecutionAcknowledgementVersion, 200)
+  ) {
+    return false;
+  }
+  if (value.busyPolicy !== undefined) {
+    if (
+      !isRecord(value.busyPolicy) ||
+      !hasOnlyKeys(value.busyPolicy, ['mode', 'maxDelayMinutes']) ||
+      !['skip', 'wait-until-deadline', 'force'].includes(String(value.busyPolicy.mode)) ||
+      (value.busyPolicy.maxDelayMinutes !== undefined && !isNonNegativeInteger(value.busyPolicy.maxDelayMinutes))
+    ) {
+      return false;
+    }
+  }
+  if (
+    value.blackoutDatesLocal !== undefined &&
+    (!Array.isArray(value.blackoutDatesLocal) ||
+      value.blackoutDatesLocal.length > RESOURCE_STRATEGY_CONTRACT_LIMITS.metadataItems ||
+      !value.blackoutDatesLocal.every(isDate))
+  ) {
+    return false;
+  }
+  if (value.activeFromUtc !== undefined && !isIsoTimestamp(value.activeFromUtc)) return false;
+  if (value.activeUntilUtc !== undefined && !isIsoTimestamp(value.activeUntilUtc)) return false;
+  if (
+    typeof value.activeFromUtc === 'string' &&
+    typeof value.activeUntilUtc === 'string' &&
+    Date.parse(value.activeFromUtc) > Date.parse(value.activeUntilUtc)
+  ) {
+    return false;
+  }
+  return true;
 }
 export function isResourceStrategyWeeklyScheduleWriteRequest(value: unknown): value is ResourceStrategyWeeklyScheduleWriteRequest {
   if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !isRecord(value) || containsForbiddenKey(value))
@@ -301,8 +360,7 @@ function isResourceSchedulingExecutionHistoryItem(value: unknown): value is Reso
       ['succeeded', 'no-op', 'skipped', 'blocked', 'failed', 'superseded', 'expired'].includes(String(value.outcome))) &&
     isOptionalBoundedString(value.reasonCode, 200) &&
     isPositiveInteger(value.attemptCount) &&
-    ((value.completedAtUtc === undefined && value.outcome === undefined) ||
-      (value.completedAtUtc !== undefined && value.outcome !== undefined))
+    ((value.completedAtUtc === undefined && value.outcome === undefined) || (value.completedAtUtc !== undefined && value.outcome !== undefined))
   );
 }
 export function isResourceSchedulingExecutionHistoryResponse(value: unknown): value is ResourceSchedulingExecutionHistoryResponse {

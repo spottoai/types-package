@@ -7,7 +7,7 @@ import {
   type ResourceScheduleScenarioMoneyProjection,
   type ResourceSchedulingOpportunity,
 } from './resourceStrategyContracts';
-import { isResourceStrategyWeeklyScheduleWriteRequest } from './resourceStrategyScheduleValidation';
+import { isResourceStrategyWeeklyScheduleSuggestion, isResourceStrategyWeeklyScheduleWriteRequest } from './resourceStrategyScheduleValidation';
 import {
   hasOnlyKeys,
   isBoundedString,
@@ -161,7 +161,7 @@ export function isResourceSchedulingOpportunity(value: unknown): value is Resour
     !isOptionalBoundedString(value.cloudAccountId, 200) ||
     !isBoundedString(value.resourceId, 2000) ||
     !isCapabilityRef(value.capability) ||
-    (value.suggestedDefinition !== undefined && !isResourceStrategyWeeklyScheduleWriteRequest(value.suggestedDefinition)) ||
+    (value.suggestedDefinition !== undefined && !isResourceStrategyWeeklyScheduleSuggestion(value.suggestedDefinition)) ||
     !isIsoTimestamp(value.observedAtUtc)
   ) {
     return false;
@@ -169,9 +169,6 @@ export function isResourceSchedulingOpportunity(value: unknown): value is Resour
   if (value.suggestedDefinition !== undefined) {
     const suggestion = value.suggestedDefinition;
     if (
-      suggestion.providerScopeId !== value.providerScopeId ||
-      suggestion.cloudAccountId !== value.cloudAccountId ||
-      suggestion.resourceId !== value.resourceId ||
       suggestion.capability.capabilityId !== value.capability.capabilityId ||
       suggestion.capability.capabilityVersion !== value.capability.capabilityVersion
     ) {

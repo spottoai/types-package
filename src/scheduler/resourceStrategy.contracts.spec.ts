@@ -8,6 +8,7 @@ import type {
   ResourceSchedulingExecutionHistoryResponse,
   ResourceSchedulingOpportunity,
   ResourceSchedulingReadinessProjection,
+  ResourceStrategyWeeklyScheduleSuggestion,
   ResourceStrategyWeeklyScheduleProjection,
   ResourceStrategyWeeklyScheduleWriteRequest,
   ScheduledResourceTransitionV1,
@@ -112,6 +113,13 @@ const writeRequest = {
   notificationPolicyId: 'notification-policy-1',
   notes: 'Keep the current UI behavior.',
 } satisfies ResourceStrategyWeeklyScheduleWriteRequest;
+
+const suggestion = {
+  definitionType: 'resource-strategy-weekly',
+  capability: capabilityRef,
+  rules: writeRequest.rules,
+  busyPolicy: { mode: 'skip' },
+} satisfies ResourceStrategyWeeklyScheduleSuggestion;
 
 const schedule = {
   scheduleId: 'schedule-1',
@@ -253,7 +261,7 @@ const opportunity = {
   cloudAccountId: 'account-1',
   resourceId,
   capability: capabilityRef,
-  suggestedDefinition: writeRequest,
+  suggestedDefinition: suggestion,
   projectionAvailability: 'available',
   projection: previewResponse.aggregate,
   observedAtUtc: timestamp,
@@ -339,6 +347,15 @@ const invalidDesiredModeRule: ResourceStrategyWeeklyScheduleWriteRequest = {
   ],
 };
 
+const invalidExecutableSuggestion: ResourceStrategyWeeklyScheduleSuggestion = {
+  ...suggestion,
+  // @ts-expect-error Recommendation suggestions cannot choose an Azure cloud account.
+  cloudAccountId: 'account-1',
+};
+
+// @ts-expect-error A complete executable write request cannot be reused as a non-executable suggestion.
+const invalidSuggestionFromWriteRequest: ResourceStrategyWeeklyScheduleSuggestion = writeRequest;
+
 void [
   capability,
   schedule,
@@ -352,5 +369,7 @@ void [
   invalidAction,
   invalidSupersededDiscriminator,
   invalidDesiredModeRule,
+  invalidExecutableSuggestion,
+  invalidSuggestionFromWriteRequest,
   undefined as unknown as ResourceScheduleDefinition,
 ];

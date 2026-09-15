@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.isResourceStrategyWeeklyScheduleSuggestion = isResourceStrategyWeeklyScheduleSuggestion;
 exports.isResourceStrategyWeeklyScheduleWriteRequest = isResourceStrategyWeeklyScheduleWriteRequest;
 exports.isResourceStrategyWeeklyScheduleProjection = isResourceStrategyWeeklyScheduleProjection;
 exports.isScheduledResourceTransitionV1 = isScheduledResourceTransitionV1;
@@ -21,6 +22,58 @@ function isWeeklyRule(value) {
         value.daysOfWeek.every(day => Number.isInteger(day) && day >= 0 && day <= 6) &&
         (0, resourceStrategyValidationShared_1.isTime)(value.desiredStateAtLocal) &&
         (value.parameters === undefined || (0, resourceStrategyValidationShared_1.isBoundedParameters)(value.parameters)));
+}
+function isResourceStrategyWeeklyScheduleSuggestion(value) {
+    if (!(0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !(0, resourceStrategyValidationShared_1.isRecord)(value) || (0, resourceStrategyValidationShared_1.containsForbiddenKey)(value))
+        return false;
+    if (!(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, [
+        'definitionType',
+        'capability',
+        'defaultParameters',
+        'rules',
+        'busyPolicy',
+        'blackoutDatesLocal',
+        'activeFromUtc',
+        'activeUntilUtc',
+        'acknowledgementVersion',
+        'firstExecutionAcknowledgementVersion',
+    ]) ||
+        value.definitionType !== 'resource-strategy-weekly' ||
+        !(0, resourceStrategyValidationShared_1.isCapabilityRef)(value.capability) ||
+        (value.defaultParameters !== undefined && !(0, resourceStrategyValidationShared_1.isBoundedParameters)(value.defaultParameters)) ||
+        !Array.isArray(value.rules) ||
+        value.rules.length === 0 ||
+        value.rules.length > resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.rules ||
+        !value.rules.every(isWeeklyRule) ||
+        new Set(value.rules.map(rule => rule.ruleId)).size !== value.rules.length ||
+        !(0, resourceStrategyValidationShared_1.isOptionalBoundedString)(value.acknowledgementVersion, 200) ||
+        !(0, resourceStrategyValidationShared_1.isOptionalBoundedString)(value.firstExecutionAcknowledgementVersion, 200)) {
+        return false;
+    }
+    if (value.busyPolicy !== undefined) {
+        if (!(0, resourceStrategyValidationShared_1.isRecord)(value.busyPolicy) ||
+            !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value.busyPolicy, ['mode', 'maxDelayMinutes']) ||
+            !['skip', 'wait-until-deadline', 'force'].includes(String(value.busyPolicy.mode)) ||
+            (value.busyPolicy.maxDelayMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isNonNegativeInteger)(value.busyPolicy.maxDelayMinutes))) {
+            return false;
+        }
+    }
+    if (value.blackoutDatesLocal !== undefined &&
+        (!Array.isArray(value.blackoutDatesLocal) ||
+            value.blackoutDatesLocal.length > resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.metadataItems ||
+            !value.blackoutDatesLocal.every(resourceStrategyValidationShared_1.isDate))) {
+        return false;
+    }
+    if (value.activeFromUtc !== undefined && !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.activeFromUtc))
+        return false;
+    if (value.activeUntilUtc !== undefined && !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.activeUntilUtc))
+        return false;
+    if (typeof value.activeFromUtc === 'string' &&
+        typeof value.activeUntilUtc === 'string' &&
+        Date.parse(value.activeFromUtc) > Date.parse(value.activeUntilUtc)) {
+        return false;
+    }
+    return true;
 }
 function isResourceStrategyWeeklyScheduleWriteRequest(value) {
     if (!(0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !(0, resourceStrategyValidationShared_1.isRecord)(value) || (0, resourceStrategyValidationShared_1.containsForbiddenKey)(value))
@@ -255,8 +308,7 @@ function isResourceSchedulingExecutionHistoryItem(value) {
             ['succeeded', 'no-op', 'skipped', 'blocked', 'failed', 'superseded', 'expired'].includes(String(value.outcome))) &&
         (0, resourceStrategyValidationShared_1.isOptionalBoundedString)(value.reasonCode, 200) &&
         (0, resourceStrategyValidationShared_1.isPositiveInteger)(value.attemptCount) &&
-        ((value.completedAtUtc === undefined && value.outcome === undefined) ||
-            (value.completedAtUtc !== undefined && value.outcome !== undefined)));
+        ((value.completedAtUtc === undefined && value.outcome === undefined) || (value.completedAtUtc !== undefined && value.outcome !== undefined)));
 }
 function isResourceSchedulingExecutionHistoryResponse(value) {
     return ((0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&

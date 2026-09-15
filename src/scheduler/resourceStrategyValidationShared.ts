@@ -154,6 +154,7 @@ export function isWithinJsonByteLimit(value: unknown, maximum: number): boolean 
       } else if (typeof current === 'boolean') {
         bytes += current ? 4 : 5;
       } else if (Array.isArray(current)) {
+        if (Object.getPrototypeOf(current) !== Array.prototype) return false;
         bytes += 2 + Math.max(0, current.length - 1);
         if (bytes > maximum) return false;
         const ownKeys = Reflect.ownKeys(current);
