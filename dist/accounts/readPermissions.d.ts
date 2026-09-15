@@ -1,4 +1,4 @@
-export type { CloudAccountCapabilityValidationPlan, CloudAccountCapabilityValidationProgress, CloudAccountCapabilityValidationResult, CloudAccountCapabilityValidationScope, CloudAccountCapabilityValidationStatus, CloudAccountReadAccessValidation, CloudAccountValidationResult, CloudAccountValidationStreamEvent, CloudAccountWriteAccessValidation, SubscriptionReadValidationResult, SubscriptionValidationStatus, } from './validation';
+export type { CloudAccountCapabilityValidationPlan, CloudAccountCapabilityValidationProgress, CloudAccountCapabilityValidationResult, CloudAccountCapabilityValidationScope, CloudAccountCapabilityValidationStatus, CloudAccountReadAccessValidation, CloudAccountValidationRequest, CloudAccountValidationResult, CloudAccountValidationStreamEvent, CloudAccountWriteAccessValidation, SubscriptionReadValidationResult, SubscriptionValidationStatus, } from './validation';
 /**
  * Subscription-scoped read capability bitmask enum.
  * Each capability maps to a single bit.

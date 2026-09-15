@@ -44,6 +44,7 @@ export * from './azure/subscriptions';
 export * from './azure/views';
 export * from './azure/security';
 export * from './azure/savings';
+export { isReportPortfolioSavingsContribution, isReportScenarioSavings } from './azure/reportSavingsContributionValidation';
 export * from './azure/serviceRetirement';
 export * from './azure/serviceRetirementState';
 export * from './azure/serviceRetirementWorkManagement';

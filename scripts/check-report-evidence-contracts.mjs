@@ -326,6 +326,67 @@ rejectSubscription(value => {
 });
 
 const oversizedHistory = structuredClone(history);
+const completeHistory = structuredClone(history);
+completeHistory.periods[0].recommendations = rows(
+  Array.from({ length: 283 }, (_, index) => ({
+    ...history.periods[0].recommendations.rows[0],
+    id: `history-${index}`,
+    resolved: false,
+  }))
+);
+completeHistory.periods[0].metrics.recommendationCount = 283;
+assert.equal(isSubscriptionReportHistory(completeHistory), true, 'Complete EROAD-scale history exceeds the former sample bound');
+const tooManyFingerprints = structuredClone(completeHistory);
+tooManyFingerprints.periods[0].recommendations = rows(
+  Array.from({ length: 2001 }, (_, index) => ({
+    ...history.periods[0].recommendations.rows[0],
+    id: `history-${index}`,
+    resolved: false,
+  }))
+);
+tooManyFingerprints.periods[0].metrics.recommendationCount = 2001;
+assert.equal(isSubscriptionReportHistory(tooManyFingerprints), false, 'History remains bounded');
+const monthlyActivityPack = structuredClone(subscriptionPack);
+monthlyActivityPack.reporting.activity.monthlyFindings = rows([
+  {
+    month: '2026-08',
+    findings: rows([{ kind: 'security', eventTimestamp: '2026-08-31T23:00:00Z', isSecuritySensitive: true }]),
+  },
+]);
+assert.equal(isSubscriptionReportEvidencePack(monthlyActivityPack), true);
+for (const mutate of [
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].month = '2026-09';
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].importance = { toString: null, valueOf: null };
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].status = { toString: null, valueOf: null };
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings = rows(
+      Array.from({ length: 51 }, () => monthlyActivityPack.reporting.activity.monthlyFindings.rows[0].findings.rows[0])
+    );
+  },
+  value => {
+    value.reporting.activity.monthlyFindings = rows(Array.from({ length: 14 }, () => monthlyActivityPack.reporting.activity.monthlyFindings.rows[0]));
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].eventTimestamp = 'invalid';
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].isSecuritySensitive = false;
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows.push(value.reporting.activity.monthlyFindings.rows[0]);
+    value.reporting.activity.monthlyFindings.totalCount = 2;
+  },
+]) {
+  const invalid = structuredClone(monthlyActivityPack);
+  mutate(invalid);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'Reject misplaced, undated, non-high or duplicate monthly activity');
+}
 oversizedHistory.periods = Array.from({ length: 14 }, (_, index) => ({
   ...history.periods[0],
   period: `2025-${String(index + 1).padStart(2, '0')}`,
@@ -539,3 +600,48 @@ const augustGap = {
 assert.equal(isReportDailySpend(augustGap), true, 'EROAD-shaped missing first 13 August days');
 assert.equal(isReportDailySpend({ ...augustGap, coverage: { ...augustGap.coverage, billed: { status: 'complete', coveredDayCount: 31 } } }), false);
 console.log('Report evidence contract checks passed.');
+
+const contribution = {
+  semantics: 'portfolio-contribution',
+  allocationIds: ['allocation-1'],
+  range: { currency: 'NZD', minorUnitScale: 2, currentMonthlyMinorUnits: 10000, minSavingsMinorUnits: 2000, maxSavingsMinorUnits: 4000 },
+};
+const contributionPack = structuredClone(cataloguePack);
+Object.assign(contributionPack.reporting.recommendationCatalogue.rows[0], {
+  portfolioContribution: contribution,
+  savingsOwnerResourceId: '/resources/' + 'a'.repeat(500),
+  billableComponentKey: 'compute',
+  savingsAggregationPolicy: 'owner-component',
+});
+assert.equal(isSubscriptionReportEvidencePack(contributionPack), true, 'canonical contribution and untruncated owner identity');
+for (const mutate of [
+  row => {
+    row.portfolioContribution.allocationIds.push('allocation-1');
+  },
+  row => {
+    row.portfolioContribution.range.minorUnitScale = 7;
+  },
+  row => {
+    row.portfolioContribution.range.maxSavingsMinorUnits = 10001;
+  },
+  row => {
+    row.portfolioContribution.range.minSavingsMinorUnits = -1;
+  },
+  row => {
+    row.savingsAggregationPolicy = 'add-everything';
+  },
+  row => {
+    row.savingsOwnerResourceId = 123;
+  },
+]) {
+  const invalid = structuredClone(contributionPack);
+  mutate(invalid.reporting.recommendationCatalogue.rows[0]);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'reject invalid savings metadata');
+}
+
+const { isReportScenarioSavings } = await import('../dist/index.js');
+assert.equal(
+  isReportScenarioSavings({ semantics: 'standalone-scenario', range: contribution.range, combinationPolicy: { toString: null } }),
+  false,
+  'malformed policy never invokes input coercion'
+);

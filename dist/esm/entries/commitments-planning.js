@@ -1,3 +1,3 @@
-export * from '../aws/commitmentsPlanningValidation.js';
-import * as namespace from '../aws/commitmentsPlanningValidation.js';
+export * from '../aws/commitments-planning.js';
+import * as namespace from '../aws/commitments-planning.js';
 export default namespace;
