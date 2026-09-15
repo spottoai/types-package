@@ -2,6 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isTenantReportEvidencePack = exports.isSubscriptionReportHistory = exports.isSubscriptionReportEvidencePack = exports.isReportSecureScoreEvidence = void 0;
 const reportEvidenceCatalogueValidation_1 = require("./reportEvidenceCatalogueValidation");
+const reportDailySpendValidation_1 = require("./reportDailySpendValidation");
+const reportSpendValidation_1 = require("./reportSpendValidation");
 const reportEvidence_1 = require("./reportEvidence");
 const reportEvidenceValidationHelpers_1 = require("./reportEvidenceValidationHelpers");
 const isReportSecureScoreEvidence = (value) => {
@@ -18,6 +20,7 @@ const isReportSecureScoreEvidence = (value) => {
 };
 exports.isReportSecureScoreEvidence = isReportSecureScoreEvidence;
 const isCostSavingsCategory = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (value.savingsBasis === undefined || (0, reportSpendValidation_1.isReportSavingsBasis)(value.savingsBasis)) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.key) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.label) &&
     (0, reportEvidenceValidationHelpers_1.isCount)(value.recommendationCount) &&
@@ -67,7 +70,10 @@ const isRecommendationPortfolio = (value) => {
     }
     if (value.costSavings === undefined)
         return true;
-    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.costSavings) || !(0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.currency) || !(0, reportEvidenceValidationHelpers_1.isCount)(value.costSavings.contributingRecommendationCount)) {
+    if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.costSavings) ||
+        !(0, reportEvidenceValidationHelpers_1.isString)(value.costSavings.currency) ||
+        !(0, reportEvidenceValidationHelpers_1.isCount)(value.costSavings.contributingRecommendationCount) ||
+        (value.costSavings.savingsBasis !== undefined && !(0, reportSpendValidation_1.isReportSavingsBasis)(value.costSavings.savingsBasis))) {
         return false;
     }
     const monthly = value.costSavings.monthly;
@@ -143,6 +149,8 @@ const isCommitments = (value) => {
         (0, reportEvidenceValidationHelpers_1.countTotal)(value.inventorySummary.statusCounts) !== value.inventorySummary.totalCount) {
         return false;
     }
+    if (value.resourceCoverage !== undefined && !(0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.resourceCoverage))
+        return false;
     return ['coverage', 'obsoleteCandidates', 'reallocationOpportunities', 'purchaseRecommendations', 'renewals'].every(key => (0, reportEvidenceValidationHelpers_1.isProjectionRows)(value[key]));
 };
 function isCommitmentInventoryRow(value) {
@@ -166,6 +174,10 @@ function isCommitmentInventoryRow(value) {
 }
 const isReportingProjection = (value) => {
     if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !(0, reportEvidenceValidationHelpers_1.isRecord)(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio))
+        return false;
+    if (value.dailySpend !== undefined && !(0, reportDailySpendValidation_1.isReportDailySpend)(value.dailySpend))
+        return false;
+    if (value.spend !== undefined && !(0, reportSpendValidation_1.isReportSpendProjection)(value.spend))
         return false;
     const subscription = (0, reportEvidenceValidationHelpers_1.isRecord)(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
     const properties = subscription && (0, reportEvidenceValidationHelpers_1.isRecord)(subscription.properties) ? subscription.properties : undefined;
@@ -214,6 +226,9 @@ const isReportingProjection = (value) => {
         (0, reportEvidenceValidationHelpers_1.isRecord)(publicIps) &&
         (0, reportEvidenceValidationHelpers_1.isProjectionRows)(publicIps.items) &&
         (0, reportEvidenceValidationHelpers_1.isRecord)(activity) &&
+        (activity.monthlyFindings === undefined ||
+            ((0, reportEvidenceValidationHelpers_1.isBoundedRows)(activity.monthlyFindings, reportEvidence_1.REPORT_EVIDENCE_LIMITS.activityMonths, isActivityMonthlyFindings) &&
+                new Set(activity.monthlyFindings.rows.map(row => row.month)).size === activity.monthlyFindings.rows.length)) &&
         (activity.dailySummary === undefined ||
             ((0, reportEvidenceValidationHelpers_1.isBoundedRows)(activity.dailySummary, reportEvidence_1.REPORT_EVIDENCE_LIMITS.activityDays, isActivityDailySummary) &&
                 new Set(activity.dailySummary.rows.map(row => row.date)).size === activity.dailySummary.rows.length)) &&
@@ -223,6 +238,17 @@ const isReportingProjection = (value) => {
 const isActivityCounts = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
     ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => (0, reportEvidenceValidationHelpers_1.isCount)(value[key])) &&
     ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => value[key] <= value.visibleEvents);
+const isActivityMonthlyFindings = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isString)(value.month) &&
+    /^\d{4}-(0[1-9]|1[0-2])$/.test(value.month) &&
+    (0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.findings, reportEvidence_1.REPORT_EVIDENCE_LIMITS.detailRows, (row) => (0, reportEvidenceValidationHelpers_1.isRecord)(row) &&
+        (0, reportEvidenceValidationHelpers_1.isDateTime)(row.eventTimestamp) &&
+        new Date(row.eventTimestamp).toISOString().slice(0, 7) === value.month &&
+        (row.importance === undefined || (0, reportEvidenceValidationHelpers_1.isString)(row.importance)) &&
+        (row.status === undefined || (0, reportEvidenceValidationHelpers_1.isString)(row.status)) &&
+        ((typeof row.importance === 'string' && row.importance.toLowerCase() === 'high') ||
+            row.isSecuritySensitive === true ||
+            (typeof row.status === 'string' && row.status.toLowerCase() === 'failed')));
 const isActivityDailySummary = (value) => isActivityCounts(value) &&
     (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.date) &&
@@ -267,12 +293,22 @@ const isSubscriptionReportEvidencePack = (value) => {
         !(0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value.scope, ['companyId', 'tenantId', 'displayName', 'currency', 'currencySymbol'])) {
         return false;
     }
+    const dailySpend = value.reporting.dailySpend;
+    if (dailySpend && value.scope.currency !== undefined && dailySpend.currency !== value.scope.currency)
+        return false;
+    const spend = value.reporting.spend;
+    if (spend &&
+        ((value.scope.currency !== undefined && spend.currency !== value.scope.currency) ||
+            (dailySpend && spend.currency !== dailySpend.currency) ||
+            Date.parse(spend.generatedAt) > Date.parse(value.generatedAt)))
+        return false;
     return (value.reliability.relationshipGraph === undefined ||
         ((0, reportEvidenceValidationHelpers_1.isRecord)(value.reliability.relationshipGraph) &&
             (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value.reliability.relationshipGraph, ['totalNodes', 'totalEdges', 'unresolvedCount', 'buildMs'])));
 };
 exports.isSubscriptionReportEvidencePack = isSubscriptionReportEvidencePack;
 const isRecommendationFingerprint = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (value.savingsBasis === undefined || (0, reportSpendValidation_1.isReportSavingsBasis)(value.savingsBasis)) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.id) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.title) &&
     (0, reportEvidenceValidationHelpers_1.hasOptionalStrings)(value, ['category', 'impact', 'severity', 'currency']) &&

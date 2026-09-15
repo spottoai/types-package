@@ -2,15 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isInventoryCatalogueResource = exports.isCompactRecommendation = void 0;
 const reportEvidence_1 = require("./reportEvidence");
+const reportSpendValidation_1 = require("./reportSpendValidation");
+const reportSavingsContributionValidation_1 = require("./reportSavingsContributionValidation");
 const reportEvidenceValidationHelpers_1 = require("./reportEvidenceValidationHelpers");
 const isCompactRecommendationResource = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportSavingsContributionValidation_1.hasValidReportSavingsMetadata)(value) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.id) &&
     ['name', 'type', 'resourceGroup', 'location', 'currency', 'currencySymbol'].every(key => (0, reportEvidenceValidationHelpers_1.isOptionalString)(value[key])) &&
     ['spend', 'spendAmortized'].every(key => (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value[key])) &&
+    (value.savingsBasis === undefined || (0, reportSpendValidation_1.isReportSavingsBasis)(value.savingsBasis)) &&
     (value.savings === undefined ||
         ((0, reportEvidenceValidationHelpers_1.isRecord)(value.savings) && (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.savings.minAmount) && (0, reportEvidenceValidationHelpers_1.isOptionalFiniteNumber)(value.savings.maxAmount)));
 const isCompactRecommendation = (value) => {
     if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !(0, reportEvidenceValidationHelpers_1.isRecord)(value.recommendation) || !Array.isArray(value.resources))
+        return false;
+    if (!(0, reportSavingsContributionValidation_1.hasValidReportSavingsMetadata)(value))
+        return false;
+    if (value.savingsBasis !== undefined && !(0, reportSpendValidation_1.isReportSavingsBasis)(value.savingsBasis))
         return false;
     const recommendation = value.recommendation;
     const assessment = recommendation.securityAssessmentSummary;

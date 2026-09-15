@@ -7,6 +7,7 @@ exports.REPORT_EVIDENCE_LIMITS = {
     recommendationCatalogue: 2000,
     complianceAssessments: 2000,
     activityDays: 400,
+    activityMonths: 13,
     recommendationResources: 2,
     resourceCatalogue: 2000,
     totalRecommendationResourceRows: 10000,
@@ -18,7 +19,7 @@ exports.REPORT_EVIDENCE_LIMITS = {
     topRecommendationIdsPerPillar: 5,
     upcomingEvents: 20,
     historyPeriods: 13,
-    historyRecommendations: 90,
+    historyRecommendations: 2000,
     tenantGlobalAdministrators: 50,
 };
 //# sourceMappingURL=reportEvidence.js.map

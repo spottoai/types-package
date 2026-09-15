@@ -1,12 +1,16 @@
-import type { CostSavingsSummaryBasis } from './views';
+import type { CostSavingsSummaryBasis, CostSavingsAggregationPolicy } from './views';
+import type { PortfolioSavingsContributionV2, ScenarioSavingsPotentialV2 } from './savings';
 import type { TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
+import type { ReportDailySpend } from './reportDailySpend';
+import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 export declare const REPORT_EVIDENCE_LIMITS: {
     readonly detailRows: 50;
     readonly currentRecommendations: 90;
     readonly recommendationCatalogue: 2000;
     readonly complianceAssessments: 2000;
     readonly activityDays: 400;
+    readonly activityMonths: 13;
     readonly recommendationResources: 2;
     readonly resourceCatalogue: 2000;
     readonly totalRecommendationResourceRows: 10000;
@@ -18,7 +22,7 @@ export declare const REPORT_EVIDENCE_LIMITS: {
     readonly topRecommendationIdsPerPillar: 5;
     readonly upcomingEvents: 20;
     readonly historyPeriods: 13;
-    readonly historyRecommendations: 90;
+    readonly historyRecommendations: 2000;
     readonly tenantGlobalAdministrators: 50;
 };
 /** An additive report section whose stable field-level contract has not yet been promoted. */
@@ -40,6 +44,12 @@ export interface ReportEvidenceReference {
     value?: string | number | boolean;
 }
 export interface ReportCompactRecommendationResource {
+    /** Exact producer allocation; standalone resource savings must not be added as portfolio value. */
+    portfolioContribution?: PortfolioSavingsContributionV2;
+    scenarioSavings?: ScenarioSavingsPotentialV2;
+    savingsOwnerResourceId?: string;
+    billableComponentKey?: string;
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     id: string;
     name?: string;
     type?: string;
@@ -53,8 +63,15 @@ export interface ReportCompactRecommendationResource {
         minAmount?: number;
         maxAmount?: number;
     };
+    /** Pricing basis of savings, independent of the resource's billed/amortized spend values. */
+    savingsBasis?: ReportSavingsBasis;
 }
 export interface ReportCompactRecommendation {
+    portfolioContribution?: PortfolioSavingsContributionV2;
+    scenarioSavings?: ScenarioSavingsPotentialV2;
+    savingsOwnerResourceId?: string;
+    billableComponentKey?: string;
+    savingsAggregationPolicy?: CostSavingsAggregationPolicy;
     recommendation: {
         id: string;
         name?: string;
@@ -108,12 +125,15 @@ export interface ReportCompactRecommendation {
         minAmount?: number;
         maxAmount?: number;
     };
+    /** Mixed/unknown basis is not evidence of a cash saving; never infer a basis from the amount. */
+    savingsBasis?: ReportSavingsBasis;
     currency?: string;
     currencySymbol?: string;
 }
 export type ReportImpactBand = 'High' | 'Medium' | 'Low' | 'Unknown';
 export type ReportEffortBand = 'Low' | 'Medium' | 'High' | 'Unknown';
 export interface ReportCostSavingsCategory {
+    savingsBasis?: ReportSavingsBasis;
     key: string;
     label: string;
     recommendationCount: number;
@@ -124,6 +144,7 @@ export interface ReportCostSavingsCategory {
     maximumMonthlySavings: number;
 }
 export interface ReportCostSavingsProjection {
+    savingsBasis?: ReportSavingsBasis;
     currency: string;
     currencySymbol?: string;
     contributingRecommendationCount: number;
@@ -270,6 +291,7 @@ export interface ReportCommitmentInventoryRow {
     doNotRenewAnnualImpact?: ReportProjectionRecord;
 }
 export interface ReportCommitmentsProjection extends ReportProjectionRecord {
+    resourceCoverage?: ReportBoundedRows<ReportProjectionRecord>;
     inventorySummary: ReportCommitmentInventorySummary;
     inventory: ReportBoundedRows<ReportCommitmentInventoryRow>;
     coverage: ReportBoundedRows<ReportProjectionRecord>;
@@ -304,12 +326,18 @@ export interface ReportPublicIpProjection extends ReportProjectionRecord {
     items: ReportBoundedRows<ReportProjectionRecord>;
 }
 export interface ReportActivityProjection extends ReportProjectionRecord {
+    /** Period-specific high findings, retained before the current global detail samples. */
+    monthlyFindings?: ReportBoundedRows<ReportActivityMonthlyFindings>;
     dailySummary?: ReportBoundedRows<ReportActivityDailySummary>;
     undatedSummary?: ReportActivityCounts;
     changes: ReportBoundedRows<ReportProjectionRecord>;
     security: ReportBoundedRows<ReportProjectionRecord>;
     health: ReportBoundedRows<ReportProjectionRecord>;
     suppressed: ReportBoundedRows<ReportProjectionRecord>;
+}
+export interface ReportActivityMonthlyFindings {
+    month: string;
+    findings: ReportBoundedRows<ReportProjectionRecord>;
 }
 export interface ReportActivityCounts {
     visibleEvents: number;
@@ -323,7 +351,11 @@ export interface ReportActivityDailySummary extends ReportActivityCounts {
     date: string;
 }
 export interface SubscriptionReportingProjection {
+    /** Explicit cost bases and source components; preferred over unqualified legacy dashboard totals. */
+    spend?: ReportSpendProjection;
     dashboard: ReportProjectionRecord;
+    /** Optional on older packs. Missing or incomplete coverage must not become zero spend. */
+    dailySpend?: ReportDailySpend;
     recommendationPortfolio: ReportRecommendationPortfolio;
     recommendations: ReportBoundedRows<ReportCompactRecommendation>;
     /** Section selection uses this catalogue; the smaller recommendations collection is an overview sample. */
@@ -482,6 +514,7 @@ export interface SubscriptionReportEvidencePack {
     evidence: ReportEvidenceReference[];
 }
 export interface ReportRecommendationFingerprint {
+    savingsBasis?: ReportSavingsBasis;
     id: string;
     title: string;
     category?: string;

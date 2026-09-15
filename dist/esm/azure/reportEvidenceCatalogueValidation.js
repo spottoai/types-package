@@ -1,13 +1,21 @@
 import { REPORT_EVIDENCE_LIMITS } from './reportEvidence.js';
+import { isReportSavingsBasis } from './reportSpendValidation.js';
+import { hasValidReportSavingsMetadata } from './reportSavingsContributionValidation.js';
 import { isRecord, isString, isOptionalString, isOptionalFiniteNumber, isOptionalBoolean, isFiniteNumber, isCount, isBoundedRows, hasOptionalStrings, hasOptionalNumbers, } from './reportEvidenceValidationHelpers.js';
 const isCompactRecommendationResource = (value) => isRecord(value) &&
+    hasValidReportSavingsMetadata(value) &&
     isString(value.id) &&
     ['name', 'type', 'resourceGroup', 'location', 'currency', 'currencySymbol'].every(key => isOptionalString(value[key])) &&
     ['spend', 'spendAmortized'].every(key => isOptionalFiniteNumber(value[key])) &&
+    (value.savingsBasis === undefined || isReportSavingsBasis(value.savingsBasis)) &&
     (value.savings === undefined ||
         (isRecord(value.savings) && isOptionalFiniteNumber(value.savings.minAmount) && isOptionalFiniteNumber(value.savings.maxAmount)));
 export const isCompactRecommendation = (value) => {
     if (!isRecord(value) || !isRecord(value.recommendation) || !Array.isArray(value.resources))
+        return false;
+    if (!hasValidReportSavingsMetadata(value))
+        return false;
+    if (value.savingsBasis !== undefined && !isReportSavingsBasis(value.savingsBasis))
         return false;
     const recommendation = value.recommendation;
     const assessment = recommendation.securityAssessmentSummary;

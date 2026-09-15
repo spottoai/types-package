@@ -57,7 +57,7 @@ const reporting = {
   },
 };
 
-const subscriptionPack = {
+export const subscriptionPack = {
   generatedAt: '2026-09-11T00:00:00.000Z',
   generation: {},
   scope: { subscriptionId: 'subscription-1', currency: 'NZD' },
@@ -326,6 +326,67 @@ rejectSubscription(value => {
 });
 
 const oversizedHistory = structuredClone(history);
+const completeHistory = structuredClone(history);
+completeHistory.periods[0].recommendations = rows(
+  Array.from({ length: 283 }, (_, index) => ({
+    ...history.periods[0].recommendations.rows[0],
+    id: `history-${index}`,
+    resolved: false,
+  }))
+);
+completeHistory.periods[0].metrics.recommendationCount = 283;
+assert.equal(isSubscriptionReportHistory(completeHistory), true, 'Complete EROAD-scale history exceeds the former sample bound');
+const tooManyFingerprints = structuredClone(completeHistory);
+tooManyFingerprints.periods[0].recommendations = rows(
+  Array.from({ length: 2001 }, (_, index) => ({
+    ...history.periods[0].recommendations.rows[0],
+    id: `history-${index}`,
+    resolved: false,
+  }))
+);
+tooManyFingerprints.periods[0].metrics.recommendationCount = 2001;
+assert.equal(isSubscriptionReportHistory(tooManyFingerprints), false, 'History remains bounded');
+const monthlyActivityPack = structuredClone(subscriptionPack);
+monthlyActivityPack.reporting.activity.monthlyFindings = rows([
+  {
+    month: '2026-08',
+    findings: rows([{ kind: 'security', eventTimestamp: '2026-08-31T23:00:00Z', isSecuritySensitive: true }]),
+  },
+]);
+assert.equal(isSubscriptionReportEvidencePack(monthlyActivityPack), true);
+for (const mutate of [
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].month = '2026-09';
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].importance = { toString: null, valueOf: null };
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].status = { toString: null, valueOf: null };
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings = rows(
+      Array.from({ length: 51 }, () => monthlyActivityPack.reporting.activity.monthlyFindings.rows[0].findings.rows[0])
+    );
+  },
+  value => {
+    value.reporting.activity.monthlyFindings = rows(Array.from({ length: 14 }, () => monthlyActivityPack.reporting.activity.monthlyFindings.rows[0]));
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].eventTimestamp = 'invalid';
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows[0].findings.rows[0].isSecuritySensitive = false;
+  },
+  value => {
+    value.reporting.activity.monthlyFindings.rows.push(value.reporting.activity.monthlyFindings.rows[0]);
+    value.reporting.activity.monthlyFindings.totalCount = 2;
+  },
+]) {
+  const invalid = structuredClone(monthlyActivityPack);
+  mutate(invalid);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'Reject misplaced, undated, non-high or duplicate monthly activity');
+}
 oversizedHistory.periods = Array.from({ length: 14 }, (_, index) => ({
   ...history.periods[0],
   period: `2025-${String(index + 1).padStart(2, '0')}`,
@@ -356,4 +417,231 @@ oversizedTenant.globalAdmins.principals = {
 };
 assert.equal(isTenantReportEvidencePack(oversizedTenant), false);
 
+const dailySpend = {
+  startDate: '2026-08-01',
+  endDate: '2026-08-02',
+  dateBasis: 'billing-calendar',
+  currency: 'NZD',
+  generatedAt: '2026-09-12T00:00:00.000Z',
+  sourceObservedAt: '2026-09-11T00:00:00.000Z',
+  freshness: 'current',
+  coverage: {
+    billed: { status: 'complete', coveredDayCount: 2 },
+    amortized: { status: 'partial', coveredDayCount: 1 },
+  },
+  entries: [
+    { date: '2026-08-01', cost: 0, costAmortized: -2.5 },
+    { date: '2026-08-02', cost: 10.25 },
+  ],
+};
+const packWithDailySpend = value => ({ ...subscriptionPack, reporting: { ...subscriptionPack.reporting, dailySpend: value } });
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(dailySpend)), true);
+for (const [label, mutate] of [
+  [
+    'false completeness',
+    v => {
+      v.coverage.amortized.status = 'complete';
+    },
+  ],
+  [
+    'duplicate date',
+    v => {
+      v.entries[1].date = v.entries[0].date;
+    },
+  ],
+  [
+    'invalid calendar date',
+    v => {
+      v.entries[0].date = '2026-02-30';
+    },
+  ],
+  [
+    'non-finite cost',
+    v => {
+      v.entries[0].cost = Infinity;
+    },
+  ],
+  [
+    'null amount',
+    v => {
+      v.entries[0].cost = null;
+    },
+  ],
+  [
+    'string amount',
+    v => {
+      v.entries[0].cost = '0';
+    },
+  ],
+  [
+    'empty amount row',
+    v => {
+      v.entries[0] = { date: '2026-08-01' };
+    },
+  ],
+  [
+    'out of order',
+    v => {
+      v.entries.reverse();
+    },
+  ],
+  [
+    'out of window',
+    v => {
+      v.entries[1].date = '2026-08-03';
+    },
+  ],
+  [
+    'invalid window',
+    v => {
+      v.endDate = '2026-07-31';
+    },
+  ],
+  [
+    'unbounded window',
+    v => {
+      v.endDate = '2027-08-01';
+    },
+  ],
+  [
+    'currency mismatch',
+    v => {
+      v.currency = 'USD';
+    },
+  ],
+  [
+    'invalid currency',
+    v => {
+      v.currency = 'nzd';
+    },
+  ],
+  [
+    'wrong date basis',
+    v => {
+      v.dateBasis = 'utc';
+    },
+  ],
+  [
+    'missing observation',
+    v => {
+      delete v.sourceObservedAt;
+    },
+  ],
+  [
+    'future observation',
+    v => {
+      v.sourceObservedAt = '2026-10-01T00:00:00Z';
+    },
+  ],
+  [
+    'missing freshness',
+    v => {
+      delete v.freshness;
+    },
+  ],
+  [
+    'false unavailability',
+    v => {
+      v.freshness = 'unavailable';
+    },
+  ],
+  [
+    'invalid coverage count',
+    v => {
+      v.coverage.billed.coveredDayCount = 1;
+    },
+  ],
+]) {
+  const invalid = structuredClone(dailySpend);
+  mutate(invalid);
+  assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(invalid)), false, label);
+}
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(null)), false);
+const unavailableDaily = {
+  ...dailySpend,
+  sourceObservedAt: undefined,
+  freshness: 'unavailable',
+  entries: [],
+  coverage: { billed: { status: 'unavailable', coveredDayCount: 0 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+};
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend(unavailableDaily)), true);
+assert.equal(isSubscriptionReportEvidencePack(packWithDailySpend({ ...dailySpend, freshness: 'stale' })), true);
+const { isReportDailySpend } = await import('../dist/index.js');
+const esmDaily = await import('../dist/esm/entries/root.js');
+assert.equal(esmDaily.isReportDailySpend(dailySpend), true, 'ESM runtime export');
+assert.equal(isReportDailySpend(dailySpend), true, 'CJS runtime export');
+const fullWindow = {
+  ...dailySpend,
+  startDate: '2026-07-01',
+  endDate: '2026-09-30',
+  coverage: { billed: { status: 'complete', coveredDayCount: 92 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: Array.from({ length: 92 }, (_, index) => ({ date: new Date(Date.UTC(2026, 6, 1 + index)).toISOString().slice(0, 10), cost: 0 })),
+};
+assert.equal(isReportDailySpend(fullWindow), true, '92-day boundary and absent amortized evidence');
+assert.equal(isReportDailySpend({ ...fullWindow, endDate: '2026-10-01' }), false, '93-day window');
+assert.equal(isReportDailySpend({ ...fullWindow, entries: [...fullWindow.entries, fullWindow.entries[0]] }), false, '93 rows');
+const leapDay = {
+  ...dailySpend,
+  startDate: '2024-02-29',
+  endDate: '2024-02-29',
+  coverage: { billed: { status: 'complete', coveredDayCount: 1 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: [{ date: '2024-02-29', cost: -10 }],
+};
+assert.equal(isReportDailySpend(leapDay), true, 'leap day and credit');
+assert.equal(isReportDailySpend({ ...leapDay, generatedAt: '2026-02-30T00:00:00Z' }), false);
+assert.equal(isReportDailySpend({ ...leapDay, generatedAt: '2026-09-12T24:00:00Z' }), false);
+const augustGap = {
+  ...dailySpend,
+  startDate: '2026-08-01',
+  endDate: '2026-08-31',
+  entries: Array.from({ length: 18 }, (_, index) => ({ date: `2026-08-${14 + index}`, cost: 1 })),
+  coverage: { billed: { status: 'partial', coveredDayCount: 18 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+};
+assert.equal(isReportDailySpend(augustGap), true, 'EROAD-shaped missing first 13 August days');
+assert.equal(isReportDailySpend({ ...augustGap, coverage: { ...augustGap.coverage, billed: { status: 'complete', coveredDayCount: 31 } } }), false);
 console.log('Report evidence contract checks passed.');
+
+const contribution = {
+  semantics: 'portfolio-contribution',
+  allocationIds: ['allocation-1'],
+  range: { currency: 'NZD', minorUnitScale: 2, currentMonthlyMinorUnits: 10000, minSavingsMinorUnits: 2000, maxSavingsMinorUnits: 4000 },
+};
+const contributionPack = structuredClone(cataloguePack);
+Object.assign(contributionPack.reporting.recommendationCatalogue.rows[0], {
+  portfolioContribution: contribution,
+  savingsOwnerResourceId: '/resources/' + 'a'.repeat(500),
+  billableComponentKey: 'compute',
+  savingsAggregationPolicy: 'owner-component',
+});
+assert.equal(isSubscriptionReportEvidencePack(contributionPack), true, 'canonical contribution and untruncated owner identity');
+for (const mutate of [
+  row => {
+    row.portfolioContribution.allocationIds.push('allocation-1');
+  },
+  row => {
+    row.portfolioContribution.range.minorUnitScale = 7;
+  },
+  row => {
+    row.portfolioContribution.range.maxSavingsMinorUnits = 10001;
+  },
+  row => {
+    row.portfolioContribution.range.minSavingsMinorUnits = -1;
+  },
+  row => {
+    row.savingsAggregationPolicy = 'add-everything';
+  },
+  row => {
+    row.savingsOwnerResourceId = 123;
+  },
+]) {
+  const invalid = structuredClone(contributionPack);
+  mutate(invalid.reporting.recommendationCatalogue.rows[0]);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'reject invalid savings metadata');
+}
+
+const { isReportScenarioSavings } = await import('../dist/index.js');
+assert.equal(
+  isReportScenarioSavings({ semantics: 'standalone-scenario', range: contribution.range, combinationPolicy: { toString: null } }),
+  false,
+  'malformed policy never invokes input coercion'
+);

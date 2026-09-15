@@ -1,4 +1,6 @@
 import { REPORT_EVIDENCE_LIMITS, type ReportCompactRecommendation } from './reportEvidence';
+import { isReportSavingsBasis } from './reportSpendValidation';
+import { hasValidReportSavingsMetadata } from './reportSavingsContributionValidation';
 import {
   isRecord,
   isString,
@@ -15,14 +17,18 @@ import {
 
 const isCompactRecommendationResource = (value: unknown): value is JsonRecord =>
   isRecord(value) &&
+  hasValidReportSavingsMetadata(value) &&
   isString(value.id) &&
   ['name', 'type', 'resourceGroup', 'location', 'currency', 'currencySymbol'].every(key => isOptionalString(value[key])) &&
   ['spend', 'spendAmortized'].every(key => isOptionalFiniteNumber(value[key])) &&
+  (value.savingsBasis === undefined || isReportSavingsBasis(value.savingsBasis)) &&
   (value.savings === undefined ||
     (isRecord(value.savings) && isOptionalFiniteNumber(value.savings.minAmount) && isOptionalFiniteNumber(value.savings.maxAmount)));
 
 export const isCompactRecommendation = (value: unknown): value is ReportCompactRecommendation => {
   if (!isRecord(value) || !isRecord(value.recommendation) || !Array.isArray(value.resources)) return false;
+  if (!hasValidReportSavingsMetadata(value)) return false;
+  if (value.savingsBasis !== undefined && !isReportSavingsBasis(value.savingsBasis)) return false;
   const recommendation = value.recommendation;
   const assessment = recommendation.securityAssessmentSummary;
   if (
