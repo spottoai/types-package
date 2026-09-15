@@ -1,0 +1,43 @@
+import {
+  WEEKLY_AVAILABILITY_FIXTURES_V1,
+  isResourceSchedulePermissionManifestConsent,
+  isResourceStrategyWeeklyScheduleSuggestion,
+  isResourceStrategyWeeklyScheduleWriteRequest,
+  type ResourceSchedulePermissionManifestConsent,
+  type ResourceStrategyWeeklyScheduleSuggestion,
+  type ResourceStrategyWeeklyScheduleWriteRequest,
+} from '@spottoai/types-package/scheduler';
+
+const definition: ResourceStrategyWeeklyScheduleWriteRequest = {
+  definitionType: 'resource-strategy-weekly',
+  providerScopeId: 'subscription-1',
+  cloudAccountId: 'cloud-account-1',
+  resourceId: '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1',
+  capability: { capabilityId: 'azure.compute.virtual-machines.runtime', capabilityVersion: 1 },
+  name: 'Weekday availability',
+  timezone: 'Pacific/Auckland',
+  rules: [{ ruleId: 'restore', transition: 'restore', daysOfWeek: [1], desiredStateAtLocal: '08:00' }],
+  initialMode: 'draft',
+  notificationPolicyId: 'notification-policy-1',
+};
+
+const consent: ResourceSchedulePermissionManifestConsent = {
+  version: 'manifest-v1',
+  contentHash: 'sha256:manifest',
+  orderedGrantGroupHashes: ['sha256:group'],
+};
+
+const suggestion: ResourceStrategyWeeklyScheduleSuggestion = {
+  definitionType: 'resource-strategy-weekly',
+  capability: definition.capability,
+  rules: definition.rules,
+};
+
+if (
+  !isResourceStrategyWeeklyScheduleWriteRequest(definition) ||
+  !isResourceStrategyWeeklyScheduleSuggestion(suggestion) ||
+  !isResourceSchedulePermissionManifestConsent(consent) ||
+  WEEKLY_AVAILABILITY_FIXTURES_V1.length === 0
+) {
+  throw new Error('Resource strategy scheduler package contract is unavailable.');
+}

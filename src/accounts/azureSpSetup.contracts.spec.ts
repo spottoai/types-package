@@ -25,6 +25,7 @@ import type {
   AzureSpSetupDurableStateTableProjectionV1,
   AzureSpSetupDurableStateV1,
 } from './azureSpSetupDurable';
+import type { ResourceSchedulePermissionManifestConsent } from '../scheduler/resourceStrategy';
 
 const assistedSetupSubscriptionLimit: 100 = AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS;
 
@@ -426,6 +427,18 @@ const executeRequest: AzureSpSetupExecuteRequest = {
   writeBitmask: 0,
 };
 
+const resourceSchedulingConsent: ResourceSchedulePermissionManifestConsent = {
+  version: 'manifest-v1',
+  contentHash: 'sha256:manifest',
+  orderedGrantGroupHashes: ['sha256:group-1', 'sha256:group-2'],
+};
+
+const resourceSchedulingExecuteRequest: AzureSpSetupExecuteRequest = {
+  subscriptionIds: ['sub-123'],
+  selectedPermissionInstanceKeys: [],
+  resourceSchedulingPermissionConsent: resourceSchedulingConsent,
+};
+
 const selectedExistingStorageExecuteRequest: AzureSpSetupExecuteRequest = {
   subscriptionIds: ['sub-123'],
   selectedPermissionInstanceKeys: ['subscriptionReader:/subscriptions/sub-123', 'billingExportStorage:sub-123'],
@@ -662,6 +675,7 @@ const repairExecutionRequest: AzureSpSetupExecutionRequestV1 = {
     result: 'partial',
   },
   requestedRefreshComponents: ['resourceInventory', 'billing'],
+  resourceSchedulingPermissionConsent: resourceSchedulingConsent,
   snapshotHash: 'sha256:canonical-non-secret-snapshot',
 };
 
@@ -894,6 +908,8 @@ void permissionSummary;
 void statusResponse;
 void planResponse;
 void executeRequest;
+void resourceSchedulingConsent;
+void resourceSchedulingExecuteRequest;
 void selectedExistingStorageExecuteRequest;
 void createStorageExecuteRequest;
 void skippedBillingExports;

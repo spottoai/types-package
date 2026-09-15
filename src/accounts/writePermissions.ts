@@ -9,6 +9,8 @@ export enum WritePermission {
   StorageInventory = 1 << 1, // 2
   /** Permission to create scoped Azure Policy exemptions */
   PolicyExemptions = 1 << 2, // 4
+  /** Permission to run approved resource scheduling capabilities */
+  ResourceScheduling = 1 << 3, // 8
 }
 
 /**
@@ -28,6 +30,8 @@ export interface WritePermissionMetadata {
   documentationUrl?: string;
   /** URL to script generator for creating custom roles */
   scriptGeneratorUrl?: string;
+  /** Identifies permissions whose provider grants come from an immutable multi-group manifest. */
+  permissionManifestKind?: 'resource-scheduling';
 }
 
 /**
@@ -58,5 +62,12 @@ export const WRITE_PERMISSIONS_METADATA: WritePermissionMetadata[] = [
     requiredRoles: ['Custom role with Azure Policy exemption actions at the target and assignment scopes'],
     documentationUrl: 'https://docs.spotto.ai/docs/portal/write-permissions/policy-exemptions',
     scriptGeneratorUrl: '/scripts/policy-exemptions-role',
+  },
+  {
+    id: WritePermission.ResourceScheduling,
+    displayName: 'Resource Scheduling',
+    description: 'Allows Spotto to run explicitly approved resource scheduling capabilities at their exact Azure scopes.',
+    requiredRoles: [],
+    permissionManifestKind: 'resource-scheduling',
   },
 ];

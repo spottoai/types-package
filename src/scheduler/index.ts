@@ -1,4 +1,3 @@
-export * from './bastionSchedule';
-export * from './bastionScheduleProfile';
-export * from './bastionScheduleValidation';
 export * from './scheduler';
+export * from './resourceStrategy';
+export * from './weeklyAvailabilityFixtures';

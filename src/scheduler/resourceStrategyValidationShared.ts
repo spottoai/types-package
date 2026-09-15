@@ -1,0 +1,227 @@
+import { RESOURCE_STRATEGY_CONTRACT_LIMITS, type ResourceSchedulingCapabilityRef } from './resourceStrategyContracts';
+
+const FORBIDDEN_AUTHORING_KEYS = new Set([
+  '__proto__',
+  'prototype',
+  'constructor',
+  'actionId',
+  'actionRef',
+  'actionDefinitionId',
+  'actionDefinitionRef',
+  'workflowRef',
+  'operation',
+  'providerOperation',
+  'compiledOperation',
+  'httpMethod',
+  'endpoint',
+  'apiVersion',
+  'requestTemplate',
+  'permissions',
+  'permissionActions',
+  'permissionSetRef',
+  'permissionSetRefs',
+  'baseline',
+  'baselineRef',
+  'selectorRef',
+  'restoreBaseline',
+  'compiledDueRow',
+]);
+const INHERITED_FORBIDDEN_AUTHORING_KEYS = [...FORBIDDEN_AUTHORING_KEYS].filter(
+  key => key !== '__proto__' && key !== 'prototype' && key !== 'constructor'
+);
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return false;
+  try {
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype !== Object.prototype && prototype !== null) return false;
+    return Reflect.ownKeys(value).every(key => {
+      if (typeof key !== 'string') return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return descriptor !== undefined && descriptor.enumerable && 'value' in descriptor;
+    });
+  } catch {
+    return false;
+  }
+}
+export function hasOnlyKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+  try {
+    const allowedSet = new Set(allowed);
+    return (
+      Object.keys(value).every(key => allowedSet.has(key)) &&
+      allowed.every(key => !Reflect.has(value, key) || Object.prototype.hasOwnProperty.call(value, key))
+    );
+  } catch {
+    return false;
+  }
+}
+export function isBoundedString(value: unknown, maximum: number = RESOURCE_STRATEGY_CONTRACT_LIMITS.textLength): value is string {
+  return typeof value === 'string' && value.length > 0 && value.length <= maximum;
+}
+export function isOptionalBoundedString(value: unknown, maximum: number = RESOURCE_STRATEGY_CONTRACT_LIMITS.textLength): boolean {
+  return value === undefined || isBoundedString(value, maximum);
+}
+export function isPositiveInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+}
+export function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+}
+export function isIsoTimestamp(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/.test(value)) return false;
+  const instant = new Date(value);
+  if (!Number.isFinite(instant.getTime())) return false;
+  const canonical = instant.toISOString();
+  return value.includes('.') ? canonical === value : canonical.replace('.000Z', 'Z') === value;
+}
+export function isDate(value: unknown): value is string {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+export function isTime(value: unknown): value is string {
+  return typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+export function isCurrency(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Z]{3}$/.test(value);
+}
+export function isNonNegativeDecimal(value: unknown): value is string {
+  return typeof value === 'string' && /^\d{1,15}(?:\.\d{1,8})?$/.test(value);
+}
+export function isIanaTimezone(value: unknown): value is string {
+  if (!isBoundedString(value, 100)) return false;
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function jsonStringByteLengthWithin(value: string, maximum: number): number | null {
+  let bytes = 2;
+  for (let index = 0; index < value.length; index += 1) {
+    const codeUnit = value.charCodeAt(index);
+    if (
+      codeUnit === 0x22 ||
+      codeUnit === 0x5c ||
+      codeUnit === 0x08 ||
+      codeUnit === 0x09 ||
+      codeUnit === 0x0a ||
+      codeUnit === 0x0c ||
+      codeUnit === 0x0d
+    ) {
+      bytes += 2;
+    } else if (
+      codeUnit <= 0x1f ||
+      (codeUnit >= 0xd800 &&
+        codeUnit <= 0xdfff &&
+        !(codeUnit <= 0xdbff && index + 1 < value.length && value.charCodeAt(index + 1) >= 0xdc00 && value.charCodeAt(index + 1) <= 0xdfff))
+    ) {
+      bytes += 6;
+    } else if (codeUnit <= 0x7f) {
+      bytes += 1;
+    } else if (codeUnit <= 0x7ff) {
+      bytes += 2;
+    } else if (codeUnit <= 0xdbff) {
+      bytes += 4;
+      index += 1;
+    } else {
+      bytes += 3;
+    }
+    if (bytes > maximum) return null;
+  }
+  return bytes;
+}
+
+export function isWithinJsonByteLimit(value: unknown, maximum: number): boolean {
+  if (!Number.isSafeInteger(maximum) || maximum < 0) return false;
+  const stack: unknown[] = [value];
+  let bytes = 0;
+  let nodes = 0;
+  try {
+    while (stack.length > 0) {
+      nodes += 1;
+      if (nodes > 10_000) return false;
+      const current = stack.pop();
+      if (current === null) {
+        bytes += 4;
+      } else if (typeof current === 'string') {
+        const stringBytes = jsonStringByteLengthWithin(current, maximum - bytes);
+        if (stringBytes === null) return false;
+        bytes += stringBytes;
+      } else if (typeof current === 'number') {
+        if (!Number.isFinite(current)) return false;
+        bytes += String(Object.is(current, -0) ? 0 : current).length;
+      } else if (typeof current === 'boolean') {
+        bytes += current ? 4 : 5;
+      } else if (Array.isArray(current)) {
+        if (Object.getPrototypeOf(current) !== Array.prototype) return false;
+        bytes += 2 + Math.max(0, current.length - 1);
+        if (bytes > maximum) return false;
+        const ownKeys = Reflect.ownKeys(current);
+        if (ownKeys.length !== current.length + 1 || !ownKeys.includes('length')) return false;
+        for (let index = 0; index < current.length; index += 1) {
+          const descriptor = Object.getOwnPropertyDescriptor(current, String(index));
+          if (descriptor === undefined || !descriptor.enumerable || !('value' in descriptor)) return false;
+          stack.push(descriptor.value);
+        }
+      } else if (isRecord(current)) {
+        const keys = Object.keys(current);
+        bytes += 2 + Math.max(0, keys.length - 1);
+        if (bytes > maximum) return false;
+        for (const key of keys) {
+          const keyBytes = jsonStringByteLengthWithin(key, maximum - bytes);
+          if (keyBytes === null) return false;
+          bytes += keyBytes + 1;
+          if (bytes > maximum) return false;
+          const descriptor = Object.getOwnPropertyDescriptor(current, key);
+          if (descriptor === undefined || !('value' in descriptor)) return false;
+          stack.push(descriptor.value);
+        }
+      } else {
+        return false;
+      }
+      if (bytes > maximum) return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+export function isBoundedStringArray(value: unknown, maximum: number = RESOURCE_STRATEGY_CONTRACT_LIMITS.metadataItems): value is string[] {
+  return Array.isArray(value) && value.length <= maximum && value.every(item => isBoundedString(item, 2000));
+}
+export function containsForbiddenKey(value: unknown, depth = 0): boolean {
+  try {
+    if (depth > 8) return true;
+    if (value !== null && typeof value === 'object') {
+      if (INHERITED_FORBIDDEN_AUTHORING_KEYS.some(key => Reflect.has(value, key) && !Object.prototype.hasOwnProperty.call(value, key))) {
+        return true;
+      }
+    }
+    if (Array.isArray(value)) return value.some(item => containsForbiddenKey(item, depth + 1));
+    if (!isRecord(value)) return false;
+    return Object.keys(value).some(key => FORBIDDEN_AUTHORING_KEYS.has(key) || containsForbiddenKey(value[key], depth + 1));
+  } catch {
+    return true;
+  }
+}
+function isBoundedJsonValue(value: unknown, depth = 0): boolean {
+  if (depth > 8) return false;
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return true;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (Array.isArray(value)) return value.length <= 128 && value.every(item => isBoundedJsonValue(item, depth + 1));
+  if (!isRecord(value) || Object.keys(value).length > 128) return false;
+  return Object.entries(value).every(([key, item]) => !FORBIDDEN_AUTHORING_KEYS.has(key) && isBoundedJsonValue(item, depth + 1));
+}
+export function isBoundedParameters(value: unknown): value is Record<string, unknown> {
+  if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.parameterBytes)) return false;
+  return isRecord(value) && isBoundedJsonValue(value) && !containsForbiddenKey(value);
+}
+export function isCapabilityRef(value: unknown): value is ResourceSchedulingCapabilityRef {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, ['capabilityId', 'capabilityVersion']) &&
+    isBoundedString(value.capabilityId, 200) &&
+    isPositiveInteger(value.capabilityVersion)
+  );
+}
