@@ -53,6 +53,7 @@
     "src/common/capabilityPassport.contracts.spec.ts",
     "src/common/provider.contracts.spec.ts",
     "src/environment/environment.contracts.spec.ts",
+    "src/features-and-permissions/access.contracts.spec.ts",
     "src/identity/microsoftSignInAdminConsent.contracts.spec.ts",
     "src/portfolio/portfolioProjections.contracts.spec.ts",
     "tests/**/*.ts"

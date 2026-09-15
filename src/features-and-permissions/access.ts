@@ -108,9 +108,7 @@ export interface PortalCompanyFeatureOverrideUpsertRequest {
 
 export type PortalRoleAssignmentSource = 'legacy_migration' | 'admin_assignment' | 'seed';
 
-export type PortalAssignmentDataScope =
-  | { mode: 'unrestricted' }
-  | { mode: 'scoped'; scopeIds: string[] };
+export type PortalAssignmentDataScope = { mode: 'unrestricted' } | { mode: 'scoped'; scopeIds: string[] };
 
 export type PortalAccessIdSelector = { mode: 'all' } | { mode: 'selected'; ids: string[] };
 export type PortalAccessGroupSelector = { mode: 'all' } | { mode: 'selected'; names: string[] };
@@ -188,10 +186,26 @@ export interface PortalEffectiveAccessResponse {
   sources: PortalEffectiveAccessSource[];
 }
 
+export type PortalDataScopeMode = 'unrestricted' | 'restricted' | 'none' | 'unavailable';
+
+export interface PortalAccessScopeSummaryItem {
+  id: string;
+  name: string;
+}
+
+export interface PortalAccessScopeSummary {
+  /** Opaque cache identity for the caller's effective scope. It is not an authorization token. */
+  fingerprint: string;
+  eligibleSubscriptionCount: number;
+  scopes: PortalAccessScopeSummaryItem[];
+}
+
 export interface PortalFeatureActionAccess {
   action: PortalAccessAction;
   actionabilityState: PortalActionabilityState;
   reasonCode: PortalAccessReasonCode;
+  /** Present on scope-aware bootstrap responses; optional while older API deployments remain in rotation. */
+  dataScopeMode?: PortalDataScopeMode;
 }
 
 export interface PortalFeatureAccessSummary {
@@ -216,6 +230,7 @@ export interface PortalAccessBootstrapResponse {
   principalType: PortalPrincipalType;
   principalId: string;
   catalogVersion: string;
+  scopeSummary?: PortalAccessScopeSummary;
   featureSets: PortalFeatureSetAccessSummary[];
   features: PortalFeatureAccessSummary[];
 }
