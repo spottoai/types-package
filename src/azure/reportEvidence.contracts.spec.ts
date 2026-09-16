@@ -2,6 +2,7 @@ import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
   type ReportCostChangePeriod,
+  type ReportCommitmentInventoryRow,
   type ReportProjectionRecord,
   type SubscriptionReportEvidencePack,
   type SubscriptionReportHistory,
@@ -27,6 +28,18 @@ void [dailyValidation, legacyDailyProjection];
 
 const rows = <T>(values: T[] = []): ReportBoundedRows<T> => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const projectedRows = rows<ReportProjectionRecord>();
+const reservationWithUtilization: ReportCommitmentInventoryRow = {
+  id: 'reservation-1',
+  benefitType: 'reservation',
+  utilization: { sevenDay: 84.5, thirtyDay: 88.2, source: 'reservation-summary' },
+};
+const savingsPlanWithUtilization: ReportCommitmentInventoryRow = {
+  id: 'savings-plan-1',
+  benefitType: 'savings-plan',
+  utilization: { thirtyDay: 108, source: 'usage' },
+};
+const legacyCommitmentRow: ReportCommitmentInventoryRow = { id: 'reservation-legacy', benefitType: 'reservation' };
+void [reservationWithUtilization, savingsPlanWithUtilization, legacyCommitmentRow];
 const costChangePeriods = rows<ReportCostChangePeriod>([
   {
     period: '2026-08',

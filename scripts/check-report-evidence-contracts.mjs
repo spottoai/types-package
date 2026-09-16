@@ -230,6 +230,32 @@ const tenantPack = {
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
 assert.equal(isSubscriptionReportHistory(history), true);
+const commitmentUtilizationPack = structuredClone(subscriptionPack);
+commitmentUtilizationPack.reporting.commitmentsPlanning.inventorySummary = {
+  totalCount: 2,
+  statusCounts: { active: 2 },
+  benefitTypeCounts: { reservation: 1, 'savings-plan': 1 },
+};
+commitmentUtilizationPack.reporting.commitmentsPlanning.inventory = rows([
+  {
+    id: 'reservation-1',
+    benefitType: 'reservation',
+    status: 'active',
+    utilization: { sevenDay: 84.5, thirtyDay: 88.2, source: 'reservation-summary' },
+  },
+  {
+    id: 'savings-plan-1',
+    benefitType: 'savings-plan',
+    status: 'active',
+    utilization: { thirtyDay: 108, source: 'usage' },
+  },
+]);
+assert.equal(isSubscriptionReportEvidencePack(commitmentUtilizationPack), true);
+for (const utilization of [null, {}, { thirtyDay: '88' }, { sevenDay: -1 }, { thirtyDay: Infinity }, { thirtyDay: 88, source: 'unknown' }]) {
+  const invalid = structuredClone(commitmentUtilizationPack);
+  invalid.reporting.commitmentsPlanning.inventory.rows[0].utilization = utilization;
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, 'Malformed commitment utilization rejected');
+}
 for (const evidence of [
   {
     status: 'available',

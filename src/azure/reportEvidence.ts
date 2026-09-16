@@ -5,6 +5,7 @@ import type { SecureScoreEvidence } from './secureScore';
 import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 import type { ChangeType } from './reports';
+import type { IBenefitUtilization } from './benefits';
 
 export const REPORT_EVIDENCE_LIMITS = {
   detailRows: 50,
@@ -327,6 +328,10 @@ export interface ReportCommitmentInventorySummary {
   benefitTypeCounts?: Record<string, number>;
 }
 
+/** Per-item percentage evidence. Omit when neither period has a reading. */
+export type ReportCommitmentUtilization = Pick<IBenefitUtilization, 'source'> &
+  ({ sevenDay: number; thirtyDay?: number } | { sevenDay?: number; thirtyDay: number });
+
 export interface ReportCommitmentInventoryRow {
   id?: string;
   benefitType?: string;
@@ -341,6 +346,7 @@ export interface ReportCommitmentInventoryRow {
   location?: string;
   term?: string;
   renew?: boolean;
+  utilization?: ReportCommitmentUtilization;
   annualCommittedCost?: ReportProjectionRecord;
   doNotRenewAnnualImpact?: ReportProjectionRecord;
 }

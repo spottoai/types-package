@@ -317,6 +317,12 @@ const isResourceHealthEvent = (value: unknown): value is JsonRecord =>
   (value.impactedServices === undefined || isStringArray(value.impactedServices)) &&
   (value.impactedRegions === undefined || isStringArray(value.impactedRegions));
 
+const isCommitmentUtilization = (value: unknown): boolean =>
+  isRecord(value) &&
+  (value.sevenDay !== undefined || value.thirtyDay !== undefined) &&
+  ['sevenDay', 'thirtyDay'].every(key => value[key] === undefined || (isFiniteNumber(value[key]) && value[key] >= 0)) &&
+  (value.source === undefined || ['aggregate', 'usage', 'reservation-summary'].includes(value.source as string));
+
 function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
   return (
     isRecord(value) &&
@@ -334,6 +340,7 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
     ]) &&
     hasOptionalNumbers(value, ['daysToExpiry', 'reservedQuantity']) &&
     isOptionalBoolean(value.renew) &&
+    (value.utilization === undefined || isCommitmentUtilization(value.utilization)) &&
     (value.annualCommittedCost === undefined || isRecord(value.annualCommittedCost)) &&
     (value.doNotRenewAnnualImpact === undefined || isRecord(value.doNotRenewAnnualImpact))
   );
