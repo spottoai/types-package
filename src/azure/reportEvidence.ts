@@ -4,6 +4,7 @@ import type { TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
 import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
+import type { ChangeType } from './reports';
 
 export const REPORT_EVIDENCE_LIMITS = {
   detailRows: 50,
@@ -24,6 +25,10 @@ export const REPORT_EVIDENCE_LIMITS = {
   upcomingEvents: 20,
   historyPeriods: 13,
   historyRecommendations: 2000,
+  historyComparisonIdentities: 2000,
+  costChangePeriods: 13,
+  costChangeDrivers: 50,
+  costChangeReasons: 10,
   tenantGlobalAdministrators: 50,
 } as const;
 
@@ -159,6 +164,53 @@ export interface ReportCostSavingsProjection {
   basis?: CostSavingsSummaryBasis;
 }
 
+export type ReportCostChangeDriverLevel = 'service' | 'resource-group' | 'resource' | 'meter';
+export type ReportCostChangeReasonType =
+  | 'new_resource'
+  | 'removed_resource'
+  | 'quantity_increase'
+  | 'quantity_decrease'
+  | 'rate_change'
+  | 'sku_change'
+  | 'new_meter'
+  | 'removed_meter';
+
+export interface ReportCostChangeReason {
+  type: ReportCostChangeReasonType;
+  impact: number;
+  impactPercent?: number;
+  description: string;
+  oldValue?: string | number;
+  newValue?: string | number;
+}
+
+export interface ReportCostChangeDriver {
+  /** Stable producer identity for comparisons and de-duplication. */
+  key: string;
+  level: ReportCostChangeDriverLevel;
+  label: string;
+  resourceId?: string;
+  currentCost: number;
+  previousCost: number;
+  change: number;
+  changePercent?: number;
+  changeType: ChangeType;
+  summary?: string;
+  reasons: ReportBoundedRows<ReportCostChangeReason>;
+}
+
+export interface ReportCostChangePeriod {
+  /** Current and comparison billing months in YYYY-MM form. */
+  period: string;
+  previousPeriod: string;
+  currency: string;
+  currentCost: number;
+  previousCost: number;
+  change: number;
+  changePercent?: number;
+  drivers: ReportBoundedRows<ReportCostChangeDriver>;
+}
+
 export interface ReportRecommendationPortfolio {
   sourceRecommendationCount: number;
   activeRecommendationCount: number;
@@ -271,6 +323,8 @@ export interface ReportComplianceAssessment {
 export interface ReportCommitmentInventorySummary {
   totalCount: number;
   statusCounts: Record<string, number>;
+  /** Complete counts calculated from inventory before detail truncation. */
+  benefitTypeCounts?: Record<string, number>;
 }
 
 export interface ReportCommitmentInventoryRow {
@@ -306,15 +360,49 @@ export interface ReportPatchManagementProjection extends ReportProjectionRecord 
   machines: ReportBoundedRows<ReportProjectionRecord>;
 }
 
+export interface ReportDataProtectionCostTotals {
+  actualCostLast30Days?: number;
+  actualAmortizedCostLast30Days?: number;
+  allocatedCostLast30Days?: number;
+  estimatedMonthlyCostForUnprotected?: number;
+}
+
+export interface ReportDataProtectionCostSummary extends ReportProjectionRecord {
+  currencyCode?: string;
+  currencySymbol?: string;
+  billingWindow?: ReportProjectionRecord;
+  totals?: ReportDataProtectionCostTotals;
+}
+
 export interface ReportDataProtectionProjection extends ReportProjectionRecord {
+  /** Native backup-cost totals; preferred over compatibility fields in summary. */
+  costSummary?: ReportDataProtectionCostSummary;
   items: ReportBoundedRows<ReportProjectionRecord>;
   issues: ReportBoundedRows<ReportProjectionRecord>;
 }
 
+export interface ReportResourceHealthEvent extends ReportProjectionRecord {
+  id?: string;
+  trackingId?: string;
+  eventType?: string;
+  status?: string;
+  level?: string;
+  title?: string;
+  summary?: string;
+  impactStartTime?: string;
+  impactMitigationTime?: string;
+  lastUpdateTime?: string;
+  durationSeconds?: number;
+  priority?: number;
+  impactedServices?: string[];
+  impactedRegions?: string[];
+  impactedResourceCount?: number;
+}
+
 export interface ReportResourceHealthProjection {
-  eventCatalogue?: ReportBoundedRows<ReportProjectionRecord>;
+  eventCatalogue?: ReportBoundedRows<ReportResourceHealthEvent>;
   availabilityCatalogue?: ReportBoundedRows<ReportProjectionRecord>;
-  events: ReportProjectionRecord & { events: ReportBoundedRows<ReportProjectionRecord> };
+  events: ReportProjectionRecord & { events: ReportBoundedRows<ReportResourceHealthEvent> };
   availabilityStatuses: ReportProjectionRecord & { statuses: ReportBoundedRows<ReportProjectionRecord> };
 }
 
@@ -361,6 +449,8 @@ export interface SubscriptionReportingProjection {
   /** Explicit cost bases and source components; preferred over unqualified legacy dashboard totals. */
   spend?: ReportSpendProjection;
   dashboard: ReportProjectionRecord;
+  /** Bounded billing-month explanations derived from the cost decomposition tree. */
+  costChangePeriods?: ReportBoundedRows<ReportCostChangePeriod>;
   /** Optional on older packs. Missing or incomplete coverage must not become zero spend. */
   dailySpend?: ReportDailySpend;
   recommendationPortfolio: ReportRecommendationPortfolio;
@@ -515,12 +605,23 @@ export interface SubscriptionReportHistoryMetrics {
   maximumMonthlySavings?: number;
 }
 
+export interface ReportHistoryComparisonIdentities {
+  /** Stable recommendation IDs classified as cost-saving recommendations. */
+  costRecommendationIds: ReportBoundedRows<string>;
+  /** Full Azure resource IDs for VMs classified as undersized in this period. */
+  undersizedResourceIds: ReportBoundedRows<string>;
+  /** Semantic governance assessment keys, not presentation labels. */
+  regulatoryAssessmentKeys: ReportBoundedRows<string>;
+}
+
 export interface SubscriptionReportHistoryPeriod {
   period: string;
   sourceRunId: string;
   sourceGeneratedAt: string;
   metrics: SubscriptionReportHistoryMetrics;
   recommendations: ReportBoundedRows<ReportRecommendationFingerprint>;
+  /** Optional on older history; enables category-specific 1/2/3-month deltas. */
+  comparisonIdentities?: ReportHistoryComparisonIdentities;
 }
 
 export interface SubscriptionReportHistory {
@@ -568,6 +669,9 @@ export interface TenantReportGlobalAdministrator {
   isPimBacked: boolean;
   lastActivatedAt?: string;
   lastActivatedEvidence: string;
+  /** Most recent sign-in timestamp under the basis declared by lastSignInEvidence. */
+  lastSignInAt?: string;
+  lastSignInEvidence?: 'last-successful-sign-in' | 'last-interactive-sign-in' | 'unavailable';
 }
 
 export interface TenantReportEvidencePack {

@@ -64,6 +64,62 @@ const isCostSavingsCategory = (value: unknown): value is JsonRecord =>
   isCount(value.resourceCount) &&
   ['currentMonthlyCost', 'potentialMonthlyCost', 'minimumMonthlySavings', 'maximumMonthlySavings'].every(key => isFiniteNumber(value[key]));
 
+const REPORT_COST_CHANGE_LEVELS = new Set(['service', 'resource-group', 'resource', 'meter']);
+const REPORT_COST_CHANGE_TYPES = new Set(['increase', 'decrease', 'no_change', 'new_resource', 'removed_resource']);
+const REPORT_COST_CHANGE_REASON_TYPES = new Set([
+  'new_resource',
+  'removed_resource',
+  'quantity_increase',
+  'quantity_decrease',
+  'rate_change',
+  'sku_change',
+  'new_meter',
+  'removed_meter',
+]);
+
+const isStringOrFiniteNumber = (value: unknown): value is string | number => isString(value) || isFiniteNumber(value);
+
+const isCostChangeReason = (value: unknown): value is JsonRecord =>
+  isRecord(value) &&
+  isString(value.type) &&
+  REPORT_COST_CHANGE_REASON_TYPES.has(value.type) &&
+  isFiniteNumber(value.impact) &&
+  isOptionalFiniteNumber(value.impactPercent) &&
+  isString(value.description) &&
+  (value.oldValue === undefined || isStringOrFiniteNumber(value.oldValue)) &&
+  (value.newValue === undefined || isStringOrFiniteNumber(value.newValue));
+
+const isCostChangeDriver = (value: unknown): value is JsonRecord =>
+  isRecord(value) &&
+  isString(value.key) &&
+  isString(value.level) &&
+  REPORT_COST_CHANGE_LEVELS.has(value.level) &&
+  isString(value.label) &&
+  isOptionalString(value.resourceId) &&
+  isFiniteNumber(value.currentCost) &&
+  isFiniteNumber(value.previousCost) &&
+  isFiniteNumber(value.change) &&
+  isOptionalFiniteNumber(value.changePercent) &&
+  isString(value.changeType) &&
+  REPORT_COST_CHANGE_TYPES.has(value.changeType) &&
+  isOptionalString(value.summary) &&
+  isBoundedRows(value.reasons, REPORT_EVIDENCE_LIMITS.costChangeReasons, isCostChangeReason);
+
+const isCostChangePeriod = (value: unknown): value is JsonRecord =>
+  isRecord(value) &&
+  isString(value.period) &&
+  /^\d{4}-(0[1-9]|1[0-2])$/u.test(value.period) &&
+  isString(value.previousPeriod) &&
+  /^\d{4}-(0[1-9]|1[0-2])$/u.test(value.previousPeriod) &&
+  value.previousPeriod < value.period &&
+  isString(value.currency) &&
+  /^[A-Z]{3}$/u.test(value.currency) &&
+  isFiniteNumber(value.currentCost) &&
+  isFiniteNumber(value.previousCost) &&
+  isFiniteNumber(value.change) &&
+  isOptionalFiniteNumber(value.changePercent) &&
+  isBoundedRows(value.drivers, REPORT_EVIDENCE_LIMITS.costChangeDrivers, isCostChangeDriver);
+
 const hasRequiredCountKeys = (value: unknown, keys: readonly string[]): value is Record<string, number> =>
   isCountRecord(value) && keys.every(key => Object.prototype.hasOwnProperty.call(value, key));
 
@@ -215,7 +271,10 @@ const isCommitments = (value: unknown): boolean => {
   }
   if (
     value.inventorySummary.totalCount !== value.inventory.totalCount ||
-    countTotal(value.inventorySummary.statusCounts) !== value.inventorySummary.totalCount
+    countTotal(value.inventorySummary.statusCounts) !== value.inventorySummary.totalCount ||
+    (value.inventorySummary.benefitTypeCounts !== undefined &&
+      (!isCountRecord(value.inventorySummary.benefitTypeCounts) ||
+        countTotal(value.inventorySummary.benefitTypeCounts) !== value.inventorySummary.totalCount))
   ) {
     return false;
   }
@@ -224,6 +283,39 @@ const isCommitments = (value: unknown): boolean => {
     isProjectionRows(value[key])
   );
 };
+
+const isDataProtectionCostSummary = (value: unknown): boolean =>
+  isRecord(value) &&
+  hasOptionalStrings(value, ['currencyCode', 'currencySymbol']) &&
+  (value.billingWindow === undefined || isRecord(value.billingWindow)) &&
+  (value.totals === undefined ||
+    (isRecord(value.totals) &&
+      hasOptionalNumbers(value.totals, [
+        'actualCostLast30Days',
+        'actualAmortizedCostLast30Days',
+        'allocatedCostLast30Days',
+        'estimatedMonthlyCostForUnprotected',
+      ])));
+
+const isResourceHealthEvent = (value: unknown): value is JsonRecord =>
+  isRecord(value) &&
+  hasOptionalStrings(value, [
+    'id',
+    'trackingId',
+    'eventType',
+    'status',
+    'level',
+    'title',
+    'summary',
+    'impactStartTime',
+    'impactMitigationTime',
+    'lastUpdateTime',
+  ]) &&
+  isOptionalFiniteNumber(value.priority) &&
+  (value.durationSeconds === undefined || (isFiniteNumber(value.durationSeconds) && value.durationSeconds >= 0)) &&
+  (value.impactedResourceCount === undefined || isCount(value.impactedResourceCount)) &&
+  (value.impactedServices === undefined || isStringArray(value.impactedServices)) &&
+  (value.impactedRegions === undefined || isStringArray(value.impactedRegions));
 
 function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
   return (
@@ -251,6 +343,13 @@ const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
   if (value.dailySpend !== undefined && !isReportDailySpend(value.dailySpend)) return false;
   if (value.spend !== undefined && !isReportSpendProjection(value.spend)) return false;
+  if (
+    value.costChangePeriods !== undefined &&
+    (!isBoundedRows(value.costChangePeriods, REPORT_EVIDENCE_LIMITS.costChangePeriods, isCostChangePeriod) ||
+      new Set(value.costChangePeriods.rows.map(period => period.period)).size !== value.costChangePeriods.rows.length)
+  ) {
+    return false;
+  }
   const subscription = isRecord(value.dashboard.subscription) ? value.dashboard.subscription : undefined;
   const properties = subscription && isRecord(subscription.properties) ? subscription.properties : undefined;
   if (properties?.secureScoreEvidence !== undefined && !isReportSecureScoreEvidence(properties.secureScoreEvidence)) return false;
@@ -282,13 +381,14 @@ const isReportingProjection = (value: unknown): boolean => {
     isRecord(patch) &&
     isProjectionRows(patch.machines) &&
     isRecord(protection) &&
+    (protection.costSummary === undefined || isDataProtectionCostSummary(protection.costSummary)) &&
     isProjectionRows(protection.items) &&
     isProjectionRows(protection.issues) &&
     isRecord(health) &&
-    (health.eventCatalogue === undefined || isBoundedRows(health.eventCatalogue, REPORT_EVIDENCE_LIMITS.healthCatalogue, isRecord)) &&
+    (health.eventCatalogue === undefined || isBoundedRows(health.eventCatalogue, REPORT_EVIDENCE_LIMITS.healthCatalogue, isResourceHealthEvent)) &&
     (health.availabilityCatalogue === undefined || isBoundedRows(health.availabilityCatalogue, REPORT_EVIDENCE_LIMITS.healthCatalogue, isRecord)) &&
     isRecord(health.events) &&
-    isProjectionRows(health.events.events) &&
+    isBoundedRows(health.events.events, REPORT_EVIDENCE_LIMITS.detailRows, isResourceHealthEvent) &&
     (health.eventCatalogue === undefined || health.eventCatalogue.totalCount === (health.events.events as ReportBoundedRows<unknown>).totalCount) &&
     isRecord(health.availabilityStatuses) &&
     isProjectionRows(health.availabilityStatuses.statuses) &&
@@ -426,6 +526,16 @@ const isHistoryMetrics = (value: unknown): value is SubscriptionReportHistoryMet
   value.securityImpactedResourceCount <= value.impactedResourceCount &&
   isOptionalFiniteNumber(value.maximumMonthlySavings);
 
+const isUniqueIdentityRows = (value: unknown, itemValidator: (item: unknown) => item is string = isString): boolean =>
+  isBoundedRows(value, REPORT_EVIDENCE_LIMITS.historyComparisonIdentities, itemValidator) &&
+  new Set((value as ReportBoundedRows<string>).rows).size === (value as ReportBoundedRows<string>).rows.length;
+
+const isHistoryComparisonIdentities = (value: unknown): boolean =>
+  isRecord(value) &&
+  isUniqueIdentityRows(value.costRecommendationIds) &&
+  isUniqueIdentityRows(value.undersizedResourceIds) &&
+  isUniqueIdentityRows(value.regulatoryAssessmentKeys, (item): item is string => isString(item) && /^[a-f0-9]{64}$/u.test(item));
+
 export const isSubscriptionReportHistory = (value: unknown): value is SubscriptionReportHistory => {
   if (
     !isRecord(value) ||
@@ -448,7 +558,8 @@ export const isSubscriptionReportHistory = (value: unknown): value is Subscripti
       !isString(period.sourceRunId) ||
       !isDateTime(period.sourceGeneratedAt) ||
       !isHistoryMetrics(period.metrics) ||
-      !isBoundedRows(period.recommendations, REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint)
+      !isBoundedRows(period.recommendations, REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint) ||
+      (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities))
     ) {
       return false;
     }
@@ -511,7 +622,11 @@ const isTenantPrincipal = (value: unknown): value is TenantReportGlobalAdministr
   typeof value.isPimBacked === 'boolean' &&
   isString(value.lastActivatedEvidence) &&
   hasOptionalStrings(value, ['displayName', 'userPrincipalName', 'mfaStatus', 'lastActivatedAt']) &&
-  isOptionalBoolean(value.accountEnabled);
+  isOptionalBoolean(value.accountEnabled) &&
+  ((value.lastSignInAt === undefined && value.lastSignInEvidence === undefined) ||
+    (value.lastSignInAt === undefined && value.lastSignInEvidence === 'unavailable') ||
+    (isDateTime(value.lastSignInAt) &&
+      (value.lastSignInEvidence === 'last-successful-sign-in' || value.lastSignInEvidence === 'last-interactive-sign-in')));
 
 export const isTenantReportEvidencePack = (value: unknown): value is TenantReportEvidencePack => {
   if (

@@ -7,6 +7,38 @@ const emptyRows = () => rows([]);
 
 const reporting = {
   dashboard: {},
+  costChangePeriods: rows([
+    {
+      period: '2026-08',
+      previousPeriod: '2026-07',
+      currency: 'NZD',
+      currentCost: 125,
+      previousCost: 100,
+      change: 25,
+      drivers: rows([
+        {
+          key: 'service:virtual-machines',
+          level: 'service',
+          label: 'Virtual Machines',
+          currentCost: 75,
+          previousCost: 50,
+          change: 25,
+          changeType: 'increase',
+          summary: 'Compute usage increased.',
+          reasons: rows([
+            {
+              type: 'quantity_increase',
+              impact: 25,
+              impactPercent: 100,
+              description: 'Usage increased by 50 hours.',
+              oldValue: 100,
+              newValue: 150,
+            },
+          ]),
+        },
+      ]),
+    },
+  ]),
   recommendationPortfolio: {
     sourceRecommendationCount: 0,
     activeRecommendationCount: 0,
@@ -41,13 +73,33 @@ const reporting = {
     limitations: emptyRows(),
   },
   patchManagement: { machines: emptyRows() },
-  dataProtection: { items: emptyRows(), issues: emptyRows() },
-  resourceHealth: { events: { events: emptyRows() }, availabilityStatuses: { statuses: emptyRows() } },
+  dataProtection: {
+    costSummary: {
+      currencyCode: 'NZD',
+      totals: { actualCostLast30Days: 25, estimatedMonthlyCostForUnprotected: 10 },
+    },
+    items: emptyRows(),
+    issues: emptyRows(),
+  },
+  resourceHealth: {
+    events: {
+      events: rows([
+        {
+          id: 'incident-1',
+          status: 'Resolved',
+          impactStartTime: '2026-08-01T00:00:00.000Z',
+          impactMitigationTime: '2026-08-01T01:00:00.000Z',
+          durationSeconds: 3600,
+        },
+      ]),
+    },
+    availabilityStatuses: { statuses: emptyRows() },
+  },
   serverUptime: { workspaces: emptyRows(), gaps: emptyRows(), servers: emptyRows() },
   publicIpAddresses: { items: emptyRows() },
   activity: { changes: emptyRows(), security: emptyRows(), health: emptyRows(), suppressed: emptyRows() },
   commitmentsPlanning: {
-    inventorySummary: { totalCount: 0, statusCounts: {} },
+    inventorySummary: { totalCount: 0, statusCounts: {}, benefitTypeCounts: {} },
     inventory: emptyRows(),
     coverage: emptyRows(),
     obsoleteCandidates: emptyRows(),
@@ -127,6 +179,11 @@ const history = {
         maximumMonthlySavings: 274.08,
       },
       recommendations: rows([{ id: 'cost-1', title: 'Reduce cost', category: 'Cost', affectedResourceCount: 1, maximumMonthlySavings: 274.08 }]),
+      comparisonIdentities: {
+        costRecommendationIds: rows(['cost-1']),
+        undersizedResourceIds: rows(['/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1']),
+        regulatoryAssessmentKeys: rows(['a'.repeat(64)]),
+      },
     },
   ],
 };
@@ -146,7 +203,23 @@ const tenantPack = {
       enforcement: { enforced: 9_000, conditionallyEnforced: 900, notEnforced: 50, unknown: 50 },
     },
   },
-  globalAdmins: { summary: {}, coverage: {}, warnings: emptyRows(), principals: emptyRows() },
+  globalAdmins: {
+    summary: {},
+    coverage: {},
+    warnings: emptyRows(),
+    principals: rows([
+      {
+        principalId: 'principal-1',
+        principalType: 'user',
+        assignmentSource: 'direct',
+        assignmentModes: ['permanent'],
+        isPimBacked: false,
+        lastActivatedEvidence: 'none',
+        lastSignInAt: '2026-09-10T00:00:00.000Z',
+        lastSignInEvidence: 'last-successful-sign-in',
+      },
+    ]),
+  },
 };
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
@@ -219,12 +292,12 @@ assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
 const cataloguePack = structuredClone(populationPack);
 cataloguePack.reporting.recommendationCatalogue.rows[0].resourceCatalogue = emptyRows();
 cataloguePack.reporting.inventory.resourceCatalogue = emptyRows();
-cataloguePack.reporting.resourceHealth.eventCatalogue = emptyRows();
+cataloguePack.reporting.resourceHealth.eventCatalogue = structuredClone(cataloguePack.reporting.resourceHealth.events.events);
 cataloguePack.reporting.resourceHealth.availabilityCatalogue = emptyRows();
 assert.equal(isSubscriptionReportEvidencePack(cataloguePack), true);
 for (const mutate of [
   pack => {
-    pack.reporting.resourceHealth.eventCatalogue = rows([{ id: 'unmatched-event' }]);
+    pack.reporting.resourceHealth.eventCatalogue = rows([{ id: 'incident-1' }, { id: 'unmatched-event' }]);
   },
   pack => {
     pack.reporting.resourceHealth.availabilityCatalogue = rows([{ id: 'unmatched-status' }]);
@@ -324,6 +397,21 @@ rejectSubscription(value => {
 rejectSubscription(value => {
   value.reporting.governance.coverage = 42;
 });
+rejectSubscription(value => {
+  value.reporting.costChangePeriods.rows[0].drivers.rows[0].reasons.rows[0].type = 'guess';
+});
+rejectSubscription(value => {
+  value.reporting.costChangePeriods.rows[0].previousPeriod = '2026-09';
+});
+rejectSubscription(value => {
+  value.reporting.dataProtection.costSummary.totals.actualCostLast30Days = '25';
+});
+rejectSubscription(value => {
+  value.reporting.resourceHealth.events.events.rows[0].durationSeconds = -1;
+});
+rejectSubscription(value => {
+  value.reporting.commitmentsPlanning.inventorySummary.benefitTypeCounts = { reservation: 1 };
+});
 
 const oversizedHistory = structuredClone(history);
 const completeHistory = structuredClone(history);
@@ -398,6 +486,12 @@ assert.equal(isSubscriptionReportHistory(invalidSavingsHistory), false);
 const resolvedCountHistory = structuredClone(history);
 resolvedCountHistory.periods[0].recommendations.rows[0].resolved = true;
 assert.equal(isSubscriptionReportHistory(resolvedCountHistory), false);
+const duplicateComparisonIdentityHistory = structuredClone(history);
+duplicateComparisonIdentityHistory.periods[0].comparisonIdentities.costRecommendationIds = rows(['cost-1', 'cost-1']);
+assert.equal(isSubscriptionReportHistory(duplicateComparisonIdentityHistory), false);
+const invalidAssessmentIdentityHistory = structuredClone(history);
+invalidAssessmentIdentityHistory.periods[0].comparisonIdentities.regulatoryAssessmentKeys = rows(['display-label']);
+assert.equal(isSubscriptionReportHistory(invalidAssessmentIdentityHistory), false);
 
 const unreconciledTenant = structuredClone(tenantPack);
 unreconciledTenant.mfa.summary.enforcement.notEnforced = 51;
@@ -416,6 +510,9 @@ oversizedTenant.globalAdmins.principals = {
   omittedCount: 0,
 };
 assert.equal(isTenantReportEvidencePack(oversizedTenant), false);
+const ambiguousTenantSignIn = structuredClone(tenantPack);
+ambiguousTenantSignIn.globalAdmins.principals.rows[0].lastSignInEvidence = 'unavailable';
+assert.equal(isTenantReportEvidencePack(ambiguousTenantSignIn), false);
 
 const dailySpend = {
   startDate: '2026-08-01',
