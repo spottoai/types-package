@@ -1,4 +1,5 @@
 import type { BaseScheduleWriteRequest, ScheduleDocument, SchedulerBatchRunItem, ScheduleWriteRequest } from './scheduler';
+import { isBastionScheduleRun, type BastionScheduleRun } from '../index';
 
 const recommendationSchedule: ScheduleDocument = {
   scheduleId: 'schedule-1',
@@ -53,10 +54,11 @@ const recurringProviderScopeRequest: ScheduleWriteRequest = {
   timezone: 'Pacific/Auckland',
 };
 
-const invalidResourceOperation: BaseScheduleWriteRequest = {
+const legacyResourceOperation: BaseScheduleWriteRequest = {
   ...writeRequest,
-  // @ts-expect-error Resource mutations use ResourceStrategyScheduleWriteRequest.
   targetType: 'resource-operation',
 };
 
-void [recommendationSchedule, schedulerBatchRunItem, writeRequest, recurringProviderScopeRequest, invalidResourceOperation];
+const isLegacyBastionRun = (run: SchedulerBatchRunItem): run is BastionScheduleRun => isBastionScheduleRun(run);
+
+void [recommendationSchedule, schedulerBatchRunItem, writeRequest, recurringProviderScopeRequest, legacyResourceOperation, isLegacyBastionRun];

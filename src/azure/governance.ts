@@ -690,6 +690,7 @@ export type GlobalAdminPrincipalType = 'user' | 'group' | 'servicePrincipal' | '
 export type GlobalAdminAssignmentSource = 'direct' | 'groupDerived' | 'unknown';
 export type GlobalAdminAssignmentMode = 'permanent' | 'eligible' | 'active' | 'unknown';
 export type GlobalAdminLastActivatedEvidence = 'roleAssignmentScheduleInstance' | 'directoryAudit' | 'none' | 'unavailable';
+export type GlobalAdminLastSignInEvidence = 'last-successful-sign-in' | 'unavailable';
 export type GlobalAdminMfaStatus = 'mfa' | 'unknown';
 
 export interface GlobalAdminCoverageSection {
@@ -710,6 +711,7 @@ export interface GlobalAdminCoverage {
   groupMemberships: GlobalAdminCoverageSection;
   globalAdminResolution: GlobalAdminCoverageSection;
   userRegistrationDetails?: GlobalAdminCoverageSection;
+  userSignInActivity?: GlobalAdminCoverageSection;
 }
 
 export interface GlobalAdminWarning {
@@ -743,6 +745,9 @@ export interface GlobalAdminPrincipal {
   activeAssignmentIds: string[];
   lastActivatedAt?: string;
   lastActivatedEvidence: GlobalAdminLastActivatedEvidence;
+  /** Only a successful Entra sign-in is a last login; PIM activation is separate. */
+  lastSignInAt?: string;
+  lastSignInEvidence?: GlobalAdminLastSignInEvidence;
   coverage: GlobalAdminCoverage;
 }
 

@@ -1,6 +1,6 @@
 import type { CostSavingsSummaryBasis, CostSavingsAggregationPolicy } from './views';
 import type { PortfolioSavingsContributionV2, ScenarioSavingsPotentialV2 } from './savings';
-import type { TenantMfaEnforcementStatus } from './governance';
+import type { GlobalAdminLastSignInEvidence, GovernanceCoverageState, TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
 import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
@@ -657,6 +657,11 @@ export interface TenantReportCoverageSection {
   maximumSourceLagHours?: number;
 }
 
+export type TenantReportGlobalAdminCoverage = Record<string, TenantReportCoverageSection> & {
+  /** Optional for older packs; absence does not establish that no administrator signed in. */
+  userSignInActivity?: TenantReportCoverageSection & { state: GovernanceCoverageState };
+};
+
 export interface TenantReportGlobalAdministrator {
   principalId: string;
   principalType: string;
@@ -671,7 +676,7 @@ export interface TenantReportGlobalAdministrator {
   lastActivatedEvidence: string;
   /** Most recent sign-in timestamp under the basis declared by lastSignInEvidence. */
   lastSignInAt?: string;
-  lastSignInEvidence?: 'last-successful-sign-in' | 'last-interactive-sign-in' | 'unavailable';
+  lastSignInEvidence?: GlobalAdminLastSignInEvidence | 'last-interactive-sign-in';
 }
 
 export interface TenantReportEvidencePack {
@@ -684,7 +689,7 @@ export interface TenantReportEvidencePack {
   };
   globalAdmins: {
     summary: ReportProjectionRecord;
-    coverage: Record<string, TenantReportCoverageSection>;
+    coverage: TenantReportGlobalAdminCoverage;
     warnings: ReportBoundedRows<ReportProjectionRecord>;
     principals: ReportBoundedRows<TenantReportGlobalAdministrator>;
   };

@@ -447,6 +447,7 @@ const globalAdminCoverage: GlobalAdminCoverage = {
   groupMemberships: { state: 'complete', source: 'governance', requiredPermissions: ['GroupMember.Read.All'] },
   globalAdminResolution: { state: 'complete', source: 'derived' },
   userRegistrationDetails: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['AuditLog.Read.All'] },
+  userSignInActivity: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['AuditLog.Read.All'] },
 };
 
 const governanceAccessGlobalAdmins: GovernanceAccessGlobalAdminSection = {
@@ -478,6 +479,8 @@ const governanceAccessGlobalAdmins: GovernanceAccessGlobalAdminSection = {
       activeAssignmentIds: ['role-assignment-schedule-1'],
       lastActivatedAt: '2026-05-13T00:00:00.000Z',
       lastActivatedEvidence: 'roleAssignmentScheduleInstance',
+      lastSignInAt: '2026-05-12T00:00:00.000Z',
+      lastSignInEvidence: 'last-successful-sign-in',
       coverage: globalAdminCoverage,
     },
   ],

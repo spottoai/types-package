@@ -205,7 +205,13 @@ const tenantPack = {
   },
   globalAdmins: {
     summary: {},
-    coverage: {},
+    coverage: {
+      userSignInActivity: {
+        state: 'complete',
+        source: 'microsoft-graph',
+        requiredPermissions: ['AuditLog.Read.All'],
+      },
+    },
     warnings: emptyRows(),
     principals: rows([
       {
@@ -513,6 +519,18 @@ assert.equal(isTenantReportEvidencePack(oversizedTenant), false);
 const ambiguousTenantSignIn = structuredClone(tenantPack);
 ambiguousTenantSignIn.globalAdmins.principals.rows[0].lastSignInEvidence = 'unavailable';
 assert.equal(isTenantReportEvidencePack(ambiguousTenantSignIn), false);
+const unavailableTenantSignIn = structuredClone(tenantPack);
+unavailableTenantSignIn.globalAdmins.coverage.userSignInActivity.state = 'unavailable';
+unavailableTenantSignIn.globalAdmins.principals.rows[0].lastSignInAt = undefined;
+unavailableTenantSignIn.globalAdmins.principals.rows[0].lastSignInEvidence = 'unavailable';
+assert.equal(isTenantReportEvidencePack(unavailableTenantSignIn), true);
+const staleTenantSignIn = structuredClone(unavailableTenantSignIn);
+staleTenantSignIn.globalAdmins.principals.rows[0].lastSignInAt = '2026-09-10T00:00:00.000Z';
+staleTenantSignIn.globalAdmins.principals.rows[0].lastSignInEvidence = 'last-successful-sign-in';
+assert.equal(isTenantReportEvidencePack(staleTenantSignIn), false);
+const invalidTenantSignInCoverage = structuredClone(tenantPack);
+invalidTenantSignInCoverage.globalAdmins.coverage.userSignInActivity.state = 'unknown';
+assert.equal(isTenantReportEvidencePack(invalidTenantSignInCoverage), false);
 
 const dailySpend = {
   startDate: '2026-08-01',

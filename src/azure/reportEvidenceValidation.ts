@@ -612,6 +612,9 @@ const isTenantCoverage = (value: unknown): boolean =>
       isOptionalFiniteNumber(section.maximumSourceLagHours)
   );
 
+const isTenantSignInCoverage = (value: unknown): boolean =>
+  isRecord(value) && ['complete', 'partial', 'unavailable', 'skipped'].includes(value.state as string);
+
 const isTenantPrincipal = (value: unknown): value is TenantReportGlobalAdministrator =>
   isRecord(value) &&
   isString(value.principalId) &&
@@ -643,6 +646,15 @@ export const isTenantReportEvidencePack = (value: unknown): value is TenantRepor
     !isTenantCoverage(value.globalAdmins.coverage) ||
     !isBoundedRows(value.globalAdmins.warnings, REPORT_EVIDENCE_LIMITS.tenantGlobalAdministrators, isRecord) ||
     !isBoundedRows(value.globalAdmins.principals, REPORT_EVIDENCE_LIMITS.tenantGlobalAdministrators, isTenantPrincipal)
+  ) {
+    return false;
+  }
+  const signInCoverage = (value.globalAdmins.coverage as Record<string, unknown>).userSignInActivity;
+  if (signInCoverage !== undefined && !isTenantSignInCoverage(signInCoverage)) return false;
+  if (
+    isRecord(signInCoverage) &&
+    (signInCoverage.state === 'unavailable' || signInCoverage.state === 'skipped') &&
+    value.globalAdmins.principals.rows.some(principal => principal.lastSignInAt !== undefined)
   ) {
     return false;
   }

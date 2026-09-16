@@ -226,7 +226,13 @@ const tenantPack: TenantReportEvidencePack = {
   },
   globalAdmins: {
     summary: {},
-    coverage: {},
+    coverage: {
+      userSignInActivity: {
+        state: 'complete',
+        source: 'microsoft-graph',
+        requiredPermissions: ['AuditLog.Read.All and Microsoft Entra ID P1 or P2'],
+      },
+    },
     warnings: rows(),
     principals: rows([
       {
