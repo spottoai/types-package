@@ -1,6 +1,7 @@
 import type {
   ResourceSchedulePermissionManifestConsent,
   ResourceSchedulePermissionManifestProjection,
+  ResourceScheduleDryRunProjection,
   ResourceSchedulePreviewRequest,
   ResourceSchedulePreviewResponse,
   ResourceSchedulingCapabilityProjection,
@@ -134,6 +135,29 @@ const schedule = {
   updatedAtUtc: timestamp,
   updatedBy: 'user-1',
 } satisfies ResourceStrategyWeeklyScheduleProjection;
+
+const dryRun = {
+  scheduleId: schedule.scheduleId,
+  definitionRevision: schedule.definitionRevision,
+  controlGeneration: schedule.controlGeneration,
+  evaluatedAtUtc: timestamp,
+  expiresAtUtc: '2026-09-15T00:05:00.000Z',
+  freshness: 'fresh',
+  windowStartUtc: timestamp,
+  windowEndUtc: '2026-09-22T00:00:00.000Z',
+  occurrenceCount: 10,
+  status: 'blocked',
+  checks: [
+    { name: 'ownership', status: 'ready', reasonCodes: [] },
+    { name: 'readiness', status: 'blocked', reasonCodes: ['missing-provider-operation'] },
+    { name: 'mutation-contention', status: 'ready', reasonCodes: [] },
+    { name: 'busy-policy', status: 'ready', reasonCodes: [] },
+    { name: 'blackout', status: 'ready', reasonCodes: [] },
+    { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
+    { name: 'evidence-freshness', status: 'ready', reasonCodes: [] },
+    { name: 'notification-routing', status: 'ready', reasonCodes: [] },
+  ],
+} satisfies ResourceScheduleDryRunProjection;
 
 const readiness = {
   companyId: 'company-1',
@@ -359,6 +383,7 @@ const invalidSuggestionFromWriteRequest: ResourceStrategyWeeklyScheduleSuggestio
 void [
   capability,
   schedule,
+  dryRun,
   readiness,
   run,
   execution,

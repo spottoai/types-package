@@ -9,6 +9,10 @@ export const RESOURCE_STRATEGY_CONTRACT_LIMITS = {
   grantGroups: 128,
   permissionOperations: 8_192,
   listResults: 100,
+  dryRunChecks: 8,
+  dryRunReasonCodes: 32,
+  dryRunDtoBytes: 16_384,
+  dryRunMaxTtlMs: 5 * 60_000,
   parameterBytes: 32_768,
   publicDtoBytes: 262_144,
 } as const;
@@ -215,6 +219,33 @@ export interface ResourceStrategyWeeklyScheduleListResponse {
   continuation?: {
     cursor: string;
   };
+}
+export type ResourceScheduleDryRunCheckName =
+  | 'ownership'
+  | 'readiness'
+  | 'mutation-contention'
+  | 'busy-policy'
+  | 'blackout'
+  | 'admission-budgets'
+  | 'evidence-freshness'
+  | 'notification-routing';
+export interface ResourceScheduleDryRunCheckProjection {
+  name: ResourceScheduleDryRunCheckName;
+  status: 'ready' | 'blocked';
+  reasonCodes: string[];
+}
+export interface ResourceScheduleDryRunProjection {
+  scheduleId: string;
+  definitionRevision: number;
+  controlGeneration: number;
+  evaluatedAtUtc: string;
+  expiresAtUtc: string;
+  freshness: 'fresh' | 'stale';
+  windowStartUtc: string;
+  windowEndUtc: string;
+  occurrenceCount: number;
+  status: 'ready' | 'blocked';
+  checks: ResourceScheduleDryRunCheckProjection[];
 }
 export interface ScheduledResourceTransitionV1 {
   schemaVersion: 1;
@@ -424,6 +455,10 @@ export type ResourceStrategyScheduleCommand =
     }
   | {
       command: 'resume';
+      idempotencyKey: string;
+    }
+  | {
+      command: 'rerun-dry-run';
       idempotencyKey: string;
     }
   | {

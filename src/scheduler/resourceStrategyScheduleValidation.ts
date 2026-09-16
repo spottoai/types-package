@@ -1,5 +1,8 @@
 import {
   RESOURCE_STRATEGY_CONTRACT_LIMITS,
+  type ResourceScheduleDryRunCheckName,
+  type ResourceScheduleDryRunCheckProjection,
+  type ResourceScheduleDryRunProjection,
   type ResourceSchedulePermissionManifestRef,
   type ResourceSchedulingExecutionHistoryItem,
   type ResourceSchedulingExecutionHistoryResponse,
@@ -224,6 +227,78 @@ export function isResourceStrategyWeeklyScheduleProjection(value: unknown): valu
     (value.firstExecutionAcknowledgement === undefined || isAcknowledgement(value.firstExecutionAcknowledgement))
   );
 }
+const RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES: readonly ResourceScheduleDryRunCheckName[] = [
+  'ownership',
+  'readiness',
+  'mutation-contention',
+  'busy-policy',
+  'blackout',
+  'admission-budgets',
+  'evidence-freshness',
+  'notification-routing',
+];
+function isResourceScheduleDryRunCheckProjection(value: unknown): value is ResourceScheduleDryRunCheckProjection {
+  if (
+    !isRecord(value) ||
+    !hasOnlyKeys(value, ['name', 'status', 'reasonCodes']) ||
+    !RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES.includes(value.name as ResourceScheduleDryRunCheckName) ||
+    (value.status !== 'ready' && value.status !== 'blocked') ||
+    !Array.isArray(value.reasonCodes) ||
+    value.reasonCodes.length > RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunReasonCodes ||
+    !value.reasonCodes.every(reasonCode => isBoundedString(reasonCode, 200)) ||
+    new Set(value.reasonCodes).size !== value.reasonCodes.length
+  ) {
+    return false;
+  }
+  return value.status === 'ready' ? value.reasonCodes.length === 0 : value.reasonCodes.length > 0;
+}
+/** Validates one bounded authoritative dry-run result for a schedule revision. */
+export function isResourceScheduleDryRunProjection(value: unknown): value is ResourceScheduleDryRunProjection {
+  if (
+    !isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunDtoBytes) ||
+    !isRecord(value) ||
+    containsForbiddenKey(value) ||
+    !hasOnlyKeys(value, [
+      'scheduleId',
+      'definitionRevision',
+      'controlGeneration',
+      'evaluatedAtUtc',
+      'expiresAtUtc',
+      'freshness',
+      'windowStartUtc',
+      'windowEndUtc',
+      'occurrenceCount',
+      'status',
+      'checks',
+    ]) ||
+    !isBoundedString(value.scheduleId, 200) ||
+    !isPositiveInteger(value.definitionRevision) ||
+    !isPositiveInteger(value.controlGeneration) ||
+    !isIsoTimestamp(value.evaluatedAtUtc) ||
+    !isIsoTimestamp(value.expiresAtUtc) ||
+    Date.parse(value.expiresAtUtc) <= Date.parse(value.evaluatedAtUtc) ||
+    Date.parse(value.expiresAtUtc) - Date.parse(value.evaluatedAtUtc) > RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunMaxTtlMs ||
+    (value.freshness !== 'fresh' && value.freshness !== 'stale') ||
+    !isIsoTimestamp(value.windowStartUtc) ||
+    !isIsoTimestamp(value.windowEndUtc) ||
+    Date.parse(value.windowEndUtc) <= Date.parse(value.windowStartUtc) ||
+    !isNonNegativeInteger(value.occurrenceCount) ||
+    (value.status !== 'ready' && value.status !== 'blocked') ||
+    !Array.isArray(value.checks) ||
+    value.checks.length !== RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunChecks ||
+    !value.checks.every(isResourceScheduleDryRunCheckProjection)
+  ) {
+    return false;
+  }
+  const checkNames = value.checks.map(check => check.name);
+  if (
+    new Set(checkNames).size !== RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES.length ||
+    !RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES.every(name => checkNames.includes(name))
+  ) {
+    return false;
+  }
+  return value.status === (value.checks.every(check => check.status === 'ready') ? 'ready' : 'blocked');
+}
 function isManifestRef(value: unknown): value is ResourceSchedulePermissionManifestRef {
   return (
     isRecord(value) &&
@@ -384,7 +459,7 @@ export function isResourceStrategyScheduleCommand(value: unknown): value is Reso
     return false;
   }
   if (value.command === 'leave-current-state') return isBoundedString(value.acknowledgement, 2000);
-  return ['pause', 'resume', 'restore-now'].includes(String(value.command)) && value.acknowledgement === undefined;
+  return ['pause', 'resume', 'rerun-dry-run', 'restore-now'].includes(String(value.command)) && value.acknowledgement === undefined;
 }
 export function isResourceStrategyWeeklyScheduleListResponse(value: unknown): value is ResourceStrategyWeeklyScheduleListResponse {
   return (

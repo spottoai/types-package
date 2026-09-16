@@ -121,6 +121,53 @@ assert.equal(
   false
 );
 
+const dryRun = {
+  scheduleId: schedule.scheduleId,
+  definitionRevision: schedule.definitionRevision,
+  controlGeneration: schedule.controlGeneration,
+  evaluatedAtUtc: timestamp,
+  expiresAtUtc: '2026-09-15T00:05:00.000Z',
+  freshness: 'fresh',
+  windowStartUtc: timestamp,
+  windowEndUtc: '2026-09-22T00:00:00.000Z',
+  occurrenceCount: 10,
+  status: 'blocked',
+  checks: [
+    { name: 'ownership', status: 'ready', reasonCodes: [] },
+    { name: 'readiness', status: 'blocked', reasonCodes: ['missing-provider-operation'] },
+    { name: 'mutation-contention', status: 'ready', reasonCodes: [] },
+    { name: 'busy-policy', status: 'ready', reasonCodes: [] },
+    { name: 'blackout', status: 'ready', reasonCodes: [] },
+    { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
+    { name: 'evidence-freshness', status: 'ready', reasonCodes: [] },
+    { name: 'notification-routing', status: 'ready', reasonCodes: [] },
+  ],
+};
+assert.equal(scheduler.isResourceScheduleDryRunProjection(dryRun), true);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, internalEventId: 'compilation:private' }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: dryRun.checks.slice(0, 7) }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: [...dryRun.checks.slice(0, 7), dryRun.checks[0]] }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, status: 'ready' }), false);
+assert.equal(
+  scheduler.isResourceScheduleDryRunProjection({
+    ...dryRun,
+    checks: dryRun.checks.map(check => (check.name === 'readiness' ? { ...check, status: 'blocked', reasonCodes: [] } : check)),
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceScheduleDryRunProjection({
+    ...dryRun,
+    checks: dryRun.checks.map(check => (check.name === 'ownership' ? { ...check, status: 'ready', reasonCodes: ['unexpected-reason'] } : check)),
+  }),
+  false
+);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, windowEndUtc: timestamp }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: timestamp }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: '2026-09-15T00:05:00.001Z' }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, freshness: 'stale' }), true);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, freshness: 'unknown' }), false);
+
 const capability = {
   capability: capabilityRef,
   contentHash: 'sha256:capability',
@@ -706,6 +753,7 @@ assert.equal(
 );
 
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'restore-now', idempotencyKey: 'command-1' }), true);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'rerun-dry-run', idempotencyKey: 'command-2' }), true);
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'start', idempotencyKey: 'command-1' }), false);
 assert.equal(
   scheduler.isResourceStrategyWeeklyScheduleListResponse({

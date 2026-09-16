@@ -1,8 +1,15 @@
 import {
+  createResourceSchedulerTickRequestMessageV1,
+  isResourceSchedulerTickRequestMessageV1,
+  type ResourceSchedulerTickRequestMessageV1,
+} from '@spottoai/types-package';
+import {
   WEEKLY_AVAILABILITY_FIXTURES_V1,
+  isResourceScheduleDryRunProjection,
   isResourceSchedulePermissionManifestConsent,
   isResourceStrategyWeeklyScheduleSuggestion,
   isResourceStrategyWeeklyScheduleWriteRequest,
+  type ResourceScheduleDryRunProjection,
   type ResourceSchedulePermissionManifestConsent,
   type ResourceStrategyWeeklyScheduleSuggestion,
   type ResourceStrategyWeeklyScheduleWriteRequest,
@@ -33,7 +40,36 @@ const suggestion: ResourceStrategyWeeklyScheduleSuggestion = {
   rules: definition.rules,
 };
 
+const tick: ResourceSchedulerTickRequestMessageV1 = createResourceSchedulerTickRequestMessageV1('2026-09-16T00:00:00.000Z');
+
+const dryRun: ResourceScheduleDryRunProjection = {
+  scheduleId: 'schedule-1',
+  definitionRevision: 1,
+  controlGeneration: 1,
+  evaluatedAtUtc: '2026-09-16T00:00:00.000Z',
+  expiresAtUtc: '2026-09-16T00:05:00.000Z',
+  freshness: 'fresh',
+  windowStartUtc: '2026-09-16T00:00:00.000Z',
+  windowEndUtc: '2026-09-23T00:00:00.000Z',
+  occurrenceCount: 2,
+  status: 'ready',
+  checks: (
+    [
+      'ownership',
+      'readiness',
+      'mutation-contention',
+      'busy-policy',
+      'blackout',
+      'admission-budgets',
+      'evidence-freshness',
+      'notification-routing',
+    ] as const
+  ).map(name => ({ name, status: 'ready', reasonCodes: [] })),
+};
+
 if (
+  !isResourceSchedulerTickRequestMessageV1(tick) ||
+  !isResourceScheduleDryRunProjection(dryRun) ||
   !isResourceStrategyWeeklyScheduleWriteRequest(definition) ||
   !isResourceStrategyWeeklyScheduleSuggestion(suggestion) ||
   !isResourceSchedulePermissionManifestConsent(consent) ||
