@@ -44,6 +44,7 @@ import type {
   PublicCloudAccountDto,
   ProcessPayload,
   RequestMessage,
+  ResourceSchedulerTickRequestMessageV1,
   ReviewChecklistPayload,
   SubscriptionSyncRequest,
   WorkflowTracingOptions,
@@ -777,6 +778,33 @@ const scheduledComponentRefreshRequestMessage: CloudAccountsScheduledRefreshRequ
 
 const baseScheduledRefreshRequestMessage: RequestMessage = scheduledRefreshRequestMessage;
 
+const resourceSchedulerTickRequestMessage: ResourceSchedulerTickRequestMessageV1 = {
+  schemaVersion: 1,
+  entity: 'resource-scheduler',
+  action: 'tick',
+  companyId: '*',
+  cloudAccountId: '*',
+  tenantId: '*',
+  clientId: '*',
+  tickId: 'resource-scheduler:tick:2026-09-16T00:00:00.000Z',
+  scheduledAtUtc: '2026-09-16T00:00:00.000Z',
+  correlationId: 'resource-scheduler:tick:2026-09-16T00:00:00.000Z',
+};
+
+const baseResourceSchedulerTickRequestMessage: RequestMessage = resourceSchedulerTickRequestMessage;
+
+const invalidResourceSchedulerTickScope: ResourceSchedulerTickRequestMessageV1 = {
+  ...resourceSchedulerTickRequestMessage,
+  // @ts-expect-error A global tick must never target one company.
+  companyId: 'comp-123',
+};
+
+const invalidResourceSchedulerTickAction: ResourceSchedulerTickRequestMessageV1 = {
+  ...resourceSchedulerTickRequestMessage,
+  // @ts-expect-error Resource scheduler wake-ups use only the tick action.
+  action: 'dispatch-batch',
+};
+
 // requestId is optional for rollout compatibility: an older API emits the message without it.
 const { requestId: _removedScheduledRefreshRequestId, ...scheduledRefreshWithoutRequestId } = scheduledRefreshRequestMessage;
 const legacyScheduledRefreshRequestMessage: CloudAccountsScheduledRefreshRequestMessage = scheduledRefreshWithoutRequestId;
@@ -1063,6 +1091,10 @@ void invalidAzureSpSetupMaintenanceSchemaVersion;
 void scheduledRefreshRequestMessage;
 void scheduledComponentRefreshRequestMessage;
 void baseScheduledRefreshRequestMessage;
+void resourceSchedulerTickRequestMessage;
+void baseResourceSchedulerTickRequestMessage;
+void invalidResourceSchedulerTickScope;
+void invalidResourceSchedulerTickAction;
 void legacyScheduledRefreshRequestMessage;
 void invalidScheduledRefreshAction;
 void invalidScheduledRefreshCompanyWildcard;

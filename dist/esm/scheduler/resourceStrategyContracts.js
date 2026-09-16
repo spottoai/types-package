@@ -9,6 +9,10 @@ export const RESOURCE_STRATEGY_CONTRACT_LIMITS = {
     grantGroups: 128,
     permissionOperations: 8192,
     listResults: 100,
+    dryRunChecks: 8,
+    dryRunReasonCodes: 32,
+    dryRunDtoBytes: 16384,
+    dryRunMaxTtlMs: 5 * 60000,
     parameterBytes: 32768,
     publicDtoBytes: 262144,
 };
