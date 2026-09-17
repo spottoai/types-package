@@ -441,6 +441,8 @@ export interface ReportActivityMonthlyFindings {
 export interface ReportActivityCounts {
   visibleEvents: number;
   materialChanges: number;
+  /** Snapshot lifecycle events attributed to an automated actor or workflow, included in materialChanges when fully measured. This does not identify a backup provider. */
+  automatedSnapshotEvents?: number;
   securitySensitive: number;
   healthEvents: number;
   failedEvents: number;
@@ -449,6 +451,13 @@ export interface ReportActivityCounts {
 
 export interface ReportActivityDailySummary extends ReportActivityCounts {
   date: string;
+}
+
+/** Counts come from the current service-retirement source before report detail is capped. */
+export interface ReportCredentialDeadlineCounts {
+  asOf: string;
+  overdueCount: number;
+  upcomingSixMonthsCount: number;
 }
 
 export interface SubscriptionReportingProjection {
@@ -464,6 +473,8 @@ export interface SubscriptionReportingProjection {
   /** Section selection uses this catalogue; the smaller recommendations collection is an overview sample. */
   recommendationCatalogue?: ReportBoundedRows<ReportCompactRecommendation>;
   serviceRetirements: ReportBoundedRows<ReportProjectionRecord>;
+  /** Optional on older packs; rows above remain a bounded selection. */
+  credentialDeadlines?: ReportCredentialDeadlineCounts;
   inventory: ReportInventoryProjection;
   governance: ReportGovernanceProjection;
   patchManagement: ReportPatchManagementProjection;
