@@ -35,6 +35,7 @@ __exportStar(require("./financialSavingsAuthorityValidation"), exports);
 __exportStar(require("./financialSavingsSurfaceProjection"), exports);
 __exportStar(require("./financialSavingsSurfaceProjectionValidation"), exports);
 __exportStar(require("./financialSavingsSurfaceProjectionKernel"), exports);
+__exportStar(require("./financialSavingsPercentageKernel"), exports);
 __exportStar(require("./financialCurrentSpendSurfaceProjection"), exports);
 __exportStar(require("./financialCurrentSpendSurfaceProjectionValidation"), exports);
 __exportStar(require("./financialResourceSurfaceProjection"), exports);

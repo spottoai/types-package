@@ -14,12 +14,14 @@ import {
   FINANCIAL_SAVINGS_SURFACE_PROJECTION_SCHEMA_VERSION_V1,
   type FinancialSavingsLifecycleBindingV1,
   type FinancialSavingsRecommendationContributionV1,
+  type FinancialSavingsSurfaceResourceContributionV1,
   type FinancialSavingsSurfaceCoordinateEnvelopeV1,
   type FinancialSavingsSurfaceProjectionIdentityPreimageV1,
   type FinancialSavingsSurfaceProjectionV1,
   type FinancialSavingsSurfaceScopeV1,
   type FinancialSavingsSurfaceV1,
 } from './financialSavingsSurfaceProjection';
+import { composeFinancialSavingsAllocationPercentageV1 } from './financialSavingsPercentageKernel';
 import {
   createFinancialSavingsSurfaceProjectionIdV1,
   isFinancialSavingsSurfaceProjectionV1,
@@ -103,6 +105,43 @@ const projectLifecycleBindings = (
     );
 };
 
+const projectResourceContributions = (
+  recommendationContributions: readonly FinancialSavingsRecommendationContributionV1[],
+  lifecycleBindings: readonly FinancialSavingsLifecycleBindingV1[] | undefined,
+  minorUnitScale: number
+): FinancialSavingsSurfaceResourceContributionV1[] | undefined => {
+  if (!lifecycleBindings?.length) return undefined;
+  const allocationById = new Map(
+    recommendationContributions.flatMap(contribution => contribution.allocations ?? []).map(allocation => [allocation.allocationId, allocation])
+  );
+  const allocationIdsByResource = new Map<string, Set<string>>();
+  for (const binding of lifecycleBindings) {
+    const allocationIds = allocationIdsByResource.get(binding.resourceId) ?? new Set<string>();
+    binding.allocationIds.forEach(allocationId => allocationIds.add(allocationId));
+    allocationIdsByResource.set(binding.resourceId, allocationIds);
+  }
+  const contributions: FinancialSavingsSurfaceResourceContributionV1[] = [];
+  for (const [resourceId, allocationIds] of allocationIdsByResource) {
+    const allocations = [...allocationIds].map(allocationId => allocationById.get(allocationId));
+    if (allocations.some(allocation => allocation === undefined)) return undefined;
+    const exactAllocations = allocations as NonNullable<FinancialSavingsRecommendationContributionV1['allocations']>;
+    const composed = composeFinancialSavingsAllocationPercentageV1(exactAllocations, minorUnitScale);
+    if (!composed) return undefined;
+    contributions.push({
+      resourceId,
+      allocationIds: [...allocationIds].sort() as [string, ...string[]],
+      savingsMinorUnits: exactMinorUnitSum(exactAllocations.map(allocation => allocation.savingsMinorUnits)),
+      denominator: {
+        denominatorIds: composed.denominatorIds as [string, ...string[]],
+        amount: composed.denominatorAmount,
+        currencyCode: composed.denominatorCurrencyCode,
+      },
+      percentage: composed.percentage,
+    });
+  }
+  return contributions.sort((left, right) => left.resourceId.localeCompare(right.resourceId));
+};
+
 export const projectFinancialSavingsSurfaceQueryV1 = (
   source: FinancialSavingsSurfaceProjectionV1,
   recommendationIds: readonly string[],
@@ -133,8 +172,14 @@ export const projectFinancialSavingsSurfaceQueryV1 = (
     const recommendationContributions = coordinate.recommendationContributions.filter(contribution =>
       includedRecommendationIds.has(contribution.recommendationId)
     );
+    const resourceContributions = projectResourceContributions(
+      recommendationContributions,
+      lifecycleBindings,
+      coordinate.minorUnitScale
+    );
     const filteredAmounts = {
       recommendationContributions,
+      ...(resourceContributions?.length ? { resourceContributions } : {}),
       aggregate: {
         allocationIds: recommendationContributions.flatMap(contribution => contribution.allocationIds),
         savingsMinorUnits: exactMinorUnitSum(recommendationContributions.map(contribution => contribution.savingsMinorUnits)),
@@ -179,11 +224,24 @@ export const projectFinancialSavingsSurfaceQueryV1 = (
 };
 
 const projectRecommendationContributions = (
-  allocations: ReadonlyArray<{ allocationId: string; recommendationId: string; savingsMinorUnits: number }>
+  allocations: ReadonlyArray<{
+    allocationId: string;
+    recommendationId: string;
+    savingsMinorUnits: number;
+    denominator?: { denominatorId: string; amount: string; currencyCode: string };
+  }>
 ): FinancialSavingsRecommendationContributionV1[] => {
   const byRecommendation = new Map<
     string,
-    { allocationIds: string[]; savingsMinorUnits: number[]; allocations: Array<{ allocationId: string; savingsMinorUnits: number }> }
+    {
+      allocationIds: string[];
+      savingsMinorUnits: number[];
+      allocations: Array<{
+        allocationId: string;
+        savingsMinorUnits: number;
+        denominator?: { denominatorId: string; amount: string; currencyCode: string };
+      }>;
+    }
   >();
   for (const allocation of allocations) {
     const existing = byRecommendation.get(allocation.recommendationId) ?? {
@@ -193,7 +251,11 @@ const projectRecommendationContributions = (
     };
     existing.allocationIds.push(allocation.allocationId);
     existing.savingsMinorUnits.push(allocation.savingsMinorUnits);
-    existing.allocations.push({ allocationId: allocation.allocationId, savingsMinorUnits: allocation.savingsMinorUnits });
+    existing.allocations.push({
+      allocationId: allocation.allocationId,
+      savingsMinorUnits: allocation.savingsMinorUnits,
+      ...(allocation.denominator ? { denominator: allocation.denominator } : {}),
+    });
     byRecommendation.set(allocation.recommendationId, existing);
   }
   return Array.from(byRecommendation.entries())
@@ -271,8 +333,14 @@ export const projectFinancialSavingsSurfaceResourceQueryV1 = (
         };
       })
       .filter((contribution): contribution is NonNullable<typeof contribution> => contribution !== undefined);
+    const resourceContributions = projectResourceContributions(
+      recommendationContributions,
+      lifecycleBindings,
+      coordinate.minorUnitScale
+    );
     const filteredAmounts = {
       recommendationContributions,
+      ...(resourceContributions?.length ? { resourceContributions } : {}),
       aggregate: {
         allocationIds: recommendationContributions.flatMap(contribution => contribution.allocationIds),
         savingsMinorUnits: exactMinorUnitSum(recommendationContributions.map(contribution => contribution.savingsMinorUnits)),
@@ -336,6 +404,7 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
 
   const financialCoordinateById = new Map(authority.coordinates.map(coordinate => [coordinate.coordinateId, coordinate]));
   const savingsCoordinateById = new Map(savingsAuthority.coordinates.map(coordinate => [coordinate.coordinateId, coordinate]));
+  const eligibilityById = new Map(savingsAuthority.eligibilityAssessments.map(assessment => [assessment.eligibilityId, assessment]));
   if (
     financialCoordinateById.size !== authority.coordinates.length ||
     savingsCoordinateById.size !== savingsAuthority.coordinates.length ||
@@ -352,6 +421,7 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
     ownerScopeId: string;
     recommendationId: string;
     savingsMinorUnits: number;
+    denominator?: { denominatorId: string; amount: string; currencyCode: string };
   }> = [];
   const coordinates = authority.coordinates.map((financialCoordinate): FinancialSavingsSurfaceCoordinateEnvelopeV1 => {
     const savingsCoordinate = savingsCoordinateById.get(financialCoordinate.coordinateId);
@@ -414,11 +484,37 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
           if (disposition === 'unavailable') policyUnavailableRecommendationIds.add(allocation.recommendationId);
           return disposition === 'included';
         });
-    projectedAllocations.push(...selectedAllocations);
+    const projectionById = new Map(financialCoordinate.projections.map(projection => [projection.projectionId, projection]));
+    const selectedAllocationsWithDenominators = selectedAllocations.map(allocation => {
+      const mappedEligibility =
+        allocation.eligibility?.kind === 'mapped' ? eligibilityById.get(allocation.eligibility.eligibilityId) : undefined;
+      const financialProjection = projectionById.get(allocation.projectionId);
+      const denominator =
+        mappedEligibility?.status === 'available'
+          ? {
+              denominatorId: mappedEligibility.denominator.denominatorId,
+              amount: mappedEligibility.denominator.amount,
+              currencyCode: mappedEligibility.denominator.currencyCode,
+            }
+          : allocation.eligibility?.kind === 'not-applicable' && financialProjection?.status === 'available'
+            ? {
+                denominatorId: allocation.denominatorId,
+                amount: financialProjection.current.affected,
+                currencyCode: financialProjection.accountingCurrencyCode,
+              }
+            : undefined;
+      return { ...allocation, ...(denominator ? { denominator } : {}) };
+    });
+    projectedAllocations.push(...selectedAllocationsWithDenominators);
     const unavailableRecommendationIds = [
       ...new Set([...sourceUnavailableRecommendationIds, ...policyUnavailableRecommendationIds]),
     ].sort();
-    const recommendationContributions = projectRecommendationContributions(selectedAllocations);
+    const recommendationContributions = projectRecommendationContributions(selectedAllocationsWithDenominators);
+    const resourceContributions = projectResourceContributions(
+      recommendationContributions,
+      projectLifecycleBindings(selectedAllocationsWithDenominators),
+      savingsCoordinate.minorUnitScale
+    );
     const composed = {
       ...common,
       currentAggregateBaselineId: savingsCoordinate.currentAggregateBaselineId,
@@ -427,6 +523,7 @@ export const buildFinancialSavingsSurfaceProjectionV1 = (
       minorUnitScale: savingsCoordinate.minorUnitScale,
       roundingMode: savingsCoordinate.roundingMode,
       recommendationContributions,
+      ...(resourceContributions?.length ? { resourceContributions } : {}),
       aggregate: {
         allocationIds: recommendationContributions.flatMap(contribution => contribution.allocationIds),
         savingsMinorUnits: exactMinorUnitSum(recommendationContributions.map(contribution => contribution.savingsMinorUnits)),

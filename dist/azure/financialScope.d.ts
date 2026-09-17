@@ -19,6 +19,7 @@ export * from './financialSavingsAuthorityValidation';
 export * from './financialSavingsSurfaceProjection';
 export * from './financialSavingsSurfaceProjectionValidation';
 export * from './financialSavingsSurfaceProjectionKernel';
+export * from './financialSavingsPercentageKernel';
 export * from './financialCurrentSpendSurfaceProjection';
 export * from './financialCurrentSpendSurfaceProjectionValidation';
 export * from './financialResourceSurfaceProjection';

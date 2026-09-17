@@ -51,6 +51,16 @@ export type FinancialSavingsSurfaceScopeV1 =
 export interface FinancialSavingsAllocationContributionV1 {
   allocationId: string;
   savingsMinorUnits: number;
+  /**
+   * Exact denominator bound to this allocation by the Financial Savings
+   * Authority. Optional only for projections produced before denominator
+   * evidence was added; consumers must withhold percentages when absent.
+   */
+  denominator?: {
+    denominatorId: string;
+    amount: string;
+    currencyCode: string;
+  };
 }
 
 export interface FinancialSavingsRecommendationContributionV1 {
@@ -64,6 +74,19 @@ export interface FinancialSavingsRecommendationContributionV1 {
    * fails closed when this evidence is absent.
    */
   allocations?: [FinancialSavingsAllocationContributionV1, ...FinancialSavingsAllocationContributionV1[]];
+}
+
+/** Producer-computed percentage for one canonical resource owner. */
+export interface FinancialSavingsSurfaceResourceContributionV1 {
+  resourceId: string;
+  allocationIds: [string, ...string[]];
+  savingsMinorUnits: number;
+  denominator: {
+    denominatorIds: [string, ...string[]];
+    amount: string;
+    currencyCode: string;
+  };
+  percentage: number;
 }
 
 /**
@@ -101,6 +124,8 @@ export interface AvailableFinancialSavingsSurfaceCoordinateV1 extends FinancialS
   minorUnitScale: number;
   roundingMode: 'half-away-from-zero';
   recommendationContributions: FinancialSavingsRecommendationContributionV1[];
+  /** Optional only for projections produced before canonical percentages were added. */
+  resourceContributions?: FinancialSavingsSurfaceResourceContributionV1[];
   aggregate: {
     allocationIds: string[];
     savingsMinorUnits: number;

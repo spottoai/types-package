@@ -19,6 +19,7 @@ export * from './financialSavingsAuthorityValidation.js';
 export * from './financialSavingsSurfaceProjection.js';
 export * from './financialSavingsSurfaceProjectionValidation.js';
 export * from './financialSavingsSurfaceProjectionKernel.js';
+export * from './financialSavingsPercentageKernel.js';
 export * from './financialCurrentSpendSurfaceProjection.js';
 export * from './financialCurrentSpendSurfaceProjectionValidation.js';
 export * from './financialResourceSurfaceProjection.js';

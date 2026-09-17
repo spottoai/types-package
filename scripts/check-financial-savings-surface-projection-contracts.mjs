@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {
   AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_V1,
   buildFinancialSavingsSurfaceProjectionV1,
+  composeFinancialSavingsAllocationPercentageV1,
   createFinancialChargeCompositionV1,
+  createFinancialSavingsDenominatorIdV1,
   createFinancialSavingsSurfaceProjectionIdV1,
   isFinancialSavingsSurfaceProjectionV1,
   projectFinancialSavingsSurfaceQueryV1,
@@ -14,8 +16,18 @@ const generation = { runId: 'run-1', generatedAt: '2026-08-31T00:00:00.000Z' };
 const coordinateId = `sha256:${'3'.repeat(64)}`;
 const baselineId = `sha256:${'4'.repeat(64)}`;
 const allocationId = `sha256:${'5'.repeat(64)}`;
+const projectionId = `sha256:${'6'.repeat(64)}`;
+const componentId = `sha256:${'7'.repeat(64)}`;
 const resourceId = '/subscriptions/sub-1/resourcegroups/rg/providers/microsoft.compute/virtualmachines/vm-1';
 const recommendationId = 'vm-rightsize';
+const denominator = {
+  kind: 'projection-affected-current',
+  baselineId,
+  componentIds: [componentId],
+  amount: '20',
+  currencyCode: 'AUD',
+};
+const denominatorId = createFinancialSavingsDenominatorIdV1(denominator);
 const resourcesView = {
   artifactGeneration: generation,
   resources: [{ id: resourceId }],
@@ -37,6 +49,16 @@ const resourcesView = {
         costBasis: 'billed',
         estimateLens: 'actual-plus-estimated',
         aggregateBaseline: { status: 'available', baselineId, total: { amount: '100', currencyCode: 'AUD' } },
+        projections: [
+          {
+            status: 'available',
+            projectionId,
+            baselineId,
+            affectedComponentIds: [componentId],
+            current: { affected: denominator.amount },
+            accountingCurrencyCode: denominator.currencyCode,
+          },
+        ],
       },
     ],
   },
@@ -44,6 +66,7 @@ const resourcesView = {
     savingsAuthorityId: `sha256:${'2'.repeat(64)}`,
     financialAuthorityId: `sha256:${'1'.repeat(64)}`,
     artifactGeneration: generation,
+    eligibilityAssessments: [],
     coordinates: [
       {
         status: 'available',
@@ -58,6 +81,10 @@ const resourcesView = {
             allocationId,
             ownerScopeId: resourceId,
             recommendationId,
+            baselineId,
+            projectionId,
+            denominatorId,
+            eligibility: { kind: 'not-applicable' },
             savingsMinorUnits: 1234,
           },
         ],
@@ -70,6 +97,35 @@ const resourcesView = {
 const projection = buildFinancialSavingsSurfaceProjectionV1(resourcesView, 'dashboard');
 assert.equal(isFinancialSavingsSurfaceProjectionV1(projection), true);
 assert.deepEqual(projection.lifecycleBindings, [{ resourceId, recommendationId, allocationIds: [allocationId] }]);
+const projectedAllocation = projection.coordinates[0].recommendationContributions[0].allocations[0];
+assert.deepEqual(projectedAllocation.denominator, {
+  denominatorId,
+  amount: '20',
+  currencyCode: 'AUD',
+});
+assert.deepEqual(
+  composeFinancialSavingsAllocationPercentageV1([projectedAllocation], 2),
+  { denominatorIds: [denominatorId], denominatorAmount: '20', denominatorCurrencyCode: 'AUD', percentage: 61.7 },
+  'Savings percentages must use the allocation-bound denominator rather than display-resource spend.'
+);
+assert.deepEqual(projection.coordinates[0].resourceContributions, [
+  {
+    resourceId,
+    allocationIds: [allocationId],
+    savingsMinorUnits: 1234,
+    denominator: { denominatorIds: [denominatorId], amount: '20', currencyCode: 'AUD' },
+    percentage: 61.7,
+  },
+]);
+const forgedPercentage = structuredClone(projection);
+forgedPercentage.coordinates[0].resourceContributions[0].percentage = 12.34;
+const { projectionId: _forgedPercentageProjectionId, ...forgedPercentageIdentity } = forgedPercentage;
+forgedPercentage.projectionId = createFinancialSavingsSurfaceProjectionIdV1(forgedPercentageIdentity);
+assert.equal(
+  isFinancialSavingsSurfaceProjectionV1(forgedPercentage),
+  false,
+  'A resource percentage must replay from the exact allocation savings and denominator evidence.'
+);
 
 const forgedBinding = structuredClone(projection);
 forgedBinding.lifecycleBindings[0].recommendationId = 'another-recommendation';
@@ -97,6 +153,11 @@ const filteredResources = projectFinancialSavingsSurfaceResourceQueryV1(
   `sha256:${'9'.repeat(64)}`
 );
 assert.deepEqual(filteredResources.lifecycleBindings, resourceProjection.lifecycleBindings);
+assert.deepEqual(
+  filteredResources.coordinates[0].resourceContributions,
+  resourceProjection.coordinates[0].resourceContributions,
+  'Resource filtering must preserve the producer-computed percentage for the selected allocation set.'
+);
 
 const azureComponentId = `sha256:${'a'.repeat(64)}`;
 const marketplaceComponentId = `sha256:${'b'.repeat(64)}`;

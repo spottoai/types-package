@@ -19,6 +19,7 @@ import {
 import { isFinancialBaselinePeriodV2 } from './financialScopeBaselineValidation';
 import { isFinancialChargeInclusionPolicyRefV1 } from './financialChargeCompositionValidation';
 import { isCanonicalExactMoney } from './financialValidationPrimitives';
+import { composeFinancialSavingsAllocationPercentageV1 } from './financialSavingsPercentageKernel';
 
 const COST_BASES = new Set(['billed', 'amortized']);
 const ESTIMATE_LENSES = new Set(['actual-only', 'actual-plus-estimated', 'estimates-only']);
@@ -78,6 +79,20 @@ export const canonicalizeFinancialSavingsSurfaceProjectionIdentityV1 = (value: F
                           ),
                         }),
                   })),
+                ...(coordinate.resourceContributions === undefined
+                  ? {}
+                  : {
+                      resourceContributions: [...coordinate.resourceContributions]
+                        .sort((left, right) => left.resourceId.localeCompare(right.resourceId))
+                        .map(contribution => ({
+                          ...contribution,
+                          allocationIds: [...contribution.allocationIds].sort(),
+                          denominator: {
+                            ...contribution.denominator,
+                            denominatorIds: [...contribution.denominator.denominatorIds].sort(),
+                          },
+                        })),
+                    }),
                 aggregate: { ...coordinate.aggregate, allocationIds: [...coordinate.aggregate.allocationIds].sort() },
               }
         ),
@@ -165,7 +180,7 @@ const isComposedCoordinate = (
         'aggregate',
         ...(partial ? ['unavailableRecommendationIds'] : []),
       ],
-      ['requestedCurrencyCode']
+      ['requestedCurrencyCode', 'resourceContributions']
     ) ||
     !isCoordinateCommon(value) ||
     !isFinancialSavingsHash(value.currentAggregateBaselineId) ||
@@ -202,6 +217,10 @@ const isComposedCoordinate = (
   const recommendationIds = new Set<string>();
   const allocationIds: string[] = [];
   const contributionAmounts: number[] = [];
+  const allocationById = new Map<
+    string,
+    { allocationId: string; savingsMinorUnits: number; denominator?: { denominatorId: string; amount: string; currencyCode: string } }
+  >();
   for (const contribution of value.recommendationContributions) {
     if (
       !isFinancialSavingsRecord(contribution) ||
@@ -236,13 +255,29 @@ const isComposedCoordinate = (
     for (const allocation of exactAllocations) {
       if (
         !isFinancialSavingsRecord(allocation) ||
-        !hasExactFinancialSavingsFields(allocation, ['allocationId', 'savingsMinorUnits']) ||
+        !hasExactFinancialSavingsFields(allocation, ['allocationId', 'savingsMinorUnits'], ['denominator']) ||
         !isFinancialSavingsHash(allocation.allocationId) ||
         (queryAllocationIds !== undefined && !queryAllocationIds.has(allocation.allocationId)) ||
-        !isFinancialSavingsMinorUnits(allocation.savingsMinorUnits)
+        !isFinancialSavingsMinorUnits(allocation.savingsMinorUnits) ||
+        (allocation.denominator !== undefined &&
+          (!isFinancialSavingsRecord(allocation.denominator) ||
+            !hasExactFinancialSavingsFields(allocation.denominator, ['denominatorId', 'amount', 'currencyCode']) ||
+            !isFinancialSavingsHash(allocation.denominator.denominatorId) ||
+            !isCanonicalExactMoney({
+              amount: allocation.denominator.amount,
+              currencyCode: allocation.denominator.currencyCode,
+            })))
       ) return false;
       exactAllocationIds.push(allocation.allocationId);
       exactAllocationAmounts.push(allocation.savingsMinorUnits);
+      allocationById.set(
+        allocation.allocationId,
+        allocation as {
+          allocationId: string;
+          savingsMinorUnits: number;
+          denominator?: { denominatorId: string; amount: string; currencyCode: string };
+        }
+      );
     }
     if (
       new Set(exactAllocationIds).size !== exactAllocationIds.length ||
@@ -252,6 +287,62 @@ const isComposedCoordinate = (
     recommendationIds.add(contribution.recommendationId);
     allocationIds.push(...contribution.allocationIds);
     contributionAmounts.push(contribution.savingsMinorUnits);
+  }
+
+  if (value.resourceContributions !== undefined) {
+    if (!Array.isArray(value.resourceContributions) || value.resourceContributions.length > MAX_ALLOCATIONS) return false;
+    const resourceIds = new Set<string>();
+    const resourceAllocationIds: string[] = [];
+    for (const contribution of value.resourceContributions) {
+      if (
+        !isFinancialSavingsRecord(contribution) ||
+        !hasExactFinancialSavingsFields(
+          contribution,
+          ['resourceId', 'allocationIds', 'savingsMinorUnits', 'denominator', 'percentage']
+        ) ||
+        !isFinancialSavingsIdentity(contribution.resourceId) ||
+        resourceIds.has(contribution.resourceId) ||
+        !Array.isArray(contribution.allocationIds) ||
+        contribution.allocationIds.length === 0 ||
+        contribution.allocationIds.length > MAX_ALLOCATIONS ||
+        !contribution.allocationIds.every(isFinancialSavingsHash) ||
+        new Set(contribution.allocationIds).size !== contribution.allocationIds.length ||
+        !isFinancialSavingsMinorUnits(contribution.savingsMinorUnits) ||
+        !isFinancialSavingsRecord(contribution.denominator) ||
+        !hasExactFinancialSavingsFields(contribution.denominator, ['denominatorIds', 'amount', 'currencyCode']) ||
+        !Array.isArray(contribution.denominator.denominatorIds) ||
+        contribution.denominator.denominatorIds.length === 0 ||
+        !contribution.denominator.denominatorIds.every(isFinancialSavingsHash) ||
+        new Set(contribution.denominator.denominatorIds).size !== contribution.denominator.denominatorIds.length ||
+        !isCanonicalExactMoney({ amount: contribution.denominator.amount, currencyCode: contribution.denominator.currencyCode }) ||
+        typeof contribution.percentage !== 'number' ||
+        !Number.isFinite(contribution.percentage) ||
+        contribution.percentage < 0
+      ) return false;
+      const allocations = contribution.allocationIds.map(allocationId => allocationById.get(allocationId));
+      if (allocations.some(allocation => allocation === undefined)) return false;
+      const exactAllocations = allocations as Array<{
+        allocationId: string;
+        savingsMinorUnits: number;
+        denominator?: { denominatorId: string; amount: string; currencyCode: string };
+      }>;
+      const composed = composeFinancialSavingsAllocationPercentageV1(exactAllocations, Number(value.minorUnitScale));
+      if (
+        !composed ||
+        sumFinancialSavingsMinorUnits(exactAllocations.map(allocation => allocation.savingsMinorUnits)) !==
+          contribution.savingsMinorUnits ||
+        !haveSameFinancialSavingsSet(composed.denominatorIds, contribution.denominator.denominatorIds) ||
+        composed.denominatorAmount !== contribution.denominator.amount ||
+        composed.denominatorCurrencyCode !== contribution.denominator.currencyCode ||
+        composed.percentage !== contribution.percentage
+      ) return false;
+      resourceIds.add(contribution.resourceId);
+      resourceAllocationIds.push(...contribution.allocationIds);
+    }
+    if (
+      new Set(resourceAllocationIds).size !== resourceAllocationIds.length ||
+      !haveSameFinancialSavingsSet(resourceAllocationIds, allocationIds)
+    ) return false;
   }
 
   return (
