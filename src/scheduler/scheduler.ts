@@ -4,30 +4,15 @@ import type {
   BastionScheduleRun,
 } from './bastionSchedule';
 
-export type ScheduleTargetType =
-  | 'recommendation-action'
-  | 'resource-operation'
-  | 'provider-scope-operation';
-export type ScheduleSelectorType =
-  | 'single-resource'
-  | 'selected-resources'
-  | 'provider-scope';
+export type ScheduleTargetType = 'recommendation-action' | 'resource-operation' | 'provider-scope-operation';
+export type ScheduleSelectorType = 'single-resource' | 'selected-resources' | 'provider-scope';
 export type ScheduleType = 'once' | 'recurring';
 export type ScheduleStatus = 'active' | 'paused';
-export type ScheduleRunStatus =
-  | 'success'
-  | 'dispatch-failed'
-  | 'dispatching';
-export type ScheduleHistoryEventType =
-  | 'dispatch-succeeded'
-  | 'dispatch-failed';
+export type ScheduleRunStatus = 'success' | 'dispatch-failed' | 'dispatching';
+export type ScheduleHistoryEventType = 'dispatch-succeeded' | 'dispatch-failed';
 
 export type ScheduleDefinitionClass = 'atomic' | 'composite';
-export type ScheduleDefinitionType =
-  | 'recommendation-action'
-  | 'resource-operation'
-  | 'vm-runtime-weekly'
-  | 'bastion-availability-weekly';
+export type ScheduleDefinitionType = 'recommendation-action' | 'resource-operation' | 'vm-runtime-weekly' | 'bastion-availability-weekly';
 
 export type ResourceScheduleGroupType = 'resource-schedule-definition';
 
@@ -116,22 +101,16 @@ export interface SchedulerBatchRunItemBase {
   updatedByUserId?: string;
 }
 
-export interface NonBastionSchedulerBatchRunItem
-  extends SchedulerBatchRunItemBase {
+export interface NonBastionSchedulerBatchRunItem extends SchedulerBatchRunItemBase {
   selectedResourceIds?: string[];
   recommendationId?: string;
   operation?: string;
   actionDefinitionId?: string;
   recommendationAction?: string;
-  definitionType?: Exclude<
-    ScheduleDefinitionType,
-    'bastion-availability-weekly'
-  >;
+  definitionType?: Exclude<ScheduleDefinitionType, 'bastion-availability-weekly'>;
 }
 
-export type SchedulerBatchRunItem =
-  | NonBastionSchedulerBatchRunItem
-  | BastionScheduleRun;
+export type SchedulerBatchRunItem = NonBastionSchedulerBatchRunItem | BastionScheduleRun;
 
 export interface SchedulerBatchQueueMessage {
   batchId: string;
@@ -185,9 +164,7 @@ export interface RecurringScheduleWriteRequest extends BaseScheduleWriteRequest 
   status?: ScheduleStatus;
 }
 
-export type ScheduleWriteRequest =
-  | OnceScheduleWriteRequest
-  | RecurringScheduleWriteRequest;
+export type ScheduleWriteRequest = OnceScheduleWriteRequest | RecurringScheduleWriteRequest;
 
 export type ResourceScheduleStatus = ScheduleStatus;
 export type VmRuntimeOperation = 'start' | 'deallocate';
@@ -243,19 +220,12 @@ export interface ResourceScheduleDefinitionBase {
   updatedByUserId?: string;
 }
 
-export interface AtomicResourceScheduleDefinition
-  extends ResourceScheduleDefinitionBase {
+export interface AtomicResourceScheduleDefinition extends ResourceScheduleDefinitionBase {
   definitionClass: 'atomic';
   definitionType: 'recommendation-action' | 'resource-operation';
   scheduleId?: string;
-  targetType: Extract<
-    ScheduleTargetType,
-    'recommendation-action' | 'resource-operation'
-  >;
-  selectorType: Extract<
-    ScheduleSelectorType,
-    'single-resource' | 'selected-resources' | 'provider-scope'
-  >;
+  targetType: Extract<ScheduleTargetType, 'recommendation-action' | 'resource-operation'>;
+  selectorType: Extract<ScheduleSelectorType, 'single-resource' | 'selected-resources' | 'provider-scope'>;
   scheduleType: ScheduleType;
   localDateTime?: string;
   cronExpression?: string;
@@ -268,8 +238,7 @@ export interface AtomicResourceScheduleDefinition
   configuration?: Record<string, unknown>;
 }
 
-export interface VmRuntimeWeeklyScheduleDefinition
-  extends ResourceScheduleDefinitionBase {
+export interface VmRuntimeWeeklyScheduleDefinition extends ResourceScheduleDefinitionBase {
   definitionClass: 'composite';
   definitionType: 'vm-runtime-weekly';
   resourceId: string;
@@ -302,14 +271,8 @@ export interface AtomicResourceScheduleWriteRequest {
   timezone?: string;
   notes?: string;
   executionPolicy?: ResourceScheduleExecutionPolicy;
-  targetType: Extract<
-    ScheduleTargetType,
-    'recommendation-action' | 'resource-operation'
-  >;
-  selectorType: Extract<
-    ScheduleSelectorType,
-    'single-resource' | 'selected-resources' | 'provider-scope'
-  >;
+  targetType: Extract<ScheduleTargetType, 'recommendation-action' | 'resource-operation'>;
+  selectorType: Extract<ScheduleSelectorType, 'single-resource' | 'selected-resources' | 'provider-scope'>;
   scheduleType: ScheduleType;
   localDateTime?: string;
   cronExpression?: string;

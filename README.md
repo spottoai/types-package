@@ -42,6 +42,9 @@ import * as Types from '@spottoai/types-package';
 // Import specific interfaces
 import { User } from '@spottoai/types-package';
 
+// Import the provider-neutral resource scheduling contract and validators
+import { isResourceStrategyWeeklyScheduleWriteRequest, type ResourceStrategyWeeklyScheduleWriteRequest } from '@spottoai/types-package/scheduler';
+
 // Import AWS-only public artifact contracts
 import type { AwsPortalAccountSummaryArtifact, AwsPortalResourceCollectionArtifact } from '@spottoai/types-package/aws';
 

@@ -284,9 +284,7 @@ function isBastionScheduleRun(value) {
         'definitionRevision',
         'scheduledForUtc',
     ];
-    const requiredFields = value['compiledOperation'] === 'remove'
-        ? [...commonRequiredFields, 'controlGeneration']
-        : commonRequiredFields;
+    const requiredFields = value['compiledOperation'] === 'remove' ? [...commonRequiredFields, 'controlGeneration'] : commonRequiredFields;
     if (!hasExactFields(value, requiredFields, [
         'scheduleName',
         'scheduleGroupId',

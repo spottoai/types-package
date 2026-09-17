@@ -1,6 +1,8 @@
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
+  type ReportCostChangePeriod,
+  type ReportCommitmentInventoryRow,
   type ReportProjectionRecord,
   type SubscriptionReportEvidencePack,
   type SubscriptionReportHistory,
@@ -26,9 +28,54 @@ void [dailyValidation, legacyDailyProjection];
 
 const rows = <T>(values: T[] = []): ReportBoundedRows<T> => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const projectedRows = rows<ReportProjectionRecord>();
+const reservationWithUtilization: ReportCommitmentInventoryRow = {
+  id: 'reservation-1',
+  benefitType: 'reservation',
+  utilization: { sevenDay: 84.5, thirtyDay: 88.2, source: 'reservation-summary' },
+};
+const savingsPlanWithUtilization: ReportCommitmentInventoryRow = {
+  id: 'savings-plan-1',
+  benefitType: 'savings-plan',
+  utilization: { thirtyDay: 108, source: 'usage' },
+};
+const legacyCommitmentRow: ReportCommitmentInventoryRow = { id: 'reservation-legacy', benefitType: 'reservation' };
+void [reservationWithUtilization, savingsPlanWithUtilization, legacyCommitmentRow];
+const costChangePeriods = rows<ReportCostChangePeriod>([
+  {
+    period: '2026-08',
+    previousPeriod: '2026-07',
+    currency: 'NZD',
+    currentCost: 125,
+    previousCost: 100,
+    change: 25,
+    drivers: rows([
+      {
+        key: 'service:virtual-machines',
+        level: 'service',
+        label: 'Virtual Machines',
+        currentCost: 75,
+        previousCost: 50,
+        change: 25,
+        changeType: 'increase',
+        summary: 'Compute usage increased.',
+        reasons: rows([
+          {
+            type: 'quantity_increase',
+            impact: 25,
+            impactPercent: 100,
+            description: 'Usage increased by 50 hours.',
+            oldValue: 100,
+            newValue: 150,
+          },
+        ]),
+      },
+    ]),
+  },
+]);
 
 const reporting: SubscriptionReportingProjection = {
   dashboard: {},
+  costChangePeriods,
   recommendationPortfolio: {
     sourceRecommendationCount: 0,
     activeRecommendationCount: 0,
@@ -61,13 +108,33 @@ const reporting: SubscriptionReportingProjection = {
     limitations: projectedRows,
   },
   patchManagement: { machines: projectedRows },
-  dataProtection: { items: projectedRows, issues: projectedRows },
-  resourceHealth: { events: { events: projectedRows }, availabilityStatuses: { statuses: projectedRows } },
+  dataProtection: {
+    costSummary: {
+      currencyCode: 'NZD',
+      totals: { actualCostLast30Days: 25, estimatedMonthlyCostForUnprotected: 10 },
+    },
+    items: projectedRows,
+    issues: projectedRows,
+  },
+  resourceHealth: {
+    events: {
+      events: rows([
+        {
+          id: 'incident-1',
+          status: 'Resolved',
+          impactStartTime: '2026-08-01T00:00:00.000Z',
+          impactMitigationTime: '2026-08-01T01:00:00.000Z',
+          durationSeconds: 3600,
+        },
+      ]),
+    },
+    availabilityStatuses: { statuses: projectedRows },
+  },
   serverUptime: { workspaces: projectedRows, gaps: projectedRows, servers: projectedRows },
   publicIpAddresses: { items: projectedRows },
   activity: { changes: projectedRows, security: projectedRows, health: projectedRows, suppressed: projectedRows },
   commitmentsPlanning: {
-    inventorySummary: { totalCount: 0, statusCounts: {} },
+    inventorySummary: { totalCount: 0, statusCounts: {}, benefitTypeCounts: {} },
     inventory: rows(),
     coverage: projectedRows,
     obsoleteCandidates: projectedRows,
@@ -133,7 +200,26 @@ const history: SubscriptionReportHistory = {
   subscriptionId: 'subscription-1',
   generatedAt: '2026-09-11T00:00:00.000Z',
   retention: { maxPeriods: REPORT_EVIDENCE_LIMITS.historyPeriods },
-  periods: [],
+  periods: [
+    {
+      period: '2026-08',
+      sourceRunId: 'run-1',
+      sourceGeneratedAt: '2026-09-11T00:00:00.000Z',
+      metrics: {
+        resourceCount: 1,
+        recommendationCount: 0,
+        impactedResourceCount: 0,
+        securityRecommendationCount: 0,
+        securityImpactedResourceCount: 0,
+      },
+      recommendations: rows(),
+      comparisonIdentities: {
+        costRecommendationIds: rows(),
+        undersizedResourceIds: rows(['/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1']),
+        regulatoryAssessmentKeys: rows(['a'.repeat(64)]),
+      },
+    },
+  ],
 };
 
 const tenantPack: TenantReportEvidencePack = {
@@ -151,7 +237,29 @@ const tenantPack: TenantReportEvidencePack = {
       enforcement: { enforced: 4, conditionallyEnforced: 2, notEnforced: 1, unknown: 1 },
     },
   },
-  globalAdmins: { summary: {}, coverage: {}, warnings: rows(), principals: rows() },
+  globalAdmins: {
+    summary: {},
+    coverage: {
+      userSignInActivity: {
+        state: 'complete',
+        source: 'microsoft-graph',
+        requiredPermissions: ['AuditLog.Read.All and Microsoft Entra ID P1 or P2'],
+      },
+    },
+    warnings: rows(),
+    principals: rows([
+      {
+        principalId: 'principal-1',
+        principalType: 'user',
+        assignmentSource: 'direct',
+        assignmentModes: ['permanent'],
+        isPimBacked: false,
+        lastActivatedEvidence: 'none',
+        lastSignInAt: '2026-09-10T00:00:00.000Z',
+        lastSignInEvidence: 'last-successful-sign-in',
+      },
+    ]),
+  },
 };
 
 const invalidHistoryRetention: SubscriptionReportHistory = {

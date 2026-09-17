@@ -1,0 +1,79 @@
+import {
+  createResourceSchedulerTickRequestMessageV1,
+  isResourceSchedulerTickRequestMessageV1,
+  type ResourceSchedulerTickRequestMessageV1,
+} from '@spottoai/types-package';
+import {
+  WEEKLY_AVAILABILITY_FIXTURES_V1,
+  isResourceScheduleDryRunProjection,
+  isResourceSchedulePermissionManifestConsent,
+  isResourceStrategyWeeklyScheduleSuggestion,
+  isResourceStrategyWeeklyScheduleWriteRequest,
+  type ResourceScheduleDryRunProjection,
+  type ResourceSchedulePermissionManifestConsent,
+  type ResourceStrategyWeeklyScheduleSuggestion,
+  type ResourceStrategyWeeklyScheduleWriteRequest,
+} from '@spottoai/types-package/scheduler';
+
+const definition: ResourceStrategyWeeklyScheduleWriteRequest = {
+  definitionType: 'resource-strategy-weekly',
+  providerScopeId: 'subscription-1',
+  cloudAccountId: 'cloud-account-1',
+  resourceId: '/subscriptions/subscription-1/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-1',
+  capability: { capabilityId: 'azure.compute.virtual-machines.runtime', capabilityVersion: 1 },
+  name: 'Weekday availability',
+  timezone: 'Pacific/Auckland',
+  rules: [{ ruleId: 'restore', transition: 'restore', daysOfWeek: [1], desiredStateAtLocal: '08:00' }],
+  initialMode: 'draft',
+  notificationPolicyId: 'notification-policy-1',
+};
+
+const consent: ResourceSchedulePermissionManifestConsent = {
+  version: 'manifest-v1',
+  contentHash: 'sha256:manifest',
+  orderedGrantGroupHashes: ['sha256:group'],
+};
+
+const suggestion: ResourceStrategyWeeklyScheduleSuggestion = {
+  definitionType: 'resource-strategy-weekly',
+  capability: definition.capability,
+  rules: definition.rules,
+};
+
+const tick: ResourceSchedulerTickRequestMessageV1 = createResourceSchedulerTickRequestMessageV1('2026-09-16T00:00:00.000Z');
+
+const dryRun: ResourceScheduleDryRunProjection = {
+  scheduleId: 'schedule-1',
+  definitionRevision: 1,
+  controlGeneration: 1,
+  evaluatedAtUtc: '2026-09-16T00:00:00.000Z',
+  expiresAtUtc: '2026-09-16T00:05:00.000Z',
+  freshness: 'fresh',
+  windowStartUtc: '2026-09-16T00:00:00.000Z',
+  windowEndUtc: '2026-09-23T00:00:00.000Z',
+  occurrenceCount: 2,
+  status: 'ready',
+  checks: (
+    [
+      'ownership',
+      'readiness',
+      'mutation-contention',
+      'busy-policy',
+      'blackout',
+      'admission-budgets',
+      'evidence-freshness',
+      'notification-routing',
+    ] as const
+  ).map(name => ({ name, status: 'ready', reasonCodes: [] })),
+};
+
+if (
+  !isResourceSchedulerTickRequestMessageV1(tick) ||
+  !isResourceScheduleDryRunProjection(dryRun) ||
+  !isResourceStrategyWeeklyScheduleWriteRequest(definition) ||
+  !isResourceStrategyWeeklyScheduleSuggestion(suggestion) ||
+  !isResourceSchedulePermissionManifestConsent(consent) ||
+  WEEKLY_AVAILABILITY_FIXTURES_V1.length === 0
+) {
+  throw new Error('Resource strategy scheduler package contract is unavailable.');
+}

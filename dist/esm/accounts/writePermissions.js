@@ -10,6 +10,8 @@ export var WritePermission;
     WritePermission[WritePermission["StorageInventory"] = 2] = "StorageInventory";
     /** Permission to create scoped Azure Policy exemptions */
     WritePermission[WritePermission["PolicyExemptions"] = 4] = "PolicyExemptions";
+    /** Permission to run approved resource scheduling capabilities */
+    WritePermission[WritePermission["ResourceScheduling"] = 8] = "ResourceScheduling";
 })(WritePermission || (WritePermission = {}));
 /**
  * Permission metadata array
@@ -39,5 +41,12 @@ export const WRITE_PERMISSIONS_METADATA = [
         requiredRoles: ['Custom role with Azure Policy exemption actions at the target and assignment scopes'],
         documentationUrl: 'https://docs.spotto.ai/docs/portal/write-permissions/policy-exemptions',
         scriptGeneratorUrl: '/scripts/policy-exemptions-role',
+    },
+    {
+        id: WritePermission.ResourceScheduling,
+        displayName: 'Resource Scheduling',
+        description: 'Allows Spotto to run explicitly approved resource scheduling capabilities at their exact Azure scopes.',
+        requiredRoles: [],
+        permissionManifestKind: 'resource-scheduling',
     },
 ];

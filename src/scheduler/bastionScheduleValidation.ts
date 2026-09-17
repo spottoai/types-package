@@ -347,10 +347,7 @@ export function isBastionScheduleRun(value: unknown): value is BastionScheduleRu
     'definitionRevision',
     'scheduledForUtc',
   ] as const;
-  const requiredFields =
-    value['compiledOperation'] === 'remove'
-      ? ([...commonRequiredFields, 'controlGeneration'] as const)
-      : commonRequiredFields;
+  const requiredFields = value['compiledOperation'] === 'remove' ? ([...commonRequiredFields, 'controlGeneration'] as const) : commonRequiredFields;
   if (
     !hasExactFields(value, requiredFields, [
       'scheduleName',

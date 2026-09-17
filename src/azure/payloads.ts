@@ -70,6 +70,124 @@ export interface RequestMessage {
   tracing?: WorkflowTracingOptions;
 }
 
+type ResourceSchedulerTickIdentifierFields = Pick<
+  RequestMessage,
+  'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'
+>;
+
+/**
+ * Internal global wake-up for the cloud-engine-owned resource scheduler.
+ *
+ * The message intentionally contains no tenant, schedule, resource, capability,
+ * Action or due-work selection. `scheduledAtUtc` is correlation and bounded
+ * catch-up evidence only; cloud-engine remains authoritative for execution time.
+ */
+export interface ResourceSchedulerTickRequestMessageV1 extends ResourceSchedulerTickIdentifierFields {
+  schemaVersion: 1;
+  entity: 'resource-scheduler';
+  action: 'tick';
+  companyId: '*';
+  cloudAccountId: '*';
+  tenantId: '*';
+  clientId: '*';
+  tickId: string;
+  scheduledAtUtc: string;
+  correlationId: string;
+}
+
+const RESOURCE_SCHEDULER_TICK_PREFIX_V1 = 'resource-scheduler:tick:';
+const RESOURCE_SCHEDULER_TICK_MAX_ID_LENGTH_V1 = 128;
+const RESOURCE_SCHEDULER_TICK_KEYS_V1 = [
+  'schemaVersion',
+  'entity',
+  'action',
+  'companyId',
+  'cloudAccountId',
+  'tenantId',
+  'clientId',
+  'tickId',
+  'scheduledAtUtc',
+  'correlationId',
+] as const;
+const CANONICAL_UTC_TIMESTAMP_MILLISECONDS = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u;
+
+const isCanonicalUtcTimestampMilliseconds = (value: unknown): value is string => {
+  if (typeof value !== 'string' || !CANONICAL_UTC_TIMESTAMP_MILLISECONDS.test(value)) return false;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
+};
+
+const hasExactResourceSchedulerTickKeysV1 = (value: Record<string, unknown>): boolean => {
+  const keys = Object.keys(value);
+  return (
+    keys.length === RESOURCE_SCHEDULER_TICK_KEYS_V1.length &&
+    RESOURCE_SCHEDULER_TICK_KEYS_V1.every(key => Object.prototype.hasOwnProperty.call(value, key))
+  );
+};
+
+const normalizeResourceSchedulerTickInstantV1 = (scheduledAt: Date | string | number): string => {
+  if (typeof scheduledAt === 'string') {
+    if (!isCanonicalUtcTimestampMilliseconds(scheduledAt)) {
+      throw new TypeError('Resource scheduler tick time must be a canonical UTC timestamp with milliseconds');
+    }
+    return scheduledAt;
+  }
+
+  const milliseconds = scheduledAt instanceof Date ? scheduledAt.getTime() : scheduledAt;
+  if (!Number.isFinite(milliseconds)) throw new TypeError('Resource scheduler tick time must be finite');
+  const normalized = new Date(milliseconds).toISOString();
+  if (!isCanonicalUtcTimestampMilliseconds(normalized)) {
+    throw new TypeError('Resource scheduler tick time must use a four-digit UTC year');
+  }
+  return normalized;
+};
+
+/** Creates the deterministic internal queue envelope for one cron occurrence. */
+export const createResourceSchedulerTickRequestMessageV1 = (scheduledAt: Date | string | number): ResourceSchedulerTickRequestMessageV1 => {
+  const scheduledAtUtc = normalizeResourceSchedulerTickInstantV1(scheduledAt);
+  const tickId = `${RESOURCE_SCHEDULER_TICK_PREFIX_V1}${scheduledAtUtc}`;
+  return {
+    schemaVersion: 1,
+    entity: 'resource-scheduler',
+    action: 'tick',
+    companyId: '*',
+    cloudAccountId: '*',
+    tenantId: '*',
+    clientId: '*',
+    tickId,
+    scheduledAtUtc,
+    correlationId: tickId,
+  };
+};
+
+/** Exact validator for the internal resource-scheduler tick queue boundary. */
+export const isResourceSchedulerTickRequestMessageV1 = (value: unknown): value is ResourceSchedulerTickRequestMessageV1 => {
+  try {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+    const candidate = value as Record<string, unknown>;
+    if (!hasExactResourceSchedulerTickKeysV1(candidate) || !isCanonicalUtcTimestampMilliseconds(candidate['scheduledAtUtc'])) {
+      return false;
+    }
+
+    const expectedTickId = `${RESOURCE_SCHEDULER_TICK_PREFIX_V1}${candidate['scheduledAtUtc']}`;
+    return (
+      candidate['schemaVersion'] === 1 &&
+      candidate['entity'] === 'resource-scheduler' &&
+      candidate['action'] === 'tick' &&
+      candidate['companyId'] === '*' &&
+      candidate['cloudAccountId'] === '*' &&
+      candidate['tenantId'] === '*' &&
+      candidate['clientId'] === '*' &&
+      typeof candidate['tickId'] === 'string' &&
+      candidate['tickId'].length <= RESOURCE_SCHEDULER_TICK_MAX_ID_LENGTH_V1 &&
+      candidate['tickId'] === expectedTickId &&
+      candidate['correlationId'] === expectedTickId
+    );
+  } catch {
+    return false;
+  }
+};
+
 type AzureSpSetupIdentifierOnlyRequestMessage = Pick<
   RequestMessage,
   'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'

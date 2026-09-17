@@ -129,3 +129,23 @@ User approval: "proceed - make the proposed changes" covers additive shared repo
 Optional `reportingTextTruncated` identifies recommendation editorial inputs that exceed the producer's text bounds. Consumers use the source title for these rows rather than inferring a theme from clipped context. Optional security assessment summaries preserve complete status counts; Secure Score evidence retains availability, observation and denominator fields in current and historical projections.
 
 Final correction validation: package build, full `npm test` (including packed consumer checks) and full `npm run lint` pass on 2026-09-12. This supersedes the earlier lint-blocker status above. Cross-repository evidence and outstanding release gates are recorded in [reporting parity verification](../../../core/specs/reporting/reporting-parity-verification-2026-09-12.md).
+
+## Global Administrator sign-in contract completion — approved 2026-09-16
+
+Approval: the user requested the types-package follow-up for typed Global Administrator sign-in coverage and verification of the emitted data. This iteration is additive and does not publish a package or alter stored schema versions.
+
+Open questions: no blocking contract choice remains. Live Microsoft Graph permission/licensing availability varies by tenant and cannot be inferred from an absent date.
+
+Assumptions and constraints: the cloud-engine producer already emits `coverage.userSignInActivity` and only `lastSuccessfulSignInDateTime` as a last login; the UI now displays only `lastSignInEvidence: last-successful-sign-in`. Existing artifacts without these optional fields remain valid. Historical comparison identities still require configured history storage and complete governance evidence for each period; this contract change does not backfill them.
+
+Alternatives and tradeoffs: duplicating a UI-only sign-in type would preserve the shared contract gap; making the new fields required would reject older stored artifacts. Decision: add optional sign-in coverage and principal evidence to the shared governance contract, retain optional compact-pack fields, and verify the runtime guard's success/unavailable cases.
+
+Deferred ideas: new Graph requests, historical sign-in backfill, history-storage configuration changes, and publishing/consumer lockfile updates.
+
+Tasks and verification:
+
+1. Add optional `userSignInActivity` and successful-sign-in evidence to shared governance DTOs; keep compact tenant coverage explicitly typed. Verify contract fixtures compile.
+2. Extend built-artifact runtime tests for complete, unavailable, and invalid sign-in evidence. Verify older packs still pass.
+3. Verify current cloud-engine collection and compact-pack projection tests, plus UI successful-login mapping, without adding storage or Graph requests. Run package build, focused contract test, lint and formatting checks; record blockers and downstream publish state.
+
+Verification on 2026-09-16: `npm test` passed with the report-evidence contract check included in the standard suite; `npm run lint`, contract typechecking, and changed-file formatting passed. The cloud-engine Global Administrator collector suite passed (14 tests), and the UI report projection/demo-artifact suites passed (21 tests). A transient generated-output race and a concurrent scheduler assertion failed earlier attempts but did not reproduce in the final suite. Publishing and consumer installation remain separate; historical identity deltas still depend on configured history storage and complete per-period governance evidence.

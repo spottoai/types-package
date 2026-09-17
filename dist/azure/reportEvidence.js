@@ -20,6 +20,10 @@ exports.REPORT_EVIDENCE_LIMITS = {
     upcomingEvents: 20,
     historyPeriods: 13,
     historyRecommendations: 2000,
+    historyComparisonIdentities: 2000,
+    costChangePeriods: 13,
+    costChangeDrivers: 50,
+    costChangeReasons: 10,
     tenantGlobalAdministrators: 50,
 };
 //# sourceMappingURL=reportEvidence.js.map

@@ -1,3 +1,8 @@
+import type {
+  ResourceSchedulePermissionManifestConsent,
+  ResourceSchedulePermissionManifestProjection,
+} from '../scheduler/resourceStrategy';
+
 export type AzureSpSetupPhase =
   | 'created'
   | 'authorizing'
@@ -415,6 +420,9 @@ export interface AzureSpSetupExecutionRequestV1 {
   groupNames?: string[];
   readBitmask?: number;
   writeBitmask?: number;
+  resourceSchedulingPermissionConsent?: ResourceSchedulePermissionManifestConsent;
+  /** Server-resolved immutable manifest. Clients can provide consent only, never this authority payload. */
+  resourceSchedulingPermissionManifest?: ResourceSchedulePermissionManifestProjection;
   targetCloudAccountId?: string;
   targetAzureApplicationAppId?: string;
   targetAzureApplicationObjectId?: string;
@@ -736,6 +744,7 @@ export interface AzureSpSetupExecuteRequest {
   groupNames?: string[];
   readBitmask?: number;
   writeBitmask?: number;
+  resourceSchedulingPermissionConsent?: ResourceSchedulePermissionManifestConsent;
 }
 
 export type AzureSpSetupExecuteResponse = AzureSpSetupStatusResponse;
