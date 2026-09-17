@@ -229,6 +229,24 @@ const tenantPack = {
 };
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
+const monthlyBudgetPack = structuredClone(subscriptionPack);
+monthlyBudgetPack.cost.budget = {
+  name: 'd365-sub-budget',
+  amount: 9000,
+  currentSpend: 7627.35,
+  startDate: '2024-01-01T00:00:00Z',
+  endDate: '2034-12-31T00:00:00Z',
+  timeGrain: 'Monthly',
+  category: 'Cost',
+  currencyCode: 'NZD',
+  filter: {},
+};
+assert.equal(isSubscriptionReportEvidencePack(monthlyBudgetPack), true, 'typed monthly budget evidence');
+for (const [field, invalidValue] of [['timeGrain', 30], ['amount', '9000'], ['filter', []], ['currencyCode', 123]]) {
+  const invalidBudget = structuredClone(monthlyBudgetPack);
+  invalidBudget.cost.budget[field] = invalidValue;
+  assert.equal(isSubscriptionReportEvidencePack(invalidBudget), false, `reject malformed budget ${field}`);
+}
 const credentialActivityPack = structuredClone(subscriptionPack);
 credentialActivityPack.reporting.credentialDeadlines = {
   asOf: '2026-09-17T00:00:00.000Z',

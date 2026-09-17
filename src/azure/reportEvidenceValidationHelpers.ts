@@ -65,12 +65,18 @@ export const isResourceSummary = (value: unknown): boolean =>
   value.topSpendResources.length <= REPORT_EVIDENCE_LIMITS.summaryRows &&
   value.topSpendResources.every(isTopSpendResource);
 
+const isReportBudgetProjection = (value: unknown): boolean =>
+  isRecord(value) &&
+  hasOptionalStrings(value, ['name', 'startDate', 'endDate', 'timeGrain', 'category', 'currencyCode']) &&
+  hasOptionalNumbers(value, ['amount', 'currentSpend', 'forecastedSpend']) &&
+  (value.filter === undefined || isRecord(value.filter));
+
 export const isCostSummary = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.sourceMetadata) || !Array.isArray(value.topSpendResources)) return false;
   if (
     !hasOptionalStrings(value, ['currency', 'currencySymbol']) ||
     !hasOptionalNumbers(value, ['spend30Days', 'spend30DaysAmortized', 'totalRetailCost', 'miscCost', 'rollingCostRecordCount']) ||
-    (value.budget !== undefined && !isRecord(value.budget)) ||
+    (value.budget !== undefined && !isReportBudgetProjection(value.budget)) ||
     !isString(value.sourceMetadata.spend30DaysSource) ||
     !isString(value.sourceMetadata.spend30DaysAmortizedSource) ||
     !isString(value.sourceMetadata.totalRetailCostSource) ||

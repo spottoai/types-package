@@ -506,6 +506,27 @@ export interface SubscriptionReportResourceSummary {
   }>;
 }
 
+/** Selected source budget. Older report packs may omit its comparison metadata. */
+export interface ReportBudgetProjection extends ReportProjectionRecord {
+  name?: string;
+  /** Configured amount for one source time grain, not the report period's actual cost. */
+  amount?: number;
+  /** Spend observed in the source budget's current period, which may differ from the report month. */
+  currentSpend?: number;
+  forecastedSpend?: number;
+  /** Overall dates during which the budget configuration applies. */
+  startDate?: string;
+  endDate?: string;
+  /** Source cadence, for example Monthly; absent in older packs. */
+  timeGrain?: string;
+  /** Source category, for example Cost; absent in older packs. */
+  category?: string;
+  /** Source currency, when established independently of the report's billing currency. */
+  currencyCode?: string;
+  /** Source filter; an empty object denotes an unfiltered budget. */
+  filter?: ReportProjectionRecord;
+}
+
 export interface SubscriptionReportEvidencePack {
   generatedAt: string;
   generation: { sourceRunId?: string; sourceGeneratedAt?: string };
@@ -526,7 +547,7 @@ export interface SubscriptionReportEvidencePack {
     spend30DaysAmortized?: number;
     totalRetailCost?: number;
     miscCost?: number;
-    budget?: ReportProjectionRecord;
+    budget?: ReportBudgetProjection;
     period?: { type: 'rolling_30_days'; startDate?: string; endDate?: string; source: string };
     sourceMetadata: {
       spend30DaysSource: string;

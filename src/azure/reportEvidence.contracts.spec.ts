@@ -1,6 +1,7 @@
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
+  type ReportBudgetProjection,
   type ReportCostChangePeriod,
   type ReportCommitmentInventoryRow,
   type ReportProjectionRecord,
@@ -28,6 +29,19 @@ void [dailyValidation, legacyDailyProjection];
 
 const rows = <T>(values: T[] = []): ReportBoundedRows<T> => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const projectedRows = rows<ReportProjectionRecord>();
+const monthlyBudget: ReportBudgetProjection = {
+  name: 'd365-sub-budget',
+  amount: 9000,
+  currentSpend: 7627.35,
+  startDate: '2024-01-01T00:00:00Z',
+  endDate: '2034-12-31T00:00:00Z',
+  timeGrain: 'Monthly',
+  category: 'Cost',
+  currencyCode: 'NZD',
+  filter: {},
+};
+const legacyBudget: ReportBudgetProjection = { name: 'older budget', amount: 9000 };
+void legacyBudget;
 const reservationWithUtilization: ReportCommitmentInventoryRow = {
   id: 'reservation-1',
   benefitType: 'reservation',
@@ -173,6 +187,7 @@ const subscriptionPack: SubscriptionReportEvidencePack = {
     topSpendResources: [],
   },
   cost: {
+    budget: monthlyBudget,
     sourceMetadata: {
       spend30DaysSource: 'summary',
       spend30DaysAmortizedSource: 'summary',
