@@ -9,10 +9,12 @@ export const RESOURCE_STRATEGY_CONTRACT_LIMITS = {
   grantGroups: 128,
   permissionOperations: 8_192,
   listResults: 100,
-  dryRunChecks: 8,
+  dryRunChecks: 7,
   dryRunReasonCodes: 32,
   dryRunDtoBytes: 16_384,
-  dryRunMaxTtlMs: 5 * 60_000,
+  // Stable readiness evidence may remain current for 24 hours. Transient
+  // verdicts still publish their shorter dependency expiry (normally 5 min).
+  dryRunMaxTtlMs: 24 * 60 * 60_000,
   parameterBytes: 32_768,
   publicDtoBytes: 262_144,
 } as const;
@@ -99,12 +101,6 @@ export interface ResourceSchedulingCapabilityProjection {
     version: string;
     severity: 'info' | 'warning' | 'destructive';
     message: string;
-  };
-  evidence: {
-    sourceUrls: string[];
-    labResult: 'not-run' | 'failed' | 'passed';
-    verifiedAtUtc: string | null;
-    expiresAtUtc: string | null;
   };
 }
 export type ResourceSchedulingReadinessState =
@@ -221,14 +217,7 @@ export interface ResourceStrategyWeeklyScheduleListResponse {
   };
 }
 export type ResourceScheduleDryRunCheckName =
-  | 'ownership'
-  | 'readiness'
-  | 'mutation-contention'
-  | 'busy-policy'
-  | 'blackout'
-  | 'admission-budgets'
-  | 'evidence-freshness'
-  | 'notification-routing';
+  'ownership' | 'readiness' | 'mutation-contention' | 'busy-policy' | 'blackout' | 'admission-budgets' | 'notification-routing';
 export interface ResourceScheduleDryRunCheckProjection {
   name: ResourceScheduleDryRunCheckName;
   status: 'ready' | 'blocked';
@@ -246,6 +235,26 @@ export interface ResourceScheduleDryRunProjection {
   occurrenceCount: number;
   status: 'ready' | 'blocked';
   checks: ResourceScheduleDryRunCheckProjection[];
+}
+export type ResourceScheduleDryRunEvaluationStatus = 'queued' | 'running' | 'retrying' | 'ready' | 'blocked' | 'failed';
+export interface ResourceScheduleDryRunEvaluationError {
+  code: string;
+  message: string;
+}
+export interface ResourceScheduleDryRunEvaluationProjection {
+  scheduleId: string;
+  definitionRevision: number;
+  controlGeneration: number;
+  evaluationId: string;
+  status: ResourceScheduleDryRunEvaluationStatus;
+  queuedAtUtc: string;
+  startedAtUtc?: string;
+  updatedAtUtc: string;
+  completedAtUtc?: string;
+  attemptCount: number;
+  nextAttemptAtUtc?: string;
+  result?: ResourceScheduleDryRunProjection;
+  error?: ResourceScheduleDryRunEvaluationError;
 }
 export interface ScheduledResourceTransitionV1 {
   schemaVersion: 1;

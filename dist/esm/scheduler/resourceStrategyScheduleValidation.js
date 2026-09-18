@@ -181,7 +181,6 @@ const RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES = [
     'busy-policy',
     'blackout',
     'admission-budgets',
-    'evidence-freshness',
     'notification-routing',
 ];
 function isResourceScheduleDryRunCheckProjection(value) {
@@ -239,6 +238,110 @@ export function isResourceScheduleDryRunProjection(value) {
         return false;
     }
     return value.status === (value.checks.every(check => check.status === 'ready') ? 'ready' : 'blocked');
+}
+/** Validates durable progress for exactly one schedule revision dry-run evaluation. */
+export function isResourceScheduleDryRunEvaluationProjection(value) {
+    if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) ||
+        !isRecord(value) ||
+        containsForbiddenKey(value) ||
+        !hasOnlyKeys(value, [
+            'scheduleId',
+            'definitionRevision',
+            'controlGeneration',
+            'evaluationId',
+            'status',
+            'queuedAtUtc',
+            'startedAtUtc',
+            'updatedAtUtc',
+            'completedAtUtc',
+            'attemptCount',
+            'nextAttemptAtUtc',
+            'result',
+            'error',
+        ]) ||
+        !isBoundedString(value.scheduleId, 200) ||
+        !isPositiveInteger(value.definitionRevision) ||
+        !isPositiveInteger(value.controlGeneration) ||
+        !isBoundedString(value.evaluationId, 500) ||
+        !['queued', 'running', 'retrying', 'ready', 'blocked', 'failed'].includes(String(value.status)) ||
+        !isIsoTimestamp(value.queuedAtUtc) ||
+        !isIsoTimestamp(value.updatedAtUtc) ||
+        Date.parse(value.updatedAtUtc) < Date.parse(value.queuedAtUtc) ||
+        !isNonNegativeInteger(value.attemptCount)) {
+        return false;
+    }
+    const startedAtUtc = value.startedAtUtc;
+    if (startedAtUtc !== undefined &&
+        (!isIsoTimestamp(startedAtUtc) ||
+            Date.parse(startedAtUtc) < Date.parse(value.queuedAtUtc) ||
+            Date.parse(startedAtUtc) > Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const completedAtUtc = value.completedAtUtc;
+    if (completedAtUtc !== undefined &&
+        (!isIsoTimestamp(completedAtUtc) ||
+            startedAtUtc === undefined ||
+            Date.parse(completedAtUtc) < Date.parse(startedAtUtc) ||
+            Date.parse(completedAtUtc) > Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const nextAttemptAtUtc = value.nextAttemptAtUtc;
+    if (nextAttemptAtUtc !== undefined && (!isIsoTimestamp(nextAttemptAtUtc) || Date.parse(nextAttemptAtUtc) < Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const result = value.result;
+    if (result !== undefined &&
+        (!isResourceScheduleDryRunProjection(result) ||
+            result.scheduleId !== value.scheduleId ||
+            result.definitionRevision !== value.definitionRevision ||
+            result.controlGeneration !== value.controlGeneration)) {
+        return false;
+    }
+    const error = value.error;
+    if (error !== undefined &&
+        (!isRecord(error) || !hasOnlyKeys(error, ['code', 'message']) || !isBoundedString(error.code, 200) || !isBoundedString(error.message))) {
+        return false;
+    }
+    switch (value.status) {
+        case 'queued':
+            return (value.attemptCount === 0 &&
+                startedAtUtc === undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'running':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'retrying':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc !== undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'ready':
+        case 'blocked':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc !== undefined &&
+                nextAttemptAtUtc === undefined &&
+                result !== undefined &&
+                result.status === value.status &&
+                error === undefined);
+        case 'failed':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc !== undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error !== undefined);
+    }
+    return false;
 }
 function isManifestRef(value) {
     return (isRecord(value) &&

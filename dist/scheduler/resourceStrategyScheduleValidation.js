@@ -4,6 +4,7 @@ exports.isResourceStrategyWeeklyScheduleSuggestion = isResourceStrategyWeeklySch
 exports.isResourceStrategyWeeklyScheduleWriteRequest = isResourceStrategyWeeklyScheduleWriteRequest;
 exports.isResourceStrategyWeeklyScheduleProjection = isResourceStrategyWeeklyScheduleProjection;
 exports.isResourceScheduleDryRunProjection = isResourceScheduleDryRunProjection;
+exports.isResourceScheduleDryRunEvaluationProjection = isResourceScheduleDryRunEvaluationProjection;
 exports.isScheduledResourceTransitionV1 = isScheduledResourceTransitionV1;
 exports.isResourceSchedulingExecutionProjection = isResourceSchedulingExecutionProjection;
 exports.isResourceSchedulingExecutionHistoryResponse = isResourceSchedulingExecutionHistoryResponse;
@@ -192,7 +193,6 @@ const RESOURCE_SCHEDULE_DRY_RUN_CHECK_NAMES = [
     'busy-policy',
     'blackout',
     'admission-budgets',
-    'evidence-freshness',
     'notification-routing',
 ];
 function isResourceScheduleDryRunCheckProjection(value) {
@@ -250,6 +250,110 @@ function isResourceScheduleDryRunProjection(value) {
         return false;
     }
     return value.status === (value.checks.every(check => check.status === 'ready') ? 'ready' : 'blocked');
+}
+/** Validates durable progress for exactly one schedule revision dry-run evaluation. */
+function isResourceScheduleDryRunEvaluationProjection(value) {
+    if (!(0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) ||
+        !(0, resourceStrategyValidationShared_1.isRecord)(value) ||
+        (0, resourceStrategyValidationShared_1.containsForbiddenKey)(value) ||
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, [
+            'scheduleId',
+            'definitionRevision',
+            'controlGeneration',
+            'evaluationId',
+            'status',
+            'queuedAtUtc',
+            'startedAtUtc',
+            'updatedAtUtc',
+            'completedAtUtc',
+            'attemptCount',
+            'nextAttemptAtUtc',
+            'result',
+            'error',
+        ]) ||
+        !(0, resourceStrategyValidationShared_1.isBoundedString)(value.scheduleId, 200) ||
+        !(0, resourceStrategyValidationShared_1.isPositiveInteger)(value.definitionRevision) ||
+        !(0, resourceStrategyValidationShared_1.isPositiveInteger)(value.controlGeneration) ||
+        !(0, resourceStrategyValidationShared_1.isBoundedString)(value.evaluationId, 500) ||
+        !['queued', 'running', 'retrying', 'ready', 'blocked', 'failed'].includes(String(value.status)) ||
+        !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.queuedAtUtc) ||
+        !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.updatedAtUtc) ||
+        Date.parse(value.updatedAtUtc) < Date.parse(value.queuedAtUtc) ||
+        !(0, resourceStrategyValidationShared_1.isNonNegativeInteger)(value.attemptCount)) {
+        return false;
+    }
+    const startedAtUtc = value.startedAtUtc;
+    if (startedAtUtc !== undefined &&
+        (!(0, resourceStrategyValidationShared_1.isIsoTimestamp)(startedAtUtc) ||
+            Date.parse(startedAtUtc) < Date.parse(value.queuedAtUtc) ||
+            Date.parse(startedAtUtc) > Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const completedAtUtc = value.completedAtUtc;
+    if (completedAtUtc !== undefined &&
+        (!(0, resourceStrategyValidationShared_1.isIsoTimestamp)(completedAtUtc) ||
+            startedAtUtc === undefined ||
+            Date.parse(completedAtUtc) < Date.parse(startedAtUtc) ||
+            Date.parse(completedAtUtc) > Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const nextAttemptAtUtc = value.nextAttemptAtUtc;
+    if (nextAttemptAtUtc !== undefined && (!(0, resourceStrategyValidationShared_1.isIsoTimestamp)(nextAttemptAtUtc) || Date.parse(nextAttemptAtUtc) < Date.parse(value.updatedAtUtc))) {
+        return false;
+    }
+    const result = value.result;
+    if (result !== undefined &&
+        (!isResourceScheduleDryRunProjection(result) ||
+            result.scheduleId !== value.scheduleId ||
+            result.definitionRevision !== value.definitionRevision ||
+            result.controlGeneration !== value.controlGeneration)) {
+        return false;
+    }
+    const error = value.error;
+    if (error !== undefined &&
+        (!(0, resourceStrategyValidationShared_1.isRecord)(error) || !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(error, ['code', 'message']) || !(0, resourceStrategyValidationShared_1.isBoundedString)(error.code, 200) || !(0, resourceStrategyValidationShared_1.isBoundedString)(error.message))) {
+        return false;
+    }
+    switch (value.status) {
+        case 'queued':
+            return (value.attemptCount === 0 &&
+                startedAtUtc === undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'running':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'retrying':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc === undefined &&
+                nextAttemptAtUtc !== undefined &&
+                result === undefined &&
+                error === undefined);
+        case 'ready':
+        case 'blocked':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc !== undefined &&
+                nextAttemptAtUtc === undefined &&
+                result !== undefined &&
+                result.status === value.status &&
+                error === undefined);
+        case 'failed':
+            return (value.attemptCount > 0 &&
+                startedAtUtc !== undefined &&
+                completedAtUtc !== undefined &&
+                nextAttemptAtUtc === undefined &&
+                result === undefined &&
+                error !== undefined);
+    }
+    return false;
 }
 function isManifestRef(value) {
     return ((0, resourceStrategyValidationShared_1.isRecord)(value) &&

@@ -1,6 +1,7 @@
 import type {
   ResourceSchedulePermissionManifestConsent,
   ResourceSchedulePermissionManifestProjection,
+  ResourceScheduleDryRunEvaluationProjection,
   ResourceScheduleDryRunProjection,
   ResourceSchedulePreviewRequest,
   ResourceSchedulePreviewResponse,
@@ -77,12 +78,6 @@ const capability = {
   dependencies: {
     hasDependencies: false,
   },
-  evidence: {
-    sourceUrls: [],
-    labResult: 'passed',
-    verifiedAtUtc: timestamp,
-    expiresAtUtc: null,
-  },
 } satisfies ResourceSchedulingCapabilityProjection;
 
 const writeRequest = {
@@ -154,10 +149,20 @@ const dryRun = {
     { name: 'busy-policy', status: 'ready', reasonCodes: [] },
     { name: 'blackout', status: 'ready', reasonCodes: [] },
     { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
-    { name: 'evidence-freshness', status: 'ready', reasonCodes: [] },
     { name: 'notification-routing', status: 'ready', reasonCodes: [] },
   ],
 } satisfies ResourceScheduleDryRunProjection;
+
+const dryRunEvaluation = {
+  scheduleId: schedule.scheduleId,
+  definitionRevision: schedule.definitionRevision,
+  controlGeneration: schedule.controlGeneration,
+  evaluationId: 'dry-run:schedule-1:1:1',
+  status: 'queued',
+  queuedAtUtc: timestamp,
+  updatedAtUtc: timestamp,
+  attemptCount: 0,
+} satisfies ResourceScheduleDryRunEvaluationProjection;
 
 const readiness = {
   companyId: 'company-1',
@@ -384,6 +389,7 @@ void [
   capability,
   schedule,
   dryRun,
+  dryRunEvaluation,
   readiness,
   run,
   execution,
