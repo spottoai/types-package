@@ -1,6 +1,7 @@
 import {
   REPORT_EVIDENCE_LIMITS,
   type ReportBoundedRows,
+  type ReportBudgetProjection,
   type ReportCostChangePeriod,
   type ReportCommitmentInventoryRow,
   type ReportProjectionRecord,
@@ -28,6 +29,19 @@ void [dailyValidation, legacyDailyProjection];
 
 const rows = <T>(values: T[] = []): ReportBoundedRows<T> => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const projectedRows = rows<ReportProjectionRecord>();
+const monthlyBudget: ReportBudgetProjection = {
+  name: 'd365-sub-budget',
+  amount: 9000,
+  currentSpend: 7627.35,
+  startDate: '2024-01-01T00:00:00Z',
+  endDate: '2034-12-31T00:00:00Z',
+  timeGrain: 'Monthly',
+  category: 'Cost',
+  currencyCode: 'NZD',
+  filter: {},
+};
+const legacyBudget: ReportBudgetProjection = { name: 'older budget', amount: 9000 };
+void legacyBudget;
 const reservationWithUtilization: ReportCommitmentInventoryRow = {
   id: 'reservation-1',
   benefitType: 'reservation',
@@ -90,6 +104,7 @@ const reporting: SubscriptionReportingProjection = {
   },
   recommendations: rows(),
   serviceRetirements: projectedRows,
+  credentialDeadlines: { asOf: '2026-09-17T00:00:00.000Z', overdueCount: 162, upcomingSixMonthsCount: 85 },
   inventory: {
     totalResources: 0,
     untaggedResourceCount: 0,
@@ -132,7 +147,22 @@ const reporting: SubscriptionReportingProjection = {
   },
   serverUptime: { workspaces: projectedRows, gaps: projectedRows, servers: projectedRows },
   publicIpAddresses: { items: projectedRows },
-  activity: { changes: projectedRows, security: projectedRows, health: projectedRows, suppressed: projectedRows },
+  activity: {
+    changes: projectedRows,
+    security: projectedRows,
+    health: projectedRows,
+    suppressed: projectedRows,
+    dailySummary: rows([{
+      date: '2026-08-17',
+      visibleEvents: 100,
+      materialChanges: 90,
+      securitySensitive: 5,
+      healthEvents: 5,
+      failedEvents: 0,
+      highFindingCount: 0,
+      automatedSnapshotEvents: 80,
+    }]),
+  },
   commitmentsPlanning: {
     inventorySummary: { totalCount: 0, statusCounts: {}, benefitTypeCounts: {} },
     inventory: rows(),
@@ -157,6 +187,7 @@ const subscriptionPack: SubscriptionReportEvidencePack = {
     topSpendResources: [],
   },
   cost: {
+    budget: monthlyBudget,
     sourceMetadata: {
       spend30DaysSource: 'summary',
       spend30DaysAmortizedSource: 'summary',

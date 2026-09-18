@@ -368,6 +368,11 @@ const isReportingProjection = (value: unknown): boolean => {
       (!isBoundedRows(value.recommendationCatalogue, REPORT_EVIDENCE_LIMITS.recommendationCatalogue, isCompactRecommendation) ||
         value.recommendationCatalogue.totalCount !== (value.recommendationPortfolio as JsonRecord).activeRecommendationCount)) ||
     !isProjectionRows(value.serviceRetirements) ||
+    (value.credentialDeadlines !== undefined &&
+      (!isRecord(value.credentialDeadlines) ||
+        !isDateTime(value.credentialDeadlines.asOf) ||
+        !isCount(value.credentialDeadlines.overdueCount) ||
+        !isCount(value.credentialDeadlines.upcomingSixMonthsCount))) ||
     !isInventory(value.inventory) ||
     !isGovernance(value.governance) ||
     !isCommitments(value.commitmentsPlanning)
@@ -420,6 +425,8 @@ const isReportingProjection = (value: unknown): boolean => {
 const isActivityCounts = (value: unknown): value is import('./reportEvidence').ReportActivityCounts =>
   isRecord(value) &&
   ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => isCount(value[key])) &&
+  (value.automatedSnapshotEvents === undefined ||
+    (isCount(value.automatedSnapshotEvents) && value.automatedSnapshotEvents <= (value.materialChanges as number))) &&
   ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => (value[key] as number) <= (value.visibleEvents as number));
 
 const isActivityMonthlyFindings = (value: unknown): value is import('./reportEvidence').ReportActivityMonthlyFindings =>

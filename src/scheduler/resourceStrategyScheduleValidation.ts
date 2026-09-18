@@ -538,8 +538,7 @@ export function isResourceSchedulingExecutionProjection(value: unknown): value i
     value.allowedCommands.length <= 5 &&
     new Set(value.allowedCommands).size === value.allowedCommands.length &&
     value.allowedCommands.every(
-      command =>
-        typeof command === 'string' && ['pause', 'resume', 'restore-now', 'restore-and-delete', 'leave-current-state'].includes(command)
+      command => typeof command === 'string' && ['pause', 'resume', 'restore-now', 'restore-and-delete', 'leave-current-state'].includes(command)
     ) &&
     isIsoTimestamp(value.updatedAtUtc)
   );
