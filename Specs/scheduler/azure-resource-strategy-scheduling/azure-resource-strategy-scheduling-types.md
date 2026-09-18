@@ -4,8 +4,8 @@ Status: approved
 Approval required: Yes — breaking shared scheduler contract
 Approved: Yes
 Approver/evidence: User approval in the Codex sessions on 2026-09-15 to begin implementation, on 2026-09-16 to unify resource-strategy and recommendation-action scheduling without legacy contracts, and on 2026-09-18 to expose durable dry-run evaluation progress separately from schedule and command-operation state and to keep Action Lab evidence outside customer runtime contracts
-Iterations: 6
-Last updated: 2026-09-18
+Iterations: 7
+Last updated: 2026-09-19
 Owner: Platform
 Repo: types-package
 Domain: scheduler
@@ -54,11 +54,11 @@ Out of scope:
 
 ## Local Recon
 
-- Entry points: `src/scheduler/scheduler.ts`, `src/scheduler/resourceStrategyContracts.ts`, `src/scheduler/index.ts`, `src/azure/payloads.ts`, `src/index.ts`.
-- Current VM contract: `definitionType = vm-runtime-weekly` and `targetType = resource-operation`.
-- Current Bastion contract: `src/scheduler/bastionSchedule*.ts`, exported by the scheduler barrel and verified by `scripts/check-bastion-schedule-contracts.mjs`.
+- Entry points: `src/scheduler/resourceStrategy.ts`, `src/scheduler/resourceStrategyContracts.ts`, `src/scheduler/schedulerContracts.ts`, `src/scheduler/index.ts`, `src/azure/payloads.ts`, `src/index.ts`.
+- VM and Bastion schedules use the same `resource-strategy-weekly` definition, distinguished by capability identity and provider-neutral strategy configuration rather than dedicated schedule contracts.
+- Resource-strategy and recommendation-action definitions share the strict scheduler union; legacy VM, Bastion and batch-specific scheduler exports are absent.
 - Current package build emits CommonJS, ESM and declaration artifacts and runs consumer package checks.
-- Published `.423` is the resource-scheduler baseline and must be superseded by a coordinated package release for this breaking union.
+- Published `.425` is the current consumer baseline and must be superseded by a coordinated package release for the additive `restore-and-delete` command.
 - Remaining questions: none.
 
 ## Contract Families
@@ -110,6 +110,7 @@ Each valid case includes the displayed availability periods, equivalent transiti
 
 - `ResourceSchedulingReadinessProjection` retains the parent `state` union and company/cloud-account/provider-scope/resource/capability identity, timestamps, reason codes, missing actions, required/offending scopes and repair link.
 - `ResourceSchedulingExecutionProjection` retains the parent lifecycle state, active recovery cycle, `restoreOwed`, last run phase/outcome and allowed commands.
+- Generic lifecycle commands include `restore-now` for a one-time availability override and `restore-and-delete` for the protected restore, verify and delete workflow. Neither command exposes provider-specific restore mechanics.
 - Raw provider errors and baseline values remain excluded.
 
 ### Dry-run evaluation
@@ -244,6 +245,7 @@ No old definition, validator, queue message, export or package artifact remains 
 - Iteration 4 (2026-09-17): added the asynchronous scheduler control command, accepted response and typed operation projection while keeping runtime behavior outside the package.
 - Iteration 5 (2026-09-18): separated dry-run evaluation progress from schedule mode and command operations. Added a strict queued/running/retrying/terminal projection around the existing final verdict, with no compatibility wrapper, fake percentage or provider-specific stage.
 - Iteration 6 (2026-09-18): removed Action Lab evidence from the public capability and dry-run contracts. Action Lab remains engineering-only release, CI and audit proof; customer runtime authority comes from published capability policy plus tenant-specific Azure readiness and transition preflight.
+- Iteration 7 (2026-09-19): added the provider-neutral `restore-and-delete` lifecycle command and allowed-command projection value for protected restore, verification and schedule deletion.
 
 ## Runtime Environment
 

@@ -451,9 +451,9 @@ function isResourceSchedulingExecutionProjection(value) {
         (0, resourceStrategyValidationShared_1.isOptionalBoundedString)(value.activeRecoveryCycleId, 200) &&
         typeof value.restoreOwed === 'boolean' &&
         Array.isArray(value.allowedCommands) &&
-        value.allowedCommands.length <= 4 &&
+        value.allowedCommands.length <= 5 &&
         new Set(value.allowedCommands).size === value.allowedCommands.length &&
-        value.allowedCommands.every(command => ['pause', 'resume', 'restore-now', 'leave-current-state'].includes(String(command))) &&
+        value.allowedCommands.every(command => typeof command === 'string' && ['pause', 'resume', 'restore-now', 'restore-and-delete', 'leave-current-state'].includes(command)) &&
         (0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.updatedAtUtc));
 }
 function isResourceSchedulingExecutionHistoryItem(value) {
@@ -499,7 +499,9 @@ function isResourceStrategyScheduleCommand(value) {
     }
     if (value.command === 'leave-current-state')
         return (0, resourceStrategyValidationShared_1.isBoundedString)(value.acknowledgement, 2000);
-    return ['pause', 'resume', 'rerun-dry-run', 'restore-now'].includes(String(value.command)) && value.acknowledgement === undefined;
+    return (typeof value.command === 'string' &&
+        ['pause', 'resume', 'rerun-dry-run', 'restore-now', 'restore-and-delete'].includes(value.command) &&
+        value.acknowledgement === undefined);
 }
 function isResourceStrategyWeeklyScheduleListResponse(value) {
     return ((0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&

@@ -815,6 +815,27 @@ const execution = {
   updatedAtUtc: timestamp,
 };
 assert.equal(scheduler.isResourceSchedulingExecutionProjection(execution), true);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: ['restore-and-delete'],
+  }),
+  true
+);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: [['restore-and-delete']],
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: [{ toString: null }],
+  }),
+  false
+);
 assert.equal(scheduler.isResourceSchedulingExecutionProjection({ ...execution, lifecycleState: 'restore-blocked' }), false);
 assert.equal(scheduler.isResourceSchedulingExecutionProjection({ ...execution, allowedCommands: Array(100_000).fill('pause') }), false);
 assert.equal(
@@ -834,6 +855,9 @@ assert.equal(
 );
 
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'restore-now', idempotencyKey: 'command-1' }), true);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'restore-and-delete', idempotencyKey: 'command-delete-1' }), true);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: ['restore-and-delete'], idempotencyKey: 'command-array' }), false);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: { toString: null }, idempotencyKey: 'command-object' }), false);
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'rerun-dry-run', idempotencyKey: 'command-2' }), true);
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'start', idempotencyKey: 'command-1' }), false);
 assert.equal(

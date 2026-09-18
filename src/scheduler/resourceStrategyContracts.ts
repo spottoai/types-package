@@ -299,7 +299,7 @@ export interface ResourceSchedulingExecutionProjection {
     updatedAtUtc: string;
     reasonCode?: string;
   };
-  allowedCommands: Array<'pause' | 'resume' | 'restore-now' | 'leave-current-state'>;
+  allowedCommands: Array<'pause' | 'resume' | 'restore-now' | 'restore-and-delete' | 'leave-current-state'>;
   updatedAtUtc: string;
 }
 export interface ResourceSchedulingExecutionHistoryItem {
@@ -472,6 +472,10 @@ export type ResourceStrategyScheduleCommand =
     }
   | {
       command: 'restore-now';
+      idempotencyKey: string;
+    }
+  | {
+      command: 'restore-and-delete';
       idempotencyKey: string;
     }
   | {

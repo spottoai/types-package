@@ -10,6 +10,7 @@ import type {
   ResourceSchedulingExecutionHistoryResponse,
   ResourceSchedulingOpportunity,
   ResourceSchedulingReadinessProjection,
+  ResourceStrategyScheduleCommand,
   ResourceStrategyWeeklyScheduleSuggestion,
   ResourceStrategyWeeklyScheduleProjection,
   ResourceStrategyWeeklyScheduleWriteRequest,
@@ -218,9 +219,14 @@ const execution = {
     updatedAtUtc: timestamp,
     reasonCode: 'AZURE_RBAC_DENIED',
   },
-  allowedCommands: ['restore-now', 'leave-current-state'],
+  allowedCommands: ['restore-now', 'restore-and-delete', 'leave-current-state'],
   updatedAtUtc: timestamp,
 } satisfies ResourceSchedulingExecutionProjection;
+
+const restoreAndDeleteCommand = {
+  command: 'restore-and-delete',
+  idempotencyKey: 'command-delete-1',
+} satisfies ResourceStrategyScheduleCommand;
 
 const executionHistory = {
   execution,
