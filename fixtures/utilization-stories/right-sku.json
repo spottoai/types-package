@@ -1,0 +1,1469 @@
+{
+  "storyKey": "right-sku",
+  "scope": {
+    "companyId": "company-fixture",
+    "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "subscriptionId": "11111111-2222-4333-8444-555555555555",
+    "displayName": "Fixture Dev",
+    "currency": "NZD"
+  },
+  "generation": {
+    "sourceRunId": "run-2026-09-12T02-00Z-fixture",
+    "generatedAt": "2026-09-12T02:15:00.000Z"
+  },
+  "window": {
+    "start": "2026-08-13T00:00:00Z",
+    "end": "2026-09-12T00:00:00Z",
+    "days": 30,
+    "timezone": "Pacific/Auckland"
+  },
+  "summary": {
+    "counts": {
+      "verdict:modernise": 3,
+      "verdict:downsize": 1,
+      "verdict:consider": 1,
+      "verdict:keep": 7,
+      "rows": 12
+    },
+    "spend": {
+      "total30d": 5041.14,
+      "savingsMax": 1199.16
+    },
+    "currency": "NZD"
+  },
+  "sections": [
+    {
+      "resourceType": "microsoft.compute/virtualmachines",
+      "family": "compute",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
+        },
+        {
+          "key": "current",
+          "label": "Current",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "option",
+          "label": "Best option",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "savingsPct",
+          "label": "Saves",
+          "cell": "percent",
+          "priority": 2,
+          "roleClass": "nums"
+        },
+        {
+          "key": "lost",
+          "label": "Capabilities lost",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "verdict",
+          "label": "Read",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "spend",
+          "label": "Spend (30d)",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Saves up to",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "save"
+        }
+      ],
+      "totalCount": 12,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
+          "name": "vm-dev-01",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 368.43,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-01",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 368.43,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 8.56,
+            "secondaryP95": 45.31,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
+          "name": "vm-dev-02",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 215.81,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-02",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 215.81,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
+          "name": "vm-dev-03",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 301.19,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-03",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 301.19,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
+          "name": "vm-dev-04",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 425.9,
+          "savingsMax": 314.21,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|right-sku|consider",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-04",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": "E2s v4",
+              "detail": "trade-off"
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": 50
+            },
+            "lost": {
+              "kind": "number",
+              "value": 3,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "consider",
+              "label": "Consider",
+              "tone": "neutral"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 425.9,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 314.21,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "consider",
+          "usage": {
+            "primaryP95": 29.07,
+            "secondaryP95": 94.22,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
+          "name": "vm-dev-05",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 230.04,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-05",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 230.04,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06",
+          "name": "vm-dev-06",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 364.81,
+          "savingsMax": 195.15,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|right-sku|modernise",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-06",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "DS13 v2",
+              "detail": "8 vCPU \u00b7 56 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": "E8as v4",
+              "detail": "same-shape"
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": 13.5
+            },
+            "lost": {
+              "kind": "number",
+              "value": 3,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "modernise",
+              "label": "Modernise",
+              "tone": "good"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 364.81,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 195.15,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_DS13_v2",
+            "label": "DS13 v2",
+            "capacity": {
+              "units": 8,
+              "memoryGB": 56
+            },
+            "monthlyCost": 1450.79,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "same-shape",
+              "sku": "Standard_E8as_v4",
+              "label": "E8as v4",
+              "capacity": {
+                "units": 8,
+                "memoryGB": 64
+              },
+              "monthlyCost": 1255.64,
+              "currency": "NZD",
+              "savingsPercent": 13.5,
+              "savingsMonthly": 195.15,
+              "lostCapabilities": [
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks",
+                "maxNics"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E4a_v4",
+              "label": "E4a v4",
+              "capacity": {
+                "units": 4,
+                "memoryGB": 32
+              },
+              "monthlyCost": 628.43,
+              "currency": "NZD",
+              "savingsPercent": 56.7,
+              "savingsMonthly": 822.36,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks",
+                "resourceDiskSizeMB",
+                "maxNics",
+                "supportsPremiumDisk"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 1834.24,
+              "currency": "NZD",
+              "savingsPercent": -26.43,
+              "savingsMonthly": -383.45,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "modernise",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07",
+          "name": "vm-dev-07",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 927.93,
+          "savingsMax": 422.23,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|right-sku|downsize",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-07",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v3",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": "A2 v2",
+              "detail": "fits-usage"
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": 68.39
+            },
+            "lost": {
+              "kind": "number",
+              "value": 0,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "downsize",
+              "label": "Downsize",
+              "tone": "warn"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 927.93,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 422.23,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v3",
+            "label": "E4 v3",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 617.39,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "fits-usage",
+              "sku": "Standard_A2_v2",
+              "label": "A2 v2",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 4
+              },
+              "monthlyCost": 195.16,
+              "currency": "NZD",
+              "savingsPercent": 68.39,
+              "savingsMonthly": 422.23,
+              "lostCapabilities": [],
+              "confidence": "high"
+            },
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2a_v4",
+              "label": "E2a v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 49.1,
+              "savingsMonthly": 303.17,
+              "lostCapabilities": [
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks",
+                "resourceDiskSizeMB"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -48.55,
+              "savingsMonthly": -299.73,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "downsize",
+          "usage": {
+            "primaryP95": 1.46,
+            "secondaryP95": 0.0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-08",
+          "name": "vm-dev-08",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 307.89,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-08|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-08",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 307.89,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-09",
+          "name": "vm-dev-09",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 307.89,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-09|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-09",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 307.89,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-10",
+          "name": "vm-dev-10",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 201.57,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-10|right-sku|keep",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-10",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4 v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": null
+            },
+            "lost": {
+              "kind": "number",
+              "value": null,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "keep",
+              "label": "Keep",
+              "tone": "muted"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 201.57,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4_v5",
+            "label": "E4 v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 628.43,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 50,
+              "savingsMonthly": 314.21,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -45.94,
+              "savingsMonthly": -288.69,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "keep",
+          "usage": {
+            "primaryP95": 0,
+            "secondaryP95": 0,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11",
+          "name": "vm-dev-11",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 398.14,
+          "savingsMax": 72.42,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11|right-sku|modernise",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-11",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "E4bs v5",
+              "detail": "4 vCPU \u00b7 32 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": "E4s v4",
+              "detail": "same-shape"
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": 10.3
+            },
+            "lost": {
+              "kind": "number",
+              "value": 0,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "modernise",
+              "label": "Modernise",
+              "tone": "good"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 398.14,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 72.42,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_E4bs_v5",
+            "label": "E4bs v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 32
+            },
+            "monthlyCost": 700.85,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "same-shape",
+              "sku": "Standard_E4s_v4",
+              "label": "E4s v4",
+              "capacity": {
+                "units": 4,
+                "memoryGB": 32
+              },
+              "monthlyCost": 628.43,
+              "currency": "NZD",
+              "savingsPercent": 10.3,
+              "savingsMonthly": 72.42,
+              "lostCapabilities": [],
+              "confidence": "high"
+            },
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v4",
+              "label": "E2s v4",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 314.22,
+              "currency": "NZD",
+              "savingsPercent": 55.2,
+              "savingsMonthly": 386.63,
+              "lostCapabilities": [
+                "numberOfCores",
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 917.12,
+              "currency": "NZD",
+              "savingsPercent": -30.86,
+              "savingsMonthly": -216.27,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "modernise",
+          "usage": {
+            "primaryP95": 71.93,
+            "secondaryP95": 89.08,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12",
+          "name": "vm-dev-12",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 991.54,
+          "savingsMax": 195.15,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12|right-sku|modernise",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-12",
+              "detail": "australiasoutheast"
+            },
+            "current": {
+              "kind": "text",
+              "value": "DS13 v2",
+              "detail": "8 vCPU \u00b7 56 GB RAM"
+            },
+            "option": {
+              "kind": "text",
+              "value": "E8as v4",
+              "detail": "same-shape"
+            },
+            "savingsPct": {
+              "kind": "percent",
+              "value": 13.5
+            },
+            "lost": {
+              "kind": "number",
+              "value": 3,
+              "decimals": 0
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "modernise",
+              "label": "Modernise",
+              "tone": "good"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 991.54,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 195.15,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_DS13_v2",
+            "label": "DS13 v2",
+            "capacity": {
+              "units": 8,
+              "memoryGB": 56
+            },
+            "monthlyCost": 1450.79,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "same-shape",
+              "sku": "Standard_E8as_v4",
+              "label": "E8as v4",
+              "capacity": {
+                "units": 8,
+                "memoryGB": 64
+              },
+              "monthlyCost": 1255.64,
+              "currency": "NZD",
+              "savingsPercent": 13.5,
+              "savingsMonthly": 195.15,
+              "lostCapabilities": [
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks",
+                "maxNics"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E4a_v4",
+              "label": "E4a v4",
+              "capacity": {
+                "units": 4,
+                "memoryGB": 32
+              },
+              "monthlyCost": 628.43,
+              "currency": "NZD",
+              "savingsPercent": 56.7,
+              "savingsMonthly": 822.36,
+              "lostCapabilities": [
+                "memoryGB",
+                "maxDataDiskCount",
+                "maxRemoteStorageDisks",
+                "resourceDiskSizeMB",
+                "maxNics",
+                "supportsPremiumDisk"
+              ],
+              "confidence": "high"
+            },
+            {
+              "kind": "cross-platform",
+              "sku": "app-service-plan",
+              "label": "App Service Plan",
+              "monthlyCost": 1834.24,
+              "currency": "NZD",
+              "savingsPercent": -26.43,
+              "savingsMonthly": -383.45,
+              "lostCapabilities": [],
+              "confidence": "medium"
+            }
+          ],
+          "verdict": "modernise",
+          "usage": {
+            "primaryP95": 22.15,
+            "secondaryP95": 44.25,
+            "telemetry": "collected"
+          }
+        }
+      ],
+      "omittedCount": 0
+    }
+  ]
+}

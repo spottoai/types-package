@@ -1,0 +1,429 @@
+{
+  "storyKey": "commitments",
+  "scope": {
+    "companyId": "company-fixture",
+    "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "subscriptionId": "11111111-2222-4333-8444-555555555555",
+    "displayName": "Fixture Dev",
+    "currency": "NZD"
+  },
+  "generation": {
+    "sourceRunId": "run-2026-09-12T02-00Z-fixture",
+    "generatedAt": "2026-09-12T02:15:00.000Z"
+  },
+  "window": {
+    "start": "2026-08-13T00:00:00Z",
+    "end": "2026-09-12T00:00:00Z",
+    "days": 30,
+    "timezone": "Pacific/Auckland"
+  },
+  "summary": {
+    "counts": {
+      "covered": 3,
+      "partiallyCovered": 2,
+      "uncovered": 7,
+      "rows": 5
+    },
+    "spend": {
+      "total30d": 3111.94,
+      "savingsMax": 0
+    },
+    "currency": "NZD"
+  },
+  "sections": [
+    {
+      "resourceType": "microsoft.compute/virtualmachines",
+      "family": "compute",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
+        },
+        {
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "percent",
+          "priority": 1,
+          "roleClass": "nums"
+        },
+        {
+          "key": "benefits",
+          "label": "Benefits",
+          "cell": "text",
+          "priority": 2,
+          "roleClass": "cap"
+        },
+        {
+          "key": "covered",
+          "label": "Covered (30d)",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "uncovered",
+          "label": "Uncovered (30d)",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "utilization",
+          "label": "Primary p95",
+          "cell": "percent",
+          "priority": 3,
+          "roleClass": "nums"
+        },
+        {
+          "key": "verdict",
+          "label": "Read",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        }
+      ],
+      "totalCount": 5,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
+          "name": "vm-dev-01",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 368.43,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|commitments|covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-01",
+              "detail": "australiasoutheast"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 100
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "sp-01",
+              "detail": "savings-plan"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 93.05,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 0,
+              "currency": "NZD"
+            },
+            "utilization": {
+              "kind": "percent",
+              "value": 8.56
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "covered",
+              "label": "Covered",
+              "tone": "good",
+              "icon": "tag"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 100,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-01"
+            ],
+            "coveredCost": 93.05,
+            "uncoveredCost": 0,
+            "windowStart": "2026-08-13T00:00:00Z",
+            "windowEnd": "2026-09-12T00:00:00Z"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 8.56
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
+          "name": "vm-dev-04",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 425.9,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|commitments|covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-04",
+              "detail": "australiasoutheast"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 100
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "sp-01",
+              "detail": "savings-plan"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 390.6,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 0,
+              "currency": "NZD"
+            },
+            "utilization": {
+              "kind": "percent",
+              "value": 29.07
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "covered",
+              "label": "Covered",
+              "tone": "good",
+              "icon": "tag"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 100,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-01"
+            ],
+            "coveredCost": 390.6,
+            "uncoveredCost": 0,
+            "windowStart": "2026-08-13T00:00:00Z",
+            "windowEnd": "2026-09-12T00:00:00Z"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 29.07
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07",
+          "name": "vm-dev-07",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 927.93,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|commitments|partially-covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-07",
+              "detail": "australiasoutheast"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 64.65
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "sp-01",
+              "detail": "savings-plan"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 571.38,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 460.83,
+              "currency": "NZD"
+            },
+            "utilization": {
+              "kind": "percent",
+              "value": 1.46
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "partially-covered",
+              "label": "Partial",
+              "tone": "warn",
+              "icon": "tag"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 64.65,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-01"
+            ],
+            "coveredCost": 571.38,
+            "uncoveredCost": 460.83,
+            "windowStart": "2026-08-13T00:00:00Z",
+            "windowEnd": "2026-09-12T00:00:00Z"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 1.46
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11",
+          "name": "vm-dev-11",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 398.14,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11|commitments|covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-11",
+              "detail": "australiasoutheast"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 100
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "sp-01",
+              "detail": "savings-plan"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 264.17,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 0,
+              "currency": "NZD"
+            },
+            "utilization": {
+              "kind": "percent",
+              "value": 71.93
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "covered",
+              "label": "Covered",
+              "tone": "good",
+              "icon": "tag"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 100,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-01"
+            ],
+            "coveredCost": 264.17,
+            "uncoveredCost": 0,
+            "windowStart": "2026-08-13T00:00:00Z",
+            "windowEnd": "2026-09-12T00:00:00Z"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 71.93
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12",
+          "name": "vm-dev-12",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiasoutheast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 991.54,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12|commitments|partially-covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-12",
+              "detail": "australiasoutheast"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 37.93
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "sp-01",
+              "detail": "savings-plan"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 178.5,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 419.66,
+              "currency": "NZD"
+            },
+            "utilization": {
+              "kind": "percent",
+              "value": 22.15
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "partially-covered",
+              "label": "Partial",
+              "tone": "warn",
+              "icon": "tag"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 37.93,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-01"
+            ],
+            "coveredCost": 178.5,
+            "uncoveredCost": 419.66,
+            "windowStart": "2026-08-13T00:00:00Z",
+            "windowEnd": "2026-09-12T00:00:00Z"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 22.15
+          }
+        }
+      ],
+      "omittedCount": 0
+    }
+  ]
+}

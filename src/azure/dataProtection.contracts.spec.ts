@@ -131,6 +131,22 @@ const projection: DataProtectionPostureProjection = {
         artifactPaths: ['data-protection/recoveryservices-protected-items.json.gz'],
         observedAt: '2026-06-24T00:00:00.000Z',
       },
+      replication: {
+        state: 'replicated',
+        protectionState: 'Protected',
+        health: 'Normal',
+        sourceRegion: 'australiaeast',
+        targetRegion: 'australiasoutheast',
+        rpoSeconds: 120,
+        rpoCalculatedAt: '2026-06-24T00:00:00.000Z',
+        lastTestFailoverAt: '2026-05-01T00:00:00.000Z',
+        policyName: '24-hour-retention-policy',
+        vaultId: '/subscriptions/sub-123/resourcegroups/rg-dr/providers/microsoft.recoveryservices/vaults/rsv-dr',
+        vaultName: 'rsv-dr',
+        instanceType: 'A2A',
+        observedAt: '2026-06-24T00:00:00.000Z',
+        source: 'arg',
+      },
     },
     {
       protectedResourceId: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm-2',
@@ -193,6 +209,15 @@ const projection: DataProtectionPostureProjection = {
   ],
   issues: [],
   sourceArtifacts: [DATA_PROTECTION_PORTAL_FILE],
+  replicationSummary: {
+    collected: true,
+    evaluatedCount: 2,
+    replicatedCount: 1,
+    notReplicatedCount: 1,
+    unknownCount: 0,
+    unhealthyCount: 0,
+    observedAt: '2026-06-24T00:00:00.000Z',
+  },
 };
 
 const diagnostics: DataProtectionBackupCostDiagnostics = {

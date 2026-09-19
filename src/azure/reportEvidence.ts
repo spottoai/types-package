@@ -1,4 +1,6 @@
 import type { CostSavingsSummaryBasis, CostSavingsAggregationPolicy } from './views';
+import type { ReportBoundedRows } from '../common/boundedRows';
+import type { ReportingStories, StoryFingerprint } from '../common/utilizationStories';
 import type { PortfolioSavingsContributionV2, ScenarioSavingsPotentialV2 } from './savings';
 import type { GlobalAdminLastSignInEvidence, GovernanceCoverageState, TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
@@ -36,11 +38,7 @@ export const REPORT_EVIDENCE_LIMITS = {
 /** An additive report section whose stable field-level contract has not yet been promoted. */
 export type ReportProjectionRecord = Record<string, unknown>;
 
-export interface ReportBoundedRows<T> {
-  totalCount: number;
-  rows: T[];
-  omittedCount: number;
-}
+export type { ReportBoundedRows };
 
 export interface ReportSourceFileStatus {
   path: string;
@@ -484,6 +482,8 @@ export interface SubscriptionReportingProjection {
   publicIpAddresses: ReportPublicIpProjection;
   activity: ReportActivityProjection;
   commitmentsPlanning: ReportCommitmentsProjection;
+  /** Optional bounded story samples (<= STORY_LIMITS.sampleRows rows per section); absent on older packs. */
+  stories?: ReportingStories;
 }
 
 export interface SubscriptionReportResourceSummary {
@@ -660,6 +660,8 @@ export interface SubscriptionReportHistoryPeriod {
   recommendations: ReportBoundedRows<ReportRecommendationFingerprint>;
   /** Optional on older history; enables category-specific 1/2/3-month deltas. */
   comparisonIdentities?: ReportHistoryComparisonIdentities;
+  /** Optional on older history; utilization story fingerprints (all six stories) for `previouslyReported` signals. */
+  stories?: ReportBoundedRows<StoryFingerprint>;
 }
 
 export interface SubscriptionReportHistory {

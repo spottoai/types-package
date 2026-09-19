@@ -40,6 +40,7 @@ import {
   type JsonRecord,
 } from './reportEvidenceValidationHelpers';
 import type { SecureScoreEvidence } from './secureScore';
+import { isReportingStories, isStoryFingerprintRows } from '../common/utilizationStoriesValidation';
 
 export const isReportSecureScoreEvidence = (value: unknown): value is SecureScoreEvidence => {
   if (!isRecord(value) || !['available', 'unavailable', 'stale'].includes(value.status as string)) return false;
@@ -350,6 +351,7 @@ const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
   if (value.dailySpend !== undefined && !isReportDailySpend(value.dailySpend)) return false;
   if (value.spend !== undefined && !isReportSpendProjection(value.spend)) return false;
+  if (value.stories !== undefined && !isReportingStories(value.stories)) return false;
   if (
     value.costChangePeriods !== undefined &&
     (!isBoundedRows(value.costChangePeriods, REPORT_EVIDENCE_LIMITS.costChangePeriods, isCostChangePeriod) ||
@@ -573,7 +575,8 @@ export const isSubscriptionReportHistory = (value: unknown): value is Subscripti
       !isDateTime(period.sourceGeneratedAt) ||
       !isHistoryMetrics(period.metrics) ||
       !isBoundedRows(period.recommendations, REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint) ||
-      (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities))
+      (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities)) ||
+      (period.stories !== undefined && !isStoryFingerprintRows(period.stories))
     ) {
       return false;
     }

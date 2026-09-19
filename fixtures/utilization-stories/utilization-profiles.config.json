@@ -1,0 +1,163 @@
+{
+  "version": 1,
+  "defaults": {
+    "windowDays": 30,
+    "bucket": "P1D",
+    "weeklyProfile": true,
+    "verdictRules": {
+      "oversized": "primary.p95 < 20 and (secondary.p95 = null or secondary.p95 < 40)",
+      "rebalance": "primary.p95 < 20 and secondary.p95 >= 40",
+      "busy": "primary.p95 >= 70",
+      "mostly-off": "running.share < 0.5",
+      "fits": "true"
+    }
+  },
+  "profiles": {
+    "microsoft.compute/virtualmachines": {
+      "family": "compute",
+      "producer": "parser",
+      "capacityLabel": "$join([$string(capacity.units), ' vCPU \u00b7 ', $string(capacity.memoryGB), ' GB RAM'])",
+      "runMode": "stop-start",
+      "runningSignal": "cpu",
+      "scheduleFit": "stop",
+      "metrics": [
+        {
+          "key": "cpu",
+          "metricName": "Percentage CPU",
+          "role": "primary",
+          "visual": "sparkline",
+          "unit": "%",
+          "axisMax": 100,
+          "priority": 1
+        },
+        {
+          "key": "memory",
+          "metricName": "Available Memory Bytes",
+          "role": "secondary",
+          "visual": "sparkline",
+          "unit": "%",
+          "axisMax": 100,
+          "transform": "availableMemoryToUtilizationPercent",
+          "requires": "capacity.memoryGB",
+          "priority": 2
+        }
+      ],
+      "skuAlternatives": {
+        "source": "vmPricePerformance",
+        "capabilityKeys": [
+          "maxDataDiskCount",
+          "maxNics",
+          "supportsPremiumDisk"
+        ]
+      }
+    },
+    "microsoft.web/serverfarms": {
+      "family": "compute",
+      "producer": "strategy",
+      "runMode": "always-on",
+      "runningSignal": null,
+      "scheduleFit": false,
+      "metrics": [
+        {
+          "key": "cpu",
+          "metricName": "CpuPercentage",
+          "role": "primary",
+          "visual": "sparkline",
+          "unit": "%",
+          "axisMax": 100
+        },
+        {
+          "key": "memory",
+          "metricName": "MemoryPercentage",
+          "role": "secondary",
+          "visual": "sparkline",
+          "unit": "%",
+          "axisMax": 100
+        }
+      ]
+    },
+    "microsoft.sql/servers/databases": {
+      "family": "database",
+      "runMode": "auto-pause",
+      "runningSignal": "cpu",
+      "scheduleFit": "pause",
+      "variants": [
+        {
+          "when": "sku.tier = 'Basic' or sku.tier = 'Standard' or sku.tier = 'Premium'",
+          "metrics": [
+            {
+              "key": "dtu",
+              "metricName": "dtu_consumption_percent",
+              "role": "primary",
+              "unit": "%",
+              "axisMax": 100
+            },
+            {
+              "key": "storage",
+              "metricName": "storage_percent",
+              "role": "secondary",
+              "visual": "capacity-bar",
+              "unit": "%",
+              "axisMax": 100,
+              "billedOn": "used"
+            }
+          ]
+        },
+        {
+          "when": "$not(sku.tier = 'Basic' or sku.tier = 'Standard' or sku.tier = 'Premium')",
+          "metrics": [
+            {
+              "key": "cpu",
+              "metricName": "cpu_percent",
+              "role": "primary",
+              "unit": "%",
+              "axisMax": 100
+            },
+            {
+              "key": "storage",
+              "metricName": "storage_percent",
+              "role": "secondary",
+              "visual": "capacity-bar",
+              "unit": "%",
+              "axisMax": 100,
+              "billedOn": "used"
+            }
+          ],
+          "verdictRules": {
+            "idle": "primary.p95 < 5 and properties.autoPauseDelay != null"
+          }
+        }
+      ]
+    },
+    "microsoft.storage/storageaccounts": {
+      "family": "storage",
+      "runMode": "always-on",
+      "scheduleFit": false,
+      "metrics": [
+        {
+          "key": "capacity",
+          "metricName": "BlobCapacity",
+          "role": "primary",
+          "visual": "trend",
+          "unit": "GB",
+          "axisMaxExpression": "$max(series) * 1.1",
+          "billedOn": "used",
+          "dimensions": {
+            "policy": "split",
+            "name": "Tier"
+          }
+        },
+        {
+          "key": "transactions",
+          "metricName": "Transactions",
+          "role": "context",
+          "visual": "sparkline",
+          "unit": "count",
+          "dimensions": {
+            "policy": "sum"
+          }
+        }
+      ]
+    }
+  }
+}

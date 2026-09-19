@@ -227,6 +227,48 @@ export interface DataProtectionPostureItem {
   cost?: DataProtectionBackupCost;
   findings: DataProtectionFinding[];
   source: DataProtectionSourceProvenance;
+  /** Site Recovery replication posture (VM items only); absent when replication was not collected for this scan. */
+  replication?: DataProtectionReplication;
+}
+
+// ---- Site Recovery replication (additive; utilization stories, resilience story)
+export type DataProtectionReplicationState = 'replicated' | 'not_replicated' | 'unknown';
+export type DataProtectionReplicationSource = 'arg' | 'arm';
+
+/**
+ * Azure Site Recovery replication facts for one VM. `state` is `unknown` only when the replication collection could not
+ * run (query and vault reads failed); a collection that ran and found no item for the VM yields `not_replicated`.
+ */
+export interface DataProtectionReplication {
+  state: DataProtectionReplicationState;
+  /** Provider protection state description, e.g. "Protected", "Enabling protection", "Disabled". */
+  protectionState?: string;
+  /** Replication health: Normal | Warning | Critical. */
+  health?: string;
+  sourceRegion?: string;
+  targetRegion?: string;
+  rpoSeconds?: number;
+  rpoCalculatedAt?: string;
+  lastTestFailoverAt?: string;
+  lastFailoverAt?: string;
+  policyName?: string;
+  vaultId?: string;
+  vaultName?: string;
+  instanceType?: string;
+  observedAt: string;
+  source?: DataProtectionReplicationSource;
+}
+
+export interface DataProtectionReplicationSummary {
+  /** False when neither the Resource Graph query nor the vault reads succeeded; item states are then `unknown`. */
+  collected: boolean;
+  evaluatedCount: number;
+  replicatedCount: number;
+  notReplicatedCount: number;
+  unknownCount: number;
+  /** Replicated items whose health is not Normal. */
+  unhealthyCount: number;
+  observedAt?: string;
 }
 
 export interface DataProtectionCollectionIssue {
@@ -273,6 +315,8 @@ export interface DataProtectionPostureProjection {
   items: DataProtectionPostureItem[];
   issues: DataProtectionCollectionIssue[];
   sourceArtifacts: string[];
+  /** Present once the engine collects Site Recovery replication (additive). */
+  replicationSummary?: DataProtectionReplicationSummary;
 }
 
 export interface DataProtectionBackupCostDiagnostics {

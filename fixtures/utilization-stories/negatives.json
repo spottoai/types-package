@@ -1,0 +1,924 @@
+[
+  {
+    "name": "unknown storyKey",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "storyKey"
+        ],
+        "oversized-vms"
+      ]
+    ]
+  },
+  {
+    "name": "storyKey mismatch with the requested key",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [],
+    "storyKey": "right-sku"
+  },
+  {
+    "name": "sparkline arrays of unequal length",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "append",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "metrics",
+          0,
+          "p95"
+        ],
+        1.0
+      ]
+    ]
+  },
+  {
+    "name": "sparkline length differs from window.days",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "window",
+          "days"
+        ],
+        31
+      ]
+    ]
+  },
+  {
+    "name": "rows beyond totalCount",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "totalCount"
+        ],
+        1
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "omittedCount"
+        ],
+        0
+      ]
+    ]
+  },
+  {
+    "name": "omittedCount does not reconcile",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "omittedCount"
+        ],
+        3
+      ]
+    ]
+  },
+  {
+    "name": "column priority outside 1-5",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "columns",
+          0,
+          "priority"
+        ],
+        6
+      ]
+    ]
+  },
+  {
+    "name": "unknown column cell kind",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "columns",
+          2,
+          "cell"
+        ],
+        "chart"
+      ]
+    ]
+  },
+  {
+    "name": "duplicate column keys",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "append",
+        [
+          "sections",
+          0,
+          "columns"
+        ],
+        {
+          "key": "resource",
+          "label": "Again",
+          "cell": "text",
+          "priority": 5
+        }
+      ]
+    ]
+  },
+  {
+    "name": "row missing a cell for a column",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "cells",
+          "verdict"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "cell kind differs from column cell",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "cells",
+          "verdict"
+        ],
+        {
+          "kind": "text",
+          "value": "Oversized"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "malformed cell payload",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "cells",
+          "spend",
+          "currency"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "profile missing verdict",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "verdict"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "verdict outside the union",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "verdict"
+        ],
+        "too-big"
+      ]
+    ]
+  },
+  {
+    "name": "oversized row without a profile",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "metric role outside the union",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "metrics",
+          1,
+          "role"
+        ],
+        "tertiary"
+      ]
+    ]
+  },
+  {
+    "name": "weekly grid is not 7 x 24",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "pop",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "weekly",
+          "running"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "schedule fit good without a corroborated running basis",
+    "guard": "isStoryArtifact",
+    "base": "schedule-candidates",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "corroboration"
+        ],
+        []
+      ]
+    ]
+  },
+  {
+    "name": "schedule fit good with partial telemetry",
+    "guard": "isStoryArtifact",
+    "base": "schedule-candidates",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "evidenceWindow",
+          "telemetry"
+        ],
+        "partial"
+      ]
+    ]
+  },
+  {
+    "name": "schedule candidate without a weekly profile",
+    "guard": "isStoryArtifact",
+    "base": "schedule-candidates",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "weekly"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "mostly-off verdict from uncorroborated metric presence",
+    "guard": "isUtilizationProfile",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "verdict"
+        ],
+        "mostly-off"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "scheduleFit"
+        ],
+        "done"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "corroboration"
+        ],
+        []
+      ]
+    ]
+  },
+  {
+    "name": "resilience row without a protection profile",
+    "guard": "isStoryArtifact",
+    "base": "resilience-recovery",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "protection"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "protection capability state outside the union",
+    "guard": "isStoryArtifact",
+    "base": "resilience-recovery",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "protection",
+          "capabilities",
+          0,
+          "state"
+        ],
+        "on"
+      ]
+    ]
+  },
+  {
+    "name": "backup run state outside the union",
+    "guard": "isStoryArtifact",
+    "base": "resilience-recovery",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          1,
+          "backupRuns",
+          0
+        ],
+        "skipped"
+      ]
+    ]
+  },
+  {
+    "name": "right-sku row with an invalid option",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "options",
+          0,
+          "lostCapabilities"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "right-sku verdict outside the union",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "verdict"
+        ],
+        "upgrade"
+      ]
+    ]
+  },
+  {
+    "name": "hybrid-benefit row missing decision",
+    "guard": "isStoryArtifact",
+    "base": "hybrid-benefit",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "decision"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "commitment row with an invalid benefit type",
+    "guard": "isStoryArtifact",
+    "base": "commitments",
+    "ops": [
+      [
+        "append",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "coverage",
+          "benefitTypes"
+        ],
+        "spot"
+      ]
+    ]
+  },
+  {
+    "name": "sample section beyond the 50-row limit",
+    "guard": "isReportingStories",
+    "base": "reporting-stories",
+    "ops": [
+      [
+        "set",
+        [
+          "oversized-resources",
+          "sections",
+          0,
+          "rows"
+        ],
+        {
+          "$repeat": [
+            "oversized-resources",
+            "sections",
+            0,
+            "rows",
+            0
+          ],
+          "times": 51
+        }
+      ],
+      [
+        "set",
+        [
+          "oversized-resources",
+          "sections",
+          0,
+          "totalCount"
+        ],
+        51
+      ],
+      [
+        "set",
+        [
+          "oversized-resources",
+          "sections",
+          0,
+          "omittedCount"
+        ],
+        0
+      ]
+    ]
+  },
+  {
+    "name": "reporting stories with an unknown key",
+    "guard": "isReportingStories",
+    "base": "reporting-stories",
+    "ops": [
+      [
+        "set",
+        [
+          "oversized-vms"
+        ],
+        {
+          "summary": {
+            "counts": {},
+            "spend": {},
+            "currency": "NZD"
+          },
+          "sections": []
+        }
+      ]
+    ]
+  },
+  {
+    "name": "signal secondary sparkline length differs from primary",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "append",
+        [
+          "secondary",
+          "sparkline"
+        ],
+        null
+      ]
+    ]
+  },
+  {
+    "name": "signal telemetry outside the union",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "set",
+        [
+          "telemetry"
+        ],
+        "ok"
+      ]
+    ]
+  },
+  {
+    "name": "config metric role outside the union",
+    "guard": "isUtilizationProfileConfig",
+    "base": "utilization-profiles.config",
+    "ops": [
+      [
+        "set",
+        [
+          "profiles",
+          "microsoft.compute/virtualmachines",
+          "metrics",
+          0,
+          "role"
+        ],
+        "tertiary"
+      ]
+    ]
+  },
+  {
+    "name": "config profile key not lowercase",
+    "guard": "isUtilizationProfileConfig",
+    "base": "utilization-profiles.config",
+    "ops": [
+      [
+        "set",
+        [
+          "profiles",
+          "Microsoft.Compute/virtualMachines"
+        ],
+        {
+          "family": "compute",
+          "runMode": "stop-start"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "config with unsupported version",
+    "guard": "isUtilizationProfileConfig",
+    "base": "utilization-profiles.config",
+    "ops": [
+      [
+        "set",
+        [
+          "version"
+        ],
+        2
+      ]
+    ]
+  },
+  {
+    "name": "resilience config capability without required flag",
+    "guard": "isResilienceProfileConfig",
+    "base": "resilience-profiles.config",
+    "ops": [
+      [
+        "remove",
+        [
+          "profiles",
+          "microsoft.compute/virtualmachines",
+          "capabilities",
+          0,
+          "required"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "row from another company inside the artifact scope",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "companyId"
+        ],
+        "company-other"
+      ]
+    ]
+  },
+  {
+    "name": "row from another tenant inside the artifact scope",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "tenantId"
+        ],
+        "ffffffff-1111-4222-8333-444444444444"
+      ]
+    ]
+  },
+  {
+    "name": "row from another subscription inside the artifact scope",
+    "guard": "isStoryArtifact",
+    "base": "resilience-recovery",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "subscriptionId"
+        ],
+        "99999999-8888-4777-8666-555555555555"
+      ]
+    ]
+  },
+  {
+    "name": "metric presence corroborated only by itself",
+    "guard": "isStoryArtifact",
+    "base": "schedule-candidates",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "corroboration"
+        ],
+        [
+          "metric-presence"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "corroboration lists the basis itself",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "basis"
+        ],
+        "billing-hours"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "running",
+          "corroboration"
+        ],
+        [
+          "billing-hours"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "signal with an actionable schedule fit but partial telemetry",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "set",
+        [
+          "scheduleFit"
+        ],
+        "good"
+      ],
+      [
+        "set",
+        [
+          "telemetry"
+        ],
+        "partial"
+      ]
+    ]
+  },
+  {
+    "name": "signal with a mostly-off verdict but no-series telemetry",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "set",
+        [
+          "verdict"
+        ],
+        "mostly-off"
+      ],
+      [
+        "set",
+        [
+          "telemetry"
+        ],
+        "no-series"
+      ]
+    ]
+  },
+  {
+    "name": "metric stats missing a required field",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "remove",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "metrics",
+          0,
+          "stats",
+          "median"
+        ]
+      ]
+    ]
+  },
+  {
+    "name": "metric stats with a non-numeric optional field",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "profile",
+          "metrics",
+          0,
+          "stats",
+          "uptime"
+        ],
+        "high"
+      ]
+    ]
+  },
+  {
+    "name": "protection profile with a non-string missingRequired entry",
+    "guard": "isProtectionProfile",
+    "base": "resilience-recovery",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "protection",
+          "missingRequired"
+        ],
+        [
+          1
+        ]
+      ]
+    ]
+  }
+]
