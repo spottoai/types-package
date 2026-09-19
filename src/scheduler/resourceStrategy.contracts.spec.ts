@@ -36,6 +36,13 @@ const capability = {
   strategy: 'on-off',
   displayName: 'Virtual machine runtime',
   description: 'Schedule when the virtual machine should be available.',
+  presentation: {
+    resourceKindLabel: 'Virtual machine',
+    reduceTransitionLabel: 'Deallocate',
+    restoreTransitionLabel: 'Start',
+    reducedStateLabel: 'Deallocated',
+    restoredStateLabel: 'Running',
+  },
   configurationSchemaKind: 'weekly-paired-transitions',
   configurationSchema: {},
   recommendationMaturity: 'supported',

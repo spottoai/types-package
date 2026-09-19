@@ -4,6 +4,14 @@ exports.isResourceSchedulingCapabilityProjection = isResourceSchedulingCapabilit
 exports.isResourceSchedulingReadinessProjection = isResourceSchedulingReadinessProjection;
 const resourceStrategyContracts_1 = require("./resourceStrategyContracts");
 const resourceStrategyValidationShared_1 = require("./resourceStrategyValidationShared");
+const isPresentationLabel = (value) => (0, resourceStrategyValidationShared_1.isBoundedString)(value, 80) &&
+    value === value.trim() &&
+    !/[<>]/.test(value) &&
+    Array.from(value).every(character => {
+        const codePoint = character.codePointAt(0);
+        return codePoint !== undefined && codePoint >= 0x20 && codePoint !== 0x7f;
+    }) &&
+    !/https?:\/\//i.test(value);
 function isResourceSchedulingCapabilityProjection(value) {
     if (!(0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !(0, resourceStrategyValidationShared_1.isRecord)(value))
         return false;
@@ -16,6 +24,7 @@ function isResourceSchedulingCapabilityProjection(value) {
         'strategy',
         'displayName',
         'description',
+        'presentation',
         'configurationSchemaKind',
         'configurationSchema',
         'recommendationMaturity',
@@ -33,6 +42,7 @@ function isResourceSchedulingCapabilityProjection(value) {
     if (!(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, allowed))
         return false;
     const executionPolicy = value.executionPolicy;
+    const presentation = value.presentation;
     const baseline = value.baseline;
     const cost = value.cost;
     const cadence = value.cadence;
@@ -49,6 +59,13 @@ function isResourceSchedulingCapabilityProjection(value) {
         !['on-off', 'sku-change', 'dial', 'recreate'].includes(String(value.strategy)) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.displayName) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.description, 2000) ||
+        !(0, resourceStrategyValidationShared_1.isRecord)(presentation) ||
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(presentation, ['resourceKindLabel', 'reduceTransitionLabel', 'restoreTransitionLabel', 'reducedStateLabel', 'restoredStateLabel']) ||
+        !isPresentationLabel(presentation.resourceKindLabel) ||
+        !isPresentationLabel(presentation.reduceTransitionLabel) ||
+        !isPresentationLabel(presentation.restoreTransitionLabel) ||
+        !isPresentationLabel(presentation.reducedStateLabel) ||
+        !isPresentationLabel(presentation.restoredStateLabel) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.configurationSchemaKind, 200) ||
         !(0, resourceStrategyValidationShared_1.isBoundedParameters)(value.configurationSchema) ||
         !['unsupported', 'candidate', 'supported'].includes(String(value.recommendationMaturity)) ||

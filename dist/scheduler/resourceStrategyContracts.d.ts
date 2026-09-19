@@ -35,6 +35,13 @@ export interface ResourceSchedulingCapabilityProjection {
     strategy: ResourceSchedulingStrategy;
     displayName: string;
     description: string;
+    presentation: {
+        resourceKindLabel: string;
+        reduceTransitionLabel: string;
+        restoreTransitionLabel: string;
+        reducedStateLabel: string;
+        restoredStateLabel: string;
+    };
     configurationSchemaKind: string;
     configurationSchema: Record<string, unknown>;
     recommendationMaturity: 'unsupported' | 'candidate' | 'supported';
