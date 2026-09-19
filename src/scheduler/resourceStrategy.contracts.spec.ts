@@ -1,6 +1,7 @@
 import type {
   ResourceSchedulePermissionManifestConsent,
   ResourceSchedulePermissionManifestProjection,
+  ResourceScheduleDryRunEvaluationProjection,
   ResourceScheduleDryRunProjection,
   ResourceSchedulePreviewRequest,
   ResourceSchedulePreviewResponse,
@@ -9,6 +10,7 @@ import type {
   ResourceSchedulingExecutionHistoryResponse,
   ResourceSchedulingOpportunity,
   ResourceSchedulingReadinessProjection,
+  ResourceStrategyScheduleCommand,
   ResourceStrategyWeeklyScheduleSuggestion,
   ResourceStrategyWeeklyScheduleProjection,
   ResourceStrategyWeeklyScheduleWriteRequest,
@@ -76,12 +78,6 @@ const capability = {
   },
   dependencies: {
     hasDependencies: false,
-  },
-  evidence: {
-    sourceUrls: [],
-    labResult: 'passed',
-    verifiedAtUtc: timestamp,
-    expiresAtUtc: null,
   },
 } satisfies ResourceSchedulingCapabilityProjection;
 
@@ -154,10 +150,20 @@ const dryRun = {
     { name: 'busy-policy', status: 'ready', reasonCodes: [] },
     { name: 'blackout', status: 'ready', reasonCodes: [] },
     { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
-    { name: 'evidence-freshness', status: 'ready', reasonCodes: [] },
     { name: 'notification-routing', status: 'ready', reasonCodes: [] },
   ],
 } satisfies ResourceScheduleDryRunProjection;
+
+const dryRunEvaluation = {
+  scheduleId: schedule.scheduleId,
+  definitionRevision: schedule.definitionRevision,
+  controlGeneration: schedule.controlGeneration,
+  evaluationId: 'dry-run:schedule-1:1:1',
+  status: 'queued',
+  queuedAtUtc: timestamp,
+  updatedAtUtc: timestamp,
+  attemptCount: 0,
+} satisfies ResourceScheduleDryRunEvaluationProjection;
 
 const readiness = {
   companyId: 'company-1',
@@ -213,9 +219,14 @@ const execution = {
     updatedAtUtc: timestamp,
     reasonCode: 'AZURE_RBAC_DENIED',
   },
-  allowedCommands: ['restore-now', 'leave-current-state'],
+  allowedCommands: ['restore-now', 'restore-and-delete', 'leave-current-state'],
   updatedAtUtc: timestamp,
 } satisfies ResourceSchedulingExecutionProjection;
+
+const restoreAndDeleteCommand = {
+  command: 'restore-and-delete',
+  idempotencyKey: 'command-delete-1',
+} satisfies ResourceStrategyScheduleCommand;
 
 const executionHistory = {
   execution,
@@ -384,6 +395,7 @@ void [
   capability,
   schedule,
   dryRun,
+  dryRunEvaluation,
   readiness,
   run,
   execution,

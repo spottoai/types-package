@@ -70,21 +70,21 @@ export interface RequestMessage {
   tracing?: WorkflowTracingOptions;
 }
 
-type ResourceSchedulerTickIdentifierFields = Pick<
+type SchedulerTickIdentifierFields = Pick<
   RequestMessage,
   'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'
 >;
 
 /**
- * Internal global wake-up for the cloud-engine-owned resource scheduler.
+ * Internal global wake-up for the cloud-engine-owned scheduler.
  *
  * The message intentionally contains no tenant, schedule, resource, capability,
  * Action or due-work selection. `scheduledAtUtc` is correlation and bounded
  * catch-up evidence only; cloud-engine remains authoritative for execution time.
  */
-export interface ResourceSchedulerTickRequestMessageV1 extends ResourceSchedulerTickIdentifierFields {
+export interface SchedulerTickRequestMessageV1 extends SchedulerTickIdentifierFields {
   schemaVersion: 1;
-  entity: 'resource-scheduler';
+  entity: 'scheduler';
   action: 'tick';
   companyId: '*';
   cloudAccountId: '*';
@@ -95,9 +95,9 @@ export interface ResourceSchedulerTickRequestMessageV1 extends ResourceScheduler
   correlationId: string;
 }
 
-const RESOURCE_SCHEDULER_TICK_PREFIX_V1 = 'resource-scheduler:tick:';
-const RESOURCE_SCHEDULER_TICK_MAX_ID_LENGTH_V1 = 128;
-const RESOURCE_SCHEDULER_TICK_KEYS_V1 = [
+const SCHEDULER_TICK_PREFIX_V1 = 'scheduler:tick:';
+const SCHEDULER_TICK_MAX_ID_LENGTH_V1 = 128;
+const SCHEDULER_TICK_KEYS_V1 = [
   'schemaVersion',
   'entity',
   'action',
@@ -117,38 +117,35 @@ const isCanonicalUtcTimestampMilliseconds = (value: unknown): value is string =>
   return Number.isFinite(parsed) && new Date(parsed).toISOString() === value;
 };
 
-const hasExactResourceSchedulerTickKeysV1 = (value: Record<string, unknown>): boolean => {
+const hasExactSchedulerTickKeysV1 = (value: Record<string, unknown>): boolean => {
   const keys = Object.keys(value);
-  return (
-    keys.length === RESOURCE_SCHEDULER_TICK_KEYS_V1.length &&
-    RESOURCE_SCHEDULER_TICK_KEYS_V1.every(key => Object.prototype.hasOwnProperty.call(value, key))
-  );
+  return keys.length === SCHEDULER_TICK_KEYS_V1.length && SCHEDULER_TICK_KEYS_V1.every(key => Object.prototype.hasOwnProperty.call(value, key));
 };
 
-const normalizeResourceSchedulerTickInstantV1 = (scheduledAt: Date | string | number): string => {
+const normalizeSchedulerTickInstantV1 = (scheduledAt: Date | string | number): string => {
   if (typeof scheduledAt === 'string') {
     if (!isCanonicalUtcTimestampMilliseconds(scheduledAt)) {
-      throw new TypeError('Resource scheduler tick time must be a canonical UTC timestamp with milliseconds');
+      throw new TypeError('Scheduler tick time must be a canonical UTC timestamp with milliseconds');
     }
     return scheduledAt;
   }
 
   const milliseconds = scheduledAt instanceof Date ? scheduledAt.getTime() : scheduledAt;
-  if (!Number.isFinite(milliseconds)) throw new TypeError('Resource scheduler tick time must be finite');
+  if (!Number.isFinite(milliseconds)) throw new TypeError('Scheduler tick time must be finite');
   const normalized = new Date(milliseconds).toISOString();
   if (!isCanonicalUtcTimestampMilliseconds(normalized)) {
-    throw new TypeError('Resource scheduler tick time must use a four-digit UTC year');
+    throw new TypeError('Scheduler tick time must use a four-digit UTC year');
   }
   return normalized;
 };
 
 /** Creates the deterministic internal queue envelope for one cron occurrence. */
-export const createResourceSchedulerTickRequestMessageV1 = (scheduledAt: Date | string | number): ResourceSchedulerTickRequestMessageV1 => {
-  const scheduledAtUtc = normalizeResourceSchedulerTickInstantV1(scheduledAt);
-  const tickId = `${RESOURCE_SCHEDULER_TICK_PREFIX_V1}${scheduledAtUtc}`;
+export const createSchedulerTickRequestMessageV1 = (scheduledAt: Date | string | number): SchedulerTickRequestMessageV1 => {
+  const scheduledAtUtc = normalizeSchedulerTickInstantV1(scheduledAt);
+  const tickId = `${SCHEDULER_TICK_PREFIX_V1}${scheduledAtUtc}`;
   return {
     schemaVersion: 1,
-    entity: 'resource-scheduler',
+    entity: 'scheduler',
     action: 'tick',
     companyId: '*',
     cloudAccountId: '*',
@@ -160,26 +157,26 @@ export const createResourceSchedulerTickRequestMessageV1 = (scheduledAt: Date | 
   };
 };
 
-/** Exact validator for the internal resource-scheduler tick queue boundary. */
-export const isResourceSchedulerTickRequestMessageV1 = (value: unknown): value is ResourceSchedulerTickRequestMessageV1 => {
+/** Exact validator for the internal scheduler tick queue boundary. */
+export const isSchedulerTickRequestMessageV1 = (value: unknown): value is SchedulerTickRequestMessageV1 => {
   try {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
     const candidate = value as Record<string, unknown>;
-    if (!hasExactResourceSchedulerTickKeysV1(candidate) || !isCanonicalUtcTimestampMilliseconds(candidate['scheduledAtUtc'])) {
+    if (!hasExactSchedulerTickKeysV1(candidate) || !isCanonicalUtcTimestampMilliseconds(candidate['scheduledAtUtc'])) {
       return false;
     }
 
-    const expectedTickId = `${RESOURCE_SCHEDULER_TICK_PREFIX_V1}${candidate['scheduledAtUtc']}`;
+    const expectedTickId = `${SCHEDULER_TICK_PREFIX_V1}${candidate['scheduledAtUtc']}`;
     return (
       candidate['schemaVersion'] === 1 &&
-      candidate['entity'] === 'resource-scheduler' &&
+      candidate['entity'] === 'scheduler' &&
       candidate['action'] === 'tick' &&
       candidate['companyId'] === '*' &&
       candidate['cloudAccountId'] === '*' &&
       candidate['tenantId'] === '*' &&
       candidate['clientId'] === '*' &&
       typeof candidate['tickId'] === 'string' &&
-      candidate['tickId'].length <= RESOURCE_SCHEDULER_TICK_MAX_ID_LENGTH_V1 &&
+      candidate['tickId'].length <= SCHEDULER_TICK_MAX_ID_LENGTH_V1 &&
       candidate['tickId'] === expectedTickId &&
       candidate['correlationId'] === expectedTickId
     );
@@ -307,9 +304,7 @@ export interface NonGdapCloudAccountTenantSyncRequestMessage extends RequestMess
   runId?: string;
 }
 
-export type CloudAccountTenantSyncRequestMessage =
-  | NonGdapCloudAccountTenantSyncRequestMessage
-  | AzureGdapCloudAccountTenantSyncRequestMessage;
+export type CloudAccountTenantSyncRequestMessage = NonGdapCloudAccountTenantSyncRequestMessage | AzureGdapCloudAccountTenantSyncRequestMessage;
 
 export interface SubscriptionMessage {
   authToken?: string;
@@ -353,11 +348,10 @@ export interface BillingReconciliationSubscriptionMessage extends SubscriptionMe
   };
 }
 
-export interface AzureGdapQueueAuthContext
-  extends Omit<
-    AzureCloudAccountAuthContext,
-    'authMode' | 'cloudAccountId' | 'customerTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference'
-  > {
+export interface AzureGdapQueueAuthContext extends Omit<
+  AzureCloudAccountAuthContext,
+  'authMode' | 'cloudAccountId' | 'customerTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference'
+> {
   authMode?: 'gdap';
   cloudAccountId?: string;
   customerTenantId?: string;
@@ -366,24 +360,23 @@ export interface AzureGdapQueueAuthContext
   credentialReference?: never;
 }
 
-export interface AzureGdapSubscriptionMessage
-  extends Omit<
-    SubscriptionMessage,
-    | 'authToken'
-    | 'authClientId'
-    | 'authClientSecret'
-    | 'authTenantId'
-    | 'clientId'
-    | 'authMode'
-    | 'cloudAccountId'
-    | 'tenantId'
-    | 'customerTenantId'
-    | 'authorityTenantId'
-    | 'partnerTenantId'
-    | 'principalClientId'
-    | 'credentialReference'
-    | 'authContext'
-  > {
+export interface AzureGdapSubscriptionMessage extends Omit<
+  SubscriptionMessage,
+  | 'authToken'
+  | 'authClientId'
+  | 'authClientSecret'
+  | 'authTenantId'
+  | 'clientId'
+  | 'authMode'
+  | 'cloudAccountId'
+  | 'tenantId'
+  | 'customerTenantId'
+  | 'authorityTenantId'
+  | 'partnerTenantId'
+  | 'principalClientId'
+  | 'credentialReference'
+  | 'authContext'
+> {
   authMode: 'gdap';
   cloudAccountId: string;
   tenantId: string;
@@ -404,18 +397,10 @@ export interface AzureGdapSubscriptionMessage
  * Queue-safe GDAP request identity. Credentials and Azure application IDs are
  * resolved inside cloud-engine from the persisted authorization profile.
  */
-export interface AzureGdapRequestMessage
-  extends Omit<
-    RequestMessage,
-    | 'clientId'
-    | 'authMode'
-    | 'customerTenantId'
-    | 'authorityTenantId'
-    | 'partnerTenantId'
-    | 'principalClientId'
-    | 'credentialReference'
-    | 'authContext'
-  > {
+export interface AzureGdapRequestMessage extends Omit<
+  RequestMessage,
+  'clientId' | 'authMode' | 'customerTenantId' | 'authorityTenantId' | 'partnerTenantId' | 'principalClientId' | 'credentialReference' | 'authContext'
+> {
   authMode: 'gdap';
   customerTenantId: string;
   authorityTenantId?: string;
@@ -551,26 +536,25 @@ export interface AzureGuestAccessSubscriptionMessageMetadata {
   authFlow: AzureGuestAccessAuthFlow;
 }
 
-export interface AzureGuestAccessSubscriptionMessage
-  extends Omit<
-    SubscriptionMessage,
-    | 'authToken'
-    | 'authClientId'
-    | 'authClientSecret'
-    | 'authTenantId'
-    | 'authMode'
-    | 'cloudAccountId'
-    | 'tenantId'
-    | 'clientId'
-    | 'customerTenantId'
-    | 'authorityTenantId'
-    | 'partnerTenantId'
-    | 'principalClientId'
-    | 'credentialReference'
-    | 'authContext'
-    | 'sagaRunId'
-    | 'metadata'
-  > {
+export interface AzureGuestAccessSubscriptionMessage extends Omit<
+  SubscriptionMessage,
+  | 'authToken'
+  | 'authClientId'
+  | 'authClientSecret'
+  | 'authTenantId'
+  | 'authMode'
+  | 'cloudAccountId'
+  | 'tenantId'
+  | 'clientId'
+  | 'customerTenantId'
+  | 'authorityTenantId'
+  | 'partnerTenantId'
+  | 'principalClientId'
+  | 'credentialReference'
+  | 'authContext'
+  | 'sagaRunId'
+  | 'metadata'
+> {
   authMode: 'delegatedUser';
   cloudAccountId: string;
   tenantId: string;
