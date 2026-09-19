@@ -18,6 +18,16 @@ import {
   isWithinJsonByteLimit,
 } from './resourceStrategyValidationShared';
 
+const isPresentationLabel = (value: unknown): value is string =>
+  isBoundedString(value, 80) &&
+  value === value.trim() &&
+  !/[<>]/.test(value) &&
+  Array.from(value).every(character => {
+    const codePoint = character.codePointAt(0);
+    return codePoint !== undefined && codePoint >= 0x20 && codePoint !== 0x7f;
+  }) &&
+  !/https?:\/\//i.test(value);
+
 export function isResourceSchedulingCapabilityProjection(value: unknown): value is ResourceSchedulingCapabilityProjection {
   if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !isRecord(value)) return false;
   const allowed = [
@@ -29,6 +39,7 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
     'strategy',
     'displayName',
     'description',
+    'presentation',
     'configurationSchemaKind',
     'configurationSchema',
     'recommendationMaturity',
@@ -45,6 +56,7 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
   ];
   if (!hasOnlyKeys(value, allowed)) return false;
   const executionPolicy = value.executionPolicy;
+  const presentation = value.presentation;
   const baseline = value.baseline;
   const cost = value.cost;
   const cadence = value.cadence;
@@ -62,6 +74,13 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
     !['on-off', 'sku-change', 'dial', 'recreate'].includes(String(value.strategy)) ||
     !isBoundedString(value.displayName) ||
     !isBoundedString(value.description, 2000) ||
+    !isRecord(presentation) ||
+    !hasOnlyKeys(presentation, ['resourceKindLabel', 'reduceTransitionLabel', 'restoreTransitionLabel', 'reducedStateLabel', 'restoredStateLabel']) ||
+    !isPresentationLabel(presentation.resourceKindLabel) ||
+    !isPresentationLabel(presentation.reduceTransitionLabel) ||
+    !isPresentationLabel(presentation.restoreTransitionLabel) ||
+    !isPresentationLabel(presentation.reducedStateLabel) ||
+    !isPresentationLabel(presentation.restoredStateLabel) ||
     !isBoundedString(value.configurationSchemaKind, 200) ||
     !isBoundedParameters(value.configurationSchema) ||
     !['unsupported', 'candidate', 'supported'].includes(String(value.recommendationMaturity)) ||

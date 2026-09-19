@@ -239,6 +239,13 @@ const capability = {
   strategy: 'on-off',
   displayName: 'Virtual machine runtime',
   description: 'Schedule VM availability.',
+  presentation: {
+    resourceKindLabel: 'Virtual machine',
+    reduceTransitionLabel: 'Deallocate',
+    restoreTransitionLabel: 'Start',
+    reducedStateLabel: 'Deallocated',
+    restoredStateLabel: 'Running',
+  },
   configurationSchemaKind: 'weekly-paired-transitions',
   configurationSchema: {},
   recommendationMaturity: 'supported',
@@ -272,6 +279,34 @@ const capability = {
   dependencies: { hasDependencies: false },
 };
 assert.equal(scheduler.isResourceSchedulingCapabilityProjection(capability), true);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    presentation: { ...capability.presentation, resourceKindLabel: '' },
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    presentation: { ...capability.presentation, html: '<strong>unsafe</strong>' },
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    presentation: { ...capability.presentation, resourceKindLabel: '<strong>Virtual machine</strong>' },
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    presentation: { ...capability.presentation, restoreTransitionLabel: 'https://example.test/start' },
+  }),
+  false
+);
 assert.equal(
   scheduler.isResourceSchedulingCapabilityProjection(capability),
   true,
