@@ -139,14 +139,13 @@ const dryRun = {
     { name: 'busy-policy', status: 'ready', reasonCodes: [] },
     { name: 'blackout', status: 'ready', reasonCodes: [] },
     { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
-    { name: 'evidence-freshness', status: 'ready', reasonCodes: [] },
     { name: 'notification-routing', status: 'ready', reasonCodes: [] },
   ],
 };
 assert.equal(scheduler.isResourceScheduleDryRunProjection(dryRun), true);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, internalEventId: 'compilation:private' }), false);
-assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: dryRun.checks.slice(0, 7) }), false);
-assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: [...dryRun.checks.slice(0, 7), dryRun.checks[0]] }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: dryRun.checks.slice(0, 6) }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, checks: [...dryRun.checks.slice(0, 6), dryRun.checks[0]] }), false);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, status: 'ready' }), false);
 assert.equal(
   scheduler.isResourceScheduleDryRunProjection({
@@ -164,9 +163,72 @@ assert.equal(
 );
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, windowEndUtc: timestamp }), false);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: timestamp }), false);
-assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: '2026-09-15T00:05:00.001Z' }), false);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: '2026-09-16T00:00:00.000Z' }), true);
+assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, expiresAtUtc: '2026-09-16T00:00:00.001Z' }), false);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, freshness: 'stale' }), true);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, freshness: 'unknown' }), false);
+
+const queuedDryRunEvaluation = {
+  scheduleId: schedule.scheduleId,
+  definitionRevision: schedule.definitionRevision,
+  controlGeneration: schedule.controlGeneration,
+  evaluationId: 'dry-run:schedule-1:1:1',
+  status: 'queued',
+  queuedAtUtc: timestamp,
+  updatedAtUtc: timestamp,
+  attemptCount: 0,
+};
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection(queuedDryRunEvaluation), true);
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection({ ...queuedDryRunEvaluation, attemptCount: 1 }), false);
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection({ ...queuedDryRunEvaluation, completedAtUtc: timestamp }), false);
+
+const readyDryRunEvaluation = {
+  ...queuedDryRunEvaluation,
+  status: 'ready',
+  startedAtUtc: timestamp,
+  completedAtUtc: timestamp,
+  attemptCount: 1,
+  result: {
+    ...dryRun,
+    status: 'ready',
+    checks: dryRun.checks.map(check => ({ ...check, status: 'ready', reasonCodes: [] })),
+  },
+};
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection(readyDryRunEvaluation), true);
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection({ ...readyDryRunEvaluation, status: 'blocked' }), false);
+assert.equal(
+  scheduler.isResourceScheduleDryRunEvaluationProjection({
+    ...readyDryRunEvaluation,
+    result: { ...readyDryRunEvaluation.result, definitionRevision: 2 },
+  }),
+  false
+);
+
+const retryingDryRunEvaluation = {
+  ...queuedDryRunEvaluation,
+  status: 'retrying',
+  startedAtUtc: timestamp,
+  updatedAtUtc: '2026-09-15T00:00:01.000Z',
+  attemptCount: 1,
+  nextAttemptAtUtc: '2026-09-15T00:01:00.000Z',
+};
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection(retryingDryRunEvaluation), true);
+assert.equal(
+  scheduler.isResourceScheduleDryRunEvaluationProjection({ ...retryingDryRunEvaluation, error: { code: 'temporary', message: 'retry' } }),
+  false
+);
+
+const failedDryRunEvaluation = {
+  ...queuedDryRunEvaluation,
+  status: 'failed',
+  startedAtUtc: timestamp,
+  updatedAtUtc: '2026-09-15T00:05:00.000Z',
+  completedAtUtc: '2026-09-15T00:05:00.000Z',
+  attemptCount: 3,
+  error: { code: 'dry-run-evaluation-failed', message: 'The schedule check could not be completed.' },
+};
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection(failedDryRunEvaluation), true);
+assert.equal(scheduler.isResourceScheduleDryRunEvaluationProjection({ ...failedDryRunEvaluation, result: dryRun }), false);
 
 const capability = {
   capability: capabilityRef,
@@ -208,14 +270,47 @@ const capability = {
   },
   automation: { ownership: 'spotto', conflictingControllerLabels: [] },
   dependencies: { hasDependencies: false },
-  evidence: {
-    sourceUrls: ['https://learn.microsoft.com/azure/virtual-machines/states-billing'],
-    labResult: 'passed',
-    verifiedAtUtc: timestamp,
-    expiresAtUtc: null,
-  },
 };
 assert.equal(scheduler.isResourceSchedulingCapabilityProjection(capability), true);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection(capability),
+  true,
+  'published executable capabilities must not require engineering-only Action Lab evidence'
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    evidence: { sourceUrls: [], labResult: 'passed', verifiedAtUtc: timestamp, expiresAtUtc: null },
+  }),
+  false,
+  'engineering-only Action Lab evidence must not leak into the public capability projection'
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    executionPolicy: {
+      authoring: 'allowed',
+      reduce: 'blocked',
+      restore: 'blocked',
+      disableReason: 'Execution evidence has not been verified.',
+    },
+  }),
+  true,
+  'non-executable authoring must not require execution evidence'
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    executionPolicy: {
+      authoring: 'allowed',
+      reduce: 'allowed',
+      restore: 'blocked',
+      disableReason: 'Restore execution evidence has not been verified.',
+    },
+  }),
+  false,
+  'a capability cannot advertise reduce while restore remains blocked'
+);
 assert.equal(
   scheduler.isResourceSchedulingCapabilityProjection({
     ...capability,
@@ -627,20 +722,6 @@ assert.equal(
   false
 );
 assert.equal(
-  scheduler.isResourceSchedulingCapabilityProjection({
-    ...capability,
-    evidence: { ...capability.evidence, expiresAtUtc: '2026-09-14T23:59:59.000Z' },
-  }),
-  false
-);
-assert.equal(
-  scheduler.isResourceSchedulingCapabilityProjection({
-    ...capability,
-    evidence: { sourceUrls: [], labResult: 'passed', verifiedAtUtc: null, expiresAtUtc: null },
-  }),
-  false
-);
-assert.equal(
   scheduler.isResourceSchedulingReadinessProjection({
     ...readiness,
     expiresAtUtc: '2026-09-14T23:59:59.000Z',
@@ -734,6 +815,27 @@ const execution = {
   updatedAtUtc: timestamp,
 };
 assert.equal(scheduler.isResourceSchedulingExecutionProjection(execution), true);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: ['restore-and-delete'],
+  }),
+  true
+);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: [['restore-and-delete']],
+  }),
+  false
+);
+assert.equal(
+  scheduler.isResourceSchedulingExecutionProjection({
+    ...execution,
+    allowedCommands: [{ toString: null }],
+  }),
+  false
+);
 assert.equal(scheduler.isResourceSchedulingExecutionProjection({ ...execution, lifecycleState: 'restore-blocked' }), false);
 assert.equal(scheduler.isResourceSchedulingExecutionProjection({ ...execution, allowedCommands: Array(100_000).fill('pause') }), false);
 assert.equal(
@@ -753,6 +855,9 @@ assert.equal(
 );
 
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'restore-now', idempotencyKey: 'command-1' }), true);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'restore-and-delete', idempotencyKey: 'command-delete-1' }), true);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: ['restore-and-delete'], idempotencyKey: 'command-array' }), false);
+assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: { toString: null }, idempotencyKey: 'command-object' }), false);
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'rerun-dry-run', idempotencyKey: 'command-2' }), true);
 assert.equal(scheduler.isResourceStrategyScheduleCommand({ command: 'start', idempotencyKey: 'command-1' }), false);
 assert.equal(

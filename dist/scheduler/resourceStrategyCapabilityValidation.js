@@ -29,7 +29,6 @@ function isResourceSchedulingCapabilityProjection(value) {
         'automation',
         'dependencies',
         'acknowledgement',
-        'evidence',
     ];
     if (!(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, allowed))
         return false;
@@ -41,7 +40,6 @@ function isResourceSchedulingCapabilityProjection(value) {
     const restore = value.restore;
     const automation = value.automation;
     const dependencies = value.dependencies;
-    const evidence = value.evidence;
     if (!(0, resourceStrategyValidationShared_1.isCapabilityRef)(value.capability) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.contentHash, 200) ||
         !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.publishedAtUtc) ||
@@ -63,7 +61,6 @@ function isResourceSchedulingCapabilityProjection(value) {
         !(0, resourceStrategyValidationShared_1.isRecord)(restore) ||
         !(0, resourceStrategyValidationShared_1.isRecord)(automation) ||
         !(0, resourceStrategyValidationShared_1.isRecord)(dependencies) ||
-        !(0, resourceStrategyValidationShared_1.isRecord)(evidence) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(executionPolicy, ['authoring', 'reduce', 'restore', 'disableReason', 'supersededBy']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(baseline, ['policy', 'mutationDomains', 'coupledValueLabels', 'driftPolicy']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(cost, [
@@ -84,8 +81,7 @@ function isResourceSchedulingCapabilityProjection(value) {
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(disruption, ['reversibility', 'risk', 'affectedScopeLabel', 'expectedDowntimeMinutes', 'supportedBusyPolicies']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(restore, ['restoreLeadMinutes', 'capacityReturnRisk', 'retryPolicyLabel', 'escalationClass']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(automation, ['ownership', 'conflictingControllerLabels']) ||
-        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk']) ||
-        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(evidence, ['sourceUrls', 'labResult', 'verifiedAtUtc', 'expiresAtUtc'])) {
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk'])) {
         return false;
     }
     if (!['allowed', 'blocked'].includes(String(executionPolicy.authoring)) ||
@@ -170,27 +166,15 @@ function isResourceSchedulingCapabilityProjection(value) {
         executionPolicy.restore === 'blocked';
     if (requiresDisableReason && !(0, resourceStrategyValidationShared_1.isBoundedString)(executionPolicy.disableReason, 500))
         return false;
+    if (executionPolicy.reduce === 'allowed' && executionPolicy.restore !== 'allowed')
+        return false;
     if (cost.billingClass === 'C-no-material-saving' && (executionPolicy.authoring !== 'blocked' || executionPolicy.reduce !== 'blocked'))
         return false;
     if (value.strategy === 'recreate') {
         if (!(0, resourceStrategyValidationShared_1.isRecord)(value.acknowledgement) || value.acknowledgement.severity !== 'destructive')
             return false;
     }
-    if (!(0, resourceStrategyValidationShared_1.isBoundedStringArray)(evidence.sourceUrls, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.evidenceReferences) ||
-        !['not-run', 'failed', 'passed'].includes(String(evidence.labResult)) ||
-        !(evidence.verifiedAtUtc === null || (0, resourceStrategyValidationShared_1.isIsoTimestamp)(evidence.verifiedAtUtc)) ||
-        !(evidence.expiresAtUtc === null || (0, resourceStrategyValidationShared_1.isIsoTimestamp)(evidence.expiresAtUtc))) {
-        return false;
-    }
-    if (evidence.labResult === 'passed' && evidence.verifiedAtUtc === null)
-        return false;
-    const allowsAuthoringOrReduce = executionPolicy.authoring === 'allowed' || executionPolicy.reduce === 'allowed';
-    if (allowsAuthoringOrReduce && (evidence.labResult !== 'passed' || evidence.verifiedAtUtc === null || evidence.sourceUrls.length === 0)) {
-        return false;
-    }
-    return !(typeof evidence.verifiedAtUtc === 'string' &&
-        typeof evidence.expiresAtUtc === 'string' &&
-        Date.parse(evidence.expiresAtUtc) < Date.parse(evidence.verifiedAtUtc));
+    return true;
 }
 const readinessStates = new Set([
     'ready',

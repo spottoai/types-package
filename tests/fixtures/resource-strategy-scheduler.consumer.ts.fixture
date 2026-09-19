@@ -1,7 +1,7 @@
 import {
-  createResourceSchedulerTickRequestMessageV1,
-  isResourceSchedulerTickRequestMessageV1,
-  type ResourceSchedulerTickRequestMessageV1,
+  createSchedulerTickRequestMessageV1,
+  isSchedulerTickRequestMessageV1,
+  type SchedulerTickRequestMessageV1,
 } from '@spottoai/types-package';
 import {
   WEEKLY_AVAILABILITY_FIXTURES_V1,
@@ -9,6 +9,8 @@ import {
   isResourceSchedulePermissionManifestConsent,
   isResourceStrategyWeeklyScheduleSuggestion,
   isResourceStrategyWeeklyScheduleWriteRequest,
+  isScheduleWriteRequest,
+  type RecommendationActionScheduleWriteRequest,
   type ResourceScheduleDryRunProjection,
   type ResourceSchedulePermissionManifestConsent,
   type ResourceStrategyWeeklyScheduleSuggestion,
@@ -40,7 +42,19 @@ const suggestion: ResourceStrategyWeeklyScheduleSuggestion = {
   rules: definition.rules,
 };
 
-const tick: ResourceSchedulerTickRequestMessageV1 = createResourceSchedulerTickRequestMessageV1('2026-09-16T00:00:00.000Z');
+const recommendationDefinition: RecommendationActionScheduleWriteRequest = {
+  definitionType: 'recommendation-action',
+  name: 'Apply recommendation',
+  timezone: 'Pacific/Auckland',
+  trigger: { triggerType: 'once', localDateTime: '2026-09-17T10:00' },
+  providerScopeId: 'subscription-1',
+  recommendationId: 'recommendation-1',
+  operation: 'implement',
+  target: { selectorType: 'provider-scope' },
+  initialMode: 'active',
+};
+
+const tick: SchedulerTickRequestMessageV1 = createSchedulerTickRequestMessageV1('2026-09-16T00:00:00.000Z');
 
 const dryRun: ResourceScheduleDryRunProjection = {
   scheduleId: 'schedule-1',
@@ -61,14 +75,14 @@ const dryRun: ResourceScheduleDryRunProjection = {
       'busy-policy',
       'blackout',
       'admission-budgets',
-      'evidence-freshness',
       'notification-routing',
     ] as const
   ).map(name => ({ name, status: 'ready', reasonCodes: [] })),
 };
 
 if (
-  !isResourceSchedulerTickRequestMessageV1(tick) ||
+  !isSchedulerTickRequestMessageV1(tick) ||
+  !isScheduleWriteRequest(recommendationDefinition) ||
   !isResourceScheduleDryRunProjection(dryRun) ||
   !isResourceStrategyWeeklyScheduleWriteRequest(definition) ||
   !isResourceStrategyWeeklyScheduleSuggestion(suggestion) ||
