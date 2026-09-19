@@ -461,10 +461,12 @@
           0,
           "rows",
           1,
-          "backupRuns",
-          0
+          "backupRuns"
         ],
-        "skipped"
+        [
+          "ok",
+          "skipped"
+        ]
       ]
     ]
   },

@@ -12,22 +12,23 @@
     "generatedAt": "2026-09-12T02:15:00.000Z"
   },
   "window": {
-    "start": "2026-08-13T00:00:00Z",
-    "end": "2026-09-12T00:00:00Z",
+    "start": "2026-08-13T00:00:00.000Z",
+    "end": "2026-09-12T00:00:00.000Z",
     "days": 30,
     "timezone": "Pacific/Auckland"
   },
   "summary": {
     "counts": {
-      "decision:worth-getting-quote": 5,
-      "decision:not-currently-eligible": 14,
-      "decision:modernization-required-first": 4,
-      "decision:eligibility-or-pricing-unresolved": 7,
-      "rows": 30
+      "resources": 4,
+      "worth-getting-quote": 1,
+      "benefit-already-enabled": 1,
+      "payg-likely-preferable": 1,
+      "strong-candidate": 1,
+      "withSavings": 3
     },
     "spend": {
-      "total30d": 1569.45,
-      "savingsMax": 204.09
+      "total": 2282.8,
+      "savingsMax": 601.9
     },
     "currency": "NZD"
   },
@@ -44,17 +45,38 @@
           "roleClass": "res"
         },
         {
-          "key": "licence",
-          "label": "Licence",
+          "key": "product",
+          "label": "Product",
           "cell": "text",
-          "priority": 2,
+          "priority": 1,
           "roleClass": "cap"
         },
         {
-          "key": "status",
-          "label": "Hybrid Benefit",
+          "key": "vcpu",
+          "label": "vCPU",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "configuration",
+          "label": "Benefit",
           "cell": "mark",
           "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "eligibility",
+          "label": "Eligibility",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "mark",
+          "priority": 3,
           "roleClass": "read"
         },
         {
@@ -66,823 +88,266 @@
         },
         {
           "key": "payback",
-          "label": "Payback (months)",
+          "label": "Payback",
           "cell": "number",
-          "priority": 3,
+          "priority": 4,
           "roleClass": "nums"
         },
         {
           "key": "spend",
-          "label": "Spend (30d)",
+          "label": "30-day spend",
           "cell": "money",
           "priority": 2,
           "roleClass": "cost"
         },
         {
           "key": "savings",
-          "label": "Saves up to",
+          "label": "Potential saving",
           "cell": "money",
-          "priority": 2,
-          "roleClass": "save"
+          "priority": 1,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
         }
       ],
-      "totalCount": 30,
+      "totalCount": 3,
       "rows": [
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
           "name": "vm-dev-01",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 368.43,
-          "savingsMax": 18.75,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|ahb|worth-getting-quote",
+          "spend30d": 612.4,
+          "savingsMax": 176,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|worth-getting-quote|disabled",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-01",
-              "detail": "Standard_E4_v5"
+              "detail": "microsoft.compute/virtualmachines"
             },
-            "licence": {
+            "product": {
               "kind": "text",
-              "value": "windows-server",
-              "detail": "standard \u00b7 4 vCPU"
+              "value": "Windows Server",
+              "detail": "virtual-machine · Datacenter"
             },
-            "status": {
+            "vcpu": {
+              "kind": "number",
+              "value": 8
+            },
+            "configuration": {
               "kind": "mark",
               "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
             },
             "decision": {
               "kind": "mark",
               "state": "worth-getting-quote",
-              "label": "Indicative savings estimate \u2014 worth investigating",
-              "tone": "good",
-              "hint": "low"
+              "label": "Worth getting quote",
+              "tone": "warn",
+              "hint": "Quote licences for 8 vCPU"
             },
             "payback": {
               "kind": "number",
-              "value": 8.21,
+              "value": null,
+              "unit": "months",
               "decimals": 1
             },
             "spend": {
               "kind": "money",
-              "value": 368.43,
+              "value": 612.4,
               "currency": "NZD"
             },
             "savings": {
               "kind": "money",
-              "value": 18.75,
+              "value": 176,
               "currency": "NZD"
             }
           },
           "productFamily": "windows-server",
           "serviceModel": "virtual-machine",
-          "edition": "standard",
-          "vCpuCount": 4,
+          "edition": "Datacenter",
+          "vCpuCount": 8,
           "configurationStatus": "disabled",
           "technicalEligibilityStatus": "eligible",
           "coverageStatus": "uncovered",
           "entitlementStatus": "unknown",
           "decision": {
             "status": "worth-getting-quote",
-            "headline": "Indicative savings estimate \u2014 worth investigating",
-            "paybackMonths": 8.21,
-            "confidence": "low"
-          },
-          "reasonCodes": [
-            "hybrid-benefit-disabled",
-            "eligible-opportunity",
-            "unverified-qualifying-rights",
-            "entitlement-not-confirmed"
-          ],
-          "licenceObservedStableDays": 24
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-13",
-          "name": "vm-dev-13",
-          "type": "microsoft.sqlvirtualmachine/sqlvirtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 0,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-13|ahb|not-currently-eligible",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-13",
-              "detail": null
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "developer \u00b7 4 vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "not-currently-eligible",
-              "label": "Not currently eligible for this AHUB scenario",
-              "tone": "muted",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 0,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-virtual-machine",
-          "edition": "developer",
-          "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "uncovered",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "not-currently-eligible",
-            "headline": "Not currently eligible for this AHUB scenario",
+            "headline": "Quote licences for 8 vCPU",
             "paybackMonths": null,
-            "confidence": "high"
+            "confidence": "medium"
           },
           "reasonCodes": [
-            "unsupported-edition",
-            "missing-public-price"
+            "windows-charge-observed"
           ],
-          "licenceObservedStableDays": 24
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
-          "name": "vm-dev-02",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 215.81,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|ahb|eligibility-or-pricing-unresolved",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-02",
-              "detail": "Standard_E4_v5"
-            },
-            "licence": {
-              "kind": "text",
-              "value": "windows-server",
-              "detail": "standard \u00b7 4 vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "eligibility-or-pricing-unresolved",
-              "label": "More charge evidence is needed",
-              "tone": "neutral",
-              "hint": "unknown"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 215.81,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "windows-server",
-          "serviceModel": "virtual-machine",
-          "edition": "standard",
-          "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "eligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "eligibility-or-pricing-unresolved",
-            "headline": "More charge evidence is needed",
-            "paybackMonths": null,
-            "confidence": "unknown"
-          },
-          "reasonCodes": [
-            "hybrid-benefit-disabled",
-            "eligible-opportunity",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-retail-price",
-            "entitlement-not-confirmed"
-          ],
-          "licenceObservedStableDays": null
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-14",
-          "name": "vm-dev-14",
-          "type": "microsoft.sqlvirtualmachine/sqlvirtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 0,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-14|ahb|not-currently-eligible",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-14",
-              "detail": null
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "developer \u00b7 4 vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "not-currently-eligible",
-              "label": "Not currently eligible for this AHUB scenario",
-              "tone": "muted",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 0,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-virtual-machine",
-          "edition": "developer",
-          "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "not-currently-eligible",
-            "headline": "Not currently eligible for this AHUB scenario",
-            "paybackMonths": null,
-            "confidence": "high"
-          },
-          "reasonCodes": [
-            "unsupported-edition",
-            "insufficient-billing-evidence",
-            "missing-public-price"
-          ],
-          "licenceObservedStableDays": null
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-15",
-          "name": "vm-dev-15",
-          "type": "microsoft.sql/servers/databases",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 18.72,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-15|ahb|modernization-required-first",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-15",
-              "detail": "GP_S_Gen5"
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "standard \u00b7 None vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "unknown",
-              "label": "Unknown",
-              "tone": "muted",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "modernization-required-first",
-              "label": "Modernization is required before AHUB can be assessed",
-              "tone": "warn",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 18.72,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-database",
-          "edition": "standard",
-          "vCpuCount": null,
-          "configurationStatus": "unknown",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "modernization-required-first",
-            "headline": "Modernization is required before AHUB can be assessed",
-            "paybackMonths": null,
-            "confidence": "high"
-          },
-          "reasonCodes": [
-            "unsupported-purchasing-model",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-resource-shape"
-          ],
-          "licenceObservedStableDays": 27
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-16",
-          "name": "vm-dev-16",
-          "type": "microsoft.sql/servers/databases",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 0,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-16|ahb|not-currently-eligible",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-16",
-              "detail": "GP_SYSTEM"
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "standard \u00b7 None vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "unknown",
-              "label": "Unknown",
-              "tone": "muted",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "not-currently-eligible",
-              "label": "Not currently eligible for this AHUB scenario",
-              "tone": "muted",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 0,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-database",
-          "edition": "standard",
-          "vCpuCount": null,
-          "configurationStatus": "unknown",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "not-currently-eligible",
-            "headline": "Not currently eligible for this AHUB scenario",
-            "paybackMonths": null,
-            "confidence": "high"
-          },
-          "reasonCodes": [
-            "system-database",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-resource-shape"
-          ],
-          "licenceObservedStableDays": null
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-17",
-          "name": "vm-dev-17",
-          "type": "microsoft.sql/servers/databases",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 9.36,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/databases/vm-dev-17|ahb|modernization-required-first",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-17",
-              "detail": "GP_S_Gen5"
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "standard \u00b7 None vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "unknown",
-              "label": "Unknown",
-              "tone": "muted",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "modernization-required-first",
-              "label": "Modernization is required before AHUB can be assessed",
-              "tone": "warn",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 9.36,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-database",
-          "edition": "standard",
-          "vCpuCount": null,
-          "configurationStatus": "unknown",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "modernization-required-first",
-            "headline": "Modernization is required before AHUB can be assessed",
-            "paybackMonths": null,
-            "confidence": "high"
-          },
-          "reasonCodes": [
-            "unsupported-purchasing-model",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-resource-shape"
-          ],
-          "licenceObservedStableDays": 27
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
-          "name": "vm-dev-03",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 301.19,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|ahb|eligibility-or-pricing-unresolved",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-03",
-              "detail": "Standard_E4_v5"
-            },
-            "licence": {
-              "kind": "text",
-              "value": "windows-server",
-              "detail": "standard \u00b7 4 vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "eligibility-or-pricing-unresolved",
-              "label": "More charge evidence is needed",
-              "tone": "neutral",
-              "hint": "unknown"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 301.19,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "windows-server",
-          "serviceModel": "virtual-machine",
-          "edition": "standard",
-          "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "eligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "eligibility-or-pricing-unresolved",
-            "headline": "More charge evidence is needed",
-            "paybackMonths": null,
-            "confidence": "unknown"
-          },
-          "reasonCodes": [
-            "hybrid-benefit-disabled",
-            "eligible-opportunity",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-retail-price",
-            "entitlement-not-confirmed"
-          ],
-          "licenceObservedStableDays": null
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-18",
-          "name": "vm-dev-18",
-          "type": "microsoft.sqlvirtualmachine/sqlvirtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 0,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-18|ahb|not-currently-eligible",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-18",
-              "detail": null
-            },
-            "licence": {
-              "kind": "text",
-              "value": "sql-server",
-              "detail": "developer \u00b7 4 vCPU"
-            },
-            "status": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
-            },
-            "decision": {
-              "kind": "mark",
-              "state": "not-currently-eligible",
-              "label": "Not currently eligible for this AHUB scenario",
-              "tone": "muted",
-              "hint": "high"
-            },
-            "payback": {
-              "kind": "number",
-              "value": null,
-              "decimals": 1
-            },
-            "spend": {
-              "kind": "money",
-              "value": 0,
-              "currency": "NZD"
-            },
-            "savings": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-virtual-machine",
-          "edition": "developer",
-          "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "unknown",
-          "entitlementStatus": "unknown",
-          "decision": {
-            "status": "not-currently-eligible",
-            "headline": "Not currently eligible for this AHUB scenario",
-            "paybackMonths": null,
-            "confidence": "high"
-          },
-          "reasonCodes": [
-            "unsupported-edition",
-            "insufficient-billing-evidence",
-            "missing-public-price"
-          ],
-          "licenceObservedStableDays": null
+          "licenceObservedStableDays": 183
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
           "name": "vm-dev-04",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 425.9,
-          "savingsMax": 185.34,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|ahb|worth-getting-quote",
+          "spend30d": 148.3,
+          "savingsMax": 23.4,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|payg-likely-preferable|disabled",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-04",
-              "detail": "Standard_E4_v5"
+              "detail": "microsoft.compute/virtualmachines"
             },
-            "licence": {
+            "product": {
               "kind": "text",
-              "value": "windows-server",
-              "detail": "standard \u00b7 4 vCPU"
+              "value": "Windows Server",
+              "detail": "virtual-machine · Datacenter"
             },
-            "status": {
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
               "kind": "mark",
               "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
             },
             "decision": {
               "kind": "mark",
-              "state": "worth-getting-quote",
-              "label": "Indicative savings estimate \u2014 worth investigating",
-              "tone": "good",
-              "hint": "low"
+              "state": "payg-likely-preferable",
+              "label": "Payg likely preferable",
+              "tone": "neutral",
+              "hint": "Runs too few hours for licences to pay back"
             },
             "payback": {
               "kind": "number",
-              "value": 2.16,
+              "value": null,
+              "unit": "months",
               "decimals": 1
             },
             "spend": {
               "kind": "money",
-              "value": 425.9,
+              "value": 148.3,
               "currency": "NZD"
             },
             "savings": {
               "kind": "money",
-              "value": 185.34,
+              "value": 23.4,
               "currency": "NZD"
             }
           },
           "productFamily": "windows-server",
           "serviceModel": "virtual-machine",
-          "edition": "standard",
+          "edition": "Datacenter",
           "vCpuCount": 4,
           "configurationStatus": "disabled",
           "technicalEligibilityStatus": "eligible",
           "coverageStatus": "uncovered",
           "entitlementStatus": "unknown",
           "decision": {
-            "status": "worth-getting-quote",
-            "headline": "Indicative savings estimate \u2014 worth investigating",
-            "paybackMonths": 2.16,
-            "confidence": "low"
+            "status": "payg-likely-preferable",
+            "headline": "Runs too few hours for licences to pay back",
+            "paybackMonths": null,
+            "confidence": "medium"
           },
           "reasonCodes": [
-            "hybrid-benefit-disabled",
-            "eligible-opportunity",
-            "unverified-qualifying-rights",
-            "entitlement-not-confirmed"
+            "low-runtime"
           ],
-          "licenceObservedStableDays": 27
+          "licenceObservedStableDays": 183
         },
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-04",
-          "name": "vm-dev-04",
-          "type": "microsoft.sqlvirtualmachine/sqlvirtualmachines",
-          "location": "australiasoutheast",
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
+          "name": "vm-dev-02",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 0,
+          "spend30d": 402.1,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sqlvirtualmachine/sqlvirtualmachines/vm-dev-04|ahb|not-currently-eligible",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|benefit-already-enabled|enabled",
           "cells": {
             "resource": {
               "kind": "text",
-              "value": "vm-dev-04",
-              "detail": null
+              "value": "vm-dev-02",
+              "detail": "microsoft.compute/virtualmachines"
             },
-            "licence": {
+            "product": {
               "kind": "text",
-              "value": "sql-server",
-              "detail": "developer \u00b7 4 vCPU"
+              "value": "Windows Server",
+              "detail": "virtual-machine · Standard"
             },
-            "status": {
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
               "kind": "mark",
-              "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
+              "state": "enabled",
+              "label": "Enabled",
+              "tone": "good"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "covered",
+              "label": "Covered",
+              "tone": "good"
             },
             "decision": {
               "kind": "mark",
-              "state": "not-currently-eligible",
-              "label": "Not currently eligible for this AHUB scenario",
-              "tone": "muted",
-              "hint": "high"
+              "state": "benefit-already-enabled",
+              "label": "Benefit already enabled",
+              "tone": "good",
+              "hint": "Azure Hybrid Benefit is already applied"
             },
             "payback": {
               "kind": "number",
               "value": null,
+              "unit": "months",
               "decimals": 1
             },
             "spend": {
               "kind": "money",
-              "value": 0,
+              "value": 402.1,
               "currency": "NZD"
             },
             "savings": {
@@ -891,105 +356,196 @@
               "currency": "NZD"
             }
           },
-          "productFamily": "sql-server",
-          "serviceModel": "sql-virtual-machine",
-          "edition": "developer",
+          "productFamily": "windows-server",
+          "serviceModel": "virtual-machine",
+          "edition": "Standard",
           "vCpuCount": 4,
-          "configurationStatus": "disabled",
-          "technicalEligibilityStatus": "ineligible",
-          "coverageStatus": "uncovered",
+          "configurationStatus": "enabled",
+          "technicalEligibilityStatus": "eligible",
+          "coverageStatus": "covered",
           "entitlementStatus": "unknown",
           "decision": {
-            "status": "not-currently-eligible",
-            "headline": "Not currently eligible for this AHUB scenario",
+            "status": "benefit-already-enabled",
+            "headline": "Azure Hybrid Benefit is already applied",
             "paybackMonths": null,
             "confidence": "high"
           },
           "reasonCodes": [
-            "unsupported-edition",
-            "missing-public-price"
+            "ahb-enabled"
           ],
-          "licenceObservedStableDays": 27
+          "licenceObservedStableDays": 183
+        }
+      ],
+      "omittedCount": 0
+    },
+    {
+      "resourceType": "microsoft.sql/servers/databases",
+      "family": "database",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
         },
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
-          "name": "vm-dev-05",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "key": "product",
+          "label": "Product",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "vcpu",
+          "label": "vCPU",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "configuration",
+          "label": "Benefit",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "eligibility",
+          "label": "Eligibility",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "decision",
+          "label": "Decision",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "payback",
+          "label": "Payback",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 1,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
+        }
+      ],
+      "totalCount": 1,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02",
+          "name": "sqldb-dev-02",
+          "type": "microsoft.sql/servers/databases",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 230.04,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|ahb|eligibility-or-pricing-unresolved",
+          "spend30d": 1120,
+          "savingsMax": 402.5,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02|strong-candidate|disabled",
           "cells": {
             "resource": {
               "kind": "text",
-              "value": "vm-dev-05",
-              "detail": "Standard_E4_v5"
+              "value": "sqldb-dev-02",
+              "detail": "microsoft.sql/servers/databases"
             },
-            "licence": {
+            "product": {
               "kind": "text",
-              "value": "windows-server",
-              "detail": "standard \u00b7 4 vCPU"
+              "value": "SQL Server",
+              "detail": "sql-database · Standard"
             },
-            "status": {
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
               "kind": "mark",
               "state": "disabled",
-              "label": "Not applied",
-              "tone": "warn",
-              "icon": "licence"
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
             },
             "decision": {
               "kind": "mark",
-              "state": "eligibility-or-pricing-unresolved",
-              "label": "More charge evidence is needed",
-              "tone": "neutral",
-              "hint": "unknown"
+              "state": "strong-candidate",
+              "label": "Strong candidate",
+              "tone": "good",
+              "hint": "Apply SQL Server licences to 4 vCore"
             },
             "payback": {
               "kind": "number",
-              "value": null,
+              "value": 7.5,
+              "unit": "months",
               "decimals": 1
             },
             "spend": {
               "kind": "money",
-              "value": 230.04,
+              "value": 1120,
               "currency": "NZD"
             },
             "savings": {
               "kind": "money",
-              "value": null,
+              "value": 402.5,
               "currency": "NZD"
             }
           },
-          "productFamily": "windows-server",
-          "serviceModel": "virtual-machine",
-          "edition": "standard",
+          "productFamily": "sql-server",
+          "serviceModel": "sql-database",
+          "edition": "Standard",
           "vCpuCount": 4,
           "configurationStatus": "disabled",
           "technicalEligibilityStatus": "eligible",
-          "coverageStatus": "unknown",
+          "coverageStatus": "uncovered",
           "entitlementStatus": "unknown",
           "decision": {
-            "status": "eligibility-or-pricing-unresolved",
-            "headline": "More charge evidence is needed",
-            "paybackMonths": null,
-            "confidence": "unknown"
+            "status": "strong-candidate",
+            "headline": "Apply SQL Server licences to 4 vCore",
+            "paybackMonths": 7.5,
+            "confidence": "high"
           },
           "reasonCodes": [
-            "hybrid-benefit-disabled",
-            "eligible-opportunity",
-            "insufficient-billing-evidence",
-            "unverified-qualifying-rights",
-            "missing-retail-price",
-            "entitlement-not-confirmed"
+            "sql-licence-charge-observed"
           ],
-          "licenceObservedStableDays": null
+          "licenceObservedStableDays": 183
         }
       ],
-      "omittedCount": 18
+      "omittedCount": 0
     }
   ]
 }

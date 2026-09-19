@@ -12,20 +12,21 @@
     "generatedAt": "2026-09-12T02:15:00.000Z"
   },
   "window": {
-    "start": "2026-08-13T00:00:00Z",
-    "end": "2026-09-12T00:00:00Z",
+    "start": "2026-08-13T00:00:00.000Z",
+    "end": "2026-09-12T00:00:00.000Z",
     "days": 30,
     "timezone": "Pacific/Auckland"
   },
   "summary": {
     "counts": {
-      "covered": 3,
-      "partiallyCovered": 2,
-      "uncovered": 7,
-      "rows": 5
+      "resources": 4,
+      "partial": 1,
+      "uncovered": 1,
+      "covered": 2,
+      "withSavings": 0
     },
     "spend": {
-      "total30d": 3111.94,
+      "total": 2344.5,
       "savingsMax": 0
     },
     "currency": "NZD"
@@ -54,56 +55,553 @@
           "label": "Benefits",
           "cell": "text",
           "priority": 2,
-          "roleClass": "cap"
+          "roleClass": "read"
         },
         {
           "key": "covered",
-          "label": "Covered (30d)",
+          "label": "Covered cost",
           "cell": "money",
-          "priority": 2,
+          "priority": 3,
           "roleClass": "cost"
         },
         {
           "key": "uncovered",
-          "label": "Uncovered (30d)",
+          "label": "Uncovered cost",
           "cell": "money",
           "priority": 2,
           "roleClass": "cost"
         },
         {
-          "key": "utilization",
-          "label": "Primary p95",
-          "cell": "percent",
-          "priority": 3,
+          "key": "primary",
+          "label": "Primary",
+          "cell": "sparkline",
+          "priority": 1,
+          "roleClass": "prim",
+          "hint": "Daily p95 over the window"
+        },
+        {
+          "key": "secondary",
+          "label": "Secondary",
+          "cell": "sparkline",
+          "priority": 2,
+          "roleClass": "sec",
+          "hint": "Daily p95 over the window"
+        },
+        {
+          "key": "dual",
+          "label": "Usage",
+          "cell": "dual",
+          "priority": 1,
+          "roleClass": "dual"
+        },
+        {
+          "key": "primaryP95",
+          "label": "p95",
+          "cell": "number",
+          "priority": 4,
           "roleClass": "nums"
         },
         {
-          "key": "verdict",
-          "label": "Read",
-          "cell": "mark",
-          "priority": 1,
-          "roleClass": "read"
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
         }
       ],
-      "totalCount": 5,
+      "totalCount": 3,
       "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
+          "name": "vm-dev-02",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 402.1,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|uncovered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-02",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 0
+            },
+            "benefits": {
+              "kind": "text",
+              "value": null,
+              "detail": null
+            },
+            "covered": {
+              "kind": "money",
+              "value": 0,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 402.1,
+              "currency": "NZD"
+            },
+            "primary": {
+              "kind": "sparkline",
+              "role": "primary",
+              "values": [
+                3.1,
+                3.1,
+                2.8,
+                4.3,
+                1.9,
+                2.3,
+                3.1,
+                2.8,
+                3.2,
+                4.5,
+                4.5,
+                4.2,
+                4.5,
+                2.4,
+                2,
+                2.8,
+                1.9,
+                3.1,
+                3.6,
+                3,
+                3.9,
+                2.3,
+                4.3,
+                1.9,
+                3.5,
+                3,
+                2.3,
+                4.1,
+                2.8,
+                4.6
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 4.5,
+              "label": "cpu"
+            },
+            "primaryP95": {
+              "kind": "number",
+              "value": 4.5,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondary": {
+              "kind": "sparkline",
+              "role": "secondary",
+              "values": [
+                22.7,
+                29.4,
+                23.4,
+                25.7,
+                24.6,
+                24,
+                25.5,
+                24.6,
+                23.8,
+                22.4,
+                23.2,
+                27,
+                26.6,
+                27.1,
+                23.8,
+                25.7,
+                22.5,
+                29.3,
+                24.4,
+                23.1,
+                27.8,
+                22.4,
+                25.5,
+                25.2,
+                27.4,
+                22.4,
+                28.8,
+                28.2,
+                26.9,
+                28.8
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 29.3,
+              "label": "memory"
+            },
+            "dual": {
+              "kind": "dual",
+              "primary": {
+                "kind": "sparkline",
+                "role": "primary",
+                "values": [
+                  3.1,
+                  3.1,
+                  2.8,
+                  4.3,
+                  1.9,
+                  2.3,
+                  3.1,
+                  2.8,
+                  3.2,
+                  4.5,
+                  4.5,
+                  4.2,
+                  4.5,
+                  2.4,
+                  2,
+                  2.8,
+                  1.9,
+                  3.1,
+                  3.6,
+                  3,
+                  3.9,
+                  2.3,
+                  4.3,
+                  1.9,
+                  3.5,
+                  3,
+                  2.3,
+                  4.1,
+                  2.8,
+                  4.6
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 4.5,
+                "label": "cpu"
+              },
+              "secondary": {
+                "kind": "sparkline",
+                "role": "secondary",
+                "values": [
+                  22.7,
+                  29.4,
+                  23.4,
+                  25.7,
+                  24.6,
+                  24,
+                  25.5,
+                  24.6,
+                  23.8,
+                  22.4,
+                  23.2,
+                  27,
+                  26.6,
+                  27.1,
+                  23.8,
+                  25.7,
+                  22.5,
+                  29.3,
+                  24.4,
+                  23.1,
+                  27.8,
+                  22.4,
+                  25.5,
+                  25.2,
+                  27.4,
+                  22.4,
+                  28.8,
+                  28.2,
+                  26.9,
+                  28.8
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 29.3,
+                "label": "memory"
+              }
+            },
+            "spend": {
+              "kind": "money",
+              "value": 402.1,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 0,
+            "benefitTypes": [],
+            "benefitNames": [],
+            "coveredCost": 0,
+            "uncoveredCost": 402.1,
+            "windowStart": "2026-08-13",
+            "windowEnd": "2026-09-11"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 4.5
+          }
+        },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
           "name": "vm-dev-01",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 368.43,
+          "spend30d": 612.4,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|commitments|covered",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|partial",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-01",
-              "detail": "australiasoutheast"
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "coverage": {
+              "kind": "percent",
+              "value": 64.6
+            },
+            "benefits": {
+              "kind": "text",
+              "value": "Savings plan",
+              "detail": "sp-fixture-compute"
+            },
+            "covered": {
+              "kind": "money",
+              "value": 395.6,
+              "currency": "NZD"
+            },
+            "uncovered": {
+              "kind": "money",
+              "value": 216.8,
+              "currency": "NZD"
+            },
+            "primary": {
+              "kind": "sparkline",
+              "role": "primary",
+              "values": [
+                5.3,
+                9,
+                7.7,
+                8.2,
+                6.8,
+                8.6,
+                8,
+                10.1,
+                5.8,
+                4.9,
+                6.8,
+                9.2,
+                6.8,
+                9.7,
+                7.3,
+                5.1,
+                4.9,
+                6.9,
+                4.6,
+                5.7,
+                8.9,
+                6.1,
+                4.7,
+                8.2,
+                4.7,
+                8,
+                4.7,
+                7,
+                9.6,
+                7
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 9.7,
+              "label": "cpu"
+            },
+            "primaryP95": {
+              "kind": "number",
+              "value": 9.7,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondary": {
+              "kind": "sparkline",
+              "role": "secondary",
+              "values": [
+                38.5,
+                37,
+                39.2,
+                41.7,
+                41,
+                38.7,
+                38.5,
+                39.7,
+                36.3,
+                32.8,
+                36.7,
+                41,
+                39.8,
+                39.8,
+                38.7,
+                39.8,
+                34.6,
+                37.5,
+                32.1,
+                36,
+                38.2,
+                40.5,
+                35.5,
+                36.3,
+                40.9,
+                39.3,
+                34,
+                40.1,
+                34.2,
+                39
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 41,
+              "label": "memory"
+            },
+            "dual": {
+              "kind": "dual",
+              "primary": {
+                "kind": "sparkline",
+                "role": "primary",
+                "values": [
+                  5.3,
+                  9,
+                  7.7,
+                  8.2,
+                  6.8,
+                  8.6,
+                  8,
+                  10.1,
+                  5.8,
+                  4.9,
+                  6.8,
+                  9.2,
+                  6.8,
+                  9.7,
+                  7.3,
+                  5.1,
+                  4.9,
+                  6.9,
+                  4.6,
+                  5.7,
+                  8.9,
+                  6.1,
+                  4.7,
+                  8.2,
+                  4.7,
+                  8,
+                  4.7,
+                  7,
+                  9.6,
+                  7
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 9.7,
+                "label": "cpu"
+              },
+              "secondary": {
+                "kind": "sparkline",
+                "role": "secondary",
+                "values": [
+                  38.5,
+                  37,
+                  39.2,
+                  41.7,
+                  41,
+                  38.7,
+                  38.5,
+                  39.7,
+                  36.3,
+                  32.8,
+                  36.7,
+                  41,
+                  39.8,
+                  39.8,
+                  38.7,
+                  39.8,
+                  34.6,
+                  37.5,
+                  32.1,
+                  36,
+                  38.2,
+                  40.5,
+                  35.5,
+                  36.3,
+                  40.9,
+                  39.3,
+                  34,
+                  40.1,
+                  34.2,
+                  39
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 41,
+                "label": "memory"
+              }
+            },
+            "spend": {
+              "kind": "money",
+              "value": 612.4,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "coverage": {
+            "coveragePercent": 64.6,
+            "benefitTypes": [
+              "savings-plan"
+            ],
+            "benefitNames": [
+              "sp-fixture-compute"
+            ],
+            "coveredCost": 395.6,
+            "uncoveredCost": 216.8,
+            "windowStart": "2026-08-13",
+            "windowEnd": "2026-09-11"
+          },
+          "utilization": {
+            "primaryKey": "cpu",
+            "p95": 9.7
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
+          "name": "vm-dev-05",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 210,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|covered",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-05",
+              "detail": "microsoft.compute/virtualmachines"
             },
             "coverage": {
               "kind": "percent",
@@ -111,12 +609,12 @@
             },
             "benefits": {
               "kind": "text",
-              "value": "sp-01",
-              "detail": "savings-plan"
+              "value": "Reservation",
+              "detail": "ri-fixture-d2s"
             },
             "covered": {
               "kind": "money",
-              "value": 93.05,
+              "value": 210,
               "currency": "NZD"
             },
             "uncovered": {
@@ -124,53 +622,311 @@
               "value": 0,
               "currency": "NZD"
             },
-            "utilization": {
-              "kind": "percent",
-              "value": 8.56
+            "primary": {
+              "kind": "sparkline",
+              "role": "primary",
+              "values": [
+                16.3,
+                9.9,
+                15.4,
+                17,
+                12.7,
+                13,
+                16.9,
+                15.8,
+                10.4,
+                9.7,
+                9.9,
+                12.8,
+                17,
+                13.5,
+                17,
+                15.1,
+                16.5,
+                9.9,
+                15.3,
+                13.9,
+                15.4,
+                13.1,
+                10.8,
+                11.2,
+                9,
+                10.8,
+                12.8,
+                12.8,
+                16.7,
+                10.9
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 17,
+              "label": "cpu"
             },
-            "verdict": {
-              "kind": "mark",
-              "state": "covered",
-              "label": "Covered",
-              "tone": "good",
-              "icon": "tag"
+            "primaryP95": {
+              "kind": "number",
+              "value": 17,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondary": {
+              "kind": "sparkline",
+              "role": "secondary",
+              "values": [
+                43.1,
+                49.5,
+                43.3,
+                49.7,
+                43.9,
+                39.8,
+                48.6,
+                46.7,
+                39.8,
+                45.1,
+                45,
+                44.7,
+                43.3,
+                41.9,
+                41.6,
+                45.9,
+                45,
+                41,
+                47.9,
+                45.9,
+                49.8,
+                49.1,
+                45.6,
+                46.7,
+                45.6,
+                40.5,
+                43.6,
+                47.1,
+                45.9,
+                40.9
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 49.7,
+              "label": "memory"
+            },
+            "dual": {
+              "kind": "dual",
+              "primary": {
+                "kind": "sparkline",
+                "role": "primary",
+                "values": [
+                  16.3,
+                  9.9,
+                  15.4,
+                  17,
+                  12.7,
+                  13,
+                  16.9,
+                  15.8,
+                  10.4,
+                  9.7,
+                  9.9,
+                  12.8,
+                  17,
+                  13.5,
+                  17,
+                  15.1,
+                  16.5,
+                  9.9,
+                  15.3,
+                  13.9,
+                  15.4,
+                  13.1,
+                  10.8,
+                  11.2,
+                  9,
+                  10.8,
+                  12.8,
+                  12.8,
+                  16.7,
+                  10.9
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 17,
+                "label": "cpu"
+              },
+              "secondary": {
+                "kind": "sparkline",
+                "role": "secondary",
+                "values": [
+                  43.1,
+                  49.5,
+                  43.3,
+                  49.7,
+                  43.9,
+                  39.8,
+                  48.6,
+                  46.7,
+                  39.8,
+                  45.1,
+                  45,
+                  44.7,
+                  43.3,
+                  41.9,
+                  41.6,
+                  45.9,
+                  45,
+                  41,
+                  47.9,
+                  45.9,
+                  49.8,
+                  49.1,
+                  45.6,
+                  46.7,
+                  45.6,
+                  40.5,
+                  43.6,
+                  47.1,
+                  45.9,
+                  40.9
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 49.7,
+                "label": "memory"
+              }
+            },
+            "spend": {
+              "kind": "money",
+              "value": 210,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
             }
           },
           "coverage": {
             "coveragePercent": 100,
             "benefitTypes": [
-              "savings-plan"
+              "reservation"
             ],
             "benefitNames": [
-              "sp-01"
+              "ri-fixture-d2s"
             ],
-            "coveredCost": 93.05,
+            "coveredCost": 210,
             "uncoveredCost": 0,
-            "windowStart": "2026-08-13T00:00:00Z",
-            "windowEnd": "2026-09-12T00:00:00Z"
+            "windowStart": "2026-08-13",
+            "windowEnd": "2026-09-11"
           },
           "utilization": {
             "primaryKey": "cpu",
-            "p95": 8.56
+            "p95": 17
           }
+        }
+      ],
+      "omittedCount": 0
+    },
+    {
+      "resourceType": "microsoft.sql/servers/databases",
+      "family": "database",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
         },
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
-          "name": "vm-dev-04",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "percent",
+          "priority": 1,
+          "roleClass": "nums"
+        },
+        {
+          "key": "benefits",
+          "label": "Benefits",
+          "cell": "text",
+          "priority": 2,
+          "roleClass": "read"
+        },
+        {
+          "key": "covered",
+          "label": "Covered cost",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "cost"
+        },
+        {
+          "key": "uncovered",
+          "label": "Uncovered cost",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "primary",
+          "label": "Primary",
+          "cell": "sparkline",
+          "priority": 1,
+          "roleClass": "prim",
+          "hint": "Daily p95 over the window"
+        },
+        {
+          "key": "secondary",
+          "label": "Secondary",
+          "cell": "sparkline",
+          "priority": 2,
+          "roleClass": "sec",
+          "hint": "Daily p95 over the window"
+        },
+        {
+          "key": "dual",
+          "label": "Usage",
+          "cell": "dual",
+          "priority": 1,
+          "roleClass": "dual"
+        },
+        {
+          "key": "primaryP95",
+          "label": "p95",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
+        }
+      ],
+      "totalCount": 1,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02",
+          "name": "sqldb-dev-02",
+          "type": "microsoft.sql/servers/databases",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 425.9,
+          "spend30d": 1120,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|commitments|covered",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02|covered",
           "cells": {
             "resource": {
               "kind": "text",
-              "value": "vm-dev-04",
-              "detail": "australiasoutheast"
+              "value": "sqldb-dev-02",
+              "detail": "microsoft.sql/servers/databases"
             },
             "coverage": {
               "kind": "percent",
@@ -178,12 +934,12 @@
             },
             "benefits": {
               "kind": "text",
-              "value": "sp-01",
-              "detail": "savings-plan"
+              "value": "Reservation",
+              "detail": "ri-fixture-sql-gp4"
             },
             "covered": {
               "kind": "money",
-              "value": 390.6,
+              "value": 1120,
               "currency": "NZD"
             },
             "uncovered": {
@@ -191,235 +947,202 @@
               "value": 0,
               "currency": "NZD"
             },
-            "utilization": {
-              "kind": "percent",
-              "value": 29.07
+            "primary": {
+              "kind": "sparkline",
+              "role": "primary",
+              "values": [
+                13.5,
+                7.7,
+                13.9,
+                9.3,
+                8.1,
+                7,
+                14.6,
+                9.6,
+                7.2,
+                14.3,
+                13.6,
+                11.6,
+                12.6,
+                12.7,
+                13,
+                9.5,
+                13.6,
+                9.5,
+                9.9,
+                11.5,
+                14.2,
+                14.7,
+                14.2,
+                8,
+                14.2,
+                8.2,
+                6.9,
+                12.7,
+                7.2,
+                14.6
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 14.6,
+              "label": "cpu"
             },
-            "verdict": {
-              "kind": "mark",
-              "state": "covered",
-              "label": "Covered",
-              "tone": "good",
-              "icon": "tag"
+            "primaryP95": {
+              "kind": "number",
+              "value": 14.6,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondary": {
+              "kind": "sparkline",
+              "role": "secondary",
+              "values": [
+                41.6,
+                42.4,
+                42,
+                41.6,
+                41.9,
+                42.3,
+                42.5,
+                42.1,
+                42.3,
+                42.8,
+                42.3,
+                42.3,
+                43.1,
+                43.1,
+                42.9,
+                43.1,
+                43.1,
+                43.2,
+                42.7,
+                42.9,
+                42.5,
+                43.3,
+                43.5,
+                43.6,
+                43.5,
+                43.5,
+                43.3,
+                42.9,
+                43.9,
+                43.9
+              ],
+              "axisMax": 100,
+              "unit": "%",
+              "p95": 43.9,
+              "label": "storage"
+            },
+            "dual": {
+              "kind": "dual",
+              "primary": {
+                "kind": "sparkline",
+                "role": "primary",
+                "values": [
+                  13.5,
+                  7.7,
+                  13.9,
+                  9.3,
+                  8.1,
+                  7,
+                  14.6,
+                  9.6,
+                  7.2,
+                  14.3,
+                  13.6,
+                  11.6,
+                  12.6,
+                  12.7,
+                  13,
+                  9.5,
+                  13.6,
+                  9.5,
+                  9.9,
+                  11.5,
+                  14.2,
+                  14.7,
+                  14.2,
+                  8,
+                  14.2,
+                  8.2,
+                  6.9,
+                  12.7,
+                  7.2,
+                  14.6
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 14.6,
+                "label": "cpu"
+              },
+              "secondary": {
+                "kind": "sparkline",
+                "role": "secondary",
+                "values": [
+                  41.6,
+                  42.4,
+                  42,
+                  41.6,
+                  41.9,
+                  42.3,
+                  42.5,
+                  42.1,
+                  42.3,
+                  42.8,
+                  42.3,
+                  42.3,
+                  43.1,
+                  43.1,
+                  42.9,
+                  43.1,
+                  43.1,
+                  43.2,
+                  42.7,
+                  42.9,
+                  42.5,
+                  43.3,
+                  43.5,
+                  43.6,
+                  43.5,
+                  43.5,
+                  43.3,
+                  42.9,
+                  43.9,
+                  43.9
+                ],
+                "axisMax": 100,
+                "unit": "%",
+                "p95": 43.9,
+                "label": "storage"
+              }
+            },
+            "spend": {
+              "kind": "money",
+              "value": 1120,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
             }
           },
           "coverage": {
             "coveragePercent": 100,
             "benefitTypes": [
-              "savings-plan"
+              "reservation"
             ],
             "benefitNames": [
-              "sp-01"
+              "ri-fixture-sql-gp4"
             ],
-            "coveredCost": 390.6,
+            "coveredCost": 1120,
             "uncoveredCost": 0,
-            "windowStart": "2026-08-13T00:00:00Z",
-            "windowEnd": "2026-09-12T00:00:00Z"
+            "windowStart": "2026-08-13",
+            "windowEnd": "2026-09-11"
           },
           "utilization": {
             "primaryKey": "cpu",
-            "p95": 29.07
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07",
-          "name": "vm-dev-07",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 927.93,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|commitments|partially-covered",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-07",
-              "detail": "australiasoutheast"
-            },
-            "coverage": {
-              "kind": "percent",
-              "value": 64.65
-            },
-            "benefits": {
-              "kind": "text",
-              "value": "sp-01",
-              "detail": "savings-plan"
-            },
-            "covered": {
-              "kind": "money",
-              "value": 571.38,
-              "currency": "NZD"
-            },
-            "uncovered": {
-              "kind": "money",
-              "value": 460.83,
-              "currency": "NZD"
-            },
-            "utilization": {
-              "kind": "percent",
-              "value": 1.46
-            },
-            "verdict": {
-              "kind": "mark",
-              "state": "partially-covered",
-              "label": "Partial",
-              "tone": "warn",
-              "icon": "tag"
-            }
-          },
-          "coverage": {
-            "coveragePercent": 64.65,
-            "benefitTypes": [
-              "savings-plan"
-            ],
-            "benefitNames": [
-              "sp-01"
-            ],
-            "coveredCost": 571.38,
-            "uncoveredCost": 460.83,
-            "windowStart": "2026-08-13T00:00:00Z",
-            "windowEnd": "2026-09-12T00:00:00Z"
-          },
-          "utilization": {
-            "primaryKey": "cpu",
-            "p95": 1.46
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11",
-          "name": "vm-dev-11",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 398.14,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11|commitments|covered",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-11",
-              "detail": "australiasoutheast"
-            },
-            "coverage": {
-              "kind": "percent",
-              "value": 100
-            },
-            "benefits": {
-              "kind": "text",
-              "value": "sp-01",
-              "detail": "savings-plan"
-            },
-            "covered": {
-              "kind": "money",
-              "value": 264.17,
-              "currency": "NZD"
-            },
-            "uncovered": {
-              "kind": "money",
-              "value": 0,
-              "currency": "NZD"
-            },
-            "utilization": {
-              "kind": "percent",
-              "value": 71.93
-            },
-            "verdict": {
-              "kind": "mark",
-              "state": "covered",
-              "label": "Covered",
-              "tone": "good",
-              "icon": "tag"
-            }
-          },
-          "coverage": {
-            "coveragePercent": 100,
-            "benefitTypes": [
-              "savings-plan"
-            ],
-            "benefitNames": [
-              "sp-01"
-            ],
-            "coveredCost": 264.17,
-            "uncoveredCost": 0,
-            "windowStart": "2026-08-13T00:00:00Z",
-            "windowEnd": "2026-09-12T00:00:00Z"
-          },
-          "utilization": {
-            "primaryKey": "cpu",
-            "p95": 71.93
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12",
-          "name": "vm-dev-12",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 991.54,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12|commitments|partially-covered",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-12",
-              "detail": "australiasoutheast"
-            },
-            "coverage": {
-              "kind": "percent",
-              "value": 37.93
-            },
-            "benefits": {
-              "kind": "text",
-              "value": "sp-01",
-              "detail": "savings-plan"
-            },
-            "covered": {
-              "kind": "money",
-              "value": 178.5,
-              "currency": "NZD"
-            },
-            "uncovered": {
-              "kind": "money",
-              "value": 419.66,
-              "currency": "NZD"
-            },
-            "utilization": {
-              "kind": "percent",
-              "value": 22.15
-            },
-            "verdict": {
-              "kind": "mark",
-              "state": "partially-covered",
-              "label": "Partial",
-              "tone": "warn",
-              "icon": "tag"
-            }
-          },
-          "coverage": {
-            "coveragePercent": 37.93,
-            "benefitTypes": [
-              "savings-plan"
-            ],
-            "benefitNames": [
-              "sp-01"
-            ],
-            "coveredCost": 178.5,
-            "uncoveredCost": 419.66,
-            "windowStart": "2026-08-13T00:00:00Z",
-            "windowEnd": "2026-09-12T00:00:00Z"
-          },
-          "utilization": {
-            "primaryKey": "cpu",
-            "p95": 22.15
+            "p95": 14.6
           }
         }
       ],
