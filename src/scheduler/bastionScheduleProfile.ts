@@ -1,3 +1,9 @@
+/**
+ * @deprecated Temporary: Bastion schedule profile reader restored from before commit 38f20e3 ("finalize generic scheduler contracts") and kept
+ * only until cloud-engine, api and ui migrate Bastion / legacy schedule handling to the generic scheduler contracts
+ * (`./schedulerContracts`, `./resourceStrategy`; see specs/scheduler/azure-resource-strategy-scheduling-types.md).
+ * Do not add new consumers. Exported from the package root only, never from the `/scheduler` subpath.
+ */
 type JsonRecord = Record<string, unknown>;
 
 const MAX_IDENTIFIER_LENGTH = 2_048;
@@ -8,8 +14,10 @@ const MAX_TAG_COUNT = 50;
 const MAX_TAG_NAME_LENGTH = 512;
 const MAX_TAG_VALUE_LENGTH = 256;
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionScheduleSupportedSkuV1 = 'Basic' | 'Standard' | 'Premium';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionScheduleSupportedProfileV1 {
   skuName: BastionScheduleSupportedSkuV1;
   location: string;
@@ -98,7 +106,10 @@ function readSku(value: unknown): BastionScheduleSupportedSkuV1 | undefined {
   return name === 'Basic' || name === 'Standard' || name === 'Premium' ? name : undefined;
 }
 
-/** Normalizes an eligible public dedicated Azure Bastion profile for schedule readiness and recovery. */
+/**
+ * Normalizes an eligible public dedicated Azure Bastion profile for schedule readiness and recovery.
+ * @deprecated Temporary Bastion scheduler contract; see file header.
+ */
 export function readSupportedBastionScheduleProfileV1(value: unknown, expectedResourceId: string): BastionScheduleSupportedProfileV1 | undefined {
   try {
     if (

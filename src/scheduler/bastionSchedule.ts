@@ -1,8 +1,17 @@
+/**
+ * @deprecated Temporary: Bastion schedule contracts restored from before commit 38f20e3 ("finalize generic scheduler contracts") and kept
+ * only until cloud-engine, api and ui migrate Bastion / legacy schedule handling to the generic scheduler contracts
+ * (`./schedulerContracts`, `./resourceStrategy`; see specs/scheduler/azure-resource-strategy-scheduling-types.md).
+ * Do not add new consumers. Exported from the package root only, never from the `/scheduler` subpath.
+ */
 import type { ResourceScheduleDefinitionBase, SchedulerBatchRunItemBase, WeekdayNumber } from './legacySchedulerContracts';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionScheduleDefinitionType = 'bastion-availability-weekly';
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionAvailabilityOperation = 'remove' | 'restore';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionAvailabilityWindow {
   windowId: string;
   daysOfWeek: WeekdayNumber[];
@@ -10,10 +19,12 @@ export interface BastionAvailabilityWindow {
   accessEndTimeLocal: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionAvailabilityWeeklyConfiguration {
   accessWindows: BastionAvailabilityWindow[];
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionAvailabilityWeeklyScheduleWriteRequest {
   definitionType: BastionScheduleDefinitionType;
   name: string;
@@ -28,6 +39,7 @@ export interface BastionAvailabilityWeeklyScheduleWriteRequest {
   configuration: BastionAvailabilityWeeklyConfiguration;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionAvailabilityWeeklyScheduleDefinition extends ResourceScheduleDefinitionBase {
   definitionClass: 'composite';
   definitionType: BastionScheduleDefinitionType;
@@ -54,18 +66,22 @@ interface BastionScheduleRunBase extends SchedulerBatchRunItemBase {
   scheduledForUtc: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionRemoveScheduleRun extends BastionScheduleRunBase {
   compiledOperation: 'remove';
   controlGeneration: number;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionRestoreScheduleRun extends BastionScheduleRunBase {
   compiledOperation: 'restore';
   controlGeneration?: never;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionScheduleRun = BastionRemoveScheduleRun | BastionRestoreScheduleRun;
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionScheduleControlV1 {
   schemaVersion: 1;
   companyId: string;
@@ -77,8 +93,10 @@ export interface BastionScheduleControlV1 {
   updatedAtUtc: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionScheduleReadinessStatus = 'confirmed' | 'missing' | 'unknown' | 'unsupported';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionScheduleReadinessReasonCode =
   | 'feature-disabled'
   | 'resource-not-found'
@@ -88,6 +106,7 @@ export type BastionScheduleReadinessReasonCode =
   | 'permission-unknown'
   | 'management-lock';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionScheduleReadinessV1 {
   schemaVersion: 1;
   status: BastionScheduleReadinessStatus;
@@ -101,10 +120,13 @@ export interface BastionScheduleReadinessV1 {
   checkedAtUtc: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionAvailabilityPhase = 'available' | 'removing' | 'absent' | 'restoring';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionAvailabilityResult = 'succeeded' | 'skipped' | 'blocked' | 'failed' | 'pending';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export type BastionAvailabilityReasonCode =
   | 'feature-disabled'
   | 'resource-not-found'
@@ -125,6 +147,7 @@ export type BastionAvailabilityReasonCode =
   | 'azure-operation-failed'
   | 'restore-timeout';
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionAvailabilityStatusV1 {
   schemaVersion: 1;
   companyId: string;
@@ -140,6 +163,7 @@ export interface BastionAvailabilityStatusV1 {
   updatedAtUtc: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionPauseResponse {
   status: 'paused' | 'pause-pending';
   resourceId: string;
@@ -147,6 +171,7 @@ export interface BastionPauseResponse {
   requestedAtUtc: string;
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export interface BastionRestoreNowResponse {
   accepted: boolean;
   scheduleRunId: string;

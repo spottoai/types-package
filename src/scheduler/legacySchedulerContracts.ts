@@ -1,21 +1,39 @@
+/**
+ * @deprecated Temporary: legacy (pre-generic) schedule contracts restored from before commit 38f20e3 ("finalize generic scheduler contracts") and kept
+ * only until cloud-engine, api and ui migrate Bastion / legacy schedule handling to the generic scheduler contracts
+ * (`./schedulerContracts`, `./resourceStrategy`; see specs/scheduler/azure-resource-strategy-scheduling-types.md).
+ * Do not add new consumers. Exported from the package root only, never from the `/scheduler` subpath.
+ */
+// `ScheduleDetailResponse`, `ScheduleListResponse` and `ScheduleWriteRequest` are intentionally not restored: the
+// generic scheduler (`./schedulerContracts`) now owns those names with new shapes.
 import type {
   BastionAvailabilityWeeklyScheduleDefinition,
   BastionAvailabilityWeeklyScheduleWriteRequest,
   BastionScheduleRun,
 } from './bastionSchedule';
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleTargetType = 'recommendation-action' | 'resource-operation' | 'provider-scope-operation';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleSelectorType = 'single-resource' | 'selected-resources' | 'provider-scope';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleType = 'once' | 'recurring';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleStatus = 'active' | 'paused';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleRunStatus = 'success' | 'dispatch-failed' | 'dispatching';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleHistoryEventType = 'dispatch-succeeded' | 'dispatch-failed';
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleDefinitionClass = 'atomic' | 'composite';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ScheduleDefinitionType = 'recommendation-action' | 'resource-operation' | 'vm-runtime-weekly' | 'bastion-availability-weekly';
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleGroupType = 'resource-schedule-definition';
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ScheduleTargetBase {
   companyId: string;
   providerName: string;
@@ -36,6 +54,7 @@ export interface ScheduleTargetBase {
   compiledOperation?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ScheduleSummary extends ScheduleTargetBase {
   scheduleId: string;
   name: string;
@@ -59,14 +78,14 @@ export interface ScheduleSummary extends ScheduleTargetBase {
   updatedByUserId?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ScheduleDocument extends ScheduleSummary {
   selectedResourceIds?: string[];
   notes?: string;
   configuration?: Record<string, unknown>;
 }
 
-export type ScheduleDetailResponse = ScheduleDocument;
-
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ScheduleHistoryItem {
   eventId: string;
   companyId: string;
@@ -80,6 +99,7 @@ export interface ScheduleHistoryItem {
   message?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface SchedulerBatchRunItemBase {
   scheduleId: string;
   scheduleRunId: string;
@@ -101,6 +121,7 @@ export interface SchedulerBatchRunItemBase {
   updatedByUserId?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface NonBastionSchedulerBatchRunItem extends SchedulerBatchRunItemBase {
   selectedResourceIds?: string[];
   recommendationId?: string;
@@ -110,8 +131,10 @@ export interface NonBastionSchedulerBatchRunItem extends SchedulerBatchRunItemBa
   definitionType?: Exclude<ScheduleDefinitionType, 'bastion-availability-weekly'>;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type SchedulerBatchRunItem = NonBastionSchedulerBatchRunItem | BastionScheduleRun;
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface SchedulerBatchQueueMessage {
   batchId: string;
   companyId: string;
@@ -119,13 +142,7 @@ export interface SchedulerBatchQueueMessage {
   runs: SchedulerBatchRunItem[];
 }
 
-export interface ScheduleListResponse {
-  results: ScheduleSummary[];
-  continuation?: {
-    nextScheduleId?: string;
-  };
-}
-
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface BaseScheduleWriteRequest {
   name: string;
   targetType: ScheduleTargetType;
@@ -151,12 +168,14 @@ export interface BaseScheduleWriteRequest {
   compiledOperation?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface OnceScheduleWriteRequest extends BaseScheduleWriteRequest {
   scheduleType: 'once';
   localDateTime: string;
   timezone: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface RecurringScheduleWriteRequest extends BaseScheduleWriteRequest {
   scheduleType: 'recurring';
   cronExpression: string;
@@ -164,18 +183,21 @@ export interface RecurringScheduleWriteRequest extends BaseScheduleWriteRequest 
   status?: ScheduleStatus;
 }
 
-export type ScheduleWriteRequest = OnceScheduleWriteRequest | RecurringScheduleWriteRequest;
-
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleStatus = ScheduleStatus;
+/** @deprecated Legacy scheduler contract; see file header. */
 export type VmRuntimeOperation = 'start' | 'deallocate';
+/** @deprecated Legacy scheduler contract; see file header. */
 export type WeekdayNumber = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface VmRuntimeWeeklyRule {
   ruleId: string;
   daysOfWeek: WeekdayNumber[];
   timeLocal: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface VmRuntimePreDeallocateGuardPolicy {
   enabled: boolean;
   metric: 'cpu';
@@ -185,15 +207,18 @@ export interface VmRuntimePreDeallocateGuardPolicy {
   maxDeferralsPerDay?: number;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ResourceScheduleExecutionPolicy {
   preDeallocateGuard?: VmRuntimePreDeallocateGuardPolicy;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface VmRuntimeWeeklyConfiguration {
   startRules: VmRuntimeWeeklyRule[];
   deallocateRules: VmRuntimeWeeklyRule[];
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ResourceScheduleDefinitionBase {
   definitionId: string;
   definitionClass: ScheduleDefinitionClass;
@@ -220,6 +245,7 @@ export interface ResourceScheduleDefinitionBase {
   updatedByUserId?: string;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface AtomicResourceScheduleDefinition extends ResourceScheduleDefinitionBase {
   definitionClass: 'atomic';
   definitionType: 'recommendation-action' | 'resource-operation';
@@ -238,6 +264,7 @@ export interface AtomicResourceScheduleDefinition extends ResourceScheduleDefini
   configuration?: Record<string, unknown>;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface VmRuntimeWeeklyScheduleDefinition extends ResourceScheduleDefinitionBase {
   definitionClass: 'composite';
   definitionType: 'vm-runtime-weekly';
@@ -246,11 +273,13 @@ export interface VmRuntimeWeeklyScheduleDefinition extends ResourceScheduleDefin
   configuration: VmRuntimeWeeklyConfiguration;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleDefinition =
   | AtomicResourceScheduleDefinition
   | VmRuntimeWeeklyScheduleDefinition
   | BastionAvailabilityWeeklyScheduleDefinition;
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface ResourceScheduleListResponse {
   results: ResourceScheduleDefinition[];
   continuation?: {
@@ -259,6 +288,7 @@ export interface ResourceScheduleListResponse {
   };
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface AtomicResourceScheduleWriteRequest {
   definitionClass?: 'atomic';
   definitionType: 'recommendation-action' | 'resource-operation';
@@ -285,6 +315,7 @@ export interface AtomicResourceScheduleWriteRequest {
   configuration?: Record<string, unknown>;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export interface VmRuntimeWeeklyScheduleWriteRequest {
   definitionClass?: 'composite';
   definitionType: 'vm-runtime-weekly';
@@ -300,6 +331,7 @@ export interface VmRuntimeWeeklyScheduleWriteRequest {
   configuration: VmRuntimeWeeklyConfiguration;
 }
 
+/** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleDefinitionWriteRequest =
   | AtomicResourceScheduleWriteRequest
   | VmRuntimeWeeklyScheduleWriteRequest

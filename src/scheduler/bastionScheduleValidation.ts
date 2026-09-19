@@ -1,3 +1,9 @@
+/**
+ * @deprecated Temporary: Bastion schedule runtime guards restored from before commit 38f20e3 ("finalize generic scheduler contracts") and kept
+ * only until cloud-engine, api and ui migrate Bastion / legacy schedule handling to the generic scheduler contracts
+ * (`./schedulerContracts`, `./resourceStrategy`; see specs/scheduler/azure-resource-strategy-scheduling-types.md).
+ * Do not add new consumers. Exported from the package root only, never from the `/scheduler` subpath.
+ */
 import type {
   BastionAvailabilityStatusV1,
   BastionAvailabilityWeeklyConfiguration,
@@ -221,6 +227,7 @@ function isAvailabilityConfiguration(value: unknown): value is BastionAvailabili
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionAvailabilityWeeklyScheduleWriteRequest(value: unknown): value is BastionAvailabilityWeeklyScheduleWriteRequest {
   if (
     !isWithinJsonSize(value, MAX_WRITE_REQUEST_BYTES) ||
@@ -258,6 +265,7 @@ export function isBastionAvailabilityWeeklyScheduleWriteRequest(value: unknown):
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionAvailabilityWeeklyScheduleDefinition(value: unknown): value is BastionAvailabilityWeeklyScheduleDefinition {
   if (
     !isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) ||
@@ -321,6 +329,7 @@ export function isBastionAvailabilityWeeklyScheduleDefinition(value: unknown): v
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionScheduleRun(value: unknown): value is BastionScheduleRun {
   if (
     !isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) ||
@@ -386,6 +395,7 @@ export function isBastionScheduleRun(value: unknown): value is BastionScheduleRu
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionScheduleControlV1(value: unknown): value is BastionScheduleControlV1 {
   return (
     isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) &&
@@ -410,6 +420,7 @@ export function isBastionScheduleControlV1(value: unknown): value is BastionSche
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionScheduleReadinessV1(value: unknown): value is BastionScheduleReadinessV1 {
   if (
     !isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) ||
@@ -445,6 +456,7 @@ export function isBastionScheduleReadinessV1(value: unknown): value is BastionSc
   return value.reasonCode === undefined || (typeof value.reasonCode === 'string' && readinessReasonCodes.has(value.reasonCode));
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionAvailabilityStatusV1(value: unknown): value is BastionAvailabilityStatusV1 {
   return (
     isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) &&
@@ -481,6 +493,7 @@ export function isBastionAvailabilityStatusV1(value: unknown): value is BastionA
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionPauseResponse(value: unknown): value is BastionPauseResponse {
   return (
     isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) &&
@@ -492,6 +505,7 @@ export function isBastionPauseResponse(value: unknown): value is BastionPauseRes
   );
 }
 
+/** @deprecated Temporary Bastion scheduler contract; see file header. */
 export function isBastionRestoreNowResponse(value: unknown): value is BastionRestoreNowResponse {
   return (
     isWithinJsonSize(value, MAX_PUBLIC_DTO_BYTES) &&
