@@ -149,6 +149,32 @@ additive.sections[0].rows[0].cells.verdict.futureField = 'x';
 additive.sections[0].columns[0].futureField = 'x';
 assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive fields accepted');
 
+// ---- Summary view (a reader's projection): rows removed, produced counts kept, marked `view: 'summary'`.
+for (const storyKey of STORY_KEYS) {
+  const summaryView = { ...clone(artifacts[storyKey]), view: 'summary' };
+  summaryView.sections = summaryView.sections.map(section => ({ ...section, rows: [] }));
+  assert.equal(isStoryArtifact(summaryView, storyKey), true, `${storyKey}: summary view accepted`);
+  const unmarked = clone(summaryView);
+  delete unmarked.view;
+  assert.equal(isStoryArtifact(unmarked, storyKey), false, `${storyKey}: emptied rows without the summary marker rejected`);
+  const withRows = { ...clone(artifacts[storyKey]), view: 'summary' };
+  assert.equal(isStoryArtifact(withRows, storyKey), false, `${storyKey}: summary marker with rows rejected`);
+}
+{
+  const summaryView = { ...clone(artifacts['oversized-resources']), view: 'summary' };
+  summaryView.sections = summaryView.sections.map(section => ({ ...section, rows: [] }));
+  assert.equal(isStoryArtifact({ ...summaryView, view: 'compact' }, 'oversized-resources'), false, 'unknown view marker rejected');
+  const overOmitted = clone(summaryView);
+  overOmitted.sections[0].omittedCount = overOmitted.sections[0].totalCount + 1;
+  assert.equal(isStoryArtifact(overOmitted, 'oversized-resources'), false, 'summary view: omittedCount above totalCount rejected');
+  const badColumns = clone(summaryView);
+  badColumns.sections[0].columns[0].cell = 'hologram';
+  assert.equal(isStoryArtifact(badColumns, 'oversized-resources'), false, 'summary view: invalid column rejected');
+  const badScope = clone(summaryView);
+  delete badScope.scope.subscriptionId;
+  assert.equal(isStoryArtifact(badScope, 'oversized-resources'), false, 'summary view: envelope still validated');
+}
+
 // ---- Negatives: one patch per rejection rule.
 const getAt = (root, path) => path.reduce((node, key) => node[key], root);
 const applyOp = (root, [op, path, value]) => {

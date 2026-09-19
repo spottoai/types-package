@@ -275,9 +275,7 @@ export interface VmRuntimeWeeklyScheduleDefinition extends ResourceScheduleDefin
 
 /** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleDefinition =
-  | AtomicResourceScheduleDefinition
-  | VmRuntimeWeeklyScheduleDefinition
-  | BastionAvailabilityWeeklyScheduleDefinition;
+  AtomicResourceScheduleDefinition | VmRuntimeWeeklyScheduleDefinition | BastionAvailabilityWeeklyScheduleDefinition;
 
 /** @deprecated Legacy scheduler contract; see file header. */
 export interface ResourceScheduleListResponse {
@@ -333,6 +331,4 @@ export interface VmRuntimeWeeklyScheduleWriteRequest {
 
 /** @deprecated Legacy scheduler contract; see file header. */
 export type ResourceScheduleDefinitionWriteRequest =
-  | AtomicResourceScheduleWriteRequest
-  | VmRuntimeWeeklyScheduleWriteRequest
-  | BastionAvailabilityWeeklyScheduleWriteRequest;
+  AtomicResourceScheduleWriteRequest | VmRuntimeWeeklyScheduleWriteRequest | BastionAvailabilityWeeklyScheduleWriteRequest;

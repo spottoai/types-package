@@ -437,6 +437,11 @@ export interface StoryArtifact<TRow = unknown> {
   window: { start: string; end: string; days: number; timezone: string };
   summary: StorySummary;
   sections: StorySection<TRow>[];
+  /**
+   * Set only by a reader that projects the artifact to its summary view (API `view=summary`): every section keeps
+   * `columns`, `totalCount` and `omittedCount` as produced, with `rows: []`. Absent on the artifact the engine writes.
+   */
+  view?: 'summary';
 }
 
 // ---- History extension (SubscriptionReportHistoryPeriod.stories)

@@ -5,7 +5,8 @@
  * - enum fields (`role`, `visual`, `verdict`, `scheduleFit`, `telemetry`, `storyKey`, `cell`, ...) are in their unions;
  * - sparkline arrays (`avg`/`p95`/`max`, signal sparklines) have equal length, equal to the window days where known;
  * - `weekly.running` / `weekly.usage` are 7 x 24 when present;
- * - bounded sections satisfy `rows.length <= limit` and `omittedCount === totalCount - rows.length`;
+ * - bounded sections satisfy `rows.length <= limit` and `omittedCount === totalCount - rows.length`; the only exception is an
+ *   artifact marked `view: 'summary'` (a reader's projection), whose sections carry `rows: []` with the produced counts;
  * - `columns[].priority` is an integer 1–5, and every row carries a cell per column whose `kind` matches `column.cell`;
  * - a schedule fit of good|fair|low, or a `mostly-off` verdict, requires a corroborated running basis (an independent source,
  *   never the basis itself) and collected telemetry — on profiles and on the compact signal alike;
@@ -507,6 +508,24 @@ export const isStorySection = (value: unknown, storyKey: string, limit: number, 
   return (value.rows as StoryRowBase[]).every(row => hasCellsForColumns(row, columns));
 };
 
+/**
+ * A section of a summary-view projection (`view: 'summary'`): the produced columns and counts with the rows removed,
+ * so `rows` must be empty while `totalCount` / `omittedCount` keep the values the engine wrote.
+ */
+export const isStorySummarySection = (value: unknown): value is StorySection<StoryRowBase> => {
+  if (!isRecord(value) || !isString(value.resourceType) || !isString(value.family)) return false;
+  if (!Array.isArray(value.columns) || !value.columns.every(isStoryColumn)) return false;
+  if (new Set((value.columns as StoryColumn[]).map(column => column.key)).size !== value.columns.length) return false;
+  return (
+    Array.isArray(value.rows) &&
+    value.rows.length === 0 &&
+    isCount(value.totalCount) &&
+    isCount(value.omittedCount) &&
+    value.omittedCount <= value.totalCount &&
+    value.totalCount - value.omittedCount <= STORY_LIMITS.sectionRows
+  );
+};
+
 /** Every row of an artifact belongs to the artifact's scope; a row from another company, tenant or subscription is rejected. */
 export const isRowInScope = (row: StoryRowBase, scope: { companyId: string; tenantId: string; subscriptionId: string }): boolean =>
   row.companyId === scope.companyId && row.tenantId === scope.tenantId && row.subscriptionId === scope.subscriptionId;
@@ -531,6 +550,8 @@ export const isStoryArtifact = (value: unknown, storyKey?: StoryKey): value is S
   if (!isStorySummary(value.summary)) return false;
   const days = value.window.days as number;
   const key = value.storyKey as string;
+  if (value.view !== undefined && value.view !== 'summary') return false;
+  if (value.view === 'summary') return Array.isArray(value.sections) && value.sections.every(isStorySummarySection);
   if (!Array.isArray(value.sections) || !value.sections.every(section => isStorySection(section, key, STORY_LIMITS.sectionRows, days))) return false;
   const scope = value.scope as { companyId: string; tenantId: string; subscriptionId: string };
   return (value.sections as StorySection<StoryRowBase>[]).every(section => section.rows.every(row => isRowInScope(row, scope)));

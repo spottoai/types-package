@@ -323,3 +323,14 @@ const signalValid: boolean = isUtilizationSignal(signal);
 const rowGuard = storyRowGuard('resilience-recovery');
 const rowValid: boolean = rowGuard(resilienceRow);
 void [sampleValid, storiesValid, profileValid, signalValid, rowValid];
+
+// Summary-view projection (API `view=summary`): marked, rows removed, produced counts kept.
+const summaryView: StoryArtifact<OversizedResourceRow> = {
+  ...artifact,
+  view: 'summary',
+  sections: artifact.sections.map(section => ({ ...section, rows: [] })),
+};
+const summaryViewValid: boolean = isStoryArtifact(summaryView, 'oversized-resources');
+// @ts-expect-error only the summary projection is a known view marker.
+const unknownView: StoryArtifact<OversizedResourceRow> = { ...artifact, view: 'compact' };
+void [summaryViewValid, unknownView];
