@@ -44,7 +44,7 @@ import type {
   PublicCloudAccountDto,
   ProcessPayload,
   RequestMessage,
-  ResourceSchedulerTickRequestMessageV1,
+  SchedulerTickRequestMessageV1,
   ReviewChecklistPayload,
   SubscriptionSyncRequest,
   WorkflowTracingOptions,
@@ -778,30 +778,30 @@ const scheduledComponentRefreshRequestMessage: CloudAccountsScheduledRefreshRequ
 
 const baseScheduledRefreshRequestMessage: RequestMessage = scheduledRefreshRequestMessage;
 
-const resourceSchedulerTickRequestMessage: ResourceSchedulerTickRequestMessageV1 = {
+const schedulerTickRequestMessage: SchedulerTickRequestMessageV1 = {
   schemaVersion: 1,
-  entity: 'resource-scheduler',
+  entity: 'scheduler',
   action: 'tick',
   companyId: '*',
   cloudAccountId: '*',
   tenantId: '*',
   clientId: '*',
-  tickId: 'resource-scheduler:tick:2026-09-16T00:00:00.000Z',
+  tickId: 'scheduler:tick:2026-09-16T00:00:00.000Z',
   scheduledAtUtc: '2026-09-16T00:00:00.000Z',
-  correlationId: 'resource-scheduler:tick:2026-09-16T00:00:00.000Z',
+  correlationId: 'scheduler:tick:2026-09-16T00:00:00.000Z',
 };
 
-const baseResourceSchedulerTickRequestMessage: RequestMessage = resourceSchedulerTickRequestMessage;
+const baseSchedulerTickRequestMessage: RequestMessage = schedulerTickRequestMessage;
 
-const invalidResourceSchedulerTickScope: ResourceSchedulerTickRequestMessageV1 = {
-  ...resourceSchedulerTickRequestMessage,
+const invalidSchedulerTickScope: SchedulerTickRequestMessageV1 = {
+  ...schedulerTickRequestMessage,
   // @ts-expect-error A global tick must never target one company.
   companyId: 'comp-123',
 };
 
-const invalidResourceSchedulerTickAction: ResourceSchedulerTickRequestMessageV1 = {
-  ...resourceSchedulerTickRequestMessage,
-  // @ts-expect-error Resource scheduler wake-ups use only the tick action.
+const invalidSchedulerTickAction: SchedulerTickRequestMessageV1 = {
+  ...schedulerTickRequestMessage,
+  // @ts-expect-error Scheduler wake-ups use only the tick action.
   action: 'dispatch-batch',
 };
 
@@ -1091,10 +1091,10 @@ void invalidAzureSpSetupMaintenanceSchemaVersion;
 void scheduledRefreshRequestMessage;
 void scheduledComponentRefreshRequestMessage;
 void baseScheduledRefreshRequestMessage;
-void resourceSchedulerTickRequestMessage;
-void baseResourceSchedulerTickRequestMessage;
-void invalidResourceSchedulerTickScope;
-void invalidResourceSchedulerTickAction;
+void schedulerTickRequestMessage;
+void baseSchedulerTickRequestMessage;
+void invalidSchedulerTickScope;
+void invalidSchedulerTickAction;
 void legacyScheduledRefreshRequestMessage;
 void invalidScheduledRefreshAction;
 void invalidScheduledRefreshCompanyWildcard;

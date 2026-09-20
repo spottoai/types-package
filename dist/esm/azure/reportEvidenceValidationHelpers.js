@@ -1,22 +1,6 @@
 import { REPORT_EVIDENCE_LIMITS } from './reportEvidence.js';
-export const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
-export const isString = (value) => typeof value === 'string' && value.trim().length > 0;
-export const isOptionalString = (value) => value === undefined || isString(value);
-export const isFiniteNumber = (value) => typeof value === 'number' && Number.isFinite(value);
-export const isOptionalFiniteNumber = (value) => value === undefined || isFiniteNumber(value);
-export const isOptionalBoolean = (value) => value === undefined || typeof value === 'boolean';
-export const isCount = (value) => isFiniteNumber(value) && Number.isInteger(value) && value >= 0;
-export const isDateTime = (value) => isString(value) && Number.isFinite(Date.parse(value));
-export const isStringArray = (value) => Array.isArray(value) && value.every(isString);
-export const isCountRecord = (value) => isRecord(value) && Object.values(value).every(isCount);
-export const countTotal = (value) => Object.values(value).reduce((total, count) => total + count, 0);
-export const hasOptionalStrings = (value, keys) => keys.every(key => isOptionalString(value[key]));
-export const hasOptionalNumbers = (value, keys) => keys.every(key => isOptionalFiniteNumber(value[key]));
-export const isBoundedRows = (value, limit, isRow) => {
-    if (!isRecord(value) || !isCount(value.totalCount) || !isCount(value.omittedCount) || !Array.isArray(value.rows))
-        return false;
-    return value.rows.length <= limit && value.rows.every(isRow) && value.totalCount === value.rows.length + value.omittedCount;
-};
+import { isBoundedRows, isCount, isCountRecord, isFiniteNumber, isOptionalFiniteNumber, isOptionalString, isRecord, isString, isStringArray, hasOptionalNumbers, hasOptionalStrings, } from '../common/validationHelpers.js';
+export { isRecord, isString, isOptionalString, isFiniteNumber, isOptionalFiniteNumber, isOptionalBoolean, isCount, isDateTime, isStringArray, isCountRecord, countTotal, hasOptionalStrings, hasOptionalNumbers, isBoundedRows, } from '../common/validationHelpers.js';
 export const isProjectionRows = (value, limit = REPORT_EVIDENCE_LIMITS.detailRows) => isBoundedRows(value, limit, isRecord);
 export const hasRequiredRecords = (value, keys) => keys.every(key => isRecord(value[key]));
 export const isSourceFileStatus = (value) => isRecord(value) &&
@@ -52,12 +36,16 @@ export const isResourceSummary = (value) => isRecord(value) &&
     Array.isArray(value.topSpendResources) &&
     value.topSpendResources.length <= REPORT_EVIDENCE_LIMITS.summaryRows &&
     value.topSpendResources.every(isTopSpendResource);
+const isReportBudgetProjection = (value) => isRecord(value) &&
+    hasOptionalStrings(value, ['name', 'startDate', 'endDate', 'timeGrain', 'category', 'currencyCode']) &&
+    hasOptionalNumbers(value, ['amount', 'currentSpend', 'forecastedSpend']) &&
+    (value.filter === undefined || isRecord(value.filter));
 export const isCostSummary = (value) => {
     if (!isRecord(value) || !isRecord(value.sourceMetadata) || !Array.isArray(value.topSpendResources))
         return false;
     if (!hasOptionalStrings(value, ['currency', 'currencySymbol']) ||
         !hasOptionalNumbers(value, ['spend30Days', 'spend30DaysAmortized', 'totalRetailCost', 'miscCost', 'rollingCostRecordCount']) ||
-        (value.budget !== undefined && !isRecord(value.budget)) ||
+        (value.budget !== undefined && !isReportBudgetProjection(value.budget)) ||
         !isString(value.sourceMetadata.spend30DaysSource) ||
         !isString(value.sourceMetadata.spend30DaysAmortizedSource) ||
         !isString(value.sourceMetadata.totalRetailCostSource) ||

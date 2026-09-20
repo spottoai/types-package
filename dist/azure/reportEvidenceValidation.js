@@ -6,6 +6,7 @@ const reportDailySpendValidation_1 = require("./reportDailySpendValidation");
 const reportSpendValidation_1 = require("./reportSpendValidation");
 const reportEvidence_1 = require("./reportEvidence");
 const reportEvidenceValidationHelpers_1 = require("./reportEvidenceValidationHelpers");
+const utilizationStoriesValidation_1 = require("../common/utilizationStoriesValidation");
 const isReportSecureScoreEvidence = (value) => {
     if (!(0, reportEvidenceValidationHelpers_1.isRecord)(value) || !['available', 'unavailable', 'stale'].includes(value.status))
         return false;
@@ -264,6 +265,8 @@ const isReportingProjection = (value) => {
         return false;
     if (value.spend !== undefined && !(0, reportSpendValidation_1.isReportSpendProjection)(value.spend))
         return false;
+    if (value.stories !== undefined && !(0, utilizationStoriesValidation_1.isReportingStories)(value.stories))
+        return false;
     if (value.costChangePeriods !== undefined &&
         (!(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.costChangePeriods, reportEvidence_1.REPORT_EVIDENCE_LIMITS.costChangePeriods, isCostChangePeriod) ||
             new Set(value.costChangePeriods.rows.map(period => period.period)).size !== value.costChangePeriods.rows.length)) {
@@ -280,6 +283,11 @@ const isReportingProjection = (value) => {
             (!(0, reportEvidenceValidationHelpers_1.isBoundedRows)(value.recommendationCatalogue, reportEvidence_1.REPORT_EVIDENCE_LIMITS.recommendationCatalogue, reportEvidenceCatalogueValidation_1.isCompactRecommendation) ||
                 value.recommendationCatalogue.totalCount !== value.recommendationPortfolio.activeRecommendationCount)) ||
         !(0, reportEvidenceValidationHelpers_1.isProjectionRows)(value.serviceRetirements) ||
+        (value.credentialDeadlines !== undefined &&
+            (!(0, reportEvidenceValidationHelpers_1.isRecord)(value.credentialDeadlines) ||
+                !(0, reportEvidenceValidationHelpers_1.isDateTime)(value.credentialDeadlines.asOf) ||
+                !(0, reportEvidenceValidationHelpers_1.isCount)(value.credentialDeadlines.overdueCount) ||
+                !(0, reportEvidenceValidationHelpers_1.isCount)(value.credentialDeadlines.upcomingSixMonthsCount))) ||
         !isInventory(value.inventory) ||
         !isGovernance(value.governance) ||
         !isCommitments(value.commitmentsPlanning)) {
@@ -328,6 +336,8 @@ const isReportingProjection = (value) => {
 };
 const isActivityCounts = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
     ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => (0, reportEvidenceValidationHelpers_1.isCount)(value[key])) &&
+    (value.automatedSnapshotEvents === undefined ||
+        ((0, reportEvidenceValidationHelpers_1.isCount)(value.automatedSnapshotEvents) && value.automatedSnapshotEvents <= value.materialChanges)) &&
     ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => value[key] <= value.visibleEvents);
 const isActivityMonthlyFindings = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
     (0, reportEvidenceValidationHelpers_1.isString)(value.month) &&
@@ -446,7 +456,8 @@ const isSubscriptionReportHistory = (value) => {
             !(0, reportEvidenceValidationHelpers_1.isDateTime)(period.sourceGeneratedAt) ||
             !isHistoryMetrics(period.metrics) ||
             !(0, reportEvidenceValidationHelpers_1.isBoundedRows)(period.recommendations, reportEvidence_1.REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint) ||
-            (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities))) {
+            (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities)) ||
+            (period.stories !== undefined && !(0, utilizationStoriesValidation_1.isStoryFingerprintRows)(period.stories))) {
             return false;
         }
         if (period.recommendations.omittedCount === 0 &&

@@ -40,6 +40,7 @@ import {
   type JsonRecord,
 } from './reportEvidenceValidationHelpers';
 import type { SecureScoreEvidence } from './secureScore';
+import { isReportingStories, isStoryFingerprintRows } from '../common/utilizationStoriesValidation';
 
 export const isReportSecureScoreEvidence = (value: unknown): value is SecureScoreEvidence => {
   if (!isRecord(value) || !['available', 'unavailable', 'stale'].includes(value.status as string)) return false;
@@ -350,6 +351,7 @@ const isReportingProjection = (value: unknown): boolean => {
   if (!isRecord(value) || !isRecord(value.dashboard) || !isRecommendationPortfolio(value.recommendationPortfolio)) return false;
   if (value.dailySpend !== undefined && !isReportDailySpend(value.dailySpend)) return false;
   if (value.spend !== undefined && !isReportSpendProjection(value.spend)) return false;
+  if (value.stories !== undefined && !isReportingStories(value.stories)) return false;
   if (
     value.costChangePeriods !== undefined &&
     (!isBoundedRows(value.costChangePeriods, REPORT_EVIDENCE_LIMITS.costChangePeriods, isCostChangePeriod) ||
@@ -368,6 +370,11 @@ const isReportingProjection = (value: unknown): boolean => {
       (!isBoundedRows(value.recommendationCatalogue, REPORT_EVIDENCE_LIMITS.recommendationCatalogue, isCompactRecommendation) ||
         value.recommendationCatalogue.totalCount !== (value.recommendationPortfolio as JsonRecord).activeRecommendationCount)) ||
     !isProjectionRows(value.serviceRetirements) ||
+    (value.credentialDeadlines !== undefined &&
+      (!isRecord(value.credentialDeadlines) ||
+        !isDateTime(value.credentialDeadlines.asOf) ||
+        !isCount(value.credentialDeadlines.overdueCount) ||
+        !isCount(value.credentialDeadlines.upcomingSixMonthsCount))) ||
     !isInventory(value.inventory) ||
     !isGovernance(value.governance) ||
     !isCommitments(value.commitmentsPlanning)
@@ -420,6 +427,8 @@ const isReportingProjection = (value: unknown): boolean => {
 const isActivityCounts = (value: unknown): value is import('./reportEvidence').ReportActivityCounts =>
   isRecord(value) &&
   ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => isCount(value[key])) &&
+  (value.automatedSnapshotEvents === undefined ||
+    (isCount(value.automatedSnapshotEvents) && value.automatedSnapshotEvents <= (value.materialChanges as number))) &&
   ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => (value[key] as number) <= (value.visibleEvents as number));
 
 const isActivityMonthlyFindings = (value: unknown): value is import('./reportEvidence').ReportActivityMonthlyFindings =>
@@ -566,7 +575,8 @@ export const isSubscriptionReportHistory = (value: unknown): value is Subscripti
       !isDateTime(period.sourceGeneratedAt) ||
       !isHistoryMetrics(period.metrics) ||
       !isBoundedRows(period.recommendations, REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint) ||
-      (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities))
+      (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities)) ||
+      (period.stories !== undefined && !isStoryFingerprintRows(period.stories))
     ) {
       return false;
     }

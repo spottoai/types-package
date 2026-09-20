@@ -4,6 +4,14 @@ exports.isResourceSchedulingCapabilityProjection = isResourceSchedulingCapabilit
 exports.isResourceSchedulingReadinessProjection = isResourceSchedulingReadinessProjection;
 const resourceStrategyContracts_1 = require("./resourceStrategyContracts");
 const resourceStrategyValidationShared_1 = require("./resourceStrategyValidationShared");
+const isPresentationLabel = (value) => (0, resourceStrategyValidationShared_1.isBoundedString)(value, 80) &&
+    value === value.trim() &&
+    !/[<>]/.test(value) &&
+    Array.from(value).every(character => {
+        const codePoint = character.codePointAt(0);
+        return codePoint !== undefined && codePoint >= 0x20 && codePoint !== 0x7f;
+    }) &&
+    !/https?:\/\//i.test(value);
 function isResourceSchedulingCapabilityProjection(value) {
     if (!(0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !(0, resourceStrategyValidationShared_1.isRecord)(value))
         return false;
@@ -16,6 +24,7 @@ function isResourceSchedulingCapabilityProjection(value) {
         'strategy',
         'displayName',
         'description',
+        'presentation',
         'configurationSchemaKind',
         'configurationSchema',
         'recommendationMaturity',
@@ -29,11 +38,11 @@ function isResourceSchedulingCapabilityProjection(value) {
         'automation',
         'dependencies',
         'acknowledgement',
-        'evidence',
     ];
     if (!(0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, allowed))
         return false;
     const executionPolicy = value.executionPolicy;
+    const presentation = value.presentation;
     const baseline = value.baseline;
     const cost = value.cost;
     const cadence = value.cadence;
@@ -41,7 +50,6 @@ function isResourceSchedulingCapabilityProjection(value) {
     const restore = value.restore;
     const automation = value.automation;
     const dependencies = value.dependencies;
-    const evidence = value.evidence;
     if (!(0, resourceStrategyValidationShared_1.isCapabilityRef)(value.capability) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.contentHash, 200) ||
         !(0, resourceStrategyValidationShared_1.isIsoTimestamp)(value.publishedAtUtc) ||
@@ -51,6 +59,13 @@ function isResourceSchedulingCapabilityProjection(value) {
         !['on-off', 'sku-change', 'dial', 'recreate'].includes(String(value.strategy)) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.displayName) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.description, 2000) ||
+        !(0, resourceStrategyValidationShared_1.isRecord)(presentation) ||
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(presentation, ['resourceKindLabel', 'reduceTransitionLabel', 'restoreTransitionLabel', 'reducedStateLabel', 'restoredStateLabel']) ||
+        !isPresentationLabel(presentation.resourceKindLabel) ||
+        !isPresentationLabel(presentation.reduceTransitionLabel) ||
+        !isPresentationLabel(presentation.restoreTransitionLabel) ||
+        !isPresentationLabel(presentation.reducedStateLabel) ||
+        !isPresentationLabel(presentation.restoredStateLabel) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.configurationSchemaKind, 200) ||
         !(0, resourceStrategyValidationShared_1.isBoundedParameters)(value.configurationSchema) ||
         !['unsupported', 'candidate', 'supported'].includes(String(value.recommendationMaturity)) ||
@@ -63,7 +78,6 @@ function isResourceSchedulingCapabilityProjection(value) {
         !(0, resourceStrategyValidationShared_1.isRecord)(restore) ||
         !(0, resourceStrategyValidationShared_1.isRecord)(automation) ||
         !(0, resourceStrategyValidationShared_1.isRecord)(dependencies) ||
-        !(0, resourceStrategyValidationShared_1.isRecord)(evidence) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(executionPolicy, ['authoring', 'reduce', 'restore', 'disableReason', 'supersededBy']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(baseline, ['policy', 'mutationDomains', 'coupledValueLabels', 'driftPolicy']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(cost, [
@@ -84,8 +98,7 @@ function isResourceSchedulingCapabilityProjection(value) {
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(disruption, ['reversibility', 'risk', 'affectedScopeLabel', 'expectedDowntimeMinutes', 'supportedBusyPolicies']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(restore, ['restoreLeadMinutes', 'capacityReturnRisk', 'retryPolicyLabel', 'escalationClass']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(automation, ['ownership', 'conflictingControllerLabels']) ||
-        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk']) ||
-        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(evidence, ['sourceUrls', 'labResult', 'verifiedAtUtc', 'expiresAtUtc'])) {
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk'])) {
         return false;
     }
     if (!['allowed', 'blocked'].includes(String(executionPolicy.authoring)) ||
@@ -170,27 +183,15 @@ function isResourceSchedulingCapabilityProjection(value) {
         executionPolicy.restore === 'blocked';
     if (requiresDisableReason && !(0, resourceStrategyValidationShared_1.isBoundedString)(executionPolicy.disableReason, 500))
         return false;
+    if (executionPolicy.reduce === 'allowed' && executionPolicy.restore !== 'allowed')
+        return false;
     if (cost.billingClass === 'C-no-material-saving' && (executionPolicy.authoring !== 'blocked' || executionPolicy.reduce !== 'blocked'))
         return false;
     if (value.strategy === 'recreate') {
         if (!(0, resourceStrategyValidationShared_1.isRecord)(value.acknowledgement) || value.acknowledgement.severity !== 'destructive')
             return false;
     }
-    if (!(0, resourceStrategyValidationShared_1.isBoundedStringArray)(evidence.sourceUrls, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.evidenceReferences) ||
-        !['not-run', 'failed', 'passed'].includes(String(evidence.labResult)) ||
-        !(evidence.verifiedAtUtc === null || (0, resourceStrategyValidationShared_1.isIsoTimestamp)(evidence.verifiedAtUtc)) ||
-        !(evidence.expiresAtUtc === null || (0, resourceStrategyValidationShared_1.isIsoTimestamp)(evidence.expiresAtUtc))) {
-        return false;
-    }
-    if (evidence.labResult === 'passed' && evidence.verifiedAtUtc === null)
-        return false;
-    const allowsAuthoringOrReduce = executionPolicy.authoring === 'allowed' || executionPolicy.reduce === 'allowed';
-    if (allowsAuthoringOrReduce && (evidence.labResult !== 'passed' || evidence.verifiedAtUtc === null || evidence.sourceUrls.length === 0)) {
-        return false;
-    }
-    return !(typeof evidence.verifiedAtUtc === 'string' &&
-        typeof evidence.expiresAtUtc === 'string' &&
-        Date.parse(evidence.expiresAtUtc) < Date.parse(evidence.verifiedAtUtc));
+    return true;
 }
 const readinessStates = new Set([
     'ready',

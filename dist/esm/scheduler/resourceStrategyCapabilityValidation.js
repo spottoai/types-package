@@ -1,5 +1,13 @@
 import { RESOURCE_STRATEGY_CONTRACT_LIMITS, } from './resourceStrategyContracts.js';
 import { hasOnlyKeys, isBoundedParameters, isBoundedString, isBoundedStringArray, isCapabilityRef, isIsoTimestamp, isNonNegativeInteger, isOptionalBoundedString, isPositiveInteger, isRecord, isWithinJsonByteLimit, } from './resourceStrategyValidationShared.js';
+const isPresentationLabel = (value) => isBoundedString(value, 80) &&
+    value === value.trim() &&
+    !/[<>]/.test(value) &&
+    Array.from(value).every(character => {
+        const codePoint = character.codePointAt(0);
+        return codePoint !== undefined && codePoint >= 0x20 && codePoint !== 0x7f;
+    }) &&
+    !/https?:\/\//i.test(value);
 export function isResourceSchedulingCapabilityProjection(value) {
     if (!isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) || !isRecord(value))
         return false;
@@ -12,6 +20,7 @@ export function isResourceSchedulingCapabilityProjection(value) {
         'strategy',
         'displayName',
         'description',
+        'presentation',
         'configurationSchemaKind',
         'configurationSchema',
         'recommendationMaturity',
@@ -25,11 +34,11 @@ export function isResourceSchedulingCapabilityProjection(value) {
         'automation',
         'dependencies',
         'acknowledgement',
-        'evidence',
     ];
     if (!hasOnlyKeys(value, allowed))
         return false;
     const executionPolicy = value.executionPolicy;
+    const presentation = value.presentation;
     const baseline = value.baseline;
     const cost = value.cost;
     const cadence = value.cadence;
@@ -37,7 +46,6 @@ export function isResourceSchedulingCapabilityProjection(value) {
     const restore = value.restore;
     const automation = value.automation;
     const dependencies = value.dependencies;
-    const evidence = value.evidence;
     if (!isCapabilityRef(value.capability) ||
         !isBoundedString(value.contentHash, 200) ||
         !isIsoTimestamp(value.publishedAtUtc) ||
@@ -47,6 +55,13 @@ export function isResourceSchedulingCapabilityProjection(value) {
         !['on-off', 'sku-change', 'dial', 'recreate'].includes(String(value.strategy)) ||
         !isBoundedString(value.displayName) ||
         !isBoundedString(value.description, 2000) ||
+        !isRecord(presentation) ||
+        !hasOnlyKeys(presentation, ['resourceKindLabel', 'reduceTransitionLabel', 'restoreTransitionLabel', 'reducedStateLabel', 'restoredStateLabel']) ||
+        !isPresentationLabel(presentation.resourceKindLabel) ||
+        !isPresentationLabel(presentation.reduceTransitionLabel) ||
+        !isPresentationLabel(presentation.restoreTransitionLabel) ||
+        !isPresentationLabel(presentation.reducedStateLabel) ||
+        !isPresentationLabel(presentation.restoredStateLabel) ||
         !isBoundedString(value.configurationSchemaKind, 200) ||
         !isBoundedParameters(value.configurationSchema) ||
         !['unsupported', 'candidate', 'supported'].includes(String(value.recommendationMaturity)) ||
@@ -59,7 +74,6 @@ export function isResourceSchedulingCapabilityProjection(value) {
         !isRecord(restore) ||
         !isRecord(automation) ||
         !isRecord(dependencies) ||
-        !isRecord(evidence) ||
         !hasOnlyKeys(executionPolicy, ['authoring', 'reduce', 'restore', 'disableReason', 'supersededBy']) ||
         !hasOnlyKeys(baseline, ['policy', 'mutationDomains', 'coupledValueLabels', 'driftPolicy']) ||
         !hasOnlyKeys(cost, [
@@ -80,8 +94,7 @@ export function isResourceSchedulingCapabilityProjection(value) {
         !hasOnlyKeys(disruption, ['reversibility', 'risk', 'affectedScopeLabel', 'expectedDowntimeMinutes', 'supportedBusyPolicies']) ||
         !hasOnlyKeys(restore, ['restoreLeadMinutes', 'capacityReturnRisk', 'retryPolicyLabel', 'escalationClass']) ||
         !hasOnlyKeys(automation, ['ownership', 'conflictingControllerLabels']) ||
-        !hasOnlyKeys(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk']) ||
-        !hasOnlyKeys(evidence, ['sourceUrls', 'labResult', 'verifiedAtUtc', 'expiresAtUtc'])) {
+        !hasOnlyKeys(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk'])) {
         return false;
     }
     if (!['allowed', 'blocked'].includes(String(executionPolicy.authoring)) ||
@@ -166,27 +179,15 @@ export function isResourceSchedulingCapabilityProjection(value) {
         executionPolicy.restore === 'blocked';
     if (requiresDisableReason && !isBoundedString(executionPolicy.disableReason, 500))
         return false;
+    if (executionPolicy.reduce === 'allowed' && executionPolicy.restore !== 'allowed')
+        return false;
     if (cost.billingClass === 'C-no-material-saving' && (executionPolicy.authoring !== 'blocked' || executionPolicy.reduce !== 'blocked'))
         return false;
     if (value.strategy === 'recreate') {
         if (!isRecord(value.acknowledgement) || value.acknowledgement.severity !== 'destructive')
             return false;
     }
-    if (!isBoundedStringArray(evidence.sourceUrls, RESOURCE_STRATEGY_CONTRACT_LIMITS.evidenceReferences) ||
-        !['not-run', 'failed', 'passed'].includes(String(evidence.labResult)) ||
-        !(evidence.verifiedAtUtc === null || isIsoTimestamp(evidence.verifiedAtUtc)) ||
-        !(evidence.expiresAtUtc === null || isIsoTimestamp(evidence.expiresAtUtc))) {
-        return false;
-    }
-    if (evidence.labResult === 'passed' && evidence.verifiedAtUtc === null)
-        return false;
-    const allowsAuthoringOrReduce = executionPolicy.authoring === 'allowed' || executionPolicy.reduce === 'allowed';
-    if (allowsAuthoringOrReduce && (evidence.labResult !== 'passed' || evidence.verifiedAtUtc === null || evidence.sourceUrls.length === 0)) {
-        return false;
-    }
-    return !(typeof evidence.verifiedAtUtc === 'string' &&
-        typeof evidence.expiresAtUtc === 'string' &&
-        Date.parse(evidence.expiresAtUtc) < Date.parse(evidence.verifiedAtUtc));
+    return true;
 }
 const readinessStates = new Set([
     'ready',

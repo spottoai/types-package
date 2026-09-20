@@ -56,11 +56,25 @@ const providerScopeSelectionItem = {
   providerAccountState: 'ACTIVE',
   cloudAccountId: 'aws-cloud-account-123',
   cloudAccountName: 'Production AWS',
+  awsEstateId: 'estate-production',
   groupName: 'Customer workloads',
   icon: '/moneybag',
   environmentType: 'Production',
   ready: true,
 } satisfies ProviderScopeSelectionItem;
+
+const azureSelectionWithoutAwsEstate = {
+  companyId: 'company-123',
+  providerName: ProviderName.Azure,
+  providerScopeId: '12345678-1234-1234-1234-123456789012',
+  scopeType: ProviderScopeType.Subscription,
+  name: 'Production',
+  cloudAccountId: 'azure-cloud-account-123',
+  cloudAccountName: 'Production Azure',
+  ready: true,
+} satisfies ProviderScopeSelectionItem;
+
+void azureSelectionWithoutAwsEstate;
 
 const providerScopeMetadataUpdate: ProviderScopeDisplayMetadataUpdateRequest = {
   friendlyName: 'Payments',

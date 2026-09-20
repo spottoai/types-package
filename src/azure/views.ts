@@ -14,6 +14,7 @@ import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } f
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
+import type { UtilizationProfile, UtilizationSignal } from '../common/utilizationStories.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import {
@@ -204,6 +205,8 @@ export interface AzureResourcePortalItem {
   vmPricePerformance?: VmPricePerformanceInsights;
   /** Current Azure Resource Health availability status for this resource, when available. */
   resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
+  /** Compact utilization verdict + sparklines (engine-produced; absent until the resource has been scanned by the new producer). */
+  utilizationSignal?: UtilizationSignal;
 }
 
 export interface SavingsOpportunity {
@@ -308,6 +311,8 @@ export interface AzureResourcePluginItem {
   optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
+  utilizationProfile?: UtilizationProfile;
 }
 
 export interface AzureResourcePluginItemDetailed {
@@ -373,6 +378,8 @@ export interface AzureResourcePluginItemDetailed {
   financialEvidenceCoverage?: FinancialEvidenceCoverageProjectionV1;
   /** Generic compute hosting model alternatives, including cross-platform options. */
   computeAlternatives?: ComputeAlternativesInsights;
+  /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
+  utilizationProfile?: UtilizationProfile;
 }
 
 export type VmPricePerformanceOsType = 'linux' | 'windows';

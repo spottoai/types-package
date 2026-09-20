@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "profiles": {
+    "microsoft.compute/virtualmachines": {
+      "capabilities": [
+        {
+          "key": "backup",
+          "required": true,
+          "source": "data-protection",
+          "sla": "99.9"
+        },
+        {
+          "key": "replication",
+          "required": false,
+          "source": "recovery-services"
+        },
+        {
+          "key": "placement",
+          "required": false,
+          "source": "resource"
+        },
+        {
+          "key": "disk-redundancy",
+          "required": false,
+          "source": "resource"
+        }
+      ]
+    },
+    "microsoft.sql/servers/databases": {
+      "capabilities": [
+        {
+          "key": "pitr-retention",
+          "required": true,
+          "source": "resource"
+        },
+        {
+          "key": "backup-storage-redundancy",
+          "required": false,
+          "source": "resource"
+        },
+        {
+          "key": "zone-redundancy",
+          "required": false,
+          "source": "resource"
+        },
+        {
+          "key": "long-term-retention",
+          "required": false,
+          "source": "resource"
+        }
+      ]
+    },
+    "microsoft.storage/storageaccounts": {
+      "capabilities": [
+        {
+          "key": "soft-delete",
+          "required": true,
+          "source": "resource"
+        },
+        {
+          "key": "versioning",
+          "required": false,
+          "source": "resource"
+        },
+        {
+          "key": "redundancy",
+          "required": false,
+          "source": "resource"
+        },
+        {
+          "key": "immutability",
+          "required": false,
+          "source": "resource"
+        }
+      ]
+    }
+  }
+}

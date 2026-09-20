@@ -9,7 +9,7 @@ export declare const RESOURCE_STRATEGY_CONTRACT_LIMITS: {
     readonly grantGroups: 128;
     readonly permissionOperations: 8192;
     readonly listResults: 100;
-    readonly dryRunChecks: 8;
+    readonly dryRunChecks: 7;
     readonly dryRunReasonCodes: 32;
     readonly dryRunDtoBytes: 16384;
     readonly dryRunMaxTtlMs: number;
@@ -35,6 +35,13 @@ export interface ResourceSchedulingCapabilityProjection {
     strategy: ResourceSchedulingStrategy;
     displayName: string;
     description: string;
+    presentation: {
+        resourceKindLabel: string;
+        reduceTransitionLabel: string;
+        restoreTransitionLabel: string;
+        reducedStateLabel: string;
+        restoredStateLabel: string;
+    };
     configurationSchemaKind: string;
     configurationSchema: Record<string, unknown>;
     recommendationMaturity: 'unsupported' | 'candidate' | 'supported';
@@ -99,12 +106,6 @@ export interface ResourceSchedulingCapabilityProjection {
         version: string;
         severity: 'info' | 'warning' | 'destructive';
         message: string;
-    };
-    evidence: {
-        sourceUrls: string[];
-        labResult: 'not-run' | 'failed' | 'passed';
-        verifiedAtUtc: string | null;
-        expiresAtUtc: string | null;
     };
 }
 export type ResourceSchedulingReadinessState = 'ready' | 'blocked' | 'pending-permission-propagation' | 'missing-permission' | 'scope-mismatch' | 'manifest-outdated' | 'credential-unavailable' | 'permission-check-unavailable' | 'blocked-by-lock' | 'blocked-by-deny-assignment' | 'blocked-by-policy' | 'target-missing' | 'dependency-unready' | 'conflicting-automation' | 'unsupported-resource-state';
@@ -205,7 +206,7 @@ export interface ResourceStrategyWeeklyScheduleListResponse {
         cursor: string;
     };
 }
-export type ResourceScheduleDryRunCheckName = 'ownership' | 'readiness' | 'mutation-contention' | 'busy-policy' | 'blackout' | 'admission-budgets' | 'evidence-freshness' | 'notification-routing';
+export type ResourceScheduleDryRunCheckName = 'ownership' | 'readiness' | 'mutation-contention' | 'busy-policy' | 'blackout' | 'admission-budgets' | 'notification-routing';
 export interface ResourceScheduleDryRunCheckProjection {
     name: ResourceScheduleDryRunCheckName;
     status: 'ready' | 'blocked';
@@ -223,6 +224,27 @@ export interface ResourceScheduleDryRunProjection {
     occurrenceCount: number;
     status: 'ready' | 'blocked';
     checks: ResourceScheduleDryRunCheckProjection[];
+    permissionConsent: ResourceSchedulePermissionManifestConsent;
+}
+export type ResourceScheduleDryRunEvaluationStatus = 'queued' | 'running' | 'retrying' | 'ready' | 'blocked' | 'failed';
+export interface ResourceScheduleDryRunEvaluationError {
+    code: string;
+    message: string;
+}
+export interface ResourceScheduleDryRunEvaluationProjection {
+    scheduleId: string;
+    definitionRevision: number;
+    controlGeneration: number;
+    evaluationId: string;
+    status: ResourceScheduleDryRunEvaluationStatus;
+    queuedAtUtc: string;
+    startedAtUtc?: string;
+    updatedAtUtc: string;
+    completedAtUtc?: string;
+    attemptCount: number;
+    nextAttemptAtUtc?: string;
+    result?: ResourceScheduleDryRunProjection;
+    error?: ResourceScheduleDryRunEvaluationError;
 }
 export interface ScheduledResourceTransitionV1 {
     schemaVersion: 1;
@@ -266,7 +288,7 @@ export interface ResourceSchedulingExecutionProjection {
         updatedAtUtc: string;
         reasonCode?: string;
     };
-    allowedCommands: Array<'pause' | 'resume' | 'restore-now' | 'leave-current-state'>;
+    allowedCommands: Array<'pause' | 'resume' | 'restore-now' | 'restore-and-delete' | 'leave-current-state'>;
     updatedAtUtc: string;
 }
 export interface ResourceSchedulingExecutionHistoryItem {
@@ -428,6 +450,9 @@ export type ResourceStrategyScheduleCommand = {
     idempotencyKey: string;
 } | {
     command: 'restore-now';
+    idempotencyKey: string;
+} | {
+    command: 'restore-and-delete';
     idempotencyKey: string;
 } | {
     command: 'leave-current-state';

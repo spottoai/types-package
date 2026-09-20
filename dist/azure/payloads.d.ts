@@ -52,17 +52,17 @@ export interface RequestMessage {
     eventId?: string;
     tracing?: WorkflowTracingOptions;
 }
-type ResourceSchedulerTickIdentifierFields = Pick<RequestMessage, 'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'>;
+type SchedulerTickIdentifierFields = Pick<RequestMessage, 'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'>;
 /**
- * Internal global wake-up for the cloud-engine-owned resource scheduler.
+ * Internal global wake-up for the cloud-engine-owned scheduler.
  *
  * The message intentionally contains no tenant, schedule, resource, capability,
  * Action or due-work selection. `scheduledAtUtc` is correlation and bounded
  * catch-up evidence only; cloud-engine remains authoritative for execution time.
  */
-export interface ResourceSchedulerTickRequestMessageV1 extends ResourceSchedulerTickIdentifierFields {
+export interface SchedulerTickRequestMessageV1 extends SchedulerTickIdentifierFields {
     schemaVersion: 1;
-    entity: 'resource-scheduler';
+    entity: 'scheduler';
     action: 'tick';
     companyId: '*';
     cloudAccountId: '*';
@@ -73,9 +73,9 @@ export interface ResourceSchedulerTickRequestMessageV1 extends ResourceScheduler
     correlationId: string;
 }
 /** Creates the deterministic internal queue envelope for one cron occurrence. */
-export declare const createResourceSchedulerTickRequestMessageV1: (scheduledAt: Date | string | number) => ResourceSchedulerTickRequestMessageV1;
-/** Exact validator for the internal resource-scheduler tick queue boundary. */
-export declare const isResourceSchedulerTickRequestMessageV1: (value: unknown) => value is ResourceSchedulerTickRequestMessageV1;
+export declare const createSchedulerTickRequestMessageV1: (scheduledAt: Date | string | number) => SchedulerTickRequestMessageV1;
+/** Exact validator for the internal scheduler tick queue boundary. */
+export declare const isSchedulerTickRequestMessageV1: (value: unknown) => value is SchedulerTickRequestMessageV1;
 type AzureSpSetupIdentifierOnlyRequestMessage = Pick<RequestMessage, 'entity' | 'action' | 'companyId' | 'cloudAccountId' | 'tenantId' | 'clientId' | 'correlationId'>;
 export interface AzureSpSetupExecutionRequestMessage extends AzureSpSetupIdentifierOnlyRequestMessage {
     schemaVersion: 1;

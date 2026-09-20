@@ -3,6 +3,7 @@ import { isReportDailySpend } from './reportDailySpendValidation.js';
 import { isReportSavingsBasis, isReportSpendProjection } from './reportSpendValidation.js';
 import { REPORT_EVIDENCE_LIMITS, } from './reportEvidence.js';
 import { countTotal, hasOptionalNumbers, hasOptionalStrings, hasRequiredRecords, isBoundedRows, isCommitmentExpirySummary, isCostSummary, isCount, isCountRecord, isDateTime, isEvidenceReference, isFiniteNumber, isOptionalBoolean, isOptionalFiniteNumber, isOptionalString, isProjectionRows, isRecommendationSummary, isRecord, isResourceSummary, isRetirementSummary, isSourceFileStatus, isString, isStringArray, isTagCoverage, } from './reportEvidenceValidationHelpers.js';
+import { isReportingStories, isStoryFingerprintRows } from '../common/utilizationStoriesValidation.js';
 export const isReportSecureScoreEvidence = (value) => {
     if (!isRecord(value) || !['available', 'unavailable', 'stale'].includes(value.status))
         return false;
@@ -260,6 +261,8 @@ const isReportingProjection = (value) => {
         return false;
     if (value.spend !== undefined && !isReportSpendProjection(value.spend))
         return false;
+    if (value.stories !== undefined && !isReportingStories(value.stories))
+        return false;
     if (value.costChangePeriods !== undefined &&
         (!isBoundedRows(value.costChangePeriods, REPORT_EVIDENCE_LIMITS.costChangePeriods, isCostChangePeriod) ||
             new Set(value.costChangePeriods.rows.map(period => period.period)).size !== value.costChangePeriods.rows.length)) {
@@ -276,6 +279,11 @@ const isReportingProjection = (value) => {
             (!isBoundedRows(value.recommendationCatalogue, REPORT_EVIDENCE_LIMITS.recommendationCatalogue, isCompactRecommendation) ||
                 value.recommendationCatalogue.totalCount !== value.recommendationPortfolio.activeRecommendationCount)) ||
         !isProjectionRows(value.serviceRetirements) ||
+        (value.credentialDeadlines !== undefined &&
+            (!isRecord(value.credentialDeadlines) ||
+                !isDateTime(value.credentialDeadlines.asOf) ||
+                !isCount(value.credentialDeadlines.overdueCount) ||
+                !isCount(value.credentialDeadlines.upcomingSixMonthsCount))) ||
         !isInventory(value.inventory) ||
         !isGovernance(value.governance) ||
         !isCommitments(value.commitmentsPlanning)) {
@@ -324,6 +332,8 @@ const isReportingProjection = (value) => {
 };
 const isActivityCounts = (value) => isRecord(value) &&
     ['visibleEvents', 'materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents', 'highFindingCount'].every(key => isCount(value[key])) &&
+    (value.automatedSnapshotEvents === undefined ||
+        (isCount(value.automatedSnapshotEvents) && value.automatedSnapshotEvents <= value.materialChanges)) &&
     ['materialChanges', 'securitySensitive', 'healthEvents', 'failedEvents'].every(key => value[key] <= value.visibleEvents);
 const isActivityMonthlyFindings = (value) => isRecord(value) &&
     isString(value.month) &&
@@ -441,7 +451,8 @@ export const isSubscriptionReportHistory = (value) => {
             !isDateTime(period.sourceGeneratedAt) ||
             !isHistoryMetrics(period.metrics) ||
             !isBoundedRows(period.recommendations, REPORT_EVIDENCE_LIMITS.historyRecommendations, isRecommendationFingerprint) ||
-            (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities))) {
+            (period.comparisonIdentities !== undefined && !isHistoryComparisonIdentities(period.comparisonIdentities)) ||
+            (period.stories !== undefined && !isStoryFingerprintRows(period.stories))) {
             return false;
         }
         if (period.recommendations.omittedCount === 0 &&

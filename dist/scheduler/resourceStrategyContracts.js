@@ -12,10 +12,12 @@ exports.RESOURCE_STRATEGY_CONTRACT_LIMITS = {
     grantGroups: 128,
     permissionOperations: 8192,
     listResults: 100,
-    dryRunChecks: 8,
+    dryRunChecks: 7,
     dryRunReasonCodes: 32,
     dryRunDtoBytes: 16384,
-    dryRunMaxTtlMs: 5 * 60000,
+    // Stable readiness evidence may remain current for 24 hours. Transient
+    // verdicts still publish their shorter dependency expiry (normally 5 min).
+    dryRunMaxTtlMs: 24 * 60 * 60000,
     parameterBytes: 32768,
     publicDtoBytes: 262144,
 };

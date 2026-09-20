@@ -229,6 +229,47 @@ const tenantPack = {
 };
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
+const monthlyBudgetPack = structuredClone(subscriptionPack);
+monthlyBudgetPack.cost.budget = {
+  name: 'd365-sub-budget',
+  amount: 9000,
+  currentSpend: 7627.35,
+  startDate: '2024-01-01T00:00:00Z',
+  endDate: '2034-12-31T00:00:00Z',
+  timeGrain: 'Monthly',
+  category: 'Cost',
+  currencyCode: 'NZD',
+  filter: {},
+};
+assert.equal(isSubscriptionReportEvidencePack(monthlyBudgetPack), true, 'typed monthly budget evidence');
+for (const [field, invalidValue] of [['timeGrain', 30], ['amount', '9000'], ['filter', []], ['currencyCode', 123]]) {
+  const invalidBudget = structuredClone(monthlyBudgetPack);
+  invalidBudget.cost.budget[field] = invalidValue;
+  assert.equal(isSubscriptionReportEvidencePack(invalidBudget), false, `reject malformed budget ${field}`);
+}
+const credentialActivityPack = structuredClone(subscriptionPack);
+credentialActivityPack.reporting.credentialDeadlines = {
+  asOf: '2026-09-17T00:00:00.000Z',
+  overdueCount: 162,
+  upcomingSixMonthsCount: 85,
+};
+credentialActivityPack.reporting.activity.dailySummary = rows([{
+  date: '2026-08-17',
+  visibleEvents: 100,
+  materialChanges: 90,
+  securitySensitive: 5,
+  healthEvents: 5,
+  failedEvents: 0,
+  highFindingCount: 0,
+  automatedSnapshotEvents: 80,
+}]);
+assert.equal(isSubscriptionReportEvidencePack(credentialActivityPack), true, 'complete credential and activity counts');
+const invalidCredentialCount = structuredClone(credentialActivityPack);
+invalidCredentialCount.reporting.credentialDeadlines.overdueCount = -1;
+assert.equal(isSubscriptionReportEvidencePack(invalidCredentialCount), false, 'reject negative credential counts');
+const invalidSnapshotCount = structuredClone(credentialActivityPack);
+invalidSnapshotCount.reporting.activity.dailySummary.rows[0].automatedSnapshotEvents = 91;
+assert.equal(isSubscriptionReportEvidencePack(invalidSnapshotCount), false, 'snapshot events cannot exceed material changes');
 assert.equal(isSubscriptionReportHistory(history), true);
 const commitmentUtilizationPack = structuredClone(subscriptionPack);
 commitmentUtilizationPack.reporting.commitmentsPlanning.inventorySummary = {

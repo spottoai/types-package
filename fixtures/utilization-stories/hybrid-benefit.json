@@ -1,0 +1,551 @@
+{
+  "storyKey": "hybrid-benefit",
+  "scope": {
+    "companyId": "company-fixture",
+    "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "subscriptionId": "11111111-2222-4333-8444-555555555555",
+    "displayName": "Fixture Dev",
+    "currency": "NZD"
+  },
+  "generation": {
+    "sourceRunId": "run-2026-09-12T02-00Z-fixture",
+    "generatedAt": "2026-09-12T02:15:00.000Z"
+  },
+  "window": {
+    "start": "2026-08-13T00:00:00.000Z",
+    "end": "2026-09-12T00:00:00.000Z",
+    "days": 30,
+    "timezone": "Pacific/Auckland"
+  },
+  "summary": {
+    "counts": {
+      "resources": 4,
+      "worth-getting-quote": 1,
+      "benefit-already-enabled": 1,
+      "payg-likely-preferable": 1,
+      "strong-candidate": 1,
+      "withSavings": 3
+    },
+    "spend": {
+      "total": 2282.8,
+      "savingsMax": 601.9
+    },
+    "currency": "NZD"
+  },
+  "sections": [
+    {
+      "resourceType": "microsoft.compute/virtualmachines",
+      "family": "compute",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
+        },
+        {
+          "key": "product",
+          "label": "Product",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "vcpu",
+          "label": "vCPU",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "configuration",
+          "label": "Benefit",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "eligibility",
+          "label": "Eligibility",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "decision",
+          "label": "Decision",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "payback",
+          "label": "Payback",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 1,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
+        }
+      ],
+      "totalCount": 3,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
+          "name": "vm-dev-01",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 612.4,
+          "savingsMax": 176,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|worth-getting-quote|disabled",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-01",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "product": {
+              "kind": "text",
+              "value": "Windows Server",
+              "detail": "virtual-machine · Datacenter"
+            },
+            "vcpu": {
+              "kind": "number",
+              "value": 8
+            },
+            "configuration": {
+              "kind": "mark",
+              "state": "disabled",
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
+            },
+            "decision": {
+              "kind": "mark",
+              "state": "worth-getting-quote",
+              "label": "Worth getting quote",
+              "tone": "warn",
+              "hint": "Quote licences for 8 vCPU"
+            },
+            "payback": {
+              "kind": "number",
+              "value": null,
+              "unit": "months",
+              "decimals": 1
+            },
+            "spend": {
+              "kind": "money",
+              "value": 612.4,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 176,
+              "currency": "NZD"
+            }
+          },
+          "productFamily": "windows-server",
+          "serviceModel": "virtual-machine",
+          "edition": "Datacenter",
+          "vCpuCount": 8,
+          "configurationStatus": "disabled",
+          "technicalEligibilityStatus": "eligible",
+          "coverageStatus": "uncovered",
+          "entitlementStatus": "unknown",
+          "decision": {
+            "status": "worth-getting-quote",
+            "headline": "Quote licences for 8 vCPU",
+            "paybackMonths": null,
+            "confidence": "medium"
+          },
+          "reasonCodes": [
+            "windows-charge-observed"
+          ],
+          "licenceObservedStableDays": 183
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
+          "name": "vm-dev-04",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 148.3,
+          "savingsMax": 23.4,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|payg-likely-preferable|disabled",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-04",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "product": {
+              "kind": "text",
+              "value": "Windows Server",
+              "detail": "virtual-machine · Datacenter"
+            },
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
+              "kind": "mark",
+              "state": "disabled",
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
+            },
+            "decision": {
+              "kind": "mark",
+              "state": "payg-likely-preferable",
+              "label": "Payg likely preferable",
+              "tone": "neutral",
+              "hint": "Runs too few hours for licences to pay back"
+            },
+            "payback": {
+              "kind": "number",
+              "value": null,
+              "unit": "months",
+              "decimals": 1
+            },
+            "spend": {
+              "kind": "money",
+              "value": 148.3,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 23.4,
+              "currency": "NZD"
+            }
+          },
+          "productFamily": "windows-server",
+          "serviceModel": "virtual-machine",
+          "edition": "Datacenter",
+          "vCpuCount": 4,
+          "configurationStatus": "disabled",
+          "technicalEligibilityStatus": "eligible",
+          "coverageStatus": "uncovered",
+          "entitlementStatus": "unknown",
+          "decision": {
+            "status": "payg-likely-preferable",
+            "headline": "Runs too few hours for licences to pay back",
+            "paybackMonths": null,
+            "confidence": "medium"
+          },
+          "reasonCodes": [
+            "low-runtime"
+          ],
+          "licenceObservedStableDays": 183
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
+          "name": "vm-dev-02",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 402.1,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|benefit-already-enabled|enabled",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-02",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "product": {
+              "kind": "text",
+              "value": "Windows Server",
+              "detail": "virtual-machine · Standard"
+            },
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
+              "kind": "mark",
+              "state": "enabled",
+              "label": "Enabled",
+              "tone": "good"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "covered",
+              "label": "Covered",
+              "tone": "good"
+            },
+            "decision": {
+              "kind": "mark",
+              "state": "benefit-already-enabled",
+              "label": "Benefit already enabled",
+              "tone": "good",
+              "hint": "Azure Hybrid Benefit is already applied"
+            },
+            "payback": {
+              "kind": "number",
+              "value": null,
+              "unit": "months",
+              "decimals": 1
+            },
+            "spend": {
+              "kind": "money",
+              "value": 402.1,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            }
+          },
+          "productFamily": "windows-server",
+          "serviceModel": "virtual-machine",
+          "edition": "Standard",
+          "vCpuCount": 4,
+          "configurationStatus": "enabled",
+          "technicalEligibilityStatus": "eligible",
+          "coverageStatus": "covered",
+          "entitlementStatus": "unknown",
+          "decision": {
+            "status": "benefit-already-enabled",
+            "headline": "Azure Hybrid Benefit is already applied",
+            "paybackMonths": null,
+            "confidence": "high"
+          },
+          "reasonCodes": [
+            "ahb-enabled"
+          ],
+          "licenceObservedStableDays": 183
+        }
+      ],
+      "omittedCount": 0
+    },
+    {
+      "resourceType": "microsoft.sql/servers/databases",
+      "family": "database",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
+        },
+        {
+          "key": "product",
+          "label": "Product",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "vcpu",
+          "label": "vCPU",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "configuration",
+          "label": "Benefit",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "eligibility",
+          "label": "Eligibility",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "coverage",
+          "label": "Coverage",
+          "cell": "mark",
+          "priority": 3,
+          "roleClass": "read"
+        },
+        {
+          "key": "decision",
+          "label": "Decision",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "payback",
+          "label": "Payback",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 1,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
+        }
+      ],
+      "totalCount": 1,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02",
+          "name": "sqldb-dev-02",
+          "type": "microsoft.sql/servers/databases",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 1120,
+          "savingsMax": 402.5,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02|strong-candidate|disabled",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "sqldb-dev-02",
+              "detail": "microsoft.sql/servers/databases"
+            },
+            "product": {
+              "kind": "text",
+              "value": "SQL Server",
+              "detail": "sql-database · Standard"
+            },
+            "vcpu": {
+              "kind": "number",
+              "value": 4
+            },
+            "configuration": {
+              "kind": "mark",
+              "state": "disabled",
+              "label": "Disabled",
+              "tone": "bad"
+            },
+            "eligibility": {
+              "kind": "mark",
+              "state": "eligible",
+              "label": "Eligible",
+              "tone": "good"
+            },
+            "coverage": {
+              "kind": "mark",
+              "state": "uncovered",
+              "label": "Uncovered",
+              "tone": "bad"
+            },
+            "decision": {
+              "kind": "mark",
+              "state": "strong-candidate",
+              "label": "Strong candidate",
+              "tone": "good",
+              "hint": "Apply SQL Server licences to 4 vCore"
+            },
+            "payback": {
+              "kind": "number",
+              "value": 7.5,
+              "unit": "months",
+              "decimals": 1
+            },
+            "spend": {
+              "kind": "money",
+              "value": 1120,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 402.5,
+              "currency": "NZD"
+            }
+          },
+          "productFamily": "sql-server",
+          "serviceModel": "sql-database",
+          "edition": "Standard",
+          "vCpuCount": 4,
+          "configurationStatus": "disabled",
+          "technicalEligibilityStatus": "eligible",
+          "coverageStatus": "uncovered",
+          "entitlementStatus": "unknown",
+          "decision": {
+            "status": "strong-candidate",
+            "headline": "Apply SQL Server licences to 4 vCore",
+            "paybackMonths": 7.5,
+            "confidence": "high"
+          },
+          "reasonCodes": [
+            "sql-licence-charge-observed"
+          ],
+          "licenceObservedStableDays": 183
+        }
+      ],
+      "omittedCount": 0
+    }
+  ]
+}

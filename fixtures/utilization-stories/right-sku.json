@@ -1,0 +1,431 @@
+{
+  "storyKey": "right-sku",
+  "scope": {
+    "companyId": "company-fixture",
+    "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+    "subscriptionId": "11111111-2222-4333-8444-555555555555",
+    "displayName": "Fixture Dev",
+    "currency": "NZD"
+  },
+  "generation": {
+    "sourceRunId": "run-2026-09-12T02-00Z-fixture",
+    "generatedAt": "2026-09-12T02:15:00.000Z"
+  },
+  "window": {
+    "start": "2026-08-13T00:00:00.000Z",
+    "end": "2026-09-12T00:00:00.000Z",
+    "days": 30,
+    "timezone": "Pacific/Auckland"
+  },
+  "summary": {
+    "counts": {
+      "resources": 3,
+      "downsize": 1,
+      "consider": 1,
+      "modernise": 1,
+      "withSavings": 3
+    },
+    "spend": {
+      "total": 1120.95,
+      "savingsMax": 448.79
+    },
+    "currency": "NZD"
+  },
+  "sections": [
+    {
+      "resourceType": "microsoft.compute/virtualmachines",
+      "family": "compute",
+      "columns": [
+        {
+          "key": "resource",
+          "label": "Resource",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "res"
+        },
+        {
+          "key": "current",
+          "label": "Current SKU",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "verdict",
+          "label": "Verdict",
+          "cell": "mark",
+          "priority": 1,
+          "roleClass": "read"
+        },
+        {
+          "key": "primaryP95",
+          "label": "Primary p95",
+          "cell": "number",
+          "priority": 3,
+          "roleClass": "nums"
+        },
+        {
+          "key": "secondaryP95",
+          "label": "Secondary p95",
+          "cell": "number",
+          "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "option",
+          "label": "Best option",
+          "cell": "text",
+          "priority": 1,
+          "roleClass": "cap"
+        },
+        {
+          "key": "optionCost",
+          "label": "Option cost",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savingsPercent",
+          "label": "Saving %",
+          "cell": "percent",
+          "priority": 2,
+          "roleClass": "nums"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
+          "roleClass": "cost"
+        },
+        {
+          "key": "savings",
+          "label": "Potential saving",
+          "cell": "money",
+          "priority": 1,
+          "roleClass": "save",
+          "hint": "Monthly, upper bound"
+        }
+      ],
+      "totalCount": 3,
+      "rows": [
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
+          "name": "vm-dev-01",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 612.4,
+          "savingsMax": 341.72,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|downsize|Standard_D4as_v5",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-01",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "current": {
+              "kind": "text",
+              "value": "D8s v5",
+              "detail": "8 vCPU · 32 GB RAM"
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "downsize",
+              "label": "Downsize",
+              "tone": "warn"
+            },
+            "primaryP95": {
+              "kind": "number",
+              "value": 9.7,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondaryP95": {
+              "kind": "number",
+              "value": 41,
+              "unit": "%",
+              "decimals": 1
+            },
+            "option": {
+              "kind": "text",
+              "value": "D4as v5",
+              "detail": "Fits usage"
+            },
+            "optionCost": {
+              "kind": "money",
+              "value": 286.3,
+              "currency": "NZD"
+            },
+            "savingsPercent": {
+              "kind": "percent",
+              "value": 55.8
+            },
+            "spend": {
+              "kind": "money",
+              "value": 612.4,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 341.72,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_D8s_v5",
+            "label": "D8s v5",
+            "capacity": {
+              "units": 8,
+              "memoryGB": 32
+            },
+            "monthlyCost": 648.2,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "fits-usage",
+              "sku": "Standard_D4as_v5",
+              "label": "D4as v5",
+              "capacity": {
+                "units": 4,
+                "memoryGB": 16
+              },
+              "monthlyCost": 286.3,
+              "currency": "NZD",
+              "savingsPercent": 55.8,
+              "savingsMonthly": 361.44,
+              "lostCapabilities": [],
+              "confidence": "high"
+            }
+          ],
+          "verdict": "downsize",
+          "usage": {
+            "primaryP95": 9.7,
+            "secondaryP95": 41,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
+          "name": "vm-dev-03",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 298.55,
+          "savingsMax": 89.57,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|consider|Standard_E2s_v5",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-03",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "current": {
+              "kind": "text",
+              "value": "D4s v5",
+              "detail": "4 vCPU · 16 GB RAM"
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "consider",
+              "label": "Consider",
+              "tone": "neutral"
+            },
+            "primaryP95": {
+              "kind": "number",
+              "value": 14.9,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondaryP95": {
+              "kind": "number",
+              "value": 100,
+              "unit": "%",
+              "decimals": 1
+            },
+            "option": {
+              "kind": "text",
+              "value": "E2s v5",
+              "detail": "Trade-off · loses 2 vCPU"
+            },
+            "optionCost": {
+              "kind": "money",
+              "value": 226.9,
+              "currency": "NZD"
+            },
+            "savingsPercent": {
+              "kind": "percent",
+              "value": 30
+            },
+            "spend": {
+              "kind": "money",
+              "value": 298.55,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 89.57,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_D4s_v5",
+            "label": "D4s v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 16
+            },
+            "monthlyCost": 324.1,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v5",
+              "label": "E2s v5",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 226.9,
+              "currency": "NZD",
+              "savingsPercent": 30,
+              "savingsMonthly": 97.24,
+              "lostCapabilities": [
+                "2 vCPU"
+              ],
+              "confidence": "high"
+            }
+          ],
+          "verdict": "consider",
+          "usage": {
+            "primaryP95": 14.9,
+            "secondaryP95": 100,
+            "telemetry": "collected"
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
+          "name": "vm-dev-05",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 210,
+          "savingsMax": 17.5,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|modernise|Standard_D2as_v5",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-05",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "current": {
+              "kind": "text",
+              "value": "D2s v5",
+              "detail": "2 vCPU · 8 GB RAM"
+            },
+            "verdict": {
+              "kind": "mark",
+              "state": "modernise",
+              "label": "Modernise",
+              "tone": "good"
+            },
+            "primaryP95": {
+              "kind": "number",
+              "value": 17,
+              "unit": "%",
+              "decimals": 1
+            },
+            "secondaryP95": {
+              "kind": "number",
+              "value": 49.7,
+              "unit": "%",
+              "decimals": 1
+            },
+            "option": {
+              "kind": "text",
+              "value": "D2as v5",
+              "detail": "Same shape"
+            },
+            "optionCost": {
+              "kind": "money",
+              "value": 144.5,
+              "currency": "NZD"
+            },
+            "savingsPercent": {
+              "kind": "percent",
+              "value": 10.8
+            },
+            "spend": {
+              "kind": "money",
+              "value": 210,
+              "currency": "NZD"
+            },
+            "savings": {
+              "kind": "money",
+              "value": 17.5,
+              "currency": "NZD"
+            }
+          },
+          "current": {
+            "kind": "same-shape",
+            "sku": "Standard_D2s_v5",
+            "label": "D2s v5",
+            "capacity": {
+              "units": 2,
+              "memoryGB": 8
+            },
+            "monthlyCost": 162,
+            "currency": "NZD",
+            "savingsPercent": null,
+            "savingsMonthly": null,
+            "lostCapabilities": []
+          },
+          "options": [
+            {
+              "kind": "same-shape",
+              "sku": "Standard_D2as_v5",
+              "label": "D2as v5",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 8
+              },
+              "monthlyCost": 144.5,
+              "currency": "NZD",
+              "savingsPercent": 10.8,
+              "savingsMonthly": 17.5,
+              "lostCapabilities": [],
+              "confidence": "high"
+            }
+          ],
+          "verdict": "modernise",
+          "usage": {
+            "primaryP95": 17,
+            "secondaryP95": 49.7,
+            "telemetry": "collected"
+          }
+        }
+      ],
+      "omittedCount": 0
+    }
+  ]
+}
