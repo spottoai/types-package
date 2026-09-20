@@ -11,6 +11,7 @@ exports.isResourceSchedulingExecutionHistoryResponse = isResourceSchedulingExecu
 exports.isResourceStrategyScheduleCommand = isResourceStrategyScheduleCommand;
 exports.isResourceStrategyWeeklyScheduleListResponse = isResourceStrategyWeeklyScheduleListResponse;
 const resourceStrategyContracts_1 = require("./resourceStrategyContracts");
+const resourceStrategyPermissionValidation_1 = require("./resourceStrategyPermissionValidation");
 const resourceStrategyValidationShared_1 = require("./resourceStrategyValidationShared");
 function isWeeklyRule(value) {
     return ((0, resourceStrategyValidationShared_1.isRecord)(value) &&
@@ -225,6 +226,7 @@ function isResourceScheduleDryRunProjection(value) {
             'occurrenceCount',
             'status',
             'checks',
+            'permissionConsent',
         ]) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(value.scheduleId, 200) ||
         !(0, resourceStrategyValidationShared_1.isPositiveInteger)(value.definitionRevision) ||
@@ -241,7 +243,8 @@ function isResourceScheduleDryRunProjection(value) {
         (value.status !== 'ready' && value.status !== 'blocked') ||
         !Array.isArray(value.checks) ||
         value.checks.length !== resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunChecks ||
-        !value.checks.every(isResourceScheduleDryRunCheckProjection)) {
+        !value.checks.every(isResourceScheduleDryRunCheckProjection) ||
+        !(0, resourceStrategyPermissionValidation_1.isResourceSchedulePermissionManifestConsent)(value.permissionConsent)) {
         return false;
     }
     const checkNames = value.checks.map(check => check.name);

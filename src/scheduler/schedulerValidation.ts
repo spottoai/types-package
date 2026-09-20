@@ -11,6 +11,7 @@ import type {
   RecommendationActionScheduleWriteRequest,
   ScheduleListResponse,
   ScheduleCommand,
+  ScheduleMutationRequest,
   ScheduleProjection,
   ScheduleWriteRequest,
   ScheduledOccurrenceV1,
@@ -22,6 +23,7 @@ import type {
   SchedulerOperationProjection,
   SchedulerOperationResult,
 } from './schedulerContracts';
+import { isResourceSchedulePermissionManifestConsent } from './resourceStrategyPermissionValidation';
 import { isResourceSchedulingCapabilityProjection, isResourceSchedulingReadinessProjection } from './resourceStrategyCapabilityValidation';
 import { isResourceSchedulePreviewRequest, isResourceSchedulePreviewResponse } from './resourceStrategyFinancialValidation';
 import {
@@ -115,6 +117,15 @@ export function isRecommendationActionScheduleWriteRequest(value: unknown): valu
 
 export function isScheduleWriteRequest(value: unknown): value is ScheduleWriteRequest {
   return isResourceStrategyWeeklyScheduleWriteRequest(value) || isRecommendationActionScheduleWriteRequest(value);
+}
+
+export function isScheduleMutationRequest(value: unknown): value is ScheduleMutationRequest {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, ['definition', 'permissionConsent']) &&
+    isScheduleWriteRequest(value.definition) &&
+    (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent))
+  );
 }
 
 export function isRecommendationActionScheduleCommand(value: unknown): value is RecommendationActionScheduleCommand {
@@ -259,15 +270,17 @@ function isSchedulerControlCommandV1(value: unknown): value is SchedulerControlC
       return hasOnlyKeys(value, ['commandType']);
     case 'create-schedule':
       return (
-        hasOnlyKeys(value, ['commandType', 'definition', 'idempotencyKey']) &&
+        hasOnlyKeys(value, ['commandType', 'definition', 'permissionConsent', 'idempotencyKey']) &&
         isScheduleWriteRequest(value.definition) &&
+        (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
         isBoundedString(value.idempotencyKey, 200)
       );
     case 'update-schedule':
       return (
-        hasOnlyKeys(value, ['commandType', 'scheduleId', 'definition', 'expectedEtag', 'idempotencyKey']) &&
+        hasOnlyKeys(value, ['commandType', 'scheduleId', 'definition', 'permissionConsent', 'expectedEtag', 'idempotencyKey']) &&
         isBoundedString(value.scheduleId, 500) &&
         isScheduleWriteRequest(value.definition) &&
+        (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
         isBoundedString(value.expectedEtag, 2000) &&
         isBoundedString(value.idempotencyKey, 200)
       );

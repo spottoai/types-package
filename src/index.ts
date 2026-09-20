@@ -67,12 +67,6 @@ export * from './common/artifactEvidence';
 export * from './company';
 export * from './customProperties';
 export * from './scheduler';
-// Deprecated, temporary: Bastion + legacy schedule contracts kept until cloud-engine, api and ui migrate to the generic
-// scheduler. Root export only (never the `/scheduler` subpath). See specs/scheduler/azure-resource-strategy-scheduling-types.md.
-export * from './scheduler/legacySchedulerContracts';
-export * from './scheduler/bastionSchedule';
-export * from './scheduler/bastionScheduleProfile';
-export * from './scheduler/bastionScheduleValidation';
 export * from './ai';
 export * from './environment';
 export * from './events';

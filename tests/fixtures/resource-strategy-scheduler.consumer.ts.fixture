@@ -78,6 +78,7 @@ const dryRun: ResourceScheduleDryRunProjection = {
       'notification-routing',
     ] as const
   ).map(name => ({ name, status: 'ready', reasonCodes: [] })),
+  permissionConsent: consent,
 };
 
 if (

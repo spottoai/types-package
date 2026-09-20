@@ -242,6 +242,7 @@ export interface ResourceScheduleDryRunProjection {
   occurrenceCount: number;
   status: 'ready' | 'blocked';
   checks: ResourceScheduleDryRunCheckProjection[];
+  permissionConsent: ResourceSchedulePermissionManifestConsent;
 }
 export type ResourceScheduleDryRunEvaluationStatus = 'queued' | 'running' | 'retrying' | 'ready' | 'blocked' | 'failed';
 export interface ResourceScheduleDryRunEvaluationError {
