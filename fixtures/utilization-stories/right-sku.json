@@ -93,13 +93,6 @@
           "roleClass": "nums"
         },
         {
-          "key": "options",
-          "label": "Options",
-          "cell": "number",
-          "priority": 5,
-          "roleClass": "nums"
-        },
-        {
           "key": "spend",
           "label": "30-day spend",
           "cell": "money",
@@ -172,10 +165,6 @@
               "kind": "percent",
               "value": 55.8
             },
-            "options": {
-              "kind": "number",
-              "value": 2
-            },
             "spend": {
               "kind": "money",
               "value": 612.4,
@@ -214,21 +203,6 @@
               "currency": "NZD",
               "savingsPercent": 55.8,
               "savingsMonthly": 361.44,
-              "lostCapabilities": [],
-              "confidence": "high"
-            },
-            {
-              "kind": "same-shape",
-              "sku": "Standard_D8as_v5",
-              "label": "D8as v5",
-              "capacity": {
-                "units": 8,
-                "memoryGB": 32
-              },
-              "monthlyCost": 578.1,
-              "currency": "NZD",
-              "savingsPercent": 10.8,
-              "savingsMonthly": 69.99,
               "lostCapabilities": [],
               "confidence": "high"
             }
@@ -294,10 +268,6 @@
             "savingsPercent": {
               "kind": "percent",
               "value": 30
-            },
-            "options": {
-              "kind": "number",
-              "value": 1
             },
             "spend": {
               "kind": "money",
@@ -404,10 +374,6 @@
             "savingsPercent": {
               "kind": "percent",
               "value": 10.8
-            },
-            "options": {
-              "kind": "number",
-              "value": 1
             },
             "spend": {
               "kind": "money",

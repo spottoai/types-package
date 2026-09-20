@@ -166,7 +166,8 @@
                   "lastRecoveryPoint": null,
                   "recoveryPointAgeDays": null,
                   "lastBackupStatus": null,
-                  "consecutiveFailures": null
+                  "consecutiveFailures": null,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 },
                 "costIfEnabled": 16.81
               },
@@ -178,6 +179,9 @@
                 "evidence": {
                   "source": "recovery-services",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -277,6 +281,9 @@
                 "evidence": {
                   "source": "data-protection",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -286,6 +293,9 @@
                 "label": "Site Recovery replication",
                 "evidence": {
                   "source": "not-collected"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -393,7 +403,8 @@
                   "lastRecoveryPoint": null,
                   "recoveryPointAgeDays": null,
                   "lastBackupStatus": null,
-                  "consecutiveFailures": null
+                  "consecutiveFailures": null,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 },
                 "costIfEnabled": 9.4
               },
@@ -405,6 +416,9 @@
                 "evidence": {
                   "source": "recovery-services",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -513,7 +527,8 @@
                   "lastRecoveryPoint": "2026-09-11T14:05:00.000Z",
                   "recoveryPointAgeDays": 1,
                   "lastBackupStatus": "Completed",
-                  "consecutiveFailures": 0
+                  "consecutiveFailures": 0,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -530,7 +545,8 @@
                   "targetRegion": "australiasoutheast",
                   "rpoSeconds": 48,
                   "lastTestFailoverAt": "2026-07-02T03:00:00.000Z",
-                  "policy": "asr-24h-retention"
+                  "policy": "asr-24h-retention",
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -638,7 +654,8 @@
                   "lastRecoveryPoint": "2026-09-11T15:00:00.000Z",
                   "recoveryPointAgeDays": 1,
                   "lastBackupStatus": "Completed",
-                  "consecutiveFailures": 0
+                  "consecutiveFailures": 0,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -648,6 +665,9 @@
                 "label": "Site Recovery replication",
                 "evidence": {
                   "source": "not-collected"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -754,7 +774,8 @@
                   "lastRecoveryPoint": "2026-09-08T14:02:00.000Z",
                   "recoveryPointAgeDays": 4,
                   "lastBackupStatus": "Failed",
-                  "consecutiveFailures": 3
+                  "consecutiveFailures": 3,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -765,6 +786,9 @@
                 "evidence": {
                   "source": "recovery-services",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -871,7 +895,8 @@
                   "lastRecoveryPoint": "2026-09-11T14:10:00.000Z",
                   "recoveryPointAgeDays": 1,
                   "lastBackupStatus": "Completed",
-                  "consecutiveFailures": 0
+                  "consecutiveFailures": 0,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -882,6 +907,9 @@
                 "evidence": {
                   "source": "recovery-services",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -988,7 +1016,8 @@
                   "lastRecoveryPoint": "2026-09-06T02:00:00.000Z",
                   "recoveryPointAgeDays": 6,
                   "lastBackupStatus": "Completed",
-                  "consecutiveFailures": 0
+                  "consecutiveFailures": 0,
+                  "recommendationId": "compute-virtualmachines_no-backup"
                 }
               },
               {
@@ -999,6 +1028,9 @@
                 "evidence": {
                   "source": "recovery-services",
                   "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "recommendationId": "compute-virtualmachines_no-asr"
                 }
               },
               {
@@ -1487,7 +1519,20 @@
                 }
               },
               {
-                "key": "redundancy",
+                "key": "zone-redundancy",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Zone redundancy",
+                "evidence": {
+                  "source": "recommendation"
+                },
+                "details": {
+                  "reason": "outside-recommendation-scope",
+                  "recommendationId": "reliability-storage-storageaccounts_e6c7e1cc-2f47-264d-aa50-1da421314472"
+                }
+              },
+              {
+                "key": "geo-redundancy",
                 "state": "disabled",
                 "required": false,
                 "label": "Geo redundancy",
@@ -1603,7 +1648,20 @@
                 }
               },
               {
-                "key": "redundancy",
+                "key": "zone-redundancy",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Zone redundancy",
+                "evidence": {
+                  "source": "recommendation"
+                },
+                "details": {
+                  "reason": "outside-recommendation-scope",
+                  "recommendationId": "reliability-storage-storageaccounts_e6c7e1cc-2f47-264d-aa50-1da421314472"
+                }
+              },
+              {
+                "key": "geo-redundancy",
                 "state": "enabled",
                 "required": false,
                 "label": "Geo redundancy",

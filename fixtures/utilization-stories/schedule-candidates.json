@@ -121,7 +121,7 @@
           "currency": "NZD",
           "spend30d": 612.4,
           "savingsMax": 430.14,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|good|stop",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|compute-virtualmachines_schedule-shutdown-windows|stop",
           "cells": {
             "resource": {
               "kind": "text",
@@ -133,7 +133,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "metric-presence + billing-hours, power-state"
+              "hint": "Proposed by compute-virtualmachines_schedule-shutdown-windows"
             },
             "action": {
               "kind": "text",
@@ -1107,7 +1107,7 @@
           "currency": "NZD",
           "spend30d": 210,
           "savingsMax": 147.5,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|good|stop",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|compute-virtualmachines_formalise-shutdown-schedule|stop",
           "cells": {
             "resource": {
               "kind": "text",
@@ -1119,7 +1119,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "metric-presence + billing-hours, power-state"
+              "hint": "Proposed by compute-virtualmachines_formalise-shutdown-schedule"
             },
             "action": {
               "kind": "text",
@@ -2093,7 +2093,7 @@
           "currency": "NZD",
           "spend30d": 95.4,
           "savingsMax": 67.01,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|good|stop",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|compute-virtualmachines_schedule-shutdown-windows|stop",
           "cells": {
             "resource": {
               "kind": "text",
@@ -2105,7 +2105,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "metric-presence + billing-hours, power-state"
+              "hint": "Proposed by compute-virtualmachines_schedule-shutdown-windows"
             },
             "action": {
               "kind": "text",
