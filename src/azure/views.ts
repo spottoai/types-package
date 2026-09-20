@@ -122,8 +122,13 @@ export interface AzureResourcePortalItem {
   spend: number;
   /** Rolling resource spend partition used to include or exclude Marketplace charges. */
   financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
-  /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
-  spendAmortized: number;
+  /**
+   * Total spend over the last 30 days, taking into account reserved instances
+   * and savings plans. Absent when the producer has no amortized evidence for
+   * every contributing billing row: a missing basis stays missing rather than
+   * repeating the actual cost.
+   */
+  spendAmortized?: number;
   /** Billing-backed portion of spend over the last 30 days */
   spendActual?: number;
   /** Billing-backed portion of amortized spend over the last 30 days */

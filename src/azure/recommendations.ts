@@ -575,7 +575,8 @@ export interface RecommendationResource {
     aliases?: string[];
   };
   spend: number;
-  spendAmortized: number;
+  /** Absent when the producer has no amortized evidence for every contributing billing row. */
+  spendAmortized?: number;
   /** Rolling 30-day source partition used to present proved Azure-native resource spend. */
   financialChargeSpend?: import('./financialChargePolicy.js').AzureResourceFinancialChargeSpendBreakdownV1;
   /** Spend basis used to calculate this recommendation resource's savings. */
