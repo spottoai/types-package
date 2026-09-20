@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isRecommendationActionScheduleWriteRequest = isRecommendationActionScheduleWriteRequest;
 exports.isScheduleWriteRequest = isScheduleWriteRequest;
+exports.isScheduleMutationRequest = isScheduleMutationRequest;
 exports.isRecommendationActionScheduleCommand = isRecommendationActionScheduleCommand;
 exports.isScheduleCommand = isScheduleCommand;
 exports.isRecommendationActionScheduleProjection = isRecommendationActionScheduleProjection;
@@ -14,6 +15,7 @@ exports.isSchedulerOperationAcceptedResponse = isSchedulerOperationAcceptedRespo
 exports.isSchedulerOperationProjection = isSchedulerOperationProjection;
 const resourceStrategyContracts_1 = require("./resourceStrategyContracts");
 const resourceStrategyScheduleValidation_1 = require("./resourceStrategyScheduleValidation");
+const resourceStrategyPermissionValidation_1 = require("./resourceStrategyPermissionValidation");
 const resourceStrategyCapabilityValidation_1 = require("./resourceStrategyCapabilityValidation");
 const resourceStrategyFinancialValidation_1 = require("./resourceStrategyFinancialValidation");
 const resourceStrategyValidationShared_1 = require("./resourceStrategyValidationShared");
@@ -89,6 +91,12 @@ function isRecommendationActionScheduleWriteRequest(value) {
 }
 function isScheduleWriteRequest(value) {
     return (0, resourceStrategyScheduleValidation_1.isResourceStrategyWeeklyScheduleWriteRequest)(value) || isRecommendationActionScheduleWriteRequest(value);
+}
+function isScheduleMutationRequest(value) {
+    return ((0, resourceStrategyValidationShared_1.isRecord)(value) &&
+        (0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['definition', 'permissionConsent']) &&
+        isScheduleWriteRequest(value.definition) &&
+        (value.permissionConsent === undefined || (0, resourceStrategyPermissionValidation_1.isResourceSchedulePermissionManifestConsent)(value.permissionConsent)));
 }
 function isRecommendationActionScheduleCommand(value) {
     return ((0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&
@@ -217,13 +225,15 @@ function isSchedulerControlCommandV1(value) {
         case 'refresh-capabilities':
             return (0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['commandType']);
         case 'create-schedule':
-            return ((0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['commandType', 'definition', 'idempotencyKey']) &&
+            return ((0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['commandType', 'definition', 'permissionConsent', 'idempotencyKey']) &&
                 isScheduleWriteRequest(value.definition) &&
+                (value.permissionConsent === undefined || (0, resourceStrategyPermissionValidation_1.isResourceSchedulePermissionManifestConsent)(value.permissionConsent)) &&
                 (0, resourceStrategyValidationShared_1.isBoundedString)(value.idempotencyKey, 200));
         case 'update-schedule':
-            return ((0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['commandType', 'scheduleId', 'definition', 'expectedEtag', 'idempotencyKey']) &&
+            return ((0, resourceStrategyValidationShared_1.hasOnlyKeys)(value, ['commandType', 'scheduleId', 'definition', 'permissionConsent', 'expectedEtag', 'idempotencyKey']) &&
                 (0, resourceStrategyValidationShared_1.isBoundedString)(value.scheduleId, 500) &&
                 isScheduleWriteRequest(value.definition) &&
+                (value.permissionConsent === undefined || (0, resourceStrategyPermissionValidation_1.isResourceSchedulePermissionManifestConsent)(value.permissionConsent)) &&
                 (0, resourceStrategyValidationShared_1.isBoundedString)(value.expectedEtag, 2000) &&
                 (0, resourceStrategyValidationShared_1.isBoundedString)(value.idempotencyKey, 200));
         case 'delete-schedule':

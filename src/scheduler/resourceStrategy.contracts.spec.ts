@@ -159,6 +159,11 @@ const dryRun = {
     { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
     { name: 'notification-routing', status: 'ready', reasonCodes: [] },
   ],
+  permissionConsent: {
+    version: 'manifest-v1',
+    contentHash: 'sha256:manifest',
+    orderedGrantGroupHashes: ['sha256:group'],
+  },
 } satisfies ResourceScheduleDryRunProjection;
 
 const dryRunEvaluation = {

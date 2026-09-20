@@ -1,4 +1,4 @@
-import type { ResourceSchedulePreviewRequest, ResourceSchedulePreviewResponse, ResourceStrategyScheduleCommand, ResourceStrategyWeeklyScheduleProjection, ResourceStrategyWeeklyScheduleWriteRequest, ResourceSchedulingCapabilityRef, ResourceSchedulingCapabilityProjection, ResourceSchedulingReadinessProjection, ScheduledResourceTransitionV1 } from './resourceStrategyContracts';
+import type { ResourceSchedulePreviewRequest, ResourceSchedulePreviewResponse, ResourceSchedulePermissionManifestConsent, ResourceStrategyScheduleCommand, ResourceStrategyWeeklyScheduleProjection, ResourceStrategyWeeklyScheduleWriteRequest, ResourceSchedulingCapabilityRef, ResourceSchedulingCapabilityProjection, ResourceSchedulingReadinessProjection, ScheduledResourceTransitionV1 } from './resourceStrategyContracts';
 export type RecommendationActionScheduleTrigger = {
     triggerType: 'once';
     localDateTime: string;
@@ -47,6 +47,10 @@ export interface RecommendationActionScheduleProjection {
     updatedBy: string;
 }
 export type ScheduleWriteRequest = ResourceStrategyWeeklyScheduleWriteRequest | RecommendationActionScheduleWriteRequest;
+export interface ScheduleMutationRequest {
+    definition: ScheduleWriteRequest;
+    permissionConsent?: ResourceSchedulePermissionManifestConsent;
+}
 export type ScheduleProjection = ResourceStrategyWeeklyScheduleProjection | RecommendationActionScheduleProjection;
 export type ScheduleDetailResponse = ScheduleProjection;
 export type RecommendationActionScheduleCommand = {
@@ -88,11 +92,13 @@ export type SchedulerControlCommandV1 = {
 } | {
     commandType: 'create-schedule';
     definition: ScheduleWriteRequest;
+    permissionConsent?: ResourceSchedulePermissionManifestConsent;
     idempotencyKey: string;
 } | {
     commandType: 'update-schedule';
     scheduleId: string;
     definition: ScheduleWriteRequest;
+    permissionConsent?: ResourceSchedulePermissionManifestConsent;
     expectedEtag: string;
     idempotencyKey: string;
 } | {

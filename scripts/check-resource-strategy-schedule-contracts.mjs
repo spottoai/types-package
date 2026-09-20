@@ -141,6 +141,11 @@ const dryRun = {
     { name: 'admission-budgets', status: 'ready', reasonCodes: [] },
     { name: 'notification-routing', status: 'ready', reasonCodes: [] },
   ],
+  permissionConsent: {
+    version: 'manifest-v1',
+    contentHash: 'sha256:manifest',
+    orderedGrantGroupHashes: ['sha256:group'],
+  },
 };
 assert.equal(scheduler.isResourceScheduleDryRunProjection(dryRun), true);
 assert.equal(scheduler.isResourceScheduleDryRunProjection({ ...dryRun, internalEventId: 'compilation:private' }), false);

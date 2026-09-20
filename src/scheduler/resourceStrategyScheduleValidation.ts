@@ -16,6 +16,7 @@ import {
   type ResourceStrategyWeeklyScheduleWriteRequest,
   type ScheduledResourceTransitionV1,
 } from './resourceStrategyContracts';
+import { isResourceSchedulePermissionManifestConsent } from './resourceStrategyPermissionValidation';
 import {
   containsForbiddenKey,
   hasOnlyKeys,
@@ -270,6 +271,7 @@ export function isResourceScheduleDryRunProjection(value: unknown): value is Res
       'occurrenceCount',
       'status',
       'checks',
+      'permissionConsent',
     ]) ||
     !isBoundedString(value.scheduleId, 200) ||
     !isPositiveInteger(value.definitionRevision) ||
@@ -286,7 +288,8 @@ export function isResourceScheduleDryRunProjection(value: unknown): value is Res
     (value.status !== 'ready' && value.status !== 'blocked') ||
     !Array.isArray(value.checks) ||
     value.checks.length !== RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunChecks ||
-    !value.checks.every(isResourceScheduleDryRunCheckProjection)
+    !value.checks.every(isResourceScheduleDryRunCheckProjection) ||
+    !isResourceSchedulePermissionManifestConsent(value.permissionConsent)
   ) {
     return false;
   }

@@ -1,4 +1,5 @@
 import { RESOURCE_STRATEGY_CONTRACT_LIMITS, } from './resourceStrategyContracts.js';
+import { isResourceSchedulePermissionManifestConsent } from './resourceStrategyPermissionValidation.js';
 import { containsForbiddenKey, hasOnlyKeys, isBoundedParameters, isBoundedString, isCapabilityRef, isDate, isIanaTimezone, isIsoTimestamp, isNonNegativeInteger, isOptionalBoundedString, isPositiveInteger, isRecord, isTime, isWithinJsonByteLimit, } from './resourceStrategyValidationShared.js';
 function isWeeklyRule(value) {
     return (isRecord(value) &&
@@ -213,6 +214,7 @@ export function isResourceScheduleDryRunProjection(value) {
             'occurrenceCount',
             'status',
             'checks',
+            'permissionConsent',
         ]) ||
         !isBoundedString(value.scheduleId, 200) ||
         !isPositiveInteger(value.definitionRevision) ||
@@ -229,7 +231,8 @@ export function isResourceScheduleDryRunProjection(value) {
         (value.status !== 'ready' && value.status !== 'blocked') ||
         !Array.isArray(value.checks) ||
         value.checks.length !== RESOURCE_STRATEGY_CONTRACT_LIMITS.dryRunChecks ||
-        !value.checks.every(isResourceScheduleDryRunCheckProjection)) {
+        !value.checks.every(isResourceScheduleDryRunCheckProjection) ||
+        !isResourceSchedulePermissionManifestConsent(value.permissionConsent)) {
         return false;
     }
     const checkNames = value.checks.map(check => check.name);

@@ -1,6 +1,7 @@
-import type { RecommendationActionScheduleCommand, RecommendationActionScheduleProjection, RecommendationActionScheduleWriteRequest, ScheduleListResponse, ScheduleCommand, ScheduleProjection, ScheduleWriteRequest, ScheduledOccurrenceV1, ScheduledRecommendationActionV1, SchedulerControlRequestMessageV1, SchedulerOperationAcceptedResponse, SchedulerOperationProjection } from './schedulerContracts';
+import type { RecommendationActionScheduleCommand, RecommendationActionScheduleProjection, RecommendationActionScheduleWriteRequest, ScheduleListResponse, ScheduleCommand, ScheduleMutationRequest, ScheduleProjection, ScheduleWriteRequest, ScheduledOccurrenceV1, ScheduledRecommendationActionV1, SchedulerControlRequestMessageV1, SchedulerOperationAcceptedResponse, SchedulerOperationProjection } from './schedulerContracts';
 export declare function isRecommendationActionScheduleWriteRequest(value: unknown): value is RecommendationActionScheduleWriteRequest;
 export declare function isScheduleWriteRequest(value: unknown): value is ScheduleWriteRequest;
+export declare function isScheduleMutationRequest(value: unknown): value is ScheduleMutationRequest;
 export declare function isRecommendationActionScheduleCommand(value: unknown): value is RecommendationActionScheduleCommand;
 export declare function isScheduleCommand(value: unknown): value is ScheduleCommand;
 export declare function isRecommendationActionScheduleProjection(value: unknown): value is RecommendationActionScheduleProjection;
