@@ -12,19 +12,20 @@
     "generatedAt": "2026-09-12T02:15:00.000Z"
   },
   "window": {
-    "start": "2026-08-13T00:00:00Z",
-    "end": "2026-09-12T00:00:00Z",
+    "start": "2026-08-13T00:00:00.000Z",
+    "end": "2026-09-12T00:00:00.000Z",
     "days": 30,
     "timezone": "Pacific/Auckland"
   },
   "summary": {
     "counts": {
-      "missingRequired": 11,
-      "backupFailures": 1,
-      "rows": 18
+      "resources": 12,
+      "protected": 9,
+      "gaps": 3,
+      "withSavings": 0
     },
     "spend": {
-      "total30d": 5986.98,
+      "total": 4290.45,
       "savingsMax": 0
     },
     "currency": "NZD"
@@ -49,492 +50,100 @@
           "roleClass": "read"
         },
         {
-          "key": "replication",
-          "label": "Replication",
-          "cell": "mark",
+          "key": "missing",
+          "label": "Missing required",
+          "cell": "number",
+          "priority": 1,
+          "roleClass": "nums"
+        },
+        {
+          "key": "missingList",
+          "label": "Gaps",
+          "cell": "text",
           "priority": 2,
           "roleClass": "read"
         },
         {
-          "key": "runs",
-          "label": "Backup runs (30d)",
-          "cell": "event-strip",
-          "priority": 2,
-          "roleClass": "prim"
-        },
-        {
-          "key": "lastRecovery",
+          "key": "lastRecoveryPoint",
           "label": "Last recovery point",
           "cell": "text",
           "priority": 3,
-          "roleClass": "nums"
+          "roleClass": "read"
         },
         {
-          "key": "missing",
-          "label": "Missing required",
-          "cell": "number",
-          "priority": 3,
-          "roleClass": "nums"
-        },
-        {
-          "key": "costIfEnabled",
-          "label": "Cost to protect",
-          "cell": "money",
+          "key": "sla",
+          "label": "SLA",
+          "cell": "percent",
           "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "costToEnable",
+          "label": "Cost to enable",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "cost",
+          "hint": "Estimated monthly backup cost when not protected"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
           "roleClass": "cost"
         }
       ],
-      "totalCount": 12,
+      "totalCount": 8,
       "rows": [
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
-          "name": "vm-dev-01",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 368.43,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-01",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 16.81,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 16.81
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02",
           "name": "vm-dev-02",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 215.81,
+          "spend30d": 402.1,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|resilience|protected",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-02|backup",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-02",
-              "detail": "australiasoutheast"
+              "detail": "microsoft.compute/virtualmachines"
             },
             "backup": {
               "kind": "mark",
-              "state": "enabled",
-              "label": "On",
-              "tone": "good",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
               "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
+              "label": "Not protected",
+              "tone": "bad",
+              "hint": "Backup · data-protection"
             },
             "missing": {
               "kind": "number",
-              "value": 0,
-              "decimals": 0
+              "value": 1
             },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "enabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": "rsv-fixture-dev",
-                  "policy": "DefaultPolicy"
-                }
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok"
-          ],
-          "lastRecoveryPointAt": "2026-09-11T14:05:00.000Z",
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
-          "name": "vm-dev-03",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 301.19,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|resilience|missing-backup",
-          "cells": {
-            "resource": {
+            "missingList": {
               "kind": "text",
-              "value": "vm-dev-03",
-              "detail": "australiasoutheast"
+              "value": "Backup"
             },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
+            "lastRecoveryPoint": {
               "kind": "text",
               "value": null
             },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
+            "sla": {
+              "kind": "percent",
+              "value": null
             },
-            "costIfEnabled": {
+            "costToEnable": {
               "kind": "money",
               "value": 16.81,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 402.1,
               "currency": "NZD"
             }
           },
@@ -545,14 +154,19 @@
                 "key": "backup",
                 "state": "disabled",
                 "required": true,
-                "label": "Azure Backup",
+                "label": "Backup",
                 "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
+                  "provider": "none",
                   "vault": null,
-                  "policy": null
+                  "policy": null,
+                  "lastRecoveryPoint": null,
+                  "recoveryPointAgeDays": null,
+                  "lastBackupStatus": null,
+                  "consecutiveFailures": null
                 },
                 "costIfEnabled": 16.81
               },
@@ -560,13 +174,10 @@
                 "key": "replication",
                 "state": "disabled",
                 "required": false,
-                "label": "Site Recovery",
+                "label": "Site Recovery replication",
                 "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 }
               },
               {
@@ -575,521 +186,311 @@
                 "required": false,
                 "label": "Availability zone / set",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
+                  "source": "resource"
                 }
               },
               {
                 "key": "disk-redundancy",
-                "state": "unknown",
+                "state": "partial",
                 "required": false,
-                "label": "OS disk redundancy",
+                "label": "Disk redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "disabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
                 }
               }
             ],
             "missingRequired": [
               "backup"
-            ],
-            "slaPercent": null
+            ]
           },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
-          "name": "vm-dev-04",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 425.9,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-04",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 351.44,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 351.44
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "enabled",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": "Standard_LRS"
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
-          "name": "vm-dev-05",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 230.04,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-05",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 16.81,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 16.81
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
+          "lastRecoveryPointAt": null
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06",
           "name": "vm-dev-06",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 364.81,
+          "spend30d": 187.2,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|resilience|backup-failures",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|backup",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-06",
-              "detail": "australiasoutheast"
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "disabled",
+              "label": "Not protected",
+              "tone": "bad",
+              "hint": "Backup · data-protection"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 1
+            },
+            "missingList": {
+              "kind": "text",
+              "value": "Backup"
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 187.2,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "backup",
+                "state": "disabled",
+                "required": true,
+                "label": "Backup",
+                "evidence": {
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              },
+              {
+                "key": "replication",
+                "state": "unknown",
+                "required": false,
+                "label": "Site Recovery replication",
+                "evidence": {
+                  "source": "not-collected"
+                }
+              },
+              {
+                "key": "placement",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Availability zone / set",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "disk-redundancy",
+                "state": "partial",
+                "required": false,
+                "label": "Disk redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "disabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
+                }
+              }
+            ],
+            "missingRequired": [
+              "backup"
+            ]
+          },
+          "lastRecoveryPointAt": null
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
+          "name": "vm-dev-04",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 148.3,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|backup",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-04",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "disabled",
+              "label": "Not protected",
+              "tone": "bad",
+              "hint": "Backup · data-protection"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 1
+            },
+            "missingList": {
+              "kind": "text",
+              "value": "Backup"
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": 9.4,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 148.3,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "backup",
+                "state": "disabled",
+                "required": true,
+                "label": "Backup",
+                "evidence": {
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "provider": "none",
+                  "vault": null,
+                  "policy": null,
+                  "lastRecoveryPoint": null,
+                  "recoveryPointAgeDays": null,
+                  "lastBackupStatus": null,
+                  "consecutiveFailures": null
+                },
+                "costIfEnabled": 9.4
+              },
+              {
+                "key": "replication",
+                "state": "disabled",
+                "required": false,
+                "label": "Site Recovery replication",
+                "evidence": {
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              },
+              {
+                "key": "placement",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Availability zone / set",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "disk-redundancy",
+                "state": "partial",
+                "required": false,
+                "label": "Disk redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "enabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
+                }
+              }
+            ],
+            "missingRequired": [
+              "backup"
+            ]
+          },
+          "lastRecoveryPointAt": null
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01",
+          "name": "vm-dev-01",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 612.4,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|ok",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-01",
+              "detail": "microsoft.compute/virtualmachines"
             },
             "backup": {
               "kind": "mark",
               "state": "enabled",
-              "label": "On",
+              "label": "Protected",
               "tone": "good",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "failed",
-                "failed",
-                "ok",
-                "ok",
-                "failed",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
+              "hint": "Backup · data-protection"
             },
             "missing": {
               "kind": "number",
-              "value": 0,
-              "decimals": 0
+              "value": 0
             },
-            "costIfEnabled": {
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": "2026-09-11T14:05:00.000Z",
+              "detail": "1 d ago"
+            },
+            "sla": {
+              "kind": "percent",
+              "value": 99.99
+            },
+            "costToEnable": {
               "kind": "money",
               "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 612.4,
               "currency": "NZD"
             }
           },
@@ -1100,27 +501,153 @@
                 "key": "backup",
                 "state": "enabled",
                 "required": true,
-                "label": "Azure Backup",
+                "label": "Backup",
                 "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
+                  "provider": "recoveryServicesVault",
                   "vault": "rsv-fixture-dev",
-                  "policy": "DefaultPolicy"
+                  "policy": "DailyPolicy",
+                  "lastRecoveryPoint": "2026-09-11T14:05:00.000Z",
+                  "recoveryPointAgeDays": 1,
+                  "lastBackupStatus": "Completed",
+                  "consecutiveFailures": 0
                 }
               },
               {
                 "key": "replication",
-                "state": "disabled",
+                "state": "enabled",
                 "required": false,
-                "label": "Site Recovery",
+                "label": "Site Recovery replication",
                 "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
-                  "replicationHealth": null
+                  "health": "Normal",
+                  "targetRegion": "australiasoutheast",
+                  "rpoSeconds": 48,
+                  "lastTestFailoverAt": "2026-07-02T03:00:00.000Z",
+                  "policy": "asr-24h-retention"
+                }
+              },
+              {
+                "key": "placement",
+                "state": "enabled",
+                "required": false,
+                "label": "Availability zone / set",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "disk-redundancy",
+                "state": "partial",
+                "required": false,
+                "label": "Disk redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "enabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
+                }
+              }
+            ],
+            "missingRequired": [],
+            "slaPercent": 99.99
+          },
+          "lastRecoveryPointAt": "2026-09-11T14:05:00.000Z"
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dr-08",
+          "name": "vm-dr-08",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 331.9,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dr-08|ok",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dr-08",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "enabled",
+              "label": "Protected",
+              "tone": "good",
+              "hint": "Backup · data-protection"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 0
+            },
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": "2026-09-11T15:00:00.000Z",
+              "detail": "1 d ago"
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 331.9,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "backup",
+                "state": "enabled",
+                "required": true,
+                "label": "Backup",
+                "evidence": {
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "provider": "recoveryServicesVault",
+                  "vault": "rsv-fixture-dev",
+                  "policy": "DailyPolicy",
+                  "lastRecoveryPoint": "2026-09-11T15:00:00.000Z",
+                  "recoveryPointAgeDays": 1,
+                  "lastBackupStatus": "Completed",
+                  "consecutiveFailures": 0
+                }
+              },
+              {
+                "key": "replication",
+                "state": "unknown",
+                "required": false,
+                "label": "Site Recovery replication",
+                "evidence": {
+                  "source": "not-collected"
                 }
               },
               {
@@ -1129,705 +656,317 @@
                 "required": false,
                 "label": "Availability zone / set",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
+                  "source": "resource"
                 }
               },
               {
                 "key": "disk-redundancy",
-                "state": "unknown",
+                "state": "enabled",
                 "required": false,
-                "label": "OS disk redundancy",
+                "label": "Disk redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "enabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
                 }
               }
             ],
-            "missingRequired": [],
-            "slaPercent": null
+            "missingRequired": []
           },
-          "backupRuns": [
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "failed",
-            "failed",
-            "ok",
-            "ok",
-            "failed",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok"
-          ],
-          "lastRecoveryPointAt": "2026-09-11T14:12:00.000Z",
-          "uptimeDays": null,
-          "activeHealthEvents": 0
+          "lastRecoveryPointAt": "2026-09-11T15:00:00.000Z"
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
+          "name": "vm-dev-03",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 298.55,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|ok",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-03",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "enabled",
+              "label": "Protected",
+              "tone": "good",
+              "hint": "Backup · data-protection"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 0
+            },
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": "2026-09-08T14:02:00.000Z",
+              "detail": "4 d ago"
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 298.55,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "backup",
+                "state": "enabled",
+                "required": true,
+                "label": "Backup",
+                "evidence": {
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "provider": "recoveryServicesVault",
+                  "vault": "rsv-fixture-dev",
+                  "policy": "DailyPolicy",
+                  "lastRecoveryPoint": "2026-09-08T14:02:00.000Z",
+                  "recoveryPointAgeDays": 4,
+                  "lastBackupStatus": "Failed",
+                  "consecutiveFailures": 3
+                }
+              },
+              {
+                "key": "replication",
+                "state": "disabled",
+                "required": false,
+                "label": "Site Recovery replication",
+                "evidence": {
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              },
+              {
+                "key": "placement",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Availability zone / set",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "disk-redundancy",
+                "state": "partial",
+                "required": false,
+                "label": "Disk redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "disabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
+                }
+              }
+            ],
+            "missingRequired": []
+          },
+          "lastRecoveryPointAt": "2026-09-08T14:02:00.000Z"
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05",
+          "name": "vm-dev-05",
+          "type": "microsoft.compute/virtualmachines",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 210,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|ok",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "vm-dev-05",
+              "detail": "microsoft.compute/virtualmachines"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "enabled",
+              "label": "Protected",
+              "tone": "good",
+              "hint": "Backup · data-protection"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 0
+            },
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": "2026-09-11T14:10:00.000Z",
+              "detail": "1 d ago"
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 210,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "backup",
+                "state": "enabled",
+                "required": true,
+                "label": "Backup",
+                "evidence": {
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "provider": "recoveryServicesVault",
+                  "vault": "rsv-fixture-dev",
+                  "policy": "DailyPolicy",
+                  "lastRecoveryPoint": "2026-09-11T14:10:00.000Z",
+                  "recoveryPointAgeDays": 1,
+                  "lastBackupStatus": "Completed",
+                  "consecutiveFailures": 0
+                }
+              },
+              {
+                "key": "replication",
+                "state": "disabled",
+                "required": false,
+                "label": "Site Recovery replication",
+                "evidence": {
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              },
+              {
+                "key": "placement",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Availability zone / set",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "disk-redundancy",
+                "state": "partial",
+                "required": false,
+                "label": "Disk redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "enabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
+                }
+              }
+            ],
+            "missingRequired": []
+          },
+          "lastRecoveryPointAt": "2026-09-11T14:10:00.000Z"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07",
           "name": "vm-dev-07",
           "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
+          "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 927.93,
+          "spend30d": 95.4,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|resilience|missing-backup",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-07|ok",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "vm-dev-07",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 16.81,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 16.81
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-08",
-          "name": "vm-dev-08",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 307.89,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-08|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-08",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 16.81,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 16.81
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-09",
-          "name": "vm-dev-09",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 307.89,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-09|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-09",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 16.81,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 16.81
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "unknown",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-10",
-          "name": "vm-dev-10",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 201.57,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-10|resilience|protected",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-10",
-              "detail": "australiasoutheast"
+              "detail": "microsoft.compute/virtualmachines"
             },
             "backup": {
               "kind": "mark",
               "state": "enabled",
-              "label": "On",
+              "label": "Protected",
               "tone": "good",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
+              "hint": "Backup · data-protection"
             },
             "missing": {
               "kind": "number",
-              "value": 0,
-              "decimals": 0
+              "value": 0
             },
-            "costIfEnabled": {
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": "2026-09-06T02:00:00.000Z",
+              "detail": "6 d ago"
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
               "kind": "money",
               "value": null,
               "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 95.4,
+              "currency": "NZD"
             }
           },
           "protection": {
@@ -1837,27 +976,29 @@
                 "key": "backup",
                 "state": "enabled",
                 "required": true,
-                "label": "Azure Backup",
+                "label": "Backup",
                 "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "data-protection",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
+                  "provider": "recoveryServicesVault",
                   "vault": "rsv-fixture-dev",
-                  "policy": "DefaultPolicy"
+                  "policy": "WeeklyPolicy",
+                  "lastRecoveryPoint": "2026-09-06T02:00:00.000Z",
+                  "recoveryPointAgeDays": 6,
+                  "lastBackupStatus": "Completed",
+                  "consecutiveFailures": 0
                 }
               },
               {
                 "key": "replication",
                 "state": "disabled",
                 "required": false,
-                "label": "Site Recovery",
+                "label": "Site Recovery replication",
                 "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
+                  "source": "recovery-services",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 }
               },
               {
@@ -1866,436 +1007,31 @@
                 "required": false,
                 "label": "Availability zone / set",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
+                  "source": "resource"
                 }
               },
               {
                 "key": "disk-redundancy",
-                "state": "unknown",
+                "state": "partial",
                 "required": false,
-                "label": "OS disk redundancy",
+                "label": "Disk redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": null
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "patching",
+                "state": "disabled",
+                "required": false,
+                "label": "Automatic patching",
+                "evidence": {
+                  "source": "resource"
                 }
               }
             ],
-            "missingRequired": [],
-            "slaPercent": null
+            "missingRequired": []
           },
-          "backupRuns": [
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok",
-            "ok"
-          ],
-          "lastRecoveryPointAt": "2026-09-11T14:05:00.000Z",
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11",
-          "name": "vm-dev-11",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 398.14,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-11|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-11",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 469.5,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 469.5
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "enabled",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": "Standard_LRS"
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12",
-          "name": "vm-dev-12",
-          "type": "microsoft.compute/virtualmachines",
-          "location": "australiasoutheast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 991.54,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-12|resilience|missing-backup",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "vm-dev-12",
-              "detail": "australiasoutheast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy",
-              "hint": "Site Recovery not configured (optional)"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Daily backup jobs"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 1,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": 849.64,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "backup",
-                "state": "disabled",
-                "required": true,
-                "label": "Azure Backup",
-                "evidence": {
-                  "source": "data-protection.json.gz",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "vault": null,
-                  "policy": null
-                },
-                "costIfEnabled": 849.64
-              },
-              {
-                "key": "replication",
-                "state": "disabled",
-                "required": false,
-                "label": "Site Recovery",
-                "evidence": {
-                  "source": "recoveryservicesresources",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "replicationHealth": null
-                }
-              },
-              {
-                "key": "placement",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Availability zone / set",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zones": null,
-                  "availabilitySet": false
-                }
-              },
-              {
-                "key": "disk-redundancy",
-                "state": "enabled",
-                "required": false,
-                "label": "OS disk redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "osDiskType": "Standard_LRS"
-                }
-              }
-            ],
-            "missingRequired": [
-              "backup"
-            ],
-            "slaPercent": null
-          },
-          "backupRuns": [
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-          ],
-          "lastRecoveryPointAt": null,
-          "uptimeDays": null,
-          "activeHealthEvents": 0
+          "lastRecoveryPointAt": "2026-09-06T02:00:00.000Z"
         }
       ],
       "omittedCount": 0
@@ -2319,188 +1055,53 @@
           "roleClass": "read"
         },
         {
-          "key": "replication",
-          "label": "Replication",
-          "cell": "mark",
+          "key": "missing",
+          "label": "Missing required",
+          "cell": "number",
+          "priority": 1,
+          "roleClass": "nums"
+        },
+        {
+          "key": "missingList",
+          "label": "Gaps",
+          "cell": "text",
           "priority": 2,
           "roleClass": "read"
         },
         {
-          "key": "runs",
-          "label": "Backup runs (30d)",
-          "cell": "event-strip",
-          "priority": 2,
-          "roleClass": "prim"
-        },
-        {
-          "key": "lastRecovery",
+          "key": "lastRecoveryPoint",
           "label": "Last recovery point",
           "cell": "text",
           "priority": 3,
-          "roleClass": "nums"
+          "roleClass": "read"
         },
         {
-          "key": "missing",
-          "label": "Missing required",
-          "cell": "number",
-          "priority": 3,
-          "roleClass": "nums"
-        },
-        {
-          "key": "costIfEnabled",
-          "label": "Cost to protect",
-          "cell": "money",
+          "key": "sla",
+          "label": "SLA",
+          "cell": "percent",
           "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "costToEnable",
+          "label": "Cost to enable",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "cost",
+          "hint": "Estimated monthly backup cost when not protected"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
           "roleClass": "cost"
         }
       ],
-      "totalCount": 3,
+      "totalCount": 2,
       "rows": [
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-01",
-          "name": "sqldb-dev-01",
-          "type": "microsoft.sql/servers/databases",
-          "location": "australiaeast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 502.53,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-01|resilience|protected",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "sqldb-dev-01",
-              "detail": "sqlsrv-dev-01"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "enabled",
-              "label": "On",
-              "tone": "good",
-              "icon": "shield",
-              "hint": "PITR 7 days"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Automatic backups"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
-            },
-            "missing": {
-              "kind": "number",
-              "value": 0,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "ownerResourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01",
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "pitr-retention",
-                "state": "enabled",
-                "required": true,
-                "label": "Point-in-time restore",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "retentionDays": 7
-                }
-              },
-              {
-                "key": "backup-storage-redundancy",
-                "state": "partial",
-                "required": false,
-                "label": "Backup storage redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "redundancy": "Local"
-                }
-              },
-              {
-                "key": "zone-redundancy",
-                "state": "disabled",
-                "required": false,
-                "label": "Zone redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zoneRedundant": false
-                }
-              },
-              {
-                "key": "long-term-retention",
-                "state": "unknown",
-                "required": false,
-                "label": "Long-term retention",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                }
-              }
-            ],
-            "missingRequired": [],
-            "slaPercent": 99.99
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-02",
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02",
           "name": "sqldb-dev-02",
           "type": "microsoft.sql/servers/databases",
           "location": "australiaeast",
@@ -2508,83 +1109,49 @@
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 9.36,
+          "spend30d": 1120,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-02|resilience|protected",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-02|ok",
           "cells": {
             "resource": {
               "kind": "text",
               "value": "sqldb-dev-02",
-              "detail": "sqlsrv-dev-01"
+              "detail": "microsoft.sql/servers/databases"
             },
             "backup": {
               "kind": "mark",
               "state": "enabled",
-              "label": "On",
+              "label": "Protected",
               "tone": "good",
-              "icon": "shield",
-              "hint": "PITR 7 days"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Automatic backups"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
+              "hint": "Point-in-time restore · resilience-facts"
             },
             "missing": {
               "kind": "number",
-              "value": 0,
-              "decimals": 0
+              "value": 0
             },
-            "costIfEnabled": {
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": 99.995
+            },
+            "costToEnable": {
               "kind": "money",
               "value": null,
               "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 1120,
+              "currency": "NZD"
             }
           },
-          "ownerResourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01",
           "protection": {
             "provider": "azure",
             "capabilities": [
@@ -2594,11 +1161,126 @@
                 "required": true,
                 "label": "Point-in-time restore",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
-                  "retentionDays": 7
+                  "days": 35,
+                  "diffBackupIntervalHours": 12,
+                  "backupStorageRedundancy": null
+                }
+              },
+              {
+                "key": "backup-storage-redundancy",
+                "state": "enabled",
+                "required": false,
+                "label": "Backup storage redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "zone-redundancy",
+                "state": "enabled",
+                "required": false,
+                "label": "Zone redundancy",
+                "evidence": {
+                  "source": "resource"
+                }
+              },
+              {
+                "key": "long-term-retention",
+                "state": "unknown",
+                "required": false,
+                "label": "Long-term retention",
+                "evidence": {
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              },
+              {
+                "key": "geo-replication",
+                "state": "disabled",
+                "required": false,
+                "label": "Geo-replication / failover group",
+                "evidence": {
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                }
+              }
+            ],
+            "missingRequired": [],
+            "slaPercent": 99.995
+          }
+        },
+        {
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01",
+          "name": "sqldb-dev-01",
+          "type": "microsoft.sql/servers/databases",
+          "location": "australiaeast",
+          "subscriptionId": "11111111-2222-4333-8444-555555555555",
+          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+          "companyId": "company-fixture",
+          "currency": "NZD",
+          "spend30d": 503.2,
+          "savingsMax": null,
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01|ok",
+          "cells": {
+            "resource": {
+              "kind": "text",
+              "value": "sqldb-dev-01",
+              "detail": "microsoft.sql/servers/databases"
+            },
+            "backup": {
+              "kind": "mark",
+              "state": "enabled",
+              "label": "Protected",
+              "tone": "good",
+              "hint": "Point-in-time restore · resilience-facts"
+            },
+            "missing": {
+              "kind": "number",
+              "value": 0
+            },
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
+              "kind": "money",
+              "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 503.2,
+              "currency": "NZD"
+            }
+          },
+          "protection": {
+            "provider": "azure",
+            "capabilities": [
+              {
+                "key": "pitr-retention",
+                "state": "enabled",
+                "required": true,
+                "label": "Point-in-time restore",
+                "evidence": {
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "days": 7,
+                  "diffBackupIntervalHours": 12,
+                  "backupStorageRedundancy": null
                 }
               },
               {
@@ -2607,11 +1289,7 @@
                 "required": false,
                 "label": "Backup storage redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "redundancy": "Local"
+                  "source": "resource"
                 }
               },
               {
@@ -2620,11 +1298,7 @@
                 "required": false,
                 "label": "Zone redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zoneRedundant": false
+                  "source": "resource"
                 }
               },
               {
@@ -2633,156 +1307,22 @@
                 "required": false,
                 "label": "Long-term retention",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                }
-              }
-            ],
-            "missingRequired": [],
-            "slaPercent": 99.99
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-03",
-          "name": "sqldb-dev-03",
-          "type": "microsoft.sql/servers/databases",
-          "location": "australiaeast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 18.72,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01/databases/sqldb-dev-03|resilience|protected",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "sqldb-dev-03",
-              "detail": "sqlsrv-dev-01"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "enabled",
-              "label": "On",
-              "tone": "good",
-              "icon": "shield",
-              "hint": "PITR 7 days"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "muted",
-              "icon": "copy"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok",
-                "ok"
-              ],
-              "start": "2026-08-13T00:00:00Z",
-              "label": "Automatic backups"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": "2026-09-11"
-            },
-            "missing": {
-              "kind": "number",
-              "value": 0,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "ownerResourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sqlsrv-dev-01",
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "pitr-retention",
-                "state": "enabled",
-                "required": true,
-                "label": "Point-in-time restore",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "retentionDays": 7
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 }
               },
               {
-                "key": "backup-storage-redundancy",
-                "state": "enabled",
-                "required": false,
-                "label": "Backup storage redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "redundancy": "Zone"
-                }
-              },
-              {
-                "key": "zone-redundancy",
+                "key": "geo-replication",
                 "state": "disabled",
                 "required": false,
-                "label": "Zone redundancy",
+                "label": "Geo-replication / failover group",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "zoneRedundant": false
-                }
-              },
-              {
-                "key": "long-term-retention",
-                "state": "unknown",
-                "required": false,
-                "label": "Long-term retention",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 }
               }
             ],
-            "missingRequired": [],
-            "slaPercent": 99.99
+            "missingRequired": []
           }
         }
       ],
@@ -2807,125 +1347,100 @@
           "roleClass": "read"
         },
         {
-          "key": "replication",
-          "label": "Replication",
-          "cell": "mark",
+          "key": "missing",
+          "label": "Missing required",
+          "cell": "number",
+          "priority": 1,
+          "roleClass": "nums"
+        },
+        {
+          "key": "missingList",
+          "label": "Gaps",
+          "cell": "text",
           "priority": 2,
           "roleClass": "read"
         },
         {
-          "key": "runs",
-          "label": "Backup runs (30d)",
-          "cell": "event-strip",
-          "priority": 2,
-          "roleClass": "prim"
-        },
-        {
-          "key": "lastRecovery",
+          "key": "lastRecoveryPoint",
           "label": "Last recovery point",
           "cell": "text",
           "priority": 3,
-          "roleClass": "nums"
+          "roleClass": "read"
         },
         {
-          "key": "missing",
-          "label": "Missing required",
-          "cell": "number",
-          "priority": 3,
-          "roleClass": "nums"
-        },
-        {
-          "key": "costIfEnabled",
-          "label": "Cost to protect",
-          "cell": "money",
+          "key": "sla",
+          "label": "SLA",
+          "cell": "percent",
           "priority": 4,
+          "roleClass": "nums"
+        },
+        {
+          "key": "costToEnable",
+          "label": "Cost to enable",
+          "cell": "money",
+          "priority": 3,
+          "roleClass": "cost",
+          "hint": "Estimated monthly backup cost when not protected"
+        },
+        {
+          "key": "spend",
+          "label": "30-day spend",
+          "cell": "money",
+          "priority": 2,
           "roleClass": "cost"
         }
       ],
-      "totalCount": 3,
+      "totalCount": 2,
       "rows": [
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev01",
-          "name": "stdev01",
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev01",
+          "name": "stfixturedev01",
           "type": "microsoft.storage/storageaccounts",
           "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 368.89,
+          "spend30d": 369,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev01|resilience|missing-soft-delete",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev01|ok",
           "cells": {
             "resource": {
               "kind": "text",
-              "value": "stdev01",
-              "detail": "australiaeast"
+              "value": "stfixturedev01",
+              "detail": "microsoft.storage/storageaccounts"
             },
             "backup": {
               "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield",
-              "hint": "Soft delete"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "partial",
-              "label": "Partial",
-              "tone": "warn",
-              "icon": "copy",
-              "hint": "Standard_LRS"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
+              "state": "not-applicable",
+              "label": "N/A",
+              "tone": "muted",
+              "hint": "Soft delete · resilience-facts"
             },
             "missing": {
               "kind": "number",
-              "value": 1,
-              "decimals": 0
+              "value": 0
             },
-            "costIfEnabled": {
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
               "kind": "money",
               "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 369,
               "currency": "NZD"
             }
           },
@@ -2934,188 +1449,59 @@
             "capabilities": [
               {
                 "key": "soft-delete",
-                "state": "disabled",
+                "state": "not-applicable",
                 "required": true,
-                "label": "Blob soft delete",
+                "label": "Soft delete",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
-                  "retentionDays": null
+                  "reason": "no-blob-usage"
                 }
               },
               {
                 "key": "versioning",
-                "state": "disabled",
+                "state": "not-applicable",
                 "required": false,
-                "label": "Blob versioning",
+                "label": "Versioning",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "reason": "no-blob-usage"
+                }
+              },
+              {
+                "key": "point-in-time-restore",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Point-in-time restore",
+                "evidence": {
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "reason": "no-blob-usage"
                 }
               },
               {
                 "key": "redundancy",
-                "state": "partial",
+                "state": "disabled",
                 "required": false,
                 "label": "Geo redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "sku": "Standard_LRS"
+                  "source": "resource"
                 }
               },
               {
                 "key": "immutability",
                 "state": "not-applicable",
                 "required": false,
-                "label": "Immutability policy",
+                "label": "Immutability",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                }
-              }
-            ],
-            "missingRequired": [
-              "soft-delete"
-            ]
-          }
-        },
-        {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev02",
-          "name": "stdev02",
-          "type": "microsoft.storage/storageaccounts",
-          "location": "australiaeast",
-          "subscriptionId": "11111111-2222-4333-8444-555555555555",
-          "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
-          "companyId": "company-fixture",
-          "currency": "NZD",
-          "spend30d": 32.23,
-          "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev02|resilience|protected",
-          "cells": {
-            "resource": {
-              "kind": "text",
-              "value": "stdev02",
-              "detail": "australiaeast"
-            },
-            "backup": {
-              "kind": "mark",
-              "state": "enabled",
-              "label": "On",
-              "tone": "good",
-              "icon": "shield",
-              "hint": "Soft delete"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "partial",
-              "label": "Partial",
-              "tone": "warn",
-              "icon": "copy",
-              "hint": "Premium_LRS"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
-            },
-            "missing": {
-              "kind": "number",
-              "value": 0,
-              "decimals": 0
-            },
-            "costIfEnabled": {
-              "kind": "money",
-              "value": null,
-              "currency": "NZD"
-            }
-          },
-          "protection": {
-            "provider": "azure",
-            "capabilities": [
-              {
-                "key": "soft-delete",
-                "state": "enabled",
-                "required": true,
-                "label": "Blob soft delete",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "retentionDays": 7
-                }
-              },
-              {
-                "key": "versioning",
-                "state": "disabled",
-                "required": false,
-                "label": "Blob versioning",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                }
-              },
-              {
-                "key": "redundancy",
-                "state": "partial",
-                "required": false,
-                "label": "Geo redundancy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "sku": "Premium_LRS"
-                }
-              },
-              {
-                "key": "immutability",
-                "state": "not-applicable",
-                "required": false,
-                "label": "Immutability policy",
-                "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resource"
                 }
               }
             ],
@@ -3123,87 +1509,54 @@
           }
         },
         {
-          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev03",
-          "name": "stdev03",
+          "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev02",
+          "name": "stfixturedev02",
           "type": "microsoft.storage/storageaccounts",
           "location": "australiaeast",
           "subscriptionId": "11111111-2222-4333-8444-555555555555",
           "tenantId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
           "companyId": "company-fixture",
           "currency": "NZD",
-          "spend30d": 14.11,
+          "spend30d": 12.4,
           "savingsMax": null,
-          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.storage/storageaccounts/stdev03|resilience|missing-soft-delete",
+          "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev02|ok",
           "cells": {
             "resource": {
               "kind": "text",
-              "value": "stdev03",
-              "detail": "australiaeast"
+              "value": "stfixturedev02",
+              "detail": "microsoft.storage/storageaccounts"
             },
             "backup": {
               "kind": "mark",
-              "state": "disabled",
-              "label": "Off",
-              "tone": "bad",
-              "icon": "shield",
-              "hint": "Soft delete"
-            },
-            "replication": {
-              "kind": "mark",
-              "state": "partial",
-              "label": "Partial",
-              "tone": "warn",
-              "icon": "copy",
-              "hint": "Standard_LRS"
-            },
-            "runs": {
-              "kind": "event-strip",
-              "events": [
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-              ],
-              "start": "2026-08-13T00:00:00Z"
-            },
-            "lastRecovery": {
-              "kind": "text",
-              "value": null
+              "state": "not-applicable",
+              "label": "N/A",
+              "tone": "muted",
+              "hint": "Soft delete · resilience-facts"
             },
             "missing": {
               "kind": "number",
-              "value": 1,
-              "decimals": 0
+              "value": 0
             },
-            "costIfEnabled": {
+            "missingList": {
+              "kind": "text",
+              "value": null
+            },
+            "lastRecoveryPoint": {
+              "kind": "text",
+              "value": null
+            },
+            "sla": {
+              "kind": "percent",
+              "value": null
+            },
+            "costToEnable": {
               "kind": "money",
               "value": null,
+              "currency": "NZD"
+            },
+            "spend": {
+              "kind": "money",
+              "value": 12.4,
               "currency": "NZD"
             }
           },
@@ -3212,54 +1565,63 @@
             "capabilities": [
               {
                 "key": "soft-delete",
-                "state": "disabled",
+                "state": "not-applicable",
                 "required": true,
-                "label": "Blob soft delete",
+                "label": "Soft delete",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
                 },
                 "details": {
-                  "retentionDays": null
+                  "reason": "no-blob-usage"
                 }
               },
               {
                 "key": "versioning",
-                "state": "disabled",
+                "state": "not-applicable",
                 "required": false,
-                "label": "Blob versioning",
+                "label": "Versioning",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "reason": "no-blob-usage"
+                }
+              },
+              {
+                "key": "point-in-time-restore",
+                "state": "not-applicable",
+                "required": false,
+                "label": "Point-in-time restore",
+                "evidence": {
+                  "source": "resilience-facts",
+                  "observedAt": "2026-09-12T01:00:00.000Z"
+                },
+                "details": {
+                  "reason": "no-blob-usage"
                 }
               },
               {
                 "key": "redundancy",
-                "state": "partial",
+                "state": "enabled",
                 "required": false,
                 "label": "Geo redundancy",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
-                },
-                "details": {
-                  "sku": "Standard_LRS"
+                  "source": "resource"
                 }
               },
               {
                 "key": "immutability",
                 "state": "not-applicable",
                 "required": false,
-                "label": "Immutability policy",
+                "label": "Immutability",
                 "evidence": {
-                  "source": "resources.json",
-                  "observedAt": "2026-09-12T01:40:00.000Z"
+                  "source": "resource"
                 }
               }
             ],
-            "missingRequired": [
-              "soft-delete"
-            ]
+            "missingRequired": []
           }
         }
       ],

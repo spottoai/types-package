@@ -48,6 +48,8 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
   providerAccountState?: AwsAccountState;
   cloudAccountId: string;
   cloudAccountName: string;
+  /** Opaque Spotto AWS estate association. Present only for linked AWS account scopes. */
+  awsEstateId?: string;
   /** Azure compatibility field; new provider-neutral consumers use environmentType. */
   subscriptionType?: EnvironmentType;
   status?: string;
