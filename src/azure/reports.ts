@@ -81,8 +81,8 @@ export interface MeterDetail {
   quantity: number;
   /** 12.721536 */
   cost: number;
-  /** 12.721536 */
-  costAmortized: number;
+  /** 12.721536; absent when the meter has no amortized evidence */
+  costAmortized?: number;
   /** cost / quantity = rate per unit */
   unitCost?: number;
 }
