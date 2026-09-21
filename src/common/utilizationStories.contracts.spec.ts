@@ -1,6 +1,8 @@
 import {
   STORY_KEYS,
   STORY_LIMITS,
+  type CapacityDescriptor,
+  type CommitmentBenefit,
   type CommitmentRow,
   type HybridBenefitRow,
   type MetricSparkline,
@@ -108,6 +110,30 @@ const profile: UtilizationProfile = {
   },
   fingerprint: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z|mostly-off',
 };
+const scalableCapacity: CapacityDescriptor = {
+  sku: 'P3v2',
+  tier: 'PremiumV2',
+  units: 3,
+  unitName: 'instances',
+  scaleMode: 'autoscale',
+  scaling: {
+    autoscaleEnabled: true,
+    minimumUnits: 3,
+    defaultUnits: 3,
+    maximumUnits: 10,
+    source: 'Azure Monitor Autoscale',
+  },
+  label: 'PremiumV2 P3v2 · 3 instances · autoscale 3–10',
+};
+const commitmentBenefit: CommitmentBenefit = {
+  benefitId: '/providers/microsoft.capacity/reservationorders/order-fixture/reservations/ri-fixture-d2s',
+  benefitName: 'ri-fixture-d2s',
+  benefitType: 'reservation',
+  status: 'active',
+  expiryDate: '2027-04-30T00:00:00.000Z',
+  daysToExpiry: 230,
+};
+void [scalableCapacity, commitmentBenefit];
 /** Legacy shape without the running profile is still a valid profile (running is optional). */
 const profileWithoutRunning: UtilizationProfile = { ...profile, running: undefined, verdict: 'oversized', scheduleFit: 'insufficient-data' };
 void profileWithoutRunning;
@@ -258,6 +284,16 @@ const commitmentRow: CommitmentRow = {
     coveragePercent: 100,
     benefitTypes: ['savings-plan'],
     benefitNames: ['sp-compute-fixture'],
+    benefits: [
+      {
+        benefitId: '/providers/microsoft.billingbenefits/savingsplanorders/order-fixture/savingsplans/sp-compute-fixture',
+        benefitName: 'sp-compute-fixture',
+        benefitType: 'savings-plan',
+        status: 'active',
+        expiryDate: '2027-08-13T00:00:00.000Z',
+        daysToExpiry: 335,
+      },
+    ],
     coveredCost: 93.05,
     uncoveredCost: 0,
     windowStart: '2026-08-13T00:00:00.000Z',

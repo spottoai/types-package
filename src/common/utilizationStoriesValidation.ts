@@ -24,6 +24,8 @@ import {
   STORY_KEYS,
   STORY_LIMITS,
   type CapacityDescriptor,
+  type CapacityScalingDescriptor,
+  type CommitmentBenefit,
   type CommitmentCoverage,
   type CommitmentRow,
   type EvidenceWindow,
@@ -103,6 +105,7 @@ const PRODUCERS = new Set(['parser', 'strategy']);
 const isNullableNumber = (value: unknown): value is number | null => value === null || isFiniteNumber(value);
 const isOptionalNullableNumber = (value: unknown): boolean => value === undefined || isNullableNumber(value);
 const isNullableString = (value: unknown): value is string | null => value === null || isString(value);
+const isNullableInteger = (value: unknown): value is number | null => value === null || (isFiniteNumber(value) && Number.isInteger(value));
 const isText = (value: unknown): value is string => typeof value === 'string';
 const isOptionalText = (value: unknown): boolean => value === undefined || isText(value);
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
@@ -168,15 +171,44 @@ export const isMetricSparkline = (value: unknown, days?: number): value is Metri
   return isMetricStats(value.stats) && isCount(value.sourcePoints);
 };
 
-export const isCapacityDescriptor = (value: unknown): value is CapacityDescriptor =>
-  isRecord(value) &&
-  isNullableString(value.sku) &&
-  isNullableString(value.tier) &&
-  isNullableNumber(value.units) &&
-  isText(value.unitName) &&
-  isOptionalNullableNumber(value.memoryGB) &&
-  inSet(SCALE_MODES, value.scaleMode) &&
-  isText(value.label);
+export const isCapacityScalingDescriptor = (value: unknown): value is CapacityScalingDescriptor => {
+  if (!isRecord(value) || !(value.autoscaleEnabled === null || isBoolean(value.autoscaleEnabled))) return false;
+  if (
+    !isNullableNumber(value.minimumUnits) ||
+    !isNullableNumber(value.defaultUnits) ||
+    !isNullableNumber(value.maximumUnits) ||
+    !isNullableString(value.source)
+  )
+    return false;
+
+  const minimum = value.minimumUnits;
+  const defaultUnits = value.defaultUnits;
+  const maximum = value.maximumUnits;
+  if ([minimum, defaultUnits, maximum].some(units => units !== null && units < 0)) return false;
+  if (minimum !== null && maximum !== null && minimum > maximum) return false;
+  if (defaultUnits !== null && minimum !== null && defaultUnits < minimum) return false;
+  if (defaultUnits !== null && maximum !== null && defaultUnits > maximum) return false;
+  return true;
+};
+
+export const isCapacityDescriptor = (value: unknown): value is CapacityDescriptor => {
+  if (
+    !isRecord(value) ||
+    !isNullableString(value.sku) ||
+    !isNullableString(value.tier) ||
+    !isNullableNumber(value.units) ||
+    !isText(value.unitName) ||
+    !isOptionalNullableNumber(value.memoryGB) ||
+    !inSet(SCALE_MODES, value.scaleMode) ||
+    !isText(value.label)
+  )
+    return false;
+  if (value.scaling === undefined) return true;
+  if (!isCapacityScalingDescriptor(value.scaling)) return false;
+  if (value.scaling.autoscaleEnabled === true && value.scaleMode !== 'autoscale') return false;
+  if (value.scaling.autoscaleEnabled === false && value.scaleMode !== 'fixed') return false;
+  return true;
+};
 
 const isHourShare = (value: unknown): boolean => isRecord(value) && isNullableNumber(value.runningShare) && isNullableNumber(value.usageMean);
 
@@ -201,6 +233,18 @@ export const isRunningProfile = (value: unknown, days?: number): value is Runnin
 export const isCorroboratedRunningProfile = (value: RunningProfile): boolean =>
   value.basis !== 'metric-presence' || value.corroboration.some(basis => basis !== 'metric-presence');
 
+export const isCommitmentBenefit = (value: unknown): value is CommitmentBenefit =>
+  isRecord(value) &&
+  isNullableString(value.benefitId) &&
+  isNullableString(value.benefitName) &&
+  (value.benefitId !== null || value.benefitName !== null) &&
+  inSet(BENEFIT_TYPES, value.benefitType) &&
+  isNullableString(value.status) &&
+  isNullableString(value.expiryDate) &&
+  (value.expiryDate === null || isDateTime(value.expiryDate)) &&
+  isNullableInteger(value.daysToExpiry) &&
+  (value.expiryDate !== null || value.daysToExpiry === null);
+
 export const isCommitmentCoverage = (value: unknown): value is CommitmentCoverage =>
   isRecord(value) &&
   isNullableNumber(value.coveragePercent) &&
@@ -208,6 +252,7 @@ export const isCommitmentCoverage = (value: unknown): value is CommitmentCoverag
   value.benefitTypes.every(type => inSet(BENEFIT_TYPES, type)) &&
   Array.isArray(value.benefitNames) &&
   value.benefitNames.every(isText) &&
+  (value.benefits === undefined || (Array.isArray(value.benefits) && value.benefits.every(isCommitmentBenefit))) &&
   isNullableNumber(value.coveredCost) &&
   isNullableNumber(value.uncoveredCost) &&
   isDateTime(value.windowStart) &&

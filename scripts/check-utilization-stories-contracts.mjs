@@ -36,8 +36,18 @@ const guards = {
   isResilienceProfileConfig,
 };
 
-assert.deepEqual([...STORY_KEYS], ['oversized-resources', 'right-sku', 'schedule-candidates', 'resilience-recovery', 'hybrid-benefit', 'commitments']);
-assert.deepEqual(STORY_LIMITS, { sectionRows: 1000, sampleRows: 50, windowDays: 30, weeklyGridDays: 7, weeklyGridHours: 24, historyFingerprints: 2000 });
+assert.deepEqual(
+  [...STORY_KEYS],
+  ['oversized-resources', 'right-sku', 'schedule-candidates', 'resilience-recovery', 'hybrid-benefit', 'commitments']
+);
+assert.deepEqual(STORY_LIMITS, {
+  sectionRows: 1000,
+  sampleRows: 50,
+  windowDays: 30,
+  weeklyGridDays: 7,
+  weeklyGridHours: 24,
+  historyFingerprints: 2000,
+});
 
 // ---- Positive: one artifact per story key, validated with and without the expected key.
 const artifacts = {};
@@ -56,7 +66,11 @@ for (const storyKey of STORY_KEYS) {
     assert.equal(section.totalCount, section.rows.length + section.omittedCount);
     for (const row of section.rows) {
       for (const column of section.columns) {
-        assert.equal(row.cells[column.key]?.kind, column.cell, `${storyKey}/${section.resourceType}/${row.name}: cell ${column.key} is a ${column.cell}`);
+        assert.equal(
+          row.cells[column.key]?.kind,
+          column.cell,
+          `${storyKey}/${section.resourceType}/${row.name}: cell ${column.key} is a ${column.cell}`
+        );
       }
       if (row.profile) assert.equal(isUtilizationProfile(row.profile, artifact.window.days), true, `${storyKey}: ${row.name} profile accepted`);
       if (row.protection) assert.equal(isProtectionProfile(row.protection), true, `${storyKey}: ${row.name} protection accepted`);
@@ -78,7 +92,10 @@ for (const storyKey of STORY_KEYS) {
 for (const section of artifacts['schedule-candidates'].sections) {
   for (const row of section.rows) {
     assert.ok(row.profile.running?.weekly, `schedule candidate ${row.name} has a weekly profile`);
-    assert.ok(row.profile.running.basis !== 'metric-presence' || row.profile.running.corroboration.length > 0, `schedule candidate ${row.name} is corroborated`);
+    assert.ok(
+      row.profile.running.basis !== 'metric-presence' || row.profile.running.corroboration.length > 0,
+      `schedule candidate ${row.name} is corroborated`
+    );
     assert.ok(['good', 'fair', 'low'].includes(row.profile.scheduleFit));
   }
 }
@@ -88,7 +105,10 @@ const reportingStories = await readFixture('reporting-stories');
 assert.equal(isReportingStories(reportingStories), true, 'reporting.stories fixture accepted');
 assert.equal(isReportingStories({}), true, 'empty reporting.stories accepted');
 for (const [storyKey, sample] of Object.entries(reportingStories)) {
-  assert.ok(sample.sections.every(section => section.rows.length <= STORY_LIMITS.sampleRows), `${storyKey}: sample bounded`);
+  assert.ok(
+    sample.sections.every(section => section.rows.length <= STORY_LIMITS.sampleRows),
+    `${storyKey}: sample bounded`
+  );
 }
 assert.equal(isUtilizationSignal(await readFixture('utilization-signal')), true, 'utilization signal accepted');
 assert.equal(isUtilizationProfileConfig(await readFixture('utilization-profiles.config')), true, 'utilization profile config accepted');
@@ -96,14 +116,28 @@ assert.equal(isResilienceProfileConfig(await readFixture('resilience-profiles.co
 
 // ---- History fingerprints: derived from the artifacts, bounded and unique per (storyKey, fingerprint).
 const fingerprintRows = STORY_KEYS.flatMap(storyKey =>
-  artifacts[storyKey].sections.flatMap(section => section.rows.map(row => ({ storyKey, resourceId: row.resourceId, fingerprint: row.fingerprint, savingsMax: row.savingsMax })))
+  artifacts[storyKey].sections.flatMap(section =>
+    section.rows.map(row => ({ storyKey, resourceId: row.resourceId, fingerprint: row.fingerprint, savingsMax: row.savingsMax }))
+  )
 );
 const fingerprints = { totalCount: fingerprintRows.length, rows: fingerprintRows, omittedCount: 0 };
 assert.equal(isStoryFingerprintRows(fingerprints), true, 'story fingerprints accepted');
 assert.equal(isStoryFingerprintRows({ totalCount: 0, rows: [], omittedCount: 0 }), true, 'empty story fingerprints accepted');
-assert.equal(isStoryFingerprintRows({ ...fingerprints, rows: [...fingerprintRows, fingerprintRows[0]], totalCount: fingerprintRows.length + 1 }), false, 'duplicate fingerprint rejected');
-assert.equal(isStoryFingerprintRows({ ...fingerprints, rows: [{ ...fingerprintRows[0], storyKey: 'oversized-vms' }] , totalCount: 1 }), false, 'unknown story key rejected');
-assert.equal(isStoryFingerprintRows({ ...fingerprints, rows: [{ ...fingerprintRows[0], savingsMax: 'lots' }], totalCount: 1 }), false, 'non-numeric saving rejected');
+assert.equal(
+  isStoryFingerprintRows({ ...fingerprints, rows: [...fingerprintRows, fingerprintRows[0]], totalCount: fingerprintRows.length + 1 }),
+  false,
+  'duplicate fingerprint rejected'
+);
+assert.equal(
+  isStoryFingerprintRows({ ...fingerprints, rows: [{ ...fingerprintRows[0], storyKey: 'oversized-vms' }], totalCount: 1 }),
+  false,
+  'unknown story key rejected'
+);
+assert.equal(
+  isStoryFingerprintRows({ ...fingerprints, rows: [{ ...fingerprintRows[0], savingsMax: 'lots' }], totalCount: 1 }),
+  false,
+  'non-numeric saving rejected'
+);
 assert.equal(isStoryFingerprintRows({ ...fingerprints, totalCount: fingerprintRows.length + 1 }), false, 'inconsistent bounded counts rejected');
 
 // ---- Resilience facts (Task 9 collection): storage blob-service / SQL retention facts consumed by the resilience story.
@@ -120,7 +154,14 @@ const facts = {
       status: 'collected',
       observedAt: '2026-09-12T01:00:00.000Z',
       requestCount: 2,
-      storage: { blobSoftDelete: { enabled: true, days: 14 }, containerSoftDelete: null, versioning: false, changeFeed: { enabled: false }, pointInTimeRestore: null, managementPolicy: { present: false } },
+      storage: {
+        blobSoftDelete: { enabled: true, days: 14 },
+        containerSoftDelete: null,
+        versioning: false,
+        changeFeed: { enabled: false },
+        pointInTimeRestore: null,
+        managementPolicy: { present: false },
+      },
     },
     {
       resourceId: '/subscriptions/x/resourcegroups/rg-fixture-dev/providers/microsoft.sql/servers/sql-dev-01/databases/sqldb-dev-01',
@@ -138,8 +179,16 @@ assert.equal(isResilienceFactsProjection(facts), true, 'resilience facts accepte
 assert.equal(facts.items.every(isResilienceFactsItem), true, 'resilience facts items accepted');
 assert.equal(isResilienceFactsProjection({ ...facts, source: 'Other' }), false, 'resilience facts: source rejected');
 assert.equal(isResilienceFactsItem({ ...facts.items[0], status: 'done' }), false, 'resilience facts: unknown status rejected');
-assert.equal(isResilienceFactsItem({ ...facts.items[0], storage: { ...facts.items[0].storage, versioning: 'yes' } }), false, 'resilience facts: non-boolean versioning rejected');
-assert.equal(isResilienceFactsItem({ ...facts.items[1], sql: { ...facts.items[1].sql, shortTermRetentionDays: '7' } }), false, 'resilience facts: non-numeric retention rejected');
+assert.equal(
+  isResilienceFactsItem({ ...facts.items[0], storage: { ...facts.items[0].storage, versioning: 'yes' } }),
+  false,
+  'resilience facts: non-boolean versioning rejected'
+);
+assert.equal(
+  isResilienceFactsItem({ ...facts.items[1], sql: { ...facts.items[1].sql, shortTermRetentionDays: '7' } }),
+  false,
+  'resilience facts: non-numeric retention rejected'
+);
 
 // ---- Additive fields are tolerated.
 const additive = clone(artifacts['oversized-resources']);
@@ -199,6 +248,64 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   assert.equal(isStoryArtifact(badProfile, 'right-sku'), false, 'invalid optional right-SKU profile rejected');
 }
 
+// ---- Capacity scaling and commitment inventory detail are optional, additive evidence.
+{
+  const scalable = clone(artifacts['oversized-resources']);
+  const capacity = scalable.sections.flatMap(section => section.rows)[0].profile.capacity;
+  Object.assign(capacity, {
+    units: 3,
+    unitName: 'instances',
+    scaleMode: 'autoscale',
+    scaling: {
+      autoscaleEnabled: true,
+      minimumUnits: 3,
+      defaultUnits: 3,
+      maximumUnits: 10,
+      source: 'Azure Monitor Autoscale',
+    },
+    label: '3 instances · autoscale 3–10',
+  });
+  assert.equal(isStoryArtifact(scalable, 'oversized-resources'), true, 'capacity scaling evidence accepted');
+
+  const contradictoryMode = clone(scalable);
+  contradictoryMode.sections.flatMap(section => section.rows)[0].profile.capacity.scaleMode = 'fixed';
+  assert.equal(isStoryArtifact(contradictoryMode, 'oversized-resources'), false, 'enabled autoscale with fixed mode rejected');
+  const invalidBounds = clone(scalable);
+  invalidBounds.sections.flatMap(section => section.rows)[0].profile.capacity.scaling.minimumUnits = 11;
+  assert.equal(isStoryArtifact(invalidBounds, 'oversized-resources'), false, 'scaling minimum above maximum rejected');
+  const invalidScalingFlag = clone(scalable);
+  invalidScalingFlag.sections.flatMap(section => section.rows)[0].profile.capacity.scaling.autoscaleEnabled = 'yes';
+  assert.equal(isStoryArtifact(invalidScalingFlag, 'oversized-resources'), false, 'non-boolean autoscale flag rejected');
+
+  const commitments = clone(artifacts.commitments);
+  const coveredRow = commitments.sections.flatMap(section => section.rows).find(row => row.coverage.benefitTypes.length > 0);
+  assert.ok(coveredRow, 'covered commitment fixture row present');
+  coveredRow.coverage.benefits = [
+    {
+      benefitId: '/providers/microsoft.capacity/reservationorders/order-fixture/reservations/ri-fixture',
+      benefitName: coveredRow.coverage.benefitNames[0] ?? null,
+      benefitType: coveredRow.coverage.benefitTypes[0],
+      status: 'active',
+      expiryDate: '2027-04-30T00:00:00.000Z',
+      daysToExpiry: 230,
+    },
+  ];
+  assert.equal(isStoryArtifact(commitments, 'commitments'), true, 'per-benefit expiry evidence accepted');
+
+  const invalidExpiry = clone(commitments);
+  const invalidExpiryBenefit = invalidExpiry.sections.flatMap(section => section.rows).find(row => row.coverage.benefits).coverage.benefits[0];
+  invalidExpiryBenefit.expiryDate = 'not-a-date';
+  assert.equal(isStoryArtifact(invalidExpiry, 'commitments'), false, 'malformed benefit expiry rejected');
+  const missingIdentity = clone(commitments);
+  const unidentifiedBenefit = missingIdentity.sections.flatMap(section => section.rows).find(row => row.coverage.benefits).coverage.benefits[0];
+  unidentifiedBenefit.benefitId = null;
+  unidentifiedBenefit.benefitName = null;
+  assert.equal(isStoryArtifact(missingIdentity, 'commitments'), false, 'benefit without an identifier or name rejected');
+  const fractionalDays = clone(commitments);
+  fractionalDays.sections.flatMap(section => section.rows).find(row => row.coverage.benefits).coverage.benefits[0].daysToExpiry = 2.5;
+  assert.equal(isStoryArtifact(fractionalDays, 'commitments'), false, 'fractional days to expiry rejected');
+}
+
 // ---- Summary view (a reader's projection): rows removed, produced counts kept, marked `view: 'summary'`.
 for (const storyKey of STORY_KEYS) {
   const summaryView = { ...clone(artifacts[storyKey]), view: 'summary' };
@@ -232,7 +339,10 @@ const applyOp = (root, [op, path, value]) => {
   const key = path[path.length - 1];
   switch (op) {
     case 'set': {
-      const resolved = value && typeof value === 'object' && '$repeat' in value ? Array.from({ length: value.times }, () => clone(getAt(root, value.$repeat))) : value;
+      const resolved =
+        value && typeof value === 'object' && '$repeat' in value
+          ? Array.from({ length: value.times }, () => clone(getAt(root, value.$repeat)))
+          : value;
       parent[key] = resolved;
       return;
     }
@@ -269,7 +379,14 @@ for (const negative of negatives) {
 
 // Every positive fixture file is exercised (guards against orphaned fixtures).
 const files = (await readdir(fixtureDir)).filter(name => name.endsWith('.json')).map(name => name.replace(/\.json$/, ''));
-const expected = new Set([...STORY_KEYS, 'reporting-stories', 'utilization-signal', 'utilization-profiles.config', 'resilience-profiles.config', 'negatives']);
+const expected = new Set([
+  ...STORY_KEYS,
+  'reporting-stories',
+  'utilization-signal',
+  'utilization-profiles.config',
+  'resilience-profiles.config',
+  'negatives',
+]);
 assert.deepEqual(new Set(files), expected, 'fixture directory contains exactly the known fixtures');
 
 console.log(`utilization stories contracts ok (${STORY_KEYS.length} stories, ${negatives.length} negatives)`);

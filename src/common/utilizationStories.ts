@@ -48,14 +48,30 @@ export interface MetricSparkline {
   sourcePoints: number;
 }
 
+export interface CapacityScalingDescriptor {
+  /** Whether provider-managed autoscaling is currently enabled; null when the producer cannot determine it. */
+  autoscaleEnabled: boolean | null;
+  /** Configured lower bound in the same unit as `CapacityDescriptor.units`. */
+  minimumUnits: number | null;
+  /** Configured default or desired capacity in the same unit as `CapacityDescriptor.units`. */
+  defaultUnits: number | null;
+  /** Configured upper bound in the same unit as `CapacityDescriptor.units`. */
+  maximumUnits: number | null;
+  /** Provider-neutral display source, e.g. "Azure Monitor Autoscale", "AKS Cluster Autoscaler" or "Manual / Fixed Capacity". */
+  source: string | null;
+}
+
 export interface CapacityDescriptor {
   sku: string | null;
   tier: string | null;
+  /** Current observed or configured capacity. */
   units: number | null;
   /** "vCPU" | "vCore" | "DTU" | "instances" | "RU/s" | "units" | "nodes" | ... */
   unitName: string;
   memoryGB?: number | null;
   scaleMode: 'fixed' | 'autoscale' | 'serverless';
+  /** Scaling evidence for resources with variable instance/unit counts; absent on artifacts from older producers. */
+  scaling?: CapacityScalingDescriptor;
   /** Display label, e.g. "4 vCPU · 32 GB RAM". */
   label: string;
 }
@@ -97,10 +113,27 @@ export interface RunningProfile {
   };
 }
 
+export type CommitmentBenefitType = 'reservation' | 'savings-plan';
+
+/** Inventory metadata for one benefit that contributed to the resource's historical coverage window. */
+export interface CommitmentBenefit {
+  benefitId: string | null;
+  benefitName: string | null;
+  benefitType: CommitmentBenefitType;
+  /** Current inventory status at story generation time; null when no inventory match was available. */
+  status: string | null;
+  /** ISO expiry instant/date from the commitment inventory; null when unavailable. */
+  expiryDate: string | null;
+  /** Whole days from story generation to expiry; negative when already expired, null when expiry is unavailable. */
+  daysToExpiry: number | null;
+}
+
 export interface CommitmentCoverage {
   coveragePercent: number | null;
-  benefitTypes: ('reservation' | 'savings-plan')[];
+  benefitTypes: CommitmentBenefitType[];
   benefitNames: string[];
+  /** Per-benefit inventory detail; optional so artifacts from older producers remain valid. */
+  benefits?: CommitmentBenefit[];
   coveredCost: number | null;
   uncoveredCost: number | null;
   windowStart: string;
