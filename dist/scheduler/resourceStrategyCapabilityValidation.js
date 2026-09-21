@@ -90,13 +90,21 @@ function isResourceSchedulingCapabilityProjection(value) {
         ]) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(cadence, [
             'minimumTransitionIntervalMinutes',
+            'minimumAvailableWindowMinutes',
+            'minimumReducedWindowMinutes',
             'maximumChangesPerRollingWindow',
             'maximumReducedDurationMinutes',
             'preferredBillingBoundary',
             'reduceFlexMinutes',
         ]) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(disruption, ['reversibility', 'risk', 'affectedScopeLabel', 'expectedDowntimeMinutes', 'supportedBusyPolicies']) ||
-        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(restore, ['restoreLeadMinutes', 'capacityReturnRisk', 'retryPolicyLabel', 'escalationClass']) ||
+        !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(restore, [
+            'restoreLeadMinutes',
+            'dispatchSafetyIntervalMinutes',
+            'capacityReturnRisk',
+            'retryPolicyLabel',
+            'escalationClass',
+        ]) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(automation, ['ownership', 'conflictingControllerLabels']) ||
         !(0, resourceStrategyValidationShared_1.hasOnlyKeys)(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk'])) {
         return false;
@@ -123,6 +131,8 @@ function isResourceSchedulingCapabilityProjection(value) {
         return false;
     }
     if (!(0, resourceStrategyValidationShared_1.isPositiveInteger)(cadence.minimumTransitionIntervalMinutes) ||
+        (cadence.minimumAvailableWindowMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isPositiveInteger)(cadence.minimumAvailableWindowMinutes)) ||
+        (cadence.minimumReducedWindowMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isPositiveInteger)(cadence.minimumReducedWindowMinutes)) ||
         (cadence.maximumReducedDurationMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isPositiveInteger)(cadence.maximumReducedDurationMinutes)) ||
         (cadence.reduceFlexMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isNonNegativeInteger)(cadence.reduceFlexMinutes)) ||
         (cadence.preferredBillingBoundary !== undefined && !['none', 'start-of-hour'].includes(String(cadence.preferredBillingBoundary)))) {
@@ -157,6 +167,7 @@ function isResourceSchedulingCapabilityProjection(value) {
         }
     }
     if (!(0, resourceStrategyValidationShared_1.isNonNegativeInteger)(restore.restoreLeadMinutes) ||
+        (restore.dispatchSafetyIntervalMinutes !== undefined && !(0, resourceStrategyValidationShared_1.isNonNegativeInteger)(restore.dispatchSafetyIntervalMinutes)) ||
         !['none-known', 'possible', 'high', 'unknown'].includes(String(restore.capacityReturnRisk)) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(restore.retryPolicyLabel) ||
         !(0, resourceStrategyValidationShared_1.isBoundedString)(restore.escalationClass) ||
@@ -165,6 +176,18 @@ function isResourceSchedulingCapabilityProjection(value) {
         typeof dependencies.hasDependencies !== 'boolean' ||
         (dependencies.summary !== undefined && !(0, resourceStrategyValidationShared_1.isBoundedString)(dependencies.summary, 2000)) ||
         (dependencies.mutableIdentityRisk !== undefined && typeof dependencies.mutableIdentityRisk !== 'boolean')) {
+        return false;
+    }
+    const minimumReducedWindowMinutes = cadence.minimumReducedWindowMinutes;
+    const dispatchSafetyIntervalMinutes = restore.dispatchSafetyIntervalMinutes;
+    if (minimumReducedWindowMinutes !== undefined &&
+        dispatchSafetyIntervalMinutes !== undefined &&
+        minimumReducedWindowMinutes < restore.restoreLeadMinutes + dispatchSafetyIntervalMinutes) {
+        return false;
+    }
+    if (minimumReducedWindowMinutes !== undefined &&
+        cost.minimumUsefulReducedMinutes !== undefined &&
+        cost.minimumUsefulReducedMinutes < minimumReducedWindowMinutes) {
         return false;
     }
     if (value.acknowledgement !== undefined) {
