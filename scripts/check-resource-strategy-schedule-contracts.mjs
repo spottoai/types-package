@@ -267,7 +267,12 @@ const capability = {
     retainedMeters: ['Managed disks'],
     commitmentInteraction: 'may-reduce-invoice-saving',
   },
-  cadence: { minimumTransitionIntervalMinutes: 30, maximumReducedDurationMinutes: 10080 },
+  cadence: {
+    minimumTransitionIntervalMinutes: 30,
+    minimumAvailableWindowMinutes: 30,
+    minimumReducedWindowMinutes: 45,
+    maximumReducedDurationMinutes: 10080,
+  },
   disruption: {
     reversibility: 'reversible',
     risk: 'medium',
@@ -276,6 +281,7 @@ const capability = {
   },
   restore: {
     restoreLeadMinutes: 10,
+    dispatchSafetyIntervalMinutes: 15,
     capacityReturnRisk: 'possible',
     retryPolicyLabel: 'Restore retry policy',
     escalationClass: 'resource-availability',
@@ -284,6 +290,30 @@ const capability = {
   dependencies: { hasDependencies: false },
 };
 assert.equal(scheduler.isResourceSchedulingCapabilityProjection(capability), true);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    restore: { ...capability.restore, restoreLeadMinutes: 30 },
+  }),
+  true
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    cadence: { ...capability.cadence, minimumReducedWindowMinutes: 44 },
+    restore: { ...capability.restore, restoreLeadMinutes: 30 },
+  }),
+  false,
+  'the reduced window must cover restore lead plus dispatch safety'
+);
+assert.equal(
+  scheduler.isResourceSchedulingCapabilityProjection({
+    ...capability,
+    cost: { ...capability.cost, minimumUsefulReducedMinutes: 30 },
+  }),
+  false,
+  'the useful reduced-window recommendation cannot be shorter than the hard safety minimum'
+);
 assert.equal(
   scheduler.isResourceSchedulingCapabilityProjection({
     ...capability,

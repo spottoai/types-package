@@ -71,6 +71,8 @@ export interface ResourceSchedulingCapabilityProjection {
   };
   cadence: {
     minimumTransitionIntervalMinutes: number;
+    minimumAvailableWindowMinutes?: number;
+    minimumReducedWindowMinutes?: number;
     maximumChangesPerRollingWindow?: {
       changes: number;
       windowMinutes: number;
@@ -91,6 +93,7 @@ export interface ResourceSchedulingCapabilityProjection {
   };
   restore: {
     restoreLeadMinutes: number;
+    dispatchSafetyIntervalMinutes?: number;
     capacityReturnRisk: 'none-known' | 'possible' | 'high' | 'unknown';
     retryPolicyLabel: string;
     escalationClass: string;
