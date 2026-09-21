@@ -25,11 +25,11 @@
       "mostly-off": 1,
       "no-telemetry": 1,
       "idle": 2,
-      "withSavings": 8
+      "withSavings": 0
     },
     "spend": {
       "total": 4757.75,
-      "savingsMax": 1816.54
+      "savingsMax": 0
     },
     "currency": "NZD"
   },

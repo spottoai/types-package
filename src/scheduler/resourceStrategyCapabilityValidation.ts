@@ -105,13 +105,21 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
     ]) ||
     !hasOnlyKeys(cadence, [
       'minimumTransitionIntervalMinutes',
+      'minimumAvailableWindowMinutes',
+      'minimumReducedWindowMinutes',
       'maximumChangesPerRollingWindow',
       'maximumReducedDurationMinutes',
       'preferredBillingBoundary',
       'reduceFlexMinutes',
     ]) ||
     !hasOnlyKeys(disruption, ['reversibility', 'risk', 'affectedScopeLabel', 'expectedDowntimeMinutes', 'supportedBusyPolicies']) ||
-    !hasOnlyKeys(restore, ['restoreLeadMinutes', 'capacityReturnRisk', 'retryPolicyLabel', 'escalationClass']) ||
+    !hasOnlyKeys(restore, [
+      'restoreLeadMinutes',
+      'dispatchSafetyIntervalMinutes',
+      'capacityReturnRisk',
+      'retryPolicyLabel',
+      'escalationClass',
+    ]) ||
     !hasOnlyKeys(automation, ['ownership', 'conflictingControllerLabels']) ||
     !hasOnlyKeys(dependencies, ['hasDependencies', 'summary', 'mutableIdentityRisk'])
   ) {
@@ -146,6 +154,8 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
   }
   if (
     !isPositiveInteger(cadence.minimumTransitionIntervalMinutes) ||
+    (cadence.minimumAvailableWindowMinutes !== undefined && !isPositiveInteger(cadence.minimumAvailableWindowMinutes)) ||
+    (cadence.minimumReducedWindowMinutes !== undefined && !isPositiveInteger(cadence.minimumReducedWindowMinutes)) ||
     (cadence.maximumReducedDurationMinutes !== undefined && !isPositiveInteger(cadence.maximumReducedDurationMinutes)) ||
     (cadence.reduceFlexMinutes !== undefined && !isNonNegativeInteger(cadence.reduceFlexMinutes)) ||
     (cadence.preferredBillingBoundary !== undefined && !['none', 'start-of-hour'].includes(String(cadence.preferredBillingBoundary)))
@@ -188,6 +198,7 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
   }
   if (
     !isNonNegativeInteger(restore.restoreLeadMinutes) ||
+    (restore.dispatchSafetyIntervalMinutes !== undefined && !isNonNegativeInteger(restore.dispatchSafetyIntervalMinutes)) ||
     !['none-known', 'possible', 'high', 'unknown'].includes(String(restore.capacityReturnRisk)) ||
     !isBoundedString(restore.retryPolicyLabel) ||
     !isBoundedString(restore.escalationClass) ||
@@ -196,6 +207,22 @@ export function isResourceSchedulingCapabilityProjection(value: unknown): value 
     typeof dependencies.hasDependencies !== 'boolean' ||
     (dependencies.summary !== undefined && !isBoundedString(dependencies.summary, 2000)) ||
     (dependencies.mutableIdentityRisk !== undefined && typeof dependencies.mutableIdentityRisk !== 'boolean')
+  ) {
+    return false;
+  }
+  const minimumReducedWindowMinutes = cadence.minimumReducedWindowMinutes;
+  const dispatchSafetyIntervalMinutes = restore.dispatchSafetyIntervalMinutes;
+  if (
+    minimumReducedWindowMinutes !== undefined &&
+    dispatchSafetyIntervalMinutes !== undefined &&
+    minimumReducedWindowMinutes < restore.restoreLeadMinutes + dispatchSafetyIntervalMinutes
+  ) {
+    return false;
+  }
+  if (
+    minimumReducedWindowMinutes !== undefined &&
+    cost.minimumUsefulReducedMinutes !== undefined &&
+    cost.minimumUsefulReducedMinutes < minimumReducedWindowMinutes
   ) {
     return false;
   }

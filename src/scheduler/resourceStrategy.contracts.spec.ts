@@ -65,6 +65,8 @@ const capability = {
   },
   cadence: {
     minimumTransitionIntervalMinutes: 30,
+    minimumAvailableWindowMinutes: 30,
+    minimumReducedWindowMinutes: 45,
     maximumReducedDurationMinutes: 10080,
   },
   disruption: {
@@ -75,6 +77,7 @@ const capability = {
   },
   restore: {
     restoreLeadMinutes: 10,
+    dispatchSafetyIntervalMinutes: 15,
     capacityReturnRisk: 'possible',
     retryPolicyLabel: 'Restore retry policy',
     escalationClass: 'resource-availability',

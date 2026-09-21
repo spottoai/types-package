@@ -23,11 +23,11 @@
       "downsize": 1,
       "consider": 1,
       "modernise": 1,
-      "withSavings": 3
+      "withSavings": 0
     },
     "spend": {
       "total": 1120.95,
-      "savingsMax": 448.79
+      "savingsMax": 0
     },
     "currency": "NZD"
   },
