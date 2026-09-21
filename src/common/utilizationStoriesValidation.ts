@@ -73,6 +73,10 @@ const TELEMETRY_STATUSES = new Set(['collected', 'partial', 'no-series', 'unavai
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
 const BENEFIT_TYPES = new Set(['reservation', 'savings-plan']);
 const SKU_OPTION_KINDS = new Set(['same-shape', 'fits-usage', 'trade-off', 'cross-platform']);
+const SKU_CAPABILITY_SEVERITIES = new Set(['info', 'warning', 'unknown']);
+const SKU_CAPABILITY_BASES = new Set(['sku-capability', 'current-setting', 'active-vcpu-capability', 'unknown']);
+const SKU_CAPABILITY_MATERIALITIES = new Set(['used', 'not-used', 'unknown']);
+const RIGHT_SIZE_ASSESSMENT_STATUSES = new Set(['recommended', 'no-change', 'insufficient-data', 'not-supported']);
 const CAPABILITY_STATES = new Set(['enabled', 'disabled', 'partial', 'unknown', 'not-applicable']);
 const RIGHT_SKU_VERDICTS = new Set(['modernise', 'downsize', 'consider', 'keep']);
 const BACKUP_RUN_STATES = new Set(['ok', 'failed', null]);
@@ -224,6 +228,22 @@ const isVerdictReason = (value: unknown): boolean =>
 export const isSkuOptionSummary = (value: unknown): value is SkuOptionSummary =>
   isRecord(value) && inSet(SKU_OPTION_KINDS, value.kind) && isString(value.label) && isNullableNumber(value.savingsPercent);
 
+const isSkuCapabilityScalar = (value: unknown): boolean => value === null || isText(value) || isFiniteNumber(value) || isBoolean(value);
+
+const isSkuCapabilityValue = (value: unknown): boolean =>
+  isSkuCapabilityScalar(value) || (Array.isArray(value) && value.every(isSkuCapabilityScalar));
+
+const isSkuCapabilityImpact = (value: unknown): boolean =>
+  isRecord(value) &&
+  isString(value.key) &&
+  isOptionalText(value.label) &&
+  inSet(SKU_CAPABILITY_SEVERITIES, value.severity) &&
+  inSet(SKU_CAPABILITY_BASES, value.basis) &&
+  inSet(SKU_CAPABILITY_MATERIALITIES, value.materiality) &&
+  (value.currentValue === undefined || isSkuCapabilityValue(value.currentValue)) &&
+  (value.alternativeValue === undefined || isSkuCapabilityValue(value.alternativeValue)) &&
+  isOptionalText(value.message);
+
 export const isSkuOption = (value: unknown): value is SkuOption =>
   isRecord(value) &&
   inSet(SKU_OPTION_KINDS, value.kind) &&
@@ -236,6 +256,10 @@ export const isSkuOption = (value: unknown): value is SkuOption =>
   isNullableNumber(value.savingsPercent) &&
   isNullableNumber(value.savingsMonthly) &&
   isStringArray(value.lostCapabilities) &&
+  (value.capabilityImpacts === undefined ||
+    (Array.isArray(value.capabilityImpacts) &&
+      value.capabilityImpacts.every(isSkuCapabilityImpact) &&
+      new Set(value.capabilityImpacts.map(impact => (impact as JsonRecord).key)).size === value.capabilityImpacts.length)) &&
   (value.confidence === undefined || inSet(CONFIDENCES, value.confidence));
 
 export const isUtilizationProfile = (value: unknown, days?: number): value is UtilizationProfile => {
@@ -409,10 +433,21 @@ const isStoryRowBase = (value: unknown): value is StoryRowBase =>
 export const isOversizedResourceRow = (value: unknown, days?: number): value is OversizedResourceRow => {
   if (!isStoryRowBase(value)) return false;
   const row = fields(value);
-  return isUtilizationProfile(row.profile, days) && (row.betterSku === undefined || isSkuOptionSummary(row.betterSku));
+  if (!isUtilizationProfile(row.profile, days) || (row.betterSku !== undefined && !isSkuOptionSummary(row.betterSku))) return false;
+  if (row.recommendedOption !== undefined && !isSkuOption(row.recommendedOption)) return false;
+  if (row.rightSizeStatus !== undefined && !inSet(RIGHT_SIZE_ASSESSMENT_STATUSES, row.rightSizeStatus)) return false;
+  const hasRecommendation = row.betterSku !== undefined || row.recommendedOption !== undefined;
+  if (row.rightSizeStatus === 'recommended' && !hasRecommendation) return false;
+  if (row.rightSizeStatus !== undefined && row.rightSizeStatus !== 'recommended' && hasRecommendation) return false;
+  if (row.betterSku !== undefined && row.recommendedOption !== undefined) {
+    const summary = row.betterSku as SkuOptionSummary;
+    const option = row.recommendedOption as SkuOption;
+    if (summary.kind !== option.kind || summary.label !== option.label || !Object.is(summary.savingsPercent, option.savingsPercent)) return false;
+  }
+  return true;
 };
 
-export const isRightSkuRow = (value: unknown): value is RightSkuRow => {
+export const isRightSkuRow = (value: unknown, days?: number): value is RightSkuRow => {
   if (!isStoryRowBase(value)) return false;
   const row = fields(value);
   return (
@@ -423,7 +458,8 @@ export const isRightSkuRow = (value: unknown): value is RightSkuRow => {
     isRecord(row.usage) &&
     isNullableNumber(row.usage.primaryP95) &&
     isNullableNumber(row.usage.secondaryP95) &&
-    inSet(TELEMETRY_STATUSES, row.usage.telemetry)
+    inSet(TELEMETRY_STATUSES, row.usage.telemetry) &&
+    (row.profile === undefined || isUtilizationProfile(row.profile, days))
   );
 };
 
@@ -482,7 +518,7 @@ export const storyRowGuard = (storyKey: string, days?: number): ((row: unknown) 
     case 'oversized-resources':
       return (row: unknown): row is StoryRowBase => isOversizedResourceRow(row, days);
     case 'right-sku':
-      return isRightSkuRow;
+      return (row: unknown): row is StoryRowBase => isRightSkuRow(row, days);
     case 'schedule-candidates':
       return (row: unknown): row is StoryRowBase => isScheduleCandidateRow(row, days);
     case 'resilience-recovery':
@@ -504,8 +540,12 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
   isString(value.currency) &&
   isOptionalText(value.note);
 
+const isStorySectionFinancials = (value: unknown): boolean =>
+  value === undefined || (isRecord(value) && isFiniteNumber(value.spend30d) && isFiniteNumber(value.savingsMax) && isString(value.currency));
+
 export const isStorySection = (value: unknown, storyKey: string, limit: number, days?: number): value is StorySection<StoryRowBase> => {
   if (!isRecord(value) || !isString(value.resourceType) || !isString(value.family)) return false;
+  if (!isStorySectionFinancials(value.financials)) return false;
   if (!Array.isArray(value.columns) || !value.columns.every(isStoryColumn)) return false;
   if (new Set((value.columns as StoryColumn[]).map(column => column.key)).size !== value.columns.length) return false;
   if (!isBoundedRows(value, limit, storyRowGuard(storyKey, days))) return false;
@@ -519,6 +559,7 @@ export const isStorySection = (value: unknown, storyKey: string, limit: number, 
  */
 export const isStorySummarySection = (value: unknown): value is StorySection<StoryRowBase> => {
   if (!isRecord(value) || !isString(value.resourceType) || !isString(value.family)) return false;
+  if (!isStorySectionFinancials(value.financials)) return false;
   if (!Array.isArray(value.columns) || !value.columns.every(isStoryColumn)) return false;
   if (new Set((value.columns as StoryColumn[]).map(column => column.key)).size !== value.columns.length) return false;
   return (
@@ -534,6 +575,9 @@ export const isStorySummarySection = (value: unknown): value is StorySection<Sto
 /** Every row of an artifact belongs to the artifact's scope; a row from another company, tenant or subscription is rejected. */
 export const isRowInScope = (row: StoryRowBase, scope: { companyId: string; tenantId: string; subscriptionId: string }): boolean =>
   row.companyId === scope.companyId && row.tenantId === scope.tenantId && row.subscriptionId === scope.subscriptionId;
+
+const sectionFinancialsMatchCurrency = (sections: StorySection<StoryRowBase>[], currency: string): boolean =>
+  sections.every(section => section.financials === undefined || section.financials.currency === currency);
 
 const isScope = (value: unknown): boolean =>
   isRecord(value) && ['companyId', 'tenantId', 'subscriptionId', 'currency'].every(key => isString(value[key])) && isText(value.displayName);
@@ -556,18 +600,26 @@ export const isStoryArtifact = (value: unknown, storyKey?: StoryKey): value is S
   const days = value.window.days as number;
   const key = value.storyKey as string;
   if (value.view !== undefined && value.view !== 'summary') return false;
-  if (value.view === 'summary') return Array.isArray(value.sections) && value.sections.every(isStorySummarySection);
+  const summaryCurrency = (value.summary as StorySummary).currency;
+  if (value.view === 'summary') {
+    return (
+      Array.isArray(value.sections) &&
+      value.sections.every(isStorySummarySection) &&
+      sectionFinancialsMatchCurrency(value.sections as StorySection<StoryRowBase>[], summaryCurrency)
+    );
+  }
   if (!Array.isArray(value.sections) || !value.sections.every(section => isStorySection(section, key, STORY_LIMITS.sectionRows, days))) return false;
   const scope = value.scope as { companyId: string; tenantId: string; subscriptionId: string };
-  return (value.sections as StorySection<StoryRowBase>[]).every(section => section.rows.every(row => isRowInScope(row, scope)));
+  const sections = value.sections as StorySection<StoryRowBase>[];
+  return sectionFinancialsMatchCurrency(sections, summaryCurrency) && sections.every(section => section.rows.every(row => isRowInScope(row, scope)));
 };
 
 /** Bounded sample embedded in the evidence pack; rows are validated for `storyKey`, window days are not known here. */
-export const isStorySample = (value: unknown, storyKey: StoryKey): value is StorySample<StoryRowBase> =>
-  isRecord(value) &&
-  isStorySummary(value.summary) &&
-  Array.isArray(value.sections) &&
-  value.sections.every(section => isStorySection(section, storyKey, STORY_LIMITS.sampleRows));
+export const isStorySample = (value: unknown, storyKey: StoryKey): value is StorySample<StoryRowBase> => {
+  if (!isRecord(value) || !isStorySummary(value.summary) || !Array.isArray(value.sections)) return false;
+  if (!value.sections.every(section => isStorySection(section, storyKey, STORY_LIMITS.sampleRows))) return false;
+  return sectionFinancialsMatchCurrency(value.sections as StorySection<StoryRowBase>[], (value.summary as StorySummary).currency);
+};
 
 export const isStoryFingerprint = (value: unknown): value is StoryFingerprint =>
   isRecord(value) &&

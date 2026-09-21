@@ -156,6 +156,17 @@ export interface UtilizationSignal {
 
 // ---- Right SKU
 export type SkuOptionKind = 'same-shape' | 'fits-usage' | 'trade-off' | 'cross-platform';
+export type SkuCapabilityValue = string | number | boolean | null | (string | number | boolean | null)[];
+export interface SkuCapabilityImpact {
+  key: string;
+  label?: string;
+  severity: 'info' | 'warning' | 'unknown';
+  basis: 'sku-capability' | 'current-setting' | 'active-vcpu-capability' | 'unknown';
+  materiality: 'used' | 'not-used' | 'unknown';
+  currentValue?: SkuCapabilityValue;
+  alternativeValue?: SkuCapabilityValue;
+  message?: string;
+}
 export interface SkuOption {
   kind: SkuOptionKind;
   /** e.g. "Standard_E8as_v4" */
@@ -169,6 +180,8 @@ export interface SkuOption {
   savingsMonthly: number | null;
   /** Provider capability keys, e.g. "maxDataDiskCount". */
   lostCapabilities: string[];
+  /** Structured form of `lostCapabilities`, including the current and proposed values when known. */
+  capabilityImpacts?: SkuCapabilityImpact[];
   confidence?: 'high' | 'medium' | 'low';
 }
 export interface SkuOptionSummary {
@@ -176,6 +189,7 @@ export interface SkuOptionSummary {
   label: string;
   savingsPercent: number | null;
 }
+export type RightSizeAssessmentStatus = 'recommended' | 'no-change' | 'insufficient-data' | 'not-supported';
 
 // ---- Resilience
 export type CapabilityState = 'enabled' | 'disabled' | 'partial' | 'unknown' | 'not-applicable';
@@ -219,18 +233,7 @@ export const STORY_KEYS: readonly StoryKey[] = [
 // resource type; the typed domain objects on the row (`profile`, `protection`, ...) serve hover
 // detail and the report. A cell whose `kind` differs from its column's `cell` is a contract violation.
 export type StoryCellKind =
-  | 'text'
-  | 'number'
-  | 'money'
-  | 'percent'
-  | 'mark'
-  | 'dot'
-  | 'sparkline'
-  | 'dual'
-  | 'capacity-bar'
-  | 'mix-bar'
-  | 'event-strip'
-  | 'weekly-grid';
+  'text' | 'number' | 'money' | 'percent' | 'mark' | 'dot' | 'sparkline' | 'dual' | 'capacity-bar' | 'mix-bar' | 'event-strip' | 'weekly-grid';
 export type SeriesRole = 'primary' | 'secondary';
 export type StatusTone = 'good' | 'warn' | 'bad' | 'neutral' | 'muted';
 
@@ -353,12 +356,18 @@ export interface StoryRowBase {
 export interface OversizedResourceRow extends StoryRowBase {
   profile: UtilizationProfile;
   betterSku?: SkuOptionSummary;
+  /** Full recommendation evidence for detail/report views; `betterSku` remains the compact list-view projection. */
+  recommendedOption?: SkuOption;
+  /** Distinguishes a real no-change decision from unavailable or unsupported assessment. */
+  rightSizeStatus?: RightSizeAssessmentStatus;
 }
 export interface RightSkuRow extends StoryRowBase {
   current: SkuOption;
   options: SkuOption[];
   verdict: 'modernise' | 'downsize' | 'consider' | 'keep';
   usage: { primaryP95: number | null; secondaryP95: number | null; telemetry: TelemetryStatus };
+  /** Reuses the profile already built for the resource; producers must not recollect it. */
+  profile?: UtilizationProfile;
 }
 export interface ScheduleCandidateRow extends StoryRowBase {
   /** `profile.running.weekly` is always present on schedule candidates. */
@@ -409,11 +418,19 @@ export const STORY_LIMITS = {
   historyFingerprints: 2000,
 } as const;
 
+export interface StorySectionFinancials {
+  /** Totals across the full section, including omitted rows. */
+  spend30d: number;
+  savingsMax: number;
+  currency: string;
+}
+
 /** Reuses ReportBoundedRows<T> (totalCount / rows / omittedCount) from reportEvidence.ts. */
 export interface StorySection<TRow> extends ReportBoundedRows<TRow> {
   resourceType: string;
   family: string;
   columns: StoryColumn[];
+  financials?: StorySectionFinancials;
 }
 /**
  * Column definition for the generic story table. `cell` names the renderer; `priority` drives the responsive

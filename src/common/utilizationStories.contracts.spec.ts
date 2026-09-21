@@ -12,6 +12,9 @@ import {
   type ResilienceRow,
   type RightSkuRow,
   type ScheduleCandidateRow,
+  type RightSizeAssessmentStatus,
+  type SkuCapabilityImpact,
+  type SkuOption,
   type StoryArtifact,
   type StoryCell,
   type StoryColumn,
@@ -19,6 +22,7 @@ import {
   type StoryRowByKey,
   type StorySample,
   type StorySection,
+  type StorySectionFinancials,
   type UtilizationProfile,
   type UtilizationProfileConfig,
   type UtilizationSignal,
@@ -118,6 +122,19 @@ const signal: UtilizationSignal = {
   telemetry: 'collected',
 };
 
+const capabilityImpact: SkuCapabilityImpact = {
+  key: 'maxDataDiskCount',
+  label: 'Data disks',
+  severity: 'info',
+  basis: 'current-setting',
+  materiality: 'not-used',
+  currentValue: 4,
+  alternativeValue: 8,
+  message: 'The proposed size still covers the current VM configuration.',
+};
+const rightSizeStatus: RightSizeAssessmentStatus = 'recommended';
+void rightSizeStatus;
+
 const protection: ProtectionProfile = {
   provider: 'azure',
   capabilities: [
@@ -159,6 +176,7 @@ const columns: StoryColumn[] = [
   { key: 'usage', label: 'Usage (30d)', cell: 'dual', priority: 1, roleClass: 'dual' },
   { key: 'verdict', label: 'Read', cell: 'mark', priority: 1, roleClass: 'read', hint: 'One-word verdict' },
 ];
+const sectionFinancials: StorySectionFinancials = { spend30d: 4000, savingsMax: 600, currency: 'NZD' };
 
 const base = {
   resourceId: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z',
@@ -174,7 +192,26 @@ const base = {
   fingerprint: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z|mostly-off',
   cells,
 };
-const oversizedRow: OversizedResourceRow = { ...base, profile, betterSku: { kind: 'same-shape', label: 'E8as v4', savingsPercent: 13.5 } };
+const recommendedOption: SkuOption = {
+  kind: 'trade-off',
+  sku: 'Standard_E4a_v4',
+  label: 'E4a v4',
+  capacity: { units: 4, memoryGB: 32 },
+  monthlyCost: 600,
+  currency: 'NZD',
+  savingsPercent: 4.5,
+  savingsMonthly: 28.43,
+  lostCapabilities: ['supportsPremiumDisk'],
+  capabilityImpacts: [capabilityImpact],
+  confidence: 'high',
+};
+const oversizedRow: OversizedResourceRow = {
+  ...base,
+  profile,
+  betterSku: { kind: recommendedOption.kind, label: recommendedOption.label, savingsPercent: recommendedOption.savingsPercent },
+  recommendedOption,
+  rightSizeStatus: 'recommended',
+};
 const rightSkuRow: RightSkuRow = {
   ...base,
   current: {
@@ -187,22 +224,10 @@ const rightSkuRow: RightSkuRow = {
     savingsMonthly: null,
     lostCapabilities: [],
   },
-  options: [
-    {
-      kind: 'trade-off',
-      sku: 'Standard_E4a_v4',
-      label: 'E4a v4',
-      capacity: { units: 4, memoryGB: 32 },
-      monthlyCost: 600,
-      currency: 'NZD',
-      savingsPercent: 4.5,
-      savingsMonthly: 28.43,
-      lostCapabilities: ['supportsPremiumDisk'],
-      confidence: 'high',
-    },
-  ],
+  options: [recommendedOption],
   verdict: 'consider',
   usage: { primaryP95: 3.27, secondaryP95: 29.1, telemetry: 'collected' },
+  profile,
 };
 const scheduleRow: ScheduleCandidateRow = { ...base, profile, action: 'stop' };
 const resilienceRow: ResilienceRow = {
@@ -254,6 +279,7 @@ const section: StorySection<OversizedResourceRow> = {
   resourceType: 'microsoft.compute/virtualmachines',
   family: 'compute',
   columns,
+  financials: sectionFinancials,
   totalCount: 11,
   rows: [oversizedRow],
   omittedCount: 10,

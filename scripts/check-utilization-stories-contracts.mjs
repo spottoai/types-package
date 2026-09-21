@@ -149,6 +149,56 @@ additive.sections[0].rows[0].cells.verdict.futureField = 'x';
 additive.sections[0].columns[0].futureField = 'x';
 assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive fields accepted');
 
+// ---- Iteration 3: optional dense-story evidence is validated when present while legacy fixtures remain valid.
+{
+  const oversized = clone(artifacts['oversized-resources']);
+  const rightSku = clone(artifacts['right-sku']);
+  const oversizedRow = oversized.sections.flatMap(section => section.rows)[0];
+  const rightSkuRow = rightSku.sections.flatMap(section => section.rows)[0];
+  const option = rightSkuRow.options[0];
+  option.capabilityImpacts = [
+    {
+      key: 'maxDataDiskCount',
+      label: 'Data disks',
+      severity: 'info',
+      basis: 'current-setting',
+      materiality: 'not-used',
+      currentValue: 4,
+      alternativeValue: 8,
+      message: 'The proposed size still covers the current VM configuration.',
+    },
+  ];
+  oversizedRow.betterSku = { kind: option.kind, label: option.label, savingsPercent: option.savingsPercent };
+  oversizedRow.recommendedOption = option;
+  oversizedRow.rightSizeStatus = 'recommended';
+  oversized.sections[0].financials = { spend30d: 4000, savingsMax: 600, currency: oversized.scope.currency };
+  rightSkuRow.profile = clone(oversizedRow.profile);
+  assert.equal(isStoryArtifact(oversized, 'oversized-resources'), true, 'oversized full recommendation evidence accepted');
+  assert.equal(isStoryArtifact(rightSku, 'right-sku'), true, 'right-SKU utilization profile accepted');
+
+  const badStatus = clone(oversized);
+  badStatus.sections[0].rows[0].rightSizeStatus = 'maybe';
+  assert.equal(isStoryArtifact(badStatus, 'oversized-resources'), false, 'unknown right-size assessment status rejected');
+  const badImpact = clone(oversized);
+  badImpact.sections[0].rows[0].recommendedOption.capabilityImpacts[0].severity = 'critical';
+  assert.equal(isStoryArtifact(badImpact, 'oversized-resources'), false, 'unknown capability impact severity rejected');
+  const badImpactValue = clone(oversized);
+  badImpactValue.sections[0].rows[0].recommendedOption.capabilityImpacts[0].currentValue = { count: 4 };
+  assert.equal(isStoryArtifact(badImpactValue, 'oversized-resources'), false, 'object capability impact value rejected');
+  const mismatchedSummary = clone(oversized);
+  mismatchedSummary.sections[0].rows[0].recommendedOption.label = 'Different target';
+  assert.equal(isStoryArtifact(mismatchedSummary, 'oversized-resources'), false, 'inconsistent recommendation summary rejected');
+  const badFinancials = clone(oversized);
+  badFinancials.sections[0].financials.spend30d = '4000';
+  assert.equal(isStoryArtifact(badFinancials, 'oversized-resources'), false, 'malformed section financials rejected');
+  const wrongFinancialCurrency = clone(oversized);
+  wrongFinancialCurrency.sections[0].financials.currency = 'USD';
+  assert.equal(isStoryArtifact(wrongFinancialCurrency, 'oversized-resources'), false, 'section financial currency mismatch rejected');
+  const badProfile = clone(rightSku);
+  badProfile.sections[0].rows[0].profile.verdict = 'maybe';
+  assert.equal(isStoryArtifact(badProfile, 'right-sku'), false, 'invalid optional right-SKU profile rejected');
+}
+
 // ---- Summary view (a reader's projection): rows removed, produced counts kept, marked `view: 'summary'`.
 for (const storyKey of STORY_KEYS) {
   const summaryView = { ...clone(artifacts[storyKey]), view: 'summary' };
