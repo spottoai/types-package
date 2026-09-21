@@ -8,11 +8,11 @@
         "mostly-off": 1,
         "no-telemetry": 1,
         "idle": 2,
-        "withSavings": 8
+        "withSavings": 0
       },
       "spend": {
         "total": 4757.75,
-        "savingsMax": 1816.54
+        "savingsMax": 0
       },
       "currency": "NZD"
     },
@@ -9387,11 +9387,11 @@
         "downsize": 1,
         "consider": 1,
         "modernise": 1,
-        "withSavings": 3
+        "withSavings": 0
       },
       "spend": {
         "total": 1120.95,
-        "savingsMax": 448.79
+        "savingsMax": 0
       },
       "currency": "NZD"
     },
@@ -9798,11 +9798,11 @@
       "counts": {
         "resources": 3,
         "good": 3,
-        "withSavings": 3
+        "withSavings": 0
       },
       "spend": {
         "total": 917.8,
-        "savingsMax": 644.65
+        "savingsMax": 0
       },
       "currency": "NZD"
     },

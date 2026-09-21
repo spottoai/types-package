@@ -146,7 +146,7 @@ const cells: Record<string, StoryCell> = {
   verdict: { kind: 'mark', state: 'mostly-off', label: 'Mostly off', tone: 'warn', icon: 'moon' },
   betterSku: { kind: 'dot', present: true, tone: 'good', label: 'E8as v4' },
   coverage: { kind: 'percent', value: 100 },
-  spend: { kind: 'money', value: 368.43, currency: 'NZD' },
+  spend: { kind: 'money', value: 368.43, currency: 'NZD', secondaryValue: 342.11, secondaryLabel: 'Amortized' },
   weekly: { kind: 'weekly-grid', timezone: 'Pacific/Auckland', running: [], businessHoursShare: 0.9, offHoursShare: 0.2 },
   runs: { kind: 'event-strip', events: ['ok', 'failed', null], start: '2026-08-13T00:00:00.000Z' },
   tiers: { kind: 'mix-bar', parts: [{ key: 'hot', label: 'Hot', value: 55.7 }], unit: 'GB', total: 55.7 },

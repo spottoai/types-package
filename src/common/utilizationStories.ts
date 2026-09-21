@@ -250,6 +250,10 @@ export interface MoneyCell {
   kind: 'money';
   value: number | null;
   currency: string;
+  /** Optional comparison amount shown below the primary amount, e.g. amortized spend below billed spend. */
+  secondaryValue?: number | null;
+  /** Short display label for `secondaryValue`. */
+  secondaryLabel?: string;
 }
 export interface PercentCell {
   kind: 'percent';
