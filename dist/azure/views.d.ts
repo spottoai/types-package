@@ -341,6 +341,8 @@ export interface AzureResourcePluginItemDetailed {
     computeAlternatives?: ComputeAlternativesInsights;
     /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
     utilizationProfile?: UtilizationProfile;
+    /** Compact utilization verdict shared with the portal row, including the canonical better-SKU summary. */
+    utilizationSignal?: UtilizationSignal;
 }
 export type VmPricePerformanceOsType = 'linux' | 'windows';
 /** Operating system installed on the VM or VM scale set. */

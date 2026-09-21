@@ -254,7 +254,10 @@ export const isStoryCell = (value) => {
         case 'number':
             return isNullableNumber(value.value) && isOptionalText(value.unit) && (value.decimals === undefined || isCount(value.decimals));
         case 'money':
-            return isNullableNumber(value.value) && isString(value.currency);
+            return (isNullableNumber(value.value) &&
+                isString(value.currency) &&
+                (value.secondaryValue === undefined || isNullableNumber(value.secondaryValue)) &&
+                isOptionalText(value.secondaryLabel));
         case 'percent':
             return isNullableNumber(value.value);
         case 'mark':

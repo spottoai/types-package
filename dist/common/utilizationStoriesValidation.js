@@ -269,7 +269,10 @@ const isStoryCell = (value) => {
         case 'number':
             return isNullableNumber(value.value) && isOptionalText(value.unit) && (value.decimals === undefined || (0, validationHelpers_1.isCount)(value.decimals));
         case 'money':
-            return isNullableNumber(value.value) && (0, validationHelpers_1.isString)(value.currency);
+            return (isNullableNumber(value.value) &&
+                (0, validationHelpers_1.isString)(value.currency) &&
+                (value.secondaryValue === undefined || isNullableNumber(value.secondaryValue)) &&
+                isOptionalText(value.secondaryLabel));
         case 'percent':
             return isNullableNumber(value.value);
         case 'mark':
