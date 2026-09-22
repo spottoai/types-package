@@ -117,7 +117,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -342,12 +343,14 @@
               "present": true,
               "tone": "good",
               "label": "D4as v5",
-              "hint": "55.8% cheaper"
+              "hint": "4 vCPU · 16 GB RAM · 56% cheaper"
             },
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -1097,6 +1100,22 @@
             "kind": "fits-usage",
             "label": "D4as v5",
             "savingsPercent": 55.8
+          },
+          "rightSizeStatus": "recommended",
+          "recommendedOption": {
+            "kind": "fits-usage",
+            "sku": "Standard_D4as_v5",
+            "label": "D4as v5",
+            "capacity": {
+              "units": 4,
+              "memoryGB": 16
+            },
+            "monthlyCost": 286.3,
+            "currency": "NZD",
+            "savingsPercent": 55.8,
+            "savingsMonthly": 361.44,
+            "lostCapabilities": [],
+            "confidence": "high"
           }
         },
         {
@@ -1314,7 +1333,9 @@
             "spend": {
               "kind": "money",
               "value": 402.1,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -2053,7 +2074,8 @@
               "windowStart": "2026-08-13",
               "windowEnd": "2026-09-11"
             }
-          }
+          },
+          "rightSizeStatus": "not-supported"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
@@ -2267,12 +2289,14 @@
               "present": true,
               "tone": "good",
               "label": "E2s v5",
-              "hint": "30% cheaper"
+              "hint": "2 vCPU · 16 GB RAM · 30% cheaper"
             },
             "spend": {
               "kind": "money",
               "value": 298.55,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -3008,6 +3032,24 @@
             "kind": "trade-off",
             "label": "E2s v5",
             "savingsPercent": 30
+          },
+          "rightSizeStatus": "recommended",
+          "recommendedOption": {
+            "kind": "trade-off",
+            "sku": "Standard_E2s_v5",
+            "label": "E2s v5",
+            "capacity": {
+              "units": 2,
+              "memoryGB": 16
+            },
+            "monthlyCost": 226.9,
+            "currency": "NZD",
+            "savingsPercent": 30,
+            "savingsMonthly": 97.24,
+            "lostCapabilities": [
+              "2 vCPU"
+            ],
+            "confidence": "high"
           }
         },
         {
@@ -3222,12 +3264,14 @@
               "present": true,
               "tone": "good",
               "label": "D2as v5",
-              "hint": "10.8% cheaper"
+              "hint": "2 vCPU · 8 GB RAM · 11% cheaper"
             },
             "spend": {
               "kind": "money",
               "value": 210,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -3977,6 +4021,22 @@
             "kind": "same-shape",
             "label": "D2as v5",
             "savingsPercent": 10.8
+          },
+          "rightSizeStatus": "recommended",
+          "recommendedOption": {
+            "kind": "same-shape",
+            "sku": "Standard_D2as_v5",
+            "label": "D2as v5",
+            "capacity": {
+              "units": 2,
+              "memoryGB": 8
+            },
+            "monthlyCost": 144.5,
+            "currency": "NZD",
+            "savingsPercent": 10.8,
+            "savingsMonthly": 17.5,
+            "lostCapabilities": [],
+            "confidence": "high"
           }
         },
         {
@@ -4000,7 +4060,7 @@
             "verdict": {
               "kind": "mark",
               "state": "oversized",
-              "label": "Oversized · possible DR standby",
+              "label": "Oversized · Possible DR Standby",
               "tone": "neutral",
               "hint": "Name, tags or configuration suggest a disaster-recovery standby. Confirm before changing."
             },
@@ -4194,7 +4254,9 @@
             "spend": {
               "kind": "money",
               "value": 331.9,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -4930,7 +4992,8 @@
               "confidence": "high"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dr-08|oversized"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06",
@@ -4953,7 +5016,7 @@
             "verdict": {
               "kind": "mark",
               "state": "no-telemetry",
-              "label": "No telemetry",
+              "label": "No Telemetry",
               "tone": "muted",
               "hint": "telemetry-no-series"
             },
@@ -5108,7 +5171,9 @@
             "spend": {
               "kind": "money",
               "value": 187.2,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -5280,7 +5345,8 @@
               "confidence": "low"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|no-telemetry"
-          }
+          },
+          "rightSizeStatus": "insufficient-data"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
@@ -5303,7 +5369,7 @@
             "verdict": {
               "kind": "mark",
               "state": "mostly-off",
-              "label": "Mostly off",
+              "label": "Mostly Off",
               "tone": "warn",
               "hint": "mostly-off"
             },
@@ -5497,7 +5563,9 @@
             "spend": {
               "kind": "money",
               "value": 148.3,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -6228,10 +6296,16 @@
               "confidence": "low"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|mostly-off"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 2190.45,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.network/bastionhosts",
@@ -6301,7 +6375,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -6406,7 +6481,9 @@
             "spend": {
               "kind": "money",
               "value": 212.5,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -6584,10 +6661,16 @@
               "confidence": "low"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-network/providers/microsoft.network/bastionhosts/bas-fixture-dev|idle"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 212.5,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.sql/servers/databases",
@@ -6672,7 +6755,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -6900,7 +6984,9 @@
             "spend": {
               "kind": "money",
               "value": 1120,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -7223,7 +7309,8 @@
               "windowStart": "2026-08-13",
               "windowEnd": "2026-09-11"
             }
-          }
+          },
+          "rightSizeStatus": "not-supported"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01",
@@ -7440,7 +7527,9 @@
             "spend": {
               "kind": "money",
               "value": 503.2,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -7750,10 +7839,16 @@
               "confidence": "high"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01|idle"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1623.2,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.storage/storageaccounts",
@@ -7823,7 +7918,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -7928,7 +8024,9 @@
             "spend": {
               "kind": "money",
               "value": 369,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -8238,10 +8336,16 @@
               "confidence": "high"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev01|oversized"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 369,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.web/serverfarms",
@@ -8326,7 +8430,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -8554,7 +8659,9 @@
             "spend": {
               "kind": "money",
               "value": 244,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -8863,7 +8970,8 @@
               "confidence": "high"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-01|oversized"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-02",
@@ -9080,7 +9188,9 @@
             "spend": {
               "kind": "money",
               "value": 118.6,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -9390,10 +9500,16 @@
               "confidence": "high"
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-02|rebalance"
-          }
+          },
+          "rightSizeStatus": "not-supported"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 362.6,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     }
   ]
 }

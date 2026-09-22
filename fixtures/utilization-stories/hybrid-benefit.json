@@ -98,7 +98,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -132,7 +133,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Datacenter"
+              "detail": "Virtual Machine · Datacenter"
             },
             "vcpu": {
               "kind": "number",
@@ -159,7 +160,7 @@
             "decision": {
               "kind": "mark",
               "state": "worth-getting-quote",
-              "label": "Worth getting quote",
+              "label": "Get Quote",
               "tone": "warn",
               "hint": "Quote licences for 8 vCPU"
             },
@@ -172,7 +173,9 @@
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -220,7 +223,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Datacenter"
+              "detail": "Virtual Machine · Datacenter"
             },
             "vcpu": {
               "kind": "number",
@@ -260,7 +263,9 @@
             "spend": {
               "kind": "money",
               "value": 148.3,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -308,7 +313,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Standard"
+              "detail": "Virtual Machine · Standard"
             },
             "vcpu": {
               "kind": "number",
@@ -335,7 +340,7 @@
             "decision": {
               "kind": "mark",
               "state": "benefit-already-enabled",
-              "label": "Benefit already enabled",
+              "label": "Benefit Enabled",
               "tone": "good",
               "hint": "Azure Hybrid Benefit is already applied"
             },
@@ -348,7 +353,9 @@
             "spend": {
               "kind": "money",
               "value": 402.1,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -376,7 +383,12 @@
           "licenceObservedStableDays": 183
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1162.8,
+        "savingsMax": 199.4,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.sql/servers/databases",
@@ -443,7 +455,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -477,7 +490,7 @@
             "product": {
               "kind": "text",
               "value": "SQL Server",
-              "detail": "sql-database · Standard"
+              "detail": "SQL Database · Standard"
             },
             "vcpu": {
               "kind": "number",
@@ -517,7 +530,9 @@
             "spend": {
               "kind": "money",
               "value": 1120,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -545,7 +560,12 @@
           "licenceObservedStableDays": 183
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1120,
+        "savingsMax": 402.5,
+        "currency": "NZD"
+      }
     }
   ]
 }

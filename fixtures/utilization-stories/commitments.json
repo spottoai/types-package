@@ -106,7 +106,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -328,7 +329,9 @@
             "spend": {
               "kind": "money",
               "value": 402.1,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -559,7 +562,9 @@
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -794,7 +799,9 @@
             "spend": {
               "kind": "money",
               "value": 210,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -821,7 +828,12 @@
           }
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1224.5,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.sql/servers/databases",
@@ -897,7 +909,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -1119,7 +1132,9 @@
             "spend": {
               "kind": "money",
               "value": 1120,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -1146,7 +1161,12 @@
           }
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1120,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     }
   ]
 }

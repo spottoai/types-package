@@ -97,7 +97,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -105,7 +106,7 @@
           "cell": "money",
           "priority": 1,
           "roleClass": "save",
-          "hint": "Estimated by stopping outside business hours (98 of 168 hours)"
+          "hint": "Estimated from the recommendation's validated recurring shutdown window"
         }
       ],
       "totalCount": 3,
@@ -348,7 +349,9 @@
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -1334,7 +1337,9 @@
             "spend": {
               "kind": "money",
               "value": 210,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -2320,7 +2325,9 @@
             "spend": {
               "kind": "money",
               "value": 95.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -3053,7 +3060,12 @@
           "action": "stop"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 917.8,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     }
   ]
 }

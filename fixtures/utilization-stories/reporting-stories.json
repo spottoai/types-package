@@ -100,7 +100,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -325,12 +326,14 @@
                 "present": true,
                 "tone": "good",
                 "label": "D4as v5",
-                "hint": "55.8% cheaper"
+                "hint": "4 vCPU · 16 GB RAM · 56% cheaper"
               },
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -1080,6 +1083,22 @@
               "kind": "fits-usage",
               "label": "D4as v5",
               "savingsPercent": 55.8
+            },
+            "rightSizeStatus": "recommended",
+            "recommendedOption": {
+              "kind": "fits-usage",
+              "sku": "Standard_D4as_v5",
+              "label": "D4as v5",
+              "capacity": {
+                "units": 4,
+                "memoryGB": 16
+              },
+              "monthlyCost": 286.3,
+              "currency": "NZD",
+              "savingsPercent": 55.8,
+              "savingsMonthly": 361.44,
+              "lostCapabilities": [],
+              "confidence": "high"
             }
           },
           {
@@ -1297,7 +1316,9 @@
               "spend": {
                 "kind": "money",
                 "value": 402.1,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -2036,7 +2057,8 @@
                 "windowStart": "2026-08-13",
                 "windowEnd": "2026-09-11"
               }
-            }
+            },
+            "rightSizeStatus": "not-supported"
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03",
@@ -2250,12 +2272,14 @@
                 "present": true,
                 "tone": "good",
                 "label": "E2s v5",
-                "hint": "30% cheaper"
+                "hint": "2 vCPU · 16 GB RAM · 30% cheaper"
               },
               "spend": {
                 "kind": "money",
                 "value": 298.55,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -2991,6 +3015,24 @@
               "kind": "trade-off",
               "label": "E2s v5",
               "savingsPercent": 30
+            },
+            "rightSizeStatus": "recommended",
+            "recommendedOption": {
+              "kind": "trade-off",
+              "sku": "Standard_E2s_v5",
+              "label": "E2s v5",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 16
+              },
+              "monthlyCost": 226.9,
+              "currency": "NZD",
+              "savingsPercent": 30,
+              "savingsMonthly": 97.24,
+              "lostCapabilities": [
+                "2 vCPU"
+              ],
+              "confidence": "high"
             }
           },
           {
@@ -3205,12 +3247,14 @@
                 "present": true,
                 "tone": "good",
                 "label": "D2as v5",
-                "hint": "10.8% cheaper"
+                "hint": "2 vCPU · 8 GB RAM · 11% cheaper"
               },
               "spend": {
                 "kind": "money",
                 "value": 210,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -3960,6 +4004,22 @@
               "kind": "same-shape",
               "label": "D2as v5",
               "savingsPercent": 10.8
+            },
+            "rightSizeStatus": "recommended",
+            "recommendedOption": {
+              "kind": "same-shape",
+              "sku": "Standard_D2as_v5",
+              "label": "D2as v5",
+              "capacity": {
+                "units": 2,
+                "memoryGB": 8
+              },
+              "monthlyCost": 144.5,
+              "currency": "NZD",
+              "savingsPercent": 10.8,
+              "savingsMonthly": 17.5,
+              "lostCapabilities": [],
+              "confidence": "high"
             }
           },
           {
@@ -3983,7 +4043,7 @@
               "verdict": {
                 "kind": "mark",
                 "state": "oversized",
-                "label": "Oversized · possible DR standby",
+                "label": "Oversized · Possible DR Standby",
                 "tone": "neutral",
                 "hint": "Name, tags or configuration suggest a disaster-recovery standby. Confirm before changing."
               },
@@ -4177,7 +4237,9 @@
               "spend": {
                 "kind": "money",
                 "value": 331.9,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -4913,7 +4975,8 @@
                 "confidence": "high"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dr-08|oversized"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06",
@@ -4936,7 +4999,7 @@
               "verdict": {
                 "kind": "mark",
                 "state": "no-telemetry",
-                "label": "No telemetry",
+                "label": "No Telemetry",
                 "tone": "muted",
                 "hint": "telemetry-no-series"
               },
@@ -5091,7 +5154,9 @@
               "spend": {
                 "kind": "money",
                 "value": 187.2,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -5263,7 +5328,8 @@
                 "confidence": "low"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|no-telemetry"
-            }
+            },
+            "rightSizeStatus": "insufficient-data"
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
@@ -5286,7 +5352,7 @@
               "verdict": {
                 "kind": "mark",
                 "state": "mostly-off",
-                "label": "Mostly off",
+                "label": "Mostly Off",
                 "tone": "warn",
                 "hint": "mostly-off"
               },
@@ -5480,7 +5546,9 @@
               "spend": {
                 "kind": "money",
                 "value": 148.3,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -6211,10 +6279,16 @@
                 "confidence": "low"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|mostly-off"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 2190.45,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.network/bastionhosts",
@@ -6284,7 +6358,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -6389,7 +6464,9 @@
               "spend": {
                 "kind": "money",
                 "value": 212.5,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -6567,10 +6644,16 @@
                 "confidence": "low"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-network/providers/microsoft.network/bastionhosts/bas-fixture-dev|idle"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 212.5,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.sql/servers/databases",
@@ -6655,7 +6738,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -6883,7 +6967,9 @@
               "spend": {
                 "kind": "money",
                 "value": 1120,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -7206,7 +7292,8 @@
                 "windowStart": "2026-08-13",
                 "windowEnd": "2026-09-11"
               }
-            }
+            },
+            "rightSizeStatus": "not-supported"
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01",
@@ -7423,7 +7510,9 @@
               "spend": {
                 "kind": "money",
                 "value": 503.2,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -7733,10 +7822,16 @@
                 "confidence": "high"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.sql/servers/sql-fixture-dev/databases/sqldb-dev-01|idle"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1623.2,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.storage/storageaccounts",
@@ -7806,7 +7901,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -7911,7 +8007,9 @@
               "spend": {
                 "kind": "money",
                 "value": 369,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -8221,10 +8319,16 @@
                 "confidence": "high"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-data/providers/microsoft.storage/storageaccounts/stfixturedev01|oversized"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 369,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.web/serverfarms",
@@ -8309,7 +8413,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -8537,7 +8642,9 @@
               "spend": {
                 "kind": "money",
                 "value": 244,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -8846,7 +8953,8 @@
                 "confidence": "high"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-01|oversized"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-02",
@@ -9063,7 +9171,9 @@
               "spend": {
                 "kind": "money",
                 "value": 118.6,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -9373,10 +9483,16 @@
                 "confidence": "high"
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-web/providers/microsoft.web/serverfarms/asp-dev-02|rebalance"
-            }
+            },
+            "rightSizeStatus": "not-supported"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 362.6,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       }
     ]
   },
@@ -9461,7 +9577,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -9532,7 +9649,9 @@
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -9576,6 +9695,744 @@
               "primaryP95": 9.7,
               "secondaryP95": 41,
               "telemetry": "collected"
+            },
+            "profile": {
+              "provider": "azure",
+              "family": "compute",
+              "capacity": {
+                "sku": "Standard_D8s_v5",
+                "tier": "Standard",
+                "units": 8,
+                "unitName": "vCPU",
+                "memoryGB": 32,
+                "scaleMode": "fixed",
+                "label": "8 vCPU · 32 GB RAM"
+              },
+              "runMode": "stop-start",
+              "metrics": [
+                {
+                  "key": "cpu",
+                  "metricName": "Percentage CPU",
+                  "role": "primary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    3.9,
+                    6.7,
+                    5.7,
+                    6.1,
+                    5,
+                    6.4,
+                    5.9,
+                    7.5,
+                    4.3,
+                    3.6,
+                    5,
+                    6.8,
+                    5,
+                    7.2,
+                    5.4,
+                    3.8,
+                    3.6,
+                    5.1,
+                    3.4,
+                    4.2,
+                    6.6,
+                    4.5,
+                    3.5,
+                    6.1,
+                    3.5,
+                    5.9,
+                    3.5,
+                    5.2,
+                    7.1,
+                    5.2
+                  ],
+                  "p95": [
+                    5.3,
+                    9,
+                    7.7,
+                    8.2,
+                    6.8,
+                    8.6,
+                    8,
+                    10.1,
+                    5.8,
+                    4.9,
+                    6.8,
+                    9.2,
+                    6.8,
+                    9.7,
+                    7.3,
+                    5.1,
+                    4.9,
+                    6.9,
+                    4.6,
+                    5.7,
+                    8.9,
+                    6.1,
+                    4.7,
+                    8.2,
+                    4.7,
+                    8,
+                    4.7,
+                    7,
+                    9.6,
+                    7
+                  ],
+                  "max": [
+                    6.6,
+                    11.4,
+                    9.7,
+                    10.4,
+                    8.5,
+                    10.9,
+                    10,
+                    12.8,
+                    7.3,
+                    6.1,
+                    8.5,
+                    11.6,
+                    8.5,
+                    12.2,
+                    9.2,
+                    6.5,
+                    6.1,
+                    8.7,
+                    5.8,
+                    7.1,
+                    11.2,
+                    7.7,
+                    6,
+                    10.4,
+                    6,
+                    10,
+                    6,
+                    8.8,
+                    12.1,
+                    8.8
+                  ],
+                  "stats": {
+                    "average": 5.2,
+                    "median": 6.9,
+                    "p50": 6.9,
+                    "p75": 8.2,
+                    "p90": 9.2,
+                    "p95": 9.7,
+                    "p99": 10.1,
+                    "min": 4.6,
+                    "max": 12.8,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 1.6,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                },
+                {
+                  "key": "memory",
+                  "metricName": "Available Memory Bytes",
+                  "role": "secondary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    28.5,
+                    27.4,
+                    29,
+                    30.9,
+                    30.4,
+                    28.7,
+                    28.5,
+                    29.4,
+                    26.9,
+                    24.3,
+                    27.2,
+                    30.4,
+                    29.5,
+                    29.5,
+                    28.7,
+                    29.5,
+                    25.6,
+                    27.8,
+                    23.8,
+                    26.7,
+                    28.3,
+                    30,
+                    26.3,
+                    26.9,
+                    30.3,
+                    29.1,
+                    25.2,
+                    29.7,
+                    25.3,
+                    28.9
+                  ],
+                  "p95": [
+                    38.5,
+                    37,
+                    39.2,
+                    41.7,
+                    41,
+                    38.7,
+                    38.5,
+                    39.7,
+                    36.3,
+                    32.8,
+                    36.7,
+                    41,
+                    39.8,
+                    39.8,
+                    38.7,
+                    39.8,
+                    34.6,
+                    37.5,
+                    32.1,
+                    36,
+                    38.2,
+                    40.5,
+                    35.5,
+                    36.3,
+                    40.9,
+                    39.3,
+                    34,
+                    40.1,
+                    34.2,
+                    39
+                  ],
+                  "max": [
+                    48.4,
+                    46.6,
+                    49.3,
+                    52.5,
+                    51.7,
+                    48.8,
+                    48.4,
+                    50,
+                    45.7,
+                    41.3,
+                    46.2,
+                    51.7,
+                    50.2,
+                    50.2,
+                    48.8,
+                    50.2,
+                    43.5,
+                    47.3,
+                    40.5,
+                    45.4,
+                    48.1,
+                    51,
+                    44.7,
+                    45.7,
+                    51.5,
+                    49.5,
+                    42.8,
+                    50.5,
+                    43,
+                    49.1
+                  ],
+                  "stats": {
+                    "average": 28.1,
+                    "median": 38.5,
+                    "p50": 38.5,
+                    "p75": 39.8,
+                    "p90": 40.9,
+                    "p95": 41,
+                    "p99": 41.7,
+                    "min": 32.1,
+                    "max": 52.5,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 3.5,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                }
+              ],
+              "running": {
+                "signalMetric": "cpu",
+                "basis": "metric-presence",
+                "corroboration": [
+                  "billing-hours",
+                  "power-state"
+                ],
+                "daily": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "share": 1,
+                "weekly": {
+                  "timezone": "Pacific/Auckland",
+                  "running": [
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ]
+                  ],
+                  "usage": [
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      9,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ],
+                    [
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2,
+                      1.2
+                    ]
+                  ],
+                  "businessHours": {
+                    "runningShare": 1,
+                    "usageMean": 9
+                  },
+                  "offHours": {
+                    "runningShare": 1,
+                    "usageMean": 1.2
+                  }
+                }
+              },
+              "verdict": "oversized",
+              "verdictReasons": [
+                {
+                  "rule": "oversized",
+                  "values": {
+                    "primaryP95": 9.7,
+                    "primaryAverage": 5.2,
+                    "secondaryP95": 41,
+                    "runningShare": 1
+                  }
+                }
+              ],
+              "evidence": [
+                "cpu-low",
+                "memory-low"
+              ],
+              "scheduleFit": "good",
+              "scheduleAction": "stop",
+              "evidenceWindow": {
+                "windowStart": "2026-08-13T00:00:00.000Z",
+                "windowEnd": "2026-09-12T00:00:00.000Z",
+                "days": 30,
+                "sampleCount": 720,
+                "telemetry": "collected",
+                "confidence": "high"
+              },
+              "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-01|oversized",
+              "coverage": {
+                "coveragePercent": 64.6,
+                "benefitTypes": [
+                  "savings-plan"
+                ],
+                "benefitNames": [
+                  "sp-fixture-compute"
+                ],
+                "coveredCost": 395.6,
+                "uncoveredCost": 216.8,
+                "windowStart": "2026-08-13",
+                "windowEnd": "2026-09-11"
+              }
             }
           },
           {
@@ -9636,7 +10493,9 @@
               "spend": {
                 "kind": "money",
                 "value": 298.55,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -9682,6 +10541,730 @@
               "primaryP95": 14.9,
               "secondaryP95": 100,
               "telemetry": "collected"
+            },
+            "profile": {
+              "provider": "azure",
+              "family": "compute",
+              "capacity": {
+                "sku": "Standard_D4s_v5",
+                "tier": "Standard",
+                "units": 4,
+                "unitName": "vCPU",
+                "memoryGB": 16,
+                "scaleMode": "fixed",
+                "label": "4 vCPU · 16 GB RAM"
+              },
+              "runMode": "stop-start",
+              "metrics": [
+                {
+                  "key": "cpu",
+                  "metricName": "Percentage CPU",
+                  "role": "primary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    8.5,
+                    7.1,
+                    10.3,
+                    11.5,
+                    9.2,
+                    10.5,
+                    5.6,
+                    10.8,
+                    7.2,
+                    6.4,
+                    7.6,
+                    9.5,
+                    6.2,
+                    5.5,
+                    6,
+                    9.2,
+                    8.1,
+                    10.3,
+                    6.4,
+                    6.2,
+                    7.1,
+                    10.4,
+                    6.8,
+                    9.7,
+                    11,
+                    8.2,
+                    10.1,
+                    7.9,
+                    6,
+                    6.9
+                  ],
+                  "p95": [
+                    11.5,
+                    9.6,
+                    13.9,
+                    15.5,
+                    12.4,
+                    14.2,
+                    7.6,
+                    14.6,
+                    9.7,
+                    8.6,
+                    10.3,
+                    12.8,
+                    8.4,
+                    7.4,
+                    8.1,
+                    12.4,
+                    10.9,
+                    13.9,
+                    8.6,
+                    8.4,
+                    9.6,
+                    14,
+                    9.2,
+                    13.1,
+                    14.9,
+                    11.1,
+                    13.6,
+                    10.7,
+                    8.1,
+                    9.3
+                  ],
+                  "max": [
+                    14.5,
+                    12.1,
+                    17.5,
+                    19.6,
+                    15.6,
+                    17.8,
+                    9.5,
+                    18.4,
+                    12.2,
+                    10.9,
+                    12.9,
+                    16.2,
+                    10.5,
+                    9.4,
+                    10.2,
+                    15.6,
+                    13.8,
+                    17.5,
+                    10.9,
+                    10.5,
+                    12.1,
+                    17.7,
+                    11.6,
+                    16.5,
+                    18.7,
+                    13.9,
+                    17.2,
+                    13.4,
+                    10.2,
+                    11.7
+                  ],
+                  "stats": {
+                    "average": 8.2,
+                    "median": 10.7,
+                    "p50": 10.7,
+                    "p75": 13.6,
+                    "p90": 14.2,
+                    "p95": 14.9,
+                    "p99": 15.5,
+                    "min": 7.4,
+                    "max": 19.6,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 3.3,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                },
+                {
+                  "key": "memory",
+                  "metricName": "Available Memory Bytes",
+                  "role": "secondary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    86.7,
+                    87.9,
+                    81.6,
+                    81.2,
+                    80,
+                    85.5,
+                    83.6,
+                    87.3,
+                    87.3,
+                    86.3,
+                    83.8,
+                    84.3,
+                    87.3,
+                    80.6,
+                    85.8,
+                    86,
+                    84.6,
+                    87,
+                    83,
+                    81.7,
+                    82.8,
+                    86.2,
+                    80.9,
+                    82.1,
+                    87.6,
+                    81.3,
+                    80.6,
+                    87.4,
+                    83.4,
+                    81.4
+                  ],
+                  "p95": [
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100
+                  ],
+                  "max": [
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100,
+                    100
+                  ],
+                  "stats": {
+                    "average": 84.2,
+                    "median": 100,
+                    "p50": 100,
+                    "p75": 100,
+                    "p90": 100,
+                    "p95": 100,
+                    "p99": 100,
+                    "min": 100,
+                    "max": 100,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 6.5,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                }
+              ],
+              "running": {
+                "signalMetric": "cpu",
+                "basis": "metric-presence",
+                "corroboration": [
+                  "billing-hours",
+                  "power-state"
+                ],
+                "daily": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "share": 1,
+                "weekly": {
+                  "timezone": "Pacific/Auckland",
+                  "running": [
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ]
+                  ],
+                  "usage": [
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      12,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ],
+                    [
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8,
+                      8
+                    ]
+                  ],
+                  "businessHours": {
+                    "runningShare": 1,
+                    "usageMean": 12
+                  },
+                  "offHours": {
+                    "runningShare": 1,
+                    "usageMean": 8
+                  }
+                }
+              },
+              "verdict": "rebalance",
+              "verdictReasons": [
+                {
+                  "rule": "rebalance",
+                  "values": {
+                    "primaryP95": 14.9,
+                    "primaryAverage": 8.2,
+                    "secondaryP95": 100,
+                    "runningShare": 1
+                  }
+                }
+              ],
+              "evidence": [
+                "cpu-low",
+                "memory-high"
+              ],
+              "scheduleFit": "low",
+              "evidenceWindow": {
+                "windowStart": "2026-08-13T00:00:00.000Z",
+                "windowEnd": "2026-09-12T00:00:00.000Z",
+                "days": 30,
+                "sampleCount": 720,
+                "telemetry": "collected",
+                "confidence": "high"
+              },
+              "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-03|rebalance"
             }
           },
           {
@@ -9742,7 +11325,9 @@
               "spend": {
                 "kind": "money",
                 "value": 210,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -9786,10 +11371,753 @@
               "primaryP95": 17,
               "secondaryP95": 49.7,
               "telemetry": "collected"
+            },
+            "profile": {
+              "provider": "azure",
+              "family": "compute",
+              "capacity": {
+                "sku": "Standard_D2s_v5",
+                "tier": "Standard",
+                "units": 2,
+                "unitName": "vCPU",
+                "memoryGB": 8,
+                "scaleMode": "fixed",
+                "label": "2 vCPU · 8 GB RAM"
+              },
+              "runMode": "stop-start",
+              "metrics": [
+                {
+                  "key": "cpu",
+                  "metricName": "Percentage CPU",
+                  "role": "primary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    12.1,
+                    7.3,
+                    11.4,
+                    12.6,
+                    9.4,
+                    9.6,
+                    12.5,
+                    11.7,
+                    7.7,
+                    7.2,
+                    7.3,
+                    9.5,
+                    12.6,
+                    10,
+                    12.6,
+                    11.2,
+                    12.2,
+                    7.3,
+                    11.3,
+                    10.3,
+                    11.4,
+                    9.7,
+                    8,
+                    8.3,
+                    6.7,
+                    8,
+                    9.5,
+                    9.5,
+                    12.4,
+                    8.1
+                  ],
+                  "p95": [
+                    16.3,
+                    9.9,
+                    15.4,
+                    17,
+                    12.7,
+                    13,
+                    16.9,
+                    15.8,
+                    10.4,
+                    9.7,
+                    9.9,
+                    12.8,
+                    17,
+                    13.5,
+                    17,
+                    15.1,
+                    16.5,
+                    9.9,
+                    15.3,
+                    13.9,
+                    15.4,
+                    13.1,
+                    10.8,
+                    11.2,
+                    9,
+                    10.8,
+                    12.8,
+                    12.8,
+                    16.7,
+                    10.9
+                  ],
+                  "max": [
+                    20.6,
+                    12.4,
+                    19.4,
+                    21.4,
+                    16,
+                    16.3,
+                    21.3,
+                    19.9,
+                    13.1,
+                    12.2,
+                    12.4,
+                    16.2,
+                    21.4,
+                    17,
+                    21.4,
+                    19,
+                    20.7,
+                    12.4,
+                    19.2,
+                    17.5,
+                    19.4,
+                    16.5,
+                    13.6,
+                    14.1,
+                    11.4,
+                    13.6,
+                    16.2,
+                    16.2,
+                    21.1,
+                    13.8
+                  ],
+                  "stats": {
+                    "average": 9.9,
+                    "median": 13,
+                    "p50": 13,
+                    "p75": 15.8,
+                    "p90": 16.9,
+                    "p95": 17,
+                    "p99": 17,
+                    "min": 9,
+                    "max": 21.4,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 3.8,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                },
+                {
+                  "key": "memory",
+                  "metricName": "Available Memory Bytes",
+                  "role": "secondary",
+                  "visual": "sparkline",
+                  "unit": "%",
+                  "axisMax": 100,
+                  "axisMaxSource": "config",
+                  "start": "2026-08-13T00:00:00.000Z",
+                  "bucket": "P1D",
+                  "avg": [
+                    31.9,
+                    36.7,
+                    32.1,
+                    36.8,
+                    32.5,
+                    29.5,
+                    36,
+                    34.6,
+                    29.5,
+                    33.4,
+                    33.3,
+                    33.1,
+                    32.1,
+                    31,
+                    30.8,
+                    34,
+                    33.3,
+                    30.4,
+                    35.5,
+                    34,
+                    36.9,
+                    36.4,
+                    33.8,
+                    34.6,
+                    33.8,
+                    30,
+                    32.3,
+                    34.9,
+                    34,
+                    30.3
+                  ],
+                  "p95": [
+                    43.1,
+                    49.5,
+                    43.3,
+                    49.7,
+                    43.9,
+                    39.8,
+                    48.6,
+                    46.7,
+                    39.8,
+                    45.1,
+                    45,
+                    44.7,
+                    43.3,
+                    41.9,
+                    41.6,
+                    45.9,
+                    45,
+                    41,
+                    47.9,
+                    45.9,
+                    49.8,
+                    49.1,
+                    45.6,
+                    46.7,
+                    45.6,
+                    40.5,
+                    43.6,
+                    47.1,
+                    45.9,
+                    40.9
+                  ],
+                  "max": [
+                    54.2,
+                    62.4,
+                    54.6,
+                    62.6,
+                    55.3,
+                    50.2,
+                    61.2,
+                    58.8,
+                    50.2,
+                    56.8,
+                    56.6,
+                    56.3,
+                    54.6,
+                    52.7,
+                    52.4,
+                    57.8,
+                    56.6,
+                    51.7,
+                    60.4,
+                    57.8,
+                    62.7,
+                    61.9,
+                    57.5,
+                    58.8,
+                    57.5,
+                    51,
+                    54.9,
+                    59.3,
+                    57.8,
+                    51.5
+                  ],
+                  "stats": {
+                    "average": 33.2,
+                    "median": 45,
+                    "p50": 45,
+                    "p75": 46.7,
+                    "p90": 49.1,
+                    "p95": 49.7,
+                    "p99": 49.8,
+                    "min": 39.8,
+                    "max": 62.7,
+                    "frequency": 60,
+                    "trend": 0,
+                    "variance": 4.7,
+                    "count": 720,
+                    "totalDataPoints": 720,
+                    "runningDataPoints": 720,
+                    "nonRunningDataPoints": 0,
+                    "runningTimePercentage": 100,
+                    "longestRunningStreak": 720,
+                    "longestDowntimeStreak": 0,
+                    "averageUptimeStreak": 720,
+                    "averageDowntimeStreak": 0
+                  },
+                  "sourcePoints": 720
+                }
+              ],
+              "running": {
+                "signalMetric": "cpu",
+                "basis": "metric-presence",
+                "corroboration": [
+                  "billing-hours",
+                  "power-state"
+                ],
+                "daily": [
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1,
+                  1
+                ],
+                "share": 1,
+                "weekly": {
+                  "timezone": "Pacific/Auckland",
+                  "running": [
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ],
+                    [
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1,
+                      1
+                    ]
+                  ],
+                  "usage": [
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      14,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ],
+                    [
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5,
+                      1.5
+                    ]
+                  ],
+                  "businessHours": {
+                    "runningShare": 1,
+                    "usageMean": 14
+                  },
+                  "offHours": {
+                    "runningShare": 1,
+                    "usageMean": 1.5
+                  }
+                }
+              },
+              "verdict": "oversized",
+              "verdictReasons": [
+                {
+                  "rule": "oversized",
+                  "values": {
+                    "primaryP95": 17,
+                    "primaryAverage": 9.9,
+                    "secondaryP95": 49.7,
+                    "runningShare": 1
+                  }
+                }
+              ],
+              "evidence": [
+                "cpu-low",
+                "quiet-off-hours"
+              ],
+              "scheduleFit": "good",
+              "scheduleAction": "stop",
+              "evidenceWindow": {
+                "windowStart": "2026-08-13T00:00:00.000Z",
+                "windowEnd": "2026-09-12T00:00:00.000Z",
+                "days": 30,
+                "sampleCount": 720,
+                "telemetry": "collected",
+                "confidence": "high"
+              },
+              "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-05|oversized",
+              "coverage": {
+                "coveragePercent": 100,
+                "benefitTypes": [
+                  "reservation"
+                ],
+                "benefitNames": [
+                  "ri-fixture-d2s"
+                ],
+                "coveredCost": 210,
+                "uncoveredCost": 0,
+                "windowStart": "2026-08-13",
+                "windowEnd": "2026-09-11"
+              }
             }
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1120.95,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       }
     ]
   },
@@ -9874,7 +12202,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -9882,7 +12211,7 @@
             "cell": "money",
             "priority": 1,
             "roleClass": "save",
-            "hint": "Estimated by stopping outside business hours (98 of 168 hours)"
+            "hint": "Estimated from the recommendation's validated recurring shutdown window"
           }
         ],
         "totalCount": 3,
@@ -10125,7 +12454,9 @@
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -11111,7 +13442,9 @@
               "spend": {
                 "kind": "money",
                 "value": 210,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -12097,7 +14430,9 @@
               "spend": {
                 "kind": "money",
                 "value": 95.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -12830,7 +15165,12 @@
             "action": "stop"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 917.8,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       }
     ]
   },
@@ -12908,7 +15248,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           }
         ],
         "totalCount": 8,
@@ -12962,7 +15303,9 @@
               "spend": {
                 "kind": "money",
                 "value": 402.1,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13085,7 +15428,9 @@
               "spend": {
                 "kind": "money",
                 "value": 187.2,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13199,7 +15544,9 @@
               "spend": {
                 "kind": "money",
                 "value": 148.3,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13323,7 +15670,9 @@
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13450,7 +15799,9 @@
               "spend": {
                 "kind": "money",
                 "value": 331.9,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13570,7 +15921,9 @@
               "spend": {
                 "kind": "money",
                 "value": 298.55,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13691,7 +16044,9 @@
               "spend": {
                 "kind": "money",
                 "value": 210,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13812,7 +16167,9 @@
               "spend": {
                 "kind": "money",
                 "value": 95.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -13884,7 +16241,12 @@
             "lastRecoveryPointAt": "2026-09-06T02:00:00.000Z"
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 2285.85,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.sql/servers/databases",
@@ -13945,7 +16307,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           }
         ],
         "totalCount": 2,
@@ -13999,7 +16362,9 @@
               "spend": {
                 "kind": "money",
                 "value": 1120,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -14112,7 +16477,9 @@
               "spend": {
                 "kind": "money",
                 "value": 503.2,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -14176,7 +16543,12 @@
             }
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1623.2,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.storage/storageaccounts",
@@ -14237,7 +16609,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           }
         ],
         "totalCount": 2,
@@ -14291,7 +16664,9 @@
               "spend": {
                 "kind": "money",
                 "value": 369,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -14420,7 +16795,9 @@
               "spend": {
                 "kind": "money",
                 "value": 12.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               }
             },
             "protection": {
@@ -14501,7 +16878,12 @@
             }
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 381.4,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       }
     ]
   },
@@ -14587,7 +16969,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -14621,7 +17004,7 @@
               "product": {
                 "kind": "text",
                 "value": "Windows Server",
-                "detail": "virtual-machine · Datacenter"
+                "detail": "Virtual Machine · Datacenter"
               },
               "vcpu": {
                 "kind": "number",
@@ -14648,7 +17031,7 @@
               "decision": {
                 "kind": "mark",
                 "state": "worth-getting-quote",
-                "label": "Worth getting quote",
+                "label": "Get Quote",
                 "tone": "warn",
                 "hint": "Quote licences for 8 vCPU"
               },
@@ -14661,7 +17044,9 @@
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -14709,7 +17094,7 @@
               "product": {
                 "kind": "text",
                 "value": "Windows Server",
-                "detail": "virtual-machine · Datacenter"
+                "detail": "Virtual Machine · Datacenter"
               },
               "vcpu": {
                 "kind": "number",
@@ -14749,7 +17134,9 @@
               "spend": {
                 "kind": "money",
                 "value": 148.3,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -14797,7 +17184,7 @@
               "product": {
                 "kind": "text",
                 "value": "Windows Server",
-                "detail": "virtual-machine · Standard"
+                "detail": "Virtual Machine · Standard"
               },
               "vcpu": {
                 "kind": "number",
@@ -14824,7 +17211,7 @@
               "decision": {
                 "kind": "mark",
                 "state": "benefit-already-enabled",
-                "label": "Benefit already enabled",
+                "label": "Benefit Enabled",
                 "tone": "good",
                 "hint": "Azure Hybrid Benefit is already applied"
               },
@@ -14837,7 +17224,9 @@
               "spend": {
                 "kind": "money",
                 "value": 402.1,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -14865,7 +17254,12 @@
             "licenceObservedStableDays": 183
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1162.8,
+          "savingsMax": 199.4,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.sql/servers/databases",
@@ -14932,7 +17326,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -14966,7 +17361,7 @@
               "product": {
                 "kind": "text",
                 "value": "SQL Server",
-                "detail": "sql-database · Standard"
+                "detail": "SQL Database · Standard"
               },
               "vcpu": {
                 "kind": "number",
@@ -15006,7 +17401,9 @@
               "spend": {
                 "kind": "money",
                 "value": 1120,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -15034,7 +17431,12 @@
             "licenceObservedStableDays": 183
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1120,
+          "savingsMax": 402.5,
+          "currency": "NZD"
+        }
       }
     ]
   },
@@ -15128,7 +17530,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -15350,7 +17753,9 @@
               "spend": {
                 "kind": "money",
                 "value": 402.1,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -15581,7 +17986,9 @@
               "spend": {
                 "kind": "money",
                 "value": 612.4,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -15816,7 +18223,9 @@
               "spend": {
                 "kind": "money",
                 "value": 210,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -15843,7 +18252,12 @@
             }
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1224.5,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       },
       {
         "resourceType": "microsoft.sql/servers/databases",
@@ -15919,7 +18333,8 @@
             "label": "30-day spend",
             "cell": "money",
             "priority": 2,
-            "roleClass": "cost"
+            "roleClass": "cost",
+            "hint": "Billed amount; amortized amount is shown below when available"
           },
           {
             "key": "savings",
@@ -16141,7 +18556,9 @@
               "spend": {
                 "kind": "money",
                 "value": 1120,
-                "currency": "NZD"
+                "currency": "NZD",
+                "secondaryValue": null,
+                "secondaryLabel": "Amortized"
               },
               "savings": {
                 "kind": "money",
@@ -16168,7 +18585,12 @@
             }
           }
         ],
-        "omittedCount": 0
+        "omittedCount": 0,
+        "financials": {
+          "spend30d": 1120,
+          "savingsMax": 0,
+          "currency": "NZD"
+        }
       }
     ]
   }
