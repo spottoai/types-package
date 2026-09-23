@@ -160,7 +160,7 @@
             "decision": {
               "kind": "mark",
               "state": "worth-getting-quote",
-              "label": "Get Quote",
+              "label": "Get a quote",
               "tone": "warn",
               "hint": "Quote licences for 8 vCPU"
             },
@@ -250,7 +250,7 @@
             "decision": {
               "kind": "mark",
               "state": "payg-likely-preferable",
-              "label": "Payg likely preferable",
+              "label": "PAYG likely preferable",
               "tone": "neutral",
               "hint": "Runs too few hours for licences to pay back"
             },

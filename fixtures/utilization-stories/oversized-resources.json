@@ -32,7 +32,7 @@
       "savingsMax": 0
     },
     "currency": "NZD",
-    "actionable": 10
+    "actionable": 8
   },
   "sections": [
     {
@@ -104,7 +104,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "betterSku",
@@ -5375,7 +5375,8 @@
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|no-telemetry"
           },
-          "rightSizeStatus": "insufficient-data"
+          "rightSizeStatus": "insufficient-data",
+          "actionable": false
         },
         {
           "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
@@ -6326,7 +6327,8 @@
             },
             "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|mostly-off"
           },
-          "rightSizeStatus": "not-supported"
+          "rightSizeStatus": "not-supported",
+          "actionable": false
         }
       ],
       "omittedCount": 0,
@@ -6390,7 +6392,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "betterSku",
@@ -6770,7 +6772,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "betterSku",
@@ -7933,7 +7935,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "betterSku",
@@ -8446,7 +8448,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "betterSku",

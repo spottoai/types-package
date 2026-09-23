@@ -15,7 +15,7 @@
         "savingsMax": 0
       },
       "currency": "NZD",
-      "actionable": 10
+      "actionable": 8
     },
     "sections": [
       {
@@ -87,7 +87,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "betterSku",
@@ -5358,7 +5358,8 @@
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-06|no-telemetry"
             },
-            "rightSizeStatus": "insufficient-data"
+            "rightSizeStatus": "insufficient-data",
+            "actionable": false
           },
           {
             "resourceId": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04",
@@ -6309,7 +6310,8 @@
               },
               "fingerprint": "/subscriptions/11111111-2222-4333-8444-555555555555/resourcegroups/rg-fixture-dev/providers/microsoft.compute/virtualmachines/vm-dev-04|mostly-off"
             },
-            "rightSizeStatus": "not-supported"
+            "rightSizeStatus": "not-supported",
+            "actionable": false
           }
         ],
         "omittedCount": 0,
@@ -6373,7 +6375,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "betterSku",
@@ -6753,7 +6755,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "betterSku",
@@ -7916,7 +7918,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "betterSku",
@@ -8429,7 +8431,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "betterSku",
@@ -12253,7 +12255,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
           },
           {
             "key": "spend",
@@ -15335,7 +15337,7 @@
                 "state": "disabled",
                 "label": "Not protected",
                 "tone": "bad",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -15460,7 +15462,7 @@
                 "state": "disabled",
                 "label": "Not protected",
                 "tone": "bad",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -15576,7 +15578,7 @@
                 "state": "disabled",
                 "label": "Not protected",
                 "tone": "bad",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -15701,7 +15703,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -15830,7 +15832,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -15952,7 +15954,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -16075,7 +16077,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -16198,7 +16200,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Backup · data-protection"
+                "hint": "Backup · from Azure Backup"
               },
               "missing": {
                 "kind": "number",
@@ -16394,7 +16396,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Point-in-time restore · resilience-facts"
+                "hint": "Point-in-time restore · from resource settings"
               },
               "missing": {
                 "kind": "number",
@@ -16509,7 +16511,7 @@
                 "state": "enabled",
                 "label": "Protected",
                 "tone": "good",
-                "hint": "Point-in-time restore · resilience-facts"
+                "hint": "Point-in-time restore · from resource settings"
               },
               "missing": {
                 "kind": "number",
@@ -16696,7 +16698,7 @@
                 "state": "not-applicable",
                 "label": "N/A",
                 "tone": "muted",
-                "hint": "Soft delete · resilience-facts"
+                "hint": "Soft delete · from resource settings"
               },
               "missing": {
                 "kind": "number",
@@ -16827,7 +16829,7 @@
                 "state": "not-applicable",
                 "label": "N/A",
                 "tone": "muted",
-                "hint": "Soft delete · resilience-facts"
+                "hint": "Soft delete · from resource settings"
               },
               "missing": {
                 "kind": "number",
@@ -17089,7 +17091,7 @@
               "decision": {
                 "kind": "mark",
                 "state": "worth-getting-quote",
-                "label": "Get Quote",
+                "label": "Get a quote",
                 "tone": "warn",
                 "hint": "Quote licences for 8 vCPU"
               },
@@ -17179,7 +17181,7 @@
               "decision": {
                 "kind": "mark",
                 "state": "payg-likely-preferable",
-                "label": "Payg likely preferable",
+                "label": "PAYG likely preferable",
                 "tone": "neutral",
                 "hint": "Runs too few hours for licences to pay back"
               },
@@ -17527,10 +17529,11 @@
           },
           {
             "key": "coverage",
-            "label": "Coverage",
+            "label": "Historical coverage",
             "cell": "percent",
             "priority": 1,
-            "roleClass": "nums"
+            "roleClass": "nums",
+            "hint": "Share of the last 30 days' eligible usage that any reservation or savings plan covered, including ones that have since ended; the resource page shows coverage by benefits active today"
           },
           {
             "key": "benefits",
@@ -18330,10 +18333,11 @@
           },
           {
             "key": "coverage",
-            "label": "Coverage",
+            "label": "Historical coverage",
             "cell": "percent",
             "priority": 1,
-            "roleClass": "nums"
+            "roleClass": "nums",
+            "hint": "Share of the last 30 days' eligible usage that any reservation or savings plan covered, including ones that have since ended; the resource page shows coverage by benefits active today"
           },
           {
             "key": "benefits",

@@ -90,7 +90,7 @@
           "cell": "percent",
           "priority": 3,
           "roleClass": "nums",
-          "hint": "Share of the window's eligible usage covered by a reservation or savings plan"
+          "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
         },
         {
           "key": "spend",

@@ -45,10 +45,11 @@
         },
         {
           "key": "coverage",
-          "label": "Coverage",
+          "label": "Historical coverage",
           "cell": "percent",
           "priority": 1,
-          "roleClass": "nums"
+          "roleClass": "nums",
+          "hint": "Share of the last 30 days' eligible usage that any reservation or savings plan covered, including ones that have since ended; the resource page shows coverage by benefits active today"
         },
         {
           "key": "benefits",
@@ -848,10 +849,11 @@
         },
         {
           "key": "coverage",
-          "label": "Coverage",
+          "label": "Historical coverage",
           "cell": "percent",
           "priority": 1,
-          "roleClass": "nums"
+          "roleClass": "nums",
+          "hint": "Share of the last 30 days' eligible usage that any reservation or savings plan covered, including ones that have since ended; the resource page shows coverage by benefits active today"
         },
         {
           "key": "benefits",
