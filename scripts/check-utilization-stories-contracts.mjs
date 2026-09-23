@@ -395,8 +395,10 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
 // ---- Iteration 6 (Option A): the portal signal mirrors the story row's `actionable` flag plus a short reason.
 {
   const signal = await readFixture('utilization-signal');
-  assert.equal(signal.actionable === undefined && signal.actionReason === undefined, true, 'legacy signal carries no actionable flag');
-  assert.equal(isUtilizationSignal(signal), true, 'legacy signal without actionable accepted');
+  const legacySignal = clone(signal);
+  delete legacySignal.actionable;
+  delete legacySignal.actionReason;
+  assert.equal(isUtilizationSignal(legacySignal), true, 'legacy signal without actionable accepted');
   assert.equal(isUtilizationSignal({ ...signal, actionable: true }), true, 'actionable signal accepted');
   assert.equal(isUtilizationSignal({ ...signal, actionable: false }), true, 'non-actionable signal without a reason accepted');
   for (const actionReason of ['observed-fit', 'no-saving', 'blocked-by-commitment']) {
