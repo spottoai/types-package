@@ -13,6 +13,8 @@ import type {
   AIChatCanonicalStreamEvent,
   AIChatCanonicalStreamEventName,
   AIChatEvidenceCoverage,
+  AIChatFollowUpSuggestionV1,
+  AIChatGroundedFigureV1,
   AIChatGroundingSummary,
   AIChatRetrievalSourceType,
   AIChatToolDescriptor,
@@ -87,6 +89,7 @@ const terminalSnapshot: AIChatTerminalSnapshot = {
   },
   answer: 'Completed answer',
   grounding,
+  followUpSuggestions: [{ suggestionId: 'follow-up-1', text: 'Which resources make up the largest saving?' }],
   contractOutput: {
     contract: 'customerDecisionBrief',
     value: {
@@ -150,8 +153,49 @@ const invalidGroundingConfidence: AIChatGroundingSummary = {
   confidencePercentage: '100',
 };
 
+const renderedFigure: AIChatGroundedFigureV1 = {
+  figureId: 'f1',
+  status: 'verified',
+  kind: 'money',
+  text: 'NZ$705.72 per month',
+  citationIds: ['environment-call-1'],
+};
+
+const figureGrounding: AIChatGroundingSummary = {
+  status: 'partial',
+  method: 'server-rendered-figures',
+  totalClaimCount: 0,
+  verifiedClaimCount: 0,
+  claims: [],
+  figures: [
+    renderedFigure,
+    { figureId: 'f2', status: 'unverified', kind: 'quantity', text: '12 VMs', citationIds: [], reasonCode: 'grounding.figure-unreferenced' },
+  ],
+  reasonCode: 'grounding.figure-unreferenced',
+};
+
+const invalidFigureValue: AIChatGroundedFigureV1 = {
+  ...renderedFigure,
+  // @ts-expect-error figures carry rendered text, never a raw value.
+  value: '705.72',
+};
+
+// @ts-expect-error figure kinds are closed.
+const invalidFigureKind: AIChatGroundedFigureV1 = { ...renderedFigure, kind: 'identifier' };
+
+const invalidFollowUp: AIChatFollowUpSuggestionV1 = {
+  suggestionId: 'follow-up-1',
+  text: 'Next?',
+  // @ts-expect-error follow-ups carry no hidden tool arguments.
+  toolName: 'list_resources',
+};
+
 void invalidEnvironmentMatch;
 void invalidGroundingConfidence;
+void figureGrounding;
+void invalidFigureValue;
+void invalidFigureKind;
+void invalidFollowUp;
 
 // @ts-expect-error canonical streams must not use the deprecated done terminal.
 const invalidCanonicalTerminalName: AIChatCanonicalStreamEventName = 'done';

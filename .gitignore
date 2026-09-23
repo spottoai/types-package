@@ -95,6 +95,9 @@ jspm_packages/
 samples/
 
 specs/*
+!specs/ai-chat/
+specs/ai-chat/*
+!specs/ai-chat/ai-chat-analytical-artifacts-types-package.md
 !Specs/alerts/
 !Specs/alerts/*.md
 !Specs/data-quality/
@@ -107,3 +110,7 @@ specs/*
 !Specs/scheduler/
 !Specs/scheduler/dev-863-bastion-scheduled-availability/
 !Specs/scheduler/dev-863-bastion-scheduled-availability/dev-863-bastion-scheduled-availability-types.md
+
+# Claude Code: personal settings and local skill links (see ../core/scripts/link-agent-skills.mjs)
+.claude/settings.local.json
+.claude/skills/

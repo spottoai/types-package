@@ -11,6 +11,9 @@ import {
   deriveEnvironmentAzureResourceTypeV1,
   buildEnvironmentScopeQualifiedSubjectV1,
   buildEnvironmentTreeDigestPreimageV1,
+  AI_CHAT_GROUNDED_FIGURE_ANCHOR_ATTRIBUTE_V1,
+  isAIChatFollowUpSuggestions,
+  isAIChatGroundedFigureV1,
   isAIChatGroundingSummary,
   isAIEnvironmentEvidenceMatch,
   isEnvironmentCardinalityV1,
@@ -857,6 +860,139 @@ assert.equal(
   false,
   'claim citation identifiers are unique'
 );
+
+// Server-rendered figures (grounding and quality checklist, item 2.7).
+const renderedFigure = { figureId: 'f1', status: 'verified', kind: 'money', text: 'NZ$705.72 per month', citationIds: ['environment-call-1'] };
+const typedFigure = {
+  figureId: 'f2',
+  status: 'unverified',
+  kind: 'quantity',
+  text: '12 VMs',
+  citationIds: [],
+  reasonCode: 'grounding.figure-unreferenced',
+};
+const figureSummary = (status, figures, reasonCode) => ({
+  status,
+  method: 'server-rendered-figures',
+  totalClaimCount: 0,
+  verifiedClaimCount: 0,
+  claims: [],
+  figures,
+  ...(reasonCode === undefined ? {} : { reasonCode }),
+});
+assert.equal(AI_CHAT_GROUNDED_FIGURE_ANCHOR_ATTRIBUTE_V1, 'data-spotto-figure');
+assert.equal(isAIChatGroundedFigureV1(renderedFigure), true);
+assert.equal(isAIChatGroundedFigureV1(typedFigure), true);
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, citationIds: [] }), false, 'a rendered figure cites evidence');
+assert.equal(isAIChatGroundedFigureV1({ ...typedFigure, citationIds: ['environment-call-1'] }), false, 'a typed figure cites nothing');
+assert.equal(isAIChatGroundedFigureV1({ ...typedFigure, reasonCode: undefined }), false, 'a typed figure carries its reason');
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, reasonCode: 'grounding.figure-unreferenced' }), false);
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, kind: 'identifier' }), false, 'figure kinds are closed');
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, value: '705.72' }), false, 'figures carry no raw value');
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, text: ' NZ$705.72' }), false, 'figure text is trimmed');
+assert.equal(isAIChatGroundedFigureV1({ ...renderedFigure, text: 'x'.repeat(97) }), false, 'figure text is bounded');
+
+assert.equal(isAIChatGroundingSummary(figureSummary('verified', [renderedFigure])), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('partial', [renderedFigure, typedFigure], 'grounding.figure-unreferenced')), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('unverified', [typedFigure], 'grounding.figure-unreferenced')), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('unverified', [], 'grounding.reference-unresolved')), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('unverified', [], 'grounding.source-stale')), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('not-required', [], 'grounding.not-required')), true);
+assert.equal(isAIChatGroundingSummary(figureSummary('verified', [])), false, 'verified needs a rendered figure');
+assert.equal(isAIChatGroundingSummary(figureSummary('verified', [renderedFigure, typedFigure])), false, 'a typed figure prevents verified');
+assert.equal(isAIChatGroundingSummary(figureSummary('verified', [renderedFigure], 'grounding.value-mismatch')), false);
+assert.equal(
+  isAIChatGroundingSummary(figureSummary('partial', [renderedFigure], 'grounding.figure-unreferenced')),
+  false,
+  'partial needs both kinds'
+);
+assert.equal(isAIChatGroundingSummary(figureSummary('partial', [renderedFigure, typedFigure])), false, 'partial carries a reason');
+assert.equal(
+  isAIChatGroundingSummary(figureSummary('unverified', [renderedFigure], 'grounding.figure-unreferenced')),
+  false,
+  'rendered figures prevent unverified'
+);
+assert.equal(isAIChatGroundingSummary(figureSummary('unverified', [typedFigure], 'grounding.not-required')), false);
+assert.equal(isAIChatGroundingSummary(figureSummary('not-required', [renderedFigure], 'grounding.not-required')), false);
+assert.equal(isAIChatGroundingSummary(figureSummary('verified', [renderedFigure, renderedFigure])), false, 'figure ids are unique');
+assert.equal(
+  isAIChatGroundingSummary(
+    figureSummary(
+      'verified',
+      Array.from({ length: 129 }, (_, index) => ({ ...renderedFigure, figureId: `f${index}` }))
+    )
+  ),
+  false,
+  'figure lists are bounded'
+);
+assert.equal(
+  isAIChatGroundingSummary({ ...figureSummary('verified', [renderedFigure]), figures: undefined }),
+  false,
+  'the figure method requires figures'
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    ...figureSummary('verified', [renderedFigure]),
+    totalClaimCount: 1,
+    verifiedClaimCount: 1,
+    claims: verifiedGrounding.claims,
+  }),
+  false,
+  'the figure method carries no claims'
+);
+assert.equal(isAIChatGroundingSummary({ ...verifiedGrounding, figures: [renderedFigure] }), false, 'the claim method carries no figures');
+assert.equal(
+  isAIChatGroundingSummary({ ...verifiedGrounding, status: 'partial', reasonCode: 'grounding.value-mismatch' }),
+  false,
+  'partial is figure-method only'
+);
+assert.equal(
+  isAIChatGroundingSummary({
+    status: 'unverified',
+    method: 'deterministic-citation-and-value',
+    totalClaimCount: 1,
+    verifiedClaimCount: 0,
+    claims: [{ claimId: 'claim-1', status: 'unverified', citationIds: [], reasonCode: 'grounding.figure-unreferenced' }],
+    reasonCode: 'grounding.value-mismatch',
+  }),
+  false,
+  'figure-only reason codes stay out of claims'
+);
+assert.equal(isAIChatGroundingSummary({ ...figureSummary('verified', [renderedFigure]), method: 'model-confidence' }), false, 'methods are closed');
+
+assert.equal(isAIChatFollowUpSuggestions([]), true);
+assert.equal(
+  isAIChatFollowUpSuggestions([
+    { suggestionId: 's1', text: 'Which VMs make up the Azure Hybrid Benefit saving?' },
+    { suggestionId: 's2', text: 'Compare this month with last month' },
+  ]),
+  true
+);
+assert.equal(
+  isAIChatFollowUpSuggestions([
+    { suggestionId: 's1', text: 'a' },
+    { suggestionId: 's1', text: 'b' },
+  ]),
+  false,
+  'ids are unique'
+);
+assert.equal(
+  isAIChatFollowUpSuggestions([
+    { suggestionId: 's1', text: 'Same' },
+    { suggestionId: 's2', text: 'same' },
+  ]),
+  false,
+  'text is unique'
+);
+assert.equal(
+  isAIChatFollowUpSuggestions(Array.from({ length: 4 }, (_, index) => ({ suggestionId: `s${index}`, text: `Question ${index}` }))),
+  false,
+  'at most three suggestions'
+);
+assert.equal(isAIChatFollowUpSuggestions([{ suggestionId: 's1', text: 'x'.repeat(161) }]), false, 'text is bounded');
+assert.equal(isAIChatFollowUpSuggestions([{ suggestionId: 's1', text: '' }]), false, 'text is not empty');
+assert.equal(isAIChatFollowUpSuggestions([{ suggestionId: 's1', text: 'Next?', toolName: 'list_resources' }]), false, 'no hidden arguments');
+assert.equal(isAIChatFollowUpSuggestions({ suggestionId: 's1', text: 'Next?' }), false);
 
 const environmentEsm = await import('@spottoai/types-package/environment');
 const environmentCommonJs = createRequire(import.meta.url)('@spottoai/types-package/environment');
