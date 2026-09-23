@@ -87,7 +87,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "betterSku",
@@ -138,7 +138,7 @@
                 "state": "oversized",
                 "label": "Oversized",
                 "tone": "warn",
-                "hint": "Usage stayed well below capacity across the window"
+                "hint": "Usage stayed well below capacity across the window. RI / SP coverage: 65% now, 65% over the last 30 days"
               },
               "primary": {
                 "kind": "sparkline",
@@ -1133,7 +1133,7 @@
                 "state": "oversized",
                 "label": "Oversized",
                 "tone": "warn",
-                "hint": "Usage stayed well below capacity across the window"
+                "hint": "Usage stayed well below capacity across the window. RI / SP coverage: 0% now, 0% over the last 30 days"
               },
               "primary": {
                 "kind": "sparkline",
@@ -4031,7 +4031,7 @@
                 "state": "oversized",
                 "label": "Oversized",
                 "tone": "warn",
-                "hint": "Usage stayed well below capacity across the window"
+                "hint": "Usage stayed well below capacity across the window. RI / SP coverage: 100% now, 100% over the last 30 days"
               },
               "primary": {
                 "kind": "sparkline",
@@ -6375,7 +6375,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "betterSku",
@@ -6755,7 +6755,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "betterSku",
@@ -6806,7 +6806,7 @@
                 "state": "oversized",
                 "label": "Oversized",
                 "tone": "warn",
-                "hint": "Usage stayed well below capacity across the window"
+                "hint": "Usage stayed well below capacity across the window. RI / SP coverage: 100% now, 100% over the last 30 days"
               },
               "primary": {
                 "kind": "sparkline",
@@ -7918,7 +7918,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "betterSku",
@@ -8431,7 +8431,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "betterSku",
@@ -12255,7 +12255,7 @@
             "cell": "percent",
             "priority": 3,
             "roleClass": "nums",
-            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page)"
+            "hint": "Share of the window's eligible usage covered by reservations or savings plans active today (as on the resource page; when the commitment inventory is out of date, those billing still shows applying in the last 3 days). The row's hint gives the 30-day figure"
           },
           {
             "key": "spend",
@@ -12299,7 +12299,7 @@
                 "state": "good",
                 "label": "Good",
                 "tone": "good",
-                "hint": "Proposed by Schedule shutdown windows finding"
+                "hint": "Proposed by Schedule shutdown windows finding. RI / SP coverage: 65% now, 65% over the last 30 days"
               },
               "action": {
                 "kind": "text",
@@ -13287,7 +13287,7 @@
                 "state": "good",
                 "label": "Good",
                 "tone": "good",
-                "hint": "Proposed by Formalise shutdown schedule finding"
+                "hint": "Proposed by Formalise shutdown schedule finding. RI / SP coverage: 100% now, 100% over the last 30 days"
               },
               "action": {
                 "kind": "text",
