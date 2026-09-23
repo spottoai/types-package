@@ -1263,7 +1263,6 @@
         "set",
         [
           "summary",
-          "counts",
           "actionable"
         ],
         99

@@ -16,7 +16,7 @@
  *   `protection`, a right-SKU row valid `current`/`options`, and so on;
  * - a row with `actionable: false` publishes no saving; a `blocked-by-commitment` Right SKU verdict carries a valid
  *   `commitmentBlock` (and only that verdict does), publishes no saving and is never `actionable: true`;
- * - `summary.counts.actionable`, when present with `resources`, is at most `resources`.
+ * - `summary.actionable`, when present, is a count no greater than `counts.resources`.
  *
  * Guards accept additive (unknown) fields and never throw.
  */
@@ -637,9 +637,8 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
   isRecord(value) &&
   isRecord(value.counts) &&
   Object.values(value.counts).every(isCount) &&
-  (value.counts.actionable === undefined ||
-    value.counts.resources === undefined ||
-    (value.counts.actionable as number) <= (value.counts.resources as number)) &&
+  (value.actionable === undefined ||
+    (isCount(value.actionable) && (value.counts.resources === undefined || value.actionable <= (value.counts.resources as number)))) &&
   isNumberRecord(value.spend) &&
   isString(value.currency) &&
   isOptionalText(value.note);

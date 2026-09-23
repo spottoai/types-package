@@ -556,17 +556,18 @@ export interface StoryColumn {
   roleClass?: 'res' | 'prim' | 'sec' | 'nums' | 'cap' | 'read' | 'cost' | 'save' | 'dual';
   hint?: string;
 }
-/**
- * `counts` keys are story-specific row classes (verdicts, fits, statuses) plus well-known keys: `resources` (rows in
- * the full population), `withSavings`, and — from producers that classify rows — `actionable`, the rows whose
- * `actionable` is not `false` (informational rows = `resources - actionable`). Every key is optional.
- */
-export const STORY_SUMMARY_COUNT_KEYS = { resources: 'resources', withSavings: 'withSavings', actionable: 'actionable' } as const;
 export interface StorySummary {
+  /** Rows per story bucket (verdict, fit, status, ...) plus the totals `resources` and `withSavings`. */
   counts: Record<string, number>;
   spend: Record<string, number>;
   currency: string;
   note?: string;
+  /**
+   * Rows in the full population (including omitted rows) whose `actionable` is not `false`; informational rows =
+   * `counts.resources - actionable`. Kept out of `counts` so it never reads as a bucket. Absent from producers that
+   * do not classify rows.
+   */
+  actionable?: number;
 }
 export interface StoryArtifact<TRow = unknown> {
   storyKey: StoryKey;

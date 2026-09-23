@@ -427,13 +427,14 @@ const informationalRow: OversizedResourceRow = {
   rightSizeStatus: 'not-supported',
   rightSizeRejection: rejection,
 };
+const actionableSummary: StoryArtifact['summary'] = { ...artifact.summary, actionable: 5 };
 const blockValid: boolean = isCommitmentBlock(commitmentBlock);
 const blockedRowValid: boolean = storyRowGuard('right-sku')(blockedRightSkuRow);
 const billedSignalValid: boolean = isUtilizationSignal(signalWithBilledPercent);
 const informationalRowValid: boolean = storyRowGuard('oversized-resources')(informationalRow);
 // @ts-expect-error a commitment block reason is `reservation` or `cost-not-lower`.
 const unknownBlockReason: CommitmentBlock = { ...commitmentBlock, reason: 'savings-plan' };
-void [blockValid, blockedRowValid, billedSignalValid, informationalRowValid, unknownBlockReason];
+void [actionableSummary, blockValid, blockedRowValid, billedSignalValid, informationalRowValid, unknownBlockReason];
 
 // Summary-view projection (API `view=summary`): marked, rows removed, produced counts kept.
 const summaryView: StoryArtifact<OversizedResourceRow> = {

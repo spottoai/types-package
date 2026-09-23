@@ -134,7 +134,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "Proposed by compute-virtualmachines_schedule-shutdown-windows"
+              "hint": "Proposed by Schedule shutdown windows finding"
             },
             "action": {
               "kind": "text",
@@ -1122,7 +1122,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "Proposed by compute-virtualmachines_formalise-shutdown-schedule"
+              "hint": "Proposed by Formalise shutdown schedule finding"
             },
             "action": {
               "kind": "text",
@@ -2110,7 +2110,7 @@
               "state": "good",
               "label": "Good",
               "tone": "good",
-              "hint": "Proposed by compute-virtualmachines_schedule-shutdown-windows"
+              "hint": "Proposed by Schedule shutdown windows finding"
             },
             "action": {
               "kind": "text",

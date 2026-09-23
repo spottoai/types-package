@@ -107,7 +107,7 @@
           "cell": "money",
           "priority": 1,
           "roleClass": "save",
-          "hint": "Monthly, upper bound"
+          "hint": "Monthly saving net of buying licences (their cost spread over the licence term; see Payback). Below it: the saving with licences you already own"
         }
       ],
       "totalCount": 3,
@@ -464,7 +464,7 @@
           "cell": "money",
           "priority": 1,
           "roleClass": "save",
-          "hint": "Monthly, upper bound"
+          "hint": "Monthly saving net of buying licences (their cost spread over the licence term; see Payback). Below it: the saving with licences you already own"
         }
       ],
       "totalCount": 1,

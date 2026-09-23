@@ -322,7 +322,7 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   Object.assign(billedRow.options[0], { savingsBasis: 'billed', projected: { estimate: true, cpuP95: 64, memoryP95: 101.5 } });
   billedRow.actionable = true;
   rightSku.summary.counts['blocked-by-commitment'] = 1;
-  rightSku.summary.counts.actionable = 2;
+  rightSku.summary.actionable = 2;
   assert.equal(isStoryArtifact(rightSku, 'right-sku'), true, 'blocked-by-commitment row, savings basis and projection accepted');
   const costBlocked = clone(rightSku);
   costBlocked.sections[0].rows[0].commitmentBlock = {
@@ -337,6 +337,9 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   const actionableBlocked = clone(rightSku);
   actionableBlocked.sections[0].rows[0].actionable = true;
   assert.equal(isStoryArtifact(actionableBlocked, 'right-sku'), false, 'actionable blocked-by-commitment row rejected');
+  const fractionalActionable = clone(rightSku);
+  fractionalActionable.summary.actionable = 1.5;
+  assert.equal(isStoryArtifact(fractionalActionable, 'right-sku'), false, 'non-integer summary actionable count rejected');
   const badExpiry = clone(rightSku);
   badExpiry.sections[0].rows[0].commitmentBlock.expiryDate = 'at renewal';
   assert.equal(isStoryArtifact(badExpiry, 'right-sku'), false, 'unparseable commitment block expiry rejected');
@@ -350,7 +353,7 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   Object.assign(blocked, { savingsMax: null, actionable: false, commitmentBlock: block });
   blocked.betterSku = { ...blocked.betterSku, savingsPercent: null, savingsBasis: 'billed', billedSavingsPercent: null };
   blocked.recommendedOption = { ...blocked.recommendedOption, savingsPercent: null, savingsMonthly: null, savingsBasis: 'billed' };
-  oversized.summary.counts.actionable = oversized.summary.counts.resources - 2;
+  oversized.summary.actionable = oversized.summary.counts.resources - 2;
   assert.equal(isStoryArtifact(oversized, 'oversized-resources'), true, 'informational and commitment-blocked oversized rows accepted');
   const mismatchedBasis = clone(oversized);
   mismatchedBasis.sections.flatMap(section => section.rows).find(row => row.commitmentBlock).recommendedOption.savingsBasis = 'list';

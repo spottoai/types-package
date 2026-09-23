@@ -83,6 +83,8 @@
   "betterSku": {
     "kind": "fits-usage",
     "label": "D4as v5",
-    "savingsPercent": 55.8
+    "savingsPercent": 55.8,
+    "savingsBasis": "list",
+    "billedSavingsPercent": 55.8
   }
 }
