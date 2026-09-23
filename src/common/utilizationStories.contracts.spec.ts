@@ -3,6 +3,7 @@ import {
   STORY_LIMITS,
   type CapacityDescriptor,
   type CommitmentBenefit,
+  type CommitmentBlock,
   type CommitmentRow,
   type HybridBenefitRow,
   type MetricSparkline,
@@ -12,11 +13,15 @@ import {
   type StoryFingerprint,
   type ResilienceProfileConfig,
   type ResilienceRow,
+  type RightSizeRejection,
   type RightSkuRow,
+  type RightSkuVerdict,
   type ScheduleCandidateRow,
   type RightSizeAssessmentStatus,
   type SkuCapabilityImpact,
   type SkuOption,
+  type SkuOptionSummary,
+  type SkuProjectedUsage,
   type StoryArtifact,
   type StoryCell,
   type StoryColumn,
@@ -31,6 +36,7 @@ import {
 } from './utilizationStories';
 import type { SubscriptionReportEvidencePack } from '../azure/reportEvidence';
 import {
+  isCommitmentBlock,
   isReportingStories,
   isStoryFingerprintRows,
   isStoryArtifact,
@@ -385,6 +391,49 @@ const signalValid: boolean = isUtilizationSignal(signal);
 const rowGuard = storyRowGuard('resilience-recovery');
 const rowValid: boolean = rowGuard(resilienceRow);
 void [sampleValid, storiesValid, profileValid, signalValid, rowValid];
+
+// Iteration 5 (at-a-glance UX): commitment-blocked Right SKU rows, informational rows, savings basis, projected usage.
+const commitmentBlock: CommitmentBlock = {
+  reason: 'reservation',
+  coveragePercent: 100,
+  benefitName: 'ri-fixture-f16',
+  expiryDate: '2027-03-31',
+};
+const projected: SkuProjectedUsage = { estimate: true, cpuP95: 64, memoryP95: 101.5 };
+const blockedVerdict: RightSkuVerdict = 'blocked-by-commitment';
+const blockedRightSkuRow: RightSkuRow = {
+  ...rightSkuRow,
+  savingsMax: null,
+  actionable: false,
+  verdict: blockedVerdict,
+  commitmentBlock,
+  options: [{ ...recommendedOption, savingsPercent: null, savingsMonthly: null, savingsBasis: 'billed', projected }],
+};
+const billedSummary: SkuOptionSummary = {
+  kind: 'fits-usage',
+  label: 'D4as v5',
+  savingsPercent: 55.8,
+  savingsBasis: 'list',
+  billedSavingsPercent: 18.2,
+};
+const signalWithBilledPercent: UtilizationSignal = { ...signal, betterSku: billedSummary };
+const rejection: RightSizeRejection = { reason: 'observed-fit', sku: 'Standard_D2as_v5' };
+const informationalRow: OversizedResourceRow = {
+  ...oversizedRow,
+  savingsMax: null,
+  actionable: false,
+  betterSku: undefined,
+  recommendedOption: undefined,
+  rightSizeStatus: 'not-supported',
+  rightSizeRejection: rejection,
+};
+const blockValid: boolean = isCommitmentBlock(commitmentBlock);
+const blockedRowValid: boolean = storyRowGuard('right-sku')(blockedRightSkuRow);
+const billedSignalValid: boolean = isUtilizationSignal(signalWithBilledPercent);
+const informationalRowValid: boolean = storyRowGuard('oversized-resources')(informationalRow);
+// @ts-expect-error a commitment block reason is `reservation` or `cost-not-lower`.
+const unknownBlockReason: CommitmentBlock = { ...commitmentBlock, reason: 'savings-plan' };
+void [blockValid, blockedRowValid, billedSignalValid, informationalRowValid, unknownBlockReason];
 
 // Summary-view projection (API `view=summary`): marked, rows removed, produced counts kept.
 const summaryView: StoryArtifact<OversizedResourceRow> = {

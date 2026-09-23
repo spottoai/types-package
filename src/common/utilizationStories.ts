@@ -189,6 +189,44 @@ export interface UtilizationSignal {
 
 // ---- Right SKU
 export type SkuOptionKind = 'same-shape' | 'fits-usage' | 'trade-off' | 'cross-platform';
+/**
+ * What a `savingsPercent` / `savingsMonthly` figure is measured against:
+ * - `list`: the option's list (retail) price against the current size's list price;
+ * - `billed`: the published saving against the resource's billed (cash) spend in the window.
+ * Absent on artifacts from older producers: the portal signal was list-based, story rows billed-based.
+ */
+export type SkuSavingsBasis = 'list' | 'billed';
+/**
+ * Estimated p95 utilisation on the option, in percent: current p95 × current capacity ÷ option capacity (vCPUs for
+ * `cpu`, memory GB for `memory`). An estimate: it assumes the load moves unchanged and scales linearly, ignoring
+ * per-core speed differences between series, so it may exceed 100. A metric is omitted when it cannot be projected.
+ */
+export interface SkuProjectedUsage {
+  estimate: true;
+  cpuP95?: number;
+  memoryP95?: number;
+}
+/**
+ * Why a resize cannot lower the bill now:
+ * - `reservation`: most of the usage is covered by a reservation and the option is outside the reservation's
+ *   size-flexibility group, so resizing now moves covered hours to pay-as-you-go while the reservation keeps billing.
+ *   The saving exists once the reservation ends or is exchanged (resize at renewal).
+ * - `cost-not-lower`: the option's list price for the time the resource ran is not below its billed spend.
+ */
+export type CommitmentBlockReason = 'reservation' | 'cost-not-lower';
+export interface CommitmentBlock {
+  reason: CommitmentBlockReason;
+  /** Share of the window's eligible usage the commitment covered (0–100); null when unknown. */
+  coveragePercent: number | null;
+  /** The blocking (earliest-expiring) benefit's display name; null when unknown. */
+  benefitName: string | null;
+  /** ISO date/instant the blocking reservation ends; null when the inventory has no expiry. */
+  expiryDate: string | null;
+  /** `cost-not-lower`: the option's list price scaled to the running share, in the row currency. */
+  expectedOptionCost?: number | null;
+  /** `cost-not-lower`: billed (cash) spend in the window, in the row currency. */
+  billedSpend?: number | null;
+}
 export type SkuCapabilityValue = string | number | boolean | null | (string | number | boolean | null)[];
 export interface SkuCapabilityImpact {
   key: string;
@@ -211,16 +249,28 @@ export interface SkuOption {
   currency: string;
   savingsPercent: number | null;
   savingsMonthly: number | null;
+  /** Basis of `savingsPercent` / `savingsMonthly`; absent on artifacts from older producers. */
+  savingsBasis?: SkuSavingsBasis;
   /** Provider capability keys, e.g. "maxDataDiskCount". */
   lostCapabilities: string[];
   /** Structured form of `lostCapabilities`, including the current and proposed values when known. */
   capabilityImpacts?: SkuCapabilityImpact[];
   confidence?: 'high' | 'medium' | 'low';
+  /** Estimated utilisation after moving to this option; absent when not projected (e.g. a like-for-like size). */
+  projected?: SkuProjectedUsage;
 }
 export interface SkuOptionSummary {
   kind: SkuOptionKind;
   label: string;
+  /** Basis given by `savingsBasis`; when absent, list-based on the portal signal and billed-based on story rows. */
   savingsPercent: number | null;
+  savingsBasis?: SkuSavingsBasis;
+  /**
+   * The published saving as a share of billed (cash) spend (0–100); null when no billed saving is published. Lets a
+   * list-based summary (the portal `utilizationSignal.betterSku`) also carry the billed figure. Equals
+   * `savingsPercent` when `savingsBasis` is `billed`.
+   */
+  billedSavingsPercent?: number | null;
 }
 export type RightSizeAssessmentStatus = 'recommended' | 'no-change' | 'insufficient-data' | 'not-supported';
 
@@ -381,6 +431,12 @@ export interface StoryRowBase {
   currency: string;
   spend30d: number | null;
   savingsMax: number | null;
+  /**
+   * Whether the row asks for an action now. `false` marks an informational row kept as evidence (e.g. an oversized
+   * resource with no smaller size that fits, no billed saving, or a resize blocked by a commitment); such a row
+   * publishes no saving (`savingsMax: null`). Absent on artifacts from older producers: treat as actionable.
+   */
+  actionable?: boolean;
   ownerResourceId?: string;
   fingerprint: string;
   /** One entry per column key of the owning section; kinds match `StoryColumn.cell`. */
@@ -393,11 +449,33 @@ export interface OversizedResourceRow extends StoryRowBase {
   recommendedOption?: SkuOption;
   /** Distinguishes a real no-change decision from unavailable or unsupported assessment. */
   rightSizeStatus?: RightSizeAssessmentStatus;
+  /** Present when the recommended resize cannot lower the bill now; the row then publishes no saving. */
+  commitmentBlock?: CommitmentBlock;
+  /** A right-size target the engine evaluated and rejected; the row then carries no recommendation. */
+  rightSizeRejection?: RightSizeRejection;
 }
+/**
+ * - `observed-fit`: the target would not hold the observed CPU / memory peaks with headroom;
+ * - `no-saving`: the target would not lower the billed cost.
+ */
+export type RightSizeRejectionReason = 'observed-fit' | 'no-saving';
+export interface RightSizeRejection {
+  reason: RightSizeRejectionReason;
+  /** Provider SKU name of the rejected target, e.g. "Standard_D2as_v5". */
+  sku: string;
+}
+/**
+ * `blocked-by-commitment`: a smaller or cheaper option exists but a commitment (or billed cost) means resizing now
+ * would not lower the bill; the row carries `commitmentBlock` and publishes no saving. Older artifacts present these
+ * rows as `consider`.
+ */
+export type RightSkuVerdict = 'modernise' | 'downsize' | 'consider' | 'keep' | 'blocked-by-commitment';
 export interface RightSkuRow extends StoryRowBase {
   current: SkuOption;
   options: SkuOption[];
-  verdict: 'modernise' | 'downsize' | 'consider' | 'keep';
+  verdict: RightSkuVerdict;
+  /** Required when `verdict` is `blocked-by-commitment`, absent otherwise. */
+  commitmentBlock?: CommitmentBlock;
   usage: { primaryP95: number | null; secondaryP95: number | null; telemetry: TelemetryStatus };
   /** Reuses the profile already built for the resource; producers must not recollect it. */
   profile?: UtilizationProfile;
@@ -478,6 +556,12 @@ export interface StoryColumn {
   roleClass?: 'res' | 'prim' | 'sec' | 'nums' | 'cap' | 'read' | 'cost' | 'save' | 'dual';
   hint?: string;
 }
+/**
+ * `counts` keys are story-specific row classes (verdicts, fits, statuses) plus well-known keys: `resources` (rows in
+ * the full population), `withSavings`, and — from producers that classify rows — `actionable`, the rows whose
+ * `actionable` is not `false` (informational rows = `resources - actionable`). Every key is optional.
+ */
+export const STORY_SUMMARY_COUNT_KEYS = { resources: 'resources', withSavings: 'withSavings', actionable: 'actionable' } as const;
 export interface StorySummary {
   counts: Record<string, number>;
   spend: Record<string, number>;

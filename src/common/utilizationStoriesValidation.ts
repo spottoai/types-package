@@ -13,7 +13,10 @@
  * - every row of an artifact belongs to the artifact's scope (company, tenant, subscription);
  * - `MetricStats` carries every required field of the shared shape;
  * - row validation depends on the story key: an oversized row must carry a valid `profile`, a resilience row a valid
- *   `protection`, a right-SKU row valid `current`/`options`, and so on.
+ *   `protection`, a right-SKU row valid `current`/`options`, and so on;
+ * - a row with `actionable: false` publishes no saving; a `blocked-by-commitment` Right SKU verdict carries a valid
+ *   `commitmentBlock` (and only that verdict does), publishes no saving and is never `actionable: true`;
+ * - `summary.counts.actionable`, when present with `resources`, is at most `resources`.
  *
  * Guards accept additive (unknown) fields and never throw.
  */
@@ -26,6 +29,7 @@ import {
   type CapacityDescriptor,
   type CapacityScalingDescriptor,
   type CommitmentBenefit,
+  type CommitmentBlock,
   type CommitmentCoverage,
   type CommitmentRow,
   type EvidenceWindow,
@@ -37,11 +41,13 @@ import {
   type ReportingStories,
   type ResilienceProfileConfig,
   type ResilienceRow,
+  type RightSizeRejection,
   type RightSkuRow,
   type RunningProfile,
   type ScheduleCandidateRow,
   type SkuOption,
   type SkuOptionSummary,
+  type SkuProjectedUsage,
   type StoryArtifact,
   type StoryCell,
   type StoryColumn,
@@ -80,7 +86,10 @@ const SKU_CAPABILITY_BASES = new Set(['sku-capability', 'current-setting', 'acti
 const SKU_CAPABILITY_MATERIALITIES = new Set(['used', 'not-used', 'unknown']);
 const RIGHT_SIZE_ASSESSMENT_STATUSES = new Set(['recommended', 'no-change', 'insufficient-data', 'not-supported']);
 const CAPABILITY_STATES = new Set(['enabled', 'disabled', 'partial', 'unknown', 'not-applicable']);
-const RIGHT_SKU_VERDICTS = new Set(['modernise', 'downsize', 'consider', 'keep']);
+const RIGHT_SKU_VERDICTS = new Set(['modernise', 'downsize', 'consider', 'keep', 'blocked-by-commitment']);
+const SKU_SAVINGS_BASES = new Set(['list', 'billed']);
+const COMMITMENT_BLOCK_REASONS = new Set(['reservation', 'cost-not-lower']);
+const RIGHT_SIZE_REJECTION_REASONS = new Set(['observed-fit', 'no-saving']);
 const BACKUP_RUN_STATES = new Set(['ok', 'failed', null]);
 const STORY_KEY_SET = new Set<string>(STORY_KEYS);
 const STORY_CELL_KINDS = new Set([
@@ -110,6 +119,8 @@ const isText = (value: unknown): value is string => typeof value === 'string';
 const isOptionalText = (value: unknown): boolean => value === undefined || isText(value);
 const isBoolean = (value: unknown): value is boolean => typeof value === 'boolean';
 const isNullableSeries = (value: unknown): value is (number | null)[] => Array.isArray(value) && value.every(isNullableNumber);
+const isPercentage = (value: unknown): value is number => isFiniteNumber(value) && value >= 0 && value <= 100;
+const isNullablePercentage = (value: unknown): value is number | null => value === null || isPercentage(value);
 const isPriority = (value: unknown): value is 1 | 2 | 3 | 4 | 5 => isCount(value) && value >= 1 && value <= 5;
 const isStringRecord = (value: unknown): value is Record<string, string> => isRecord(value) && Object.values(value).every(isText);
 const isNumberRecord = (value: unknown): value is Record<string, number> => isRecord(value) && Object.values(value).every(isFiniteNumber);
@@ -270,8 +281,34 @@ export const isEvidenceWindow = (value: unknown): value is EvidenceWindow =>
 const isVerdictReason = (value: unknown): boolean =>
   isRecord(value) && isString(value.rule) && isRecord(value.values) && Object.values(value.values).every(isNullableNumber);
 
+/** Optional basis and billed figure: a billed-basis summary's `billedSavingsPercent` must equal its `savingsPercent`. */
 export const isSkuOptionSummary = (value: unknown): value is SkuOptionSummary =>
-  isRecord(value) && inSet(SKU_OPTION_KINDS, value.kind) && isString(value.label) && isNullableNumber(value.savingsPercent);
+  isRecord(value) &&
+  inSet(SKU_OPTION_KINDS, value.kind) &&
+  isString(value.label) &&
+  isNullableNumber(value.savingsPercent) &&
+  (value.savingsBasis === undefined || inSet(SKU_SAVINGS_BASES, value.savingsBasis)) &&
+  (value.billedSavingsPercent === undefined || isNullablePercentage(value.billedSavingsPercent)) &&
+  (value.savingsBasis !== 'billed' || value.billedSavingsPercent === undefined || Object.is(value.billedSavingsPercent, value.savingsPercent));
+
+/** An estimate marker plus at least one non-negative projected p95 percentage (may exceed 100). */
+export const isSkuProjectedUsage = (value: unknown): value is SkuProjectedUsage =>
+  isRecord(value) &&
+  value.estimate === true &&
+  (value.cpuP95 !== undefined || value.memoryP95 !== undefined) &&
+  [value.cpuP95, value.memoryP95].every(p95 => p95 === undefined || (isFiniteNumber(p95) && p95 >= 0));
+
+export const isCommitmentBlock = (value: unknown): value is CommitmentBlock =>
+  isRecord(value) &&
+  inSet(COMMITMENT_BLOCK_REASONS, value.reason) &&
+  isNullablePercentage(value.coveragePercent) &&
+  isNullableString(value.benefitName) &&
+  (value.expiryDate === null || isDateTime(value.expiryDate)) &&
+  isOptionalNullableNumber(value.expectedOptionCost) &&
+  isOptionalNullableNumber(value.billedSpend);
+
+export const isRightSizeRejection = (value: unknown): value is RightSizeRejection =>
+  isRecord(value) && inSet(RIGHT_SIZE_REJECTION_REASONS, value.reason) && isString(value.sku);
 
 const isSkuCapabilityScalar = (value: unknown): boolean => value === null || isText(value) || isFiniteNumber(value) || isBoolean(value);
 
@@ -305,7 +342,9 @@ export const isSkuOption = (value: unknown): value is SkuOption =>
     (Array.isArray(value.capabilityImpacts) &&
       value.capabilityImpacts.every(isSkuCapabilityImpact) &&
       new Set(value.capabilityImpacts.map(impact => (impact as JsonRecord).key)).size === value.capabilityImpacts.length)) &&
-  (value.confidence === undefined || inSet(CONFIDENCES, value.confidence));
+  (value.confidence === undefined || inSet(CONFIDENCES, value.confidence)) &&
+  (value.savingsBasis === undefined || inSet(SKU_SAVINGS_BASES, value.savingsBasis)) &&
+  (value.projected === undefined || isSkuProjectedUsage(value.projected));
 
 export const isUtilizationProfile = (value: unknown, days?: number): value is UtilizationProfile => {
   if (!isRecord(value) || !inSet(PROVIDERS, value.provider) || !isString(value.family) || !isCapacityDescriptor(value.capacity)) return false;
@@ -472,6 +511,9 @@ const isStoryRowBase = (value: unknown): value is StoryRowBase =>
   isNullableNumber(value.spend30d) &&
   isNullableNumber(value.savingsMax) &&
   (value.ownerResourceId === undefined || isString(value.ownerResourceId)) &&
+  (value.actionable === undefined || isBoolean(value.actionable)) &&
+  // An informational row asks for nothing, so it publishes no saving.
+  (value.actionable !== false || value.savingsMax === null) &&
   isRecord(value.cells) &&
   Object.values(value.cells).every(isStoryCell);
 
@@ -488,8 +530,21 @@ export const isOversizedResourceRow = (value: unknown, days?: number): value is 
     const summary = row.betterSku as SkuOptionSummary;
     const option = row.recommendedOption as SkuOption;
     if (summary.kind !== option.kind || summary.label !== option.label || !Object.is(summary.savingsPercent, option.savingsPercent)) return false;
+    if (summary.savingsBasis !== undefined && option.savingsBasis !== undefined && summary.savingsBasis !== option.savingsBasis) return false;
+  }
+  if (row.rightSizeRejection !== undefined && (!isRightSizeRejection(row.rightSizeRejection) || hasRecommendation)) return false;
+  // A blocked resize is still the recommended size, but it cannot lower the bill now: no saving, never actionable.
+  if (row.commitmentBlock !== undefined) {
+    if (!isCommitmentBlock(row.commitmentBlock) || !hasRecommendation || row.savingsMax !== null || row.actionable === true) return false;
   }
   return true;
+};
+
+/** `blocked-by-commitment` and `commitmentBlock` go together; a blocked row publishes no saving and is not actionable. */
+const isCoherentCommitmentBlock = (row: JsonRecord): boolean => {
+  const blocked = row.verdict === 'blocked-by-commitment';
+  if (!blocked) return row.commitmentBlock === undefined;
+  return isCommitmentBlock(row.commitmentBlock) && row.savingsMax === null && row.actionable !== true;
 };
 
 export const isRightSkuRow = (value: unknown, days?: number): value is RightSkuRow => {
@@ -504,7 +559,8 @@ export const isRightSkuRow = (value: unknown, days?: number): value is RightSkuR
     isNullableNumber(row.usage.primaryP95) &&
     isNullableNumber(row.usage.secondaryP95) &&
     inSet(TELEMETRY_STATUSES, row.usage.telemetry) &&
-    (row.profile === undefined || isUtilizationProfile(row.profile, days))
+    (row.profile === undefined || isUtilizationProfile(row.profile, days)) &&
+    isCoherentCommitmentBlock(row)
   );
 };
 
@@ -581,6 +637,9 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
   isRecord(value) &&
   isRecord(value.counts) &&
   Object.values(value.counts).every(isCount) &&
+  (value.counts.actionable === undefined ||
+    value.counts.resources === undefined ||
+    (value.counts.actionable as number) <= (value.counts.resources as number)) &&
   isNumberRecord(value.spend) &&
   isString(value.currency) &&
   isOptionalText(value.note);

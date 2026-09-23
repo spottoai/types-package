@@ -306,6 +306,89 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   assert.equal(isStoryArtifact(fractionalDays, 'commitments'), false, 'fractional days to expiry rejected');
 }
 
+// ---- Iteration 5 (at-a-glance UX): commitment-blocked Right SKU verdict, actionable rows, savings basis, projected usage.
+{
+  const block = {
+    reason: 'reservation',
+    coveragePercent: 100,
+    benefitName: 'ri-fixture-f16',
+    expiryDate: '2027-03-31',
+  };
+  const rightSku = clone(artifacts['right-sku']);
+  const [blockedRow, billedRow] = rightSku.sections[0].rows;
+  Object.assign(blockedRow, { verdict: 'blocked-by-commitment', commitmentBlock: block, savingsMax: null, actionable: false });
+  blockedRow.cells.verdict = { kind: 'mark', state: 'blocked-by-commitment', label: 'Resize at reservation renewal', tone: 'neutral' };
+  Object.assign(blockedRow.options[0], { savingsPercent: null, savingsMonthly: null, savingsBasis: 'billed' });
+  Object.assign(billedRow.options[0], { savingsBasis: 'billed', projected: { estimate: true, cpuP95: 64, memoryP95: 101.5 } });
+  billedRow.actionable = true;
+  rightSku.summary.counts['blocked-by-commitment'] = 1;
+  rightSku.summary.counts.actionable = 2;
+  assert.equal(isStoryArtifact(rightSku, 'right-sku'), true, 'blocked-by-commitment row, savings basis and projection accepted');
+  const costBlocked = clone(rightSku);
+  costBlocked.sections[0].rows[0].commitmentBlock = {
+    reason: 'cost-not-lower',
+    coveragePercent: null,
+    benefitName: null,
+    expiryDate: null,
+    expectedOptionCost: 420.5,
+    billedSpend: 380.1,
+  };
+  assert.equal(isStoryArtifact(costBlocked, 'right-sku'), true, 'cost-not-lower commitment block accepted');
+  const actionableBlocked = clone(rightSku);
+  actionableBlocked.sections[0].rows[0].actionable = true;
+  assert.equal(isStoryArtifact(actionableBlocked, 'right-sku'), false, 'actionable blocked-by-commitment row rejected');
+  const badExpiry = clone(rightSku);
+  badExpiry.sections[0].rows[0].commitmentBlock.expiryDate = 'at renewal';
+  assert.equal(isStoryArtifact(badExpiry, 'right-sku'), false, 'unparseable commitment block expiry rejected');
+
+  const oversized = clone(artifacts['oversized-resources']);
+  const rows = oversized.sections.flatMap(section => section.rows);
+  const informational = rows.find(row => row.profile.verdict === 'oversized' && row.savingsMax === null && !row.betterSku);
+  assert.ok(informational, 'oversized fixture has a no-action row');
+  Object.assign(informational, { actionable: false, rightSizeRejection: { reason: 'observed-fit', sku: 'Standard_D2as_v5' } });
+  const blocked = rows.find(row => row.recommendedOption && row.betterSku);
+  Object.assign(blocked, { savingsMax: null, actionable: false, commitmentBlock: block });
+  blocked.betterSku = { ...blocked.betterSku, savingsPercent: null, savingsBasis: 'billed', billedSavingsPercent: null };
+  blocked.recommendedOption = { ...blocked.recommendedOption, savingsPercent: null, savingsMonthly: null, savingsBasis: 'billed' };
+  oversized.summary.counts.actionable = oversized.summary.counts.resources - 2;
+  assert.equal(isStoryArtifact(oversized, 'oversized-resources'), true, 'informational and commitment-blocked oversized rows accepted');
+  const mismatchedBasis = clone(oversized);
+  mismatchedBasis.sections.flatMap(section => section.rows).find(row => row.commitmentBlock).recommendedOption.savingsBasis = 'list';
+  assert.equal(isStoryArtifact(mismatchedBasis, 'oversized-resources'), false, 'summary / option savings basis mismatch rejected');
+  const badRejection = clone(oversized);
+  badRejection.sections.flatMap(section => section.rows).find(row => row.rightSizeRejection).rightSizeRejection.reason = 'too-big';
+  assert.equal(isStoryArtifact(badRejection, 'oversized-resources'), false, 'unknown right-size rejection reason rejected');
+
+  // Hybrid Benefit gross vs net rides on the existing MoneyCell secondary fields (no contract change needed).
+  const hybrid = clone(artifacts['hybrid-benefit']);
+  const hybridRow = hybrid.sections[0].rows[0];
+  const savingsKey = hybrid.sections[0].columns.find(column => column.cell === 'money')?.key;
+  assert.ok(savingsKey, 'hybrid-benefit fixture has a money column');
+  Object.assign(hybridRow.cells[savingsKey], { secondaryValue: 120.4, secondaryLabel: 'With licences you own' });
+  assert.equal(isStoryArtifact(hybrid, 'hybrid-benefit'), true, 'money cell secondary value accepted');
+
+  // Portal signal: list-based percent plus the billed figure; a billed-basis summary repeats it.
+  const signal = await readFixture('utilization-signal');
+  assert.equal(
+    isUtilizationSignal({ ...signal, betterSku: { ...signal.betterSku, savingsBasis: 'list', billedSavingsPercent: 18.2 } }),
+    true,
+    'signal list-based percent with billed figure accepted'
+  );
+  assert.equal(
+    isUtilizationSignal({
+      ...signal,
+      betterSku: { ...signal.betterSku, savingsBasis: 'billed', billedSavingsPercent: signal.betterSku.savingsPercent },
+    }),
+    true,
+    'signal billed-basis summary accepted'
+  );
+  assert.equal(
+    isUtilizationSignal({ ...signal, betterSku: { ...signal.betterSku, billedSavingsPercent: null } }),
+    true,
+    'signal with no billed saving accepted'
+  );
+}
+
 // ---- Summary view (a reader's projection): rows removed, produced counts kept, marked `view: 'summary'`.
 for (const storyKey of STORY_KEYS) {
   const summaryView = { ...clone(artifacts[storyKey]), view: 'summary' };

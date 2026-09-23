@@ -922,5 +922,390 @@
         ]
       ]
     ]
+  },
+  {
+    "name": "right-sku blocked-by-commitment verdict without a commitmentBlock",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "verdict"
+        ],
+        "blocked-by-commitment"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "savingsMax"
+        ],
+        null
+      ]
+    ]
+  },
+  {
+    "name": "right-sku commitmentBlock on a non-blocked verdict",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "commitmentBlock"
+        ],
+        {
+          "reason": "reservation",
+          "coveragePercent": 100,
+          "benefitName": "ri-fixture-f16",
+          "expiryDate": "2027-03-31"
+        }
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "savingsMax"
+        ],
+        null
+      ]
+    ]
+  },
+  {
+    "name": "right-sku blocked-by-commitment row publishing a saving",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "verdict"
+        ],
+        "blocked-by-commitment"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "commitmentBlock"
+        ],
+        {
+          "reason": "reservation",
+          "coveragePercent": 100,
+          "benefitName": "ri-fixture-f16",
+          "expiryDate": "2027-03-31"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "right-sku commitmentBlock reason outside the union",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "verdict"
+        ],
+        "blocked-by-commitment"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "savingsMax"
+        ],
+        null
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "commitmentBlock"
+        ],
+        {
+          "reason": "savings-plan",
+          "coveragePercent": 100,
+          "benefitName": "ri-fixture-f16",
+          "expiryDate": "2027-03-31"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "right-sku commitmentBlock coverage above 100 percent",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "verdict"
+        ],
+        "blocked-by-commitment"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "savingsMax"
+        ],
+        null
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "commitmentBlock"
+        ],
+        {
+          "reason": "reservation",
+          "coveragePercent": 140,
+          "benefitName": "ri-fixture-f16",
+          "expiryDate": "2027-03-31"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "row marked not actionable while publishing a saving",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "actionable"
+        ],
+        false
+      ]
+    ]
+  },
+  {
+    "name": "row with a non-boolean actionable flag",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "actionable"
+        ],
+        "no"
+      ]
+    ]
+  },
+  {
+    "name": "oversized commitmentBlock on a row that publishes a saving",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "commitmentBlock"
+        ],
+        {
+          "reason": "reservation",
+          "coveragePercent": 100,
+          "benefitName": "ri-fixture-f16",
+          "expiryDate": "2027-03-31"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "oversized rightSizeRejection alongside a recommendation",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "rightSizeRejection"
+        ],
+        {
+          "reason": "observed-fit",
+          "sku": "Standard_D2as_v5"
+        }
+      ]
+    ]
+  },
+  {
+    "name": "sku option savingsBasis outside the union",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "options",
+          0,
+          "savingsBasis"
+        ],
+        "amortized"
+      ]
+    ]
+  },
+  {
+    "name": "sku option projected usage without the estimate marker",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "options",
+          0,
+          "projected"
+        ],
+        {
+          "cpuP95": 42
+        }
+      ]
+    ]
+  },
+  {
+    "name": "sku option projected usage without any metric",
+    "guard": "isStoryArtifact",
+    "base": "right-sku",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "options",
+          0,
+          "projected"
+        ],
+        {
+          "estimate": true
+        }
+      ]
+    ]
+  },
+  {
+    "name": "summary actionable count above resources",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "summary",
+          "counts",
+          "actionable"
+        ],
+        99
+      ]
+    ]
+  },
+  {
+    "name": "signal billedSavingsPercent above 100",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "set",
+        [
+          "betterSku",
+          "billedSavingsPercent"
+        ],
+        120
+      ]
+    ]
+  },
+  {
+    "name": "signal billed-basis summary whose billed percent differs",
+    "guard": "isUtilizationSignal",
+    "base": "utilization-signal",
+    "ops": [
+      [
+        "set",
+        [
+          "betterSku",
+          "savingsBasis"
+        ],
+        "billed"
+      ],
+      [
+        "set",
+        [
+          "betterSku",
+          "billedSavingsPercent"
+        ],
+        12.5
+      ]
+    ]
   }
 ]
