@@ -392,6 +392,27 @@ assert.equal(isStoryArtifact(additive, 'oversized-resources'), true, 'additive f
   );
 }
 
+// ---- Iteration 6 (Option A): the portal signal mirrors the story row's `actionable` flag plus a short reason.
+{
+  const signal = await readFixture('utilization-signal');
+  assert.equal(signal.actionable === undefined && signal.actionReason === undefined, true, 'legacy signal carries no actionable flag');
+  assert.equal(isUtilizationSignal(signal), true, 'legacy signal without actionable accepted');
+  assert.equal(isUtilizationSignal({ ...signal, actionable: true }), true, 'actionable signal accepted');
+  assert.equal(isUtilizationSignal({ ...signal, actionable: false }), true, 'non-actionable signal without a reason accepted');
+  for (const actionReason of ['observed-fit', 'no-saving', 'blocked-by-commitment']) {
+    assert.equal(
+      isUtilizationSignal({ ...signal, betterSku: undefined, actionable: false, actionReason }),
+      true,
+      `non-actionable signal with reason ${actionReason} accepted`
+    );
+  }
+  assert.equal(isUtilizationSignal({ ...signal, actionable: 'no' }), false, 'non-boolean actionable rejected');
+  assert.equal(isUtilizationSignal({ ...signal, actionable: null }), false, 'null actionable rejected');
+  assert.equal(isUtilizationSignal({ ...signal, actionable: false, actionReason: 'too-big' }), false, 'unknown action reason rejected');
+  assert.equal(isUtilizationSignal({ ...signal, actionable: true, actionReason: 'observed-fit' }), false, 'reason on an actionable signal rejected');
+  assert.equal(isUtilizationSignal({ ...signal, actionReason: 'observed-fit' }), false, 'reason without actionable: false rejected');
+}
+
 // ---- Summary view (a reader's projection): rows removed, produced counts kept, marked `view: 'summary'`.
 for (const storyKey of STORY_KEYS) {
   const summaryView = { ...clone(artifacts[storyKey]), view: 'summary' };

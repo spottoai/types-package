@@ -33,6 +33,7 @@ import {
   type UtilizationProfile,
   type UtilizationProfileConfig,
   type UtilizationSignal,
+  type UtilizationSignalActionReason,
 } from './utilizationStories';
 import type { SubscriptionReportEvidencePack } from '../azure/reportEvidence';
 import {
@@ -435,6 +436,15 @@ const informationalRowValid: boolean = storyRowGuard('oversized-resources')(info
 // @ts-expect-error a commitment block reason is `reservation` or `cost-not-lower`.
 const unknownBlockReason: CommitmentBlock = { ...commitmentBlock, reason: 'savings-plan' };
 void [actionableSummary, blockValid, blockedRowValid, billedSignalValid, informationalRowValid, unknownBlockReason];
+
+// Iteration 6 (Option A): the portal signal mirrors the story row's `actionable` flag with a short machine reason.
+const signalActionReason: UtilizationSignalActionReason = 'observed-fit';
+const lowUseSignal: UtilizationSignal = { ...signal, betterSku: undefined, actionable: false, actionReason: signalActionReason };
+const actionableSignal: UtilizationSignal = { ...signal, actionable: true };
+const lowUseSignalValid: boolean = isUtilizationSignal(lowUseSignal);
+// @ts-expect-error a signal action reason is `observed-fit`, `no-saving` or `blocked-by-commitment`.
+const unknownSignalReason: UtilizationSignal = { ...signal, actionable: false, actionReason: 'no-size-fits' };
+void [lowUseSignal, actionableSignal, lowUseSignalValid, unknownSignalReason];
 
 // Summary-view projection (API `view=summary`): marked, rows removed, produced counts kept.
 const summaryView: StoryArtifact<OversizedResourceRow> = {

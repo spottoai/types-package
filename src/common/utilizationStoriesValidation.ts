@@ -16,7 +16,9 @@
  *   `protection`, a right-SKU row valid `current`/`options`, and so on;
  * - a row with `actionable: false` publishes no saving; a `blocked-by-commitment` Right SKU verdict carries a valid
  *   `commitmentBlock` (and only that verdict does), publishes no saving and is never `actionable: true`;
- * - `summary.actionable`, when present, is a count no greater than `counts.resources`.
+ * - `summary.actionable`, when present, is a count no greater than `counts.resources`;
+ * - the compact signal's `actionable` is boolean when present, and `actionReason` (in its union) appears only with
+ *   `actionable: false`.
  *
  * Guards accept additive (unknown) fields and never throw.
  */
@@ -90,6 +92,7 @@ const RIGHT_SKU_VERDICTS = new Set(['modernise', 'downsize', 'consider', 'keep',
 const SKU_SAVINGS_BASES = new Set(['list', 'billed']);
 const COMMITMENT_BLOCK_REASONS = new Set(['reservation', 'cost-not-lower']);
 const RIGHT_SIZE_REJECTION_REASONS = new Set(['observed-fit', 'no-saving']);
+const SIGNAL_ACTION_REASONS = new Set(['observed-fit', 'no-saving', 'blocked-by-commitment']);
 const BACKUP_RUN_STATES = new Set(['ok', 'failed', null]);
 const STORY_KEY_SET = new Set<string>(STORY_KEYS);
 const STORY_CELL_KINDS = new Set([
@@ -372,8 +375,10 @@ const isSignalSeries = (value: unknown): boolean =>
 export const isUtilizationSignal = (value: unknown): value is UtilizationSignal => {
   if (!isRecord(value) || !inSet(SIZING_VERDICTS, value.verdict) || !inSet(SCHEDULE_FITS, value.scheduleFit)) return false;
   if (!isSignalSeries(value.primary) || !inSet(TELEMETRY_STATUSES, value.telemetry)) return false;
-  const actionable = inSet(SCHEDULE_FITS_REQUIRING_CORROBORATION, value.scheduleFit) || value.verdict === 'mostly-off';
-  if (actionable && value.telemetry !== 'collected') return false;
+  const needsCorroboration = inSet(SCHEDULE_FITS_REQUIRING_CORROBORATION, value.scheduleFit) || value.verdict === 'mostly-off';
+  if (needsCorroboration && value.telemetry !== 'collected') return false;
+  if (value.actionable !== undefined && !isBoolean(value.actionable)) return false;
+  if (value.actionReason !== undefined && (value.actionable !== false || !inSet(SIGNAL_ACTION_REASONS, value.actionReason))) return false;
   if (value.secondary !== undefined) {
     if (!isSignalSeries(value.secondary)) return false;
     const primaryLength = ((value.primary as JsonRecord).sparkline as unknown[]).length;

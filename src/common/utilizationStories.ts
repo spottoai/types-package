@@ -185,7 +185,22 @@ export interface UtilizationSignal {
   coverage?: Pick<CommitmentCoverage, 'coveragePercent' | 'benefitTypes'>;
   betterSku?: SkuOptionSummary;
   telemetry: TelemetryStatus;
+  /**
+   * Mirrors `StoryRowBase.actionable` for the resource's story row: `false` when the engine's own evidence finds no
+   * action now (e.g. a right-size target that failed the fit check), so list views label the resource "Low use" rather
+   * than "Oversized". Absent on signals from older producers: treat as actionable.
+   */
+  actionable?: boolean;
+  /** Why the signal is not actionable; only present with `actionable: false`. */
+  actionReason?: UtilizationSignalActionReason;
 }
+/**
+ * Short machine reason for a non-actionable portal signal; members reuse the story row values they mirror:
+ * - `observed-fit`: no smaller size holds the observed CPU / memory peaks with headroom (`RightSizeRejection.reason`);
+ * - `no-saving`: the smaller size would not lower the billed cost (`RightSizeRejection.reason`);
+ * - `blocked-by-commitment`: the resize cannot lower the bill now because of a commitment (`CommitmentBlock`).
+ */
+export type UtilizationSignalActionReason = 'observed-fit' | 'no-saving' | 'blocked-by-commitment';
 
 // ---- Right SKU
 export type SkuOptionKind = 'same-shape' | 'fits-usage' | 'trade-off' | 'cross-platform';

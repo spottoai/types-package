@@ -17038,7 +17038,7 @@
             "cell": "money",
             "priority": 1,
             "roleClass": "save",
-            "hint": "Monthly saving net of buying licences (their cost spread over the licence term; see Payback). Below it: the saving with licences you already own"
+            "hint": "Monthly saving net of buying licenses (their cost spread over the license term; see Payback). Below it: the saving with licenses you already own"
           }
         ],
         "totalCount": 3,
@@ -17093,7 +17093,7 @@
                 "state": "worth-getting-quote",
                 "label": "Get a quote",
                 "tone": "warn",
-                "hint": "Quote licences for 8 vCPU"
+                "hint": "Quote licenses for 8 vCPU"
               },
               "payback": {
                 "kind": "number",
@@ -17124,7 +17124,7 @@
             "entitlementStatus": "unknown",
             "decision": {
               "status": "worth-getting-quote",
-              "headline": "Quote licences for 8 vCPU",
+              "headline": "Quote licenses for 8 vCPU",
               "paybackMonths": null,
               "confidence": "medium"
             },
@@ -17183,7 +17183,7 @@
                 "state": "payg-likely-preferable",
                 "label": "PAYG likely preferable",
                 "tone": "neutral",
-                "hint": "Runs too few hours for licences to pay back"
+                "hint": "Runs too few hours for licenses to pay back"
               },
               "payback": {
                 "kind": "number",
@@ -17214,7 +17214,7 @@
             "entitlementStatus": "unknown",
             "decision": {
               "status": "payg-likely-preferable",
-              "headline": "Runs too few hours for licences to pay back",
+              "headline": "Runs too few hours for licenses to pay back",
               "paybackMonths": null,
               "confidence": "medium"
             },
@@ -17395,7 +17395,7 @@
             "cell": "money",
             "priority": 1,
             "roleClass": "save",
-            "hint": "Monthly saving net of buying licences (their cost spread over the licence term; see Payback). Below it: the saving with licences you already own"
+            "hint": "Monthly saving net of buying licenses (their cost spread over the license term; see Payback). Below it: the saving with licenses you already own"
           }
         ],
         "totalCount": 1,
@@ -17450,7 +17450,7 @@
                 "state": "strong-candidate",
                 "label": "Strong candidate",
                 "tone": "good",
-                "hint": "Apply SQL Server licences to 4 vCore"
+                "hint": "Apply SQL Server licenses to 4 vCore"
               },
               "payback": {
                 "kind": "number",
@@ -17481,7 +17481,7 @@
             "entitlementStatus": "unknown",
             "decision": {
               "status": "strong-candidate",
-              "headline": "Apply SQL Server licences to 4 vCore",
+              "headline": "Apply SQL Server licenses to 4 vCore",
               "paybackMonths": 7.5,
               "confidence": "high"
             },

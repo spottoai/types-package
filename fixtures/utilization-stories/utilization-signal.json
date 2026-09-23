@@ -86,5 +86,6 @@
     "savingsPercent": 55.8,
     "savingsBasis": "list",
     "billedSavingsPercent": 55.8
-  }
+  },
+  "actionable": true
 }
