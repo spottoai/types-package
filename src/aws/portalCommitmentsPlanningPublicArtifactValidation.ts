@@ -1,3 +1,4 @@
+import { assertCommitmentsFreshnessDiagnostics } from '../azure/commitmentsPlanningValidation.js';
 import { validateAwsCommitmentsPlanningViewIdentity } from './commitmentsPlanningValidation.js';
 import {
   AWS_PORTAL_COMMITMENTS_PLANNING_LOGICAL_NAME,
@@ -557,7 +558,14 @@ function validatePhasedOption(value: unknown, field: string): void {
 function validateFreshness(value: unknown, field: string): void {
   const freshness = exact(value, ['status', 'generatedAt', 'entries', 'warnings'], field);
   records(freshness.entries, `${field}.entries`, (entry, itemField) =>
-    exact(entry, ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'reason', 'sourceKind'], itemField)
+    assertCommitmentsFreshnessDiagnostics(
+      exact(
+        entry,
+        ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'ageHours', 'reasonCode', 'reason', 'sourceKind'],
+        itemField
+      ),
+      itemField
+    )
   );
 }
 

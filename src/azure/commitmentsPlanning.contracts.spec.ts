@@ -1,10 +1,16 @@
 import {
+  COMMITMENTS_FRESHNESS_REASON_CODES,
+  isCommitmentsFreshnessEntry,
+  isCommitmentsFreshnessSummary,
   ProviderName,
   ProviderScopeType,
   type AwsCommitmentsInventoryItem,
   type AwsCommitmentsPlanningView,
   type AwsCommitmentsPurchaseRecommendation,
   type AzureCommitmentsPlanningView,
+  type CommitmentsFreshnessEntry,
+  type CommitmentsFreshnessReasonCode,
+  type CommitmentsFreshnessSummary,
   type CommitmentsInventoryItem,
   type CommitmentsPlanningView,
   type CommitmentsPurchaseRecommendation,
@@ -303,3 +309,44 @@ void [
   invalidPurchaseScope,
   invalidBenefitScope,
 ];
+
+const staleFreshnessEntry = {
+  section: 'inventory',
+  status: 'stale',
+  lastSuccessfulSyncAt: '2026-08-08T12:00:00.000Z',
+  ageHours: 60,
+  reasonCode: 'collection-stale',
+} satisfies CommitmentsFreshnessEntry;
+const freshnessSummary = {
+  status: 'stale',
+  generatedAt: '2026-08-11T00:00:00.000Z',
+  entries: [staleFreshnessEntry, { section: 'savings-plan-inventory', status: 'unavailable', reasonCode: 'permission-denied' }],
+} satisfies CommitmentsFreshnessSummary;
+const viewWithFreshness = { ...baseView, freshness: freshnessSummary } satisfies CommitmentsPlanningView;
+const invalidFreshnessReasonCode = {
+  section: 'inventory',
+  status: 'unavailable',
+  // @ts-expect-error Freshness reason codes are a closed union.
+  reasonCode: 'throttled',
+} satisfies CommitmentsFreshnessEntry;
+const invalidFreshnessAge = {
+  section: 'inventory',
+  status: 'stale',
+  // @ts-expect-error ageHours is numeric.
+  ageHours: '60',
+} satisfies CommitmentsFreshnessEntry;
+// Every declared reason code has a runtime value, and the runtime list is typed by the union.
+const everyReasonCode: Record<CommitmentsFreshnessReasonCode, true> = {
+  'collection-stale': true,
+  'permission-denied': true,
+  'collection-failed': true,
+  'not-collected': true,
+  'status-invalid': true,
+};
+const reasonCodes: readonly CommitmentsFreshnessReasonCode[] = COMMITMENTS_FRESHNESS_REASON_CODES;
+const guardedEntry: unknown = staleFreshnessEntry;
+const guardedSummary: unknown = freshnessSummary;
+const narrowedAge: number | undefined = isCommitmentsFreshnessEntry(guardedEntry) ? guardedEntry.ageHours : undefined;
+const narrowedEntries: CommitmentsFreshnessEntry[] = isCommitmentsFreshnessSummary(guardedSummary) ? guardedSummary.entries : [];
+
+void [viewWithFreshness, invalidFreshnessReasonCode, invalidFreshnessAge, everyReasonCode, reasonCodes, narrowedAge, narrowedEntries];

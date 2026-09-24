@@ -32,6 +32,19 @@ export type CommitmentsSourceKind = 'azure-native' | 'aws-native' | 'spotto-deri
 export type CommitmentsConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none' | 'unknown';
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
+/**
+ * Machine-readable cause for a freshness entry that is not current.
+ * `collection-stale` is valid only with status `stale`: the last successful collection is older than the producer's window.
+ */
+export type CommitmentsFreshnessReasonCode = 'collection-stale' | 'permission-denied' | 'collection-failed' | 'not-collected' | 'status-invalid';
+/** Every `CommitmentsFreshnessReasonCode`, for dependency-free runtime guards. */
+export const COMMITMENTS_FRESHNESS_REASON_CODES: readonly CommitmentsFreshnessReasonCode[] = [
+  'collection-stale',
+  'permission-denied',
+  'collection-failed',
+  'not-collected',
+  'status-invalid',
+];
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
 export type CommitmentsAppliedScopeType =
@@ -443,6 +456,13 @@ export interface CommitmentsFreshnessEntry {
   generatedAt?: string;
   observedAt?: string;
   lastSuccessfulSyncAt?: string;
+  /**
+   * Hours from `lastSuccessfulSyncAt` to the producer's evaluation time, rounded to one decimal place.
+   * Present only with `lastSuccessfulSyncAt`; never negative.
+   */
+  ageHours?: number;
+  /** Machine-readable cause; `reason` remains the human-readable explanation. */
+  reasonCode?: CommitmentsFreshnessReasonCode;
   reason?: string;
   sourceKind?: CommitmentsSourceKind;
 }

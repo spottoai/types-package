@@ -1,3 +1,4 @@
+import { assertCommitmentsFreshnessDiagnostics } from '../azure/commitmentsPlanningValidation.js';
 import {
   AWS_ORGANIZATION_COMMITMENTS_ATTRIBUTION_UNAVAILABLE_REASONS,
   type AwsOrganizationCommitmentsPlanningView,
@@ -422,7 +423,11 @@ function validateFreshness(value: unknown, field: string): void {
   requiredEnum(freshness.status, ['current', 'stale', 'partial', 'unavailable'] as const, `${field}.status`);
   isoTimestamp(freshness.generatedAt, `${field}.generatedAt`);
   records(freshness.entries, `${field}.entries`, (entry, itemField) => {
-    const item = exact(entry, ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'reason', 'sourceKind'], itemField);
+    const item = exact(
+      entry,
+      ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'ageHours', 'reasonCode', 'reason', 'sourceKind'],
+      itemField
+    );
     requiredString(item.section, `${itemField}.section`);
     requiredEnum(item.status, ['current', 'stale', 'partial', 'unavailable'] as const, `${itemField}.status`);
     optionalTimestamp(item.generatedAt, `${itemField}.generatedAt`);
@@ -430,6 +435,7 @@ function validateFreshness(value: unknown, field: string): void {
     optionalTimestamp(item.lastSuccessfulSyncAt, `${itemField}.lastSuccessfulSyncAt`);
     optionalString(item.reason, `${itemField}.reason`);
     optionalString(item.sourceKind, `${itemField}.sourceKind`);
+    assertCommitmentsFreshnessDiagnostics(item, itemField);
   });
   optionalStrings(freshness.warnings, `${field}.warnings`);
 }

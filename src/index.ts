@@ -14,6 +14,7 @@ export * from './azure/artifactRunReference';
 export * from './azure/billingPlots';
 export * from './azure/benefits';
 export * from './azure/commitmentsPlanning';
+export * from './azure/commitmentsPlanningValidation';
 export * from './azure/licensing';
 export * from './azure/configs';
 export * from './azure/metrics';
