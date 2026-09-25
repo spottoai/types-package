@@ -527,6 +527,25 @@ export const isOversizedResourceRow = (value: unknown, days?: number): value is 
   const row = fields(value);
   if (!isUtilizationProfile(row.profile, days) || (row.betterSku !== undefined && !isSkuOptionSummary(row.betterSku))) return false;
   if (row.recommendedOption !== undefined && !isSkuOption(row.recommendedOption)) return false;
+  if (row.vmComputeCostComparison !== undefined) {
+    const comparison = row.vmComputeCostComparison;
+    if (
+      value.type.toLowerCase() !== 'microsoft.compute/virtualmachines' ||
+      !isRecord(comparison) ||
+      comparison.basis !== 'billed-compute' ||
+      !isFiniteNumber(comparison.currentCost) ||
+      !isFiniteNumber(comparison.targetCost) ||
+      comparison.currentCost < comparison.targetCost ||
+      comparison.targetCost < 0 ||
+      comparison.currency !== value.currency ||
+      !isFiniteNumber(comparison.windowDays) ||
+      !Number.isInteger(comparison.windowDays) ||
+      comparison.windowDays <= 0 ||
+      value.savingsMax === null ||
+      Math.abs(comparison.currentCost - comparison.targetCost - value.savingsMax) > 0.01 ||
+      row.recommendedOption === undefined
+    ) return false;
+  }
   if (row.rightSizeStatus !== undefined && !inSet(RIGHT_SIZE_ASSESSMENT_STATUSES, row.rightSizeStatus)) return false;
   const hasRecommendation = row.betterSku !== undefined || row.recommendedOption !== undefined;
   if (row.rightSizeStatus === 'recommended' && !hasRecommendation) return false;

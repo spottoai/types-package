@@ -462,6 +462,14 @@ export interface OversizedResourceRow extends StoryRowBase {
   betterSku?: SkuOptionSummary;
   /** Full recommendation evidence for detail/report views; `betterSku` remains the compact list-view projection. */
   recommendedOption?: SkuOption;
+  /** Observed-window billed compute costs for the recommended VM resize; excludes separately billed disks. */
+  vmComputeCostComparison?: {
+    basis: 'billed-compute';
+    currentCost: number;
+    targetCost: number;
+    currency: string;
+    windowDays: number;
+  };
   /** Distinguishes a real no-change decision from unavailable or unsupported assessment. */
   rightSizeStatus?: RightSizeAssessmentStatus;
   /** Present when the recommended resize cannot lower the bill now; the row then publishes no saving. */
