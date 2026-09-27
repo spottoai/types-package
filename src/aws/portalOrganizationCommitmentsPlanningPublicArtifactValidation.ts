@@ -12,18 +12,18 @@ import {
   AWS_ORGANIZATION_COMMITMENTS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   type AwsPortalOrganizationCommitmentsPlanningArtifact,
 } from './portalOrganizationCommitmentsPlanningPublicArtifacts.js';
-import { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION } from './portalPublicArtifacts.js';
+import { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION } from './publicArtifacts.js';
 import {
   asRecord,
   assertExactKeys,
-  assertPublicJson,
   assertValue,
   finiteNumber,
   isoTimestamp,
   requiredEnum,
   requiredString,
   validateGeneration,
-} from './portalPublicArtifactValidationCommon.js';
+} from '../common/validationHelpers.js';
+import { assertAwsPublicJson } from './validationHelpers.js';
 
 const TOP_LEVEL_KEYS = [
   'schemaVersion',
@@ -59,7 +59,7 @@ export function validateAwsOrganizationCommitmentsPlanningView(
 ): AwsOrganizationCommitmentsPlanningView {
   validateAwsOrganizationCommitmentsPlanningViewIdentity(value, expected);
   validateBody(value as AwsOrganizationCommitmentsPlanningView);
-  assertPublicJson(value, 'organizationCommitmentsPlanning');
+  assertAwsPublicJson(value, 'organizationCommitmentsPlanning');
   return value as AwsOrganizationCommitmentsPlanningView;
 }
 
@@ -85,7 +85,7 @@ export function validateAwsPortalOrganizationCommitmentsPlanningArtifact(
   if (artifact.month !== undefined) requiredString(artifact.month, 'artifact.month');
 
   validateAwsOrganizationCommitmentsPlanningView(artifact, expected);
-  assertPublicJson(artifact, 'artifact');
+  assertAwsPublicJson(artifact, 'artifact');
   return value as AwsPortalOrganizationCommitmentsPlanningArtifact;
 }
 

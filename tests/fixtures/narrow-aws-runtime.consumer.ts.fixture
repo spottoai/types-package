@@ -1,6 +1,9 @@
 import {
-  validateAwsPortalRelationshipArtifact,
-  type AwsPortalRelationshipArtifact,
+  RESOURCE_GRAPH_LOGICAL_NAME,
+  validateAwsResourceGraphArtifact,
+  type AwsResourceGraphArtifact,
+  type ResourceFamilyId,
+  type ResourceGraphNode,
 } from '@spottoai/types-package/aws/relationships';
 import {
   validateAwsPortalOrganizationCommitmentsPlanningArtifact,
@@ -17,7 +20,8 @@ const commitmentsViewValidator: (value: unknown, expectedAccountId?: string) => 
   validateAwsCommitmentsPlanningViewIdentity;
 
 void [
-  validateAwsPortalRelationshipArtifact,
+  validateAwsResourceGraphArtifact,
+  RESOURCE_GRAPH_LOGICAL_NAME,
   commitmentsViewValidator,
   validateAwsPortalOrganizationCommitmentsPlanningArtifact,
   validateAwsOrganizationCommitmentsRefreshAcceptedResponse,
@@ -25,6 +29,8 @@ void [
   validateAwsOrganizationCommitmentsScopeListResponse,
 ];
 
-void (undefined as unknown as AwsPortalRelationshipArtifact);
+void (undefined as unknown as AwsResourceGraphArtifact);
+void (undefined as unknown as ResourceGraphNode);
+void (undefined as unknown as ResourceFamilyId);
 void (undefined as unknown as AwsOrganizationCommitmentsPlanningView);
 void (undefined as unknown as AwsPortalOrganizationCommitmentsPlanningArtifact);
