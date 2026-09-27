@@ -4,6 +4,7 @@ import {
   AWS_COMMAND_PROVIDER,
   AWS_COMMAND_SCHEMA_VERSION,
   AWS_FORBIDDEN_CREDENTIAL_FIELDS,
+  AWS_SCHEDULED_REFRESH_SCAN_KINDS,
   type AwsAccountDeleteCommand,
   type AwsAccountRefreshCommand,
   type AwsBillingSourceRefreshCommand,
@@ -12,6 +13,7 @@ import {
   type AwsEstateDeleteCommand,
   type AwsEstateReconcileCommand,
   type AwsOrganizationCommitmentsRefreshCommand,
+  type AwsScheduledRefreshTickCommand,
 } from '../index';
 
 // @ts-expect-error The abandoned single-account setup request is not exported.
@@ -92,7 +94,37 @@ const organizationCommitmentsRefresh: AwsOrganizationCommitmentsRefreshCommand =
   requestedAt: '2026-07-31T00:03:00.000Z',
 };
 
-const commands: AwsCommand[] = [estateReconcile, estateDelete, accountRefresh, accountDelete, billingSourceRefresh, organizationCommitmentsRefresh];
+const scheduledFullRefreshTick: AwsScheduledRefreshTickCommand = {
+  schemaVersion: AWS_COMMAND_SCHEMA_VERSION,
+  provider: AWS_COMMAND_PROVIDER,
+  entity: 'scheduler',
+  action: 'tick',
+  scanKind: 'full',
+  scheduledAt: '2026-09-21T00:00:00.000Z',
+  requestId: 'aws-scheduled-refresh:full:2026-09-21T00:00:00.000Z',
+  correlationId: 'aws-scheduled-refresh:full:2026-09-21T00:00:00.000Z',
+  requestedAt: '2026-09-21T00:00:00.000Z',
+};
+
+const scheduledComponentRefreshTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  scanKind: 'components',
+  scheduledAt: '2026-09-21T04:30:00.000Z',
+  requestId: 'aws-scheduled-refresh:components:2026-09-21T04:30:00.000Z',
+  correlationId: 'aws-scheduled-refresh:components:2026-09-21T04:30:00.000Z',
+  requestedAt: '2026-09-21T04:30:00.000Z',
+};
+
+const commands: AwsCommand[] = [
+  estateReconcile,
+  estateDelete,
+  accountRefresh,
+  accountDelete,
+  billingSourceRefresh,
+  organizationCommitmentsRefresh,
+  scheduledFullRefreshTick,
+  scheduledComponentRefreshTick,
+];
 
 const companyTrustSetup: AwsCompanyTrustSetupResponse = {
   provider: 'AWS',
@@ -203,8 +235,49 @@ const { manifestRevision: _manifestRevision, ...accountRefreshWithoutRevision } 
 // @ts-expect-error Every command is bound to one exact desired-state revision.
 const invalidCommandWithoutRevision: AwsAccountRefreshCommand = accountRefreshWithoutRevision;
 
+const invalidScheduledRefreshKind: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Scheduled AWS ticks support only the approved full and component cadences.
+  scanKind: 'billing',
+};
+
+const invalidScheduledRefreshWithCompany: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Global scheduler ticks cannot carry one company scope.
+  companyId: 'company-example',
+};
+
+const invalidScheduledRefreshWithAccount: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Account selection remains engine-owned.
+  accountId: '123456789012',
+};
+
+const invalidScheduledRefreshWithCredentials: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Scheduled ticks must never carry AWS credentials.
+  credentials: { accessKeyId: 'AKIAEXAMPLE', secretAccessKey: 'raw-secret' },
+};
+
+const invalidScheduledRefreshWithRegions: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Provider Region planning remains engine-owned.
+  regions: ['us-east-1'],
+};
+
+const invalidScheduledRefreshWithProviderWindow: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Provider collection windows remain engine-owned.
+  timeWindow: { start: '2026-09-20T00:00:00.000Z', end: '2026-09-21T00:00:00.000Z' },
+};
+
+const { scheduledAt: _scheduledAt, ...scheduledRefreshWithoutScheduledAt } = scheduledFullRefreshTick;
+// @ts-expect-error Scheduled ticks must identify the exact triggering cron slot.
+const invalidScheduledRefreshWithoutScheduledAt: AwsScheduledRefreshTickCommand = scheduledRefreshWithoutScheduledAt;
+
 const commandEntities = AWS_COMMAND_ENTITIES;
 const commandActions = AWS_COMMAND_ACTIONS;
+const scheduledRefreshScanKinds = AWS_SCHEDULED_REFRESH_SCAN_KINDS;
 const forbiddenCredentialFields = AWS_FORBIDDEN_CREDENTIAL_FIELDS;
 
 void commands;
@@ -217,7 +290,16 @@ void invalidCommandWithExternalId;
 void invalidCommandWithBilling;
 void invalidCommandWithCredentials;
 void invalidCommandWithoutRevision;
+void invalidScheduledRefreshKind;
+void invalidScheduledRefreshWithCompany;
+void invalidScheduledRefreshWithAccount;
+void invalidScheduledRefreshWithCredentials;
+void invalidScheduledRefreshWithRegions;
+void invalidScheduledRefreshWithProviderWindow;
+void invalidScheduledRefreshWithoutScheduledAt;
 void _manifestRevision;
+void _scheduledAt;
 void commandEntities;
 void commandActions;
+void scheduledRefreshScanKinds;
 void forbiddenCredentialFields;

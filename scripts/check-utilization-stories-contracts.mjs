@@ -19,6 +19,8 @@ import {
   isUtilizationProfile,
   isUtilizationProfileConfig,
   isUtilizationSignal,
+  isResilienceRow,
+  storyRowGuard,
 } from '../dist/index.js';
 
 const fixtureDir = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'utilization-stories');
@@ -189,6 +191,48 @@ assert.equal(
   false,
   'resilience facts: non-numeric retention rejected'
 );
+
+// ---- AWS scope (D1): an AWS account has no tenant, so only `provider: 'aws'` admits an empty `tenantId`.
+{
+  const withTenant = (artifact, scopeTenant, rowTenant, provider) => {
+    const value = clone(artifact);
+    value.scope.tenantId = scopeTenant;
+    if (provider === undefined) delete value.scope.provider;
+    else value.scope.provider = provider;
+    for (const section of value.sections) for (const row of section.rows) row.tenantId = rowTenant;
+    return value;
+  };
+  for (const storyKey of STORY_KEYS) {
+    const base = artifacts[storyKey];
+    assert.equal(isStoryArtifact(withTenant(base, '', '', 'aws'), storyKey), true, `${storyKey}: AWS scope with empty tenant accepted`);
+    assert.equal(isStoryArtifact(withTenant(base, 't-1', 't-1', 'aws'), storyKey), true, `${storyKey}: AWS scope with a tenant accepted`);
+    assert.equal(isStoryArtifact(withTenant(base, 't-1', 't-1', 'azure'), storyKey), true, `${storyKey}: explicit Azure scope accepted`);
+    assert.equal(isStoryArtifact(withTenant(base, '', '', undefined), storyKey), false, `${storyKey}: empty tenant without provider rejected`);
+    assert.equal(isStoryArtifact(withTenant(base, '', '', 'azure'), storyKey), false, `${storyKey}: empty Azure tenant rejected`);
+    assert.equal(
+      isStoryArtifact(withTenant(base, '', 't-1', 'aws'), storyKey),
+      false,
+      `${storyKey}: AWS row outside the empty scope tenant rejected`
+    );
+    assert.equal(
+      isStoryArtifact(withTenant(base, 't-1', '', 'aws'), storyKey),
+      false,
+      `${storyKey}: AWS row with empty tenant under a tenant scope rejected`
+    );
+    assert.equal(isStoryArtifact(withTenant(base, 't-1', 't-1', 'gcp'), storyKey), false, `${storyKey}: unknown provider rejected`);
+    const awsSummary = withTenant(base, '', '', 'aws');
+    awsSummary.view = 'summary';
+    awsSummary.sections = awsSummary.sections.map(section => ({ ...section, rows: [] }));
+    assert.equal(isStoryArtifact(awsSummary, storyKey), true, `${storyKey}: AWS summary view accepted`);
+    const row = { ...base.sections[0].rows[0], tenantId: '' };
+    const days = base.window.days;
+    assert.equal(storyRowGuard(storyKey, days, 'aws')(row), true, `${storyKey}: AWS row guard accepts an empty tenant`);
+    assert.equal(storyRowGuard(storyKey, days)(row), false, `${storyKey}: default row guard rejects an empty tenant`);
+    assert.equal(storyRowGuard(storyKey, days, 'azure')(row), false, `${storyKey}: Azure row guard rejects an empty tenant`);
+  }
+  const resilienceRow = { ...artifacts['resilience-recovery'].sections[0].rows[0], tenantId: '' };
+  assert.equal(isResilienceRow(resilienceRow), false, 'standalone row guard still requires a tenant');
+}
 
 // ---- Additive fields are tolerated.
 const additive = clone(artifacts['oversized-resources']);

@@ -346,6 +346,32 @@ assert.deepEqual(validateAwsPortalRetainedHistoryBodyBinding(retained, resourceH
 const clone = value => structuredClone(value);
 const rejects = (validator, value, pattern) => assert.throws(() => validator(value), pattern);
 
+// Elastic IPs are a discovery family on current and history artifacts.
+const elasticIp = clone(resource);
+elasticIp.coverage.discovery.families.push({ ...clone(resource.coverage.discovery.families[0]), family: 'elastic-ip' });
+elasticIp.resources.push({
+  ...clone(resource.resources[0]),
+  stableKey: 'aws:ec2:elastic-ip:eipalloc-123',
+  family: 'elastic-ip',
+  resourceType: 'AWS::EC2::EIP',
+  resourceId: 'eipalloc-123',
+  discovery: { freshness: resource.resources[0].discovery.freshness, summary: { associated: false } },
+});
+elasticIp.summary = { ...elasticIp.summary, totalDiscoveredResourceCount: 2, returnedResourceCount: 2 };
+assert.deepEqual(validateAwsPortalResourceCollectionDetailArtifact(elasticIp), elasticIp);
+const elasticIpHistory = clone(resourceHistory);
+elasticIpHistory.discovery.families.push({
+  family: 'elastic-ip',
+  resourceRegionCount: 1,
+  totalResources: 1,
+  regionsWithSuccessfulRefresh: 1,
+  regionsWithoutSuccessfulRefresh: 0,
+});
+assert.deepEqual(validateAwsPortalResourceCollectionHistoryArtifact(elasticIpHistory), elasticIpHistory);
+const unknownFamily = clone(resource);
+unknownFamily.resources[0].family = 'elastic-ip-address';
+assert.throws(() => validateAwsPortalResourceCollectionDetailArtifact(unknownFamily));
+
 const undeclared = clone(resource);
 undeclared.privateArtifact = true;
 rejects(validateAwsPortalResourceCollectionDetailArtifact, undeclared, /undeclared fields/);

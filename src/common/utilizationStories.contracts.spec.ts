@@ -335,6 +335,12 @@ const artifact: StoryArtifact<OversizedResourceRow> = {
   summary: { counts: { 'verdict:mostly-off': 9 }, spend: { total30d: 4000 }, currency: 'NZD', note: 'sample' },
   sections: [section],
 };
+/** An AWS artifact names its provider; the account has no tenant, so the scope (and every row) carries `''`. */
+const awsArtifact: StoryArtifact<OversizedResourceRow> = {
+  ...artifact,
+  scope: { companyId: 'c', tenantId: '', subscriptionId: '123456789012', displayName: 'Fixture AWS', currency: 'USD', provider: 'aws' },
+};
+void awsArtifact;
 const sample: StorySample<OversizedResourceRow> = { summary: artifact.summary, sections: artifact.sections };
 const stories: ReportingStories = { 'oversized-resources': sample };
 /** The evidence pack carries stories as an optional, additive projection. */

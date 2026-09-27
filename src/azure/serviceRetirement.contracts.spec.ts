@@ -1,5 +1,8 @@
 import type {
+  AwsCertificateRetirementRenderData,
   KeyVaultObjectRetirementRenderData,
+  ServiceRetirementKnownRenderKind,
+  ServiceRetirementRenderData,
   KeyVaultRetirementCoverageArtifact,
   ServiceRetirementPortalEntry,
 } from './serviceRetirement';
@@ -52,6 +55,33 @@ const coverage: KeyVaultRetirementCoverageArtifact = {
 
 const portfolioKind: PortfolioExpiryKind = 'key-vault-secret';
 
+const awsCertificate: AwsCertificateRetirementRenderData = {
+  kind: 'aws-certificate',
+  manager: 'acm',
+  certificateArn: 'arn:aws:acm:ap-southeast-2:123456789012:certificate/11111111-2222-3333-4444-555555555555',
+  domainName: 'example.com',
+  certificateType: 'AMAZON_ISSUED',
+  renewalEligibility: 'ELIGIBLE',
+  renewalStatus: 'PENDING_AUTO_RENEWAL',
+  keyAlgorithm: 'RSA_2048',
+  inUseBy: ['arn:aws:elasticloadbalancing:ap-southeast-2:123456789012:loadbalancer/app/web/0123456789abcdef'],
+};
+const iamCertificate: AwsCertificateRetirementRenderData = {
+  kind: 'aws-certificate',
+  manager: 'iam',
+  certificateArn: 'arn:aws:iam::123456789012:server-certificate/legacy-web',
+};
+const awsRetirement: ServiceRetirementPortalEntry = { ...retirement, renderData: awsCertificate };
+const awsKind: ServiceRetirementKnownRenderKind = awsCertificate.kind;
+/** Unregistered kinds still fall back to the unknown render data shape. */
+const futureRenderData: ServiceRetirementRenderData = { kind: 'future-kind', anything: 1 };
+const invalidManager: AwsCertificateRetirementRenderData = {
+  ...iamCertificate,
+  // @ts-expect-error Only ACM and IAM manage AWS certificates.
+  manager: 'key-vault',
+};
+
+void [awsRetirement, awsKind, futureRenderData, invalidManager];
 void retirement;
 void coverage;
 void portfolioKind;

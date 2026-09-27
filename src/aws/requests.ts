@@ -5,10 +5,13 @@ export const AWS_COMMAND_SCHEMA_VERSION = 1 as const;
 export const AWS_COMMAND_PROVIDER = 'aws' as const;
 
 /** Entities handled by AWS estate orchestration. */
-export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'organization-commitments'] as const;
+export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'organization-commitments', 'scheduler'] as const;
 
 /** Actions supported across AWS estate orchestration commands. */
-export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete'] as const;
+export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete', 'tick'] as const;
+
+/** Scheduled AWS scan cadences emitted by the enqueue-only API scheduler. */
+export const AWS_SCHEDULED_REFRESH_SCAN_KINDS = ['full', 'components'] as const;
 
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
 export const AWS_FORBIDDEN_CREDENTIAL_FIELDS = [
@@ -26,6 +29,7 @@ export type AwsCommandSchemaVersion = typeof AWS_COMMAND_SCHEMA_VERSION;
 export type AwsCommandProvider = typeof AWS_COMMAND_PROVIDER;
 export type AwsCommandEntity = (typeof AWS_COMMAND_ENTITIES)[number];
 export type AwsCommandAction = (typeof AWS_COMMAND_ACTIONS)[number];
+export type AwsScheduledRefreshScanKind = (typeof AWS_SCHEDULED_REFRESH_SCAN_KINDS)[number];
 export type AwsForbiddenCredentialField = (typeof AWS_FORBIDDEN_CREDENTIAL_FIELDS)[number];
 
 /**
@@ -114,6 +118,36 @@ export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase
   estateId: string;
 }
 
+/**
+ * Wakes engine-owned AWS due selection for one exact scheduler slot.
+ * Account enumeration, desired state, credentials, Regions, and provider
+ * windows remain engine-owned and are intentionally absent.
+ */
+export interface AwsScheduledRefreshTickCommand extends AwsCommandForbiddenConfigurationFields {
+  schemaVersion: AwsCommandSchemaVersion;
+  provider: AwsCommandProvider;
+  entity: 'scheduler';
+  action: 'tick';
+  scanKind: AwsScheduledRefreshScanKind;
+  /** Exact ISO-8601 timestamp supplied by the triggering cron event. */
+  scheduledAt: string;
+  requestId: string;
+  correlationId: string;
+  requestedAt: string;
+  companyId?: never;
+  manifestRevision?: never;
+  estateId?: never;
+  accountId?: never;
+  cloudAccountId?: never;
+  billingSourceId?: never;
+  region?: never;
+  regions?: never;
+  startTime?: never;
+  endTime?: never;
+  timeWindow?: never;
+  billingDestination?: never;
+}
+
 /** Complete command union consumed by the dedicated AWS orchestration ingress. */
 export type AwsCommand =
   | AwsEstateReconcileCommand
@@ -121,4 +155,5 @@ export type AwsCommand =
   | AwsAccountRefreshCommand
   | AwsAccountDeleteCommand
   | AwsBillingSourceRefreshCommand
-  | AwsOrganizationCommitmentsRefreshCommand;
+  | AwsOrganizationCommitmentsRefreshCommand
+  | AwsScheduledRefreshTickCommand;

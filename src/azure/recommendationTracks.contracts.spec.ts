@@ -157,6 +157,9 @@ const systemTracksView: SystemTracksView = {
   ],
 };
 
+/** An AWS producer publishes the same view under its own provider. */
+const awsSystemTracksView: SystemTracksView = { ...systemTracksView, providerName: ProviderName.Aws, providerScopeId: '123456789012' };
+void awsSystemTracksView;
 void catalog;
 void eligibleClassification;
 void ineligibleClassification;

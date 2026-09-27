@@ -10,7 +10,8 @@
  * - `columns[].priority` is an integer 1–5, and every row carries a cell per column whose `kind` matches `column.cell`;
  * - a schedule fit of good|fair|low, or a `mostly-off` verdict, requires a corroborated running basis (an independent source,
  *   never the basis itself) and collected telemetry — on profiles and on the compact signal alike;
- * - every row of an artifact belongs to the artifact's scope (company, tenant, subscription);
+ * - every row of an artifact belongs to the artifact's scope (company, tenant, subscription); only an AWS scope
+ *   (`provider: 'aws'`) may carry an empty `tenantId`, and then its rows carry the same empty tenant;
  * - `MetricStats` carries every required field of the shared shape;
  * - row validation depends on the story key: an oversized row must carry a valid `profile`, a resilience row a valid
  *   `protection`, a right-SKU row valid `current`/`options`, and so on;
@@ -38,6 +39,7 @@ import {
   type HybridBenefitRow,
   type MetricSparkline,
   type OversizedResourceRow,
+  type Provider,
   type ProtectionCapability,
   type ProtectionProfile,
   type ReportingStories,
@@ -509,9 +511,13 @@ export const hasCellsForColumns = (row: StoryRowBase, columns: StoryColumn[]): b
 /** Re-widen a narrowed row so story-specific fields can be inspected without index-signature casts. */
 const fields = (value: unknown): JsonRecord => value as JsonRecord;
 
-const isStoryRowBase = (value: unknown): value is StoryRowBase =>
+/** An AWS account has no tenant, so an AWS story row may carry an empty `tenantId`; every other provider requires one. */
+const isTenantId = (value: unknown, provider?: Provider): boolean => (provider === 'aws' ? isText(value) : isString(value));
+
+const isStoryRowBase = (value: unknown, provider?: Provider): value is StoryRowBase =>
   isRecord(value) &&
-  ['resourceId', 'name', 'type', 'subscriptionId', 'tenantId', 'companyId', 'currency', 'fingerprint'].every(key => isString(value[key])) &&
+  ['resourceId', 'name', 'type', 'subscriptionId', 'companyId', 'currency', 'fingerprint'].every(key => isString(value[key])) &&
+  isTenantId(value.tenantId, provider) &&
   isText(value.location) &&
   isNullableNumber(value.spend30d) &&
   isNullableNumber(value.savingsMax) &&
@@ -522,8 +528,8 @@ const isStoryRowBase = (value: unknown): value is StoryRowBase =>
   isRecord(value.cells) &&
   Object.values(value.cells).every(isStoryCell);
 
-export const isOversizedResourceRow = (value: unknown, days?: number): value is OversizedResourceRow => {
-  if (!isStoryRowBase(value)) return false;
+export const isOversizedResourceRow = (value: unknown, days?: number, provider?: Provider): value is OversizedResourceRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   if (!isUtilizationProfile(row.profile, days) || (row.betterSku !== undefined && !isSkuOptionSummary(row.betterSku))) return false;
   if (row.recommendedOption !== undefined && !isSkuOption(row.recommendedOption)) return false;
@@ -571,8 +577,8 @@ const isCoherentCommitmentBlock = (row: JsonRecord): boolean => {
   return isCommitmentBlock(row.commitmentBlock) && row.savingsMax === null && row.actionable !== true;
 };
 
-export const isRightSkuRow = (value: unknown, days?: number): value is RightSkuRow => {
-  if (!isStoryRowBase(value)) return false;
+export const isRightSkuRow = (value: unknown, days?: number, provider?: Provider): value is RightSkuRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   return (
     isSkuOption(row.current) &&
@@ -589,16 +595,16 @@ export const isRightSkuRow = (value: unknown, days?: number): value is RightSkuR
 };
 
 /** Schedule candidates always carry a corroborated weekly running profile. */
-export const isScheduleCandidateRow = (value: unknown, days?: number): value is ScheduleCandidateRow => {
-  if (!isStoryRowBase(value)) return false;
+export const isScheduleCandidateRow = (value: unknown, days?: number, provider?: Provider): value is ScheduleCandidateRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   if (!isUtilizationProfile(row.profile, days) || !inSet(SCHEDULE_ACTIONS, row.action)) return false;
   const profile = row.profile as UtilizationProfile;
   return profile.running !== undefined && profile.running.weekly !== undefined && isCorroboratedRunningProfile(profile.running);
 };
 
-export const isResilienceRow = (value: unknown): value is ResilienceRow => {
-  if (!isStoryRowBase(value)) return false;
+const resilienceRow = (value: unknown, provider?: Provider): value is ResilienceRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   return (
     isProtectionProfile(row.protection) &&
@@ -609,8 +615,8 @@ export const isResilienceRow = (value: unknown): value is ResilienceRow => {
   );
 };
 
-export const isHybridBenefitRow = (value: unknown): value is HybridBenefitRow => {
-  if (!isStoryRowBase(value)) return false;
+const hybridBenefitRow = (value: unknown, provider?: Provider): value is HybridBenefitRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   return (
     ['productFamily', 'serviceModel', 'configurationStatus', 'technicalEligibilityStatus', 'coverageStatus', 'entitlementStatus'].every(key =>
@@ -628,8 +634,8 @@ export const isHybridBenefitRow = (value: unknown): value is HybridBenefitRow =>
   );
 };
 
-export const isCommitmentRow = (value: unknown): value is CommitmentRow => {
-  if (!isStoryRowBase(value)) return false;
+const commitmentRow = (value: unknown, provider?: Provider): value is CommitmentRow => {
+  if (!isStoryRowBase(value, provider)) return false;
   const row = fields(value);
   return (
     isCommitmentCoverage(row.coverage) &&
@@ -637,21 +643,25 @@ export const isCommitmentRow = (value: unknown): value is CommitmentRow => {
   );
 };
 
-/** Row guard for a story key; unknown keys reject every row. */
-export const storyRowGuard = (storyKey: string, days?: number): ((row: unknown) => row is StoryRowBase) => {
+export const isResilienceRow = (value: unknown): value is ResilienceRow => resilienceRow(value);
+export const isHybridBenefitRow = (value: unknown): value is HybridBenefitRow => hybridBenefitRow(value);
+export const isCommitmentRow = (value: unknown): value is CommitmentRow => commitmentRow(value);
+
+/** Row guard for a story key; unknown keys reject every row. `provider: 'aws'` admits rows with an empty `tenantId`. */
+export const storyRowGuard = (storyKey: string, days?: number, provider?: Provider): ((row: unknown) => row is StoryRowBase) => {
   switch (storyKey) {
     case 'oversized-resources':
-      return (row: unknown): row is StoryRowBase => isOversizedResourceRow(row, days);
+      return (row: unknown): row is StoryRowBase => isOversizedResourceRow(row, days, provider);
     case 'right-sku':
-      return (row: unknown): row is StoryRowBase => isRightSkuRow(row, days);
+      return (row: unknown): row is StoryRowBase => isRightSkuRow(row, days, provider);
     case 'schedule-candidates':
-      return (row: unknown): row is StoryRowBase => isScheduleCandidateRow(row, days);
+      return (row: unknown): row is StoryRowBase => isScheduleCandidateRow(row, days, provider);
     case 'resilience-recovery':
-      return isResilienceRow;
+      return (row: unknown): row is StoryRowBase => resilienceRow(row, provider);
     case 'hybrid-benefit':
-      return isHybridBenefitRow;
+      return (row: unknown): row is StoryRowBase => hybridBenefitRow(row, provider);
     case 'commitments':
-      return isCommitmentRow;
+      return (row: unknown): row is StoryRowBase => commitmentRow(row, provider);
     default:
       return (_row: unknown): _row is StoryRowBase => false;
   }
@@ -670,12 +680,18 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
 const isStorySectionFinancials = (value: unknown): boolean =>
   value === undefined || (isRecord(value) && isFiniteNumber(value.spend30d) && isFiniteNumber(value.savingsMax) && isString(value.currency));
 
-export const isStorySection = (value: unknown, storyKey: string, limit: number, days?: number): value is StorySection<StoryRowBase> => {
+export const isStorySection = (
+  value: unknown,
+  storyKey: string,
+  limit: number,
+  days?: number,
+  provider?: Provider
+): value is StorySection<StoryRowBase> => {
   if (!isRecord(value) || !isString(value.resourceType) || !isString(value.family)) return false;
   if (!isStorySectionFinancials(value.financials)) return false;
   if (!Array.isArray(value.columns) || !value.columns.every(isStoryColumn)) return false;
   if (new Set((value.columns as StoryColumn[]).map(column => column.key)).size !== value.columns.length) return false;
-  if (!isBoundedRows(value, limit, storyRowGuard(storyKey, days))) return false;
+  if (!isBoundedRows(value, limit, storyRowGuard(storyKey, days, provider))) return false;
   const columns = value.columns as StoryColumn[];
   return (value.rows as StoryRowBase[]).every(row => hasCellsForColumns(row, columns));
 };
@@ -706,8 +722,12 @@ export const isRowInScope = (row: StoryRowBase, scope: { companyId: string; tena
 const sectionFinancialsMatchCurrency = (sections: StorySection<StoryRowBase>[], currency: string): boolean =>
   sections.every(section => section.financials === undefined || section.financials.currency === currency);
 
-const isScope = (value: unknown): boolean =>
-  isRecord(value) && ['companyId', 'tenantId', 'subscriptionId', 'currency'].every(key => isString(value[key])) && isText(value.displayName);
+const isScope = (value: unknown): value is StoryArtifact['scope'] =>
+  isRecord(value) &&
+  (value.provider === undefined || inSet(PROVIDERS, value.provider)) &&
+  ['companyId', 'subscriptionId', 'currency'].every(key => isString(value[key])) &&
+  isTenantId(value.tenantId, value.provider as Provider | undefined) &&
+  isText(value.displayName);
 
 export const isStoryArtifact = (value: unknown, storyKey?: StoryKey): value is StoryArtifact<StoryRowBase> => {
   if (!isRecord(value) || !isString(value.storyKey) || !STORY_KEY_SET.has(value.storyKey)) return false;
@@ -735,8 +755,12 @@ export const isStoryArtifact = (value: unknown, storyKey?: StoryKey): value is S
       sectionFinancialsMatchCurrency(value.sections as StorySection<StoryRowBase>[], summaryCurrency)
     );
   }
-  if (!Array.isArray(value.sections) || !value.sections.every(section => isStorySection(section, key, STORY_LIMITS.sectionRows, days))) return false;
-  const scope = value.scope as { companyId: string; tenantId: string; subscriptionId: string };
+  const scope = value.scope as StoryArtifact['scope'];
+  if (
+    !Array.isArray(value.sections) ||
+    !value.sections.every(section => isStorySection(section, key, STORY_LIMITS.sectionRows, days, scope.provider))
+  )
+    return false;
   const sections = value.sections as StorySection<StoryRowBase>[];
   return sectionFinancialsMatchCurrency(sections, summaryCurrency) && sections.every(section => section.rows.every(row => isRowInScope(row, scope)));
 };

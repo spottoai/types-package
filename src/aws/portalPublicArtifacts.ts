@@ -153,6 +153,7 @@ export type AwsPortalDiscoveryFamily =
   | 'route-table'
   | 'internet-gateway'
   | 'nat-gateway'
+  | 'elastic-ip'
   | 'network-interface'
   | 'virtual-private-gateway'
   | 'load-balancer-v2'

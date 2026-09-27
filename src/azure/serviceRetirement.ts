@@ -31,7 +31,8 @@ export type ServiceRetirementKnownRenderKind =
   | 'hdd-os-disk'
   | 'benefit-expiry'
   | 'application-credential'
-  | 'key-vault-object';
+  | 'key-vault-object'
+  | 'aws-certificate';
 
 export interface HddOsDiskRetirementRenderData {
   kind: 'hdd-os-disk';
@@ -63,11 +64,32 @@ export interface KeyVaultObjectRetirementRenderData {
   enabled: boolean;
 }
 
+/**
+ * An AWS certificate expiry: an ACM certificate or an IAM server certificate. Neither is an Entra application
+ * credential nor a Key Vault object, so it has its own render kind.
+ */
+export interface AwsCertificateRetirementRenderData {
+  kind: 'aws-certificate';
+  manager: 'acm' | 'iam';
+  certificateArn: string;
+  domainName?: string;
+  /** ACM certificate type, e.g. `AMAZON_ISSUED`, `IMPORTED` or `PRIVATE`. */
+  certificateType?: string;
+  /** ACM renewal eligibility, e.g. `ELIGIBLE` or `INELIGIBLE`. */
+  renewalEligibility?: string;
+  /** ACM managed-renewal status, e.g. `PENDING_AUTO_RENEWAL`, `PENDING_VALIDATION`, `SUCCESS` or `FAILED`. */
+  renewalStatus?: string;
+  keyAlgorithm?: string;
+  /** ARNs of the resources that use the certificate. */
+  inUseBy?: string[];
+}
+
 export type ServiceRetirementKnownRenderData =
   | HddOsDiskRetirementRenderData
   | BenefitExpiryRetirementRenderData
   | ApplicationCredentialRetirementRenderData
-  | KeyVaultObjectRetirementRenderData;
+  | KeyVaultObjectRetirementRenderData
+  | AwsCertificateRetirementRenderData;
 
 /**
  * Forward-compatible shape for retirement render strategies introduced by

@@ -594,7 +594,11 @@ export interface StorySummary {
 }
 export interface StoryArtifact<TRow = unknown> {
   storyKey: StoryKey;
-  scope: { companyId: string; tenantId: string; subscriptionId: string; displayName: string; currency: string };
+  /**
+   * `provider` is absent on Azure artifacts. An AWS artifact (`provider: 'aws'`) has no tenant, so its `tenantId` - and
+   * every row's - may be empty; every row's `tenantId` still equals the scope's.
+   */
+  scope: { companyId: string; tenantId: string; subscriptionId: string; displayName: string; currency: string; provider?: Provider };
   generation: { sourceRunId: string; generatedAt: string };
   window: { start: string; end: string; days: number; timezone: string };
   summary: StorySummary;

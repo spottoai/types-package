@@ -116,6 +116,25 @@ const missingGeneration: SavingsAggregateV2 = {
   totals: aggregate.totals,
 };
 
+/** AWS producers use the same shape; the scope key keeps the provider-prefixed format. */
+const awsAggregate: SavingsAggregateV2 = {
+  ...aggregate,
+  generationId: '123456789012:run-1',
+  scopeKey: 'aws:123456789012:subscription-full:all',
+  scope: { kind: 'subscription-full', providerName: 'aws', providerScopeId: '123456789012', filterFingerprint: 'all' },
+};
+const awsLedger: CanonicalSavingsLedgerV2 = { ...ledger, providerName: 'aws', providerScopeId: '123456789012', aggregate: awsAggregate };
+const unknownProvider: SavingsAggregateV2 = {
+  ...aggregate,
+  scope: {
+    ...aggregate.scope,
+    // @ts-expect-error Only declared providers can own a savings scope.
+    providerName: 'gcp',
+  },
+};
+
+void awsLedger;
+void unknownProvider;
 void contribution;
 void aggregateSet;
 void ledger;

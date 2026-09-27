@@ -222,7 +222,8 @@ export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 export interface BenefitCoverageSummary {
   windowStart: string;
   windowEnd: string;
-  coveredQuantity: number;
+  /** Covered usage quantity. Absent when the source billing carries no usage quantity (AWS); read `coveredCost` then. */
+  coveredQuantity?: number;
   benefitIds: string[];
   benefitNames: string[];
   /** Explicit benefit classifications represented by this coverage window. */
