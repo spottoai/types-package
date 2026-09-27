@@ -1,0 +1,379 @@
+/**
+ * The `reportjobs` row (core/specs/reporting/reporting-scheduler.md, "Report job table").
+ *
+ * PartitionKey = companyId, RowKey = jobId. Three writers own disjoint field groups and merge with ETag
+ * compare-and-swap: the producer (insert only), reportworker and, from phase 6, cloud-engine's notifier.
+ * The row never holds e-mail addresses, document content, source data, Blob paths or credentials.
+ */
+import { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
+import { isReportFileName } from '../shared/reportingPaths';
+import {
+  hasExactlyKeys,
+  isBoundedPlainText,
+  isIanaTimeZone,
+  isIsoUtcTimestamp,
+  isPlainRecord,
+  isReportEntityId,
+  isReportJobCompanyId,
+  utf8ByteLength,
+} from '../shared/reportingIds';
+import { normalizeReportTableEntity } from '../shared/reportTableEntities';
+import { buildReportJobScopeHash, deriveReportJobIdentity, parseReportJobId } from './reportJobIdentity';
+import { isReportRegionCode, type ReportRegionCode } from './reportJobMessages';
+import {
+  parseReportJobRequestJson,
+  REPORT_JOB_SPEC_MAX_BYTES,
+  serializeReportJobSpecV1,
+  type ReportJobReportType,
+  type ReportJobSpecV1,
+} from './reportJobSpec';
+import {
+  isReportJobFailureCode,
+  isReportJobFailureStage,
+  isReportJobNotificationStatus,
+  isReportJobStatus,
+  REPORT_JOB_FAILURE_STAGE_BY_CODE,
+  type ReportJobFailureCode,
+  type ReportJobFailureStage,
+  type ReportJobNotificationStatus,
+  type ReportJobStatus,
+} from './reportJobStatus';
+
+export const REPORT_JOB_ROW_SCHEMA_VERSION = 1;
+export const REPORT_JOB_TRIGGERS = ['api', 'schedule'] as const;
+export type ReportJobTrigger = (typeof REPORT_JOB_TRIGGERS)[number];
+/** UTF-8 byte limit of `sourceCoverageSummary` (a JSON object). */
+export const REPORT_JOB_COVERAGE_SUMMARY_MAX_BYTES = 8 * 1024;
+
+/** Written once by the API or the scheduler adapter; immutable afterwards. */
+export interface ReportJobProducerFieldsV1 {
+  PartitionKey: string;
+  RowKey: string;
+  schemaVersion: 1;
+  jobId: string;
+  companyId: string;
+  homeRegion: ReportRegionCode;
+  reportType: ReportJobReportType;
+  trigger: ReportJobTrigger;
+  /** Schedule jobs only. */
+  scheduleId?: string;
+  /** Schedule jobs only. */
+  definitionRevision?: number;
+  /** Schedule jobs only: the occurrence the job is for (the job ID's instant). */
+  scheduledForUtc?: string;
+  /** When the producer accepted the job (the job ID's instant for API jobs). */
+  requestedAtUtc: string;
+  requestedByUserId?: string;
+  coalescedOccurrenceCount?: number;
+  /** Canonical `serializeReportJobSpecV1` output. */
+  requestJson: string;
+  requestSha256: string;
+  timezone: string;
+  fileName: string;
+  notificationPolicyId?: string;
+}
+
+/** Merged by reportworker. The producer inserts `status: 'accepted'` and `attemptCount: 0`. */
+export interface ReportJobWorkerFieldsV1 {
+  status: ReportJobStatus;
+  attemptCount: number;
+  leaseOwner?: string;
+  leaseExpiresAtUtc?: string;
+  startedAtUtc?: string;
+  lastAttemptAtUtc?: string;
+  sourceObservedAtUtc?: string;
+  sourceSnapshotSha256?: string;
+  /** A JSON object, at most 8 KiB of UTF-8. */
+  sourceCoverageSummary?: string;
+  generatedAtUtc?: string;
+  artifactContentSha256?: string;
+  artifactBytes?: number;
+  completedAtUtc?: string;
+  failureStage?: ReportJobFailureStage;
+  failureCode?: ReportJobFailureCode;
+  lastTransientErrorCode?: string;
+}
+
+/** Merged by cloud-engine's notifier (phase 6). The producer inserts `notificationStatus: 'none'`. */
+export interface ReportJobNotificationFieldsV1 {
+  notificationStatus: ReportJobNotificationStatus;
+}
+
+export type ReportJobRowV1 = ReportJobProducerFieldsV1 & ReportJobWorkerFieldsV1 & ReportJobNotificationFieldsV1;
+
+export const REPORT_JOB_PRODUCER_FIELDS = [
+  'PartitionKey',
+  'RowKey',
+  'schemaVersion',
+  'jobId',
+  'companyId',
+  'homeRegion',
+  'reportType',
+  'trigger',
+  'scheduleId',
+  'definitionRevision',
+  'scheduledForUtc',
+  'requestedAtUtc',
+  'requestedByUserId',
+  'coalescedOccurrenceCount',
+  'requestJson',
+  'requestSha256',
+  'timezone',
+  'fileName',
+  'notificationPolicyId',
+] as const satisfies readonly (keyof ReportJobProducerFieldsV1)[];
+
+export const REPORT_JOB_WORKER_FIELDS = [
+  'status',
+  'attemptCount',
+  'leaseOwner',
+  'leaseExpiresAtUtc',
+  'startedAtUtc',
+  'lastAttemptAtUtc',
+  'sourceObservedAtUtc',
+  'sourceSnapshotSha256',
+  'sourceCoverageSummary',
+  'generatedAtUtc',
+  'artifactContentSha256',
+  'artifactBytes',
+  'completedAtUtc',
+  'failureStage',
+  'failureCode',
+  'lastTransientErrorCode',
+] as const satisfies readonly (keyof ReportJobWorkerFieldsV1)[];
+
+export const REPORT_JOB_NOTIFICATION_FIELDS = ['notificationStatus'] as const satisfies readonly (keyof ReportJobNotificationFieldsV1)[];
+
+const REQUIRED_FIELDS = [
+  'PartitionKey',
+  'RowKey',
+  'schemaVersion',
+  'jobId',
+  'companyId',
+  'homeRegion',
+  'reportType',
+  'trigger',
+  'requestedAtUtc',
+  'requestJson',
+  'requestSha256',
+  'timezone',
+  'fileName',
+  'status',
+  'attemptCount',
+  'notificationStatus',
+] as const;
+
+const OPTIONAL_FIELDS: readonly string[] = [...REPORT_JOB_PRODUCER_FIELDS, ...REPORT_JOB_WORKER_FIELDS, ...REPORT_JOB_NOTIFICATION_FIELDS].filter(
+  field => !(REQUIRED_FIELDS as readonly string[]).includes(field)
+);
+
+/** Statuses reached only after the source snapshot is durable. */
+const SNAPSHOT_STATUSES: readonly ReportJobStatus[] = ['source-ready', 'generated', 'completed', 'completed-with-notification-errors'];
+/** Statuses reached only after the artifact is durable. */
+const ARTIFACT_STATUSES: readonly ReportJobStatus[] = ['generated', 'completed', 'completed-with-notification-errors'];
+
+export type ReportJobRowParseResult =
+  | { ok: true; row: ReportJobRowV1; spec: ReportJobSpecV1 }
+  | { ok: false; code: Extract<ReportJobFailureCode, 'request-invalid' | 'request-hash-mismatch' | 'unsupported-schema-version'>; errors: string[] };
+
+const isCount = (value: unknown): boolean => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 2_147_483_647;
+const isSha = (value: unknown): boolean => typeof value === 'string' && SHA256_HEX_PATTERN.test(value);
+const isText = (limit: number) => (value: unknown) => isBoundedPlainText(value, limit);
+const isOptional = (value: unknown, check: (value: unknown) => boolean): boolean => value === undefined || check(value);
+
+const isCoverageSummary = (value: unknown): boolean => {
+  if (typeof value !== 'string' || utf8ByteLength(value) > REPORT_JOB_COVERAGE_SUMMARY_MAX_BYTES) return false;
+  try {
+    const parsed: unknown = JSON.parse(value);
+    return typeof parsed === 'object' && parsed !== null;
+  } catch {
+    return false;
+  }
+};
+
+/** `row` is already normalised (REST key casing, no system properties, no null values). */
+const validateShape = (row: Record<string, unknown>, errors: string[]): void => {
+  const check = (field: string, ok: boolean) => {
+    if (!ok) errors.push(`${field}: invalid`);
+  };
+  if (!hasExactlyKeys(row, REQUIRED_FIELDS, OPTIONAL_FIELDS)) {
+    const unknown = Object.keys(row).filter(key => !(REQUIRED_FIELDS as readonly string[]).includes(key) && !OPTIONAL_FIELDS.includes(key));
+    const missing = REQUIRED_FIELDS.filter(key => row[key] === undefined);
+    if (unknown.length > 0) errors.push(`row: unknown fields ${unknown.join(', ')}`);
+    if (missing.length > 0) errors.push(`row: missing fields ${missing.join(', ')}`);
+  }
+  check('companyId', isReportJobCompanyId(row.companyId) && row.PartitionKey === row.companyId);
+  const parsedId = parseReportJobId(row.jobId);
+  check('jobId', parsedId !== null && row.RowKey === row.jobId);
+  check('reportType', parsedId !== null && row.reportType === parsedId.reportType);
+  check('homeRegion', isReportRegionCode(row.homeRegion));
+  check('trigger', row.trigger === 'api' || row.trigger === 'schedule');
+  check('requestedAtUtc', isIsoUtcTimestamp(row.requestedAtUtc));
+  check('requestJson', typeof row.requestJson === 'string' && utf8ByteLength(row.requestJson) <= REPORT_JOB_SPEC_MAX_BYTES);
+  check('requestSha256', isSha(row.requestSha256));
+  check('timezone', isIanaTimeZone(row.timezone));
+  check('fileName', isReportFileName(row.fileName));
+  // Requesters are identified by user ID, never by e-mail address.
+  check(
+    'requestedByUserId',
+    isOptional(row.requestedByUserId, value => isText(128)(value) && !(value as string).includes('@'))
+  );
+  check('notificationPolicyId', isOptional(row.notificationPolicyId, isReportEntityId));
+  check(
+    'coalescedOccurrenceCount',
+    isOptional(row.coalescedOccurrenceCount, value => isCount(value) && (value as number) >= 1)
+  );
+  if (row.trigger === 'schedule') {
+    check('scheduleId', isReportEntityId(row.scheduleId));
+    check('definitionRevision', isCount(row.definitionRevision) && (row.definitionRevision as number) >= 1);
+    check('scheduledForUtc', isIsoUtcTimestamp(row.scheduledForUtc));
+  } else {
+    check('scheduleId', row.scheduleId === undefined);
+    check('definitionRevision', row.definitionRevision === undefined);
+    check('scheduledForUtc', row.scheduledForUtc === undefined);
+    check('coalescedOccurrenceCount', row.coalescedOccurrenceCount === undefined);
+  }
+  const instant = row.trigger === 'schedule' ? row.scheduledForUtc : row.requestedAtUtc;
+  check('jobId', parsedId !== null && typeof instant === 'string' && parsedId.instant.toISOString() === instant);
+  check('status', isReportJobStatus(row.status));
+  check('attemptCount', isCount(row.attemptCount));
+  check('notificationStatus', isReportJobNotificationStatus(row.notificationStatus));
+  for (const field of ['leaseExpiresAtUtc', 'startedAtUtc', 'lastAttemptAtUtc', 'sourceObservedAtUtc', 'generatedAtUtc', 'completedAtUtc'] as const) {
+    check(field, isOptional(row[field], isIsoUtcTimestamp));
+  }
+  check('leaseOwner', isOptional(row.leaseOwner, isText(256)));
+  check('sourceSnapshotSha256', isOptional(row.sourceSnapshotSha256, isSha));
+  check('artifactContentSha256', isOptional(row.artifactContentSha256, isSha));
+  check(
+    'artifactBytes',
+    isOptional(row.artifactBytes, value => isCount(value) && (value as number) >= 1)
+  );
+  check('sourceCoverageSummary', isOptional(row.sourceCoverageSummary, isCoverageSummary));
+  check('failureStage', isOptional(row.failureStage, isReportJobFailureStage));
+  check('failureCode', isOptional(row.failureCode, isReportJobFailureCode));
+  check('lastTransientErrorCode', isOptional(row.lastTransientErrorCode, isText(128)));
+
+  // Cross-field rules: the status milestone and the fields that prove it agree.
+  if (!isReportJobStatus(row.status)) return;
+  const status = row.status;
+  if (status === 'failed') {
+    check('failureCode', isReportJobFailureCode(row.failureCode));
+    check('failureStage', isReportJobFailureStage(row.failureStage));
+    if (isReportJobFailureCode(row.failureCode) && isReportJobFailureStage(row.failureStage)) {
+      const expected = REPORT_JOB_FAILURE_STAGE_BY_CODE[row.failureCode];
+      check('failureStage', expected === null || expected === row.failureStage);
+    }
+  } else {
+    check('failureCode', row.failureCode === undefined);
+    check('failureStage', row.failureStage === undefined);
+  }
+  if (SNAPSHOT_STATUSES.includes(status)) {
+    check('sourceSnapshotSha256', isSha(row.sourceSnapshotSha256));
+    check('sourceObservedAtUtc', isIsoUtcTimestamp(row.sourceObservedAtUtc));
+  }
+  if (ARTIFACT_STATUSES.includes(status)) {
+    check('artifactContentSha256', isSha(row.artifactContentSha256));
+    check('artifactBytes', isCount(row.artifactBytes) && (row.artifactBytes as number) >= 1);
+    check('generatedAtUtc', isIsoUtcTimestamp(row.generatedAtUtc));
+  }
+  if (status === 'completed' || status === 'completed-with-notification-errors') check('completedAtUtc', isIsoUtcTimestamp(row.completedAtUtc));
+  if (status === 'accepted') check('attemptCount', row.attemptCount === 0);
+};
+
+/**
+ * Validates a stored row and its request. Accepts REST (`PartitionKey`) and `@azure/data-tables` (`partitionKey`)
+ * key casing and ignores Table system properties. Checks keys against the body, the job ID against the trigger's
+ * instant, status against the fields that prove it, the report type and scope hash against the spec, the request's
+ * canonical form and `requestSha256`. Returns the row in REST casing. Never throws.
+ */
+export const parseReportJobRowV1 = async (entity: unknown): Promise<ReportJobRowParseResult> => {
+  try {
+    if (!isPlainRecord(entity)) return { ok: false, code: 'request-invalid', errors: ['row: must be an object'] };
+    const normalized = normalizeReportTableEntity(entity);
+    if (normalized.schemaVersion !== REPORT_JOB_ROW_SCHEMA_VERSION) {
+      return { ok: false, code: 'unsupported-schema-version', errors: ['schemaVersion: unsupported'] };
+    }
+    const errors: string[] = [];
+    validateShape(normalized, errors);
+    if (errors.length > 0) return { ok: false, code: 'request-invalid', errors: Array.from(new Set(errors)) };
+    const row = normalized as unknown as ReportJobRowV1;
+    if ((await sha256Hex(row.requestJson)) !== row.requestSha256) {
+      return { ok: false, code: 'request-hash-mismatch', errors: ['requestSha256: does not match requestJson'] };
+    }
+    const spec = parseReportJobRequestJson(row.requestJson);
+    if (!spec.ok) return { ok: false, code: 'request-invalid', errors: spec.errors };
+    if (spec.value.reportType !== row.reportType) return { ok: false, code: 'request-invalid', errors: ['reportType: does not match the request'] };
+    const scopeHash = await buildReportJobScopeHash({
+      subscriptionIds: spec.value.scope.subscriptionIds,
+      scheduleId: row.trigger === 'schedule' ? row.scheduleId : undefined,
+    });
+    if (parseReportJobId(row.jobId)?.scopeHash !== scopeHash) {
+      return { ok: false, code: 'request-invalid', errors: ['jobId: scope hash does not match the request'] };
+    }
+    return { ok: true, row, spec: spec.value };
+  } catch {
+    return { ok: false, code: 'request-invalid', errors: ['row: unreadable'] };
+  }
+};
+
+export type BuildReportJobRowInput = {
+  companyId: string;
+  homeRegion: ReportRegionCode;
+  spec: ReportJobSpecV1;
+  timezone: string;
+  fileName: string;
+  requestedAtUtc: string;
+  requestedByUserId?: string;
+  notificationPolicyId?: string;
+} & (
+  | { trigger: 'api' }
+  | { trigger: 'schedule'; scheduleId: string; definitionRevision: number; scheduledForUtc: string; coalescedOccurrenceCount?: number }
+);
+
+/**
+ * Builds the row a producer inserts (status `accepted`, attempt 0, notification `none`), with the job ID derived
+ * from the trigger's instant and the request. The result is validated with `parseReportJobRowV1`; invalid input throws.
+ */
+export const buildReportJobRowV1 = async (input: BuildReportJobRowInput): Promise<ReportJobRowV1> => {
+  const requestJson = serializeReportJobSpecV1(input.spec);
+  const spec = parseReportJobRequestJson(requestJson);
+  if (!spec.ok) throw new Error(`Invalid report job spec: ${spec.errors.join('; ')}`);
+  const schedule = input.trigger === 'schedule' ? input : undefined;
+  const { jobId } = await deriveReportJobIdentity({
+    instant: schedule ? schedule.scheduledForUtc : input.requestedAtUtc,
+    reportType: spec.value.reportType,
+    subscriptionIds: spec.value.scope.subscriptionIds,
+    scheduleId: schedule?.scheduleId,
+  });
+  const row: ReportJobRowV1 = {
+    PartitionKey: input.companyId,
+    RowKey: jobId,
+    schemaVersion: 1,
+    jobId,
+    companyId: input.companyId,
+    homeRegion: input.homeRegion,
+    reportType: spec.value.reportType,
+    trigger: input.trigger,
+    ...(schedule
+      ? {
+          scheduleId: schedule.scheduleId,
+          definitionRevision: schedule.definitionRevision,
+          scheduledForUtc: schedule.scheduledForUtc,
+          ...(schedule.coalescedOccurrenceCount === undefined ? {} : { coalescedOccurrenceCount: schedule.coalescedOccurrenceCount }),
+        }
+      : {}),
+    requestedAtUtc: input.requestedAtUtc,
+    ...(input.requestedByUserId === undefined ? {} : { requestedByUserId: input.requestedByUserId }),
+    requestJson,
+    requestSha256: await sha256Hex(requestJson),
+    timezone: input.timezone,
+    fileName: input.fileName,
+    ...(input.notificationPolicyId === undefined ? {} : { notificationPolicyId: input.notificationPolicyId }),
+    status: 'accepted',
+    attemptCount: 0,
+    notificationStatus: 'none',
+  };
+  const parsed = await parseReportJobRowV1(row);
+  if (!parsed.ok) throw new Error(`Invalid report job row: ${parsed.errors.join('; ')}`);
+  return row;
+};

@@ -16,6 +16,7 @@ const azureSpSetupUiFixturePath = join(packageRoot, 'tests', 'fixtures', 'azure-
 const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'commitments-planning.consumer.ts.fixture');
 const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narrow-aws-runtime.consumer.ts.fixture');
 const resourceStrategySchedulerFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-strategy-scheduler.consumer.ts.fixture');
+const reportingJobsFixturePath = join(packageRoot, 'tests', 'fixtures', 'reporting-jobs.consumer.ts.fixture');
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
@@ -382,6 +383,7 @@ try {
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
   await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
   await copyFile(resourceStrategySchedulerFixturePath, join(consumerRoot, 'resource-strategy-scheduler.consumer.ts'));
+  await copyFile(reportingJobsFixturePath, join(consumerRoot, 'reporting-jobs.consumer.ts'));
 
   run(
     npmCommand,
@@ -413,6 +415,7 @@ try {
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
       'resource-strategy-scheduler.consumer.ts',
+      'reporting-jobs.consumer.ts',
     ],
     consumerRoot
   );
@@ -505,7 +508,10 @@ try {
     consumerRoot
   );
 
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler consumer fixture verified.\n');
+  run(process.execPath, ['--input-type=module', '-e', "import * as jobs from '@spottoai/types-package/reporting-jobs'; import root from '@spottoai/types-package'; const id = await jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }); if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || typeof jobs.parseReportJobRowV1 !== 'function' || 'buildReportJobRowV1' in root || 'REPORTS_QUEUE_NAME' in jobs || 'REPORT_JOBS_TABLE' in jobs) process.exit(1);"], consumerRoot);
+  run(process.execPath, ['-e', "const jobs = require('@spottoai/types-package/reporting-jobs'); let storageResolved = true; try { require.resolve('@spottoai/types-package/reporting-storage'); } catch { storageResolved = false; } jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }).then(id => { if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || storageResolved) process.exit(1); });"], consumerRoot);
+
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs consumer fixture verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
