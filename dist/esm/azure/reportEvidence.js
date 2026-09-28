@@ -5,6 +5,8 @@ export const REPORT_EVIDENCE_LIMITS = {
     complianceAssessments: 2000,
     activityDays: 400,
     activityMonths: 13,
+    commitmentsFreshnessEntries: 50,
+    commitmentsFreshnessWarnings: 10,
     recommendationResources: 2,
     resourceCatalogue: 2000,
     totalRecommendationResourceRows: 10000,
@@ -23,3 +25,5 @@ export const REPORT_EVIDENCE_LIMITS = {
     costChangeReasons: 10,
     tenantGlobalAdministrators: 50,
 };
+/** Lowercase Azure RBAC principal types. Producers omit `principalType` when the source type is absent or outside this list. */
+export const REPORT_PRINCIPAL_TYPES = ['user', 'group', 'serviceprincipal', 'foreigngroup', 'device'];

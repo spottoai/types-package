@@ -87,3 +87,5 @@ export function sha256Utf8(value) {
     }
     return state.map(word => (word >>> 0).toString(16).padStart(8, '0')).join('');
 }
+/** Compatibility name used by provider-neutral identity helpers. */
+export const sha256Hex = sha256Utf8;

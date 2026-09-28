@@ -1,7 +1,9 @@
 /** Common AI interfaces shared between frontend and backend */
+import type { AIChatFollowUpSuggestionV1 } from './followUps.js';
 import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
 import type { AIChatWorkspaceArtifact, AIChatWorkspaceArtifactDataMode, AIChatWorkspaceArtifactFailureReason, AIChatWorkspaceArtifactKind, AIChatWorkspaceArtifactPlacement } from './workspaceArtifacts.js';
 export * from './grounding.js';
+export * from './followUps.js';
 export * from './conversationHistory.js';
 export * from './workspaceArtifacts.js';
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
@@ -951,6 +953,8 @@ export interface AIChatTerminalSnapshot {
     collaborationRun?: AIChatCollaborationRun;
     /** Optional while pre-workspace producers and consumers drain. */
     workspaceArtifacts?: AIChatWorkspaceArtifact[];
+    /** Follow-up questions derived from this answer; absent when none were produced. */
+    followUpSuggestions?: AIChatFollowUpSuggestionV1[];
 }
 /**
  * Canonical lowerCamelCase SSE event vocabulary for the target chat runtime.

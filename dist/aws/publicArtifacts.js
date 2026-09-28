@@ -1,7 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AWS_PUBLIC_ARTIFACT_TYPES = exports.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = void 0;
+exports.AWS_PUBLIC_ARTIFACT_TYPES = exports.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = exports.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = void 0;
 exports.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1;
+/** Portal envelope version shared by the AWS Portal artifacts. */
+exports.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1;
 exports.AWS_PUBLIC_ARTIFACT_TYPES = [
     'resource-collection',
     'resource-collection-history',

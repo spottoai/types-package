@@ -3,15 +3,18 @@ export declare const AWS_COMMAND_SCHEMA_VERSION: 1;
 /** Canonical provider wire value for AWS commands. */
 export declare const AWS_COMMAND_PROVIDER: "aws";
 /** Entities handled by AWS estate orchestration. */
-export declare const AWS_COMMAND_ENTITIES: readonly ["estate", "account", "billing-source", "organization-commitments"];
+export declare const AWS_COMMAND_ENTITIES: readonly ["estate", "account", "billing-source", "organization-commitments", "scheduler"];
 /** Actions supported across AWS estate orchestration commands. */
-export declare const AWS_COMMAND_ACTIONS: readonly ["reconcile", "refresh", "delete"];
+export declare const AWS_COMMAND_ACTIONS: readonly ["reconcile", "refresh", "delete", "tick"];
+/** Scheduled AWS scan cadences emitted by the enqueue-only API scheduler. */
+export declare const AWS_SCHEDULED_REFRESH_SCAN_KINDS: readonly ["full", "components"];
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
 export declare const AWS_FORBIDDEN_CREDENTIAL_FIELDS: readonly ["accessKeyId", "secretAccessKey", "sessionToken", "credentials", "resolvedCredentials", "secret", "encryptedSecret", "credentialReference"];
 export type AwsCommandSchemaVersion = typeof AWS_COMMAND_SCHEMA_VERSION;
 export type AwsCommandProvider = typeof AWS_COMMAND_PROVIDER;
 export type AwsCommandEntity = (typeof AWS_COMMAND_ENTITIES)[number];
 export type AwsCommandAction = (typeof AWS_COMMAND_ACTIONS)[number];
+export type AwsScheduledRefreshScanKind = (typeof AWS_SCHEDULED_REFRESH_SCAN_KINDS)[number];
 export type AwsForbiddenCredentialField = (typeof AWS_FORBIDDEN_CREDENTIAL_FIELDS)[number];
 /**
  * Makes raw, resolved, or stored AWS credential material unrepresentable.
@@ -90,6 +93,35 @@ export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase
     action: 'refresh';
     estateId: string;
 }
+/**
+ * Wakes engine-owned AWS due selection for one exact scheduler slot.
+ * Account enumeration, desired state, credentials, Regions, and provider
+ * windows remain engine-owned and are intentionally absent.
+ */
+export interface AwsScheduledRefreshTickCommand extends AwsCommandForbiddenConfigurationFields {
+    schemaVersion: AwsCommandSchemaVersion;
+    provider: AwsCommandProvider;
+    entity: 'scheduler';
+    action: 'tick';
+    scanKind: AwsScheduledRefreshScanKind;
+    /** Exact ISO-8601 timestamp supplied by the triggering cron event. */
+    scheduledAt: string;
+    requestId: string;
+    correlationId: string;
+    requestedAt: string;
+    companyId?: never;
+    manifestRevision?: never;
+    estateId?: never;
+    accountId?: never;
+    cloudAccountId?: never;
+    billingSourceId?: never;
+    region?: never;
+    regions?: never;
+    startTime?: never;
+    endTime?: never;
+    timeWindow?: never;
+    billingDestination?: never;
+}
 /** Complete command union consumed by the dedicated AWS orchestration ingress. */
-export type AwsCommand = AwsEstateReconcileCommand | AwsEstateDeleteCommand | AwsAccountRefreshCommand | AwsAccountDeleteCommand | AwsBillingSourceRefreshCommand | AwsOrganizationCommitmentsRefreshCommand;
+export type AwsCommand = AwsEstateReconcileCommand | AwsEstateDeleteCommand | AwsAccountRefreshCommand | AwsAccountDeleteCommand | AwsBillingSourceRefreshCommand | AwsOrganizationCommitmentsRefreshCommand | AwsScheduledRefreshTickCommand;
 //# sourceMappingURL=requests.d.ts.map

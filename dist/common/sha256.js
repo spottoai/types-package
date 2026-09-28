@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.sha256Hex = void 0;
 exports.sha256Utf8 = sha256Utf8;
 /** Browser-safe SHA-256 over a UTF-8 string, returned as lowercase hexadecimal. */
 function sha256Utf8(value) {
@@ -90,4 +91,6 @@ function sha256Utf8(value) {
     }
     return state.map(word => (word >>> 0).toString(16).padStart(8, '0')).join('');
 }
+/** Compatibility name used by provider-neutral identity helpers. */
+exports.sha256Hex = sha256Utf8;
 //# sourceMappingURL=sha256.js.map

@@ -1,6 +1,21 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.validateAwsPortalRelationshipArtifact = void 0;
-var portalRelationshipPublicArtifactValidation_1 = require("./portalRelationshipPublicArtifactValidation");
-Object.defineProperty(exports, "validateAwsPortalRelationshipArtifact", { enumerable: true, get: function () { return portalRelationshipPublicArtifactValidation_1.validateAwsPortalRelationshipArtifact; } });
+/** Browser-safe entry for the AWS resource graph contract, its validator, and the provider-neutral graph vocabulary. */
+__exportStar(require("./resourceGraph"), exports);
+__exportStar(require("../common/resourceGraph"), exports);
+__exportStar(require("../common/resourceIdentity"), exports);
 //# sourceMappingURL=relationships.js.map

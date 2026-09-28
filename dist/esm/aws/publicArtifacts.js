@@ -1,4 +1,6 @@
 export const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1;
+/** Portal envelope version shared by the AWS Portal artifacts. */
+export const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1;
 export const AWS_PUBLIC_ARTIFACT_TYPES = [
     'resource-collection',
     'resource-collection-history',

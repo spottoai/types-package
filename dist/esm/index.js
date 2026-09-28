@@ -15,6 +15,7 @@ export * from './azure/artifactRunReference.js';
 export * from './azure/billingPlots.js';
 export * from './azure/benefits.js';
 export * from './azure/commitmentsPlanning.js';
+export * from './azure/commitmentsPlanningValidation.js';
 export * from './azure/licensing.js';
 export * from './azure/configs.js';
 export * from './azure/metrics.js';

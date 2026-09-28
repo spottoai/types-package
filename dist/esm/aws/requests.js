@@ -3,9 +3,11 @@ export const AWS_COMMAND_SCHEMA_VERSION = 1;
 /** Canonical provider wire value for AWS commands. */
 export const AWS_COMMAND_PROVIDER = 'aws';
 /** Entities handled by AWS estate orchestration. */
-export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'organization-commitments'];
+export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'organization-commitments', 'scheduler'];
 /** Actions supported across AWS estate orchestration commands. */
-export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete'];
+export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete', 'tick'];
+/** Scheduled AWS scan cadences emitted by the enqueue-only API scheduler. */
+export const AWS_SCHEDULED_REFRESH_SCAN_KINDS = ['full', 'components'];
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
 export const AWS_FORBIDDEN_CREDENTIAL_FIELDS = [
     'accessKeyId',

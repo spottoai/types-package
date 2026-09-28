@@ -32,6 +32,7 @@ __exportStar(require("./azure/artifactRunReference"), exports);
 __exportStar(require("./azure/billingPlots"), exports);
 __exportStar(require("./azure/benefits"), exports);
 __exportStar(require("./azure/commitmentsPlanning"), exports);
+__exportStar(require("./azure/commitmentsPlanningValidation"), exports);
 __exportStar(require("./azure/licensing"), exports);
 __exportStar(require("./azure/configs"), exports);
 __exportStar(require("./azure/metrics"), exports);

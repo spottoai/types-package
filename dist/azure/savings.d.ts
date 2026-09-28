@@ -1,3 +1,4 @@
+import type { Provider } from '../common/utilizationStories';
 /** Exact monthly monetary range represented in a producer-defined minor-unit scale. */
 export interface CanonicalMoneyRangeV2 {
     /** ISO 4217 currency code. */
@@ -43,7 +44,7 @@ export type SavingsScopeKindV2 = 'subscription-full' | 'recommendation-query' | 
 /** Identifies the complete result scope represented by a savings aggregate. */
 export interface SavingsScopeV2 {
     kind: SavingsScopeKindV2;
-    providerName: 'azure';
+    providerName: Provider;
     providerScopeId: string;
     /** Opaque producer/API fingerprint. It must not expose raw tenant filter values. */
     filterFingerprint: string;
@@ -52,6 +53,7 @@ export interface SavingsScopeV2 {
 export interface SavingsAggregateV2 {
     contractVersion: 'savings/v2';
     generationId: string;
+    /** `${providerName}:${providerScopeId}:${kind}:${filterFingerprint}`, e.g. `azure:<subscriptionId>:subscription-full:all`. */
     scopeKey: string;
     scope: SavingsScopeV2;
     allocationCount: number;
@@ -85,7 +87,7 @@ export interface CanonicalSavingsLedgerV2 {
     contractVersion: 'savings/v2';
     generationId: string;
     generatedAt: string;
-    providerName: 'azure';
+    providerName: Provider;
     providerScopeId: string;
     allocations: CanonicalSavingsAllocationV2[];
     aggregate: SavingsAggregateV2;

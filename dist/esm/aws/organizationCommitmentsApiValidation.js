@@ -1,6 +1,6 @@
 import { AWS_ORGANIZATION_COMMITMENTS_ISSUE_CODES, AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGES, AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGE_STATUSES, AWS_ORGANIZATION_COMMITMENTS_REFRESH_STATES, AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION, AWS_ORGANIZATION_COMMITMENTS_SCOPE_UNAVAILABLE_REASONS, } from './organizationCommitments.js';
-import { asRecord, assertExactKeys, assertPublicJson, assertValue, isoTimestamp, nonNegativeInteger, requiredBoolean, requiredEnum, requiredString, validateGeneration, } from './portalPublicArtifactValidationCommon.js';
-import { assertAccount } from './pluginPublicArtifactValidationHelpers.js';
+import { asRecord, assertExactKeys, assertValue, isoTimestamp, nonNegativeInteger, requiredBoolean, requiredEnum, requiredString, validateGeneration, } from '../common/validationHelpers.js';
+import { assertAccount, assertAwsPublicJson } from './validationHelpers.js';
 const ORGANIZATION_ID = /^o-[a-z0-9]{10,32}$/u;
 /** Validates one API-authored organization commitments refresh receipt. */
 export function validateAwsOrganizationCommitmentsRefreshAcceptedResponse(value, expected) {
@@ -32,7 +32,7 @@ export function validateAwsOrganizationCommitmentsRefreshAcceptedResponse(value,
             throw new Error('organizationCommitmentsAdmission.nextEligibleAt must be later than acceptedAt.');
         }
     }
-    assertPublicJson(response, 'organizationCommitmentsAdmission');
+    assertAwsPublicJson(response, 'organizationCommitmentsAdmission');
     return value;
 }
 /** Validates the safe organization scope selector response for one company. */
@@ -73,7 +73,7 @@ export function validateAwsOrganizationCommitmentsScopeListResponse(value, expec
     });
     assertUniqueSorted(estateIds, 'organizationCommitmentsScopes.organizations estateId');
     assertUnique(organizationIds, 'organizationCommitmentsScopes.organizations organizationId');
-    assertPublicJson(response, 'organizationCommitmentsScopes');
+    assertAwsPublicJson(response, 'organizationCommitmentsScopes');
     return value;
 }
 /** Validates one sanitized Blob-backed organization commitments status projection. */
@@ -132,7 +132,7 @@ export function validateAwsOrganizationCommitmentsRefreshStatusResponse(value, e
     if (state === 'fresh' && response.latestArtifact === undefined) {
         throw new Error('organizationCommitmentsStatus.latestArtifact is required when the refresh is fresh.');
     }
-    assertPublicJson(response, 'organizationCommitmentsStatus');
+    assertAwsPublicJson(response, 'organizationCommitmentsStatus');
     return value;
 }
 function validateStages(value) {

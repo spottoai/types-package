@@ -1,4 +1,4 @@
-import { sha256AwsPluginIdentity } from './pluginPublicArtifacts.js';
+import { sha256Hex } from '../common/sha256.js';
 export const AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION = 1;
 export const AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGES = [
     'account-inventory',
@@ -38,7 +38,7 @@ export const AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX = 'aws-org-commitmen
 export function buildAwsOrganizationCommitmentsSessionId(companyId, estateId) {
     const company = requiredSessionIdentity(companyId, 'companyId');
     const estate = requiredSessionIdentity(estateId, 'estateId');
-    return `${AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${sha256AwsPluginIdentity(JSON.stringify(['aws-organization-commitments', company, estate]))}`;
+    return `${AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${sha256Hex(JSON.stringify(['aws-organization-commitments', company, estate]))}`;
 }
 function requiredSessionIdentity(value, field) {
     if (typeof value !== 'string' || value.trim() !== value || value.length === 0) {

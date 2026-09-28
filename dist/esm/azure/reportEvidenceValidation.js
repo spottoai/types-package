@@ -1,7 +1,8 @@
 import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation.js';
 import { isReportDailySpend } from './reportDailySpendValidation.js';
 import { isReportSavingsBasis, isReportSpendProjection } from './reportSpendValidation.js';
-import { REPORT_EVIDENCE_LIMITS, } from './reportEvidence.js';
+import { isCommitmentsFreshnessEntry, isCommitmentsFreshnessStatus } from './commitmentsPlanningValidation.js';
+import { REPORT_EVIDENCE_LIMITS, REPORT_PRINCIPAL_TYPES, } from './reportEvidence.js';
 import { countTotal, hasOptionalNumbers, hasOptionalStrings, hasRequiredRecords, isBoundedRows, isCommitmentExpirySummary, isCostSummary, isCount, isCountRecord, isDateTime, isEvidenceReference, isFiniteNumber, isOptionalBoolean, isOptionalFiniteNumber, isOptionalString, isProjectionRows, isRecommendationSummary, isRecord, isResourceSummary, isRetirementSummary, isSourceFileStatus, isString, isStringArray, isTagCoverage, } from './reportEvidenceValidationHelpers.js';
 import { isReportingStories, isStoryFingerprintRows } from '../common/utilizationStoriesValidation.js';
 export const isReportSecureScoreEvidence = (value) => {
@@ -163,6 +164,8 @@ const isPrivilegedAccess = (value) => isRecord(value) &&
     isString(value.principalId) &&
     isString(value.displayName) &&
     isString(value.roleName) &&
+    (value.principalType === undefined ||
+        (typeof value.principalType === 'string' && REPORT_PRINCIPAL_TYPES.includes(value.principalType))) &&
     hasOptionalStrings(value, ['userPrincipalName', 'scope', 'scopeType', 'lastLogonDate', 'mfaStatus']);
 const isGovernance = (value) => isRecord(value) &&
     isOptionalString(value.generatedAt) &&
@@ -199,8 +202,20 @@ const isCommitments = (value) => {
     }
     if (value.resourceCoverage !== undefined && !isProjectionRows(value.resourceCoverage))
         return false;
+    if (value.freshness !== undefined && !isReportCommitmentsFreshness(value.freshness))
+        return false;
     return ['coverage', 'obsoleteCandidates', 'reallocationOpportunities', 'purchaseRecommendations', 'renewals'].every(key => isProjectionRows(value[key]));
 };
+/** Status and generatedAt appear together; without them the projection carries no entries. Older packs omit entries. */
+const isReportCommitmentsFreshness = (value) => isRecord(value) &&
+    (value.status === undefined) === (value.generatedAt === undefined) &&
+    (value.status === undefined || (isCommitmentsFreshnessStatus(value.status) && isDateTime(value.generatedAt))) &&
+    (value.entries === undefined ||
+        (Array.isArray(value.entries) &&
+            value.entries.length <= REPORT_EVIDENCE_LIMITS.commitmentsFreshnessEntries &&
+            (value.status !== undefined || value.entries.length === 0) &&
+            value.entries.every(isCommitmentsFreshnessEntry))) &&
+    (value.warnings === undefined || (isStringArray(value.warnings) && value.warnings.length <= REPORT_EVIDENCE_LIMITS.commitmentsFreshnessWarnings));
 const isDataProtectionCostSummary = (value) => isRecord(value) &&
     hasOptionalStrings(value, ['currencyCode', 'currencySymbol']) &&
     (value.billingWindow === undefined || isRecord(value.billingWindow)) &&
@@ -328,6 +343,7 @@ const isReportingProjection = (value) => {
             (isBoundedRows(activity.dailySummary, REPORT_EVIDENCE_LIMITS.activityDays, isActivityDailySummary) &&
                 new Set(activity.dailySummary.rows.map(row => row.date)).size === activity.dailySummary.rows.length)) &&
         (activity.undatedSummary === undefined || isActivityCounts(activity.undatedSummary)) &&
+        isActivityMonthEvidence(activity.verifiedMonths, activity.monthCoverage) &&
         ['changes', 'security', 'health', 'suppressed'].every(key => isProjectionRows(activity[key])));
 };
 const isActivityCounts = (value) => isRecord(value) &&
@@ -346,6 +362,64 @@ const isActivityMonthlyFindings = (value) => isRecord(value) &&
         ((typeof row.importance === 'string' && row.importance.toLowerCase() === 'high') ||
             row.isSecuritySensitive === true ||
             (typeof row.status === 'string' && row.status.toLowerCase() === 'failed')));
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const DAY_MS = 86400000;
+const daysInMonth = (month) => new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+const isCalendarDateInMonth = (value, month) => typeof value === 'string' &&
+    DATE_PATTERN.test(value) &&
+    value.slice(0, 7) === month &&
+    Number.isFinite(Date.parse(value)) &&
+    new Date(value).toISOString().slice(0, 10) === value;
+const isActivityMonthCoverage = (value) => {
+    if (!isRecord(value) ||
+        typeof value.month !== 'string' ||
+        !MONTH_PATTERN.test(value.month) ||
+        !['complete', 'partial', 'unavailable'].includes(value.status) ||
+        !['monthly-archive', 'rolling-feed'].includes(value.source) ||
+        !isCount(value.coveredDayCount) ||
+        !isCount(value.expectedDayCount) ||
+        value.expectedDayCount !== daysInMonth(value.month) ||
+        value.coveredDayCount > value.expectedDayCount) {
+        return false;
+    }
+    const covered = value.coveredDayCount;
+    const statusMatches = value.status === 'complete'
+        ? covered === value.expectedDayCount
+        : value.status === 'unavailable'
+            ? covered === 0
+            : covered > 0 && covered < value.expectedDayCount;
+    if (!statusMatches)
+        return false;
+    if (value.coveredFrom === undefined && value.coveredTo === undefined)
+        return true;
+    return (covered > 0 &&
+        isCalendarDateInMonth(value.coveredFrom, value.month) &&
+        isCalendarDateInMonth(value.coveredTo, value.month) &&
+        value.coveredFrom <= value.coveredTo &&
+        (Date.parse(value.coveredTo) - Date.parse(value.coveredFrom)) / DAY_MS + 1 >= covered);
+};
+/** Verified months are unique YYYY-MM values; any verified month listed in coverage is complete, and untruncated coverage lists every verified month. */
+const isActivityMonthEvidence = (verifiedMonths, monthCoverage) => {
+    if (verifiedMonths !== undefined &&
+        (!Array.isArray(verifiedMonths) ||
+            verifiedMonths.length > REPORT_EVIDENCE_LIMITS.activityMonths ||
+            !verifiedMonths.every(month => typeof month === 'string' && MONTH_PATTERN.test(month)) ||
+            new Set(verifiedMonths).size !== verifiedMonths.length)) {
+        return false;
+    }
+    if (monthCoverage === undefined)
+        return true;
+    if (!isBoundedRows(monthCoverage, REPORT_EVIDENCE_LIMITS.activityMonths, isActivityMonthCoverage) ||
+        new Set(monthCoverage.rows.map(row => row.month)).size !== monthCoverage.rows.length) {
+        return false;
+    }
+    const coverageByMonth = new Map(monthCoverage.rows.map(row => [row.month, row.status]));
+    return (verifiedMonths ?? []).every(month => {
+        const status = coverageByMonth.get(month);
+        return status === undefined ? monthCoverage.omittedCount > 0 : status === 'complete';
+    });
+};
 const isActivityDailySummary = (value) => isActivityCounts(value) &&
     isRecord(value) &&
     isString(value.date) &&

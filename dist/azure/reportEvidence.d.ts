@@ -8,6 +8,7 @@ import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 import type { ChangeType } from './reports';
 import type { IBenefitUtilization } from './benefits';
+import type { CommitmentsFreshnessSummary } from './commitmentsPlanning';
 export declare const REPORT_EVIDENCE_LIMITS: {
     readonly detailRows: 50;
     readonly currentRecommendations: 90;
@@ -15,6 +16,8 @@ export declare const REPORT_EVIDENCE_LIMITS: {
     readonly complianceAssessments: 2000;
     readonly activityDays: 400;
     readonly activityMonths: 13;
+    readonly commitmentsFreshnessEntries: 50;
+    readonly commitmentsFreshnessWarnings: 10;
     readonly recommendationResources: 2;
     readonly resourceCatalogue: 2000;
     readonly totalRecommendationResourceRows: 10000;
@@ -274,8 +277,13 @@ export interface ReportInventoryCatalogueResource extends ReportCompactRecommend
         alternatives: ReportProjectionRecord[];
     };
 }
+/** Lowercase Azure RBAC principal types. Producers omit `principalType` when the source type is absent or outside this list. */
+export declare const REPORT_PRINCIPAL_TYPES: readonly ["user", "group", "serviceprincipal", "foreigngroup", "device"];
+export type ReportPrincipalType = (typeof REPORT_PRINCIPAL_TYPES)[number];
 export interface ReportPrivilegedAccessRow {
     principalId: string;
+    /** Source principal type; consumers must not infer it from `displayName` fallbacks. */
+    principalType?: ReportPrincipalType;
     displayName: string;
     userPrincipalName?: string;
     roleName: string;
@@ -340,7 +348,15 @@ export interface ReportCommitmentInventoryRow {
     annualCommittedCost?: ReportProjectionRecord;
     doNotRenewAnnualImpact?: ReportProjectionRecord;
 }
+/**
+ * Report projection of `CommitmentsFreshnessSummary`: at most `commitmentsFreshnessEntries` entries and
+ * `commitmentsFreshnessWarnings` warnings. `status` and `generatedAt` appear together. A pack projected from an
+ * artifact without freshness omits both and carries no entries; consumers treat that freshness as unknown.
+ * Packs produced before per-section entries were projected (September 2026) omit `entries`.
+ */
+export type ReportCommitmentsFreshness = Partial<CommitmentsFreshnessSummary>;
 export interface ReportCommitmentsProjection extends ReportProjectionRecord {
+    freshness?: ReportCommitmentsFreshness;
     resourceCoverage?: ReportBoundedRows<ReportProjectionRecord>;
     inventorySummary: ReportCommitmentInventorySummary;
     inventory: ReportBoundedRows<ReportCommitmentInventoryRow>;
@@ -409,12 +425,41 @@ export interface ReportPublicIpProjection extends ReportProjectionRecord {
 export interface ReportActivityProjection extends ReportProjectionRecord {
     /** Period-specific high findings, retained before the current global detail samples. */
     monthlyFindings?: ReportBoundedRows<ReportActivityMonthlyFindings>;
+    /**
+     * Unique YYYY-MM months whose activity counts are verified, at most `activityMonths`. A month is verified
+     * only when its coverage is complete; when `monthCoverage` lists the month, its status is `complete`.
+     * Counts for months not listed here are lower bounds. Absent on older packs.
+     */
+    verifiedMonths?: string[];
+    /** Per-month activity collection coverage, one row per unique month, at most `activityMonths` rows. */
+    monthCoverage?: ReportBoundedRows<ReportActivityMonthCoverage>;
     dailySummary?: ReportBoundedRows<ReportActivityDailySummary>;
     undatedSummary?: ReportActivityCounts;
     changes: ReportBoundedRows<ReportProjectionRecord>;
     security: ReportBoundedRows<ReportProjectionRecord>;
     health: ReportBoundedRows<ReportProjectionRecord>;
     suppressed: ReportBoundedRows<ReportProjectionRecord>;
+}
+export type ReportActivityMonthCoverageStatus = 'complete' | 'partial' | 'unavailable';
+export type ReportActivityMonthCoverageSource = 'monthly-archive' | 'rolling-feed';
+/**
+ * Activity collection coverage for one UTC calendar month.
+ * `complete` means every day is covered, `unavailable` means no day is covered, and `partial` is anything between.
+ * `coveredFrom` and `coveredTo` appear together, only when at least one day is covered, and bound the covered days.
+ */
+export interface ReportActivityMonthCoverage {
+    /** YYYY-MM. */
+    month: string;
+    status: ReportActivityMonthCoverageStatus;
+    source: ReportActivityMonthCoverageSource;
+    /** First covered day (YYYY-MM-DD) within `month`. */
+    coveredFrom?: string;
+    /** Last covered day (YYYY-MM-DD) within `month`, on or after `coveredFrom`. */
+    coveredTo?: string;
+    /** Distinct covered days; at most the inclusive span from `coveredFrom` to `coveredTo`. */
+    coveredDayCount: number;
+    /** Number of days in `month`. */
+    expectedDayCount: number;
 }
 export interface ReportActivityMonthlyFindings {
     month: string;

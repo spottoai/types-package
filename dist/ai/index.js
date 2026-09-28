@@ -17,6 +17,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AI_CHAT_TURN_FEEDBACK_MAX_RECORDS = exports.AI_CHAT_TURN_FEEDBACK_COMMENT_MAX_LENGTH = void 0;
 __exportStar(require("./grounding.js"), exports);
+__exportStar(require("./followUps.js"), exports);
 __exportStar(require("./conversationHistory.js"), exports);
 __exportStar(require("./workspaceArtifacts.js"), exports);
 /** Maximum length of the optional free-text comment attached to per-turn feedback. */

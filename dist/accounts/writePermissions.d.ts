@@ -10,8 +10,20 @@ export declare enum WritePermission {
     /** Permission to create scoped Azure Policy exemptions */
     PolicyExemptions = 4,// 4
     /** Permission to run approved resource scheduling capabilities */
-    ResourceScheduling = 8
+    ResourceScheduling = 8,// 8
+    /** Permission to delete idle or orphaned resources when a clean-up recommendation is implemented */
+    RemediationCleanup = 16,// 16
+    /** Permission to resize, reconfigure, deallocate, or start resources when a recommendation is implemented */
+    RemediationRightsize = 32,// 32
+    /** Permission to manage reservations and savings plans */
+    CommitmentsManage = 64
 }
+/**
+ * Union of every WritePermission bit defined in this package version.
+ * Consumers mask persisted values with this so bits added by a newer producer are ignored, not misread.
+ * Bits are only ever added; an existing bit's meaning never changes.
+ */
+export declare const KNOWN_WRITE_PERMISSION_MASK: number;
 /**
  * Metadata for a write permission
  * Contains display information, required roles, and documentation links
