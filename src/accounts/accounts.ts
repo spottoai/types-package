@@ -839,6 +839,19 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
   scheduledScanSlot?: ScheduledScanSlot;
   eventId?: string;
   readBitmask?: number;
+  /**
+   * WritePermission bits that Azure currently grants the cloud account's identity on this subscription,
+   * fully or only at narrower scopes. Written by cloud-engine on every scan from Azure's effective
+   * permissions and role assignments, never from user input. Absent means not yet checked.
+   * A capability is usable only when the customer has also consented to it on the cloud account.
+   * Freshness follows `lastSuccessfulSyncAt`; mask with `KNOWN_WRITE_PERMISSION_MASK` before use.
+   */
+  effectiveWriteBitmask?: number;
+  /**
+   * Subset of `effectiveWriteBitmask` granted only at resource-group or resource scope rather than
+   * across the whole subscription. Always a subset of `effectiveWriteBitmask`.
+   */
+  partialWriteBitmask?: number;
   syncProgress?: SubscriptionSyncProgress | string | null;
   /** Azure sync features disabled for this subscription in addition to cloud-account opt-outs. */
   syncFeatureOptOuts?: AzureSyncFeatureId[];
