@@ -184,13 +184,12 @@ const checkJobs = async (jobs, label) => {
   }
 
   // Queue message.
-  const message = jobs.createReportJobRequestedV1({ companyId: COMPANY, jobId: vectors[0].expected.jobId, homeRegion: 'aue' });
+  const message = jobs.createReportJobRequestedV1({ companyId: COMPANY, jobId: vectors[0].expected.jobId });
   assert.deepEqual(message, {
     schemaVersion: 1,
     messageType: 'report-job.requested',
     companyId: COMPANY,
     jobId: vectors[0].expected.jobId,
-    homeRegion: 'aue',
     correlationId: vectors[0].expected.jobId,
   });
   assert.deepEqual(jobs.buildReportJobRequestedBrokerProperties(message), {
@@ -208,7 +207,7 @@ const checkJobs = async (jobs, label) => {
   });
   for (const invalid of [
     { ...message, extra: 1 },
-    { ...message, homeRegion: 'au' },
+    { ...message, homeRegion: 'aue' },
     { ...message, jobId: 'job-1' },
     { ...message, companyId: 'a:b' },
     { ...message, correlationId: 'x'.repeat(129) },
@@ -248,9 +247,7 @@ const checkJobs = async (jobs, label) => {
   const apiRow = await jobs.buildReportJobRowV1({
     trigger: 'api',
     companyId: COMPANY,
-    homeRegion: 'aue',
     spec: sdmSpec(),
-    timezone: 'Australia/Sydney',
     fileName: 'Contoso-Service-Delivery-Report-2026-08.docx',
     requestedAtUtc: '2026-09-28T03:15:42.123Z',
     requestedByUserId: 'operator:jay',
@@ -268,9 +265,7 @@ const checkJobs = async (jobs, label) => {
     definitionRevision: 3,
     scheduledForUtc: '2026-10-05T08:00:00.000Z',
     companyId: COMPANY,
-    homeRegion: 'swc',
     spec: { ...sdmSpec(), scope: { cloudAccountIds: ['ca-1'], subscriptionIds: [SUB_A, SUB_B] } },
-    timezone: 'Europe/Stockholm',
     fileName: 'report.docx',
     requestedAtUtc: '2026-10-05T08:00:01.500Z',
   });
@@ -278,9 +273,7 @@ const checkJobs = async (jobs, label) => {
   const csRow = await jobs.buildReportJobRowV1({
     trigger: 'api',
     companyId: COMPANY,
-    homeRegion: 'eus',
     spec: currentStateSpec(),
-    timezone: 'UTC',
     fileName: 'current-state.docx',
     requestedAtUtc: '2026-09-28T03:15:42.123Z',
   });
@@ -328,10 +321,10 @@ const checkJobs = async (jobs, label) => {
     'api job with schedule fields': [{ ...apiRow, scheduleId: 'sched-01' }, 'request-invalid'],
     'schedule id changed': [{ ...scheduleRow, scheduleId: 'sched-02' }, 'request-invalid'],
     'unknown field': [{ ...apiRow, emailAddresses: 'a@b.c' }, 'request-invalid'],
-    'invalid time zone': [{ ...apiRow, timezone: 'Mars/Olympus' }, 'request-invalid'],
+    'row with a time zone': [{ ...apiRow, timezone: 'UTC' }, 'request-invalid'],
     'path in file name': [{ ...apiRow, fileName: '../x.docx' }, 'request-invalid'],
     'not a docx': [{ ...apiRow, fileName: 'report.pdf' }, 'request-invalid'],
-    'region code au': [{ ...apiRow, homeRegion: 'au' }, 'request-invalid'],
+    'row with a region': [{ ...apiRow, homeRegion: 'aue' }, 'request-invalid'],
     'unknown status': [{ ...apiRow, status: 'queued' }, 'request-invalid'],
     'unknown failure code': [{ ...apiRow, failureCode: 'oops' }, 'request-invalid'],
     'coverage summary too long': [{ ...apiRow, sourceCoverageSummary: 'x'.repeat(8193) }, 'request-invalid'],
@@ -346,10 +339,8 @@ const checkJobs = async (jobs, label) => {
     jobs.buildReportJobRowV1({
       trigger: 'api',
       companyId: COMPANY,
-      homeRegion: 'aue',
       spec: sdmSpec(),
-      timezone: 'Nowhere/Land',
-      fileName: 'r.docx',
+      fileName: '../r.docx',
       requestedAtUtc: '2026-09-28T03:15:42.123Z',
     })
   );
@@ -376,9 +367,7 @@ const checkJobs = async (jobs, label) => {
     scheduledForUtc: '2026-11-05T08:00:00.000Z',
     coalescedOccurrenceCount: 2,
     companyId: COMPANY,
-    homeRegion: 'aue',
     spec: sdmSpec(),
-    timezone: 'Australia/Sydney',
     fileName: 'Contoso-Monthly-Insights-2026-10.docx',
     requestedAtUtc: '2026-11-05T08:00:02.000Z',
     requestedByUserId: 'user-7h6g5f4d3s2a1',

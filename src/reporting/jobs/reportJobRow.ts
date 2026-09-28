@@ -3,14 +3,14 @@
  *
  * PartitionKey = companyId, RowKey = jobId. Three writers own disjoint field groups and merge with ETag
  * compare-and-swap: the producer (insert only), reportworker and, from phase 6, cloud-engine's notifier.
- * The row never holds e-mail addresses, document content, source data, Blob paths or credentials.
+ * The row carries no region (each region has its own table, queue and worker) and no time zone (reportworker uses
+ * the company's `preferredTimezone`, else UTC). The row never holds e-mail addresses, document content, source data, Blob paths or credentials.
  */
 import { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
 import { isReportFileName } from '../shared/reportingPaths';
 import {
   hasExactlyKeys,
   isBoundedPlainText,
-  isIanaTimeZone,
   isIsoUtcTimestamp,
   isPlainRecord,
   isReportEntityId,
@@ -19,7 +19,6 @@ import {
 } from '../shared/reportingIds';
 import { normalizeReportTableEntity } from '../shared/reportTableEntities';
 import { buildReportJobScopeHash, deriveReportJobIdentity, parseReportJobId } from './reportJobIdentity';
-import { isReportRegionCode, type ReportRegionCode } from './reportJobMessages';
 import {
   parseReportJobRequestJson,
   REPORT_JOB_SPEC_MAX_BYTES,
@@ -52,7 +51,6 @@ export interface ReportJobProducerFieldsV1 {
   schemaVersion: 1;
   jobId: string;
   companyId: string;
-  homeRegion: ReportRegionCode;
   reportType: ReportJobReportType;
   trigger: ReportJobTrigger;
   /** Schedule jobs only. */
@@ -68,7 +66,6 @@ export interface ReportJobProducerFieldsV1 {
   /** Canonical `serializeReportJobSpecV1` output. */
   requestJson: string;
   requestSha256: string;
-  timezone: string;
   fileName: string;
   notificationPolicyId?: string;
 }
@@ -107,7 +104,6 @@ export const REPORT_JOB_PRODUCER_FIELDS = [
   'schemaVersion',
   'jobId',
   'companyId',
-  'homeRegion',
   'reportType',
   'trigger',
   'scheduleId',
@@ -118,7 +114,6 @@ export const REPORT_JOB_PRODUCER_FIELDS = [
   'coalescedOccurrenceCount',
   'requestJson',
   'requestSha256',
-  'timezone',
   'fileName',
   'notificationPolicyId',
 ] as const satisfies readonly (keyof ReportJobProducerFieldsV1)[];
@@ -150,13 +145,11 @@ const REQUIRED_FIELDS = [
   'schemaVersion',
   'jobId',
   'companyId',
-  'homeRegion',
   'reportType',
   'trigger',
   'requestedAtUtc',
   'requestJson',
   'requestSha256',
-  'timezone',
   'fileName',
   'status',
   'attemptCount',
@@ -206,12 +199,10 @@ const validateShape = (row: Record<string, unknown>, errors: string[]): void => 
   const parsedId = parseReportJobId(row.jobId);
   check('jobId', parsedId !== null && row.RowKey === row.jobId);
   check('reportType', parsedId !== null && row.reportType === parsedId.reportType);
-  check('homeRegion', isReportRegionCode(row.homeRegion));
   check('trigger', row.trigger === 'api' || row.trigger === 'schedule');
   check('requestedAtUtc', isIsoUtcTimestamp(row.requestedAtUtc));
   check('requestJson', typeof row.requestJson === 'string' && utf8ByteLength(row.requestJson) <= REPORT_JOB_SPEC_MAX_BYTES);
   check('requestSha256', isSha(row.requestSha256));
-  check('timezone', isIanaTimeZone(row.timezone));
   check('fileName', isReportFileName(row.fileName));
   // Requesters are identified by user ID, never by e-mail address.
   check(
@@ -318,9 +309,7 @@ export const parseReportJobRowV1 = async (entity: unknown): Promise<ReportJobRow
 
 export type BuildReportJobRowInput = {
   companyId: string;
-  homeRegion: ReportRegionCode;
   spec: ReportJobSpecV1;
-  timezone: string;
   fileName: string;
   requestedAtUtc: string;
   requestedByUserId?: string;
@@ -351,7 +340,6 @@ export const buildReportJobRowV1 = async (input: BuildReportJobRowInput): Promis
     schemaVersion: 1,
     jobId,
     companyId: input.companyId,
-    homeRegion: input.homeRegion,
     reportType: spec.value.reportType,
     trigger: input.trigger,
     ...(schedule
@@ -366,7 +354,6 @@ export const buildReportJobRowV1 = async (input: BuildReportJobRowInput): Promis
     ...(input.requestedByUserId === undefined ? {} : { requestedByUserId: input.requestedByUserId }),
     requestJson,
     requestSha256: await sha256Hex(requestJson),
-    timezone: input.timezone,
     fileName: input.fileName,
     ...(input.notificationPolicyId === undefined ? {} : { notificationPolicyId: input.notificationPolicyId }),
     status: 'accepted',
