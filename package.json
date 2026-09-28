@@ -1,6 +1,6 @@
 {
   "name": "@spottoai/types-package",
-  "version": "1.0.2-beta.455",
+  "version": "1.0.2-beta.456",
   "description": "Shared TypeScript interfaces for SpottoAI",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
