@@ -12,7 +12,6 @@ import {
 import {
   asRecord,
   assertExactKeys,
-  assertPublicJson,
   assertValue,
   isoTimestamp,
   nonNegativeInteger,
@@ -20,8 +19,8 @@ import {
   requiredEnum,
   requiredString,
   validateGeneration,
-} from './portalPublicArtifactValidationCommon.js';
-import { assertAccount } from './pluginPublicArtifactValidationHelpers.js';
+} from '../common/validationHelpers.js';
+import { assertAccount, assertAwsPublicJson } from './validationHelpers.js';
 
 const ORGANIZATION_ID = /^o-[a-z0-9]{10,32}$/u;
 
@@ -81,7 +80,7 @@ export function validateAwsOrganizationCommitmentsRefreshAcceptedResponse(
       throw new Error('organizationCommitmentsAdmission.nextEligibleAt must be later than acceptedAt.');
     }
   }
-  assertPublicJson(response, 'organizationCommitmentsAdmission');
+  assertAwsPublicJson(response, 'organizationCommitmentsAdmission');
   return value as AwsOrganizationCommitmentsRefreshAcceptedResponse;
 }
 
@@ -125,7 +124,7 @@ export function validateAwsOrganizationCommitmentsScopeListResponse(
   });
   assertUniqueSorted(estateIds, 'organizationCommitmentsScopes.organizations estateId');
   assertUnique(organizationIds, 'organizationCommitmentsScopes.organizations organizationId');
-  assertPublicJson(response, 'organizationCommitmentsScopes');
+  assertAwsPublicJson(response, 'organizationCommitmentsScopes');
   return value as AwsOrganizationCommitmentsScopeListResponse;
 }
 
@@ -190,7 +189,7 @@ export function validateAwsOrganizationCommitmentsRefreshStatusResponse(
   if (state === 'fresh' && response.latestArtifact === undefined) {
     throw new Error('organizationCommitmentsStatus.latestArtifact is required when the refresh is fresh.');
   }
-  assertPublicJson(response, 'organizationCommitmentsStatus');
+  assertAwsPublicJson(response, 'organizationCommitmentsStatus');
   return value as AwsOrganizationCommitmentsRefreshStatusResponse;
 }
 

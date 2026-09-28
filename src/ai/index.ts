@@ -1,5 +1,6 @@
 /** Common AI interfaces shared between frontend and backend */
 
+import type { AIChatFollowUpSuggestionV1 } from './followUps.js';
 import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
 import type {
   AIChatWorkspaceArtifact,
@@ -10,6 +11,7 @@ import type {
 } from './workspaceArtifacts.js';
 
 export * from './grounding.js';
+export * from './followUps.js';
 export * from './conversationHistory.js';
 export * from './workspaceArtifacts.js';
 
@@ -1196,6 +1198,8 @@ export interface AIChatTerminalSnapshot {
   collaborationRun?: AIChatCollaborationRun;
   /** Optional while pre-workspace producers and consumers drain. */
   workspaceArtifacts?: AIChatWorkspaceArtifact[];
+  /** Follow-up questions derived from this answer; absent when none were produced. */
+  followUpSuggestions?: AIChatFollowUpSuggestionV1[];
 }
 
 /**

@@ -1,3 +1,4 @@
+import { assertCommitmentsFreshnessDiagnostics } from '../azure/commitmentsPlanningValidation.js';
 import {
   AWS_ORGANIZATION_COMMITMENTS_ATTRIBUTION_UNAVAILABLE_REASONS,
   type AwsOrganizationCommitmentsPlanningView,
@@ -11,18 +12,18 @@ import {
   AWS_ORGANIZATION_COMMITMENTS_PUBLIC_ARTIFACT_SCHEMA_VERSION,
   type AwsPortalOrganizationCommitmentsPlanningArtifact,
 } from './portalOrganizationCommitmentsPlanningPublicArtifacts.js';
-import { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION } from './portalPublicArtifacts.js';
+import { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION } from './publicArtifacts.js';
 import {
   asRecord,
   assertExactKeys,
-  assertPublicJson,
   assertValue,
   finiteNumber,
   isoTimestamp,
   requiredEnum,
   requiredString,
   validateGeneration,
-} from './portalPublicArtifactValidationCommon.js';
+} from '../common/validationHelpers.js';
+import { assertAwsPublicJson } from './validationHelpers.js';
 
 const TOP_LEVEL_KEYS = [
   'schemaVersion',
@@ -58,7 +59,7 @@ export function validateAwsOrganizationCommitmentsPlanningView(
 ): AwsOrganizationCommitmentsPlanningView {
   validateAwsOrganizationCommitmentsPlanningViewIdentity(value, expected);
   validateBody(value as AwsOrganizationCommitmentsPlanningView);
-  assertPublicJson(value, 'organizationCommitmentsPlanning');
+  assertAwsPublicJson(value, 'organizationCommitmentsPlanning');
   return value as AwsOrganizationCommitmentsPlanningView;
 }
 
@@ -84,7 +85,7 @@ export function validateAwsPortalOrganizationCommitmentsPlanningArtifact(
   if (artifact.month !== undefined) requiredString(artifact.month, 'artifact.month');
 
   validateAwsOrganizationCommitmentsPlanningView(artifact, expected);
-  assertPublicJson(artifact, 'artifact');
+  assertAwsPublicJson(artifact, 'artifact');
   return value as AwsPortalOrganizationCommitmentsPlanningArtifact;
 }
 
@@ -422,7 +423,11 @@ function validateFreshness(value: unknown, field: string): void {
   requiredEnum(freshness.status, ['current', 'stale', 'partial', 'unavailable'] as const, `${field}.status`);
   isoTimestamp(freshness.generatedAt, `${field}.generatedAt`);
   records(freshness.entries, `${field}.entries`, (entry, itemField) => {
-    const item = exact(entry, ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'reason', 'sourceKind'], itemField);
+    const item = exact(
+      entry,
+      ['section', 'status', 'generatedAt', 'observedAt', 'lastSuccessfulSyncAt', 'ageHours', 'reasonCode', 'reason', 'sourceKind'],
+      itemField
+    );
     requiredString(item.section, `${itemField}.section`);
     requiredEnum(item.status, ['current', 'stale', 'partial', 'unavailable'] as const, `${itemField}.status`);
     optionalTimestamp(item.generatedAt, `${itemField}.generatedAt`);
@@ -430,6 +435,7 @@ function validateFreshness(value: unknown, field: string): void {
     optionalTimestamp(item.lastSuccessfulSyncAt, `${itemField}.lastSuccessfulSyncAt`);
     optionalString(item.reason, `${itemField}.reason`);
     optionalString(item.sourceKind, `${itemField}.sourceKind`);
+    assertCommitmentsFreshnessDiagnostics(item, itemField);
   });
   optionalStrings(freshness.warnings, `${field}.warnings`);
 }

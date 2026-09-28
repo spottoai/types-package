@@ -326,6 +326,50 @@ provedAttribution.resourceAttribution = {
 };
 assert.equal(validateAwsPortalOrganizationCommitmentsPlanningArtifact(provedAttribution, expected), provedAttribution);
 
+const freshArtifact = structuredClone(artifact);
+freshArtifact.freshness = {
+  status: 'stale',
+  generatedAt,
+  entries: [
+    {
+      section: 'inventory',
+      status: 'stale',
+      generatedAt,
+      lastSuccessfulSyncAt: '2026-08-22T13:00:00.000Z',
+      ageHours: 60,
+      reasonCode: 'collection-stale',
+      reason: 'Inventory is older than 48 hours.',
+      sourceKind: 'aws-native',
+    },
+    { section: 'purchaseRecommendations', status: 'unavailable', reasonCode: 'permission-denied' },
+  ],
+  warnings: ['Inventory is older than 48 hours.'],
+};
+assert.equal(validateAwsPortalOrganizationCommitmentsPlanningArtifact(freshArtifact, expected), freshArtifact);
+const rejectFreshness = (mutate, pattern) => {
+  const value = structuredClone(freshArtifact);
+  mutate(value.freshness.entries[0]);
+  assert.throws(() => validateAwsPortalOrganizationCommitmentsPlanningArtifact(value, expected), pattern);
+};
+rejectFreshness(entry => {
+  entry.ageHours = -1;
+}, /ageHours must be a non-negative one-decimal number/);
+rejectFreshness(entry => {
+  entry.ageHours = 60.25;
+}, /ageHours must be a non-negative one-decimal number/);
+rejectFreshness(entry => {
+  delete entry.lastSuccessfulSyncAt;
+}, /with lastSuccessfulSyncAt/);
+rejectFreshness(entry => {
+  entry.reasonCode = 'throttled';
+}, /reasonCode must be a known code/);
+rejectFreshness(entry => {
+  entry.status = 'partial';
+}, /collection-stale only with status stale/);
+rejectFreshness(entry => {
+  entry.lastSuccessfulAt = entry.lastSuccessfulSyncAt;
+}, /undeclared fields: lastSuccessfulAt/);
+
 const sessionId = buildAwsOrganizationCommitmentsSessionId(companyId, estateId);
 assert.equal(sessionId, buildAwsOrganizationCommitmentsSessionId(companyId, estateId));
 assert.notEqual(sessionId, buildAwsOrganizationCommitmentsSessionId('company-other', estateId));

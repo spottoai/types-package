@@ -1,6 +1,9 @@
 import {
   STORY_KEYS,
   STORY_LIMITS,
+  type CapacityDescriptor,
+  type CommitmentBenefit,
+  type CommitmentBlock,
   type CommitmentRow,
   type HybridBenefitRow,
   type MetricSparkline,
@@ -10,8 +13,15 @@ import {
   type StoryFingerprint,
   type ResilienceProfileConfig,
   type ResilienceRow,
+  type RightSizeRejection,
   type RightSkuRow,
+  type RightSkuVerdict,
   type ScheduleCandidateRow,
+  type RightSizeAssessmentStatus,
+  type SkuCapabilityImpact,
+  type SkuOption,
+  type SkuOptionSummary,
+  type SkuProjectedUsage,
   type StoryArtifact,
   type StoryCell,
   type StoryColumn,
@@ -19,12 +29,15 @@ import {
   type StoryRowByKey,
   type StorySample,
   type StorySection,
+  type StorySectionFinancials,
   type UtilizationProfile,
   type UtilizationProfileConfig,
   type UtilizationSignal,
+  type UtilizationSignalActionReason,
 } from './utilizationStories';
 import type { SubscriptionReportEvidencePack } from '../azure/reportEvidence';
 import {
+  isCommitmentBlock,
   isReportingStories,
   isStoryFingerprintRows,
   isStoryArtifact,
@@ -104,6 +117,30 @@ const profile: UtilizationProfile = {
   },
   fingerprint: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z|mostly-off',
 };
+const scalableCapacity: CapacityDescriptor = {
+  sku: 'P3v2',
+  tier: 'PremiumV2',
+  units: 3,
+  unitName: 'instances',
+  scaleMode: 'autoscale',
+  scaling: {
+    autoscaleEnabled: true,
+    minimumUnits: 3,
+    defaultUnits: 3,
+    maximumUnits: 10,
+    source: 'Azure Monitor Autoscale',
+  },
+  label: 'PremiumV2 P3v2 · 3 instances · autoscale 3–10',
+};
+const commitmentBenefit: CommitmentBenefit = {
+  benefitId: '/providers/microsoft.capacity/reservationorders/order-fixture/reservations/ri-fixture-d2s',
+  benefitName: 'ri-fixture-d2s',
+  benefitType: 'reservation',
+  status: 'active',
+  expiryDate: '2027-04-30T00:00:00.000Z',
+  daysToExpiry: 230,
+};
+void [scalableCapacity, commitmentBenefit];
 /** Legacy shape without the running profile is still a valid profile (running is optional). */
 const profileWithoutRunning: UtilizationProfile = { ...profile, running: undefined, verdict: 'oversized', scheduleFit: 'insufficient-data' };
 void profileWithoutRunning;
@@ -117,6 +154,19 @@ const signal: UtilizationSignal = {
   betterSku: { kind: 'same-shape', label: 'E8as v4', savingsPercent: 13.5 },
   telemetry: 'collected',
 };
+
+const capabilityImpact: SkuCapabilityImpact = {
+  key: 'maxDataDiskCount',
+  label: 'Data disks',
+  severity: 'info',
+  basis: 'current-setting',
+  materiality: 'not-used',
+  currentValue: 4,
+  alternativeValue: 8,
+  message: 'The proposed size still covers the current VM configuration.',
+};
+const rightSizeStatus: RightSizeAssessmentStatus = 'recommended';
+void rightSizeStatus;
 
 const protection: ProtectionProfile = {
   provider: 'azure',
@@ -159,6 +209,7 @@ const columns: StoryColumn[] = [
   { key: 'usage', label: 'Usage (30d)', cell: 'dual', priority: 1, roleClass: 'dual' },
   { key: 'verdict', label: 'Read', cell: 'mark', priority: 1, roleClass: 'read', hint: 'One-word verdict' },
 ];
+const sectionFinancials: StorySectionFinancials = { spend30d: 4000, savingsMax: 600, currency: 'NZD' };
 
 const base = {
   resourceId: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z',
@@ -174,7 +225,26 @@ const base = {
   fingerprint: '/subscriptions/x/resourcegroups/y/providers/microsoft.compute/virtualmachines/z|mostly-off',
   cells,
 };
-const oversizedRow: OversizedResourceRow = { ...base, profile, betterSku: { kind: 'same-shape', label: 'E8as v4', savingsPercent: 13.5 } };
+const recommendedOption: SkuOption = {
+  kind: 'trade-off',
+  sku: 'Standard_E4a_v4',
+  label: 'E4a v4',
+  capacity: { units: 4, memoryGB: 32 },
+  monthlyCost: 600,
+  currency: 'NZD',
+  savingsPercent: 4.5,
+  savingsMonthly: 28.43,
+  lostCapabilities: ['supportsPremiumDisk'],
+  capabilityImpacts: [capabilityImpact],
+  confidence: 'high',
+};
+const oversizedRow: OversizedResourceRow = {
+  ...base,
+  profile,
+  betterSku: { kind: recommendedOption.kind, label: recommendedOption.label, savingsPercent: recommendedOption.savingsPercent },
+  recommendedOption,
+  rightSizeStatus: 'recommended',
+};
 const rightSkuRow: RightSkuRow = {
   ...base,
   current: {
@@ -187,22 +257,10 @@ const rightSkuRow: RightSkuRow = {
     savingsMonthly: null,
     lostCapabilities: [],
   },
-  options: [
-    {
-      kind: 'trade-off',
-      sku: 'Standard_E4a_v4',
-      label: 'E4a v4',
-      capacity: { units: 4, memoryGB: 32 },
-      monthlyCost: 600,
-      currency: 'NZD',
-      savingsPercent: 4.5,
-      savingsMonthly: 28.43,
-      lostCapabilities: ['supportsPremiumDisk'],
-      confidence: 'high',
-    },
-  ],
+  options: [recommendedOption],
   verdict: 'consider',
   usage: { primaryP95: 3.27, secondaryP95: 29.1, telemetry: 'collected' },
+  profile,
 };
 const scheduleRow: ScheduleCandidateRow = { ...base, profile, action: 'stop' };
 const resilienceRow: ResilienceRow = {
@@ -233,6 +291,16 @@ const commitmentRow: CommitmentRow = {
     coveragePercent: 100,
     benefitTypes: ['savings-plan'],
     benefitNames: ['sp-compute-fixture'],
+    benefits: [
+      {
+        benefitId: '/providers/microsoft.billingbenefits/savingsplanorders/order-fixture/savingsplans/sp-compute-fixture',
+        benefitName: 'sp-compute-fixture',
+        benefitType: 'savings-plan',
+        status: 'active',
+        expiryDate: '2027-08-13T00:00:00.000Z',
+        daysToExpiry: 335,
+      },
+    ],
     coveredCost: 93.05,
     uncoveredCost: 0,
     windowStart: '2026-08-13T00:00:00.000Z',
@@ -254,6 +322,7 @@ const section: StorySection<OversizedResourceRow> = {
   resourceType: 'microsoft.compute/virtualmachines',
   family: 'compute',
   columns,
+  financials: sectionFinancials,
   totalCount: 11,
   rows: [oversizedRow],
   omittedCount: 10,
@@ -266,6 +335,12 @@ const artifact: StoryArtifact<OversizedResourceRow> = {
   summary: { counts: { 'verdict:mostly-off': 9 }, spend: { total30d: 4000 }, currency: 'NZD', note: 'sample' },
   sections: [section],
 };
+/** An AWS artifact names its provider; the account has no tenant, so the scope (and every row) carries `''`. */
+const awsArtifact: StoryArtifact<OversizedResourceRow> = {
+  ...artifact,
+  scope: { companyId: 'c', tenantId: '', subscriptionId: '123456789012', displayName: 'Fixture AWS', currency: 'USD', provider: 'aws' },
+};
+void awsArtifact;
 const sample: StorySample<OversizedResourceRow> = { summary: artifact.summary, sections: artifact.sections };
 const stories: ReportingStories = { 'oversized-resources': sample };
 /** The evidence pack carries stories as an optional, additive projection. */
@@ -323,6 +398,59 @@ const signalValid: boolean = isUtilizationSignal(signal);
 const rowGuard = storyRowGuard('resilience-recovery');
 const rowValid: boolean = rowGuard(resilienceRow);
 void [sampleValid, storiesValid, profileValid, signalValid, rowValid];
+
+// Iteration 5 (at-a-glance UX): commitment-blocked Right SKU rows, informational rows, savings basis, projected usage.
+const commitmentBlock: CommitmentBlock = {
+  reason: 'reservation',
+  coveragePercent: 100,
+  benefitName: 'ri-fixture-f16',
+  expiryDate: '2027-03-31',
+};
+const projected: SkuProjectedUsage = { estimate: true, cpuP95: 64, memoryP95: 101.5 };
+const blockedVerdict: RightSkuVerdict = 'blocked-by-commitment';
+const blockedRightSkuRow: RightSkuRow = {
+  ...rightSkuRow,
+  savingsMax: null,
+  actionable: false,
+  verdict: blockedVerdict,
+  commitmentBlock,
+  options: [{ ...recommendedOption, savingsPercent: null, savingsMonthly: null, savingsBasis: 'billed', projected }],
+};
+const billedSummary: SkuOptionSummary = {
+  kind: 'fits-usage',
+  label: 'D4as v5',
+  savingsPercent: 55.8,
+  savingsBasis: 'list',
+  billedSavingsPercent: 18.2,
+};
+const signalWithBilledPercent: UtilizationSignal = { ...signal, betterSku: billedSummary };
+const rejection: RightSizeRejection = { reason: 'observed-fit', sku: 'Standard_D2as_v5' };
+const informationalRow: OversizedResourceRow = {
+  ...oversizedRow,
+  savingsMax: null,
+  actionable: false,
+  betterSku: undefined,
+  recommendedOption: undefined,
+  rightSizeStatus: 'not-supported',
+  rightSizeRejection: rejection,
+};
+const actionableSummary: StoryArtifact['summary'] = { ...artifact.summary, actionable: 5 };
+const blockValid: boolean = isCommitmentBlock(commitmentBlock);
+const blockedRowValid: boolean = storyRowGuard('right-sku')(blockedRightSkuRow);
+const billedSignalValid: boolean = isUtilizationSignal(signalWithBilledPercent);
+const informationalRowValid: boolean = storyRowGuard('oversized-resources')(informationalRow);
+// @ts-expect-error a commitment block reason is `reservation` or `cost-not-lower`.
+const unknownBlockReason: CommitmentBlock = { ...commitmentBlock, reason: 'savings-plan' };
+void [actionableSummary, blockValid, blockedRowValid, billedSignalValid, informationalRowValid, unknownBlockReason];
+
+// Iteration 6 (Option A): the portal signal mirrors the story row's `actionable` flag with a short machine reason.
+const signalActionReason: UtilizationSignalActionReason = 'observed-fit';
+const lowUseSignal: UtilizationSignal = { ...signal, betterSku: undefined, actionable: false, actionReason: signalActionReason };
+const actionableSignal: UtilizationSignal = { ...signal, actionable: true };
+const lowUseSignalValid: boolean = isUtilizationSignal(lowUseSignal);
+// @ts-expect-error a signal action reason is `observed-fit`, `no-saving` or `blocked-by-commitment`.
+const unknownSignalReason: UtilizationSignal = { ...signal, actionable: false, actionReason: 'no-size-fits' };
+void [lowUseSignal, actionableSignal, lowUseSignalValid, unknownSignalReason];
 
 // Summary-view projection (API `view=summary`): marked, rows removed, produced counts kept.
 const summaryView: StoryArtifact<OversizedResourceRow> = {

@@ -1,6 +1,6 @@
 ---
 name: types-package-architecture
-description: Architecture for the shared Spotto TypeScript types package.
+description: Architecture of the shared Spotto TypeScript types package that defines the contracts and DTOs consumed by api, ui, and worker repos. Use when adding or changing shared types, build outputs, or package publishing, or when a contract change must be coordinated across repos.
 ---
 
 Status: living

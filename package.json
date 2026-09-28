@@ -30,6 +30,9 @@
       ],
       "scheduler": [
         "dist/scheduler/index.d.ts"
+      ],
+      "reporting-jobs": [
+        "dist/reporting/jobs/index.d.ts"
       ]
     }
   },
@@ -47,7 +50,7 @@
     "./aws/relationships": {
       "types": "./dist/aws/relationships.d.ts",
       "import": "./dist/esm/entries/relationships.js",
-      "require": "./dist/aws/portalRelationshipPublicArtifactValidation.js"
+      "require": "./dist/aws/relationships.js"
     },
     "./aws/commitments-planning": {
       "types": "./dist/aws/commitments-planning.d.ts",
@@ -78,6 +81,11 @@
       "types": "./dist/scheduler/index.d.ts",
       "import": "./dist/esm/scheduler/index.js",
       "require": "./dist/scheduler/index.js"
+    },
+    "./reporting-jobs": {
+      "types": "./dist/reporting/jobs/index.d.ts",
+      "import": "./dist/esm/reporting/jobs/index.js",
+      "require": "./dist/reporting/jobs/index.js"
     }
   },
   "files": [
@@ -96,9 +104,7 @@
     "check:billing-cost-analysis-read-responses": "node scripts/check-billing-cost-analysis-read-responses.mjs",
     "check:packed-exports": "node scripts/check-packed-aws-exports.mjs",
     "check:aws-examples": "node scripts/check-aws-example-identifiers.mjs",
-    "check:plugin-public-artifacts": "node scripts/check-plugin-public-artifacts.mjs",
-    "check:portal-public-artifacts": "node scripts/check-portal-public-artifacts.mjs",
-    "check:relationship-public-artifacts": "node scripts/check-relationship-public-artifacts.mjs",
+    "check:resource-graph-contracts": "node scripts/check-resource-graph-contracts.mjs",
     "check:azure-view-set-contracts": "node scripts/check-azure-view-set-contracts.mjs",
     "check:dev-1135-latest-contracts": "node scripts/check-dev-1135-latest-contracts.mjs",
     "check:financial-scope-baseline-contracts": "node scripts/check-financial-scope-baseline-contracts.mjs",
@@ -117,8 +123,9 @@
     "check:resource-strategy-schedule-contracts": "node scripts/check-resource-strategy-schedule-contracts.mjs",
     "check:scheduler-contracts": "node scripts/check-scheduler-contracts.mjs",
     "check:scheduler-tick-contracts": "node scripts/check-scheduler-tick-contracts.mjs",
+    "check:reporting-job-contracts": "node scripts/check-reporting-job-contracts.mjs",
     "prepublishOnly": "npm run clean && npm run build && npm test",
-    "test": "npm run build && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:aws-examples && npm run check:plugin-public-artifacts && npm run check:portal-public-artifacts && npm run check:relationship-public-artifacts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:financial-scope-baseline-contracts && npm run check:financial-projection-contracts && npm run check:financial-savings-surface-projection-contracts && npm run check:financial-surface-contracts && npm run check:public-cost-composition-contracts && npm run check:financial-authority-view-contracts && npm run check:financial-charge-composition-contracts && npm run check:financial-dataflow-contracts && npm run check:environment-contracts && npm run check:financial-charge-policy-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:packed-exports",
+    "test": "npm run build && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:aws-examples && npm run check:resource-graph-contracts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:financial-scope-baseline-contracts && npm run check:financial-projection-contracts && npm run check:financial-savings-surface-projection-contracts && npm run check:financial-surface-contracts && npm run check:public-cost-composition-contracts && npm run check:financial-authority-view-contracts && npm run check:financial-charge-composition-contracts && npm run check:financial-dataflow-contracts && npm run check:environment-contracts && npm run check:financial-charge-policy-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:reporting-job-contracts && npm run check:packed-exports",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",

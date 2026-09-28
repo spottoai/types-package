@@ -251,7 +251,8 @@ export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 export interface BenefitCoverageSummary {
   windowStart: string;
   windowEnd: string;
-  coveredQuantity: number;
+  /** Covered usage quantity. Absent when the source billing carries no usage quantity (AWS); read `coveredCost` then. */
+  coveredQuantity?: number;
   benefitIds: string[];
   benefitNames: string[];
   /** Explicit benefit classifications represented by this coverage window. */
@@ -405,6 +406,18 @@ export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' 
 
 /** Basis for monetary VM price and savings fields, independent of applied-benefit evaluation. */
 export type VmPricePerformancePricingBasis = 'payg-retail' | 'spot-estimate';
+
+/** A monthly estimate obtained by applying the current VM's observed billed-to-retail ratio to PAYG SKU prices. */
+export interface VmEffectiveRateProjection {
+  basis: 'billed';
+  provenance: 'observed-current-vm-compute-rate';
+  currencyCode: string;
+  observedHours: number;
+  observedBilledCost: number;
+  currentRetailHourlyPrice: number;
+  billedToRetailFactor: number;
+  projectionHours: 730;
+}
 
 export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
 
@@ -646,6 +659,8 @@ export interface VmPricePerformanceInsights {
   comparisonBasis?: VmPricePerformanceComparisonBasis;
   /** Basis for displayed monetary values; reservation coverage remains an independent evaluation. */
   pricingBasis?: VmPricePerformancePricingBasis;
+  /** Optional estimate. Existing local price fields retain their retail meaning. */
+  effectiveRateProjection?: VmEffectiveRateProjection;
   /** Subscription/display currency used for user-facing price fields when available. */
   displayCurrencyCode?: string;
   displayCurrencySymbol?: string;

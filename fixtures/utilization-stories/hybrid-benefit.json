@@ -98,7 +98,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -106,7 +107,7 @@
           "cell": "money",
           "priority": 1,
           "roleClass": "save",
-          "hint": "Monthly, upper bound"
+          "hint": "Monthly saving net of buying licenses (their cost spread over the license term; see Payback). Below it: the saving with licenses you already own"
         }
       ],
       "totalCount": 3,
@@ -132,7 +133,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Datacenter"
+              "detail": "Virtual Machine · Datacenter"
             },
             "vcpu": {
               "kind": "number",
@@ -159,9 +160,9 @@
             "decision": {
               "kind": "mark",
               "state": "worth-getting-quote",
-              "label": "Worth getting quote",
+              "label": "Get a quote",
               "tone": "warn",
-              "hint": "Quote licences for 8 vCPU"
+              "hint": "Quote licenses for 8 vCPU"
             },
             "payback": {
               "kind": "number",
@@ -172,7 +173,9 @@
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -190,7 +193,7 @@
           "entitlementStatus": "unknown",
           "decision": {
             "status": "worth-getting-quote",
-            "headline": "Quote licences for 8 vCPU",
+            "headline": "Quote licenses for 8 vCPU",
             "paybackMonths": null,
             "confidence": "medium"
           },
@@ -220,7 +223,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Datacenter"
+              "detail": "Virtual Machine · Datacenter"
             },
             "vcpu": {
               "kind": "number",
@@ -247,9 +250,9 @@
             "decision": {
               "kind": "mark",
               "state": "payg-likely-preferable",
-              "label": "Payg likely preferable",
+              "label": "PAYG likely preferable",
               "tone": "neutral",
-              "hint": "Runs too few hours for licences to pay back"
+              "hint": "Runs too few hours for licenses to pay back"
             },
             "payback": {
               "kind": "number",
@@ -260,7 +263,9 @@
             "spend": {
               "kind": "money",
               "value": 148.3,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -278,7 +283,7 @@
           "entitlementStatus": "unknown",
           "decision": {
             "status": "payg-likely-preferable",
-            "headline": "Runs too few hours for licences to pay back",
+            "headline": "Runs too few hours for licenses to pay back",
             "paybackMonths": null,
             "confidence": "medium"
           },
@@ -308,7 +313,7 @@
             "product": {
               "kind": "text",
               "value": "Windows Server",
-              "detail": "virtual-machine · Standard"
+              "detail": "Virtual Machine · Standard"
             },
             "vcpu": {
               "kind": "number",
@@ -335,7 +340,7 @@
             "decision": {
               "kind": "mark",
               "state": "benefit-already-enabled",
-              "label": "Benefit already enabled",
+              "label": "Benefit Enabled",
               "tone": "good",
               "hint": "Azure Hybrid Benefit is already applied"
             },
@@ -348,7 +353,9 @@
             "spend": {
               "kind": "money",
               "value": 402.1,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -376,7 +383,12 @@
           "licenceObservedStableDays": 183
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1162.8,
+        "savingsMax": 199.4,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.sql/servers/databases",
@@ -443,7 +455,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         },
         {
           "key": "savings",
@@ -451,7 +464,7 @@
           "cell": "money",
           "priority": 1,
           "roleClass": "save",
-          "hint": "Monthly, upper bound"
+          "hint": "Monthly saving net of buying licenses (their cost spread over the license term; see Payback). Below it: the saving with licenses you already own"
         }
       ],
       "totalCount": 1,
@@ -477,7 +490,7 @@
             "product": {
               "kind": "text",
               "value": "SQL Server",
-              "detail": "sql-database · Standard"
+              "detail": "SQL Database · Standard"
             },
             "vcpu": {
               "kind": "number",
@@ -506,7 +519,7 @@
               "state": "strong-candidate",
               "label": "Strong candidate",
               "tone": "good",
-              "hint": "Apply SQL Server licences to 4 vCore"
+              "hint": "Apply SQL Server licenses to 4 vCore"
             },
             "payback": {
               "kind": "number",
@@ -517,7 +530,9 @@
             "spend": {
               "kind": "money",
               "value": 1120,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             },
             "savings": {
               "kind": "money",
@@ -535,7 +550,7 @@
           "entitlementStatus": "unknown",
           "decision": {
             "status": "strong-candidate",
-            "headline": "Apply SQL Server licences to 4 vCore",
+            "headline": "Apply SQL Server licenses to 4 vCore",
             "paybackMonths": 7.5,
             "confidence": "high"
           },
@@ -545,7 +560,12 @@
           "licenceObservedStableDays": 183
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1120,
+        "savingsMax": 402.5,
+        "currency": "NZD"
+      }
     }
   ]
 }

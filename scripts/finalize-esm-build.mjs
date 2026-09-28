@@ -51,7 +51,7 @@ await mkdir(entryRoot, { recursive: true });
 const entries = {
   root: '../index.js',
   aws: '../aws/index.js',
-  relationships: '../aws/portalRelationshipPublicArtifactValidation.js',
+  relationships: '../aws/relationships.js',
   'commitments-planning': '../aws/commitments-planning.js',
   recommendations: '../azure/recommendations.js',
   provider: '../common/provider.js',

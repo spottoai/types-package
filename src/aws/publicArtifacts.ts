@@ -1,10 +1,11 @@
 import type { ArtifactAccountBinding, ArtifactGeneration } from '../common/artifactGeneration';
-import type { Recommendation } from '../azure/recommendations';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
-import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
 import type { AwsForbiddenCredentialFields } from './requests';
 
 export const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
+
+/** Portal envelope version shared by the AWS Portal artifacts. */
+export const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
 
 export const AWS_PUBLIC_ARTIFACT_TYPES = [
   'resource-collection',
@@ -42,62 +43,6 @@ export type AwsPublicArtifactEnvelope<
     artifactGeneration: ArtifactGeneration<RunId>;
   };
 
-export type AwsPublicAccountReference<AccountId extends string = string> = ArtifactAccountBinding<'aws', AccountId> &
-  AwsPublicArtifactForbiddenCredentialFields & {
-    companyId?: string;
-    displayName: string;
-  };
-
-export type AwsPortalAccountSummaryBody<AccountId extends string = string> = Pick<
-  AzureDashboardView,
-  'timestamp' | 'costStartDate' | 'costEndDate' | 'calendarSummary' | 'billingPeriodSummary' | 'summary' | 'dailySummary' | 'costSavingsSummary'
-> & {
-  account: AwsPublicAccountReference<AccountId>;
-};
-
-export type AwsPortalAccountSummaryArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
-  'account-summary',
-  AccountId,
-  RunId
-> &
-  AwsPortalAccountSummaryBody<AccountId>;
-
-export type AwsPortalResourceItem<AccountId extends string = string> = Omit<
-  AzureResourcePortalItem,
-  'location' | 'resourceHealth' | 'vmPricePerformance'
-> &
-  ArtifactAccountBinding<'aws', AccountId> &
-  AwsPublicArtifactForbiddenCredentialFields & {
-    arn?: string;
-    region: string;
-    location: string;
-  };
-
-export type AwsPortalResourceCollectionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
-  'resource-collection',
-  AccountId,
-  RunId
-> &
-  Omit<AzureResourcesView, 'schemaVersion' | 'artifactGeneration' | 'subscription' | 'resources'> & {
-    account: AwsPublicAccountReference<AccountId>;
-    resources: AwsPortalResourceItem<AccountId>[];
-  };
-
-export type {
-  AwsPortalRelationshipArtifact,
-  AwsPortalRelationshipArtifactV1,
-  AwsPortalRelationshipEdge,
-  AwsPortalRelationshipEdgeEvidence,
-  AwsPortalRelationshipEdgeKind,
-  AwsPortalRelationshipNode,
-  AwsPortalRelationshipNodeData,
-  AwsPortalRelationshipNodeKind,
-  AwsPortalRelationshipArtifactV2,
-  AwsPortalRelationshipLegacyArtifact,
-  AwsPortalRelationshipLegacyNode,
-  AwsPortalRelationshipLegacyNodeData,
-} from './portalRelationshipPublicArtifacts';
-
 export type AwsPortalLifecycleResource<AccountId extends string = string> = ServiceRetirementPortalResource &
   ArtifactAccountBinding<'aws', AccountId> &
   AwsPublicArtifactForbiddenCredentialFields & {
@@ -127,94 +72,3 @@ export type AwsPortalLifecycleArtifact<AccountId extends string = string, RunId 
   generatedAt: string;
   entries: AwsPortalLifecycleEntry<AccountId>[];
 };
-
-export type AwsPublicRecommendation = Pick<
-  Recommendation,
-  | 'id'
-  | 'name'
-  | 'category'
-  | 'subCategory'
-  | 'aggregateDescription'
-  | 'type'
-  | 'description'
-  | 'remediation'
-  | 'impact'
-  | 'impactReason'
-  | 'links'
-  | 'considerations'
-  | 'currency'
-  | 'potentialBenefits'
-  | 'potentialMonthlySavings'
-  | 'effort'
-  | 'effortReason'
-  | 'effortHours'
-  | 'effortEstimates'
-  | 'risk'
-  | 'riskReason'
-  | 'severity'
-  | 'costImpact'
-  | 'costImpactUnit'
-  | 'costImpactReason'
-  | 'performanceImpact'
-  | 'performanceImpactReason'
-  | 'confidencePercentage'
-  | 'confidenceReason'
-  | 'resourceIds'
-  | 'resourcesCount'
-  | 'resolved'
-  | 'solution'
-  | 'source'
-  | 'service'
-  | 'createdTime'
-  | 'lastUpdatedTime'
-  | 'title'
-  | 'headline'
-  | 'bottomLine'
-  | 'plainSummary'
-  | 'quickSteps'
-  | 'businessOwner'
-  | 'keyConstraint'
-  | 'validationEvidence'
-  | 'read'
-  | 'technicalPlaybook'
-  | 'baseScores'
-  | 'overallBaseScore'
-  | 'overallBaseReason'
-  | 'priorityTier'
-  | 'adjustedScore'
-  | 'objectiveMultiplier'
-  | 'finalScore'
-  | 'normalizedScore'
-> &
-  AwsPublicArtifactForbiddenCredentialFields & {
-    resources?: never;
-    securityImpactDetails?: never;
-    linkingIds?: never;
-    renderData?: never;
-    action?: never;
-  };
-
-/** @deprecated Use AwsPluginSubscriptionDetailArtifact for lossless plugin publication. */
-export type AwsPluginSubscriptionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
-  'plugin-subscription',
-  AccountId,
-  RunId
-> &
-  AwsPortalAccountSummaryBody<AccountId>;
-
-/** @deprecated Use AwsPluginResourceDetailArtifact for lossless plugin publication. */
-export type AwsPluginResourceArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
-  'plugin-resource',
-  AccountId,
-  RunId
-> &
-  Omit<
-    AzureResourcePluginItemDetailed,
-    'subscription' | 'resourceGroup' | 'properties' | 'recommendations' | 'vmPricePerformance' | 'computeAlternatives'
-  > & {
-    arn?: string;
-    region: string;
-    resourceGroup?: never;
-    properties?: never;
-    recommendations?: AwsPublicRecommendation[];
-  };

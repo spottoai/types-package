@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict';
 
-import { REPORT_EVIDENCE_LIMITS, isSubscriptionReportEvidencePack, isSubscriptionReportHistory, isTenantReportEvidencePack } from '../dist/index.js';
+import {
+  REPORT_EVIDENCE_LIMITS,
+  REPORT_PRINCIPAL_TYPES,
+  isSubscriptionReportEvidencePack,
+  isSubscriptionReportHistory,
+  isTenantReportEvidencePack,
+} from '../dist/index.js';
 
 const rows = values => ({ totalCount: values.length, rows: values, omittedCount: 0 });
 const emptyRows = () => rows([]);
@@ -827,3 +833,236 @@ assert.equal(
   false,
   'malformed policy never invokes input coercion'
 );
+
+// Commitments freshness: typed report projection, including packs projected from artifacts without freshness.
+const freshnessPack = structuredClone(subscriptionPack);
+freshnessPack.reporting.commitmentsPlanning.freshness = {
+  status: 'stale',
+  generatedAt: '2026-09-11T00:00:00.000Z',
+  entries: [
+    {
+      section: 'inventory',
+      status: 'stale',
+      generatedAt: '2026-09-11T00:00:00.000Z',
+      lastSuccessfulSyncAt: '2026-09-08T12:00:00.000Z',
+      ageHours: 60,
+      reasonCode: 'collection-stale',
+      reason: 'Reservation inventory is older than 48 hours.',
+      sourceKind: 'azure-native',
+    },
+    { section: 'savings-plan-inventory', status: 'unavailable', reasonCode: 'permission-denied', sourceKind: 'azure-native' },
+    { section: 'storageCapacity', status: 'current', generatedAt: '2026-09-11T00:00:00.000Z', sourceKind: 'spotto-derived' },
+  ],
+  warnings: ['Reservation inventory is older than 48 hours.'],
+};
+assert.equal(isSubscriptionReportEvidencePack(freshnessPack), true, 'accepts typed commitments freshness');
+const emptyFreshnessPack = structuredClone(subscriptionPack);
+emptyFreshnessPack.reporting.commitmentsPlanning.freshness = { entries: [], warnings: [] };
+assert.equal(isSubscriptionReportEvidencePack(emptyFreshnessPack), true, 'accepts the shape projected from an artifact without freshness');
+const preEntriesFreshnessPack = structuredClone(subscriptionPack);
+preEntriesFreshnessPack.reporting.commitmentsPlanning.freshness = {
+  status: 'partial',
+  generatedAt: '2026-09-11T00:00:00.000Z',
+  warnings: ['Inventory is partial.'],
+};
+assert.equal(isSubscriptionReportEvidencePack(preEntriesFreshnessPack), true, 'accepts packs produced before freshness entries were projected');
+const preEntriesEmptyFreshnessPack = structuredClone(subscriptionPack);
+preEntriesEmptyFreshnessPack.reporting.commitmentsPlanning.freshness = { warnings: [] };
+assert.equal(
+  isSubscriptionReportEvidencePack(preEntriesEmptyFreshnessPack),
+  true,
+  'accepts older packs projected from an artifact without freshness'
+);
+const maximalFreshnessPack = structuredClone(freshnessPack);
+maximalFreshnessPack.reporting.commitmentsPlanning.freshness.entries = Array.from(
+  { length: REPORT_EVIDENCE_LIMITS.commitmentsFreshnessEntries },
+  (_, index) => ({ section: `section-${index}`, status: 'current' })
+);
+maximalFreshnessPack.reporting.commitmentsPlanning.freshness.warnings = Array.from(
+  { length: REPORT_EVIDENCE_LIMITS.commitmentsFreshnessWarnings },
+  (_, index) => `warning-${index}`
+);
+assert.equal(isSubscriptionReportEvidencePack(maximalFreshnessPack), true, 'accepts freshness at its bounds');
+for (const [label, mutate] of [
+  ['non-array entries', freshness => (freshness.entries = 'none')],
+  ['null entries', freshness => (freshness.entries = null)],
+  ['status without generatedAt', freshness => delete freshness.generatedAt],
+  ['generatedAt without status', freshness => delete freshness.status],
+  ['unknown summary status', freshness => (freshness.status = 'fresh')],
+  ['invalid generatedAt', freshness => (freshness.generatedAt = 'today')],
+  [
+    'entries without summary status',
+    freshness => {
+      delete freshness.status;
+      delete freshness.generatedAt;
+    },
+  ],
+  [
+    'too many entries',
+    freshness => {
+      freshness.entries = Array.from({ length: REPORT_EVIDENCE_LIMITS.commitmentsFreshnessEntries + 1 }, () => ({ section: 'x', status: 'current' }));
+    },
+  ],
+  [
+    'too many warnings',
+    freshness => {
+      freshness.warnings = Array.from({ length: REPORT_EVIDENCE_LIMITS.commitmentsFreshnessWarnings + 1 }, (_, index) => `w-${index}`);
+    },
+  ],
+  ['blank warning', freshness => (freshness.warnings = [' '])],
+  ['entry without section', freshness => delete freshness.entries[0].section],
+  ['unknown entry status', freshness => (freshness.entries[0].status = 'expired')],
+  ['unknown reason code', freshness => (freshness.entries[1].reasonCode = 'throttled')],
+  ['collection-stale without stale status', freshness => (freshness.entries[0].status = 'partial')],
+  ['negative ageHours', freshness => (freshness.entries[0].ageHours = -0.1)],
+  ['ageHours beyond one decimal', freshness => (freshness.entries[0].ageHours = 60.25)],
+  ['non-finite ageHours', freshness => (freshness.entries[0].ageHours = Number.NaN)],
+  ['ageHours without lastSuccessfulSyncAt', freshness => delete freshness.entries[0].lastSuccessfulSyncAt],
+  ['invalid lastSuccessfulSyncAt', freshness => (freshness.entries[0].lastSuccessfulSyncAt = 'recently')],
+  ['unknown sourceKind', freshness => (freshness.entries[0].sourceKind = 'scraped')],
+]) {
+  const invalid = structuredClone(freshnessPack);
+  mutate(invalid.reporting.commitmentsPlanning.freshness);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, `rejects commitments freshness: ${label}`);
+}
+const nullFreshnessPack = structuredClone(subscriptionPack);
+nullFreshnessPack.reporting.commitmentsPlanning.freshness = null;
+assert.equal(isSubscriptionReportEvidencePack(nullFreshnessPack), false, 'rejects null commitments freshness');
+
+// Privileged access principal types.
+assert.deepEqual([...REPORT_PRINCIPAL_TYPES], ['user', 'group', 'serviceprincipal', 'foreigngroup', 'device']);
+const privilegedRow = { principalId: 'principal-1', displayName: 'Ada Admin', roleName: 'Owner', scope: '/subscriptions/subscription-1' };
+const principalPack = structuredClone(subscriptionPack);
+principalPack.reporting.governance.privilegedAccessRows = rows([
+  privilegedRow,
+  ...REPORT_PRINCIPAL_TYPES.map((principalType, index) => ({ ...privilegedRow, principalId: `principal-${index + 2}`, principalType })),
+]);
+assert.equal(isSubscriptionReportEvidencePack(principalPack), true, 'accepts every principal type and legacy rows without one');
+for (const principalType of ['ServicePrincipal', 'User', 'unknown', '', 42, null]) {
+  const invalid = structuredClone(principalPack);
+  invalid.reporting.governance.privilegedAccessRows.rows[0].principalType = principalType;
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, `rejects principal type ${String(principalType)}`);
+}
+
+// Activity verified months and month coverage.
+const coverageRow = (month, status, coveredDayCount, expectedDayCount, extra = {}) => ({
+  month,
+  status,
+  source: 'monthly-archive',
+  coveredDayCount,
+  expectedDayCount,
+  ...extra,
+});
+const activityCoveragePack = structuredClone(subscriptionPack);
+activityCoveragePack.reporting.activity.verifiedMonths = ['2026-07', '2026-08'];
+activityCoveragePack.reporting.activity.monthCoverage = rows([
+  coverageRow('2026-07', 'complete', 31, 31, { coveredFrom: '2026-07-01', coveredTo: '2026-07-31' }),
+  coverageRow('2026-08', 'complete', 31, 31),
+  coverageRow('2026-09', 'partial', 10, 30, { source: 'rolling-feed', coveredFrom: '2026-09-01', coveredTo: '2026-09-11' }),
+  coverageRow('2028-02', 'unavailable', 0, 29, { source: 'rolling-feed' }),
+  coverageRow('2027-02', 'partial', 27, 28),
+]);
+assert.equal(isSubscriptionReportEvidencePack(activityCoveragePack), true, 'accepts consistent activity month coverage');
+const verifiedOnlyPack = structuredClone(subscriptionPack);
+verifiedOnlyPack.reporting.activity.verifiedMonths = ['2026-08', '2026-09'];
+assert.equal(isSubscriptionReportEvidencePack(verifiedOnlyPack), true, 'accepts verified months emitted without coverage');
+const emptyVerifiedPack = structuredClone(subscriptionPack);
+emptyVerifiedPack.reporting.activity.verifiedMonths = [];
+assert.equal(isSubscriptionReportEvidencePack(emptyVerifiedPack), true, 'accepts no verified months');
+const truncatedCoveragePack = structuredClone(activityCoveragePack);
+truncatedCoveragePack.reporting.activity.verifiedMonths = ['2026-06', '2026-07'];
+truncatedCoveragePack.reporting.activity.monthCoverage.totalCount += 1;
+truncatedCoveragePack.reporting.activity.monthCoverage.omittedCount = 1;
+assert.equal(isSubscriptionReportEvidencePack(truncatedCoveragePack), true, 'a verified month may be omitted from truncated coverage');
+const fullCoveragePack = structuredClone(subscriptionPack);
+fullCoveragePack.reporting.activity.monthCoverage = rows(
+  Array.from({ length: REPORT_EVIDENCE_LIMITS.activityMonths }, (_, index) => {
+    const month = new Date(Date.UTC(2025, 8 + index, 1)).toISOString().slice(0, 7);
+    const days = new Date(Date.UTC(Number(month.slice(0, 4)), Number(month.slice(5, 7)), 0)).getUTCDate();
+    return coverageRow(month, 'complete', days, days);
+  })
+);
+fullCoveragePack.reporting.activity.verifiedMonths = fullCoveragePack.reporting.activity.monthCoverage.rows.map(row => row.month);
+assert.equal(isSubscriptionReportEvidencePack(fullCoveragePack), true, 'accepts coverage at the activity month bound');
+const coverageAt = (activity, month) => activity.monthCoverage.rows.find(row => row.month === month);
+for (const [label, mutate] of [
+  ['verifiedMonths not an array', activity => (activity.verifiedMonths = '2026-08')],
+  ['verified month format', activity => (activity.verifiedMonths = ['2026-8'])],
+  ['verified month out of range', activity => (activity.verifiedMonths = ['2026-13'])],
+  ['verified month duplicate', activity => (activity.verifiedMonths = ['2026-08', '2026-08'])],
+  [
+    'too many verified months',
+    activity => {
+      activity.verifiedMonths = Array.from({ length: REPORT_EVIDENCE_LIMITS.activityMonths + 1 }, (_, index) =>
+        new Date(Date.UTC(2024, index, 1)).toISOString().slice(0, 7)
+      );
+    },
+  ],
+  ['verified month with partial coverage', activity => activity.verifiedMonths.push('2026-09')],
+  ['verified month absent from untruncated coverage', activity => activity.verifiedMonths.push('2026-06')],
+  ['coverage not bounded rows', activity => (activity.monthCoverage = activity.monthCoverage.rows)],
+  [
+    'too many coverage rows',
+    activity => {
+      activity.monthCoverage = rows(
+        Array.from({ length: REPORT_EVIDENCE_LIMITS.activityMonths + 1 }, (_, index) => coverageRow(`20${10 + index}-01`, 'unavailable', 0, 31))
+      );
+      activity.verifiedMonths = [];
+    },
+  ],
+  [
+    'duplicate coverage month',
+    activity => {
+      activity.monthCoverage.rows.push(coverageRow('2026-09', 'unavailable', 0, 30));
+      activity.monthCoverage.totalCount += 1;
+    },
+  ],
+  ['coverage month format', activity => (coverageAt(activity, '2026-09').month = '2026/09')],
+  ['unknown coverage status', activity => (coverageAt(activity, '2026-09').status = 'verified')],
+  ['unknown coverage source', activity => (coverageAt(activity, '2026-09').source = 'activity-log')],
+  ['fractional covered days', activity => (coverageAt(activity, '2026-09').coveredDayCount = 9.5)],
+  ['negative covered days', activity => (coverageAt(activity, '2028-02').coveredDayCount = -1)],
+  ['expected days not the month length', activity => (coverageAt(activity, '2026-09').expectedDayCount = 31)],
+  ['leap-year February declared as 28 days', activity => (coverageAt(activity, '2028-02').expectedDayCount = 28)],
+  ['common-year February declared as 29 days', activity => (coverageAt(activity, '2027-02').expectedDayCount = 29)],
+  ['covered exceeds expected', activity => (coverageAt(activity, '2026-08').coveredDayCount = 32)],
+  ['complete with missing days', activity => (coverageAt(activity, '2026-08').coveredDayCount = 30)],
+  ['unavailable with covered days', activity => (coverageAt(activity, '2028-02').coveredDayCount = 1)],
+  [
+    'partial with no covered days',
+    activity => {
+      const row = coverageAt(activity, '2026-09');
+      row.coveredDayCount = 0;
+      delete row.coveredFrom;
+      delete row.coveredTo;
+    },
+  ],
+  ['partial with every day covered', activity => (coverageAt(activity, '2027-02').coveredDayCount = 28)],
+  [
+    'coveredFrom after coveredTo',
+    activity => {
+      const row = coverageAt(activity, '2026-09');
+      row.coveredFrom = '2026-09-11';
+      row.coveredTo = '2026-09-01';
+    },
+  ],
+  ['coveredFrom outside the month', activity => (coverageAt(activity, '2026-09').coveredFrom = '2026-08-31')],
+  ['coveredTo outside the month', activity => (coverageAt(activity, '2026-07').coveredTo = '2026-08-01')],
+  ['impossible coveredTo date', activity => (coverageAt(activity, '2026-09').coveredTo = '2026-09-31')],
+  ['coveredFrom without coveredTo', activity => delete coverageAt(activity, '2026-09').coveredTo],
+  ['covered span shorter than covered days', activity => (coverageAt(activity, '2026-09').coveredTo = '2026-09-05')],
+  [
+    'covered range on an unavailable month',
+    activity => {
+      const row = coverageAt(activity, '2028-02');
+      row.coveredFrom = '2028-02-01';
+      row.coveredTo = '2028-02-01';
+    },
+  ],
+]) {
+  const invalid = structuredClone(activityCoveragePack);
+  mutate(invalid.reporting.activity);
+  assert.equal(isSubscriptionReportEvidencePack(invalid), false, `rejects activity month evidence: ${label}`);
+}
+
+console.log('Report freshness, principal type and activity month coverage checks passed.');

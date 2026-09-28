@@ -1,7 +1,6 @@
 import type { ArtifactGeneration } from '../common/artifactGeneration.js';
 import type { AwsOrganizationCommitmentsPlanningView } from './organizationCommitments.js';
-import type { AwsPublicArtifactForbiddenCredentialFields } from './publicArtifacts.js';
-import type { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION } from './portalPublicArtifacts.js';
+import type { AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION, AwsPublicArtifactForbiddenCredentialFields } from './publicArtifacts.js';
 
 export const AWS_ORGANIZATION_COMMITMENTS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
 export const AWS_ORGANIZATION_COMMITMENTS_PLANNING_LOGICAL_NAME = 'organization-commitments-planning.json.gz' as const;

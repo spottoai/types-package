@@ -1,6 +1,12 @@
 import {
   REPORT_EVIDENCE_LIMITS,
+  REPORT_PRINCIPAL_TYPES,
+  type ReportActivityMonthCoverage,
+  type ReportActivityProjection,
   type ReportBoundedRows,
+  type ReportCommitmentsFreshness,
+  type ReportPrincipalType,
+  type ReportPrivilegedAccessRow,
   type ReportBudgetProjection,
   type ReportCostChangePeriod,
   type ReportCommitmentInventoryRow,
@@ -54,6 +60,98 @@ const savingsPlanWithUtilization: ReportCommitmentInventoryRow = {
 };
 const legacyCommitmentRow: ReportCommitmentInventoryRow = { id: 'reservation-legacy', benefitType: 'reservation' };
 void [reservationWithUtilization, savingsPlanWithUtilization, legacyCommitmentRow];
+
+const principalTypes: readonly ReportPrincipalType[] = REPORT_PRINCIPAL_TYPES;
+const servicePrincipalRow: ReportPrivilegedAccessRow = {
+  principalId: 'principal-2',
+  principalType: 'serviceprincipal',
+  displayName: 'Service principal 00000000…',
+  roleName: 'Owner',
+};
+const legacyPrivilegedRow: ReportPrivilegedAccessRow = { principalId: 'principal-3', displayName: 'Legacy', roleName: 'Contributor' };
+const invalidPrincipalTypeRow: ReportPrivilegedAccessRow = {
+  ...legacyPrivilegedRow,
+  // @ts-expect-error principal types are lowercase Azure RBAC values
+  principalType: 'ServicePrincipal',
+};
+void [principalTypes, servicePrincipalRow, invalidPrincipalTypeRow];
+
+const commitmentsFreshness: ReportCommitmentsFreshness = {
+  status: 'stale',
+  generatedAt: '2026-09-11T00:00:00.000Z',
+  entries: [
+    {
+      section: 'inventory',
+      status: 'stale',
+      generatedAt: '2026-09-11T00:00:00.000Z',
+      lastSuccessfulSyncAt: '2026-09-08T12:00:00.000Z',
+      ageHours: 60,
+      reasonCode: 'collection-stale',
+      reason: 'Reservation inventory is older than 48 hours.',
+      sourceKind: 'azure-native',
+    },
+    { section: 'savings-plan-inventory', status: 'unavailable', reasonCode: 'permission-denied' },
+  ],
+  warnings: ['Reservation inventory is older than 48 hours.'],
+};
+const emptyCommitmentsFreshness: ReportCommitmentsFreshness = { entries: [], warnings: [] };
+const preEntriesCommitmentsFreshness: ReportCommitmentsFreshness = { status: 'partial', generatedAt: '2026-09-11T00:00:00.000Z', warnings: [] };
+const invalidFreshnessStatus: ReportCommitmentsFreshness = {
+  // @ts-expect-error freshness status is current, stale, partial or unavailable
+  status: 'fresh',
+  generatedAt: '2026-09-11T00:00:00.000Z',
+};
+const invalidFreshnessReason: ReportCommitmentsFreshness = {
+  entries: [
+    {
+      section: 'inventory',
+      status: 'unavailable',
+      // @ts-expect-error reason codes are a closed union
+      reasonCode: 'throttled',
+    },
+  ],
+};
+void [commitmentsFreshness, emptyCommitmentsFreshness, preEntriesCommitmentsFreshness, invalidFreshnessStatus, invalidFreshnessReason];
+
+const augustCoverage: ReportActivityMonthCoverage = {
+  month: '2026-08',
+  status: 'complete',
+  source: 'monthly-archive',
+  coveredFrom: '2026-08-01',
+  coveredTo: '2026-08-31',
+  coveredDayCount: 31,
+  expectedDayCount: 31,
+};
+const septemberCoverage: ReportActivityMonthCoverage = {
+  month: '2026-09',
+  status: 'partial',
+  source: 'rolling-feed',
+  coveredFrom: '2026-09-01',
+  coveredTo: '2026-09-10',
+  coveredDayCount: 10,
+  expectedDayCount: 30,
+};
+const invalidCoverageStatus: ReportActivityMonthCoverage = {
+  ...augustCoverage,
+  // @ts-expect-error coverage status is complete, partial or unavailable
+  status: 'verified',
+};
+const invalidCoverageSource: ReportActivityMonthCoverage = {
+  ...augustCoverage,
+  // @ts-expect-error coverage source is monthly-archive or rolling-feed
+  source: 'activity-log',
+};
+// @ts-expect-error coverage counts are required
+const missingCoverageCounts: ReportActivityMonthCoverage = { month: '2026-08', status: 'unavailable', source: 'rolling-feed' };
+const activityMonthEvidence: Pick<ReportActivityProjection, 'verifiedMonths' | 'monthCoverage'> = {
+  verifiedMonths: ['2026-08'],
+  monthCoverage: rows([augustCoverage, septemberCoverage]),
+};
+const invalidVerifiedMonths: Pick<ReportActivityProjection, 'verifiedMonths'> = {
+  // @ts-expect-error verified months are YYYY-MM strings
+  verifiedMonths: [202608],
+};
+void [invalidCoverageStatus, invalidCoverageSource, missingCoverageCounts, activityMonthEvidence, invalidVerifiedMonths];
 const costChangePeriods = rows<ReportCostChangePeriod>([
   {
     period: '2026-08',
@@ -118,7 +216,7 @@ const reporting: SubscriptionReportingProjection = {
     rbacSummary: {},
     globalAdministratorSummary: {},
     complianceRows: projectedRows,
-    privilegedAccessRows: rows(),
+    privilegedAccessRows: rows([servicePrincipalRow, legacyPrivilegedRow]),
     findings: projectedRows,
     limitations: projectedRows,
   },
@@ -162,8 +260,10 @@ const reporting: SubscriptionReportingProjection = {
       highFindingCount: 0,
       automatedSnapshotEvents: 80,
     }]),
+    ...activityMonthEvidence,
   },
   commitmentsPlanning: {
+    freshness: commitmentsFreshness,
     inventorySummary: { totalCount: 0, statusCounts: {}, benefitTypeCounts: {} },
     inventory: rows(),
     coverage: projectedRows,

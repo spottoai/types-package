@@ -90,7 +90,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         }
       ],
       "totalCount": 8,
@@ -118,7 +119,7 @@
               "state": "disabled",
               "label": "Not protected",
               "tone": "bad",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -144,7 +145,9 @@
             "spend": {
               "kind": "money",
               "value": 402.1,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -241,7 +244,7 @@
               "state": "disabled",
               "label": "Not protected",
               "tone": "bad",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -267,7 +270,9 @@
             "spend": {
               "kind": "money",
               "value": 187.2,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -355,7 +360,7 @@
               "state": "disabled",
               "label": "Not protected",
               "tone": "bad",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -381,7 +386,9 @@
             "spend": {
               "kind": "money",
               "value": 148.3,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -478,7 +485,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -505,7 +512,9 @@
             "spend": {
               "kind": "money",
               "value": 612.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -605,7 +614,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -632,7 +641,9 @@
             "spend": {
               "kind": "money",
               "value": 331.9,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -725,7 +736,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -752,7 +763,9 @@
             "spend": {
               "kind": "money",
               "value": 298.55,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -846,7 +859,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -873,7 +886,9 @@
             "spend": {
               "kind": "money",
               "value": 210,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -967,7 +982,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Backup · data-protection"
+              "hint": "Backup · from Azure Backup"
             },
             "missing": {
               "kind": "number",
@@ -994,7 +1009,9 @@
             "spend": {
               "kind": "money",
               "value": 95.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -1066,7 +1083,12 @@
           "lastRecoveryPointAt": "2026-09-06T02:00:00.000Z"
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 2285.85,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.sql/servers/databases",
@@ -1127,7 +1149,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         }
       ],
       "totalCount": 2,
@@ -1155,7 +1178,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Point-in-time restore · resilience-facts"
+              "hint": "Point-in-time restore · from resource settings"
             },
             "missing": {
               "kind": "number",
@@ -1181,7 +1204,9 @@
             "spend": {
               "kind": "money",
               "value": 1120,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -1268,7 +1293,7 @@
               "state": "enabled",
               "label": "Protected",
               "tone": "good",
-              "hint": "Point-in-time restore · resilience-facts"
+              "hint": "Point-in-time restore · from resource settings"
             },
             "missing": {
               "kind": "number",
@@ -1294,7 +1319,9 @@
             "spend": {
               "kind": "money",
               "value": 503.2,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -1358,7 +1385,12 @@
           }
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 1623.2,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     },
     {
       "resourceType": "microsoft.storage/storageaccounts",
@@ -1419,7 +1451,8 @@
           "label": "30-day spend",
           "cell": "money",
           "priority": 2,
-          "roleClass": "cost"
+          "roleClass": "cost",
+          "hint": "Billed amount; amortized amount is shown below when available"
         }
       ],
       "totalCount": 2,
@@ -1447,7 +1480,7 @@
               "state": "not-applicable",
               "label": "N/A",
               "tone": "muted",
-              "hint": "Soft delete · resilience-facts"
+              "hint": "Soft delete · from resource settings"
             },
             "missing": {
               "kind": "number",
@@ -1473,7 +1506,9 @@
             "spend": {
               "kind": "money",
               "value": 369,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -1576,7 +1611,7 @@
               "state": "not-applicable",
               "label": "N/A",
               "tone": "muted",
-              "hint": "Soft delete · resilience-facts"
+              "hint": "Soft delete · from resource settings"
             },
             "missing": {
               "kind": "number",
@@ -1602,7 +1637,9 @@
             "spend": {
               "kind": "money",
               "value": 12.4,
-              "currency": "NZD"
+              "currency": "NZD",
+              "secondaryValue": null,
+              "secondaryLabel": "Amortized"
             }
           },
           "protection": {
@@ -1683,7 +1720,12 @@
           }
         }
       ],
-      "omittedCount": 0
+      "omittedCount": 0,
+      "financials": {
+        "spend30d": 381.4,
+        "savingsMax": 0,
+        "currency": "NZD"
+      }
     }
   ]
 }

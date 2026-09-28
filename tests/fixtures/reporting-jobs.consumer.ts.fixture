@@ -1,0 +1,38 @@
+import {
+  buildReportJobMessageId,
+  buildReportJobRowV1,
+  createReportJobRequestedV1,
+  isReportJobRequestedV1,
+  parseReportJobRowV1,
+  toReportTableSdkEntity,
+  type ReportJobFailureCode,
+  type ReportJobRequestedV1,
+  type ReportJobRowV1,
+  type ReportJobSpecV1,
+  type ReportJobStatus,
+} from '@spottoai/types-package/reporting-jobs';
+
+const spec: ReportJobSpecV1 = {
+  schemaVersion: 1,
+  reportType: 'sdm',
+  scope: { cloudAccountIds: ['ca-1'], subscriptionIds: ['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f'] },
+  period: { kind: 'previous-calendar-quarter' },
+  configuration: { layout: 'spotto-layout', cloudIqServiceProfile: { selectedServiceIds: [] } },
+};
+
+export const consume = async (): Promise<[ReportJobRowV1, ReportJobRequestedV1, string, boolean, ReportJobStatus]> => {
+  const row = await buildReportJobRowV1({
+    trigger: 'api',
+    companyId: 'comp-a1b2c3d4e5f6g7h',
+    spec,
+    fileName: 'report.docx',
+    requestedAtUtc: '2026-09-28T00:00:00.000Z',
+  });
+  const parsed = await parseReportJobRowV1(toReportTableSdkEntity(row));
+  if (!parsed.ok) throw new Error(parsed.code);
+  const message = createReportJobRequestedV1({ companyId: row.companyId, jobId: row.jobId });
+  // @ts-expect-error failure codes are a closed vocabulary
+  const invalidCode: ReportJobFailureCode = 'oops';
+  void invalidCode;
+  return [row, message, buildReportJobMessageId(row.companyId, row.jobId), isReportJobRequestedV1(message), parsed.row.status];
+};

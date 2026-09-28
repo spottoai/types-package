@@ -9,6 +9,7 @@ import type {
 } from './benefits.js';
 import type { SubscriptionSummaryLite } from './subscriptions.js';
 import type { FinancialChargeInclusionPolicyRefV2 } from './financialScopeBaseline.js';
+import type { AwsCommitmentsPlanningView } from '../aws/commitmentsPlanningView.js';
 
 export type CommitmentsPlanningVersion = '1.0' | '2.0';
 
@@ -33,6 +34,19 @@ export type CommitmentsSourceKind = 'azure-native' | 'aws-native' | 'spotto-deri
 export type CommitmentsConfidenceLevel = 'high' | 'medium' | 'low' | 'unknown';
 export type CommitmentsRiskLevel = 'critical' | 'high' | 'medium' | 'low' | 'none' | 'unknown';
 export type CommitmentsFreshnessStatus = 'current' | 'stale' | 'partial' | 'unavailable';
+/**
+ * Machine-readable cause for a freshness entry that is not current.
+ * `collection-stale` is valid only with status `stale`: the last successful collection is older than the producer's window.
+ */
+export type CommitmentsFreshnessReasonCode = 'collection-stale' | 'permission-denied' | 'collection-failed' | 'not-collected' | 'status-invalid';
+/** Every `CommitmentsFreshnessReasonCode`, for dependency-free runtime guards. */
+export const COMMITMENTS_FRESHNESS_REASON_CODES: readonly CommitmentsFreshnessReasonCode[] = [
+  'collection-stale',
+  'permission-denied',
+  'collection-failed',
+  'not-collected',
+  'status-invalid',
+];
 export type CommitmentsCredentialStatus = 'valid' | 'expiring' | 'expired' | 'unknown';
 export type CommitmentsRenewalAction = 'renew-as-is' | 'move-before-renewal' | 'rescope' | 'trade-in-to-savings-plan' | 'do-not-renew' | 'review';
 export type CommitmentsAppliedScopeType =
@@ -164,14 +178,6 @@ export interface LegacyCommitmentsPlanningView extends CommitmentsPlanningView {
 export interface AzureCommitmentsPlanningView extends CommitmentsPlanningView {
   providerScope: AzureCommitmentsPlanningProviderScope;
   subscription: SubscriptionSummaryLite;
-}
-
-/** AWS wire shape with an account identity and AWS-specific inventory and recommendation evidence. */
-export interface AwsCommitmentsPlanningView extends CommitmentsPlanningViewBase<AwsCommitmentsInventoryItem, AwsCommitmentsPurchaseRecommendation> {
-  providerScope: AwsCommitmentsPlanningProviderScope;
-  subscription?: never;
-  credentialHealth?: never;
-  storageCapacity?: never;
 }
 
 /** Strict provider-aware contract for new producers and validation boundaries. */
@@ -318,10 +324,6 @@ export interface CommitmentShape {
   attributes?: Record<string, string | number | boolean | undefined>;
 }
 
-export type AwsCommitmentShape = Omit<CommitmentShape, 'provider'> & {
-  provider: 'aws';
-};
-
 export interface CommitmentEligibilityBlocker {
   code:
     | 'unsupported-current-shape'
@@ -392,21 +394,6 @@ export interface CommitmentsSourceMetadata {
   notes?: string[];
 }
 
-export type AwsCommitmentsSourceMetadata = Omit<CommitmentsSourceMetadata, 'sourceKind'> & {
-  sourceKind: 'aws-native';
-};
-
-export type AwsCommitmentEligibilityMetadata = Omit<
-  CommitmentEligibilityMetadata,
-  'currentShape' | 'targetShape' | 'quotePolicy' | 'unlockFinancialLedger' | 'source'
-> & {
-  currentShape?: AwsCommitmentShape;
-  targetShape?: AwsCommitmentShape;
-  quotePolicy?: never;
-  unlockFinancialLedger?: never;
-  source?: AwsCommitmentsSourceMetadata;
-};
-
 export interface CommitmentsMoneyAmount {
   amount: number;
   currency: string;
@@ -449,6 +436,13 @@ export interface CommitmentsFreshnessEntry {
   generatedAt?: string;
   observedAt?: string;
   lastSuccessfulSyncAt?: string;
+  /**
+   * Hours from `lastSuccessfulSyncAt` to the producer's evaluation time, rounded to one decimal place.
+   * Present only with `lastSuccessfulSyncAt`; never negative.
+   */
+  ageHours?: number;
+  /** Machine-readable cause; `reason` remains the human-readable explanation. */
+  reasonCode?: CommitmentsFreshnessReasonCode;
   reason?: string;
   sourceKind?: CommitmentsSourceKind;
 }
@@ -582,49 +576,6 @@ export interface CommitmentsPurchaseRecommendation {
   linkedCommitmentIds?: string[];
   notes?: string[];
 }
-
-export interface AwsCommitmentsAppliedScopeProperties {
-  accountId: string;
-  region?: string;
-  availabilityZone?: string;
-}
-
-export type AwsCommitmentsInventoryItem = Omit<
-  CommitmentsInventoryItem,
-  'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId' | 'breakCostEstimate' | 'storageDimensions'
-> & {
-  sourceKind: 'aws-native';
-  provider: ProviderName.Aws;
-  shape?: AwsCommitmentShape;
-  subscriptionId?: never;
-  breakCostEstimate?: never;
-  storageDimensions?: never;
-  appliedScopeType: 'linked-account';
-  appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
-};
-
-export type AwsCommitmentsPurchaseRecommendation = Omit<
-  CommitmentsPurchaseRecommendation,
-  | 'eligibility'
-  | 'source'
-  | 'currentShape'
-  | 'targetShape'
-  | 'quotePolicy'
-  | 'unlockFinancialLedger'
-  | 'purchaseScope'
-  | 'appliedScopeProperties'
-  | 'pricingQuote'
-> & {
-  eligibility?: AwsCommitmentEligibilityMetadata;
-  source: AwsCommitmentsSourceMetadata;
-  currentShape?: AwsCommitmentShape;
-  targetShape: AwsCommitmentShape;
-  quotePolicy?: never;
-  unlockFinancialLedger?: never;
-  purchaseScope: 'linked-account';
-  appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
-  pricingQuote?: never;
-};
 
 export interface CommitmentsPlanningDiagnostics {
   purchaseRecommendations?: CommitmentsPurchaseRecommendationDiagnostics;

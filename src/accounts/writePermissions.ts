@@ -11,7 +11,27 @@ export enum WritePermission {
   PolicyExemptions = 1 << 2, // 4
   /** Permission to run approved resource scheduling capabilities */
   ResourceScheduling = 1 << 3, // 8
+  /** Permission to delete idle or orphaned resources when a clean-up recommendation is implemented */
+  RemediationCleanup = 1 << 4, // 16
+  /** Permission to resize, reconfigure, deallocate, or start resources when a recommendation is implemented */
+  RemediationRightsize = 1 << 5, // 32
+  /** Permission to manage reservations and savings plans */
+  CommitmentsManage = 1 << 6, // 64
 }
+
+/**
+ * Union of every WritePermission bit defined in this package version.
+ * Consumers mask persisted values with this so bits added by a newer producer are ignored, not misread.
+ * Bits are only ever added; an existing bit's meaning never changes.
+ */
+export const KNOWN_WRITE_PERMISSION_MASK: number =
+  WritePermission.DismissRecommendations |
+  WritePermission.StorageInventory |
+  WritePermission.PolicyExemptions |
+  WritePermission.ResourceScheduling |
+  WritePermission.RemediationCleanup |
+  WritePermission.RemediationRightsize |
+  WritePermission.CommitmentsManage;
 
 /**
  * Metadata for a write permission
@@ -69,5 +89,25 @@ export const WRITE_PERMISSIONS_METADATA: WritePermissionMetadata[] = [
     description: 'Allows Spotto to run explicitly approved resource scheduling capabilities at their exact Azure scopes.',
     requiredRoles: [],
     permissionManifestKind: 'resource-scheduling',
+  },
+  {
+    id: WritePermission.RemediationCleanup,
+    displayName: 'Clean Up Unused Resources',
+    description:
+      'Allows Spotto to delete idle or orphaned resources (for example unattached disks, public IPs and network interfaces) when you implement a clean-up recommendation.',
+    requiredRoles: ['Custom role with the delete actions of the Spotto clean-up remediation catalog'],
+  },
+  {
+    id: WritePermission.RemediationRightsize,
+    displayName: 'Rightsize and Reconfigure Resources',
+    description: 'Allows Spotto to resize, reconfigure, deallocate, or start resources when you implement a rightsizing recommendation.',
+    requiredRoles: ['Custom role with the write, deallocate and start actions of the Spotto rightsizing remediation catalog'],
+  },
+  {
+    id: WritePermission.CommitmentsManage,
+    displayName: 'Manage Reservations and Savings Plans',
+    description: 'Allows Spotto to change reservation and savings plan scope and settings.',
+    requiredRoles: ['Reservations Contributor'],
+    documentationUrl: 'https://learn.microsoft.com/en-us/azure/cost-management-billing/reservations/view-reservations',
   },
 ];

@@ -1,8 +1,6 @@
 import type { ArtifactGeneration } from '../common/artifactGeneration.js';
 import type { ProviderName } from '../common/provider.js';
 import type {
-  AwsCommitmentShape,
-  AwsCommitmentsSourceMetadata,
   CommitmentRecommendationAction,
   CommitmentsCommitmentFamily,
   CommitmentsConfidenceLevel,
@@ -17,7 +15,8 @@ import type {
   CommitmentsUtilizationSummary,
 } from '../azure/commitmentsPlanning.js';
 import type { BenefitScope, BenefitType, IBenefitUtilization } from '../azure/benefits.js';
-import { sha256AwsPluginIdentity } from './pluginPublicArtifacts.js';
+import type { AwsCommitmentShape, AwsCommitmentsSourceMetadata } from './commitmentsPlanningView.js';
+import { sha256Hex } from '../common/sha256.js';
 import type { AwsForbiddenCredentialFields } from './requests.js';
 
 export const AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION = 1 as const;
@@ -75,7 +74,7 @@ export type AwsOrganizationCommitmentsIssueCode = (typeof AWS_ORGANIZATION_COMMI
 export function buildAwsOrganizationCommitmentsSessionId(companyId: string, estateId: string): string {
   const company = requiredSessionIdentity(companyId, 'companyId');
   const estate = requiredSessionIdentity(estateId, 'estateId');
-  return `${AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${sha256AwsPluginIdentity(
+  return `${AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${sha256Hex(
     JSON.stringify(['aws-organization-commitments', company, estate])
   )}`;
 }
