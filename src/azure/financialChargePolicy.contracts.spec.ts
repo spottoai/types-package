@@ -9,9 +9,16 @@ import type {
   AzureNativeFinancialSummaryV1,
   AzureNativeSubscriptionFinancialStatsV1,
   AzureResourcePortalItem,
+  DecompositionTree,
+  DecompositionTreeFinancialChargeSourceCostsV1,
+  DecompositionTreeNodeFinancialChargeSourceCostsV1,
   RecommendationResource,
 } from '../index.js';
-import { isAzureFinancialChargeSpendBreakdownV1 } from '../index.js';
+import {
+  isAzureFinancialChargeSpendBreakdownV1,
+  isDecompositionTreeFinancialChargeSourceCostsV1,
+  isDecompositionTreeNodeFinancialChargeSourceCostsV1,
+} from '../index.js';
 
 const rollingSpendBreakdown: AzureProviderScopeFinancialChargeSpendBreakdownV1 = {
   contractVersion: 'financial-charge-spend/v1',
@@ -188,4 +195,111 @@ void azureNativeSubscriptionFinancialStats;
 void azureNativeFinancialSummary;
 if (!isAzureFinancialChargeSpendBreakdownV1(rollingSpendBreakdown)) {
   throw new Error('rolling spend breakdown contract must validate');
+}
+
+const mixedLeafSourceCosts: DecompositionTreeNodeFinancialChargeSourceCostsV1 = {
+  current: {
+    billed: {
+      allChargeMinorUnits: 12_500,
+      azureNativeMinorUnits: 10_000,
+      marketplaceMinorUnits: 3_000,
+      unknownMinorUnits: -500,
+      unknownAbsoluteMinorUnits: 700,
+      unknownNonZeroRowCount: 2,
+      status: 'partial',
+    },
+  },
+  previous: {
+    billed: {
+      allChargeMinorUnits: 9_000,
+      azureNativeMinorUnits: 9_000,
+      marketplaceMinorUnits: 0,
+      unknownMinorUnits: 0,
+      unknownAbsoluteMinorUnits: 0,
+      unknownNonZeroRowCount: 0,
+      status: 'complete',
+    },
+    amortized: {
+      allChargeMinorUnits: 8_800,
+      azureNativeMinorUnits: 8_800,
+      marketplaceMinorUnits: 0,
+      unknownMinorUnits: 0,
+      unknownAbsoluteMinorUnits: 0,
+      unknownNonZeroRowCount: 0,
+      status: 'complete',
+    },
+  },
+};
+
+const treeSourceCosts: DecompositionTreeFinancialChargeSourceCostsV1 = {
+  contractVersion: 'financial-charge-source-costs/v1',
+  policyRef: 'azure-cloud-services-excluding-marketplace/v1',
+  minorUnitScale: 2,
+  ...mixedLeafSourceCosts,
+};
+
+const treeWithSourceCosts: DecompositionTree = {
+  root: {
+    name: 'Subscription',
+    cost: 125,
+    percentageOfTotal: 100,
+    financialChargeSourceCosts: mixedLeafSourceCosts,
+    children: [
+      {
+        name: 'mixed-vm',
+        cost: 125,
+        percentageOfTotal: 100,
+        financialChargeSourceCosts: mixedLeafSourceCosts,
+        meterDetails: [
+          {
+            meter: 'D4s v5',
+            meterCategory: 'Virtual Machines',
+            meterSubCategory: 'Dsv5 Series',
+            quantity: 720,
+            cost: 100,
+            financialChargeSource: 'azure-native',
+          },
+          {
+            meter: 'Per VM',
+            meterCategory: 'Azure Applications',
+            meterSubCategory: 'Vendor image',
+            quantity: 1,
+            cost: 30,
+            financialChargeSource: 'marketplace',
+          },
+        ],
+      },
+    ],
+  },
+  period: { startDate: '2026-08-31', endDate: '2026-09-28', type: 'rolling_30_days' },
+  lastUpdated: '2026-09-29T00:00:00.000Z',
+  totalSpend: 125,
+  currency: 'NZD',
+  currencySymbol: '$',
+  version: '2.1',
+  financialChargeSourceCosts: treeSourceCosts,
+};
+
+const invalidNodeSourceCosts: DecompositionTreeNodeFinancialChargeSourceCostsV1 = {
+  // @ts-expect-error Each period must carry a billed split; amortized alone is not a source split.
+  current: { amortized: mixedLeafSourceCosts.previous?.amortized },
+};
+
+void treeWithSourceCosts;
+void invalidNodeSourceCosts;
+if (!isDecompositionTreeFinancialChargeSourceCostsV1(treeSourceCosts)) {
+  throw new Error('tree source costs contract must validate');
+}
+if (!isDecompositionTreeNodeFinancialChargeSourceCostsV1(mixedLeafSourceCosts)) {
+  throw new Error('node source costs contract must validate');
+}
+if (
+  isDecompositionTreeNodeFinancialChargeSourceCostsV1({
+    current: { billed: { ...mixedLeafSourceCosts.current?.billed, allChargeMinorUnits: 12_501 } },
+  })
+) {
+  throw new Error('node source costs must reconcile to the all-charge amount');
+}
+if (isDecompositionTreeNodeFinancialChargeSourceCostsV1({ ...treeSourceCosts })) {
+  throw new Error('node source costs must not repeat the tree-level contract header');
 }

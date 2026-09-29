@@ -78,6 +78,57 @@ export type AzureResourceFinancialChargeSpendBreakdownV1 = AzureFinancialChargeS
   Extract<AzureFinancialChargeSpendSubjectV1, { kind: 'resource' }>
 >;
 
+export const DECOMPOSITION_TREE_FINANCIAL_CHARGE_SOURCE_COSTS_CONTRACT_V1 = 'financial-charge-source-costs/v1' as const;
+
+/**
+ * Signed source split for one cost basis of one Cost Tree subject and period, in
+ * minor units of the tree's currency. Parts are rounded to minor units first and
+ * `allChargeMinorUnits` is their exact sum, so it can differ from the rounded
+ * all-charge `cost` field by display rounding. Marketplace and unknown amounts are
+ * never discounted; `status: 'partial'` means material unknown-source rows exist.
+ */
+export interface DecompositionTreeFinancialChargeSourceBasisCostsV1 {
+  allChargeMinorUnits: number;
+  azureNativeMinorUnits: number;
+  marketplaceMinorUnits: number;
+  unknownMinorUnits: number;
+  /** Sum of absolute unknown-source amounts, so offsetting unknown rows stay visible. */
+  unknownAbsoluteMinorUnits: number;
+  unknownNonZeroRowCount: number;
+  status: 'complete' | 'partial';
+}
+
+/** Billed and amortized source splits for one Cost Tree period. */
+export interface DecompositionTreeFinancialChargeSourcePeriodCostsV1 {
+  billed: DecompositionTreeFinancialChargeSourceBasisCostsV1;
+  /** Absent when any contributing billing row lacks amortized evidence. Never substitute billed. */
+  amortized?: DecompositionTreeFinancialChargeSourceBasisCostsV1;
+}
+
+/**
+ * Per-node source amounts for the node's own billing rows. Contract identity,
+ * policy and minor-unit scale are declared once on the tree-level
+ * `financialChargeSourceCosts` header and apply to every node.
+ */
+export interface DecompositionTreeNodeFinancialChargeSourceCostsV1 {
+  /** Source split for `cost`/`costAmortized`. */
+  current?: DecompositionTreeFinancialChargeSourcePeriodCostsV1;
+  /** Source split for `costPrevious`/`costAmortizedPrevious`. */
+  previous?: DecompositionTreeFinancialChargeSourcePeriodCostsV1;
+}
+
+/**
+ * Tree-level header plus source amounts for the tree's `totalSpend*` fields.
+ * Produced by cloud-engine during normal tree generation (tree version 2.1+).
+ * Stored amounts are unadjusted provider evidence; configured discounts are
+ * applied by the API on read and are never written back.
+ */
+export interface DecompositionTreeFinancialChargeSourceCostsV1 extends DecompositionTreeNodeFinancialChargeSourceCostsV1 {
+  contractVersion: typeof DECOMPOSITION_TREE_FINANCIAL_CHARGE_SOURCE_COSTS_CONTRACT_V1;
+  policyRef: AzureFinancialChargePolicyRefV1;
+  minorUnitScale: number;
+}
+
 /** Publisher evidence retained from the provider billing source before financial classification. */
 export type AzurePublisherTypeEvidenceV1 =
   | {
@@ -421,6 +472,61 @@ export const isAzureResourceFinancialChargeSpendBreakdownForResourceV1 = (
   isNonEmptyTrimmedString(resourceId) &&
   isAzureResourceFinancialChargeSpendBreakdownV1(value) &&
   value.subject.resourceId.toLowerCase().replace(/\/+$/u, '') === resourceId.toLowerCase().replace(/\/+$/u, '');
+
+const isTreeSourceBasisCosts = (value: unknown): value is DecompositionTreeFinancialChargeSourceBasisCostsV1 => {
+  if (
+    !isRecord(value) ||
+    !hasExactFields(value, [
+      'allChargeMinorUnits',
+      'azureNativeMinorUnits',
+      'marketplaceMinorUnits',
+      'unknownMinorUnits',
+      'unknownAbsoluteMinorUnits',
+      'unknownNonZeroRowCount',
+      'status',
+    ]) ||
+    !isSafeInteger(value.allChargeMinorUnits) ||
+    !isSafeInteger(value.azureNativeMinorUnits) ||
+    !isSafeInteger(value.marketplaceMinorUnits) ||
+    !isSafeInteger(value.unknownMinorUnits) ||
+    !isNonNegativeSafeInteger(value.unknownAbsoluteMinorUnits) ||
+    !isNonNegativeSafeInteger(value.unknownNonZeroRowCount) ||
+    (value.status !== 'complete' && value.status !== 'partial')
+  ) {
+    return false;
+  }
+  if (checkedSafeIntegerSum([value.azureNativeMinorUnits, value.marketplaceMinorUnits, value.unknownMinorUnits]) !== value.allChargeMinorUnits) {
+    return false;
+  }
+  if (Math.abs(value.unknownMinorUnits) > value.unknownAbsoluteMinorUnits) return false;
+  return value.status === 'complete'
+    ? value.unknownAbsoluteMinorUnits === 0 && value.unknownNonZeroRowCount === 0
+    : value.unknownAbsoluteMinorUnits > 0 && value.unknownNonZeroRowCount > 0;
+};
+
+const isTreeSourcePeriodCosts = (value: unknown): value is DecompositionTreeFinancialChargeSourcePeriodCostsV1 =>
+  isRecord(value) &&
+  hasExactFields(value, ['billed'], ['amortized']) &&
+  isTreeSourceBasisCosts(value.billed) &&
+  (value.amortized === undefined || isTreeSourceBasisCosts(value.amortized));
+
+/** Exact validator for the per-node Cost Tree source split. */
+export const isDecompositionTreeNodeFinancialChargeSourceCostsV1 = (value: unknown): value is DecompositionTreeNodeFinancialChargeSourceCostsV1 =>
+  isRecord(value) &&
+  hasExactFields(value, [], ['current', 'previous']) &&
+  (value.current === undefined || isTreeSourcePeriodCosts(value.current)) &&
+  (value.previous === undefined || isTreeSourcePeriodCosts(value.previous));
+
+/** Exact validator for the tree-level Cost Tree source header and totals. */
+export const isDecompositionTreeFinancialChargeSourceCostsV1 = (value: unknown): value is DecompositionTreeFinancialChargeSourceCostsV1 =>
+  isRecord(value) &&
+  hasExactFields(value, ['contractVersion', 'policyRef', 'minorUnitScale'], ['current', 'previous']) &&
+  value.contractVersion === DECOMPOSITION_TREE_FINANCIAL_CHARGE_SOURCE_COSTS_CONTRACT_V1 &&
+  value.policyRef === AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 &&
+  isNonNegativeSafeInteger(value.minorUnitScale) &&
+  value.minorUnitScale <= 6 &&
+  (value.current === undefined || isTreeSourcePeriodCosts(value.current)) &&
+  (value.previous === undefined || isTreeSourcePeriodCosts(value.previous));
 
 const areStringArraysEqual = (left: string[], right: string[]): boolean =>
   left.length === right.length && left.every((value, index) => value === right[index]);

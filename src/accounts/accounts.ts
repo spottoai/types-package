@@ -785,6 +785,16 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
   icon?: string;
   /** Optional subscription type (Production, Non-Production, Mixed) */
   subscriptionType?: SubscriptionType;
+  /**
+   * Company-configured percentage applied on demand to the cloud provider's own
+   * (native) charges wherever spend and savings are shown, including historical
+   * periods. Marketplace charges are excluded. For Azure, native means the
+   * 'azure-native' financial charge source.
+   * Absent means no configured discount; zero is an explicit 0% setting.
+   * API writes must validate a value from 0 to 100 with at most two decimals.
+   * This is not an Azure-billed price or a cloud-engine scan input.
+   */
+  nativeDiscountPercent?: number;
   status?: string;
   statusLabel?: string;
   error?: string;

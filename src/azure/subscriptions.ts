@@ -46,6 +46,8 @@ export interface SubscriptionScope {
   groupName?: string;
   icon?: string;
   subscriptionType?: SubscriptionType;
+  /** Company-configured discount on native (non-Marketplace) charges; see SubscriptionInfoBase. */
+  nativeDiscountPercent?: SubscriptionInfoBase['nativeDiscountPercent'];
   status?: string;
   statusLabel?: string;
   currency?: string;
