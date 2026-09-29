@@ -106,6 +106,62 @@ export interface PortalCompanyFeatureOverrideUpsertRequest {
   reason?: string;
 }
 
+export interface PortalFeatureSetLock {
+  companyId: string;
+  featureSetKey: string;
+  lockedBy: string;
+  lockedAt: string;
+  updatedBy: string;
+  updatedAt: string;
+}
+
+export interface PortalFeatureSetLockState {
+  isLocked: boolean;
+  isLockedAtCompany: boolean;
+  sourceCompanyId?: string;
+  sourceCompanyName?: string;
+  lockedBy?: string;
+  lockedAt?: string;
+}
+
+export interface PortalFeatureSetLockRequest {
+  locked: boolean;
+}
+
+export type PortalFeatureSetAuditAction = 'override_created' | 'override_updated' | 'override_deleted' | 'locked' | 'unlocked';
+
+export interface PortalFeatureSetAuditSnapshot {
+  decision?: PortalFeatureSetOverrideDecision;
+  appliesTo?: PortalFeatureSetOverrideAppliesTo;
+  presentationMode?: PortalPresentationMode;
+  reason?: string;
+  locked?: boolean;
+}
+
+/** Append-only control-plane event. Events have no public update or delete contract. */
+export interface PortalFeatureSetAuditEvent {
+  eventId: string;
+  companyId: string;
+  featureSetKey: string;
+  action: PortalFeatureSetAuditAction;
+  actorId: string;
+  actorDisplayName?: string;
+  actorEmail?: string;
+  occurredAt: string;
+  before?: PortalFeatureSetAuditSnapshot;
+  after?: PortalFeatureSetAuditSnapshot;
+}
+
+export interface PortalFeatureSetAuditContinuation {
+  NextPartitionKey?: string;
+  NextRowKey?: string;
+}
+
+export interface PortalFeatureSetAuditPage {
+  events: PortalFeatureSetAuditEvent[];
+  continuation?: PortalFeatureSetAuditContinuation;
+}
+
 export type PortalRoleAssignmentSource = 'legacy_migration' | 'admin_assignment' | 'seed';
 
 export type PortalAssignmentDataScope = { mode: 'unrestricted' } | { mode: 'scoped'; scopeIds: string[] };
@@ -223,6 +279,16 @@ export interface PortalFeatureSetAccessSummary {
   sourceCompanyId?: string;
   presentationMode: PortalPresentationMode;
   sources: PortalEffectiveAccessSource[];
+}
+
+export interface PortalFeatureSetConfigurationSummary extends PortalFeatureSetAccessSummary {
+  appliesTo: PortalFeatureSetOverrideAppliesTo;
+  lock: PortalFeatureSetLockState;
+}
+
+export interface PortalFeatureSetConfigurationResponse {
+  customerId: string;
+  featureSets: PortalFeatureSetConfigurationSummary[];
 }
 
 export interface PortalAccessBootstrapResponse {
