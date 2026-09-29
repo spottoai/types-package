@@ -1,4 +1,4 @@
-import type { User, UserInviteLink } from '../index';
+import type { CompanyUserHierarchyResponse, CompanyUserRemovalRequest, CompanyUserRemovalResult, User, UserInviteLink } from '../index';
 import { CompanyUser } from './companyUser';
 
 const invitedCompanyUser = new CompanyUser();
@@ -48,3 +48,34 @@ const inviteLink: UserInviteLink = {
 void invitedCompanyUser;
 void invitedUser;
 void inviteLink;
+
+const hierarchy: CompanyUserHierarchyResponse = {
+  rootCompanyId: 'root',
+  assignments: [
+    {
+      user: invitedCompanyUser,
+      companyId: 'child',
+      companyName: 'Child',
+      hierarchyPath: [
+        { companyId: 'root', companyName: 'Root' },
+        { companyId: 'child', companyName: 'Child' },
+      ],
+      hierarchyDepth: 1,
+      directRoleKeys: ['company_viewer'],
+      effectiveRoleKeys: ['company_viewer'],
+      effectivePermissionKeys: ['users.view'],
+    },
+  ],
+};
+
+const removalRequest: CompanyUserRemovalRequest = { includeDescendants: true };
+const removalResult: CompanyUserRemovalResult = {
+  rootCompanyId: 'root',
+  removedCompanyIds: ['root', 'child'],
+  remainingCompanyCount: 0,
+  identityDeleted: true,
+};
+
+void hierarchy;
+void removalRequest;
+void removalResult;
