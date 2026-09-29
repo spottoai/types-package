@@ -27,3 +27,36 @@ export class CompanyUser {
   onboardingIntentExpiresAt?: Date | string;
   customProperties?: CustomPropertyValues;
 }
+
+export interface CompanyUserHierarchyLocation {
+  companyId: string;
+  companyName: string;
+}
+
+/** One explicit company membership, enriched with its hierarchy and effective access. */
+export interface CompanyUserHierarchyAssignment {
+  user: CompanyUser;
+  companyId: string;
+  companyName: string;
+  hierarchyPath: CompanyUserHierarchyLocation[];
+  hierarchyDepth: number;
+  directRoleKeys: string[];
+  effectiveRoleKeys: string[];
+  effectivePermissionKeys: string[];
+}
+
+export interface CompanyUserHierarchyResponse {
+  rootCompanyId: string;
+  assignments: CompanyUserHierarchyAssignment[];
+}
+
+export interface CompanyUserRemovalRequest {
+  includeDescendants: boolean;
+}
+
+export interface CompanyUserRemovalResult {
+  rootCompanyId: string;
+  removedCompanyIds: string[];
+  remainingCompanyCount: number;
+  identityDeleted: boolean;
+}

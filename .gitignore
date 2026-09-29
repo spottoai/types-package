@@ -102,6 +102,8 @@ specs/ai-chat/*
 !Specs/alerts/*.md
 !Specs/data-quality/
 !Specs/data-quality/dev-1036-artifact-evidence-generation-types-package.md
+!Specs/features-and-permissions/
+!Specs/features-and-permissions/tenant-governance-controls-types.md
 !Specs/cost-savings/
 !Specs/cost-savings/resource-recommendation-savings-details/
 !Specs/cost-savings/resource-recommendation-savings-details/resource-recommendation-savings-details-types-package.md
