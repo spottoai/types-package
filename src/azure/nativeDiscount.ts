@@ -150,7 +150,7 @@ export const NATIVE_DISCOUNT_PROJECTION_HEADER = 'X-Spotto-Native-Discount';
 export const NATIVE_DISCOUNT_PROJECTION_MAX_UNAVAILABLE_PATHS = 200;
 
 /**
- * - `none`: no rate is configured (or projection is switched off); amounts are the stored amounts.
+ * - `none`: no rate is configured; amounts are the stored amounts.
  * - `applied`: every money value in the response carries the configured rate.
  * - `partial`: the rate was applied, but some values could not be proved native/Marketplace and were set to `null`.
  * - `unavailable`: the rate could not be resolved for this response; amounts are the stored amounts.
