@@ -2,6 +2,7 @@
 export * from './azure/common';
 export * from './azure/costComposition';
 export * from './azure/financialChargePolicy';
+export * from './azure/nativeDiscount';
 export * from './azure/activityLogs';
 export * from './azure/activityLogAnalysis';
 export * from './azure/activityLogAnalysisValidation';
