@@ -7,7 +7,6 @@ import type {
   PortalFeatureSetAuditEvent,
   PortalFeatureSetAuditPage,
   PortalFeatureSetConfigurationResponse,
-  PortalFeatureSetLockState,
 } from '../index';
 
 type Assert<T extends true> = T;
@@ -49,15 +48,6 @@ const restrictedBootstrap: PortalAccessBootstrapResponse = {
 
 void restrictedBootstrap;
 
-const inheritedLock: PortalFeatureSetLockState = {
-  isLocked: true,
-  isLockedAtCompany: false,
-  sourceCompanyId: 'parent-company',
-  sourceCompanyName: 'Parent company',
-  lockedBy: 'user-1',
-  lockedAt: '2026-09-22T00:00:00.000Z',
-};
-
 const auditActorDisplayName: PortalFeatureSetAuditEvent['actorDisplayName'] = 'admin@example.com';
 const auditActorEmail: PortalFeatureSetAuditEvent['actorEmail'] = 'admin@example.com';
 const auditContinuation: PortalFeatureSetAuditContinuation = {
@@ -76,12 +66,10 @@ const featureSetConfiguration: PortalFeatureSetConfigurationResponse = {
       presentationMode: 'normal',
       sources: [],
       appliesTo: 'all_users',
-      lock: inheritedLock,
     },
   ],
 };
 
-void inheritedLock;
 void auditActorDisplayName;
 void auditActorEmail;
 void auditPage;

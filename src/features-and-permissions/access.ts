@@ -106,28 +106,6 @@ export interface PortalCompanyFeatureOverrideUpsertRequest {
   reason?: string;
 }
 
-export interface PortalFeatureSetLock {
-  companyId: string;
-  featureSetKey: string;
-  lockedBy: string;
-  lockedAt: string;
-  updatedBy: string;
-  updatedAt: string;
-}
-
-export interface PortalFeatureSetLockState {
-  isLocked: boolean;
-  isLockedAtCompany: boolean;
-  sourceCompanyId?: string;
-  sourceCompanyName?: string;
-  lockedBy?: string;
-  lockedAt?: string;
-}
-
-export interface PortalFeatureSetLockRequest {
-  locked: boolean;
-}
-
 export type PortalFeatureSetAuditAction = 'override_created' | 'override_updated' | 'override_deleted' | 'locked' | 'unlocked';
 
 export interface PortalFeatureSetAuditSnapshot {
@@ -283,7 +261,6 @@ export interface PortalFeatureSetAccessSummary {
 
 export interface PortalFeatureSetConfigurationSummary extends PortalFeatureSetAccessSummary {
   appliesTo: PortalFeatureSetOverrideAppliesTo;
-  lock: PortalFeatureSetLockState;
 }
 
 export interface PortalFeatureSetConfigurationResponse {

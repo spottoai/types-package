@@ -5,7 +5,8 @@ Parent: `core/specs/features-and-permissions/tenant-governance-controls/tenant-g
 ## Scope
 
 - Add hierarchy membership summary and scoped removal contracts under users.
-- Add feature-set lock, audit (stable actor ID plus optional display name and email), Azure-continuation paged audit response, and lock-aware configuration contracts under features and permissions.
+- Add audit contracts (stable actor ID plus optional display name and email), an Azure-continuation paged audit response, and feature-set configuration contracts under features and permissions.
+- Keep historical `locked` and `unlocked` audit actions readable, but expose no live feature-set lock state, mutation request, or configuration metadata.
 - Keep all additions backward compatible and avoid runtime dependencies.
 
 ## Verification
