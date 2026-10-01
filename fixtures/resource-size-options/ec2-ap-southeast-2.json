@@ -1,0 +1,145 @@
+{
+  "service": "ec2",
+  "region": "ap-southeast-2",
+  "currency": "USD",
+  "priceBasis": "list",
+  "priceSource": "aws-price-list",
+  "comparisonScope": "same-region",
+  "pricingDimensions": {
+    "operatingSystem": "Linux",
+    "licenseModel": "No License required"
+  },
+  "availability": "verified",
+  "current": {
+    "sku": "m5.2xlarge",
+    "label": "m5.2xlarge",
+    "vcpu": 8,
+    "memoryGB": 32,
+    "architecture": "x86_64",
+    "prices": {
+      "onDemandHourly": 0.48,
+      "onDemandMonthly": 350.4,
+      "reserved1yNoUpfrontHourly": 0.302,
+      "reserved3yAllUpfrontHourly": 0.1826
+    },
+    "changePercent": 0,
+    "lostCapabilities": []
+  },
+  "alternatives": [
+    {
+      "sku": "m5a.xlarge",
+      "label": "m5a.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.216,
+        "onDemandMonthly": 157.68
+      },
+      "changePercent": -55,
+      "lostCapabilities": []
+    },
+    {
+      "sku": "m6a.xlarge",
+      "label": "m6a.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.216,
+        "onDemandMonthly": 157.68
+      },
+      "changePercent": -55,
+      "lostCapabilities": []
+    },
+    {
+      "sku": "m7i-flex.xlarge",
+      "label": "m7i-flex.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.2394,
+        "onDemandMonthly": 174.762
+      },
+      "changePercent": -50.13,
+      "lostCapabilities": []
+    }
+  ],
+  "memoryPreservingAlternatives": [
+    {
+      "sku": "r6a.xlarge",
+      "label": "r6a.xlarge",
+      "vcpu": 4,
+      "memoryGB": 32,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.2718,
+        "onDemandMonthly": 198.414
+      },
+      "changePercent": -43.38,
+      "lostCapabilities": []
+    },
+    {
+      "sku": "r5a.xlarge",
+      "label": "r5a.xlarge",
+      "vcpu": 4,
+      "memoryGB": 32,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.272,
+        "onDemandMonthly": 198.56
+      },
+      "changePercent": -43.33,
+      "lostCapabilities": []
+    }
+  ],
+  "tradeOffAlternatives": [
+    {
+      "sku": "t4g.xlarge",
+      "label": "t4g.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "arm64",
+      "prices": {
+        "onDemandHourly": 0.1696,
+        "onDemandMonthly": 123.808
+      },
+      "changePercent": -64.67,
+      "lostCapabilities": [
+        "architecture",
+        "sustained-performance"
+      ]
+    },
+    {
+      "sku": "t3a.xlarge",
+      "label": "t3a.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "x86_64",
+      "prices": {
+        "onDemandHourly": 0.1901,
+        "onDemandMonthly": 138.773
+      },
+      "changePercent": -60.4,
+      "lostCapabilities": [
+        "sustained-performance"
+      ]
+    },
+    {
+      "sku": "m6g.xlarge",
+      "label": "m6g.xlarge",
+      "vcpu": 4,
+      "memoryGB": 16,
+      "architecture": "arm64",
+      "prices": {
+        "onDemandHourly": 0.192,
+        "onDemandMonthly": 140.16
+      },
+      "changePercent": -60,
+      "lostCapabilities": [
+        "architecture"
+      ]
+    }
+  ]
+}

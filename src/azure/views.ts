@@ -15,6 +15,7 @@ import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
 import type { UtilizationProfile, UtilizationSignal } from '../common/utilizationStories.js';
+import type { ResourceSizeOptions } from '../common/resourceSizeOptions.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import {
@@ -180,6 +181,8 @@ export interface AzureResourcePortalItem {
   resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
   /** Compact utilization verdict + sparklines (engine-produced; absent until the resource has been scanned by the new producer). */
   utilizationSignal?: UtilizationSignal;
+  /** Provider-neutral same-Region menu of list-priced resize options (AWS EC2, RDS, ElastiCache). */
+  sizeOptions?: ResourceSizeOptions;
 }
 
 export interface SavingsOpportunity {
@@ -283,6 +286,8 @@ export interface AzureResourcePluginItem {
   optimizationProfile?: ResourceOptimizationProfile;
   /** VM-specific same-region price/performance lookup data. */
   vmPricePerformance?: VmPricePerformanceInsights;
+  /** Provider-neutral same-Region menu of list-priced resize options (AWS EC2, RDS, ElastiCache). */
+  sizeOptions?: ResourceSizeOptions;
   /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
   utilizationProfile?: UtilizationProfile;
 }
@@ -342,6 +347,8 @@ export interface AzureResourcePluginItemDetailed {
   utilizationProfile?: UtilizationProfile;
   /** Compact utilization verdict shared with the portal row, including the canonical better-SKU summary. */
   utilizationSignal?: UtilizationSignal;
+  /** Provider-neutral same-Region menu of list-priced resize options, shared with the portal row. */
+  sizeOptions?: ResourceSizeOptions;
 }
 
 export type VmPricePerformanceOsType = 'linux' | 'windows';

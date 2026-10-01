@@ -38,6 +38,7 @@ export * from './azure/reportEvidence';
 export * from './azure/reportEvidenceValidation';
 export * from './common/utilizationStories';
 export * from './common/utilizationStoriesValidation';
+export * from './common/resourceSizeOptions';
 export * from './azure/reportDailySpend';
 export * from './azure/reportDailySpendValidation';
 export * from './azure/reportSpend';
