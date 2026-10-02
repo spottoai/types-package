@@ -2,16 +2,17 @@ name: Backfill Version from npmjs
 
 # One-off helper for the move from registry.npmjs.org to GitHub Packages.
 # Copies a version that was already published publicly on npmjs into GitHub Packages, so a
-# consumer still pinned to a pre-1.1.0 version (cloud-engine-aws on 1.0.2-beta.319) keeps
-# installing. Uses the "legacy" dist-tag so "latest" is not moved. Run after 1.1.0 is published.
+# consumer still pinned to a pre-1.1.0 version keeps installing: cloud-engine-aws (1.0.2-beta.319)
+# and spotto-mcp (1.0.2-beta.132, plus 1.0.2-beta.405 through its npm alias). Uses the "legacy" dist-tag so "latest" is not moved. Run after 1.1.0 is published.
 
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to copy from npmjs, e.g. 1.0.2-beta.319'
+      versions:
+        description: 'Space-separated versions to copy from npmjs'
         required: true
         type: string
+        default: '1.0.2-beta.319 1.0.2-beta.132 1.0.2-beta.405'
 
 permissions:
   contents: read
@@ -22,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      VERSION: ${{ inputs.version }}
+      VERSIONS: ${{ inputs.versions }}
 
     steps:
       - name: Setup Node.js
@@ -32,15 +33,18 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@spottoai'
 
-      - name: Validate version input
+      - name: Copy versions to GitHub Packages
         run: |
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Not a semver version: $VERSION"
-            exit 1
-          fi
-
-      - name: Download tarball from npmjs
-        run: curl -fsSL -o package.tgz "https://registry.npmjs.org/@spottoai/types-package/-/types-package-${VERSION}.tgz"
-
-      - name: Publish to GitHub Packages
-        run: npm publish ./package.tgz --tag legacy --ignore-scripts
+          for VERSION in $VERSIONS; do
+            if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::error::Not a semver version: $VERSION"
+              exit 1
+            fi
+            if [[ "$(npm view "@spottoai/types-package@${VERSION}" version 2>/dev/null || true)" == "$VERSION" ]]; then
+              echo "$VERSION is already in GitHub Packages, skipping"
+              continue
+            fi
+            curl -fsSL -o "package-${VERSION}.tgz" "https://registry.npmjs.org/@spottoai/types-package/-/types-package-${VERSION}.tgz"
+            npm publish "./package-${VERSION}.tgz" --tag legacy --ignore-scripts
+            echo "Copied $VERSION"
+          done
