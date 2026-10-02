@@ -7,11 +7,14 @@ import {
   UpdateAlertDefinitionInput,
 } from './baseAlert.js';
 import type { CostAlertDefinition, CostAlertInstance } from './cost.js';
+import type { EarlySpendAlertCriteria, EarlySpendAlertSummary } from './earlySpend.js';
 
-export const QUICK_ALERT_TYPES = ['credentialExpiry', 'benefitExpiry', 'serviceRetirement', 'backupFailure'] as const;
+export const QUICK_ALERT_TYPES = ['credentialExpiry', 'benefitExpiry', 'serviceRetirement', 'backupFailure', 'earlySpend'] as const;
 
 export type QuickAlertType = (typeof QUICK_ALERT_TYPES)[number];
-export type QuickAlertCategory = 'other';
+/** Early spend alerts run on the quick-alert lifecycle but are cost alerts. */
+export type QuickAlertCategoryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? 'cost' : 'other';
+export type QuickAlertCategory = QuickAlertCategoryFor<QuickAlertType>;
 
 export type QuickAlertTemplateId =
   | 'credential-expiry-30d'
@@ -19,9 +22,10 @@ export type QuickAlertTemplateId =
   | 'benefit-expiry-30d'
   | 'benefit-expiry-7d'
   | 'service-retirement-30d'
-  | 'backup-failure';
+  | 'backup-failure'
+  | 'early-spend-default';
 
-export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection';
+export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals';
 
 export type QuickAlertBenefitType = 'reservation' | 'savingsPlan';
 
@@ -61,7 +65,8 @@ export type QuickAlertCriteria =
   | CloudAccountCredentialExpiryAlertCriteria
   | BenefitExpiryAlertCriteria
   | ServiceRetirementAlertCriteria
-  | BackupFailureAlertCriteria;
+  | BackupFailureAlertCriteria
+  | EarlySpendAlertCriteria;
 
 export type QuickAlertCriteriaFor<TType extends QuickAlertType> = Extract<QuickAlertCriteria, { kind: TType }>;
 
@@ -82,13 +87,15 @@ export interface QuickAlertSummary {
   workloadType?: string;
 }
 
+export type QuickAlertSummaryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? EarlySpendAlertSummary : QuickAlertSummary;
+
 export type QuickAlertDefinitionFor<TType extends QuickAlertType> = BaseAlertDefinition<
   QuickAlertCriteriaFor<TType>,
   BaseAlertDestinations,
   BaseAlertScope,
   TType
 > & {
-  category: QuickAlertCategory;
+  category: QuickAlertCategoryFor<TType>;
   type: TType;
 };
 
@@ -107,8 +114,8 @@ export type QuickAlertDefinitionUpdateInput = {
   [TType in QuickAlertType]: UpdateAlertDefinitionInput<QuickAlertDefinitionFor<TType>, EditableQuickAlertCriteria<TType>>;
 }[QuickAlertType];
 
-export type QuickAlertInstanceFor<TType extends QuickAlertType> = BaseAlertInstance<QuickAlertSummary, BaseAlertScope, TType> & {
-  category: QuickAlertCategory;
+export type QuickAlertInstanceFor<TType extends QuickAlertType> = BaseAlertInstance<QuickAlertSummaryFor<TType>, BaseAlertScope, TType> & {
+  category: QuickAlertCategoryFor<TType>;
   type: TType;
 };
 

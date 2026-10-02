@@ -5,4 +5,5 @@ export * from './costAnomalies';
 export * from './baseAlert';
 export * from './alertDefinitionRun';
 export * from './quickAlerts';
+export * from './earlySpend';
 export * from './actionGroups';
