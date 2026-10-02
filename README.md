@@ -5,31 +5,38 @@ A shared TypeScript interfaces package. This package contains common interfaces 
 ## Features
 
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
-- **Git Dependencies**: Designed to work with Git dependencies
+- **Private Registry**: Published to GitHub Packages (not public npm)
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support
 - **Modular Structure**: Organized by domain (API, Database, Frontend, Backend)
 
 ## Installation
 
-Add this to your consuming project's `package.json`:
+The package is published privately to GitHub Packages as `@spottoai/types-package`.
+
+Each consuming repo has an `.npmrc` that routes the `@spottoai` scope to GitHub Packages
+(everything else still comes from npmjs):
+
+```ini
+@spottoai:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
+```
 
 ```json
 {
   "dependencies": {
-    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#main"
+    "@spottoai/types-package": "^1.1.0"
   }
 }
 ```
 
-Or for a specific branch/tag:
+### Authentication
 
-```json
-{
-  "dependencies": {
-    "@spotto/types-package": "git+https://github.com/spottoai/types-package.git#v1.0.0"
-  }
-}
-```
+- **GitHub Actions**: set `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` and give the job
+  `packages: read`. The consuming repo must also be listed under the package's
+  *Manage Actions access* settings.
+- **Docker builds**: pass the token as a BuildKit secret (`npm_token`), never as a build `ARG`.
+- **Local development**: use a token with `read:packages`, for example
+  `gh auth refresh -s read:packages` then `export NODE_AUTH_TOKEN=$(gh auth token)`.
 
 ## Usage
 
@@ -52,11 +59,26 @@ import type { AwsPortalAccountSummaryArtifact, AwsPortalResourceCollectionArtifa
 // compatibility-wide AWS barrel.
 import { validateAwsPortalRelationshipArtifact } from '@spottoai/types-package/aws/relationships';
 import { validateAwsCommitmentsPlanningViewIdentity } from '@spottoai/types-package/aws/commitments-planning';
+
+// Import background report job contracts (request, queue message, reportjobs row, identity)
+import { buildReportJobRowV1, isReportJobRequestedV1, type ReportJobSpecV1 } from '@spottoai/types-package/reporting-jobs';
 ```
 
 The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
+
+Background report jobs (`ReportJobSpecV1`, `ReportJobRequestedV1`, the
+`reportjobs` row, statuses and failure codes, and the `jobId` identity
+functions) live in `@spottoai/types-package/reporting-jobs`, which is not
+exported from the root entry point. The API and cloud-engine both create
+jobs, so they must derive identical job IDs and rows. The package holds no
+table names, queue names, account names or blob paths for them: those stay
+with the repos that use them. The identity and hash functions use Web Crypto
+(`globalThis.crypto.subtle`) and are async. `npm run check:reporting-job-contracts`
+runs the identity vectors in `fixtures/reporting-job-identity-vectors.json` and
+the parser and row checks against the CommonJS and ESM builds. See
+`specs/reporting/reporting-scheduler-types.md`.
 
 The root entry point exports the provider-neutral artifact-evidence vocabulary,
 revision comparison, immutable billing analyzer V2 documents, and enforced
@@ -67,6 +89,12 @@ promoted billing or coordinated-view pointer require a positive, matching epoch
 in both ownership and revision data. `npm run check:artifact-evidence-contracts`
 executes the canonical cross-runtime corpus, billing validator matrix, ownership
 checks, promotion preconditions, and every revision-comparison outcome.
+
+`SubscriptionReportEvidencePack.cost.budget` is an optional selected-budget
+projection. New packs can provide `timeGrain`, `category`, `currencyCode`, and
+`filter` alongside the configured amount and applicability dates. Older packs
+may omit these fields. `currentSpend` belongs to the source budget's current
+period and must not be presented as spend for a historical report month.
 
 Claim-projected Azure views use `PublishedViewManifestV4` for one Portal or
 Plugin surface and `PublishedAzureViewSetV3` for the coordinated promoted pair.
@@ -228,12 +256,21 @@ src/
 
 ## Versioning
 
-This package follows semantic versioning with automated prereleases from `main`:
+This package follows semantic versioning with automated releases from `main`:
 
 1. Do not manually bump `package.json` in a feature change.
 2. Merge the validated change to `main`.
-3. The `Prerelease and Publish` workflow runs lint/build checks, increments the prerelease version, publishes it to npm, and creates the matching Git tag.
-4. Consumers must update their dependency and lockfile to the published version before removing any temporary compatibility declarations.
+3. The `Release and Publish` workflow runs lint/build/contract checks, bumps the patch version
+   (1.1.0 → 1.1.1), publishes it to GitHub Packages, and creates the matching Git tag.
+4. For a minor or major release, set the new version (e.g. `1.2.0`) in `package.json` and
+   `package-lock.json` in the merged change. The workflow publishes a version that is not yet in
+   the registry as-is, then resumes patch bumps from there.
+5. Consumers must update their dependency and lockfile to the published version before removing
+   any temporary compatibility declarations.
+
+Prerelease (`-beta.N`) versions are no longer published; 1.1.0 is the first release on GitHub
+Packages. Older `1.0.2-beta.N` versions remain on registry.npmjs.org only; use the
+`Backfill Version from npmjs` workflow if a consumer still needs one from GitHub Packages.
 
 `prepublishOnly` performs a clean build and compiles a consumer against the packed artifact, preventing source-only exports from being published accidentally.
 

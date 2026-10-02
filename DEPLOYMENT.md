@@ -31,15 +31,18 @@ npm run build:check
 
 ## Publish
 
+- Published privately to GitHub Packages (`publishConfig.registry` in
+  `package.json`); it is no longer published to registry.npmjs.org.
 - `npm run prepublishOnly` runs clean + build before publish.
-- Prereleases use the explicit `latest` distribution tag so the package page
-  and default installs expose the newest prerelease. For a supervised manual
-  recovery, run `npm publish --access public --tag latest`.
+- Releases are stable semver (1.1.0 onward) with the `latest` distribution tag;
+  prerelease `-beta.N` versions are no longer published.
+- For a supervised manual recovery, authenticate with a token that has
+  `write:packages` (`export NODE_AUTH_TOKEN=...`) and run `npm publish --tag latest`.
 
 ## Release workflow
 
 Follow the standard process in `../core/DEPLOYMENT.md` unless a repo-specific exception is documented above.
 
-The prerelease workflow and packed-consumer gate run on Node 24. The package
+The release workflow and packed-consumer gate run on Node 24. The package
 retains CommonJS output for existing consumers while verifying both the root
 and `/aws` entry points from a Node 24 ESM consumer.

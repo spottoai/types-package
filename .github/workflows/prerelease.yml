@@ -1,20 +1,23 @@
-name: Prerelease and Publish
+name: Release and Publish
 
 on:
   push:
     branches: [main]
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:
 
 concurrency:
   group: prerelease-main
   cancel-in-progress: false
 
 jobs:
-  prerelease:
+  release:
     runs-on: ubuntu-latest
     permissions:
       contents: write
       packages: write
+    env:
+      # GitHub Packages accepts the workflow token for publish and for the version lookup.
+      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # A merged PR already emits a push to main; one trigger avoids duplicate releases.
     if: |
@@ -32,7 +35,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@spottoai'
 
       - name: Install dependencies
         run: npm ci
@@ -51,36 +55,38 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
-      - name: Bump prerelease version
+      - name: Determine release version
         id: version-bump
         run: |
-          # Get current version
-          CURRENT_VERSION=$(npm pkg get version | tr -d '"')
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
           echo "Current version: $CURRENT_VERSION"
 
-          # Check if it's already a prerelease version
-          if [[ $CURRENT_VERSION == *"-"* ]]; then
-            # If it's already a prerelease version, increment the prerelease number
-            NEW_VERSION=$(npm version prerelease --no-git-tag-version)
+          if [[ "$CURRENT_VERSION" == *"-"* ]]; then
+            echo "::error::Prerelease versions are no longer published. Set a stable version (e.g. 1.2.0) in package.json."
+            exit 1
+          fi
+
+          # A version already in GitHub Packages gets a patch bump. A version that is not there yet
+          # (a manually set minor/major baseline such as 1.1.0 or 2.0.0) is published as-is.
+          PUBLISHED=$(npm view "@spottoai/types-package@${CURRENT_VERSION}" version 2>/dev/null || true)
+          if [[ "$PUBLISHED" == "$CURRENT_VERSION" ]]; then
+            NEW_VERSION=$(npm version patch --no-git-tag-version)
+            # Commit locally first so the published package records this exact git head.
+            git add package.json package-lock.json
+            git commit -m "chore: release $NEW_VERSION [skip ci]"
           else
-            # If it's not a prerelease version, create the first prerelease version
-            NEW_VERSION=$(npm version prerelease --no-git-tag-version)
+            NEW_VERSION="v${CURRENT_VERSION}"
           fi
 
           echo "New version: $NEW_VERSION"
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-          # Commit locally first so the published package records this exact git head.
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Push version commit
         run: git push origin HEAD:main
 
-      - name: Publish to npm
-        run: npm publish --access public --tag latest
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to GitHub Packages
+        # Registry comes from publishConfig in package.json.
+        run: npm publish --tag latest
 
       - name: Create Git tag
         run: |
@@ -89,6 +95,4 @@ jobs:
 
       - name: Summary
         run: |
-          echo "✅ Successfully published version ${{ steps.version-bump.outputs.new_version }} to npm"
-          echo "📦 Package: @spottoai/types-package"
-          echo "🏷️  Tag: ${{ steps.version-bump.outputs.new_version }}"
+          echo "Published @spottoai/types-package ${{ steps.version-bump.outputs.new_version }} to GitHub Packages"
