@@ -270,7 +270,8 @@ This package follows semantic versioning with automated releases from `main`:
 
 Prerelease (`-beta.N`) versions are no longer published; 1.1.0 is the first release on GitHub
 Packages. Older `1.0.2-beta.N` versions remain on registry.npmjs.org only; use the
-`Backfill Version from npmjs` workflow if a consumer still needs one from GitHub Packages.
+`Backfill Version from npmjs` workflow if a consumer still needs one from GitHub Packages
+(cloud-engine-aws and spotto-mcp are still pinned to older betas).
 
 `prepublishOnly` performs a clean build and compiles a consumer against the packed artifact, preventing source-only exports from being published accidentally.
 
