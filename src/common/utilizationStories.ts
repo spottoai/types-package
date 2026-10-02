@@ -435,6 +435,21 @@ export type StoryCell =
   | EventStripCell
   | WeeklyGridCell;
 
+/**
+ * Recommendation statuses a story row can carry (`RecommendationState['status']` without `Active`, which is the
+ * absence of an annotation). Kept in `common/` without importing the azure state type; the contracts spec asserts the
+ * two stay in step.
+ */
+export type StoryRowRecommendationStatus = 'Prioritized' | 'Dismissed' | 'Archived' | 'Implementing' | 'Implemented' | 'Failed';
+export const STORY_ROW_RECOMMENDATION_STATUSES: readonly StoryRowRecommendationStatus[] = [
+  'Prioritized',
+  'Dismissed',
+  'Archived',
+  'Implementing',
+  'Implemented',
+  'Failed',
+];
+
 export interface StoryRowBase {
   resourceId: string;
   name: string;
@@ -452,6 +467,18 @@ export interface StoryRowBase {
    * publishes no saving (`savingsMax: null`). Absent on artifacts from older producers: treat as actionable.
    */
   actionable?: boolean;
+  /**
+   * The recommendation this row's move acts on, exactly as the resource publishes it in `recommendations[].id` (not
+   * lower-cased), so a consumer can deep-link to it (`#tab=recommendations&recommendation=<id>`) and triage it.
+   * Absent when no recommendation backs the move (a story-only finding) and on artifacts from older producers.
+   */
+  recommendationId?: string;
+  /**
+   * The `recommendationId`'s current recommendation status for this resource, set by the reader that serves the
+   * artifact (the producer never writes it: state changes between scans). Absent when the recommendation is `Active`,
+   * has no state, or the reader did not annotate. Only present alongside `recommendationId`.
+   */
+  recommendationStatus?: StoryRowRecommendationStatus;
   ownerResourceId?: string;
   fingerprint: string;
   /** One entry per column key of the owning section; kinds match `StoryColumn.cell`. */

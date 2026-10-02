@@ -1,6 +1,7 @@
 import {
   STORY_KEYS,
   STORY_LIMITS,
+  STORY_ROW_RECOMMENDATION_STATUSES,
   type CapacityDescriptor,
   type CommitmentBenefit,
   type CommitmentBlock,
@@ -27,6 +28,7 @@ import {
   type StoryColumn,
   type StoryKey,
   type StoryRowByKey,
+  type StoryRowRecommendationStatus,
   type StorySample,
   type StorySection,
   type StorySectionFinancials,
@@ -36,6 +38,7 @@ import {
   type UtilizationSignalActionReason,
 } from './utilizationStories';
 import type { SubscriptionReportEvidencePack } from '../azure/reportEvidence';
+import type { RecommendationState } from '../azure/recommendationState';
 import {
   isCommitmentBlock,
   isReportingStories,
@@ -462,3 +465,20 @@ const summaryViewValid: boolean = isStoryArtifact(summaryView, 'oversized-resour
 // @ts-expect-error only the summary projection is a known view marker.
 const unknownView: StoryArtifact<OversizedResourceRow> = { ...artifact, view: 'compact' };
 void [summaryViewValid, unknownView];
+
+// Iteration 7 (At a Glance triage): the row names the recommendation its move acts on; a reader may annotate its status.
+type Assert<T extends true> = T;
+type IsExact<TActual, TExpected> = [TActual] extends [TExpected] ? ([TExpected] extends [TActual] ? true : false) : false;
+// The common/ union must track the azure state union (minus `Active`, which is the absence of an annotation).
+type RowStatusTracksRecommendationState = Assert<IsExact<StoryRowRecommendationStatus, Exclude<RecommendationState['status'], 'Active'>>>;
+const rowStatuses: readonly StoryRowRecommendationStatus[] = STORY_ROW_RECOMMENDATION_STATUSES;
+const recommendationRow: OversizedResourceRow = {
+  ...informationalRow,
+  recommendationId: 'resource-metrics-underutilized',
+  recommendationStatus: 'Prioritized',
+};
+const recommendationRowValid: boolean = storyRowGuard('oversized-resources')(recommendationRow);
+// @ts-expect-error `Active` is the absence of a status annotation, not a value.
+const activeStatusRow: OversizedResourceRow = { ...recommendationRow, recommendationStatus: 'Active' };
+const statusCheck: RowStatusTracksRecommendationState = true;
+void [rowStatuses, recommendationRowValid, activeStatusRow, statusCheck];

@@ -19,7 +19,9 @@
  *   `commitmentBlock` (and only that verdict does), publishes no saving and is never `actionable: true`;
  * - `summary.actionable`, when present, is a count no greater than `counts.resources`;
  * - the compact signal's `actionable` is boolean when present, and `actionReason` (in its union) appears only with
- *   `actionable: false`.
+ *   `actionable: false`;
+ * - a row's `recommendationId` is a non-empty string when present, and `recommendationStatus` (in its union) appears
+ *   only with a `recommendationId`.
  *
  * Guards accept additive (unknown) fields and never throw.
  */
@@ -29,6 +31,7 @@ import { isBoundedRows, isCount, isDateTime, isFiniteNumber, isRecord, isString,
 import {
   STORY_KEYS,
   STORY_LIMITS,
+  STORY_ROW_RECOMMENDATION_STATUSES,
   type CapacityDescriptor,
   type CapacityScalingDescriptor,
   type CommitmentBenefit,
@@ -73,6 +76,7 @@ const METRIC_ROLES = new Set(['primary', 'secondary', 'context']);
 const DIMENSION_POLICIES = new Set(['average', 'sum', 'max', 'split']);
 const METRIC_VISUALS = new Set(['sparkline', 'trend', 'capacity-bar', 'mix-bar', 'event-strip']);
 const BILLED_ON = new Set(['allocated', 'used', 'included']);
+const ROW_RECOMMENDATION_STATUSES = new Set<unknown>(STORY_ROW_RECOMMENDATION_STATUSES);
 const AXIS_MAX_SOURCES = new Set(['config', 'capacity', 'observed']);
 const SCALE_MODES = new Set(['fixed', 'autoscale', 'serverless']);
 const RUN_MODES = new Set(['stop-start', 'auto-pause', 'scale-to-zero', 'always-on']);
@@ -525,6 +529,10 @@ const isStoryRowBase = (value: unknown, provider?: Provider): value is StoryRowB
   (value.actionable === undefined || isBoolean(value.actionable)) &&
   // An informational row asks for nothing, so it publishes no saving.
   (value.actionable !== false || value.savingsMax === null) &&
+  (value.recommendationId === undefined || isString(value.recommendationId)) &&
+  // A status describes the row's recommendation, so it never appears without one.
+  (value.recommendationStatus === undefined ||
+    (value.recommendationId !== undefined && inSet(ROW_RECOMMENDATION_STATUSES, value.recommendationStatus))) &&
   isRecord(value.cells) &&
   Object.values(value.cells).every(isStoryCell);
 

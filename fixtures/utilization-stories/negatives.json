@@ -1306,5 +1306,88 @@
         12.5
       ]
     ]
+  },
+  {
+    "name": "row with a blank recommendation id",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "recommendationId"
+        ],
+        "  "
+      ]
+    ]
+  },
+  {
+    "name": "row with a non-string recommendation id",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "recommendationId"
+        ],
+        42
+      ]
+    ]
+  },
+  {
+    "name": "row with a recommendation status but no recommendation id",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "recommendationStatus"
+        ],
+        "Dismissed"
+      ]
+    ]
+  },
+  {
+    "name": "row with a recommendation status outside its union",
+    "guard": "isStoryArtifact",
+    "base": "oversized-resources",
+    "ops": [
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "recommendationId"
+        ],
+        "resource-metrics-underutilized"
+      ],
+      [
+        "set",
+        [
+          "sections",
+          0,
+          "rows",
+          0,
+          "recommendationStatus"
+        ],
+        "Active"
+      ]
+    ]
   }
 ]

@@ -485,6 +485,24 @@ for (const storyKey of STORY_KEYS) {
   assert.equal(isStoryArtifact(badScope, 'oversized-resources'), false, 'summary view: envelope still validated');
 }
 
+// ---- Iteration 7 (At a Glance triage): a row names the recommendation its move acts on; a reader annotates its status.
+{
+  for (const storyKey of STORY_KEYS) {
+    const annotated = clone(artifacts[storyKey]);
+    const [first, second] = annotated.sections.flatMap(section => section.rows);
+    first.recommendationId = 'resource-metrics-underutilized';
+    if (second) Object.assign(second, { recommendationId: 'Compute-Disks_RightSize', recommendationStatus: 'Dismissed' });
+    assert.equal(isStoryArtifact(annotated, storyKey), true, `${storyKey}: recommendation id and status accepted`);
+  }
+  const oversized = clone(artifacts['oversized-resources']);
+  const row = oversized.sections[0].rows[0];
+  row.recommendationId = 'e10b1381-5f0a-47ff-8c7b-37bd13d7c974';
+  for (const status of ['Prioritized', 'Dismissed', 'Archived', 'Implementing', 'Implemented', 'Failed']) {
+    row.recommendationStatus = status;
+    assert.equal(isStoryArtifact(oversized, 'oversized-resources'), true, `recommendation status ${status} accepted`);
+  }
+}
+
 // ---- Negatives: one patch per rejection rule.
 const getAt = (root, path) => path.reduce((node, key) => node[key], root);
 const applyOp = (root, [op, path, value]) => {
