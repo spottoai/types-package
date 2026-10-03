@@ -28,6 +28,21 @@ export interface PortfolioSavingsContributionV2 {
   range: CanonicalMoneyRangeV2;
 }
 
+/** Producer evidence explaining why a recommendation has no portfolio savings amount. */
+export type RecommendationSavingsUnavailableReason =
+  | 'not-estimated'
+  | 'not-applicable'
+  | 'missing-currency'
+  | 'mixed-currencies'
+  | 'restated-savings'
+  | 'overlapping-savings'
+  | 'missing-billing-attribution'
+  | 'partial-billing-coverage'
+  | 'incompatible-cost-basis'
+  | 'below-minimum-spend'
+  | 'missing-pricing-reference'
+  | 'unsupported-pricing';
+
 export type SavingsScopeKindV2 = 'subscription-full' | 'recommendation-query' | 'resource-query';
 
 /** Identifies the complete result scope represented by a savings aggregate. */
@@ -63,6 +78,14 @@ export interface CanonicalSavingsAllocationProvenanceV2 {
   source: string;
   evidenceIds?: string[];
   stableSavingsBasis: boolean;
+  /** Billing basis of the captured owner spending cap; the source estimate may have its own authority. */
+  spendBasis?: 'billed' | 'amortized';
+  /** Exact inclusive billing window captured for the owner spending cap. */
+  usageWindow?: {
+    startDateInclusive: string;
+    endDateInclusive: string;
+    dayCount: number;
+  };
 }
 
 /** One exact canonical owner/component allocation attributed to exactly one recommendation. */

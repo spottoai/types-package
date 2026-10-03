@@ -21,33 +21,28 @@ Folder `README.md` files are authoritative for local implementation details.
 - `src/accounts/`, `src/company/`, `src/users/` domain DTOs.
 - `src/azure/`, `src/tags/`, `src/events/` platform contract types.
 - `src/aws/` AWS public request and artifact contracts, also published through
-  `@spottoai/types-package/aws`. This includes lossless AWS plugin body,
-  source-binding, logical-name, complete active-set, retirement, and shared
-  runtime validation contracts. It also owns lossless resource/account current
-  bodies, compact history bodies and references, AI sibling contracts, and
-  their dependency-free rejection validators. AWS relationship graph DTOs,
-  topology constants, and their closed runtime validator live in the same
-  domain and are exported through both package entrypoints.
-  The same domain owns the immutable AWS Commitments Planning Portal envelope,
-  package logical name/registry relationship, and exact-account allowlist
-  validator; materialization and storage paths remain engine-owned. A distinct
-  organization commitments family owns the dedicated refresh/read/status
-  contracts, payer/account planning view, estate-bound immutable artifact, and
-  declared-membership validator without widening the account envelope.
-  It also includes the secret-free AWS estates desired-state manifest,
-  estate/account/billing-source orchestration commands, and company trust
-  setup shapes. Engine persistence and saga types are intentionally excluded.
+  `@spottoai/types-package/aws`: the secret-free AWS estates desired-state
+  manifest, estate/account/billing-source orchestration commands, the global
+  scheduled-refresh tick that carries only its cadence kind and exact scheduler
+  timestamp, company trust setup shapes, the account and organization
+  commitments contracts and
+  validators, the lifecycle artifact, and the AWS binding of the resource graph
+  (`resourceGraph.ts`, AWS account/Region/ARN/Availability Zone format rules).
+  AWS Portal resource/account/history/AI and plugin artifact contracts are
+  owned by `cloud-engine-aws`. Engine persistence and saga types are
+  intentionally excluded.
+- `src/common/` provider-neutral contracts, including the resource graph
+  (`resourceGraph.ts`, `resourceGraphValidation.ts`) and its open identity
+  vocabulary (`resourceIdentity.ts`). Adding a provider service never requires
+  a change here.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
 
 ## Specs and tooling
 
 - `specs/` repo-local type specs and migration notes.
 - `scripts/build-check.sh` build verification helper.
-- `scripts/check-plugin-public-artifacts.mjs` executes focused AWS plugin body
-  and active-set round-trip and rejection checks against built package output.
-- `scripts/check-portal-public-artifacts.mjs` executes focused resource,
-  account, history, AI sibling, cross-scope, undeclared-field, and prohibited
-  path/credential rejection checks against built package output.
+- `scripts/check-resource-graph-contracts.mjs` executes generic and AWS
+  resource graph round-trip and rejection checks against built package output.
 - `scripts/release.sh` release automation helper.
 - `dist/` generated package output.
 

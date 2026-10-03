@@ -20,7 +20,7 @@ import type { RecommendationSystemTrackClassification } from './recommendationTr
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
-import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type { PortfolioSavingsContributionV2, RecommendationSavingsUnavailableReason, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
 import type { MetricAggregationType } from './metrics.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -434,6 +434,8 @@ export interface RecommendationWithResources {
   scenarioSavings?: ScenarioSavingsPotentialV2;
   /** Canonical producer-attributed contribution. This value is portfolio-additive. */
   portfolioContribution?: PortfolioSavingsContributionV2;
+  /** Missing savings are a state, not zero. Omit when a canonical contribution is available. */
+  savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
   /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
   savingsByCurrency?: CurrencySavingsGroup[];
   /** Canonical resource ID that owns this recommendation savings amount for aggregation */

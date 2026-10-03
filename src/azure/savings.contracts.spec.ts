@@ -1,7 +1,10 @@
+import { RecommendationCategory } from '../index.js';
 import type {
   CanonicalSavingsAllocationV2,
   CanonicalSavingsLedgerV2,
   PortfolioSavingsContributionV2,
+  RecommendationSavingsUnavailableReason,
+  RecommendationWithResources,
   SavingsAggregateSetV2,
   SavingsAggregateV2,
   ScenarioSavingsPotentialV2,
@@ -38,6 +41,8 @@ const allocation: CanonicalSavingsAllocationV2 = {
     source: 'recommendation-savings-manager',
     evidenceIds: ['billing-fingerprint-1'],
     stableSavingsBasis: true,
+    spendBasis: 'billed',
+    usageWindow: { startDateInclusive: '2026-09-03', endDateInclusive: '2026-10-02', dayCount: 30 },
   },
 };
 
@@ -141,3 +146,23 @@ void ledger;
 void invalidContribution;
 void invalidScope;
 void missingGeneration;
+
+const withheldRecommendation: RecommendationWithResources = {
+  recommendation: { id: 'aws-snapshot-review', name: 'Review snapshot retention', category: RecommendationCategory.Cost, impact: 'Low' },
+  resources: [],
+  savingsUnavailableReason: 'below-minimum-spend',
+};
+// @ts-expect-error Absence reasons are declared producer states, not arbitrary text.
+const invalidAbsenceReason: RecommendationSavingsUnavailableReason = 'assume-zero';
+void withheldRecommendation;
+void invalidAbsenceReason;
+
+const incompatibleBasisReason: RecommendationSavingsUnavailableReason = 'incompatible-cost-basis';
+const invalidSpendBasis: CanonicalSavingsAllocationV2['provenance'] = {
+  source: 'aws-native-recommendation',
+  stableSavingsBasis: false,
+  // @ts-expect-error The captured owner cap must name its billing basis, not a pricing authority.
+  spendBasis: 'source-native',
+};
+void incompatibleBasisReason;
+void invalidSpendBasis;

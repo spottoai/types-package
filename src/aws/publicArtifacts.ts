@@ -1,6 +1,7 @@
 import type { ArtifactAccountBinding, ArtifactGeneration } from '../common/artifactGeneration';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
 import type { AwsForbiddenCredentialFields } from './requests';
+import type { SecurityPostureArtifact } from '../common/securityPosture';
 
 export const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION = 1 as const;
 
@@ -16,6 +17,7 @@ export const AWS_PUBLIC_ARTIFACT_TYPES = [
   'commitments-planning',
   'relationships',
   'lifecycle',
+  'security-posture',
   'plugin-subscription',
   'plugin-resource',
 ] as const;
@@ -72,3 +74,14 @@ export type AwsPortalLifecycleArtifact<AccountId extends string = string, RunId 
   generatedAt: string;
   entries: AwsPortalLifecycleEntry<AccountId>[];
 };
+
+/** AWS account Security page publication, with the established public run/account binding. */
+export type AwsSecurityPostureArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<
+  'security-posture',
+  AccountId,
+  RunId
+> &
+  SecurityPostureArtifact & {
+    providerName: 'aws';
+    providerScopeId: AccountId;
+  };

@@ -241,7 +241,7 @@ export interface SubscriptionHistory {
 export interface SubscriptionHistoryItem {
   /** 20250520 */
   date: number;
-  /** Omitted when Defender for Cloud did not return an observed score. */
+  /** Omitted when the provider did not supply complete, current score evidence. */
   secureScore?: number;
   secureScoreEvidence?: SecureScoreEvidence;
   advisorScore?: number;

@@ -8,3 +8,4 @@ export * from './resourceGraph';
 export * from './resourceGraphValidation';
 export * from './resourceIdentity';
 export * from './syncProgress';
+export * from './securityPosture';

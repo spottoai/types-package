@@ -29,6 +29,9 @@ import {
   validateResourceGraphArtifact,
   type PublicRelationshipArtifact,
   type PublicRelationshipProviderScope,
+  type SecurityPostureArtifact,
+  type SecureScoreEvidence,
+  type AwsSecurityPostureArtifact,
 } from '@spottoai/types-package';
 import {
   AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION,
@@ -40,7 +43,37 @@ import {
   type AwsResourceGraphArtifact,
   type AwsEstatesManifest as AwsSubpathEstatesManifest,
   type AwsScheduledRefreshTickCommand as AwsSubpathScheduledRefreshTickCommand,
+  type AwsSecurityPostureArtifact as AwsSubpathSecurityPostureArtifact,
 } from '@spottoai/types-package/aws';
+
+const awsSecureScoreEvidence: SecureScoreEvidence = {
+  status: 'available',
+  percentage: 0,
+  providerName: 'aws',
+  source: 'security-hub-cspm',
+  method: 'control-pass-rate',
+  controlCounts: { passed: 0, failed: 1, unknown: 0, noData: 0, disabled: 0 },
+};
+const awsSecurityPosture = {
+  schemaVersion: 1,
+  provider: 'aws',
+  accountId: '123456789012',
+  providerName: 'aws',
+  providerScopeId: '123456789012',
+  artifactType: 'security-posture',
+  artifactGeneration: { runId: 'security-run-1', generatedAt: '2026-10-03T00:00:00.000Z' },
+  generatedAt: '2026-10-03T00:00:00.000Z',
+  status: 'available',
+  secureScore: 0,
+  secureScoreEvidence: awsSecureScoreEvidence,
+  coverage: { status: 'available', scopes: [] },
+  standards: [],
+  controls: [],
+  findings: [],
+} satisfies AwsSecurityPostureArtifact;
+const neutralSecurityPosture: SecurityPostureArtifact = awsSecurityPosture;
+const subpathSecurityPosture: AwsSubpathSecurityPostureArtifact = awsSecurityPosture;
+void [neutralSecurityPosture, subpathSecurityPosture];
 
 const commandEntities: readonly AwsCommandEntity[] = AWS_COMMAND_ENTITIES;
 const commandActions: readonly AwsCommandAction[] = AWS_COMMAND_ACTIONS;

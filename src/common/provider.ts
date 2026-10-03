@@ -1,3 +1,5 @@
+import type { SecureScoreEvidence } from '../azure/secureScore';
+
 export enum ProviderName {
   Azure = 'azure',
   Aws = 'aws',
@@ -58,6 +60,7 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
   currencySymbol?: string;
   ready: boolean;
   secureScore?: number;
+  secureScoreEvidence?: SecureScoreEvidence;
   spend30Days?: number;
 }
 
