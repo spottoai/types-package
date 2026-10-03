@@ -35,6 +35,8 @@ export * from './azure/regulatoryCompliance';
 export * from './azure/regulatoryComplianceScoreboard';
 export * from './azure/regulatoryComplianceScoreboardMerge';
 export * from './azure/regulatoryComplianceScoreboardValidation';
+export * from './azure/regulatoryComplianceControlEvidence';
+export * from './azure/regulatoryComplianceControlEvidenceProjection';
 export * from './azure/resources';
 export * from './azure/reports';
 export * from './azure/reportEvidence';
