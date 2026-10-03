@@ -1,5 +1,6 @@
 import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation';
 import { isReportDailySpend } from './reportDailySpendValidation';
+import { isRegulatoryComplianceScoreboardSubscription, isRegulatoryReportComparisonIdentities } from './regulatoryComplianceScoreboardValidation';
 import { isReportSavingsBasis, isReportSpendProjection } from './reportSpendValidation';
 import { isCommitmentsFreshnessEntry, isCommitmentsFreshnessStatus } from './commitmentsPlanningValidation';
 import {
@@ -245,6 +246,7 @@ const isPrivilegedAccess = (value: unknown): value is JsonRecord =>
 
 const isGovernance = (value: unknown): boolean =>
   isRecord(value) &&
+  (value.regulatoryScoreboard === undefined || isRegulatoryComplianceScoreboardSubscription(value.regulatoryScoreboard)) &&
   isOptionalString(value.generatedAt) &&
   (value.coverage === undefined || isRecord(value.coverage)) &&
   hasRequiredRecords(value, ['policySummary', 'rbacSummary', 'globalAdministratorSummary']) &&
@@ -637,9 +639,11 @@ const isUniqueIdentityRows = (value: unknown, itemValidator: (item: unknown) => 
 
 const isHistoryComparisonIdentities = (value: unknown): boolean =>
   isRecord(value) &&
-  isUniqueIdentityRows(value.costRecommendationIds) &&
-  isUniqueIdentityRows(value.undersizedResourceIds) &&
-  isUniqueIdentityRows(value.regulatoryAssessmentKeys, (item): item is string => isString(item) && /^[a-f0-9]{64}$/u.test(item));
+  isRegulatoryReportComparisonIdentities(value) &&
+  (value.costRecommendationIds === undefined || isUniqueIdentityRows(value.costRecommendationIds)) &&
+  (value.undersizedResourceIds === undefined || isUniqueIdentityRows(value.undersizedResourceIds)) &&
+  (value.regulatoryAssessmentKeys === undefined || isUniqueIdentityRows(value.regulatoryAssessmentKeys, (item): item is string => isString(item) && /^[a-f0-9]{64}$/u.test(item))) &&
+  (value.regulatoryFailingControlKeys !== undefined || (value.costRecommendationIds !== undefined && value.undersizedResourceIds !== undefined && value.regulatoryAssessmentKeys !== undefined));
 
 export const isSubscriptionReportHistory = (value: unknown): value is SubscriptionReportHistory => {
   if (

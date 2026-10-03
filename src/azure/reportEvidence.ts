@@ -4,6 +4,7 @@ import type { ReportingStories, StoryFingerprint } from '../common/utilizationSt
 import type { PortfolioSavingsContributionV2, ScenarioSavingsPotentialV2 } from './savings';
 import type { GlobalAdminLastSignInEvidence, GovernanceCoverageState, TenantMfaEnforcementStatus } from './governance';
 import type { SecureScoreEvidence } from './secureScore';
+import type { RegulatoryComplianceScoreboardSubscription, RegulatoryScoreSource } from './regulatoryComplianceScoreboard';
 import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 import type { ChangeType } from './reports';
@@ -303,6 +304,7 @@ export interface ReportPrivilegedAccessRow {
 }
 
 export interface ReportGovernanceProjection extends ReportProjectionRecord {
+  regulatoryScoreboard?: RegulatoryComplianceScoreboardSubscription;
   generatedAt?: string;
   coverage?: ReportProjectionRecord;
   policySummary: ReportProjectionRecord;
@@ -693,12 +695,17 @@ export interface SubscriptionReportHistoryMetrics {
 }
 
 export interface ReportHistoryComparisonIdentities {
+  regulatoryFailingControlKeys?: ReportBoundedRows<string>;
+  regulatoryComparisonBasis?: {
+    evidenceComplete: true;
+    standards: Array<{ standardKey: string; source: RegulatoryScoreSource; assessmentBasisKey: string }>;
+  };
   /** Stable recommendation IDs classified as cost-saving recommendations. */
-  costRecommendationIds: ReportBoundedRows<string>;
+  costRecommendationIds?: ReportBoundedRows<string>;
   /** Full Azure resource IDs for VMs classified as undersized in this period. */
-  undersizedResourceIds: ReportBoundedRows<string>;
+  undersizedResourceIds?: ReportBoundedRows<string>;
   /** Semantic governance assessment keys, not presentation labels. */
-  regulatoryAssessmentKeys: ReportBoundedRows<string>;
+  regulatoryAssessmentKeys?: ReportBoundedRows<string>;
 }
 
 export interface SubscriptionReportHistoryPeriod {
