@@ -1,5 +1,6 @@
 import {
   ACTIVITY_LOG_TAG_IDS,
+  ACTIVITY_LOG_EXECUTION_ORIGINS,
   ACTIVITY_LOG_TAXONOMY_VERSION,
   PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1,
   type ActivityLogAnalysisCount,
@@ -8,13 +9,14 @@ import {
   type PortalActivityLogAnalysisScope,
   type PortalActivityLogClassification,
 } from './activityLogAnalysis';
+import { activityLogProviderName, hasActivityLogProviderEvidence, isPortalActivityLogAnalysisScope } from './activityLogAnalysisScopeValidation';
 
 export const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const EVIDENCE_ID = /^aev1_[a-f0-9]{64}$/;
 const GROUP_ID = /^aag1_[a-f0-9]{64}$/;
 export const TAG_IDS = new Set<string>(ACTIVITY_LOG_TAG_IDS);
-export const ORIGINS = new Set(['manual', 'workloadAutomation', 'azurePlatform', 'unknown']);
+export const ORIGINS = new Set<string>(ACTIVITY_LOG_EXECUTION_ORIGINS);
 export const EFFECTS = new Set(['write', 'delete', 'action', 'read', 'other']);
 export const CONFIDENCES = new Set(['high', 'medium', 'low']);
 export const POWER_SUFFICIENCY = new Set(['oneSided', 'oneOff', 'sameDayRepeat', 'repeated']);
@@ -36,7 +38,6 @@ export const LIMITATIONS = new Set([
   'mixed-taxonomy-versions',
   'response-truncated',
 ]);
-const SCOPE_LEVELS = new Set(['subscription', 'resourceGroup', 'resource', 'unknown']);
 const RESERVED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 export const isRecord = (value: unknown): value is Record<string, unknown> => {
@@ -112,26 +113,11 @@ export const isChronologicalCountRows = (value: unknown, predicate: (key: string
   );
 
 export const isScope = (value: unknown, subscriptionId: string, resourceId?: string): value is PortalActivityLogAnalysisScope => {
-  if (
-    !hasExactKeys(value, ['subscriptionId', 'level'], ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName']) ||
-    value.subscriptionId !== subscriptionId ||
-    typeof value.level !== 'string' ||
-    !SCOPE_LEVELS.has(value.level)
-  )
-    return false;
-  if (value.resourceId !== undefined && !isText(value.resourceId, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceIdCodeUnits)) return false;
-  if (value.resourceGroup !== undefined && !isText(value.resourceGroup, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceNameCodeUnits)) return false;
-  if (value.provider !== undefined && !isText(value.provider, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.providerCodeUnits)) return false;
-  if (value.resourceType !== undefined && !isText(value.resourceType, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceTypeCodeUnits)) return false;
-  if (value.resourceName !== undefined && !isText(value.resourceName, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceNameCodeUnits)) return false;
-  if (value.level === 'resource' && typeof value.resourceId !== 'string') return false;
-  if (value.level === 'resource') {
-    const scopedSubscriptionId = /^\/subscriptions\/([^/]+)\//i.exec(value.resourceId as string)?.[1];
-    if (!scopedSubscriptionId || scopedSubscriptionId.toLowerCase() !== subscriptionId.toLowerCase()) return false;
-  }
-  if (value.level === 'resourceGroup' && typeof value.resourceGroup !== 'string') return false;
-  if (value.level === 'subscription' && (value.resourceId !== undefined || value.resourceGroup !== undefined)) return false;
-  return resourceId === undefined || value.resourceId === resourceId;
+  return (
+    isPortalActivityLogAnalysisScope(value) &&
+    value.subscriptionId === subscriptionId &&
+    (resourceId === undefined || value.resourceId === resourceId)
+  );
 };
 
 /** Validates the exact additive classification carried by one Portal Activity Log entry. */
@@ -146,6 +132,7 @@ export const isPortalActivityLogClassification = (value: unknown): value is Port
     !isRecord(value.scope) ||
     typeof value.scope.subscriptionId !== 'string' ||
     !isScope(value.scope, value.scope.subscriptionId) ||
+    !hasActivityLogProviderEvidence(value, activityLogProviderName(value.scope)) ||
     !Array.isArray(value.tags) ||
     value.tags.length > PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.tagAssignmentsPerEvent
   )

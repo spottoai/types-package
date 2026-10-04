@@ -35,6 +35,9 @@ Folder `README.md` files are authoritative for local implementation details.
   (`resourceGraph.ts`, `resourceGraphValidation.ts`) and its open identity
   vocabulary (`resourceIdentity.ts`). Adding a provider service never requires
   a change here.
+- `src/common/cloudGovernance.ts` provider-neutral governance overview and
+  privileged-access projections, exported from the root and `/governance`.
+  Provider collection/evaluation and artifact persistence remain engine-owned.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
 
 ## Specs and tooling

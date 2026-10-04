@@ -1,0 +1,39 @@
+import {
+  ACTIVITY_LOG_TAXONOMY_VERSION,
+  isPortalActivityLogAnalysisScope,
+  isPortalActivityLogClassification,
+  type ActivityLogExecutionOrigin,
+  type ActivityLogTagId,
+  type PortalActivityLogClassification,
+  type PortalActivityLogAnalysisScope,
+  type PortalActivityAnalysisResponse,
+  type ConformedActivityAnalysisArtifact,
+} from '@spottoai/types-package';
+
+const scope = {
+  providerName: 'aws',
+  providerScopeId: '123456789012',
+  subscriptionId: '123456789012',
+  level: 'resource',
+  region: 'ap-southeast-2',
+  resourceId: 'arn:aws:lambda:ap-southeast-2:123456789012:function:Orders',
+} satisfies PortalActivityLogAnalysisScope;
+const classification = {
+  taxonomyVersion: ACTIVITY_LOG_TAXONOMY_VERSION,
+  executionOrigin: 'platform',
+  operationEffect: 'write',
+  scope,
+  tags: [{ tagId: 'actor.platform', dimension: 'actor', confidence: 'high' }],
+} satisfies PortalActivityLogClassification;
+const origin: ActivityLogExecutionOrigin = 'platform';
+const tag: ActivityLogTagId = 'actor.platform';
+const publicIdentity: Pick<PortalActivityAnalysisResponse, 'providerName' | 'providerScopeId' | 'subscriptionId'> = scope;
+const conformedIdentity: Pick<ConformedActivityAnalysisArtifact, 'providerName' | 'providerScopeId' | 'subscriptionId'> = scope;
+const validScope: boolean = isPortalActivityLogAnalysisScope(scope);
+const validClassification: boolean = isPortalActivityLogClassification(classification);
+void origin;
+void tag;
+void publicIdentity;
+void conformedIdentity;
+void validScope;
+void validClassification;

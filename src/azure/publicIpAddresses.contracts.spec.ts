@@ -317,3 +317,135 @@ void invalidPublicIpAddressesConcern;
 void invalidPublicIpAddressesExposureSourceKind;
 void invalidPublicIpAddressesExposureScope;
 void invalidPublicIpAddressesRemediationOptionKind;
+
+// AWS shares the report envelope while retaining native ARNs and rule evidence.
+const awsPublicIpAddressesReport: PublicIpAddressesReport = {
+  schemaVersion: PUBLIC_IP_ADDRESSES_SCHEMA_VERSION,
+  subscription: {
+    companyId: 'comp-123',
+    subscriptionId: '123456789012',
+    displayName: 'Production AWS account',
+  },
+  timestamp: '2026-10-04T05:18:44.163Z',
+  summary: {
+    ...publicIpAddressesReport.summary,
+    total: 1,
+    assigned: 1,
+    exposedRdp: 0,
+    exposedHttps: 0,
+    exposedDatabase: 1,
+    byService: { database: 1 },
+    byConcern: { database_exposed: 1 },
+    byLocation: { 'ap-southeast-2': 1 },
+    remediationOptionCounts: { restrict_ingress_allowlist: 1 },
+  },
+  coverage: {
+    status: 'partial',
+    sources: [
+      { family: 'rds-db-instances', location: 'ap-southeast-2', status: 'complete' },
+      { family: 'ec2-security-groups', location: 'ap-southeast-2', status: 'partial', reason: 'One security group reference is unresolved.' },
+      { family: 'elbv2-listeners', location: 'ap-southeast-2', status: 'missing', reason: 'Collection was denied.' },
+    ],
+    issues: [{
+      code: 'missing_security_group',
+      message: 'Referenced security group was not collected; absence of exposure findings does not establish safety.',
+      resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+      family: 'ec2-security-groups',
+      location: 'ap-southeast-2',
+    }],
+  },
+  items: [{
+    ...publicIpAddressesReport.items[0],
+    id: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+    name: 'production',
+    resourceGroup: null,
+    location: 'ap-southeast-2',
+    sku: { name: null, tier: null },
+    zones: [],
+    allocationMethod: null,
+    ipVersion: null,
+    ipAddress: null,
+    fqdn: 'production.example.us-east-1.rds.amazonaws.com',
+    assignment: {
+      via: 'direct_ip_configuration',
+      resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+      resourceName: 'production',
+      resourceType: 'AWS::RDS::DBInstance',
+      parentResourceId: null,
+      parentResourceName: null,
+      parentResourceType: null,
+      evidence: ['rds:PubliclyAccessible'],
+    },
+    associatedResource: 'production',
+    associatedResourceType: 'AWS::RDS::DBInstance',
+    associatedService: 'database',
+    exposures: [{
+      kind: 'database',
+      evidenceSource: 'security_group_rule',
+      evidence: 'Security group allows TCP/5432 from 0.0.0.0/0.',
+      confidence: 'medium',
+      sourceKind: 'internet',
+      sourcePrefixes: ['0.0.0.0/0'],
+      destinationPortRanges: [{ value: '5432', from: 5432, to: 5432 }],
+      protocol: 'tcp',
+      effectiveReachability: 'possible',
+      securityGroupRule: {
+        id: 'sgr-0123456789abcdef0',
+        name: 'public-postgres',
+        groupId: 'sg-0123456789abcdef0',
+        groupName: 'database',
+        direction: 'inbound',
+        access: 'allow',
+        sourceAddressPrefixes: ['0.0.0.0/0'],
+        destinationPortRanges: ['5432'],
+        protocol: 'tcp',
+        description: 'Public database access',
+      },
+    }],
+    concerns: ['database_exposed'],
+    remediationOptions: [{
+      kind: 'restrict_ingress_allowlist',
+      label: 'Restrict ingress to approved sources',
+      summary: 'Limit database ingress to approved private networks or CIDR ranges.',
+      suitability: 'recommended',
+    }],
+  }],
+};
+
+const awsListenerExposure: PublicIpAddressesReport['items'][number]['exposures'][number] = {
+  kind: 'https',
+  evidenceSource: 'lb_listener',
+  evidence: 'Internet-facing load balancer has a TLS listener on TCP/443.',
+  confidence: 'medium',
+  effectiveReachability: 'possible',
+};
+
+const awsPrivateSessionOption: PublicIpAddressesReport['items'][number]['remediationOptions'] = [{
+  kind: 'private_session_access',
+  label: 'Use private session access',
+  summary: 'Use AWS Systems Manager Session Manager for administration.',
+  suitability: 'conditional',
+}, {
+  kind: 'front_with_waf',
+  label: 'Protect web ingress with a WAF',
+  summary: 'Use a compatible web application firewall for HTTPS services.',
+  suitability: 'conditional',
+}];
+
+const invalidCoverage: NonNullable<PublicIpAddressesReport['coverage']> = {
+  // @ts-expect-error report coverage never represents missing evidence as healthy.
+  status: 'healthy',
+  sources: [],
+  issues: [],
+};
+
+const invalidSecurityGroupRule: NonNullable<typeof awsListenerExposure.securityGroupRule> = {
+  // @ts-expect-error AWS rule metadata uses groupId; Azure-specific metadata stays in nsgRule.
+  networkSecurityGroupId: 'sg-0123456789abcdef0',
+};
+
+void awsPublicIpAddressesReport;
+void awsListenerExposure;
+void awsPrivateSessionOption;
+void invalidCoverage;
+void invalidSecurityGroupRule;

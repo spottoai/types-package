@@ -1,0 +1,40 @@
+import { CLOUD_GOVERNANCE_SCHEMA_VERSION as rootVersion, type CloudGovernanceReport as RootReport } from '@spottoai/types-package';
+import { CLOUD_GOVERNANCE_SCHEMA_VERSION, type CloudGovernanceAccessReport, type CloudGovernanceReport } from '@spottoai/types-package/governance';
+
+// Real API/UI/engine consumers see the same contract through either published entry point.
+export const overview: RootReport & CloudGovernanceReport = {
+  schemaVersion: CLOUD_GOVERNANCE_SCHEMA_VERSION,
+  generatedAt: '2026-10-04T00:00:00.000Z',
+  scope: { providerName: 'aws', scopeType: 'account', providerScopeId: '123456789012', companyId: 'company-1', cloudAccountId: 'connection-1' },
+  coverage: [
+    {
+      id: 'credentials',
+      source: 'iam-credential-report',
+      scope: { scopeType: 'account', providerScopeId: '123456789012' },
+      state: 'unavailable',
+      reason: 'access-denied',
+      freshness: 'unknown',
+    },
+  ],
+  rootAccounts: { totalCount: 0, omittedCount: 0, rows: [] },
+  checklists: { totalCount: 0, omittedCount: 0, rows: [] },
+};
+export const access: CloudGovernanceAccessReport = {
+  schemaVersion: rootVersion,
+  generatedAt: overview.generatedAt,
+  scope: overview.scope,
+  coverage: overview.coverage,
+  principals: { totalCount: 0, omittedCount: 0, rows: [] },
+  grants: { totalCount: 0, omittedCount: 0, rows: [] },
+};
+
+// @ts-expect-error A public report cannot contain engine persistence paths.
+export const internalReport: CloudGovernanceReport = { ...overview, blobPath: 'aws-raw/internal' };
+// @ts-expect-error Every access report needs explicit source coverage.
+export const uncoveredAccess: CloudGovernanceAccessReport = {
+  schemaVersion: rootVersion,
+  generatedAt: overview.generatedAt,
+  scope: overview.scope,
+  principals: access.principals,
+  grants: access.grants,
+};

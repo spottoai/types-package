@@ -1,0 +1,52 @@
+import {
+  ProviderName,
+  type AwsCertificateRetirementRenderData,
+  type CredentialLifecycleRetirementRenderData,
+  type ServiceRetirementCoverageArtifact,
+  type ServiceRetirementDeadlineKind,
+  type ServiceRetirementKnownRenderData,
+  type ServiceRetirementPortalEntry,
+  type ServiceRetirementResourceCoverage,
+  type ServiceRetirementSourceCoverage,
+} from '@spottoai/types-package';
+
+const credential: CredentialLifecycleRetirementRenderData = {
+  kind: 'credential-lifecycle',
+  credentialType: 'key-material',
+  credentialId: 'arn:aws:kms:us-east-1:123456789012:key/11111111-2222-3333-4444-555555555555',
+};
+const certificate: AwsCertificateRetirementRenderData = {
+  kind: 'aws-certificate',
+  manager: 'acm',
+  certificateArn: 'arn:aws:acm:us-east-1:123456789012:certificate/11111111-2222-3333-4444-555555555555',
+};
+const renders: ServiceRetirementKnownRenderData[] = [credential, certificate];
+const deadline: ServiceRetirementDeadlineKind = 'expiry';
+const resourceCoverage: ServiceRetirementResourceCoverage = { status: 'unresolved', reasonCode: 'resource-not-discovered' };
+const source: ServiceRetirementSourceCoverage = {
+  sourceId: 'kms-imported-key-material',
+  region: 'us-east-1',
+  support: 'supported',
+  attempt: 'succeeded',
+  coverage: 'complete',
+  freshness: 'current',
+  itemCount: 1,
+};
+const coverage: ServiceRetirementCoverageArtifact = {
+  schemaVersion: 1,
+  generatedAt: '2026-10-04T00:00:00.000Z',
+  providerScope: { providerName: ProviderName.Aws, providerScopeId: '123456789012' },
+  sources: [source],
+};
+declare const existingAzureEntry: ServiceRetirementPortalEntry;
+const entry: ServiceRetirementPortalEntry = {
+  ...existingAzureEntry,
+  deadlineKind: deadline,
+  providerScope: coverage.providerScope,
+  sourceId: source.sourceId,
+  resourceCoverage,
+  renderData: credential,
+};
+// @ts-expect-error An unresolved resource join needs an explicit reason.
+const invalidResourceCoverage: ServiceRetirementResourceCoverage = { status: 'unresolved' };
+void [renders, entry, invalidResourceCoverage];

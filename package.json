@@ -14,6 +14,9 @@
   "sideEffects": false,
   "typesVersions": {
     "*": {
+      "governance": [
+        "dist/common/cloudGovernance.d.ts"
+      ],
       "aws": [
         "dist/aws/index.d.ts"
       ],
@@ -41,6 +44,11 @@
     }
   },
   "exports": {
+    "./governance": {
+      "types": "./dist/common/cloudGovernance.d.ts",
+      "import": "./dist/esm/entries/governance.js",
+      "require": "./dist/common/cloudGovernance.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/esm/entries/root.js",

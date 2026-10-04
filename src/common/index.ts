@@ -9,3 +9,5 @@ export * from './resourceGraphValidation';
 export * from './resourceIdentity';
 export * from './syncProgress';
 export * from './securityPosture';
+export * from './cloudGovernance';
+export * from './serviceRetirement';

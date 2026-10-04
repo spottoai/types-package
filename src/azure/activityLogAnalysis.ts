@@ -40,6 +40,7 @@ export const ACTIVITY_LOG_TAG_IDS = [
   'actor.manual',
   'actor.workload-automation',
   'actor.azure-platform',
+  'actor.platform',
   'actor.unknown',
   'change.material',
   'intent.credential-access',
@@ -58,28 +59,42 @@ export const ACTIVITY_LOG_TAG_IDS = [
 export type ActivityLogTagId = (typeof ACTIVITY_LOG_TAG_IDS)[number];
 export type ActivityLogTagDimension = 'actor' | 'change' | 'intent' | 'security' | 'scheduler';
 export type ActivityLogClassificationConfidence = 'high' | 'medium' | 'low';
-export type ActivityLogExecutionOrigin = 'manual' | 'workloadAutomation' | 'azurePlatform' | 'unknown';
+export const ACTIVITY_LOG_EXECUTION_ORIGINS = ['manual', 'workloadAutomation', 'azurePlatform', 'platform', 'unknown'] as const;
+/** New producers use platform; azurePlatform remains valid for existing Azure evidence. */
+export type ActivityLogExecutionOrigin = (typeof ACTIVITY_LOG_EXECUTION_ORIGINS)[number];
 export type ActivityLogOperationEffect = 'write' | 'delete' | 'action' | 'read' | 'other';
-export type ActivityLogScopeLevel = 'subscription' | 'resourceGroup' | 'resource' | 'unknown';
+export type ActivityLogScopeLevel = 'subscription' | 'resourceGroup' | 'account' | 'region' | 'resource' | 'unknown';
 export type ActivityLogPowerDataSufficiency = 'oneSided' | 'oneOff' | 'sameDayRepeat' | 'repeated';
 export type ActivityLogClassificationState = 'complete' | 'partial' | 'unavailable';
 export type PortalActivityEvidenceId = `aev1_${string}`;
 export type PortalActivityAnalysisGroupId = `aag1_${string}`;
 
 export type PortalActivityAnalysisReasonCode =
-  | 'derived.operation-summary'
-  | 'derived.security-sensitive-activity'
-  | 'derived.power-pattern-evidence'
-  | `tag.${ActivityLogTagId}`;
+  'derived.operation-summary' | 'derived.security-sensitive-activity' | 'derived.power-pattern-evidence' | `tag.${ActivityLogTagId}`;
 
-export interface PortalActivityLogAnalysisScope {
+export type ActivityLogProviderName = 'azure' | 'aws';
+
+export interface ActivityLogProviderScopeIdentity {
+  /** Transport alias: Azure subscription ID or AWS account ID. */
   subscriptionId: string;
+  /** Omission of both provider fields means legacy Azure evidence. Required for AWS. */
+  providerName?: ActivityLogProviderName;
+  /** Must equal subscriptionId; supplied together with providerName. */
+  providerScopeId?: string;
+}
+
+export interface PortalActivityLogAnalysisScope extends ActivityLogProviderScopeIdentity {
   level: ActivityLogScopeLevel;
+  /** Native identity, preserved verbatim, including case-sensitive AWS resource names. */
   resourceId?: string;
+  /** Azure only. */
   resourceGroup?: string;
+  /** Provider service namespace, such as microsoft.compute or ec2; not the cloud provider. */
   provider?: string;
   resourceType?: string;
   resourceName?: string;
+  /** AWS Region, or global for account-global resources. Required for regional and opaque IDs. */
+  region?: string;
 }
 
 export interface PortalActivityLogTagAssignment {
@@ -188,9 +203,7 @@ export interface ConformedActivityPowerPatternEvidence extends ConformedActivity
 }
 
 export type ConformedActivityAnalysisGroup =
-  | ConformedActivityOperationSummary
-  | ConformedActivitySecuritySensitiveEvidence
-  | ConformedActivityPowerPatternEvidence;
+  ConformedActivityOperationSummary | ConformedActivitySecuritySensitiveEvidence | ConformedActivityPowerPatternEvidence;
 
 export interface ConformedActivityResourceSummary {
   scope: PortalActivityLogAnalysisScope & { level: 'resource'; resourceId: string };
@@ -202,12 +215,11 @@ export interface ConformedActivityResourceSummary {
   relatedEvidenceIds: string[];
 }
 
-export interface ConformedActivityAnalysisArtifact {
+export interface ConformedActivityAnalysisArtifact extends ActivityLogProviderScopeIdentity {
   schemaVersion: typeof CONFORMED_ACTIVITY_ANALYSIS_SCHEMA_VERSION;
   analysisVersion: typeof ACTIVITY_LOG_ANALYSIS_VERSION;
   taxonomyVersion: typeof ACTIVITY_LOG_TAXONOMY_VERSION;
   projection: 'activity-analysis';
-  subscriptionId: string;
   month: string;
   generatedAt: string;
   source: {
@@ -342,14 +354,11 @@ export interface PortalActivityPowerPatternEvidence extends PortalActivityDerive
 }
 
 export type PortalActivityDerivedEvidence =
-  | PortalActivityOperationSummary
-  | PortalActivitySecuritySensitiveEvidence
-  | PortalActivityPowerPatternEvidence;
+  PortalActivityOperationSummary | PortalActivitySecuritySensitiveEvidence | PortalActivityPowerPatternEvidence;
 
-export interface PortalActivityAnalysisResponse {
+export interface PortalActivityAnalysisResponse extends ActivityLogProviderScopeIdentity {
   schemaVersion: typeof PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION;
   generatedAt: string;
-  subscriptionId: string;
   fromMonth: string;
   toMonth: string;
   resourceId?: string;

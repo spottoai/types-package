@@ -14,6 +14,13 @@ import {
   type PortalActivitySeries,
 } from './activityLogAnalysis';
 import {
+  activityLogProviderName,
+  hasActivityLogProviderEvidence,
+  hasActivityLogProviderFacets,
+  hasActivityLogProviderIdentity,
+  isActivityLogAnalysisResourceFilter,
+} from './activityLogAnalysisScopeValidation';
+import {
   CONFIDENCES,
   EFFECTS,
   LIMITATIONS,
@@ -369,8 +376,10 @@ export const isPortalActivityAnalysisResponse = (value: unknown): value is Porta
         'powerPatterns',
         'limitations',
       ],
-      ['resourceId']
+      ['resourceId', 'providerName', 'providerScopeId']
     ) ||
+    !hasActivityLogProviderIdentity(value) ||
+    !isActivityLogAnalysisResourceFilter(value) ||
     value.schemaVersion !== PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION ||
     !isTimestamp(value.generatedAt) ||
     !isText(value.subscriptionId, 2_048) ||
@@ -406,6 +415,8 @@ export const isPortalActivityAnalysisResponse = (value: unknown): value is Porta
     return false;
   const subscriptionId = value.subscriptionId;
   const resourceId = value.resourceId as string | undefined;
+  const providerName = activityLogProviderName(value);
+  if (!hasActivityLogProviderFacets(value.facets, providerName)) return false;
   if (
     !isCollection(value.activitySeries, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.activitySeries, (item): item is PortalActivitySeries =>
       isSeries(item, subscriptionId, resourceId, available)
@@ -428,6 +439,12 @@ export const isPortalActivityAnalysisResponse = (value: unknown): value is Porta
       value.powerPatterns,
       PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.powerPatterns,
       (item): item is PortalActivityPowerPatternEvidence => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'powerPatternEvidence'
+    )
+  )
+    return false;
+  if (
+    ![value.activitySeries, value.resources, value.operationSummaries, value.securitySensitive, value.powerPatterns].every(collection =>
+      collection.items.every(item => hasActivityLogProviderEvidence(item, providerName))
     )
   )
     return false;

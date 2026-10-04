@@ -1,0 +1,167 @@
+import {
+  PUBLIC_IP_ADDRESSES_SCHEMA_VERSION,
+  PUBLIC_IP_ADDRESSES_PORTAL_FILE,
+  type PublicIpAddressesReport,
+  type PublicIpAddressesExposure,
+  type PublicIpAddressesCoverage,
+  type PublicIpAddressesRemediationOption,
+  type PublicIpAddressesSecurityGroupRuleMetadata,
+} from '@spottoai/types-package';
+
+const schemaVersion: '2026-05-02.public-ip-addresses-v1' = PUBLIC_IP_ADDRESSES_SCHEMA_VERSION;
+const portalFile: 'public-ip-addresses.json' = PUBLIC_IP_ADDRESSES_PORTAL_FILE;
+
+// Legacy Azure payloads may omit the optional schema, coverage and database count.
+const legacyAzureReport: PublicIpAddressesReport = {
+  subscription: { subscriptionId: 'azure-subscription', displayName: 'Azure production' },
+  timestamp: '2026-10-04T00:00:00.000Z',
+  summary: {
+    total: 0,
+    assigned: 0,
+    unassigned: 0,
+    dynamicUnassigned: 0,
+    basicSku: 0,
+    exposedRdp: 0,
+    exposedSsh: 0,
+    exposedHttps: 0,
+    byService: {},
+    byConcern: {},
+    byLocation: {},
+    byPrefix: {},
+  },
+  items: [],
+};
+const legacyAzureExposure: PublicIpAddressesExposure = {
+  kind: 'ssh',
+  evidenceSource: 'nsg_rule',
+  evidence: 'Azure NSG ingress',
+  confidence: 'high',
+  nsgRule: {
+    networkSecurityGroupId: '/subscriptions/azure-subscription/resourceGroups/network/providers/Microsoft.Network/networkSecurityGroups/admin',
+    priority: 100,
+  },
+};
+const legacyAzureRemediation: PublicIpAddressesRemediationOption = {
+  kind: 'azure_bastion',
+  label: 'Use Azure Bastion',
+  summary: 'Use private VM administration.',
+  suitability: 'conditional',
+};
+
+const nativeRule: PublicIpAddressesSecurityGroupRuleMetadata = {
+  id: 'sgr-0123456789abcdef0',
+  name: 'database-access',
+  groupId: 'sg-0123456789abcdef0',
+  groupName: 'database',
+  direction: 'inbound',
+  access: 'allow',
+  sourceAddressPrefixes: ['0.0.0.0/0'],
+  destinationPortRanges: ['5432'],
+  protocol: 'tcp',
+  description: 'PostgreSQL ingress',
+};
+const awsCoverage: PublicIpAddressesCoverage = {
+  status: 'partial',
+  sources: [{ family: 'security-group', location: 'ap-southeast-2', status: 'missing', reason: 'Collection was denied.' }],
+  issues: [
+    {
+      code: 'attached_security_group_missing',
+      message: 'Exposure is unknown.',
+      resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+      family: 'security-group',
+      location: 'ap-southeast-2',
+    },
+  ],
+};
+const awsRemediations: PublicIpAddressesRemediationOption[] = [
+  { kind: 'restrict_ingress_allowlist', label: 'Restrict ingress', summary: 'Use approved sources.', suitability: 'recommended' },
+  { kind: 'private_session_access', label: 'Use Session Manager', summary: 'Use private session access.', suitability: 'conditional' },
+  { kind: 'front_with_waf', label: 'Use AWS WAF', summary: 'Protect supported web frontends.', suitability: 'conditional' },
+];
+const awsListener: PublicIpAddressesExposure = {
+  kind: 'https',
+  evidenceSource: 'lb_listener',
+  evidence: 'TLS listener on TCP/443',
+  confidence: 'medium',
+  effectiveReachability: 'possible',
+};
+const awsReport: PublicIpAddressesReport = {
+  ...legacyAzureReport,
+  schemaVersion,
+  subscription: { subscriptionId: '123456789012', displayName: 'AWS production' },
+  coverage: awsCoverage,
+  summary: {
+    ...legacyAzureReport.summary,
+    total: 1,
+    assigned: 1,
+    exposedDatabase: 1,
+    byService: { database: 1 },
+    byConcern: { database_exposed: 1 },
+  },
+  items: [
+    {
+      id: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+      name: 'production',
+      resourceGroup: null,
+      location: 'ap-southeast-2',
+      sku: { name: null, tier: null },
+      zones: [],
+      allocationMethod: null,
+      ipVersion: null,
+      ipAddress: null,
+      fqdn: 'production.example.rds.amazonaws.com',
+      use: 'assigned',
+      assignment: {
+        via: 'direct_ip_configuration',
+        resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+        resourceName: 'production',
+        resourceType: 'AWS::RDS::DBInstance',
+        parentResourceId: null,
+        parentResourceName: null,
+        parentResourceType: null,
+        evidence: ['rds:PubliclyAccessible'],
+      },
+      associatedResource: 'production',
+      associatedResourceType: 'AWS::RDS::DBInstance',
+      associatedService: 'database',
+      prefix: null,
+      exposures: [
+        {
+          kind: 'database',
+          evidenceSource: 'security_group_rule',
+          evidence: 'TCP/5432 from a public source',
+          confidence: 'medium',
+          effectiveReachability: 'possible',
+          securityGroupRule: nativeRule,
+        },
+      ],
+      concerns: ['database_exposed'],
+      remediationOptions: awsRemediations,
+      tags: {},
+    },
+  ],
+};
+const invalidNativeRule: PublicIpAddressesSecurityGroupRuleMetadata = {
+  // @ts-expect-error native security-group metadata does not accept Azure NSG fields.
+  networkSecurityGroupId: 'sg-0123456789abcdef0',
+};
+const invalidCoverage: PublicIpAddressesCoverage = {
+  // @ts-expect-error collection coverage uses the shared completeness vocabulary.
+  status: 'healthy',
+  sources: [],
+  issues: [],
+};
+
+void [
+  portalFile,
+  legacyAzureReport,
+  legacyAzureExposure,
+  legacyAzureRemediation,
+  nativeRule,
+  awsCoverage,
+  awsRemediations,
+  awsListener,
+  awsReport,
+  invalidNativeRule,
+  invalidCoverage,
+];

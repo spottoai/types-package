@@ -17,6 +17,8 @@ const commitmentsPlanningFixturePath = join(packageRoot, 'tests', 'fixtures', 'c
 const narrowAwsRuntimeFixturePath = join(packageRoot, 'tests', 'fixtures', 'narrow-aws-runtime.consumer.ts.fixture');
 const resourceStrategySchedulerFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-strategy-scheduler.consumer.ts.fixture');
 const reportingJobsFixturePath = join(packageRoot, 'tests', 'fixtures', 'reporting-jobs.consumer.ts.fixture');
+const serviceRetirementFixturePath = join(packageRoot, 'tests', 'fixtures', 'service-retirement.consumer.ts.fixture');
+const publicIpAddressesFixturePath = join(packageRoot, 'tests', 'fixtures', 'public-ip-addresses.consumer.ts.fixture');
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
@@ -324,6 +326,7 @@ for (const exportName of requiredDigestRepairRuntimeExports) {
   }
 }
 const portfolioFixturePath = join(packageRoot, 'tests', 'fixtures', 'portfolio.consumer.ts.fixture');
+const governanceFixturePath = join(packageRoot, 'tests', 'fixtures', 'cloud-governance.consumer.ts.fixture');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const nodeModulesBin = join(packageRoot, 'node_modules', '.bin');
 const tscCommand = join(nodeModulesBin, process.platform === 'win32' ? 'tsc.cmd' : 'tsc');
@@ -382,8 +385,12 @@ try {
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
   await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
+  await copyFile(governanceFixturePath, join(consumerRoot, 'cloud-governance.consumer.ts'));
   await copyFile(resourceStrategySchedulerFixturePath, join(consumerRoot, 'resource-strategy-scheduler.consumer.ts'));
   await copyFile(reportingJobsFixturePath, join(consumerRoot, 'reporting-jobs.consumer.ts'));
+  await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
+  await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/activity-analysis.consumer.ts.fixture'), join(consumerRoot, 'activity-analysis.consumer.ts'));
 
   run(
     npmCommand,
@@ -414,8 +421,12 @@ try {
       'artifact-evidence.consumer.ts',
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
+      'cloud-governance.consumer.ts',
       'resource-strategy-scheduler.consumer.ts',
       'reporting-jobs.consumer.ts',
+      'service-retirement.consumer.ts',
+      'public-ip-addresses.consumer.ts',
+      'activity-analysis.consumer.ts',
     ],
     consumerRoot
   );
@@ -429,6 +440,13 @@ try {
     consumerRoot
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
+  // The narrow public governance contract must work in both module formats and legacy TS resolution.
+  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'cloud-governance.consumer.ts'], consumerRoot);
+  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'public-ip-addresses.consumer.ts'], consumerRoot);
+  run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, PUBLIC_IP_ADDRESSES_PORTAL_FILE } from '@spottoai/types-package'; assert.equal(PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
+  run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); assert.equal(root.PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(root.PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
+  run(process.execPath, ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as rootVersion } from '@spottoai/types-package'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as narrowVersion } from '@spottoai/types-package/governance'; assert.equal(rootVersion, 1); assert.equal(narrowVersion, rootVersion);`], consumerRoot);
+  run(process.execPath, ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); const narrow = require('@spottoai/types-package/governance'); assert.equal(root.CLOUD_GOVERNANCE_SCHEMA_VERSION, 1); assert.equal(narrow.CLOUD_GOVERNANCE_SCHEMA_VERSION, root.CLOUD_GOVERNANCE_SCHEMA_VERSION);`], consumerRoot);
   run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV7ProbeSource}`], consumerRoot);
   run(
     process.execPath,

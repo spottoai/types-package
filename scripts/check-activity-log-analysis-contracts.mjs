@@ -319,6 +319,13 @@ assert.equal(isPortalActivityAnalysisResponse(response), true, 'accepts the comp
 assert.doesNotThrow(() => assertPortalActivityAnalysisResponse(response));
 assert.equal(JSON.stringify(response), before, 'validation does not mutate the response');
 assert.equal(isConformedActivityAnalysisArtifact(validConformedPowerArtifact()), true, 'accepts a truthful conformed power pattern');
+const widerConformedMetadata = validConformedPowerArtifact();
+widerConformedMetadata.activitySeries[0].scope.resourceName = 'n'.repeat(1_024);
+widerConformedMetadata.groups[0].scope.resourceName = 'n'.repeat(1_024);
+assert.equal(isConformedActivityAnalysisArtifact(widerConformedMetadata), true, 'preserves the existing conformed metadata bounds');
+rejectMutation('keeps public resource names within the narrower public bound', value => {
+  value.activitySeries.items[0].scope.resourceName = 'n'.repeat(PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceNameCodeUnits + 1);
+});
 const completeMonthFingerprint = validConformedPowerArtifact();
 completeMonthFingerprint.source.sourceShardFingerprint = 'x'.repeat(8_309);
 assert.equal(isConformedActivityAnalysisArtifact(completeMonthFingerprint), true, 'accepts a bounded complete-month source shard fingerprint');
@@ -562,7 +569,255 @@ oversized.resources.returnedCount = oversized.resources.items.length;
 assert.ok(Buffer.byteLength(JSON.stringify(oversized), 'utf8') > PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.responseUtf8Bytes);
 assert.equal(isPortalActivityAnalysisResponse(oversized), false, 'rejects more than 32 MiB measured as UTF-8 bytes');
 
+const AWS_ACCOUNT = '123456789012';
+const AWS_REGION = 'ap-southeast-2';
+const AWS_RESOURCE = `arn:aws:ec2:${AWS_REGION}:${AWS_ACCOUNT}:instance/i-0123456789abcdef0`;
+const awsIdentity = { providerName: 'aws', providerScopeId: AWS_ACCOUNT };
+const awsScope = () => ({ ...awsIdentity, subscriptionId: AWS_ACCOUNT, level: 'resource', region: AWS_REGION, resourceId: AWS_RESOURCE });
+const awsClassification = () => ({
+  ...validClassification(),
+  scope: awsScope(),
+  executionOrigin: 'platform',
+  tags: [{ tagId: 'actor.platform', dimension: 'actor', confidence: 'high' }],
+});
+
+// Keep the existing collections and counts; replace only their provider facts.
+const awsAnalysis = factory => {
+  const value = JSON.parse(
+    JSON.stringify(factory())
+      .replaceAll(RESOURCE_ID, AWS_RESOURCE)
+      .replaceAll('sub-a', AWS_ACCOUNT)
+      .replaceAll('microsoft.compute', 'ec2')
+      .replaceAll('virtualmachines', 'AWS::EC2::Instance')
+      .replaceAll('start/action', 'ec2:StartInstances')
+      .replaceAll('power/action', 'ec2:StartInstances')
+      .replaceAll('runcommand/action', 'ssm:SendCommand')
+  );
+  Object.assign(value, awsIdentity);
+  const assignScopes = item => {
+    if (!item || typeof item !== 'object') return;
+    if (item.scope) Object.assign(item.scope, awsIdentity, { region: AWS_REGION });
+    Object.values(item).forEach(assignScopes);
+  };
+  assignScopes(value);
+  if (Array.isArray(value.groups)) {
+    value.resources = [
+      {
+        scope: awsScope(),
+        eventCount: 2,
+        operationCounts: [{ value: 'ec2:StartInstances', count: 2 }],
+        resultCounts: [{ value: 'succeeded', count: 2 }],
+        tagCounts: [{ value: 'scheduler.power-operation', count: 2 }],
+        executionOriginCounts: [{ value: 'manual', count: 2 }],
+        relatedEvidenceIds: ['internal-power-group-id'],
+      },
+    ];
+  }
+  return value;
+};
+
+const checkAwsContracts = validators => {
+  const {
+    isPortalActivityLogClassification: classify,
+    isPortalActivityAnalysisResponse: publicResponse,
+    isConformedActivityAnalysisArtifact: conformed,
+  } = validators;
+  const classification = awsClassification();
+  const before = JSON.stringify(classification);
+  assert.equal(classify(classification), true, 'accepts AWS resource classification and neutral platform vocabulary');
+  assert.equal(JSON.stringify(classification), before, 'does not mutate AWS scope identity');
+  for (const scope of [
+    { ...awsScope(), level: 'account', region: undefined, resourceId: undefined },
+    { ...awsScope(), level: 'region', resourceId: undefined },
+    { ...awsScope(), level: 'unknown', region: undefined, resourceId: undefined },
+    { ...awsScope(), resourceId: `arn:aws:iam::${AWS_ACCOUNT}:role/Operators`, region: 'global' },
+    { ...awsScope(), resourceId: 'arn:aws:s3:::example-bucket', region: 'global' },
+    { ...awsScope(), resourceId: 'i-0123456789abcdef0', resourceType: 'AWS::EC2::Instance' },
+    { ...awsScope(), resourceId: `arn:aws-cn:ec2:cn-north-1:${AWS_ACCOUNT}:instance/i-abc`, region: 'cn-north-1' },
+    { ...awsScope(), resourceId: `arn:aws-us-gov:ec2:us-gov-west-1:${AWS_ACCOUNT}:instance/i-abc`, region: 'us-gov-west-1' },
+  ])
+    assert.equal(classify({ ...classification, scope }), true, `accepts native AWS ${scope.level} scope ${scope.resourceId ?? ''}`);
+  const neutralAzure = validClassification();
+  neutralAzure.executionOrigin = 'platform';
+  neutralAzure.tags = [{ tagId: 'actor.platform', dimension: 'actor', confidence: 'high' }];
+  assert.equal(classify(neutralAzure), true, 'Azure can adopt neutral platform vocabulary');
+  const legacyAzure = validClassification();
+  legacyAzure.executionOrigin = 'azurePlatform';
+  legacyAzure.tags = [{ tagId: 'actor.azure-platform', dimension: 'actor', confidence: 'high' }];
+  assert.equal(classify(legacyAzure), true, 'retains legacy Azure platform vocabulary');
+  const explicitAzure = validClassification();
+  Object.assign(explicitAzure.scope, { providerName: 'azure', providerScopeId: 'sub-a' });
+  assert.equal(classify(explicitAzure), true, 'accepts explicit Azure identity');
+
+  const invalidScopes = [
+    ['foreign ARN account', value => (value.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999'))],
+    ['ARN Region mismatch', value => (value.region = 'us-east-1')],
+    ['missing regional ARN context', value => delete value.region],
+    ['opaque ID without type', value => (value.resourceId = 'i-abc')],
+    [
+      'opaque ID without Region',
+      value => {
+        value.resourceId = 'i-abc';
+        value.resourceType = 'AWS::EC2::Instance';
+        delete value.region;
+      },
+    ],
+    [
+      'invalid account',
+      value => {
+        value.subscriptionId = '123';
+        value.providerScopeId = '123';
+      },
+    ],
+    ['unequal transport alias', value => (value.providerScopeId = '999999999999')],
+    ['missing provider', value => delete value.providerName],
+    ['missing canonical scope ID', value => delete value.providerScopeId],
+    ['unknown provider', value => (value.providerName = 'other')],
+    ['Azure scope level', value => (value.level = 'subscription')],
+    ['invented AWS resource group', value => (value.resourceGroup = 'rg')],
+    ['AWS ARM ID', value => (value.resourceId = RESOURCE_ID)],
+    ['malformed ARN', value => (value.resourceId = 'arn:aws:ec2')],
+    ['wildcard ARN', value => (value.resourceId = AWS_RESOURCE.replace('instance/i-0123456789abcdef0', '*'))],
+    ['account scope with resource ID', value => (value.level = 'account')],
+    ['unknown scope field', value => (value.requestID = 'internal')],
+    ['invalid Region', value => (value.region = 'not-a-region')],
+    ['trimmed resource identity', value => (value.resourceId = ` ${AWS_RESOURCE}`)],
+    ['control characters in identity', value => (value.resourceId = `${AWS_RESOURCE}\n`)],
+    ['reserved scope key', value => Object.defineProperty(value, '__proto__', { value: {}, enumerable: true })],
+  ];
+  for (const [label, mutate] of invalidScopes) {
+    const candidate = awsClassification();
+    mutate(candidate.scope);
+    assert.equal(classify(candidate), false, `rejects AWS ${label}`);
+  }
+  for (const mutate of [value => (value.executionOrigin = 'azurePlatform'), value => (value.tags[0].tagId = 'actor.azure-platform')]) {
+    const candidate = awsClassification();
+    mutate(candidate);
+    assert.equal(classify(candidate), false, 'rejects Azure platform vocabulary for AWS');
+  }
+
+  for (const [factory, validate, label] of [
+    [validResponse, publicResponse, 'public'],
+    [validConformedPowerArtifact, conformed, 'conformed'],
+  ]) {
+    const value = awsAnalysis(factory);
+    const before = JSON.stringify(value);
+    assert.equal(validate(value), true, `accepts complete AWS ${label} analysis`);
+    assert.equal(JSON.stringify(value), before, `does not mutate AWS ${label} analysis`);
+    const neutral = JSON.parse(JSON.stringify(value).replaceAll('actor.manual', 'actor.platform').replaceAll('manual', 'platform'));
+    assert.equal(validate(neutral), true, `accepts neutral platform counts, facets and tags in AWS ${label} analysis`);
+    for (const [reason, mutate] of [
+      [
+        'envelope provider omitted',
+        value => {
+          delete value.providerName;
+          delete value.providerScopeId;
+        },
+      ],
+      ['envelope alias mismatch', value => (value.providerScopeId = '999999999999')],
+      ['missing canonical envelope ID', value => delete value.providerScopeId],
+      [
+        'invalid envelope account',
+        value => {
+          value.subscriptionId = '123';
+          value.providerScopeId = '123';
+        },
+      ],
+      [
+        'nested foreign provider',
+        value => {
+          const series = label === 'public' ? value.activitySeries.items[0] : value.activitySeries[0];
+          series.scope = { subscriptionId: AWS_ACCOUNT, level: 'subscription' };
+        },
+      ],
+      [
+        'nested foreign ARN',
+        value => {
+          const series = label === 'public' ? value.activitySeries.items[0] : value.activitySeries[0];
+          series.scope.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999');
+        },
+      ],
+      [
+        'foreign resource-summary account',
+        value => {
+          const resource = label === 'public' ? value.resources.items[0] : value.resources[0];
+          resource.scope.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999');
+        },
+      ],
+      [
+        'Azure facet origin',
+        value => {
+          const rows = label === 'public' ? value.facets.executionOrigins.items : value.facets.executionOrigins;
+          rows[0].value = 'azurePlatform';
+        },
+      ],
+      [
+        'Azure facet tag',
+        value => {
+          const rows = label === 'public' ? value.facets.tags.items : value.facets.tags;
+          rows[0].value = 'actor.azure-platform';
+        },
+      ],
+      [
+        'nested Azure origin',
+        value => {
+          const series = label === 'public' ? value.activitySeries.items[0] : value.activitySeries[0];
+          series.executionOrigin = 'azurePlatform';
+        },
+      ],
+      [
+        'nested Azure tag',
+        value => {
+          const series = label === 'public' ? value.activitySeries.items[0] : value.activitySeries[0];
+          series.tagIds = ['actor.azure-platform', 'scheduler.power-operation'];
+        },
+      ],
+      [
+        'Azure power-pattern origin counts',
+        value => {
+          const power = label === 'public' ? value.powerPatterns.items[0] : value.groups[0];
+          power.executionOriginCounts = label === 'public' ? [{ value: 'azurePlatform', count: 2 }] : { azurePlatform: 2 };
+        },
+      ],
+    ]) {
+      const candidate = structuredClone(value);
+      mutate(candidate);
+      assert.equal(validate(candidate), false, `rejects AWS ${label} ${reason}`);
+    }
+    const empty = awsAnalysis(factory);
+    for (const key of ['activitySeries', 'resources', 'groups', 'operationSummaries', 'securitySensitive', 'powerPatterns']) {
+      if (key in empty) empty[key] = label === 'public' ? { totalCount: 0, returnedCount: 0, truncated: false, items: [] } : [];
+    }
+    for (const key of Object.keys(empty.facets))
+      empty.facets[key] = label === 'public' ? { totalCount: 0, returnedCount: 0, truncated: false, items: [] } : [];
+    if (label === 'conformed')
+      Object.assign(empty.source, { retainedEventCount: 0, classifiedRetainedEventCount: 0, unclassifiedRetainedEventCount: 0 });
+    assert.equal(validate(empty), true, `accepts empty AWS ${label} evidence`);
+    const invalidEmpty = structuredClone(empty);
+    invalidEmpty.providerScopeId = '999999999999';
+    assert.equal(validate(invalidEmpty), false, `validates AWS ${label} identity even when collections are empty`);
+    const legacyEmpty = structuredClone(empty);
+    delete legacyEmpty.providerName;
+    delete legacyEmpty.providerScopeId;
+    legacyEmpty.subscriptionId = 'sub-a';
+    assert.equal(validate(legacyEmpty), true, `retains empty legacy Azure ${label} evidence`);
+    if (label === 'public') {
+      empty.resourceId = AWS_RESOURCE;
+      assert.equal(validate(empty), true, 'accepts an in-account AWS resource filter with no returned evidence');
+      empty.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999');
+      assert.equal(validate(empty), false, 'rejects a foreign AWS resource filter with no returned evidence');
+    }
+  }
+  const filtered = awsAnalysis(validResponse);
+  filtered.resourceId = AWS_RESOURCE;
+  assert.equal(publicResponse(filtered), true, 'accepts an AWS ARN resource filter');
+  filtered.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999');
+  assert.equal(publicResponse(filtered), false, 'rejects a foreign AWS ARN resource filter');
+};
+checkAwsContracts({ isPortalActivityLogClassification, isPortalActivityAnalysisResponse, isConformedActivityAnalysisArtifact });
+
 const esm = await import('../dist/esm/entries/root.js');
+checkAwsContracts(esm);
 assert.equal(esm.isPortalActivityEvidenceId(EVIDENCE_ID), true);
 assert.equal(esm.isPortalActivityLogClassification(validClassification()), true);
 assert.equal(esm.isPortalActivityAnalysisResponse(validResponse()), true);

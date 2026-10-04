@@ -68,6 +68,44 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+The root and narrow `@spottoai/types-package/governance` entry points export
+`CloudGovernanceReport` and `CloudGovernanceAccessReport` for provider-neutral
+governance overview and privileged-access projections. They bind the company,
+cloud account and native scope, preserve source coverage/freshness and bounded
+rows, distinguish MFA registration from enforcement, and represent centralized
+root credential removal. Access grants describe assigned permissions with
+source evidence, access paths, restrictions and limitations; they do not prove
+unrestricted effective access. Unknown observations never carry invented
+zero/false values. Raw policies, credentials, storage paths and provider
+permission catalogues remain outside these public contracts. Producers and API
+readers must validate untrusted JSON and authorize every scope independently;
+these TypeScript contracts are not runtime validators. Existing Azure
+Governance/Global Administrator exports remain unchanged. See
+`specs/governance/cloud-governance-types.md` for the staged consumer handoff.
+
+Retirement Tracker keeps the shared `ServiceRetirementPortalEntry[]` payload for
+Azure and AWS. Optional `deadlineKind` distinguishes retirement, deprecation,
+end-of-support, expiry and rotation-due; `RetirementDate` carries that deadline.
+The `credential-lifecycle` render kind provides public credential/key identity
+and rotation metadata without secret values. Optional `providerScope`,
+`sourceId` and `resourceCoverage` let actionable notices remain visible when
+affected resources are unresolved. Existing render kinds and imports remain
+supported. The root exports a separate `ServiceRetirementCoverageArtifact` using
+the existing support/attempt/coverage/freshness verdicts. Missing coverage means
+unknown, and a rotation deadline does not prove hard credential expiry. See
+`specs/monitor/retirement-tracker-lifecycle-types.md` for consumer handoff and
+source-count semantics.
+
+The root entry point exports the shared `PublicIpAddressesReport` used by
+Perimeter Insights for Azure subscriptions and AWS accounts. Its existing
+schema version and Azure fields remain compatible. Native AWS exposure evidence
+uses `security_group_rule` / `securityGroupRule` or `lb_listener`; Azure NSG
+evidence retains `nsg_rule` / `nsgRule`. Database findings, provider-neutral
+remediation options, and collection `coverage` are additive extensions. Missing
+coverage does not establish complete collection, and complete collection does
+not establish effective network reachability. See
+`specs/monitor/aws-perimeter-insights-types.md`.
+
 Background report jobs (`ReportJobSpecV1`, `ReportJobRequestedV1`, the
 `reportjobs` row, statuses and failure codes, and the `jobId` identity
 functions) live in `@spottoai/types-package/reporting-jobs`, which is not
@@ -207,6 +245,28 @@ the former reduced AWS declaration remains available under the explicit
 `AwsPortalRelationshipArtifactV1` migration name.
 
 ## Development
+
+Activity Analysis uses the same classification, conformed monthly artifact and
+bounded public response contracts for Azure and AWS. New provider-aware evidence
+supplies `providerName` and `providerScopeId` together, on the envelope and each
+nested scope. Required `subscriptionId` remains the transport alias and must
+equal `providerScopeId`; for AWS it carries the 12-digit account ID. Omission of
+both provider fields retains the existing Azure interpretation.
+
+AWS scopes use `account`, `region`, `resource` or `unknown` levels, with native
+resource IDs and optional Region context (`global` for account-global resources).
+Regional ARNs must match the declared Region, and every account-bearing ARN must
+match the account. Opaque native IDs require Region and resource type. Accountless
+ARNs and opaque IDs still require authoritative ownership checks by the producer
+and API; structural validation is not authorization. `isPortalActivityLogAnalysisScope`
+exports the shared scope boundary used by classification and analysis validators.
+
+New producers can use neutral `platform` / `actor.platform` vocabulary. Existing
+Azure `azurePlatform` / `actor.azure-platform` evidence remains valid; AWS
+evidence rejects those Azure labels. Existing schema versions, collection shapes,
+logical names, limits and root exports remain stable. This additive contract
+extension requires updated engine, API and UI consumers before AWS emission.
+See `specs/monitor/provider-aware-activity-analysis.md` for validation and rollout.
 
 ### Setup
 

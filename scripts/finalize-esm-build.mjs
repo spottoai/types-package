@@ -56,6 +56,7 @@ const entries = {
   recommendations: '../azure/recommendations.js',
   provider: '../common/provider.js',
   environment: '../environment/index.js',
+  governance: '../common/cloudGovernance.js',
 };
 await Promise.all(
   Object.entries(entries).map(([name, target]) =>

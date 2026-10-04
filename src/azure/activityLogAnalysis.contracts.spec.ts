@@ -9,6 +9,8 @@ import {
   type PortalActivityEvidenceId,
   type PortalActivityAnalysisGroupId,
   type PortalActivityLogClassification,
+  type ConformedActivityAnalysisArtifact,
+  isPortalActivityLogAnalysisScope,
 } from '../index';
 
 const evidenceId = 'aev1_0000000000000000000000000000000000000000000000000000000000000001' satisfies PortalActivityEvidenceId;
@@ -199,3 +201,58 @@ void activitySeriesLimit;
 void responseLimit;
 void classificationIsValid;
 void nestedValuesTruncated;
+
+const awsScope = {
+  providerName: 'aws',
+  providerScopeId: '123456789012',
+  subscriptionId: '123456789012',
+  level: 'resource',
+  region: 'ap-southeast-2',
+  resourceId: 'arn:aws:ec2:ap-southeast-2:123456789012:instance/i-0123456789abcdef0',
+  resourceType: 'AWS::EC2::Instance',
+} as const;
+const awsClassification = {
+  taxonomyVersion: ACTIVITY_LOG_TAXONOMY_VERSION,
+  executionOrigin: 'platform',
+  operationEffect: 'action',
+  scope: awsScope,
+  tags: [{ tagId: 'actor.platform', dimension: 'actor', confidence: 'high' }],
+} satisfies PortalActivityLogClassification;
+const awsResponse = {
+  ...response,
+  providerName: 'aws',
+  providerScopeId: '123456789012',
+  subscriptionId: '123456789012',
+  activitySeries: { ...emptyCollection },
+  resources: { ...emptyCollection },
+  operationSummaries: { ...emptyCollection },
+  securitySensitive: { ...emptyCollection },
+  powerPatterns: { ...emptyCollection },
+} satisfies PortalActivityAnalysisResponse;
+const awsConformed = {
+  schemaVersion: 1,
+  analysisVersion: ACTIVITY_LOG_ANALYSIS_VERSION,
+  taxonomyVersion: ACTIVITY_LOG_TAXONOMY_VERSION,
+  projection: 'activity-analysis',
+  providerName: 'aws',
+  providerScopeId: '123456789012',
+  subscriptionId: '123456789012',
+  month: '2026-09',
+  generatedAt: '2026-09-02T05:00:00.000Z',
+  source: {
+    portalProjectionSchemaVersion: 1,
+    retainedEventCount: 0,
+    classifiedRetainedEventCount: 0,
+    unclassifiedRetainedEventCount: 0,
+    classificationState: 'complete',
+  },
+  facets: { tags: [], operations: [], providers: [], resourceTypes: [], results: [], operationEffects: [], executionOrigins: [] },
+  activitySeries: [],
+  resources: [],
+  groups: [],
+} satisfies ConformedActivityAnalysisArtifact;
+const scopeIsValid: boolean = isPortalActivityLogAnalysisScope(awsScope);
+void awsClassification;
+void awsResponse;
+void awsConformed;
+void scopeIsValid;

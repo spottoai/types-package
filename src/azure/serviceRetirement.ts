@@ -1,6 +1,13 @@
 import { Tags } from '../tags';
 import { ServiceRetirementRecommendation } from './recommendations';
 import type { BenefitCoverageSummary } from './views.js';
+import type {
+  CredentialLifecycleRetirementRenderData,
+  ServiceRetirementDeadlineKind,
+  ServiceRetirementResourceCoverage,
+} from '../common/serviceRetirement';
+import type { ProviderScope } from '../common/provider';
+import type { CapabilitySourceId } from '../common/resourceIdentity';
 
 export interface ServiceRetirement {
   id: string;
@@ -28,11 +35,7 @@ export interface ServiceRetirementPortalResource {
 export type KeyVaultObjectType = 'secret' | 'key' | 'certificate';
 
 export type ServiceRetirementKnownRenderKind =
-  | 'hdd-os-disk'
-  | 'benefit-expiry'
-  | 'application-credential'
-  | 'key-vault-object'
-  | 'aws-certificate';
+  'hdd-os-disk' | 'benefit-expiry' | 'application-credential' | 'key-vault-object' | 'aws-certificate' | 'credential-lifecycle';
 
 export interface HddOsDiskRetirementRenderData {
   kind: 'hdd-os-disk';
@@ -89,7 +92,8 @@ export type ServiceRetirementKnownRenderData =
   | BenefitExpiryRetirementRenderData
   | ApplicationCredentialRetirementRenderData
   | KeyVaultObjectRetirementRenderData
-  | AwsCertificateRetirementRenderData;
+  | AwsCertificateRetirementRenderData
+  | CredentialLifecycleRetirementRenderData;
 
 /**
  * Forward-compatible shape for retirement render strategies introduced by
@@ -106,14 +110,16 @@ export type ServiceRetirementRenderData = ServiceRetirementKnownRenderData | Ser
 export interface ServiceRetirementPortalEntry extends ServiceRetirementRecommendation {
   resources: ServiceRetirementPortalResource[];
   renderData?: ServiceRetirementRenderData;
+  /** Explicit meaning of RetirementDate; omission retains existing consumer classification. */
+  deadlineKind?: ServiceRetirementDeadlineKind;
+  /** Owning subscription/account identity, including for notices without matched resources. */
+  providerScope?: ProviderScope;
+  sourceId?: CapabilitySourceId;
+  /** Omission conveys unknown matching coverage; unresolved notices can remain actionable with resources=[]. */
+  resourceCoverage?: ServiceRetirementResourceCoverage;
 }
 
-export type KeyVaultObjectCollectionStatus =
-  | 'current'
-  | 'permission-denied'
-  | 'network-blocked'
-  | 'throttled'
-  | 'unavailable';
+export type KeyVaultObjectCollectionStatus = 'current' | 'permission-denied' | 'network-blocked' | 'throttled' | 'unavailable';
 
 export interface KeyVaultObjectFamilyCoverage {
   objectType: KeyVaultObjectType;

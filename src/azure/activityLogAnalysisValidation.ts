@@ -1,5 +1,6 @@
 import {
   ACTIVITY_LOG_ANALYSIS_VERSION,
+  ACTIVITY_LOG_EXECUTION_ORIGINS,
   ACTIVITY_LOG_TAG_IDS,
   ACTIVITY_LOG_TAXONOMY_VERSION,
   CONFORMED_ACTIVITY_ANALYSIS_LIMITS_V1,
@@ -13,14 +14,20 @@ import {
   type ConformedActivitySeries,
   type PortalActivityLogAnalysisScope,
 } from './activityLogAnalysis';
+import {
+  activityLogProviderName,
+  hasActivityLogProviderEvidence,
+  hasActivityLogProviderFacets,
+  hasActivityLogProviderIdentity,
+  isPortalActivityLogAnalysisScope,
+} from './activityLogAnalysisScopeValidation';
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const TAG_IDS = new Set<string>(ACTIVITY_LOG_TAG_IDS);
-const ORIGINS = new Set(['manual', 'workloadAutomation', 'azurePlatform', 'unknown']);
+const ORIGINS = new Set<string>(ACTIVITY_LOG_EXECUTION_ORIGINS);
 const EFFECTS = new Set(['write', 'delete', 'action', 'read', 'other']);
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
-const SCOPE_LEVELS = new Set(['subscription', 'resourceGroup', 'resource', 'unknown']);
 const RESERVED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -61,24 +68,7 @@ function isSortedUniqueTextArray(value: unknown, maximum?: number, predicate?: (
 }
 
 function isScope(value: unknown): value is PortalActivityLogAnalysisScope {
-  if (
-    !hasExactKeys(value, ['subscriptionId', 'level'], ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName']) ||
-    !isText(value.subscriptionId) ||
-    typeof value.level !== 'string' ||
-    !SCOPE_LEVELS.has(value.level)
-  ) {
-    return false;
-  }
-  for (const key of ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName'] as const) {
-    if (value[key] !== undefined && !isText(value[key])) return false;
-  }
-  if (value.level === 'resource' && !isText(value.resourceId)) return false;
-  if (value.level === 'resource') {
-    const scopedSubscriptionId = /^\/subscriptions\/([^/]+)\//i.exec(value.resourceId as string)?.[1];
-    if (!scopedSubscriptionId || scopedSubscriptionId.toLowerCase() !== value.subscriptionId.toLowerCase()) return false;
-  }
-  if (value.level === 'subscription' && value.resourceId !== undefined) return false;
-  return true;
+  return isPortalActivityLogAnalysisScope(value, 'conformed');
 }
 
 function isCountRows(value: unknown, allowed?: Set<string>): value is ActivityLogAnalysisCount[] {
@@ -356,20 +346,25 @@ function isGroup(value: unknown, subscriptionId: string, month: string): value i
 
 export function isConformedActivityAnalysisArtifact(value: unknown): value is ConformedActivityAnalysisArtifact {
   if (
-    !hasExactKeys(value, [
-      'schemaVersion',
-      'analysisVersion',
-      'taxonomyVersion',
-      'projection',
-      'subscriptionId',
-      'month',
-      'generatedAt',
-      'source',
-      'facets',
-      'activitySeries',
-      'resources',
-      'groups',
-    ])
+    !hasExactKeys(
+      value,
+      [
+        'schemaVersion',
+        'analysisVersion',
+        'taxonomyVersion',
+        'projection',
+        'subscriptionId',
+        'month',
+        'generatedAt',
+        'source',
+        'facets',
+        'activitySeries',
+        'resources',
+        'groups',
+      ],
+      ['providerName', 'providerScopeId']
+    ) ||
+    !hasActivityLogProviderIdentity(value, 'conformed')
   )
     return false;
   if (
@@ -385,6 +380,7 @@ export function isConformedActivityAnalysisArtifact(value: unknown): value is Co
     return false;
   const subscriptionId = value.subscriptionId as string;
   const month = value.month as string;
+  const providerName = activityLogProviderName(value);
   if (
     !hasExactKeys(
       value.source,
@@ -410,18 +406,24 @@ export function isConformedActivityAnalysisArtifact(value: unknown): value is Co
     return false;
   if (
     !isFacets(value.facets, value.source.retainedEventCount) ||
+    !hasActivityLogProviderFacets(value.facets, providerName) ||
     !Array.isArray(value.activitySeries) ||
     !Array.isArray(value.resources) ||
     !Array.isArray(value.groups)
   )
     return false;
   if (
-    !value.activitySeries.every(item => isSeries(item, subscriptionId, month)) ||
+    !value.activitySeries.every(item => isSeries(item, subscriptionId, month) && hasActivityLogProviderEvidence(item, providerName, 'conformed')) ||
     value.activitySeries.reduce((sum, item) => sum + item.eventCount, 0) !== value.source.classifiedRetainedEventCount
   )
     return false;
-  return value.resources.every(item => isResource(item, subscriptionId)) && value.groups.every(item => isGroup(item, subscriptionId, month));
+  return (
+    value.resources.every(item => isResource(item, subscriptionId) && hasActivityLogProviderEvidence(item, providerName, 'conformed')) &&
+    value.groups.every(item => isGroup(item, subscriptionId, month) && hasActivityLogProviderEvidence(item, providerName, 'conformed'))
+  );
 }
+
+export { isPortalActivityLogAnalysisScope } from './activityLogAnalysisScopeValidation';
 
 export function assertConformedActivityAnalysisArtifact(value: unknown): asserts value is ConformedActivityAnalysisArtifact {
   if (!isConformedActivityAnalysisArtifact(value)) throw new Error('Invalid conformed Activity Analysis artifact.');

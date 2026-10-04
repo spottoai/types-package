@@ -37,6 +37,9 @@ export type DataProtectionWorkloadPricingModel =
   | 'azureFiles'
   | 'blobVaulted'
   | 'disk'
+  | 'fileSystem'
+  | 'relationalDatabase'
+  | 'cache'
   | 'aks'
   | 'sqlDatabase'
   | 'sqlManagedInstance'
@@ -101,6 +104,8 @@ export interface DataProtectionCostAmount {
 }
 
 export interface DataProtectionBackupCostEstimate {
+  /** Currency evidenced by estimate pricing, independently of billed cost currency. */
+  currencyCode?: string;
   monthlyAmount?: number;
   monthlyLow?: number;
   monthlyHigh?: number;
@@ -123,6 +128,10 @@ export interface DataProtectionRetailMeterEvidence {
   retailPrice?: number;
   currencyCode?: string;
   armRegionName?: string;
+  regionName?: string;
+  skuId?: string;
+  rateId?: string;
+  effectiveDate?: string;
 }
 
 export interface DataProtectionBackupCost {
@@ -147,6 +156,8 @@ export interface DataProtectionVaultCostSummary {
 }
 
 export interface DataProtectionCostSummary {
+  /** Currency of the unprotected-resource estimate total; legacy producers use currencyCode. */
+  estimatedCurrencyCode?: string;
   currencyCode?: string;
   currencySymbol?: string;
   billingWindow?: {

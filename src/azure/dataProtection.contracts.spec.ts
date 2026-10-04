@@ -1,4 +1,4 @@
-import type { DataProtectionBackupCostDiagnostics, DataProtectionPostureProjection } from './dataProtection';
+import type { DataProtectionBackupCostDiagnostics, DataProtectionBackupCostEstimate, DataProtectionPostureProjection } from './dataProtection';
 import {
   DATA_PROTECTION_BACKUP_COST_DIAGNOSTICS_FILE,
   DATA_PROTECTION_BILLING_SOURCE_FILE,
@@ -283,3 +283,25 @@ void invalidDataProtectionSchemaVersion;
 void invalidDataProtectionFinding;
 void invalidDataProtectionCostConfidence;
 void invalidDataProtectionBillingSource;
+
+const awsBackupEstimate: DataProtectionBackupCostEstimate = {
+  currencyCode: 'USD',
+  monthlyAmount: 9.5,
+  confidence: 'estimated',
+  estimateStatus: 'available',
+  pricingSource: 'retail',
+  workloadPricingModel: 'relationalDatabase',
+  assumptions: [{ key: 'protectedDataSizeGb', value: 100, source: 'resourceInventory' }],
+  retailMeters: [{
+    serviceName: 'AmazonRDS', regionName: 'ap-southeast-2', skuId: 'backup-sku',
+    rateId: 'backup-rate', effectiveDate: '2026-10-01T00:00:00Z',
+    unitPrice: 0.095, unitOfMeasure: 'GB-Mo', currencyCode: 'USD',
+  }],
+};
+const awsCostSummary: DataProtectionPostureProjection['costSummary'] = {
+  currencyCode: 'NZD', estimatedCurrencyCode: 'USD',
+  totals: { actualCostLast30Days: 10, estimatedMonthlyCostForUnprotected: 9.5 },
+  vaults: [], estimationAssumptions: [],
+};
+void awsBackupEstimate;
+void awsCostSummary;

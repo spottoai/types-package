@@ -10,9 +10,16 @@ export type PublicIpAddressesJsonValue =
 
 export type PublicIpAddressesUseClassification = 'assigned' | 'unassigned' | 'unresolved';
 
-export type PublicIpAddressesExposureKind = 'rdp' | 'ssh' | 'https';
+export type PublicIpAddressesExposureKind = 'rdp' | 'ssh' | 'https' | 'database';
 
-export type PublicIpAddressesExposureEvidenceSource = 'nsg_rule' | 'lb_rule' | 'appgw_listener' | 'direct_rule' | 'derived';
+export type PublicIpAddressesExposureEvidenceSource =
+  | 'nsg_rule'
+  | 'security_group_rule'
+  | 'lb_rule'
+  | 'lb_listener'
+  | 'appgw_listener'
+  | 'direct_rule'
+  | 'derived';
 
 export type PublicIpAddressesExposureConfidence = 'high' | 'medium' | 'low';
 
@@ -41,8 +48,11 @@ export type PublicIpAddressesRemediationOptionKind =
   | 'azure_virtual_desktop'
   | 'cloudflare_tunnel'
   | 'restrict_nsg_allowlist'
+  | 'restrict_ingress_allowlist'
+  | 'private_session_access'
   | 'remove_public_ip'
   | 'front_with_app_gateway_waf'
+  | 'front_with_waf'
   | 'document_exception';
 
 export type PublicIpAddressesRemediationSuitability = 'recommended' | 'suitable' | 'conditional' | 'not_recommended';
@@ -65,6 +75,7 @@ export type PublicIpAddressesAssociatedService =
   | 'load_balancer'
   | 'network_interface'
   | 'nat_gateway'
+  | 'database'
   | 'unknown_network_consumer'
   | 'unknown'
   | 'unassigned';
@@ -83,7 +94,8 @@ export type PublicIpAddressesConcern =
   | 'orphaned_graph_reference'
   | 'rdp_exposed'
   | 'ssh_exposed'
-  | 'https_exposed';
+  | 'https_exposed'
+  | 'database_exposed';
 
 export interface PublicIpAddressesSubscriptionProperties {
   secureScore?: number;
@@ -111,6 +123,8 @@ export interface PublicIpAddressesSummary {
   exposedRdp: number;
   exposedSsh: number;
   exposedHttps: number;
+  /** Endpoint count with database exposure evidence; older producers may omit it. */
+  exposedDatabase?: number;
   byService: Record<string, number>;
   byConcern: Record<string, number>;
   byLocation: Record<string, number>;
@@ -171,6 +185,20 @@ export interface PublicIpAddressesExposureScope {
   resourceType?: string;
 }
 
+/** Native security-group evidence. Azure NSG rule evidence retains its nsgRule shape. */
+export interface PublicIpAddressesSecurityGroupRuleMetadata {
+  id?: string;
+  name?: string;
+  groupId?: string;
+  groupName?: string;
+  direction?: PublicIpAddressesRuleDirection;
+  access?: PublicIpAddressesRuleAccess;
+  sourceAddressPrefixes?: string[];
+  destinationPortRanges?: string[];
+  protocol?: PublicIpAddressesExposureProtocol;
+  description?: string;
+}
+
 export interface PublicIpAddressesExposure {
   kind: PublicIpAddressesExposureKind;
   evidenceSource: PublicIpAddressesExposureEvidenceSource;
@@ -181,6 +209,7 @@ export interface PublicIpAddressesExposure {
   destinationPortRanges?: PublicIpAddressesPortRange[];
   protocol?: PublicIpAddressesExposureProtocol;
   nsgRule?: PublicIpAddressesNsgRuleMetadata;
+  securityGroupRule?: PublicIpAddressesSecurityGroupRuleMetadata;
   scope?: PublicIpAddressesExposureScope;
   effectiveReachability?: PublicIpAddressesEffectiveReachability;
   reason?: string;
@@ -247,4 +276,28 @@ export interface PublicIpAddressesReport {
   timestamp: string;
   summary: PublicIpAddressesSummary;
   items: PublicIpAddressesItem[];
+  /** Collection evidence. Omission means completeness is unknown, not complete. */
+  coverage?: PublicIpAddressesCoverage;
+}
+
+export interface PublicIpAddressesCoverageSource {
+  family: string;
+  location: string;
+  status: 'complete' | 'partial' | 'missing';
+  reason?: string;
+}
+
+export interface PublicIpAddressesCoverageIssue {
+  code: string;
+  message: string;
+  resourceId?: string;
+  family?: string;
+  location?: string;
+}
+
+/** Complete collection does not prove effective network reachability. */
+export interface PublicIpAddressesCoverage {
+  status: 'complete' | 'partial' | 'unavailable';
+  sources: PublicIpAddressesCoverageSource[];
+  issues: PublicIpAddressesCoverageIssue[];
 }
