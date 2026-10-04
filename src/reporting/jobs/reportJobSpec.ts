@@ -218,6 +218,33 @@ const parseSdmConfiguration = (value: unknown, errors: string[]): SdmBackgroundC
   };
 };
 
+/** Scope/period boundaries shared by public projections; no fabricated report configuration is needed. */
+export const isReportJobScopeV1 = (value: unknown): value is ReportJobScopeV1 => {
+  try {
+    if (
+      !isPlainRecord(value) ||
+      !Array.isArray(value.cloudAccountIds) ||
+      value.cloudAccountIds.length > REPORT_JOB_MAX_CLOUD_ACCOUNTS ||
+      !Array.isArray(value.subscriptionIds) ||
+      value.subscriptionIds.length > REPORT_JOB_MAX_SUBSCRIPTIONS
+    )
+      return false;
+    const errors: string[] = [];
+    return parseScope(value, errors) !== undefined && errors.length === 0;
+  } catch {
+    return false;
+  }
+};
+
+export const isReportJobPeriodV1 = (value: unknown): value is ReportJobPeriodV1 => {
+  try {
+    const errors: string[] = [];
+    return parsePeriod(value, errors) !== undefined && errors.length === 0;
+  } catch {
+    return false;
+  }
+};
+
 const parseCurrentStateConfiguration = (value: unknown, errors: string[]): CurrentStateBackgroundConfigV1 | undefined => {
   if (!isPlainRecord(value) || !hasExactlyKeys(value, ['audience', 'sections', 'scopeCurrencyCode'], ['preparedBy'])) {
     errors.push('configuration: Current State needs audience, sections, scopeCurrencyCode and optionally preparedBy');

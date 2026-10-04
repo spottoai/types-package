@@ -1,4 +1,10 @@
 import type {
+  ReportGenerationScheduleCommand,
+  ReportGenerationScheduleProjection,
+  ReportGenerationScheduleWriteRequest,
+  ScheduledReportGenerationV1,
+} from './reportGenerationContracts';
+import type {
   ResourceSchedulePreviewRequest,
   ResourceSchedulePreviewResponse,
   ResourceSchedulePermissionManifestConsent,
@@ -12,7 +18,8 @@ import type {
 } from './resourceStrategyContracts';
 
 export type RecommendationActionScheduleTrigger =
-  { triggerType: 'once'; localDateTime: string } | { triggerType: 'recurring'; cronExpression: string };
+  | { triggerType: 'once'; localDateTime: string }
+  | { triggerType: 'recurring'; cronExpression: string };
 
 export type RecommendationActionScheduleTarget =
   | { selectorType: 'single-resource'; resourceId: string }
@@ -53,17 +60,25 @@ export interface RecommendationActionScheduleProjection {
   updatedBy: string;
 }
 
-export type ScheduleWriteRequest = ResourceStrategyWeeklyScheduleWriteRequest | RecommendationActionScheduleWriteRequest;
-export interface ScheduleMutationRequest {
-  definition: ScheduleWriteRequest;
-  permissionConsent?: ResourceSchedulePermissionManifestConsent;
-}
-export type ScheduleProjection = ResourceStrategyWeeklyScheduleProjection | RecommendationActionScheduleProjection;
+export type ScheduleWriteRequest =
+  | ResourceStrategyWeeklyScheduleWriteRequest
+  | RecommendationActionScheduleWriteRequest
+  | ReportGenerationScheduleWriteRequest;
+export type ScheduleMutationRequest =
+  | {
+      definition: ResourceStrategyWeeklyScheduleWriteRequest | RecommendationActionScheduleWriteRequest;
+      permissionConsent?: ResourceSchedulePermissionManifestConsent;
+    }
+  | { definition: ReportGenerationScheduleWriteRequest; permissionConsent?: never };
+export type ScheduleProjection =
+  | ResourceStrategyWeeklyScheduleProjection
+  | RecommendationActionScheduleProjection
+  | ReportGenerationScheduleProjection;
 export type ScheduleDetailResponse = ScheduleProjection;
 
 export type RecommendationActionScheduleCommand = { command: 'pause'; idempotencyKey: string } | { command: 'resume'; idempotencyKey: string };
 
-export type ScheduleCommand = ResourceStrategyScheduleCommand | RecommendationActionScheduleCommand;
+export type ScheduleCommand = ResourceStrategyScheduleCommand | RecommendationActionScheduleCommand | ReportGenerationScheduleCommand;
 
 export interface ScheduleListResponse {
   results: ScheduleProjection[];
@@ -89,7 +104,7 @@ export interface ScheduledRecommendationActionV1 {
   correlationId: string;
 }
 
-export type ScheduledOccurrenceV1 = ScheduledResourceTransitionV1 | ScheduledRecommendationActionV1;
+export type ScheduledOccurrenceV1 = ScheduledResourceTransitionV1 | ScheduledRecommendationActionV1 | ScheduledReportGenerationV1;
 
 export type SchedulerControlOperationType =
   | 'create-schedule'
@@ -104,20 +119,16 @@ export type SchedulerControlCommandV1 =
   | {
       commandType: 'refresh-capabilities';
     }
-  | {
+  | (ScheduleMutationRequest & {
       commandType: 'create-schedule';
-      definition: ScheduleWriteRequest;
-      permissionConsent?: ResourceSchedulePermissionManifestConsent;
       idempotencyKey: string;
-    }
-  | {
+    })
+  | (ScheduleMutationRequest & {
       commandType: 'update-schedule';
       scheduleId: string;
-      definition: ScheduleWriteRequest;
-      permissionConsent?: ResourceSchedulePermissionManifestConsent;
       expectedEtag: string;
       idempotencyKey: string;
-    }
+    })
   | {
       commandType: 'delete-schedule';
       scheduleId: string;

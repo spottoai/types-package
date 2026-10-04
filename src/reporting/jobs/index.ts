@@ -7,6 +7,9 @@ export * from './reportJobIdentity';
 export * from './reportJobMessages';
 export * from './reportJobStatus';
 export * from './reportJobRow';
+export * from './reportJobNotifications';
+export * from './reportJobApi';
+export * from './reportJobLifecycle';
 export { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
 export {
   isIanaTimeZone,

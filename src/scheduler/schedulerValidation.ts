@@ -1,5 +1,10 @@
 import { RESOURCE_STRATEGY_CONTRACT_LIMITS } from './resourceStrategyContracts';
 import {
+  isReportGenerationScheduleWriteRequest,
+  isReportGenerationScheduleProjection,
+  isScheduledReportGenerationV1,
+} from './reportGenerationValidation';
+import {
   isResourceStrategyScheduleCommand,
   isResourceStrategyWeeklyScheduleProjection,
   isResourceStrategyWeeklyScheduleWriteRequest,
@@ -116,7 +121,11 @@ export function isRecommendationActionScheduleWriteRequest(value: unknown): valu
 }
 
 export function isScheduleWriteRequest(value: unknown): value is ScheduleWriteRequest {
-  return isResourceStrategyWeeklyScheduleWriteRequest(value) || isRecommendationActionScheduleWriteRequest(value);
+  return (
+    isResourceStrategyWeeklyScheduleWriteRequest(value) ||
+    isRecommendationActionScheduleWriteRequest(value) ||
+    isReportGenerationScheduleWriteRequest(value)
+  );
 }
 
 export function isScheduleMutationRequest(value: unknown): value is ScheduleMutationRequest {
@@ -124,7 +133,8 @@ export function isScheduleMutationRequest(value: unknown): value is ScheduleMuta
     isRecord(value) &&
     hasOnlyKeys(value, ['definition', 'permissionConsent']) &&
     isScheduleWriteRequest(value.definition) &&
-    (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent))
+    (value.permissionConsent === undefined ||
+      (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent)))
   );
 }
 
@@ -182,7 +192,11 @@ export function isRecommendationActionScheduleProjection(value: unknown): value 
 }
 
 export function isScheduleProjection(value: unknown): value is ScheduleProjection {
-  return isResourceStrategyWeeklyScheduleProjection(value) || isRecommendationActionScheduleProjection(value);
+  return (
+    isResourceStrategyWeeklyScheduleProjection(value) ||
+    isRecommendationActionScheduleProjection(value) ||
+    isReportGenerationScheduleProjection(value)
+  );
 }
 
 export function isScheduleListResponse(value: unknown): value is ScheduleListResponse {
@@ -244,7 +258,7 @@ export function isScheduledRecommendationActionV1(value: unknown): value is Sche
 }
 
 export function isScheduledOccurrenceV1(value: unknown): value is ScheduledOccurrenceV1 {
-  return isScheduledResourceTransitionV1(value) || isScheduledRecommendationActionV1(value);
+  return isScheduledResourceTransitionV1(value) || isScheduledRecommendationActionV1(value) || isScheduledReportGenerationV1(value);
 }
 
 const schedulerOperationTypes = new Set<SchedulerControlOperationType>([
@@ -272,7 +286,8 @@ function isSchedulerControlCommandV1(value: unknown): value is SchedulerControlC
       return (
         hasOnlyKeys(value, ['commandType', 'definition', 'permissionConsent', 'idempotencyKey']) &&
         isScheduleWriteRequest(value.definition) &&
-        (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
+        (value.permissionConsent === undefined ||
+          (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent))) &&
         isBoundedString(value.idempotencyKey, 200)
       );
     case 'update-schedule':
@@ -280,7 +295,8 @@ function isSchedulerControlCommandV1(value: unknown): value is SchedulerControlC
         hasOnlyKeys(value, ['commandType', 'scheduleId', 'definition', 'permissionConsent', 'expectedEtag', 'idempotencyKey']) &&
         isBoundedString(value.scheduleId, 500) &&
         isScheduleWriteRequest(value.definition) &&
-        (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
+        (value.permissionConsent === undefined ||
+          (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent))) &&
         isBoundedString(value.expectedEtag, 2000) &&
         isBoundedString(value.idempotencyKey, 200)
       );

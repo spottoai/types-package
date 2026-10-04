@@ -118,6 +118,16 @@ runs the identity vectors in `fixtures/reporting-job-identity-vectors.json` and
 the parser and row checks against the CommonJS and ESM builds. See
 `specs/reporting/reporting-scheduler-types.md`.
 
+The same subpath includes API create/list/projection contracts, canonical
+admission fingerprints, guarded lifecycle updates and notification pointers
+with safe destination aggregates. `validateReportJobUpdateV1` returns a full
+replacement row and ETag; the runtime repository must perform the conditional
+write. Fingerprints do not enforce atomic admission or authorization.
+`npm run check:reporting-scheduler-contracts` verifies these boundaries in CJS
+and ESM. The `/scheduler` and root exports include `report-generation` write,
+projection and occurrence union members. Runtime scheduling, delivery and
+storage remain in their owning repos and are enabled by their phase plans.
+
 The root entry point exports the provider-neutral artifact-evidence vocabulary,
 revision comparison, immutable billing analyzer V2 documents, and enforced
 Azure view-generation contracts. An absent `ownershipEpochRevision` is valid

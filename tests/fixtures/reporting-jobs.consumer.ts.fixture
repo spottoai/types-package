@@ -10,7 +10,16 @@ import {
   type ReportJobRowV1,
   type ReportJobSpecV1,
   type ReportJobStatus,
+  buildReportJobAdmissionFingerprintV1,
+  buildReportJobProjectionV1,
+  buildReportJobCreateResponseV1,
+  createReportJobNotificationRequestedV1,
+  buildReportJobNotificationBrokerProperties,
+  validateReportJobUpdateV1,
+  type ReportJobCreateRequestV1,
+  type ReportJobProjectionV1,
 } from '@spottoai/types-package/reporting-jobs';
+import { isScheduleWriteRequest, isScheduledOccurrenceV1, type ReportGenerationScheduleWriteRequest, type ScheduleMutationRequest, type ScheduledOccurrenceV1 } from '@spottoai/types-package/scheduler';
 
 const spec: ReportJobSpecV1 = {
   schemaVersion: 1,
@@ -35,4 +44,31 @@ export const consume = async (): Promise<[ReportJobRowV1, ReportJobRequestedV1, 
   const invalidCode: ReportJobFailureCode = 'oops';
   void invalidCode;
   return [row, message, buildReportJobMessageId(row.companyId, row.jobId), isReportJobRequestedV1(message), parsed.row.status];
+};
+
+const reportDefinition: ReportGenerationScheduleWriteRequest = {
+  definitionType: 'report-generation', name: 'Monthly report', timezone: 'Pacific/Auckland',
+  timing: { triggerType: 'recurring', cadence: 'monthly', dayOfMonth: 'last', localTime: '09:00' },
+  report: { ...spec, period: { kind: 'previous-calendar-quarter' } }, initialMode: 'active',
+};
+const mutation: ScheduleMutationRequest = { definition: reportDefinition };
+// @ts-expect-error report schedules do not accept resource permission consent
+const invalidMutation: ScheduleMutationRequest = { definition: reportDefinition, permissionConsent: { version: 'v1', contentHash: 'digest', orderedGrantGroupHashes: ['grant-1'] } };
+// @ts-expect-error scheduled SDM periods cannot use explicit dates
+const invalidPeriod: ReportGenerationScheduleWriteRequest['report'] = { ...spec, period: { kind: 'explicit', startDate: '2026-01-01', endDate: '2026-01-31' } };
+void invalidMutation;
+void invalidPeriod;
+
+export const consumePartB = async (row: ReportJobRowV1): Promise<ReportJobProjectionV1> => {
+  const request: ReportJobCreateRequestV1 = { schemaVersion: 1, report: spec };
+  await buildReportJobAdmissionFingerprintV1(request);
+  await buildReportJobCreateResponseV1(row);
+  const message = createReportJobNotificationRequestedV1({ companyId: row.companyId, jobId: row.jobId, artifactContentSha256: 'a'.repeat(64) });
+  await buildReportJobNotificationBrokerProperties(message);
+  await validateReportJobUpdateV1(row, row, { writer: 'worker', workerId: 'worker-1', expectedEtag: 'v1', actualEtag: 'v1', nowUtc: '2026-10-04T00:00:00.000Z' });
+  const occurrence: ScheduledOccurrenceV1 = { schemaVersion: 1, definitionType: 'report-generation', companyId: row.companyId,
+    scheduleId: 'sched-1', definitionRevision: 1, controlGeneration: 1, occurrenceKey: 'occ-1', scheduleRunId: 'run-1', dueAtUtc: '2026-10-04T00:00:00.000Z',
+    report: reportDefinition.report, correlationId: 'corr-1' };
+  if (!isScheduleWriteRequest(mutation.definition) || !isScheduledOccurrenceV1(occurrence)) throw new Error('Invalid report schedule');
+  return buildReportJobProjectionV1(row);
 };

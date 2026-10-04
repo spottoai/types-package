@@ -58,11 +58,12 @@ export const isReportJobFailureStage = (value: unknown): value is ReportJobFailu
   typeof value === 'string' && (REPORT_JOB_FAILURE_STAGES as readonly string[]).includes(value);
 
 /**
- * Each failure code and the stage it belongs to. `retries-exhausted` has no fixed stage: the writer records the
- * stage the last attempt was in.
+ * Each failure code and its stage. Exhausted retries/recovery take the explicit stage from the writer.
  */
 export const REPORT_JOB_FAILURE_STAGE_BY_CODE = {
   'request-invalid': 'request',
+  'publication-rejected': 'request',
+  'recovery-exhausted': null,
   'request-hash-mismatch': 'request',
   'message-row-mismatch': 'request',
   'region-mismatch': 'request',
@@ -98,7 +99,7 @@ export const isReportJobFailureCode = (value: unknown): value is ReportJobFailur
   typeof value === 'string' && Object.prototype.hasOwnProperty.call(REPORT_JOB_FAILURE_STAGE_BY_CODE, value);
 
 /**
- * The stage to record for a failure code. `retries-exhausted` requires the caller's current stage.
+ * The stage to record. `retries-exhausted` and `recovery-exhausted` require the caller's current stage.
  */
 export const resolveReportJobFailureStage = (code: ReportJobFailureCode, currentStage?: ReportJobFailureStage): ReportJobFailureStage => {
   const stage = REPORT_JOB_FAILURE_STAGE_BY_CODE[code];

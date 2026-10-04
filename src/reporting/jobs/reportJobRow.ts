@@ -1,8 +1,8 @@
 /**
  * The `reportjobs` row (core/specs/reporting/reporting-scheduler.md, "Report job table").
  *
- * PartitionKey = companyId, RowKey = jobId. Three writers own disjoint field groups and merge with ETag
- * compare-and-swap: the producer (insert only), reportworker and, from phase 6, cloud-engine's notifier.
+ * PartitionKey = companyId, RowKey = jobId. Default owners have disjoint field groups. Updates additionally
+ * obey `validateReportJobUpdateV1` lifecycle fences and require runtime ETag compare-and-swap.
  * The row carries no region (each region has its own table, queue and worker) and no time zone (reportworker uses
  * the company's `preferredTimezone`, else UTC). The row never holds e-mail addresses, document content, source data, Blob paths or credentials.
  */
@@ -19,6 +19,7 @@ import {
 } from '../shared/reportingIds';
 import { normalizeReportTableEntity } from '../shared/reportTableEntities';
 import { buildReportJobScopeHash, deriveReportJobIdentity, parseReportJobId } from './reportJobIdentity';
+import { parseReportJobNotificationDestinationCountsV1 } from './reportJobNotifications';
 import {
   parseReportJobRequestJson,
   REPORT_JOB_SPEC_MAX_BYTES,
@@ -94,6 +95,10 @@ export interface ReportJobWorkerFieldsV1 {
 /** Merged by cloud-engine's notifier (phase 6). The producer inserts `notificationStatus: 'none'`. */
 export interface ReportJobNotificationFieldsV1 {
   notificationStatus: ReportJobNotificationStatus;
+  notificationAttemptCount?: number;
+  /** JSON safe channel aggregates only, never recipient addresses. */
+  notificationDestinationCounts?: string;
+  notificationCompletedAtUtc?: string;
 }
 
 export type ReportJobRowV1 = ReportJobProducerFieldsV1 & ReportJobWorkerFieldsV1 & ReportJobNotificationFieldsV1;
@@ -137,7 +142,12 @@ export const REPORT_JOB_WORKER_FIELDS = [
   'lastTransientErrorCode',
 ] as const satisfies readonly (keyof ReportJobWorkerFieldsV1)[];
 
-export const REPORT_JOB_NOTIFICATION_FIELDS = ['notificationStatus'] as const satisfies readonly (keyof ReportJobNotificationFieldsV1)[];
+export const REPORT_JOB_NOTIFICATION_FIELDS = [
+  'notificationStatus',
+  'notificationAttemptCount',
+  'notificationDestinationCounts',
+  'notificationCompletedAtUtc',
+] as const satisfies readonly (keyof ReportJobNotificationFieldsV1)[];
 
 const REQUIRED_FIELDS = [
   'PartitionKey',
@@ -178,7 +188,7 @@ const isCoverageSummary = (value: unknown): boolean => {
   if (typeof value !== 'string' || utf8ByteLength(value) > REPORT_JOB_COVERAGE_SUMMARY_MAX_BYTES) return false;
   try {
     const parsed: unknown = JSON.parse(value);
-    return typeof parsed === 'object' && parsed !== null;
+    return isPlainRecord(parsed);
   } catch {
     return false;
   }
@@ -229,6 +239,26 @@ const validateShape = (row: Record<string, unknown>, errors: string[]): void => 
   check('status', isReportJobStatus(row.status));
   check('attemptCount', isCount(row.attemptCount));
   check('notificationStatus', isReportJobNotificationStatus(row.notificationStatus));
+  check('notificationAttemptCount', isOptional(row.notificationAttemptCount, isCount));
+  check(
+    'notificationDestinationCounts',
+    isOptional(row.notificationDestinationCounts, value => parseReportJobNotificationDestinationCountsV1(value) !== null)
+  );
+  check('notificationCompletedAtUtc', isOptional(row.notificationCompletedAtUtc, isIsoUtcTimestamp));
+  if (row.notificationStatus === 'none') {
+    check('notificationAttemptCount', row.notificationAttemptCount === undefined);
+    check('notificationDestinationCounts', row.notificationDestinationCounts === undefined);
+    check('notificationCompletedAtUtc', row.notificationCompletedAtUtc === undefined);
+  } else if (isReportJobNotificationStatus(row.notificationStatus)) {
+    check('notificationPolicyId', isReportEntityId(row.notificationPolicyId));
+    check('notificationStatus', row.status === 'generated' || row.status === 'completed' || row.status === 'completed-with-notification-errors');
+    if (row.notificationStatus === 'pending') {
+      check('notificationStatus', row.status === 'generated');
+      check('notificationCompletedAtUtc', row.notificationCompletedAtUtc === undefined);
+    } else {
+      check('notificationStatus', row.status === (row.notificationStatus === 'delivered' ? 'completed' : 'completed-with-notification-errors'));
+    }
+  }
   for (const field of ['leaseExpiresAtUtc', 'startedAtUtc', 'lastAttemptAtUtc', 'sourceObservedAtUtc', 'generatedAtUtc', 'completedAtUtc'] as const) {
     check(field, isOptional(row[field], isIsoUtcTimestamp));
   }
@@ -293,6 +323,8 @@ export const parseReportJobRowV1 = async (entity: unknown): Promise<ReportJobRow
     }
     const spec = parseReportJobRequestJson(row.requestJson);
     if (!spec.ok) return { ok: false, code: 'request-invalid', errors: spec.errors };
+    if (row.trigger === 'schedule' && spec.value.reportType === 'sdm' && spec.value.period.kind === 'explicit')
+      return { ok: false, code: 'request-invalid', errors: ['period: schedule jobs require a period rule'] };
     if (spec.value.reportType !== row.reportType) return { ok: false, code: 'request-invalid', errors: ['reportType: does not match the request'] };
     const scopeHash = await buildReportJobScopeHash({
       subscriptionIds: spec.value.scope.subscriptionIds,
