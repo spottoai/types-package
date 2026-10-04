@@ -165,3 +165,58 @@ void [
   invalidNativeRule,
   invalidCoverage,
 ];
+
+const kafkaExposure: PublicIpAddressesExposure = {
+  kind: 'kafka',
+  evidenceSource: 'security_group_rule',
+  evidence: 'Public bootstrap broker with TCP/9194 ingress.',
+  confidence: 'medium',
+  sourceKind: 'restricted_public',
+  sourcePrefixes: ['203.0.113.10/32'],
+  destinationPortRanges: [{ value: '9194', from: 9194, to: 9194 }],
+  protocol: 'tcp',
+  effectiveReachability: 'possible',
+  securityGroupRule: { ...nativeRule, destinationPortRanges: ['9194'] },
+};
+const otherExposure: PublicIpAddressesExposure = {
+  kind: 'other',
+  evidenceSource: 'lb_listener',
+  evidence: 'Captured UDP listener on port 7777; route evidence is unknown.',
+  confidence: 'medium',
+  sourceKind: 'unknown',
+  destinationPortRanges: [{ value: '7777', from: 7777, to: 7777 }],
+  protocol: 'udp',
+  effectiveReachability: 'unknown',
+};
+const brokerReport: PublicIpAddressesReport = {
+  ...awsReport,
+  summary: { ...awsReport.summary, exposedKafka: 1, exposedOther: 1 },
+  items: [{ ...awsReport.items[0], associatedService: 'message_broker', exposures: [kafkaExposure, otherExposure], concerns: ['kafka_exposed', 'other_exposed'] }],
+};
+const omittedNewCounts: Pick<PublicIpAddressesReport['summary'], 'exposedKafka' | 'exposedOther'> = {};
+const invalidExposureKind: PublicIpAddressesExposure = {
+  ...kafkaExposure,
+  // @ts-expect-error product names are not shared exposure classifications.
+  kind: 'mqtt',
+};
+const invalidPort: PublicIpAddressesExposure = {
+  ...otherExposure,
+  // @ts-expect-error native listener ports remain numeric in the shared report.
+  destinationPortRanges: [{ value: '7777', from: '7777', to: 7777 }],
+};
+const invalidReachability: PublicIpAddressesExposure = {
+  ...kafkaExposure,
+  // @ts-expect-error captured source evidence does not admit a confirmed value.
+  effectiveReachability: 'confirmed',
+};
+// @ts-expect-error use the provider-neutral message_broker classification.
+const invalidBrokerService: PublicIpAddressesReport['items'][number]['associatedService'] = 'msk';
+const invalidConcern: PublicIpAddressesReport['items'][number]['concerns'] = [
+  // @ts-expect-error provider product names are not concern classifications.
+  'msk_exposed',
+];
+const invalidCount: typeof omittedNewCounts = {
+  // @ts-expect-error exposure counts are numbers.
+  exposedOther: '1',
+};
+void [brokerReport, omittedNewCounts, invalidExposureKind, invalidPort, invalidReachability, invalidBrokerService, invalidConcern, invalidCount];

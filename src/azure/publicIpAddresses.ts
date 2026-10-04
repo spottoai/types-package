@@ -10,7 +10,7 @@ export type PublicIpAddressesJsonValue =
 
 export type PublicIpAddressesUseClassification = 'assigned' | 'unassigned' | 'unresolved';
 
-export type PublicIpAddressesExposureKind = 'rdp' | 'ssh' | 'https' | 'database';
+export type PublicIpAddressesExposureKind = 'rdp' | 'ssh' | 'https' | 'database' | 'kafka' | 'other';
 
 export type PublicIpAddressesExposureEvidenceSource =
   | 'nsg_rule'
@@ -76,6 +76,7 @@ export type PublicIpAddressesAssociatedService =
   | 'network_interface'
   | 'nat_gateway'
   | 'database'
+  | 'message_broker'
   | 'unknown_network_consumer'
   | 'unknown'
   | 'unassigned';
@@ -95,7 +96,9 @@ export type PublicIpAddressesConcern =
   | 'rdp_exposed'
   | 'ssh_exposed'
   | 'https_exposed'
-  | 'database_exposed';
+  | 'database_exposed'
+  | 'kafka_exposed'
+  | 'other_exposed';
 
 export interface PublicIpAddressesSubscriptionProperties {
   secureScore?: number;
@@ -125,6 +128,10 @@ export interface PublicIpAddressesSummary {
   exposedHttps: number;
   /** Endpoint count with database exposure evidence; older producers may omit it. */
   exposedDatabase?: number;
+  /** Endpoint count with Kafka exposure evidence; older producers may omit it. */
+  exposedKafka?: number;
+  /** Endpoint count with exposure evidence outside the named service categories. */
+  exposedOther?: number;
   byService: Record<string, number>;
   byConcern: Record<string, number>;
   byLocation: Record<string, number>;

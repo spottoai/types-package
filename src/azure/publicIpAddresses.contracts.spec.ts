@@ -449,3 +449,72 @@ void awsListenerExposure;
 void awsPrivateSessionOption;
 void invalidCoverage;
 void invalidSecurityGroupRule;
+
+// Public Kafka and nonstandard TCP/UDP services retain native ports and source uncertainty.
+const kafkaExposure: PublicIpAddressesReport['items'][number]['exposures'][number] = {
+  kind: 'kafka',
+  evidenceSource: 'security_group_rule',
+  evidence: 'Captured MSK public bootstrap broker and TCP/9194 ingress.',
+  confidence: 'medium',
+  sourceKind: 'restricted_public',
+  sourcePrefixes: ['203.0.113.10/32'],
+  destinationPortRanges: [{ value: '9194', from: 9194, to: 9194 }],
+  protocol: 'tcp',
+  effectiveReachability: 'possible',
+};
+const otherExposure: typeof kafkaExposure = {
+  kind: 'other',
+  evidenceSource: 'lb_listener',
+  evidence: 'Captured nonstandard UDP listener on port 7777; routing was not evaluated.',
+  confidence: 'medium',
+  sourceKind: 'unknown',
+  destinationPortRanges: [{ value: '7777', from: 7777, to: 7777 }],
+  protocol: 'udp',
+  effectiveReachability: 'unknown',
+};
+const messageBrokerReport: PublicIpAddressesReport = {
+  ...awsPublicIpAddressesReport,
+  summary: { ...awsPublicIpAddressesReport.summary, exposedKafka: 1, exposedOther: 1 },
+  items: [
+    {
+      ...awsPublicIpAddressesReport.items[0],
+      id: 'arn:aws:kafka:ap-southeast-2:123456789012:cluster/production/01234567-abcd-4321-abcd-0123456789ab-1',
+      associatedService: 'message_broker',
+      exposures: [kafkaExposure, otherExposure],
+      concerns: ['kafka_exposed', 'other_exposed'],
+    },
+  ],
+};
+const legacySummaryCounts: Pick<PublicIpAddressesReport['summary'], 'exposedKafka' | 'exposedOther'> = {};
+const invalidKafkaExposure: typeof kafkaExposure = {
+  ...kafkaExposure,
+  // @ts-expect-error native service names do not replace the shared exposure vocabulary.
+  kind: 'mqtt',
+};
+const invalidKafkaPort: typeof kafkaExposure = {
+  ...kafkaExposure,
+  // @ts-expect-error destination port bounds use numbers, not provider strings.
+  destinationPortRanges: [{ value: '9194', from: '9194', to: 9194 }],
+};
+const invalidKafkaReachability: typeof kafkaExposure = {
+  ...kafkaExposure,
+  // @ts-expect-error source evidence does not introduce a confirmed reachability value.
+  effectiveReachability: 'confirmed',
+};
+const invalidMessageBrokerConcern: PublicIpAddressesReport['items'][number]['concerns'] = [
+  // @ts-expect-error provider product names do not replace the shared concern vocabulary.
+  'msk_exposed',
+];
+const invalidKafkaCount: typeof legacySummaryCounts = {
+  // @ts-expect-error exposure endpoint counts use numeric summary fields.
+  exposedKafka: '1',
+};
+void [
+  messageBrokerReport,
+  legacySummaryCounts,
+  invalidKafkaExposure,
+  invalidKafkaPort,
+  invalidKafkaReachability,
+  invalidMessageBrokerConcern,
+  invalidKafkaCount,
+];
