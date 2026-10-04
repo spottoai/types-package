@@ -1,6 +1,7 @@
 import {
   PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1,
   PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION,
+  buildActivityLogAnalysisScopeKey,
   type ActivityLogAnalysisCount,
   type PortalActivityAnalysisCollection,
   type PortalActivityAnalysisFacets,
@@ -450,7 +451,8 @@ export const isPortalActivityAnalysisResponse = (value: unknown): value is Porta
     return false;
   if (
     !isRanked(value.activitySeries.items, item => item.seriesId) ||
-    !isRanked(value.resources.items, item => item.scope.resourceId) ||
+    !isRanked(value.resources.items, item => buildActivityLogAnalysisScopeKey(item.scope)) ||
+    new Set(value.resources.items.map(item => buildActivityLogAnalysisScopeKey(item.scope))).size !== value.resources.items.length ||
     !isRanked(value.operationSummaries.items, item => item.groupId) ||
     !isRanked(value.securitySensitive.items, item => item.groupId) ||
     !isRanked(value.powerPatterns.items, item => item.patternId)

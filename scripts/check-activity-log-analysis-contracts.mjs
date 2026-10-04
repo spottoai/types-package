@@ -7,6 +7,7 @@ import {
   PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1,
   PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION,
   assertPortalActivityAnalysisResponse,
+  buildActivityLogAnalysisScopeKey,
   isPortalActivityAnalysisGroupId,
   isPortalActivityAnalysisResponse,
   isPortalActivityEvidenceId,
@@ -618,10 +619,54 @@ const awsAnalysis = factory => {
 
 const checkAwsContracts = validators => {
   const {
+    buildActivityLogAnalysisScopeKey: scopeKey,
     isPortalActivityLogClassification: classify,
     isPortalActivityAnalysisResponse: publicResponse,
     isConformedActivityAnalysisArtifact: conformed,
   } = validators;
+  const regionalResources = awsAnalysis(validResponse);
+  const resource = regionalResources.resources.items[0];
+  regionalResources.resources.items = ['ap-southeast-2', 'us-east-1'].map(region => ({
+    ...clone(resource),
+    scope: { ...awsScope(), region, provider: 'lambda', resourceType: 'AWS::Lambda::Function', resourceId: 'Orders' },
+  }));
+  regionalResources.resources.totalCount = 2;
+  regionalResources.resources.returnedCount = 2;
+  assert.equal(publicResponse(regionalResources), true, 'accepts tied same-name AWS resources in distinct Regions');
+  const [firstResource, secondResource] = regionalResources.resources.items;
+  assert.notEqual(scopeKey(firstResource.scope), scopeKey(secondResource.scope), 'AWS Region remains part of resource identity');
+  assert.equal(scopeKey(scope()), RESOURCE_ID, 'Azure legacy resource key remains unchanged');
+  assert.equal(scopeKey({ ...scope(), providerName: 'azure', providerScopeId: 'sub-a' }), RESOURCE_ID, 'explicit Azure retains legacy key');
+  assert.notEqual(scopeKey(firstResource.scope), scopeKey({ ...firstResource.scope, resourceId: 'orders' }), 'AWS resource case is preserved');
+  for (const identity of [
+    { providerScopeId: '999999999999', subscriptionId: '999999999999' },
+    { provider: 'other-service' },
+    { resourceType: 'AWS::Other::Resource' },
+  ])
+    assert.notEqual(scopeKey(firstResource.scope), scopeKey({ ...firstResource.scope, ...identity }), 'AWS account/service/type remain distinct');
+  assert.notEqual(
+    scopeKey({ ...firstResource.scope, provider: 'a|b', resourceType: 'c' }),
+    scopeKey({ ...firstResource.scope, provider: 'a', resourceType: 'b|c' }),
+    'scope key encoding cannot collide through field delimiters'
+  );
+  const duplicateResources = clone(regionalResources);
+  duplicateResources.resources.items[1].scope = clone(firstResource.scope);
+  assert.equal(publicResponse(duplicateResources), false, 'rejects duplicate exact AWS resource identities');
+  duplicateResources.resources.items[1].lastTimestamp = TIMESTAMP;
+  assert.equal(publicResponse(duplicateResources), false, 'rejects duplicate AWS resource identities even with different timestamps');
+  const reversedResources = clone(regionalResources);
+  reversedResources.resources.items.reverse();
+  assert.equal(publicResponse(reversedResources), false, 'rejects tied AWS resources outside scope-key ranking order');
+  const azureResources = validResponse();
+  azureResources.resources.items = ['vm-a', 'vm-b'].map(name => ({
+    ...clone(azureResources.resources.items[0]),
+    scope: { ...scope(), resourceId: RESOURCE_ID.replace('vm-a', name) },
+  }));
+  azureResources.resources.totalCount = 2;
+  azureResources.resources.returnedCount = 2;
+  assert.equal(publicResponse(azureResources), true, 'retains Azure legacy resource-ID ranking');
+  azureResources.resources.items.reverse();
+  assert.equal(publicResponse(azureResources), false, 'retains Azure legacy ranking rejection');
   const classification = awsClassification();
   const before = JSON.stringify(classification);
   assert.equal(classify(classification), true, 'accepts AWS resource classification and neutral platform vocabulary');
@@ -814,7 +859,12 @@ const checkAwsContracts = validators => {
   filtered.resourceId = AWS_RESOURCE.replace(AWS_ACCOUNT, '999999999999');
   assert.equal(publicResponse(filtered), false, 'rejects a foreign AWS ARN resource filter');
 };
-checkAwsContracts({ isPortalActivityLogClassification, isPortalActivityAnalysisResponse, isConformedActivityAnalysisArtifact });
+checkAwsContracts({
+  buildActivityLogAnalysisScopeKey,
+  isPortalActivityLogClassification,
+  isPortalActivityAnalysisResponse,
+  isConformedActivityAnalysisArtifact,
+});
 
 const esm = await import('../dist/esm/entries/root.js');
 checkAwsContracts(esm);

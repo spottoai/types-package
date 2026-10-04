@@ -1,5 +1,6 @@
 import {
   ACTIVITY_LOG_TAXONOMY_VERSION,
+  buildActivityLogAnalysisScopeKey,
   isPortalActivityLogAnalysisScope,
   isPortalActivityLogClassification,
   type ActivityLogExecutionOrigin,
@@ -30,10 +31,12 @@ const tag: ActivityLogTagId = 'actor.platform';
 const publicIdentity: Pick<PortalActivityAnalysisResponse, 'providerName' | 'providerScopeId' | 'subscriptionId'> = scope;
 const conformedIdentity: Pick<ConformedActivityAnalysisArtifact, 'providerName' | 'providerScopeId' | 'subscriptionId'> = scope;
 const validScope: boolean = isPortalActivityLogAnalysisScope(scope);
+const scopeKey: string = buildActivityLogAnalysisScopeKey(scope);
 const validClassification: boolean = isPortalActivityLogClassification(classification);
 void origin;
 void tag;
 void publicIdentity;
 void conformedIdentity;
 void validScope;
+void scopeKey;
 void validClassification;

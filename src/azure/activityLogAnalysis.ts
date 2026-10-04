@@ -97,6 +97,18 @@ export interface PortalActivityLogAnalysisScope extends ActivityLogProviderScope
   region?: string;
 }
 
+/** Stable identity and ranking key; retains legacy Azure resource-ID ordering. */
+export const buildActivityLogAnalysisScopeKey = (scope: PortalActivityLogAnalysisScope): string =>
+  scope.providerName === 'aws'
+    ? JSON.stringify([
+        scope.providerScopeId ?? scope.subscriptionId,
+        scope.region ?? '',
+        scope.provider ?? '',
+        scope.resourceType ?? '',
+        scope.resourceId ?? '',
+      ])
+    : (scope.resourceId ?? '');
+
 export interface PortalActivityLogTagAssignment {
   tagId: ActivityLogTagId;
   dimension: ActivityLogTagDimension;
