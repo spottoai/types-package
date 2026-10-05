@@ -411,6 +411,10 @@ export interface ResourceSpend {
   serviceName: string;
   /** Azure Cost Management publisher classification, for example Marketplace. */
   publisherType?: string;
+  /** Azure pricing model as supplied by billing evidence; absent when unavailable. */
+  pricingModel?: string;
+  /** Azure charge type as supplied by billing evidence; absent when unavailable. */
+  chargeType?: string;
   /** Publisher display name retained from billing evidence when supplied. */
   publisherName?: string;
   /** Product or offer name retained from billing evidence when supplied. */
