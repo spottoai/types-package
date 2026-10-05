@@ -19,6 +19,7 @@ const resourceStrategySchedulerFixturePath = join(packageRoot, 'tests', 'fixture
 const reportingJobsFixturePath = join(packageRoot, 'tests', 'fixtures', 'reporting-jobs.consumer.ts.fixture');
 const serviceRetirementFixturePath = join(packageRoot, 'tests', 'fixtures', 'service-retirement.consumer.ts.fixture');
 const publicIpAddressesFixturePath = join(packageRoot, 'tests', 'fixtures', 'public-ip-addresses.consumer.ts.fixture');
+const resourceHealthFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-health.consumer.ts.fixture');
 const artifactEvidenceCorpusPath = join(packageRoot, 'fixtures', 'artifact-evidence-contract-corpus.json');
 const artifactEvidenceCorpus = JSON.parse(await readFile(artifactEvidenceCorpusPath, 'utf8'));
 const legacyBillingMetadataLiteral = JSON.stringify(artifactEvidenceCorpus.fixtures.legacyBillingCostAnalysisMetadataV1, null, 2);
@@ -390,6 +391,7 @@ try {
   await copyFile(reportingJobsFixturePath, join(consumerRoot, 'reporting-jobs.consumer.ts'));
   await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
+  await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
   await copyFile(join(packageRoot, 'tests/fixtures/activity-analysis.consumer.ts.fixture'), join(consumerRoot, 'activity-analysis.consumer.ts'));
 
   run(
@@ -426,6 +428,7 @@ try {
       'reporting-jobs.consumer.ts',
       'service-retirement.consumer.ts',
       'public-ip-addresses.consumer.ts',
+      'resource-health.consumer.ts',
       'activity-analysis.consumer.ts',
     ],
     consumerRoot
@@ -443,8 +446,15 @@ try {
   // The narrow public governance contract must work in both module formats and legacy TS resolution.
   run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'cloud-governance.consumer.ts'], consumerRoot);
   run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'public-ip-addresses.consumer.ts'], consumerRoot);
+  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'resource-health.consumer.ts'], consumerRoot);
+  const healthExportChecks = "assert.equal(root.RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME, 'health-events.json'); assert.equal(root.RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME, 'health-availability-statuses.json'); assert.equal(root.AZURE_RESOURCE_HEALTH_EVENTS_SOURCE, 'Microsoft.ResourceHealth/events');";
+  run(process.execPath, ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${healthExportChecks}`], consumerRoot);
+  run(process.execPath, ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${healthExportChecks}`], consumerRoot);
   run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, PUBLIC_IP_ADDRESSES_PORTAL_FILE } from '@spottoai/types-package'; assert.equal(PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
   run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); assert.equal(root.PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(root.PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
+  const historyExportChecks = "assert.deepEqual(root.PORTAL_VIEW_HISTORY_CADENCES, ['daily', 'weekly', 'monthly']); assert.deepEqual(root.PORTAL_VIEW_HISTORY_ARTIFACTS, ['summary', 'resources', 'recommendations']); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES, 33554432); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES, 262144);";
+  run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; " + historyExportChecks], consumerRoot);
+  run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); " + historyExportChecks], consumerRoot);
   run(process.execPath, ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as rootVersion } from '@spottoai/types-package'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as narrowVersion } from '@spottoai/types-package/governance'; assert.equal(rootVersion, 1); assert.equal(narrowVersion, rootVersion);`], consumerRoot);
   run(process.execPath, ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); const narrow = require('@spottoai/types-package/governance'); assert.equal(root.CLOUD_GOVERNANCE_SCHEMA_VERSION, 1); assert.equal(narrow.CLOUD_GOVERNANCE_SCHEMA_VERSION, root.CLOUD_GOVERNANCE_SCHEMA_VERSION);`], consumerRoot);
   run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV7ProbeSource}`], consumerRoot);

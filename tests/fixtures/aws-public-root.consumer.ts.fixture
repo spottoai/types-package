@@ -10,6 +10,16 @@ import {
   AWS_SCHEDULED_REFRESH_SCAN_KINDS,
   RESOURCE_GRAPH_LOGICAL_NAME,
   RESOURCE_GRAPH_SCHEMA_VERSION,
+  PORTAL_VIEW_HISTORY_CADENCES,
+  PORTAL_VIEW_HISTORY_ARTIFACTS,
+  PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES,
+  PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES,
+  type PortalViewHistoryCadence,
+  type PortalViewHistoryArtifact,
+  type PortalViewHistoryManifest,
+  type PortalViewHistoryManifestPeriod,
+  type PortalViewHistoryArtifactMap,
+  type PortalViewHistoryArtifactDocument,
   type ArtifactGenerationManifest,
   type AwsCommand,
   type AwsCommandAction,
@@ -45,6 +55,19 @@ import {
   type AwsScheduledRefreshTickCommand as AwsSubpathScheduledRefreshTickCommand,
   type AwsSecurityPostureArtifact as AwsSubpathSecurityPostureArtifact,
 } from '@spottoai/types-package/aws';
+
+const historyCadences: readonly PortalViewHistoryCadence[] = PORTAL_VIEW_HISTORY_CADENCES;
+const historyArtifacts: readonly PortalViewHistoryArtifact[] = PORTAL_VIEW_HISTORY_ARTIFACTS;
+const historyManifest: PortalViewHistoryManifest = {
+  schemaVersion: 1,
+  subscriptionId: '123456789012',
+  cadence: 'daily',
+  generatedAt: '2026-10-05T00:00:00.000Z',
+  retention: { maxPeriods: 7 },
+  periods: [],
+};
+type PublishedPortalViewHistoryTypes = [PortalViewHistoryManifestPeriod, PortalViewHistoryArtifactMap, PortalViewHistoryArtifactDocument];
+void [historyCadences, historyArtifacts, historyManifest, PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES, PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES];
 
 const awsSecureScoreEvidence: SecureScoreEvidence = {
   status: 'available',

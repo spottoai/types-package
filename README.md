@@ -68,6 +68,29 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+Trend Tracker uses one root-exported `PortalViewHistoryManifest` contract for
+Azure subscriptions and AWS accounts. Both retain the same `summary`,
+`resources`, and `recommendations` view bodies with daily, weekly, and monthly
+cadences. Schema version 1 and the existing `subscriptionId` transport field
+remain compatible; for AWS that field carries the account ID. Producers own
+artifact paths, and readers must validate paths and authorize the requested
+provider/account independently. See `specs/trend-tracker/aws-trend-tracker-types.md`.
+
+Health uses root-exported `ResourceHealthEventPortalCollection` and
+`ResourceHealthAvailabilityStatusPortalCollection` for both providers. These
+retain schema version 1, `events`/`statuses`, the `subscriptionId` transport
+alias (AWS account ID for AWS), and the existing `health-events.json` and
+`health-availability-statuses.json` logical names. Existing Azure exports
+specialize the common shapes and retain narrow Azure source literals and
+Microsoft PIR fields. New projections carry `providerScope`, source coverage,
+native event/status context, optional matched-resource coverage and neutral PIR
+fields. Upcoming events are distinct from active incidents. Missing coverage
+means unknown; publication time never proves collection freshness, and absence
+of incidents never proves resource availability. AWS producers and API readers
+must validate and authorize account/nested resource identity at runtime.
+Collection, retention and provider mappings remain engine-owned. See
+`specs/monitor/provider-neutral-health-types.md` for rules and consumer handoff.
+
 The root and narrow `@spottoai/types-package/governance` entry points export
 `CloudGovernanceReport` and `CloudGovernanceAccessReport` for provider-neutral
 governance overview and privileged-access projections. They bind the company,
@@ -100,8 +123,9 @@ The root entry point exports the shared `PublicIpAddressesReport` used by
 Perimeter Insights for Azure subscriptions and AWS accounts. Its existing
 schema version and Azure fields remain compatible. Native AWS exposure evidence
 uses `security_group_rule` / `securityGroupRule` or `lb_listener`; Azure NSG
-evidence retains `nsg_rule` / `nsgRule`. Database findings, provider-neutral
-remediation options, and collection `coverage` are additive extensions. Missing
+evidence retains `nsg_rule` / `nsgRule`. Database, Kafka and other public-service
+findings, provider-neutral remediation options, and collection `coverage` are
+additive extensions. Missing
 coverage does not establish complete collection, and complete collection does
 not establish effective network reachability. See
 `specs/monitor/aws-perimeter-insights-types.md`.
