@@ -25,9 +25,22 @@ export interface ReviewChecklistScanRequest {
 }
 
 export type ReviewChecklistItemStatus = 'NotVerified' | 'Open' | 'Fulfilled' | 'Error' | 'NotRequired' | 'NA';
+export type ReviewChecklistProviderName = 'azure' | 'aws';
+export type ReviewChecklistAssessmentMode = 'manual' | 'automated';
+
+/** Stored evidence references; their presence alone never proves compliance. */
+export interface ReviewChecklistAssessmentEvidence {
+  source: string;
+  observedAt?: string;
+  controlIds?: string[];
+  regions?: string[];
+  resourceIds?: string[];
+  findingIds?: string[];
+}
 
 export interface ReviewChecklistItem {
   guid: string;
+  assessmentMode?: ReviewChecklistAssessmentMode;
   id?: string;
   category?: string;
   subcategory?: string;
@@ -50,6 +63,7 @@ export interface ReviewChecklistItem {
 
 export interface ReviewChecklistItemState {
   guid: string;
+  providerName?: ReviewChecklistProviderName;
   checklistId: string;
   subscriptionId: string;
   status?: ReviewChecklistItemStatus;
@@ -64,6 +78,10 @@ export interface ReviewChecklistItemState {
 
 export interface ReviewChecklistItemStateUpdateRequest {
   companyId?: string;
+  /** AWS status precondition: the definition version observed by the client. */
+  sourceVersion?: string;
+  /** AWS connection precondition; authorization derives the authoritative binding. */
+  cloudAccountId?: string;
   status?: ReviewChecklistItemStatus;
   comments?: string;
   mentions?: CommentMention[];
@@ -72,6 +90,7 @@ export interface ReviewChecklistItemStateUpdateRequest {
 
 export interface ReviewChecklistDefinition {
   checklistId: string;
+  providerName?: ReviewChecklistProviderName;
   source?: {
     commit?: string;
     syncedAt?: string;
@@ -97,6 +116,9 @@ export interface ReviewChecklistItemResult {
 }
 
 export interface ReviewChecklistItemOutput extends ReviewChecklistItemResult {
+  assessmentMode?: ReviewChecklistAssessmentMode;
+  assessmentReason?: string;
+  assessmentEvidence?: ReviewChecklistAssessmentEvidence;
   id: string | null;
   category: string | null;
   subcategory: string | null;
@@ -130,6 +152,13 @@ export type ChecklistScanStatus = 'Completed' | 'Failed' | 'In Progress' | 'NotR
 
 export interface ReviewChecklistDocument {
   checklistId: string;
+  /** Optional async assessment receipt, used by provider-neutral refresh consumers. */
+  requestId?: string;
+  requestedAt?: string;
+  providerName?: ReviewChecklistProviderName;
+  companyId?: string;
+  cloudAccountId?: string;
+  providerScopeId?: string;
   tenantId: string;
   subscriptionId: string;
   sourceVersion?: string;
@@ -158,6 +187,7 @@ export type ReviewChecklistCatalogueState = 'Preview' | 'preview' | 'GA' | 'Depr
 
 export interface ReviewChecklistCatalogueEntry {
   id: string;
+  providerName?: ReviewChecklistProviderName;
   name: string;
   serviceName: string;
   state: ReviewChecklistCatalogueState;

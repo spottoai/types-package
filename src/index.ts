@@ -50,6 +50,40 @@ export * from './azure/reportSpend';
 export { isReportSpendAmounts, isReportSpendProjection, isReportSavingsBasis } from './azure/reportSpendValidation';
 export * from './azure/reportingTemplates';
 export * from './azure/reviewChecklist';
+export type {
+  AwsReviewChecklistScope,
+  AwsReviewChecklistScanCommand,
+  AwsReviewChecklistDefinitionProjection,
+  AwsReviewChecklistDocument,
+  AwsReviewChecklistManualStateDocument,
+} from './common/awsReviewChecklist';
+export type {
+  AwsAccountLifecycleWorkLeaseRecord,
+  AwsAccountLifecycleWorkLeaseOwnership,
+  AwsAccountLifecycleWorkLeaseIdentity,
+  AwsAccountLifecycleWorkLeaseAcquireRequest,
+  AwsAccountLifecycleWorkLeaseDecision,
+  AwsAccountLifecycleWorkLeaseReleaseDecision,
+  AwsAccountLifecycleWorkLeasePlan,
+} from './common/awsAccountLifecycleWorkLease';
+export {
+  AWS_ACCOUNT_LIFECYCLE_MAX_WORK_LEASES,
+  AwsAccountLifecycleWorkLeaseError,
+  isAwsAccountLifecycleIncarnationId,
+  isAwsAccountLifecycleWorkLeases,
+  normalizeAwsAccountLifecycleWorkLeaseIdentity,
+  normalizeAwsAccountLifecycleWorkLeaseDuration,
+  hasUnexpiredAwsAccountLifecycleWorkLeases,
+  planAwsAccountLifecycleWorkLeaseAcquire,
+  planAwsAccountLifecycleWorkLeaseRelease,
+} from './common/awsAccountLifecycleWorkLease';
+export {
+  normalizeAwsReviewChecklistScope,
+  normalizeAwsReviewChecklistScanCommand,
+  buildAwsReviewChecklistResultPath,
+  buildAwsReviewChecklistStatePath,
+  buildAwsReviewChecklistManualDocument,
+} from './common/awsReviewChecklist';
 export * from './azure/advisorScore';
 export * from './azure/resourceHealth';
 export * from './azure/subscriptions';

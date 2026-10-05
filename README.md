@@ -106,6 +106,14 @@ these TypeScript contracts are not runtime validators. Existing Azure
 Governance/Global Administrator exports remain unchanged. See
 `specs/governance/cloud-governance-types.md` for the staged consumer handoff.
 
+AWS Review Checklists use root-exported scope, scan-command, slim-definition,
+result and manual-state contracts. Strict helpers reject unknown command fields,
+credentials and unsafe identities, and construct company/cloud-account isolated
+Blob paths. `buildAwsReviewChecklistManualDocument` requires an explicit clock
+and returns `NotRun`/`NotVerified` items until stored evidence or user verification
+is available. Existing Azure review contracts remain compatible. See
+[the shared contract spec](specs/governance/aws-review-checklists.md).
+
 Retirement Tracker keeps the shared `ServiceRetirementPortalEntry[]` payload for
 Azure and AWS. Optional `deadlineKind` distinguishes retirement, deprecation,
 end-of-support, expiry and rotation-due; `RetirementDate` carries that deadline.
