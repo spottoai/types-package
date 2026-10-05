@@ -65,6 +65,17 @@ export interface AzureFinancialChargeSpendBreakdownV1<TSubject extends AzureFina
   status: 'complete' | 'partial';
   allCharge: AzureFinancialChargeSpendSourceTotalsV1;
   azureNative: AzureFinancialChargeSpendSourceTotalsV1;
+  /**
+   * Unadjusted subset of azureNative eligible for the configured native discount,
+   * on this exact subject/generation/period/currency and with matching provenance.
+   * Excludes authoritative PricingModel Reservation/SavingsPlan charges, including
+   * their purchases/refunds. Marketplace and unknown-source amounts are ineligible.
+   * Native rows lacking pricing-model evidence keep legacy eligibility; they are
+   * not classified as OnDemand. Estimates require the existing native-source proof.
+   * Absence/unavailable means eligibility was not produced; zero is a produced zero.
+   * Never add this subset to allCharge or substitute billed for amortized.
+   */
+  azureNativeDiscountEligible?: AzureFinancialChargeSpendSourceTotalsV1;
   marketplace: AzureFinancialChargeSpendSourceTotalsV1;
   unknown: AzureFinancialChargeSpendSourceTotalsV1;
   unknownMaterial: AzureFinancialChargeUnknownMaterialV1;
@@ -90,6 +101,15 @@ export const DECOMPOSITION_TREE_FINANCIAL_CHARGE_SOURCE_COSTS_CONTRACT_V1 = 'fin
 export interface DecompositionTreeFinancialChargeSourceBasisCostsV1 {
   allChargeMinorUnits: number;
   azureNativeMinorUnits: number;
+  /**
+   * Unadjusted discount-eligible subset of azureNativeMinorUnits for this basis.
+   * Uses the same known-commitment exclusion/legacy fallback as
+   * AzureFinancialChargeSpendBreakdownV1.azureNativeDiscountEligible, and inherits
+   * the tree's currency, scale, generation and node/period identity.
+   * Missing is unavailable evidence, not zero. Signed credits/refunds are retained;
+   * this subset can exceed the signed native net when excluded refunds are present.
+   */
+  azureNativeDiscountEligibleMinorUnits?: number;
   marketplaceMinorUnits: number;
   unknownMinorUnits: number;
   /** Sum of absolute unknown-source amounts, so offsetting unknown rows stay visible. */
@@ -173,6 +193,13 @@ export interface AzureFinancialCoordinateV1 {
 export interface AzureFinancialChargeSourceTotalsV1 {
   allChargeMinorUnits: number;
   azureNativeMinorUnits: number;
+  /**
+   * Unadjusted discount-eligible subset for the enclosing financial coordinate's
+   * basis/generation/period/currency. Same semantics as the rolling eligible field;
+   * missing is not zero and this amount is not an additional source partition.
+   * Commitments remain Azure-native in coverage and savings policy.
+   */
+  azureNativeDiscountEligibleMinorUnits?: number;
   marketplaceMinorUnits: number;
   unknownMinorUnits: number;
   /** Sum of absolute values for material unknown-source rows, even when their signed net is zero. */
@@ -380,21 +407,25 @@ const isUnknownMaterial = (value: unknown): value is AzureFinancialChargeUnknown
 export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is AzureFinancialChargeSpendBreakdownV1 => {
   if (
     !isRecord(value) ||
-    !hasExactFields(value, [
-      'contractVersion',
-      'policyRef',
-      'generationId',
-      'subject',
-      'period',
-      'currencyCode',
-      'minorUnitScale',
-      'status',
-      'allCharge',
-      'azureNative',
-      'marketplace',
-      'unknown',
-      'unknownMaterial',
-    ]) ||
+    !hasExactFields(
+      value,
+      [
+        'contractVersion',
+        'policyRef',
+        'generationId',
+        'subject',
+        'period',
+        'currencyCode',
+        'minorUnitScale',
+        'status',
+        'allCharge',
+        'azureNative',
+        'marketplace',
+        'unknown',
+        'unknownMaterial',
+      ],
+      ['azureNativeDiscountEligible']
+    ) ||
     value.contractVersion !== 'financial-charge-spend/v1' ||
     value.policyRef !== AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 ||
     !isNonEmptyTrimmedString(value.generationId) ||
@@ -413,6 +444,7 @@ export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is
     !isSpendSourceTotals(value.azureNative) ||
     !isSpendSourceTotals(value.marketplace) ||
     !isSpendSourceTotals(value.unknown) ||
+    (value.azureNativeDiscountEligible !== undefined && !isSpendSourceTotals(value.azureNativeDiscountEligible)) ||
     !isUnknownMaterial(value.unknownMaterial)
   ) {
     return false;
@@ -421,6 +453,8 @@ export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is
   const breakdown = value as unknown as AzureFinancialChargeSpendBreakdownV1;
   const sources = [breakdown.azureNative, breakdown.marketplace, breakdown.unknown];
   for (const basis of ['billed', 'amortized'] as const) {
+    const eligible = breakdown.azureNativeDiscountEligible?.[basis];
+    if (eligible?.status === 'available' && breakdown.azureNative[basis].status !== 'available') return false;
     const partitions = [breakdown.allCharge[basis], ...sources.map(source => source[basis])];
     if (!partitions.every(partition => partition.status === partitions[0].status)) return false;
     if (partitions[0].status === 'unavailable') continue;
@@ -476,17 +510,22 @@ export const isAzureResourceFinancialChargeSpendBreakdownForResourceV1 = (
 const isTreeSourceBasisCosts = (value: unknown): value is DecompositionTreeFinancialChargeSourceBasisCostsV1 => {
   if (
     !isRecord(value) ||
-    !hasExactFields(value, [
-      'allChargeMinorUnits',
-      'azureNativeMinorUnits',
-      'marketplaceMinorUnits',
-      'unknownMinorUnits',
-      'unknownAbsoluteMinorUnits',
-      'unknownNonZeroRowCount',
-      'status',
-    ]) ||
+    !hasExactFields(
+      value,
+      [
+        'allChargeMinorUnits',
+        'azureNativeMinorUnits',
+        'marketplaceMinorUnits',
+        'unknownMinorUnits',
+        'unknownAbsoluteMinorUnits',
+        'unknownNonZeroRowCount',
+        'status',
+      ],
+      ['azureNativeDiscountEligibleMinorUnits']
+    ) ||
     !isSafeInteger(value.allChargeMinorUnits) ||
     !isSafeInteger(value.azureNativeMinorUnits) ||
+    (value.azureNativeDiscountEligibleMinorUnits !== undefined && !isSafeInteger(value.azureNativeDiscountEligibleMinorUnits)) ||
     !isSafeInteger(value.marketplaceMinorUnits) ||
     !isSafeInteger(value.unknownMinorUnits) ||
     !isNonNegativeSafeInteger(value.unknownAbsoluteMinorUnits) ||
@@ -611,18 +650,22 @@ export const isAzureFinancialCoordinateV1 = (value: unknown): value is AzureFina
 const isSourceTotals = (value: unknown): value is AzureFinancialChargeSourceTotalsV1 => {
   if (
     !isRecord(value) ||
-    !hasExactFields(value, [
-      'allChargeMinorUnits',
-      'azureNativeMinorUnits',
-      'marketplaceMinorUnits',
-      'unknownMinorUnits',
-      'unknownAbsoluteMinorUnits',
-      'rowCount',
-      'azureNativeRowCount',
-      'marketplaceRowCount',
-      'unknownRowCount',
-      'unknownNonZeroRowCount',
-    ])
+    !hasExactFields(
+      value,
+      [
+        'allChargeMinorUnits',
+        'azureNativeMinorUnits',
+        'marketplaceMinorUnits',
+        'unknownMinorUnits',
+        'unknownAbsoluteMinorUnits',
+        'rowCount',
+        'azureNativeRowCount',
+        'marketplaceRowCount',
+        'unknownRowCount',
+        'unknownNonZeroRowCount',
+      ],
+      ['azureNativeDiscountEligibleMinorUnits']
+    )
   ) {
     return false;
   }
@@ -635,7 +678,12 @@ const isSourceTotals = (value: unknown): value is AzureFinancialChargeSourceTota
     value.unknownRowCount,
     value.unknownNonZeroRowCount,
   ];
-  if (!signedValues.every(isSafeInteger) || !countValues.every(isNonNegativeSafeInteger)) return false;
+  if (
+    !signedValues.every(isSafeInteger) ||
+    !countValues.every(isNonNegativeSafeInteger) ||
+    (value.azureNativeDiscountEligibleMinorUnits !== undefined && !isSafeInteger(value.azureNativeDiscountEligibleMinorUnits))
+  )
+    return false;
   const totals = value as unknown as AzureFinancialChargeSourceTotalsV1;
   return (
     totals.unknownNonZeroRowCount <= totals.unknownRowCount &&

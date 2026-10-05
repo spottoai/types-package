@@ -12,6 +12,7 @@ import {
   isAzureResourceFinancialChargeSpendBreakdownForResourceV1,
   isAzurePolicyBoundSavingsAggregateV1,
   isAzurePublisherTypeEvidenceV1,
+  isDecompositionTreeFinancialChargeSourceCostsV1,
 } from '../dist/index.js';
 
 const coordinate = {
@@ -180,6 +181,144 @@ assert.equal(
 );
 
 assert.equal(isAzureFinancialChargeSpendBreakdownV1(rollingSpendBreakdown), true);
+
+const eligibleBasis = (billingBackedMinorUnits, estimatedMinorUnits = 0) => ({
+  status: 'available',
+  totalMinorUnits: billingBackedMinorUnits + estimatedMinorUnits,
+  billingBackedMinorUnits,
+  estimatedMinorUnits,
+});
+const eligibleSpend = {
+  billed: eligibleBasis(7_000, 1_000),
+  amortized: eligibleBasis(6_000, 1_000),
+};
+const enrichedSpend = { ...rollingSpendBreakdown, azureNativeDiscountEligible: eligibleSpend };
+assert.equal(isAzureFinancialChargeSpendBreakdownV1(enrichedSpend), true, 'eligibility is a subset, not an extra source in all-charge totals');
+for (const amount of [0, -125, 11_000]) {
+  assert.equal(
+    isAzureFinancialChargeSpendBreakdownV1({
+      ...enrichedSpend,
+      azureNativeDiscountEligible: { ...eligibleSpend, billed: eligibleBasis(amount) },
+    }),
+    true,
+    'signed eligible amounts can exceed the native net when excluded refunds offset it'
+  );
+}
+for (const amount of [null, '100', 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+  assert.equal(
+    isAzureFinancialChargeSpendBreakdownV1({
+      ...enrichedSpend,
+      azureNativeDiscountEligible: { ...eligibleSpend, billed: { ...eligibleBasis(100), totalMinorUnits: amount } },
+    }),
+    false,
+    'eligible amounts require safe-integer minor units'
+  );
+}
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...enrichedSpend,
+    azureNativeDiscountEligible: { ...eligibleSpend, billed: { ...eligibleSpend.billed, totalMinorUnits: 8_001 } },
+  }),
+  false,
+  'eligible total must equal its billing-backed and estimated parts'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...enrichedSpend,
+    azureNativeDiscountEligible: { billed: eligibleSpend.billed },
+  }),
+  false,
+  'produced eligibility must state each basis independently'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...enrichedSpend,
+    azureNativeDiscountEligible: { ...eligibleSpend, currencyCode: 'USD' },
+  }),
+  false,
+  'eligibility inherits the enclosing coordinate and cannot introduce a different currency'
+);
+const unavailableEligibility = { status: 'unavailable', reasonCode: 'not-produced' };
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...enrichedSpend,
+    azureNativeDiscountEligible: { billed: eligibleSpend.billed, amortized: unavailableEligibility },
+  }),
+  true,
+  'unavailable eligible amortized spend is explicit even when native spend is available'
+);
+const unavailableAmortizedSpend = { ...rollingSpendBreakdown };
+for (const source of ['allCharge', 'azureNative', 'marketplace', 'unknown']) {
+  unavailableAmortizedSpend[source] = { ...rollingSpendBreakdown[source], amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' } };
+}
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...unavailableAmortizedSpend,
+    azureNativeDiscountEligible: eligibleSpend,
+  }),
+  false,
+  'eligibility cannot resurrect an unavailable native basis'
+);
+assert.equal(
+  isAzureFinancialChargeSpendBreakdownV1({
+    ...unavailableAmortizedSpend,
+    azureNativeDiscountEligible: { billed: eligibleSpend.billed, amortized: unavailableEligibility },
+  }),
+  true
+);
+
+const legacyTreeBasis = {
+  allChargeMinorUnits: 15_000,
+  azureNativeMinorUnits: 10_000,
+  marketplaceMinorUnits: 5_000,
+  unknownMinorUnits: 0,
+  unknownAbsoluteMinorUnits: 0,
+  unknownNonZeroRowCount: 0,
+  status: 'complete',
+};
+const legacyTree = {
+  contractVersion: 'financial-charge-source-costs/v1',
+  policyRef: completeCoverage.policyRef,
+  minorUnitScale: 2,
+  current: { billed: legacyTreeBasis },
+};
+const eligibilityCoverage = {
+  ...completeCoverage,
+  sourceTotals: { ...completeCoverage.sourceTotals, rowCount: 4, azureNativeRowCount: 3 },
+};
+assert.equal(isDecompositionTreeFinancialChargeSourceCostsV1(legacyTree), true, 'legacy Cost Trees do not need eligibility');
+for (const amount of [0, -125, 11_000]) {
+  assert.equal(
+    isDecompositionTreeFinancialChargeSourceCostsV1({
+      ...legacyTree,
+      current: { billed: { ...legacyTreeBasis, azureNativeDiscountEligibleMinorUnits: amount } },
+    }),
+    true
+  );
+  assert.equal(
+    isAzureFinancialChargeCoverageV1({
+      ...eligibilityCoverage,
+      sourceTotals: { ...eligibilityCoverage.sourceTotals, azureNativeDiscountEligibleMinorUnits: amount },
+    }),
+    true
+  );
+}
+for (const amount of [null, '100', 1.5, Number.NaN, Number.POSITIVE_INFINITY, Number.MAX_SAFE_INTEGER + 1]) {
+  assert.equal(
+    isDecompositionTreeFinancialChargeSourceCostsV1({
+      ...legacyTree,
+      current: { billed: { ...legacyTreeBasis, azureNativeDiscountEligibleMinorUnits: amount } },
+    }),
+    false
+  );
+  assert.equal(
+    isAzureFinancialChargeCoverageV1({
+      ...eligibilityCoverage,
+      sourceTotals: { ...eligibilityCoverage.sourceTotals, azureNativeDiscountEligibleMinorUnits: amount },
+    }),
+    false
+  );
+}
 assert.equal(isAzureNativeFinancialSummaryV1(azureNativeFinancialSummary), true);
 assert.equal(isAzureNativeSubscriptionFinancialStatsV1(azureNativeSubscriptionFinancialStats), true);
 assert.equal(

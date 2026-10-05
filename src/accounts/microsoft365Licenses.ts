@@ -80,6 +80,87 @@ export interface Microsoft365LicenseView {
   licenses: Microsoft365LicenseRow[];
   accounts: Microsoft365LicensedAccountRow[];
   reports: Record<Microsoft365UsageSource, Microsoft365UsageRow[]>;
+  /**
+   * Stored by the engine: one list-price estimate per supported market currency (for example USD, NZD, AUD).
+   * The tenant view is shared across companies, so the API returns the viewer's market as `pricing` instead.
+   */
+  pricingByCurrency?: Record<string, Microsoft365LicensePricing>;
+  /** Served by the API: the estimate for the requested currency, or USD with `currencyFallback` set. */
+  pricing?: Microsoft365LicensePricing;
+}
+/**
+ * paid: per-user product with a reference list price. free: no-cost/trial/viral entitlement.
+ * capacity: tenant-level capacity (storage, devices, orders), not a human seat. unpriced: paid or unknown product without a reference price.
+ */
+export type Microsoft365LicenseProductCategory = 'paid' | 'free' | 'capacity' | 'unpriced';
+/** Product family for grouping and icons. */
+export type Microsoft365LicenseProductFamily =
+  | 'microsoft365'
+  | 'copilot'
+  | 'exchange'
+  | 'teams'
+  | 'sharepoint'
+  | 'powerBi'
+  | 'powerPlatform'
+  | 'visio'
+  | 'project'
+  | 'dynamics'
+  | 'security'
+  | 'windows'
+  | 'other';
+/** verified: taken from the publisher's current price list. reference: long-standing list price that has not been re-verified this cycle. */
+export type Microsoft365LicensePriceConfidence = 'verified' | 'reference';
+export interface Microsoft365LicenseProductPricing {
+  skuId: string;
+  skuPartNumber: string;
+  productName: string;
+  family: Microsoft365LicenseProductFamily;
+  category: Microsoft365LicenseProductCategory;
+  priceConfidence: Microsoft365LicensePriceConfidence | null;
+  /** Per user per month in `Microsoft365LicensePricing.currency`, annual commitment, excluding tax. */
+  unitPriceMonthly: number | null;
+  purchasedUnits: number | null;
+  assignedUnits: number | null;
+  unassignedUnits: number | null;
+  /** Assignments on disabled accounts in the listed account rows. */
+  disabledAccountUnits: number;
+  /** Assignments on enabled accounts whose last successful sign-in is older than 90 days. */
+  inactiveAccountUnits: number;
+  monthlyCost: number | null;
+  unassignedMonthlyCost: number | null;
+  disabledMonthlyCost: number | null;
+  inactiveMonthlyCost: number | null;
+}
+export interface Microsoft365LicensePricing {
+  basis: 'list_price_estimate';
+  /** Price list identifier, for example `microsoft-2026-07`. */
+  priceListVersion: string;
+  /** ISO currency of every amount. */
+  currency: string;
+  /** True when the requested currency had no market price list and the USD estimate was served. */
+  currencyFallback: boolean;
+  term: 'annual_commitment';
+  /** Product rows sorted by unused monthly value, highest first. */
+  products: Microsoft365LicenseProductPricing[];
+  /** Estimated list price per month for each listed account id with at least one priced license. */
+  accountMonthlyCosts: Record<string, number>;
+  summary: {
+    paidProductCount: number;
+    unpricedProductCount: number;
+    purchasedPaidUnits: number;
+    assignedPaidUnits: number;
+    unassignedPaidUnits: number;
+    monthlyCost: number;
+    unassignedMonthlyCost: number;
+    disabledAccountCount: number;
+    disabledMonthlyCost: number;
+    inactiveAccountCount: number;
+    inactiveMonthlyCost: number;
+    /** False when account rows were omitted from the view, so disabled/inactive totals are minimums. */
+    accountsComplete: boolean;
+    /** True when every disabled licensed account is in the listed rows, even if other rows were omitted. */
+    disabledAccountsComplete: boolean;
+  };
 }
 export interface Microsoft365LicenseTenant {
   cloudAccountId: string;
@@ -97,6 +178,78 @@ const nullableBoolean = (value: unknown): boolean => value === null || typeof va
 const date = (value: unknown): boolean => text(value) && Number.isFinite(Date.parse(value));
 const rows = (value: unknown, predicate: (row: unknown) => boolean): boolean =>
   Array.isArray(value) && value.length <= 2000 && value.every(predicate);
+
+const money = (value: unknown): boolean => typeof value === 'number' && Number.isFinite(value) && value >= 0;
+const nullableMoney = (value: unknown): boolean => value === null || money(value);
+const PRICING_SUMMARY_COUNTS = [
+  'paidProductCount',
+  'unpricedProductCount',
+  'purchasedPaidUnits',
+  'assignedPaidUnits',
+  'unassignedPaidUnits',
+  'disabledAccountCount',
+  'inactiveAccountCount',
+] as const;
+const PRICING_SUMMARY_MONEY = ['monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
+const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'] as const;
+const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
+const PRODUCT_FAMILIES: readonly Microsoft365LicenseProductFamily[] = [
+  'microsoft365',
+  'copilot',
+  'exchange',
+  'teams',
+  'sharepoint',
+  'powerBi',
+  'powerPlatform',
+  'visio',
+  'project',
+  'dynamics',
+  'security',
+  'windows',
+  'other',
+];
+
+/** Validates one bounded list-price estimate (engine `pricingByCurrency` entry or API `pricing`). */
+export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft365LicensePricing {
+  if (
+    !isRecord(value) ||
+    value.basis !== 'list_price_estimate' ||
+    value.term !== 'annual_commitment' ||
+    !text(value.priceListVersion) ||
+    typeof value.currency !== 'string' ||
+    !/^[A-Z]{3}$/.test(value.currency) ||
+    typeof value.currencyFallback !== 'boolean' ||
+    !isRecord(value.summary) ||
+    !isRecord(value.accountMonthlyCosts)
+  )
+    return false;
+  const summary = value.summary;
+  if (
+    !PRICING_SUMMARY_COUNTS.every(key => count(summary[key])) ||
+    !PRICING_SUMMARY_MONEY.every(key => money(summary[key])) ||
+    typeof summary.accountsComplete !== 'boolean' ||
+    typeof summary.disabledAccountsComplete !== 'boolean'
+  )
+    return false;
+  const costs = Object.entries(value.accountMonthlyCosts);
+  if (costs.length > 2000 || !costs.every(([key, cost]) => text(key) && !!key && money(cost))) return false;
+  return rows(
+    value.products,
+    row =>
+      isRecord(row) &&
+      text(row.skuId) &&
+      !!row.skuId &&
+      text(row.skuPartNumber) &&
+      text(row.productName) &&
+      PRODUCT_FAMILIES.includes(row.family as Microsoft365LicenseProductFamily) &&
+      ['paid', 'free', 'capacity', 'unpriced'].includes(String(row.category)) &&
+      (row.priceConfidence === null || row.priceConfidence === 'verified' || row.priceConfidence === 'reference') &&
+      PRODUCT_COUNTS.every(key => nullableCount(row[key])) &&
+      count(row.disabledAccountUnits) &&
+      count(row.inactiveAccountUnits) &&
+      PRODUCT_MONEY.every(key => nullableMoney(row[key]))
+  );
+}
 
 /** Validates the bounded engine projection at API/storage boundaries. */
 export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365LicenseView {
@@ -196,5 +349,12 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     )
   )
     return false;
+  if (value.pricing !== undefined && !isMicrosoft365LicensePricing(value.pricing)) return false;
+  if (value.pricingByCurrency !== undefined) {
+    if (!isRecord(value.pricingByCurrency)) return false;
+    const estimates = Object.entries(value.pricingByCurrency);
+    if (estimates.length > 16 || !estimates.every(([currency, estimate]) => isMicrosoft365LicensePricing(estimate) && estimate.currency === currency))
+      return false;
+  }
   return true;
 }
