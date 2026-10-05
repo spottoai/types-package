@@ -1,7 +1,4 @@
-import type {
-  ResourceSchedulePermissionManifestConsent,
-  ResourceSchedulePermissionManifestProjection,
-} from '../scheduler/resourceStrategy';
+import type { ResourceSchedulePermissionManifestConsent, ResourceSchedulePermissionManifestProjection } from '../scheduler/resourceStrategy';
 
 export type AzureSpSetupPhase =
   | 'created'
@@ -114,6 +111,7 @@ export type AzureSpPermissionKey =
   | 'graphAuditLogReadAll'
   | 'graphPolicyReadAll'
   | 'graphLicenseAssignmentReadAll'
+  | 'graphReportsReadAll'
   | 'billingScopeReader'
   | 'billingExportOperatorContributor'
   | 'costManagementProviderRegistration'

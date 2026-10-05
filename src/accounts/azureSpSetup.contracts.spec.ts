@@ -30,6 +30,8 @@ import type { ResourceSchedulePermissionManifestConsent } from '../scheduler/res
 const assistedSetupSubscriptionLimit: 100 = AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS;
 
 const keyVaultReaderPermissionKey: AzureSpPermissionKey = 'keyVaultReader';
+const reportsReadPermissionKey: AzureSpPermissionKey = 'graphReportsReadAll';
+void reportsReadPermissionKey;
 
 type AzureSpSetupForbiddenPublicKey =
   | 'accessToken'
