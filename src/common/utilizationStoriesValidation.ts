@@ -132,7 +132,6 @@ const isPercentage = (value: unknown): value is number => isFiniteNumber(value) 
 const isNullablePercentage = (value: unknown): value is number | null => value === null || isPercentage(value);
 const isPriority = (value: unknown): value is 1 | 2 | 3 | 4 | 5 => isCount(value) && value >= 1 && value <= 5;
 const isStringRecord = (value: unknown): value is Record<string, string> => isRecord(value) && Object.values(value).every(isText);
-const isNumberRecord = (value: unknown): value is Record<string, number> => isRecord(value) && Object.values(value).every(isFiniteNumber);
 const inSet = (set: Set<unknown>, value: unknown): boolean => set.has(value);
 
 const isWeeklyGrid = (value: unknown): value is (number | null)[][] =>
@@ -681,12 +680,12 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
   Object.values(value.counts).every(isCount) &&
   (value.actionable === undefined ||
     (isCount(value.actionable) && (value.counts.resources === undefined || value.actionable <= (value.counts.resources as number)))) &&
-  isNumberRecord(value.spend) &&
+  isRecord(value.spend) && Object.values(value.spend).every(isNullableNumber) &&
   isString(value.currency) &&
   isOptionalText(value.note);
 
 const isStorySectionFinancials = (value: unknown): boolean =>
-  value === undefined || (isRecord(value) && isFiniteNumber(value.spend30d) && isFiniteNumber(value.savingsMax) && isString(value.currency));
+  value === undefined || (isRecord(value) && isFiniteNumber(value.spend30d) && isNullableNumber(value.savingsMax) && isString(value.currency));
 
 export const isStorySection = (
   value: unknown,

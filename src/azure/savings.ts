@@ -38,6 +38,7 @@ export type RecommendationSavingsUnavailableReason =
   | 'overlapping-savings'
   | 'missing-billing-attribution'
   | 'partial-billing-coverage'
+  | 'billing-generation-mismatch'
   | 'incompatible-cost-basis'
   | 'below-minimum-spend'
   | 'missing-pricing-reference'
@@ -62,6 +63,8 @@ export interface SavingsAggregateV2 {
   scopeKey: string;
   scope: SavingsScopeV2;
   allocationCount: number;
+  /** A partial ledger is audit evidence, never a complete scope savings headline. AWS producers must supply this. */
+  coverage?: { status: 'complete' | 'partial'; unavailableClaimCount: number };
   totals: CanonicalMoneyRangeV2;
 }
 
@@ -80,6 +83,8 @@ export interface CanonicalSavingsAllocationProvenanceV2 {
   stableSavingsBasis: boolean;
   /** Billing basis of the captured owner spending cap; the source estimate may have its own authority. */
   spendBasis?: 'billed' | 'amortized';
+  /** Exact accepted billing generations checked against the captured owner spending evidence. */
+  billingGenerationIds?: string[];
   /** Exact inclusive billing window captured for the owner spending cap. */
   usageWindow?: {
     startDateInclusive: string;

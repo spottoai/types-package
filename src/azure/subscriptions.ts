@@ -2,6 +2,7 @@ import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/account
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
+import type { RecommendationSavingsUnavailableReason } from './savings.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
 import {
   hasValidAzureNativeDiscountEligibleSpendProjectionV1,
@@ -11,6 +12,7 @@ import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
 import type { CostComposition } from './costComposition.js';
+import type { RetailCostAvailability } from './retailCost.js';
 import {
   isAzureProviderScopeFinancialChargeSpendBreakdownV1,
   type AzureProviderScopeFinancialChargeSpendBreakdownV1,
@@ -19,6 +21,19 @@ import {
 export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 
 export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
+
+/** Recorded billing days are observations; even a day containing charges is not proof of finalized consumption. */
+export interface BillingSpendWindowCoverage {
+  status: 'partial' | 'unproven';
+  reasonCode: 'billing-days-not-observed' | 'billing-usage-coverage-unavailable';
+  basis: 'billed';
+  window: { startDate: string; endDate: string; dayCount: number };
+  recordedDayCount: number;
+  unobservedDayCount: number;
+  trailingUnobservedDayCount: number;
+  lastRecordedDate?: string;
+  finality: 'unknown';
+}
 
 export interface SubscriptionSummaryLite {
   companyId: string;
@@ -75,8 +90,12 @@ export interface SubscriptionSummary {
   displayName: string;
   properties?: SubscriptionProperties;
   recommendationSummary: RecommendationSummary[];
-  savings: SavingsPotential;
-  totalRetailCost: number;
+  /** Additive published savings; absent when the producer cannot qualify money. */
+  savings?: SavingsPotential;
+  savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
+  /** List-price monthly valuation, never billed/amortized spend. Missing is not zero. */
+  totalRetailCost?: number;
+  retailCostAvailability?: RetailCostAvailability;
   spendingLimit: boolean;
   budgets: Budget[];
   recommendations: Recommendation[];
@@ -204,6 +223,8 @@ export const isAzureNativeSubscriptionFinancialStatsV1 = (value: unknown): value
 };
 
 export interface SubscriptionStats {
+  /** Coverage qualification independent of imported arithmetic; absence never proves complete billing. */
+  spend30DaysCoverage?: BillingSpendWindowCoverage;
   /** Total unique customer-visible resources for resourcesTotalBasis. */
   resourcesTotal: number;
   /** Versioned counting contract for resourcesTotal. Missing on legacy payloads. */

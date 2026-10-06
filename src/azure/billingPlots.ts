@@ -22,6 +22,16 @@ export type {
   BillingPartialArtifactPublicationDecision,
 } from './billingArtifactEvidence.js';
 
+/** A forecast withheld because consumption-day coverage has not been proved. */
+export interface BillingForecastUnavailable {
+  status: 'unavailable';
+  reasonCode: 'billing-usage-coverage-unavailable';
+  basis: 'billed';
+  currency?: string;
+  observedThroughDate?: string;
+  asOfDate?: string;
+}
+
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
 
@@ -167,6 +177,8 @@ export interface BillingChartViews {
 
 /** Interactive chart data for cost analysis. */
 export interface BillingChartData {
+  /** Absent forecasts do not imply a zero forecast. */
+  forecastAvailability?: BillingForecastUnavailable;
   schemaVersion: number;
   source: 'aggregated' | (string & {});
   dataWindow: BillingChartDataWindow;
@@ -591,7 +603,10 @@ const allowedBillingCostAnalysisFields = (
   if (isRecord(value.chartData)) {
     allowControl(value.chartData, 'schemaVersion');
     allowText(value.chartData, 'source');
-    allowChildren(value.chartData, 'dataWindow', 'views', 'detectors');
+    allowChildren(value.chartData, 'dataWindow', 'views', 'detectors', 'forecastAvailability');
+    if (isRecord(value.chartData.forecastAvailability)) {
+      allowText(value.chartData.forecastAvailability, 'status', 'reasonCode', 'basis', 'currency', 'observedThroughDate', 'asOfDate');
+    }
     if (isRecord(value.chartData.views)) {
       for (const [viewKey, view] of Object.entries(value.chartData.views)) {
         allowChildren(value.chartData.views, viewKey);
@@ -700,6 +715,17 @@ const isChartView = (value: unknown): boolean => {
   return false;
 };
 
+export function isBillingForecastUnavailable(value: unknown): value is BillingForecastUnavailable {
+  if (!isRecord(value)) return false;
+  const date = (candidate: unknown): boolean => candidate === undefined ||
+    (typeof candidate === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(candidate) &&
+      Number.isFinite(Date.parse(candidate)) && new Date(candidate).toISOString().slice(0, 10) === candidate);
+  return value.status === 'unavailable' && value.reasonCode === 'billing-usage-coverage-unavailable' &&
+    value.basis === 'billed' && (value.currency === undefined ||
+      (typeof value.currency === 'string' && /^[A-Z]{3}$/u.test(value.currency))) &&
+    date(value.observedThroughDate) && date(value.asOfDate);
+}
+
 const isChartData = (value: unknown): value is Record<string, unknown> => {
   if (!isRecord(value) || !isPositiveInteger(value.schemaVersion) || !isNonEmptyString(value.source)) return false;
   if (
@@ -711,6 +737,8 @@ const isChartData = (value: unknown): value is Record<string, unknown> => {
     return false;
   }
   if (!isRecord(value.views) || !Object.values(value.views).every(view => view === undefined || isChartView(view))) return false;
+  if (value.forecastAvailability !== undefined &&
+    (!isBillingForecastUnavailable(value.forecastAvailability) || value.views.forecast_90_days !== undefined)) return false;
   if (!isRecord(value.detectors) || !isFiniteNumber(value.detectors.threshold) || !Array.isArray(value.detectors.methods)) return false;
   return value.detectors.methods.every(
     method =>
@@ -802,6 +830,8 @@ const hasValidMetadataEvidenceState = (
 const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown>): boolean => {
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (value.chartData.forecastAvailability !== undefined &&
+    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)) return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
@@ -830,6 +860,8 @@ const hasOnlyFields = (value: Record<string, unknown>, allowedFields: ReadonlySe
 const hasValidBillingCostAnalysisPublicBusinessFields = (value: Record<string, unknown>): boolean => {
   if (!isPathSegment(value.subscriptionId)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
+  if (value.chartData.forecastAvailability !== undefined &&
+    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)) return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);

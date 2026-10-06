@@ -611,6 +611,8 @@ export interface RecommendationsView extends AzurePortalVersionedArtifact {
   subscriptionSecurityStatus?: SubscriptionSecurityStatus;
   /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
   savings?: SavingsPotential;
+  /** Scope savings are unavailable rather than zero when claims cannot be qualified. */
+  savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
   /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
   savingsByCurrency?: CurrencySavingsGroup[];
   subscription: SubscriptionSummaryLite;

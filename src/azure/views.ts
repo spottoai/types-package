@@ -488,6 +488,7 @@ export interface VmPricePerformanceCapabilityImpact {
 }
 
 export interface VmPricePerformanceSku {
+  /** Historical field name for the provider SKU identifier: an Azure ARM SKU or an AWS EC2 instance type. */
   armSkuName: string;
   region: string;
   currencyCode: 'USD';
@@ -502,7 +503,7 @@ export interface VmPricePerformanceSku {
   purchaseOption: VmPricePerformancePurchaseOption;
   hourlyPriceUsd?: number;
   monthlyPriceUsd?: number;
-  /** Subscription-currency retail price. Prefer this over USD fields for UI display. */
+  /** Display-currency retail price. Prefer this over USD fields for UI display; never a billed spend figure. */
   localCurrencyCode?: string;
   localCurrencySymbol?: string;
   localHourlyPrice?: number;
@@ -607,6 +608,8 @@ export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanc
 }
 
 export interface VmPricePerformanceInsights {
+  // Both provider engines publish this contract. Provider-specific capabilities,
+  // benchmarks and commitment evidence remain optional and are never inferred.
   /** Keep the first version intentionally simple: compare alternatives only in the resource's current region. */
   comparisonScope: 'same-region';
   /** Authority used for user-visible comparisons and recommendation semantics. */

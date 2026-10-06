@@ -158,6 +158,8 @@ void withheldRecommendation;
 void invalidAbsenceReason;
 
 const incompatibleBasisReason: RecommendationSavingsUnavailableReason = 'incompatible-cost-basis';
+const billingGenerationReason: RecommendationSavingsUnavailableReason = 'billing-generation-mismatch';
+void billingGenerationReason;
 const invalidSpendBasis: CanonicalSavingsAllocationV2['provenance'] = {
   source: 'aws-native-recommendation',
   stableSavingsBasis: false,

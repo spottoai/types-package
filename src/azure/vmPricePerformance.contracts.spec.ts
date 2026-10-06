@@ -70,3 +70,52 @@ const invalidReservationEvaluation: VmPricePerformanceInsights = {
 void retailPricingWithUnavailableReservationEvaluation;
 void invalidPricingBasis;
 void invalidReservationEvaluation;
+
+// AWS uses the same VM alternatives contract and does not invent Azure-only
+// capabilities, benchmarks or reservation compatibility to satisfy it.
+const awsVmAlternatives: VmPricePerformanceInsights = {
+  comparisonScope: 'same-region',
+  comparisonBasis: 'payg-retail',
+  pricingBasis: 'payg-retail',
+  displayCurrencyCode: 'USD',
+  current: {
+    armSkuName: 'm5.xlarge',
+    region: 'ap-southeast-2',
+    currencyCode: 'USD',
+    osType: 'linux',
+    tier: 'standard',
+    purchaseOption: 'payg',
+    numberOfCores: 4,
+    memoryGB: 16,
+    cpuArchitecture: 'x86_64',
+    localCurrencyCode: 'USD',
+    localHourlyPrice: 0.24,
+    localMonthlyPrice: 175.2,
+  },
+  alternatives: [{
+    armSkuName: 'm6a.xlarge',
+    region: 'ap-southeast-2',
+    currencyCode: 'USD',
+    osType: 'linux',
+    tier: 'standard',
+    purchaseOption: 'payg',
+    numberOfCores: 4,
+    memoryGB: 16,
+    cpuArchitecture: 'x86_64',
+    rank: 1,
+    localCurrencyCode: 'USD',
+    localHourlyPrice: 0.216,
+    localMonthlyPrice: 157.68,
+    localSavingsMonthly: 17.52,
+    localSavingsPercent: 10,
+  }],
+  source: {
+    fileName: 'ec2-usd-ap-southeast-2.csv',
+    region: 'ap-southeast-2',
+    currencyCode: 'USD',
+    displayCurrencyCode: 'USD',
+    displayPricingSource: 'AWS Price List Bulk API',
+  },
+};
+
+void awsVmAlternatives;

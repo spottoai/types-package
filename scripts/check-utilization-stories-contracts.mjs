@@ -91,6 +91,19 @@ for (const storyKey of STORY_KEYS) {
 }
 
 // Schedule candidates carry a corroborated weekly running profile and a schedule action.
+const unavailableSavings = clone(artifacts['oversized-resources']);
+unavailableSavings.summary.spend.savingsMax = null;
+for (const section of unavailableSavings.sections) {
+  section.financials = { spend30d: 4000, savingsMax: null, currency: unavailableSavings.scope.currency };
+}
+assert.equal(isStoryArtifact(unavailableSavings), true, 'explicit unavailable story and section savings accepted');
+const invalidSavings = clone(unavailableSavings);
+invalidSavings.sections[0].financials.savingsMax = 'unknown';
+assert.equal(isStoryArtifact(invalidSavings), false, 'unavailable savings is typed null, never a string');
+const invalidCounts = clone(unavailableSavings);
+invalidCounts.summary.counts.withSavings = null;
+assert.equal(isStoryArtifact(invalidCounts), false, 'count coordinates remain non-nullable');
+
 for (const section of artifacts['schedule-candidates'].sections) {
   for (const row of section.rows) {
     assert.ok(row.profile.running?.weekly, `schedule candidate ${row.name} has a weekly profile`);

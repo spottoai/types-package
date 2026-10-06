@@ -1,7 +1,7 @@
 /**
  * Resource size options: the provider-neutral, same-Region menu of priced resize alternatives for one resource,
- * carried as `sizeOptions` on portal and plugin resource items. One shape serves every sized service (AWS EC2, RDS,
- * ElastiCache, ...), where `VmPricePerformanceInsights` is Azure-VM-specific.
+ * proposed as `sizeOptions` on portal and plugin resource items for sized services (RDS, ElastiCache, ...).
+ * VM alternatives for both Azure and AWS EC2 use the established `VmPricePerformanceInsights` contract instead.
  *
  * Prices are public list prices in `currency` (USD for AWS), never billed cost. The single recommended move, with a
  * billed saving, stays on `UtilizationSignal.betterSku` / `OversizedResourceRow.recommendedOption`; this is the menu
@@ -10,8 +10,8 @@
  * Spec: `specs/compute-alternatives/resource-size-options-types-package.md` (parent: cloud-engine-aws
  * `Specs/feature-gaps/22-instance-catalog-and-sku-comparison.md`).
  *
- * Producer: cloud-engine-aws (`InstanceCatalogSizeOptions`). Consumers: api (resource detail pass-through), ui
- * (resource size-options panel).
+ * This unreleased non-VM menu proposal has no active public producer or UI renderer. AWS's internal
+ * `InstanceCatalogSizeOptions` is projected into the existing VM and story contracts at publication.
  *
  * Additive: consumers must tolerate unknown fields and unknown `lostCapabilities` / `priceSource` values.
  */

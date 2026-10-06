@@ -582,7 +582,8 @@ export const STORY_LIMITS = {
 export interface StorySectionFinancials {
   /** Totals across the full section, including omitted rows. */
   spend30d: number;
-  savingsMax: number;
+  /** Null when the full section's savings authority is unavailable; measured zero remains numeric. */
+  savingsMax: number | null;
   currency: string;
 }
 
@@ -609,7 +610,8 @@ export interface StoryColumn {
 export interface StorySummary {
   /** Rows per story bucket (verdict, fit, status, ...) plus the totals `resources` and `withSavings`. */
   counts: Record<string, number>;
-  spend: Record<string, number>;
+  /** Monetary summary coordinates retain explicit unavailability, never unknown-as-zero. */
+  spend: Record<string, number | null>;
   currency: string;
   note?: string;
   /**

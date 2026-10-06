@@ -89,6 +89,7 @@ export {
 export * from './azure/advisorScore';
 export * from './azure/resourceHealth';
 export * from './azure/subscriptions';
+export * from './azure/retailCost';
 export * from './azure/views';
 export * from './azure/security';
 export * from './azure/savings';

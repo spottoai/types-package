@@ -4,10 +4,13 @@ import type {
   SubscriptionAccount,
   SubscriptionInfoBase,
   SubscriptionScopeResponse,
+  SubscriptionSummary,
 } from '../index';
 
 type Assert<T extends true> = T;
 type IsExact<TActual, TExpected> = [TActual] extends [TExpected] ? ([TExpected] extends [TActual] ? true : false) : false;
+type RetailCostAllowsAbsence = Assert<IsExact<SubscriptionSummary['totalRetailCost'], number | undefined>>;
+type SavingsAllowsAbsence = Assert<undefined extends SubscriptionSummary['savings'] ? true : false>;
 
 type CompanySubscriptionReadinessIsBoolean = Assert<IsExact<CompanySubscriptionResponse['ready'], boolean>>;
 type SubscriptionScopeReadinessIsBoolean = Assert<IsExact<SubscriptionScopeResponse['ready'], boolean>>;
@@ -76,6 +79,8 @@ void publicScopeWithoutReadiness;
 void publicSubscriptionWithNullReadiness;
 
 export type {
+  RetailCostAllowsAbsence,
+  SavingsAllowsAbsence,
   CompanySubscriptionReadinessIsBoolean,
   SubscriptionScopeReadinessIsBoolean,
   SubscriptionDiscountIsOptionalNumber,
