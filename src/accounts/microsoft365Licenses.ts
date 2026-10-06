@@ -6,8 +6,15 @@ export const MICROSOFT_365_LICENSE_SOURCES = [
   'officeActiveUsers',
   'officeAppUsage',
   'copilotUsage',
+  'subscriptions',
 ] as const;
 export type Microsoft365SourceName = (typeof MICROSOFT_365_LICENSE_SOURCES)[number];
+/** Sources added after the first release. Artifacts and views collected earlier do not have them. */
+export const MICROSOFT_365_LATER_LICENSE_SOURCES = ['subscriptions'] as const;
+export type Microsoft365LaterSourceName = (typeof MICROSOFT_365_LATER_LICENSE_SOURCES)[number];
+/** Per-source record in which later sources are optional. */
+export type Microsoft365SourceRecord<T> = Record<Exclude<Microsoft365SourceName, Microsoft365LaterSourceName>, T> &
+  Partial<Record<Microsoft365LaterSourceName, T>>;
 export type Microsoft365CoverageState = 'complete' | 'partial' | 'denied' | 'unavailable' | 'failed';
 export type Microsoft365RecoveryAction = 'review_access' | 'retry_collection' | 'none';
 export interface Microsoft365LicenseSource {
@@ -27,7 +34,7 @@ export interface Microsoft365LicenseArtifact {
   tenantId: string;
   generatedAt: string;
   tenantSyncRunId?: string;
-  sources: Record<Microsoft365SourceName, Microsoft365LicenseSource>;
+  sources: Microsoft365SourceRecord<Microsoft365LicenseSource>;
   reportIdentity: { concealment: 'concealed' | 'identifiable' | 'unknown'; correlation: 'not_performed' };
 }
 export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSource, 'data' | 'endpoint' | 'recovery'> {
@@ -45,6 +52,18 @@ export interface Microsoft365LicenseRow {
   unallocatedUnits: number | null;
   warningUnits: number | null;
   suspendedUnits: number | null;
+  /**
+   * Commercial subscriptions for this product, earliest lifecycle date first; absent when subscription evidence was
+   * not collected. `nextLifecycleDateTime` is when the subscription moves to its next state if it is not renewed.
+   */
+  renewals?: Microsoft365LicenseRenewal[];
+}
+export interface Microsoft365LicenseRenewal {
+  /** Enabled, Warning (expired, in grace), Suspended, LockedOut or Deleted. */
+  status: string | null;
+  isTrial: boolean | null;
+  totalLicenses: number | null;
+  nextLifecycleDateTime: string | null;
 }
 export interface Microsoft365LicensedAccountRow {
   id: string;
@@ -69,7 +88,7 @@ export interface Microsoft365LicenseView {
   tenantId: string;
   generatedAt: string;
   tenantSyncRunId?: string;
-  coverage: Record<Microsoft365SourceName, Microsoft365LicenseCoverage>;
+  coverage: Microsoft365SourceRecord<Microsoft365LicenseCoverage>;
   reportIdentity: Microsoft365LicenseArtifact['reportIdentity'];
   summary: {
     productCount: number | null;
@@ -393,6 +412,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     !isRecord(value.coverage) ||
     !MICROSOFT_365_LICENSE_SOURCES.every(name => {
       const source = (value.coverage as Record<string, unknown>)[name];
+      if (source === undefined && (MICROSOFT_365_LATER_LICENSE_SOURCES as readonly string[]).includes(name)) return true;
       return (
         isRecord(source) &&
         ['complete', 'partial', 'denied', 'unavailable', 'failed'].includes(String(source.state)) &&
@@ -431,7 +451,21 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         text(row.skuPartNumber) &&
         nullableText(row.appliesTo) &&
         nullableText(row.capabilityStatus) &&
-        ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key]))
+        ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
+        optional(
+          row.renewals,
+          renewals =>
+            Array.isArray(renewals) &&
+            renewals.length <= 32 &&
+            renewals.every(
+              renewal =>
+                isRecord(renewal) &&
+                nullableText(renewal.status) &&
+                nullableBoolean(renewal.isTrial) &&
+                nullableCount(renewal.totalLicenses) &&
+                (renewal.nextLifecycleDateTime === null || date(renewal.nextLifecycleDateTime))
+            )
+        )
     )
   )
     return false;

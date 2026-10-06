@@ -112,6 +112,7 @@ export type AzureSpPermissionKey =
   | 'graphPolicyReadAll'
   | 'graphLicenseAssignmentReadAll'
   | 'graphReportsReadAll'
+  | 'graphOrganizationReadAll'
   | 'billingScopeReader'
   | 'billingExportOperatorContributor'
   | 'costManagementProviderRegistration'
