@@ -87,6 +87,40 @@ export interface Microsoft365LicenseView {
   pricingByCurrency?: Record<string, Microsoft365LicensePricing>;
   /** Served by the API for the explicit or inferred estimate currency. Unavailable currencies have no estimate. */
   pricing?: Microsoft365LicensePricing;
+  /** Duplicate and downgrade findings from curated rules; absent on older snapshots. */
+  insights?: Microsoft365LicenseInsights;
+}
+/**
+ * overlap: the product's capabilities are already included in another product on the same enabled, recently active account.
+ * downgrade: the account used no Windows or Mac desktop app in the 30-day Microsoft 365 Apps report.
+ */
+export type Microsoft365LicenseInsightKind = 'overlap' | 'downgrade';
+/** available: report rows matched by exact user principal name. Otherwise downgrade counts are unknown. */
+export type Microsoft365DowngradeEvidence = 'available' | 'report_unavailable' | 'identities_concealed';
+export interface Microsoft365LicenseInsight {
+  accountId: string;
+  /** The redundant (overlap) or downgradable product assignment. */
+  skuId: string;
+  kind: Microsoft365LicenseInsightKind;
+  ruleId: string;
+  /** Overlap: products on the same account that already include this one. */
+  coveredBySkuIds?: string[];
+  /** Downgrade: suggested replacement; null means the product could be removed. */
+  targetSkuPartNumber?: string | null;
+  targetProductName?: string | null;
+  /** True when the assignment comes only from group-based licensing, so the change belongs on the group. */
+  assignedByGroup?: boolean;
+}
+export interface Microsoft365LicenseInsights {
+  rulesVersion: string;
+  /** Totals across every observed account; null when the evidence they need is unavailable. */
+  overlapAssignmentCount: number | null;
+  overlapAccountCount: number | null;
+  /** Accounts with at least one downgrade suggestion. */
+  downgradeCandidateCount: number | null;
+  downgradeEvidence: Microsoft365DowngradeEvidence;
+  /** Findings for the listed account and product rows only. */
+  findings: Microsoft365LicenseInsight[];
 }
 /**
  * paid: known commercially paid per-user product, even when this market has no price. free: no-cost/trial/viral entitlement.
@@ -139,6 +173,12 @@ export interface Microsoft365LicenseProductPricing {
   unassignedMonthlyCost: number | null;
   disabledMonthlyCost: number | null;
   inactiveMonthlyCost: number | null;
+  /** Redundant assignments on enabled, recently active accounts (disjoint from disabled and inactive); absent on older snapshots. */
+  overlapAccountUnits?: number | null;
+  overlapMonthlyCost?: number | null;
+  /** Downgrade candidates holding this product and the monthly saving of the suggested change. */
+  downgradeAccountUnits?: number | null;
+  downgradeMonthlySaving?: number | null;
 }
 export interface Microsoft365LicensePricing {
   basis: 'list_price_estimate';
@@ -179,6 +219,10 @@ export interface Microsoft365LicensePricing {
     disabledMonthlyCost: number | null;
     inactiveAccountCount: number | null;
     inactiveMonthlyCost: number | null;
+    /** Value of duplicate assignments; adds to the other reclaim values. Absent on older snapshots. */
+    overlapMonthlyCost?: number | null;
+    /** Saving if every priced downgrade candidate moved to its suggested product; not part of the reclaim total. */
+    downgradeMonthlySaving?: number | null;
     /** True only when user and sign-in sources are complete, every listed account is known and no rows were omitted. */
     accountsComplete: boolean;
     /** True when every disabled licensed account is known and listed, even if other rows were omitted. */
@@ -214,6 +258,10 @@ const PRICING_SUMMARY_COUNTS = [
   'inactiveAccountCount',
 ] as const;
 const PRICING_SUMMARY_MONEY = ['monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
+const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving'] as const;
+const OPTIONAL_PRODUCT_COUNTS = ['overlapAccountUnits', 'downgradeAccountUnits'] as const;
+const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving'] as const;
+const optional = (value: unknown, predicate: (value: unknown) => boolean): boolean => value === undefined || predicate(value);
 const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'] as const;
 const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
 const PRODUCT_FAMILIES: readonly Microsoft365LicenseProductFamily[] = [
@@ -250,6 +298,7 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
   if (
     !PRICING_SUMMARY_COUNTS.every(key => nullableCount(summary[key])) ||
     !PRICING_SUMMARY_MONEY.every(key => nullableMoney(summary[key])) ||
+    !OPTIONAL_SUMMARY_MONEY.every(key => optional(summary[key], nullableMoney)) ||
     typeof summary.accountsComplete !== 'boolean' ||
     typeof summary.disabledAccountsComplete !== 'boolean'
   )
@@ -288,7 +337,38 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       PRODUCT_COUNTS.every(key => nullableCount(row[key])) &&
       nullableCount(row.disabledAccountUnits) &&
       nullableCount(row.inactiveAccountUnits) &&
-      PRODUCT_MONEY.every(key => nullableMoney(row[key]))
+      PRODUCT_MONEY.every(key => nullableMoney(row[key])) &&
+      OPTIONAL_PRODUCT_COUNTS.every(key => optional(row[key], nullableCount)) &&
+      OPTIONAL_PRODUCT_MONEY.every(key => optional(row[key], nullableMoney))
+  );
+}
+
+/** Validates bounded duplicate and downgrade findings. */
+export function isMicrosoft365LicenseInsights(value: unknown): value is Microsoft365LicenseInsights {
+  return (
+    isRecord(value) &&
+    text(value.rulesVersion) &&
+    !!value.rulesVersion &&
+    nullableCount(value.overlapAssignmentCount) &&
+    nullableCount(value.overlapAccountCount) &&
+    nullableCount(value.downgradeCandidateCount) &&
+    ['available', 'report_unavailable', 'identities_concealed'].includes(String(value.downgradeEvidence)) &&
+    rows(
+      value.findings,
+      row =>
+        isRecord(row) &&
+        text(row.accountId) &&
+        !!row.accountId &&
+        text(row.skuId) &&
+        !!row.skuId &&
+        (row.kind === 'overlap' || row.kind === 'downgrade') &&
+        text(row.ruleId) &&
+        !!row.ruleId &&
+        optional(row.coveredBySkuIds, ids => Array.isArray(ids) && ids.length <= 16 && ids.every(id => text(id) && !!id)) &&
+        optional(row.targetSkuPartNumber, nullableText) &&
+        optional(row.targetProductName, nullableText) &&
+        optional(row.assignedByGroup, flag => typeof flag === 'boolean')
+    )
   );
 }
 
@@ -391,6 +471,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
   )
     return false;
   if (value.pricing !== undefined && !isMicrosoft365LicensePricing(value.pricing)) return false;
+  if (value.insights !== undefined && !isMicrosoft365LicenseInsights(value.insights)) return false;
   if (value.pricingByCurrency !== undefined) {
     if (!isRecord(value.pricingByCurrency)) return false;
     const estimates = Object.entries(value.pricingByCurrency);
