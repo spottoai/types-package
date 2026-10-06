@@ -7,10 +7,11 @@ export const MICROSOFT_365_LICENSE_SOURCES = [
   'officeAppUsage',
   'copilotUsage',
   'subscriptions',
+  'organization',
 ] as const;
 export type Microsoft365SourceName = (typeof MICROSOFT_365_LICENSE_SOURCES)[number];
 /** Sources added after the first release. Artifacts and views collected earlier do not have them. */
-export const MICROSOFT_365_LATER_LICENSE_SOURCES = ['subscriptions'] as const;
+export const MICROSOFT_365_LATER_LICENSE_SOURCES = ['subscriptions', 'organization'] as const;
 export type Microsoft365LaterSourceName = (typeof MICROSOFT_365_LATER_LICENSE_SOURCES)[number];
 /** Per-source record in which later sources are optional. */
 export type Microsoft365SourceRecord<T> = Record<Exclude<Microsoft365SourceName, Microsoft365LaterSourceName>, T> &
@@ -108,6 +109,13 @@ export interface Microsoft365LicenseView {
   pricing?: Microsoft365LicensePricing;
   /** Duplicate and downgrade findings from curated rules; absent on older snapshots. */
   insights?: Microsoft365LicenseInsights;
+  /** The tenant's Microsoft 365 organization; absent on older snapshots or without organization evidence. */
+  organization?: Microsoft365Organization;
+}
+export interface Microsoft365Organization {
+  displayName: string | null;
+  /** The organization's default verified domain, for example `contoso.com`. */
+  defaultDomain: string | null;
 }
 /**
  * overlap: the product's capabilities are already included in another product on the same enabled, recently active account.
@@ -210,7 +218,12 @@ export interface Microsoft365LicensePricing {
   term: 'annual_commitment';
   /** Product rows sorted by unused monthly value, highest first. */
   products: Microsoft365LicenseProductPricing[];
-  /** Estimated list price per month for each listed account id with at least one priced license. */
+  /**
+   * Estimated list price per month for each listed account id with at least one priced license. The engine stores
+   * this empty (and omits the two id lists below) in `pricingByCurrency`, because one copy per currency would crowd
+   * accounts out of the bounded snapshot; the API adds all three for the served currency with
+   * `withMicrosoft365AccountPricing`.
+   */
   accountMonthlyCosts: Record<string, number>;
   /** Accounts holding commercially paid licenses, including paid products without a market price. */
   paidAccountIds?: string[];
@@ -506,6 +519,11 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     return false;
   if (value.pricing !== undefined && !isMicrosoft365LicensePricing(value.pricing)) return false;
   if (value.insights !== undefined && !isMicrosoft365LicenseInsights(value.insights)) return false;
+  if (
+    value.organization !== undefined &&
+    (!isRecord(value.organization) || !nullableText(value.organization.displayName) || !nullableText(value.organization.defaultDomain))
+  )
+    return false;
   if (value.pricingByCurrency !== undefined) {
     if (!isRecord(value.pricingByCurrency)) return false;
     const estimates = Object.entries(value.pricingByCurrency);
@@ -513,4 +531,37 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
       return false;
   }
   return true;
+}
+
+/**
+ * Adds the per-account list-price fields to one estimate, from the listed accounts and that estimate's product
+ * prices. An account's cost is the sum of its priced paid products; any product without a known price (or an
+ * unknown assignment list) makes its value partial. Paid account ids need complete inventory evidence.
+ */
+export function withMicrosoft365AccountPricing(
+  pricing: Microsoft365LicensePricing,
+  view: Pick<Microsoft365LicenseView, 'accounts' | 'coverage'>
+): Microsoft365LicensePricing {
+  const products = new Map(pricing.products.map(product => [product.skuId, product]));
+  const inventoryKnown = view.coverage.subscribedSkus.state === 'complete' && view.coverage.subscribedSkus.omittedRowCount === 0;
+  const accountMonthlyCosts: Record<string, number> = {};
+  const paidAccountIds: string[] = [];
+  const partialAccountPriceIds: string[] = [];
+  for (const account of view.accounts) {
+    let cost = 0;
+    let paid = false;
+    let partial = account.skuIds === null;
+    for (const skuId of account.skuIds ?? []) {
+      const product = products.get(skuId);
+      if (!product || product.category === 'unpriced') partial = true;
+      if (product?.category !== 'paid') continue;
+      paid = true;
+      if (product.unitPriceMonthly === null) partial = true;
+      else cost += product.unitPriceMonthly;
+    }
+    if (cost > 0) accountMonthlyCosts[account.id] = Math.round(cost * 100) / 100;
+    if (paid) paidAccountIds.push(account.id);
+    if (partial) partialAccountPriceIds.push(account.id);
+  }
+  return { ...pricing, accountMonthlyCosts, paidAccountIds: inventoryKnown ? paidAccountIds : undefined, partialAccountPriceIds };
 }
