@@ -85,12 +85,12 @@ export interface Microsoft365LicenseView {
    * The tenant view is shared across companies, so the API returns the viewer's market as `pricing` instead.
    */
   pricingByCurrency?: Record<string, Microsoft365LicensePricing>;
-  /** Served by the API: the estimate for the requested currency, or USD with `currencyFallback` set. */
+  /** Served by the API for the explicit or inferred estimate currency. Unavailable currencies have no estimate. */
   pricing?: Microsoft365LicensePricing;
 }
 /**
- * paid: per-user product with a reference list price. free: no-cost/trial/viral entitlement.
- * capacity: tenant-level capacity (storage, devices, orders), not a human seat. unpriced: paid or unknown product without a reference price.
+ * paid: known commercially paid per-user product, even when this market has no price. free: no-cost/trial/viral entitlement.
+ * capacity: tenant-level capacity, not a human seat. unpriced: product without a reliable commercial classification/reference price.
  */
 export type Microsoft365LicenseProductCategory = 'paid' | 'free' | 'capacity' | 'unpriced';
 /** Product family for grouping and icons. */
@@ -120,10 +120,12 @@ export interface Microsoft365LicenseProductPricing {
   priceConfidence: Microsoft365LicensePriceConfidence | null;
   /**
    * How the unit price in this currency was obtained: the USD list price itself, a local price observed on the
-   * publisher's site, or the USD price converted with a calibrated market factor. `priceConfidence` describes the
-   * underlying USD list price only.
+   * publisher's site, or a legacy USD conversion. `priceConfidence` describes the selected unit price.
    */
   priceDerivation?: Microsoft365LicensePriceDerivation | null;
+  /** Review date and publisher source for the selected price; absent on legacy snapshots. */
+  priceCheckedAt?: string | null;
+  priceSource?: string | null;
   /** Per user per month in `Microsoft365LicensePricing.currency`, annual commitment, excluding tax. */
   unitPriceMonthly: number | null;
   purchasedUnits: number | null;
@@ -144,16 +146,21 @@ export interface Microsoft365LicensePricing {
   priceListVersion: string;
   /** ISO currency of every amount. */
   currency: string;
-  /** True when the requested currency had no market price list and the USD estimate was served. */
+  /** Legacy USD substitution flag. Current producers return false and never substitute another currency. */
   currencyFallback: boolean;
   term: 'annual_commitment';
   /** Product rows sorted by unused monthly value, highest first. */
   products: Microsoft365LicenseProductPricing[];
   /** Estimated list price per month for each listed account id with at least one priced license. */
   accountMonthlyCosts: Record<string, number>;
+  /** Accounts holding commercially paid licenses, including paid products without a market price. */
+  paidAccountIds?: string[];
+  /** Accounts whose assigned products include a missing or unknown price; their monetary values are partial. */
+  partialAccountPriceIds?: string[];
   /**
    * Totals are null when the evidence they need is unavailable (denied, failed or partial sources, or unknown
-   * quantities), never a zero. Account-based counts are minimums when the matching completeness flag is false.
+   * quantities), never a zero. Money is a subtotal of priced products; pricesComplete and pricedPaidUnits disclose gaps.
+   * Seat totals include paid products without a market price. Account-based counts are minimums when their completeness flag is false.
    */
   summary: {
     paidProductCount: number | null;
@@ -161,6 +168,11 @@ export interface Microsoft365LicensePricing {
     purchasedPaidUnits: number | null;
     assignedPaidUnits: number | null;
     unassignedPaidUnits: number | null;
+    /** Priced subset of all paid products/seats; absent on legacy snapshots. */
+    pricedPaidProductCount?: number | null;
+    pricedPaidUnits?: number | null;
+    /** False for incomplete inventory, unknown classifications or any paid product without a price. */
+    pricesComplete?: boolean;
     monthlyCost: number | null;
     unassignedMonthlyCost: number | null;
     disabledAccountCount: number | null;
@@ -242,6 +254,14 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
     typeof summary.disabledAccountsComplete !== 'boolean'
   )
     return false;
+  if (
+    (summary.pricedPaidProductCount !== undefined && !nullableCount(summary.pricedPaidProductCount)) ||
+    (summary.pricedPaidUnits !== undefined && !nullableCount(summary.pricedPaidUnits)) ||
+    (summary.pricesComplete !== undefined && typeof summary.pricesComplete !== 'boolean') ||
+    (typeof summary.pricedPaidProductCount === 'number' && typeof summary.paidProductCount === 'number' && summary.pricedPaidProductCount > summary.paidProductCount) ||
+    (typeof summary.pricedPaidUnits === 'number' && typeof summary.purchasedPaidUnits === 'number' && summary.pricedPaidUnits > summary.purchasedPaidUnits) ||
+    ![value.paidAccountIds, value.partialAccountPriceIds].every(ids => ids === undefined || rows(ids, id => text(id) && !!id))
+  ) return false;
   const costs = Object.entries(value.accountMonthlyCosts);
   if (costs.length > 2000 || !costs.every(([key, cost]) => text(key) && !!key && money(cost))) return false;
   return rows(
@@ -255,6 +275,8 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       PRODUCT_FAMILIES.includes(row.family as Microsoft365LicenseProductFamily) &&
       ['paid', 'free', 'capacity', 'unpriced'].includes(String(row.category)) &&
       (row.priceConfidence === null || row.priceConfidence === 'verified' || row.priceConfidence === 'reference') &&
+      (row.priceCheckedAt === undefined || row.priceCheckedAt === null || date(row.priceCheckedAt)) &&
+      (row.priceSource === undefined || nullableText(row.priceSource)) &&
       (row.priceDerivation === undefined ||
         row.priceDerivation === null ||
         ['usd_list', 'observed_local', 'market_factor'].includes(String(row.priceDerivation))) &&
