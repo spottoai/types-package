@@ -1,4 +1,10 @@
-import type { AzureFinancialChargeSpendBreakdownV1, DecompositionTreeFinancialChargeSourceBasisCostsV1 } from './financialChargePolicy.js';
+import {
+  isAzureFinancialChargeSpendBreakdownV1,
+  isDecompositionTreeNodeFinancialChargeSourceCostsV1,
+  type AzureFinancialChargeSourceV1,
+  type AzureFinancialChargeSpendBreakdownV1,
+  type DecompositionTreeFinancialChargeSourceBasisCostsV1,
+} from './financialChargePolicy.js';
 
 /**
  * Configured native discount (subscription `nativeDiscountPercent`), applied on read.
@@ -50,17 +56,50 @@ export const applyNativeDiscountMinorUnits = (nativeMinorUnits: number, basisPoi
 
 export interface NativeDiscountSourceMinorUnits {
   nativeMinorUnits: number;
+  /** Signed eligible subset; omission preserves the legacy full-native discount. Zero is produced evidence. */
+  nativeDiscountEligibleMinorUnits?: number;
   marketplaceMinorUnits: number;
   unknownMinorUnits: number;
 }
 
-/** Display amount in minor units: discounted native plus unchanged Marketplace and unknown amounts. */
+/** Provider-native rows without pricing-model evidence retain legacy eligibility. Source proof is supplied by the caller. */
+export const isAzureNativeDiscountEligible = (source: AzureFinancialChargeSourceV1, pricingModel: unknown): boolean => {
+  if (source !== 'azure-native') return false;
+  const model = typeof pricingModel === 'string' ? pricingModel.trim().toLowerCase() : '';
+  return model !== 'reservation' && model !== 'savingsplan';
+};
+
+/** Uniform-rate borrowing needs gross membership proof; legacy records retain their original rule. */
+export const isAzureNativeSpendFullyDiscountEligible = (breakdown: AzureFinancialChargeSpendBreakdownV1 | undefined): boolean => {
+  if (!breakdown || (breakdown.azureNativeDiscountEligible === undefined && breakdown.azureNativeDiscountEligibility === undefined)) return true;
+  if (!isAzureFinancialChargeSpendBreakdownV1(breakdown) || breakdown.azureNativeDiscountEligibility !== 'all-eligible') return false;
+  return (['billed', 'amortized'] as const).every(basis => {
+    const native = breakdown.azureNative[basis];
+    const eligible = breakdown.azureNativeDiscountEligible?.[basis];
+    return eligible?.status !== 'available' || (native.status === 'available' && eligible.totalMinorUnits === native.totalMinorUnits);
+  });
+};
+
+/** Display amount: unchanged excluded native, Marketplace and unknown amounts plus discounted eligible native. */
 export const projectNativeDiscountSourceMinorUnits = (source: NativeDiscountSourceMinorUnits, basisPoints: number): number | undefined => {
-  const adjustedNative = applyNativeDiscountMinorUnits(source.nativeMinorUnits, basisPoints);
-  if (adjustedNative === undefined || !Number.isSafeInteger(source.marketplaceMinorUnits) || !Number.isSafeInteger(source.unknownMinorUnits)) {
+  const eligible = source.nativeDiscountEligibleMinorUnits === undefined ? source.nativeMinorUnits : source.nativeDiscountEligibleMinorUnits;
+  const adjustedEligible = applyNativeDiscountMinorUnits(eligible, basisPoints);
+  if (
+    adjustedEligible === undefined ||
+    !Number.isSafeInteger(source.nativeMinorUnits) ||
+    !Number.isSafeInteger(source.marketplaceMinorUnits) ||
+    !Number.isSafeInteger(source.unknownMinorUnits)
+  ) {
     return undefined;
   }
-  const total = adjustedNative + source.marketplaceMinorUnits + source.unknownMinorUnits;
+  // Eligible can be negative or exceed signed native net when excluded charges include refunds.
+  const total = Number(
+    BigInt(source.nativeMinorUnits) -
+      BigInt(eligible) +
+      BigInt(adjustedEligible) +
+      BigInt(source.marketplaceMinorUnits) +
+      BigInt(source.unknownMinorUnits)
+  );
   return Number.isSafeInteger(total) ? total : undefined;
 };
 
@@ -73,9 +112,15 @@ export const projectDecompositionTreeSourceBasisMinorUnits = (
   basisPoints: number
 ): number | undefined => {
   if (!basis || basis.status !== 'complete') return undefined;
+  if (
+    (basis.azureNativeDiscountEligibleMinorUnits !== undefined || basis.azureNativeDiscountEligibility !== undefined) &&
+    !isDecompositionTreeNodeFinancialChargeSourceCostsV1({ current: { billed: basis } })
+  )
+    return undefined;
   return projectNativeDiscountSourceMinorUnits(
     {
       nativeMinorUnits: basis.azureNativeMinorUnits,
+      nativeDiscountEligibleMinorUnits: basis.azureNativeDiscountEligibleMinorUnits,
       marketplaceMinorUnits: basis.marketplaceMinorUnits,
       unknownMinorUnits: basis.unknownMinorUnits,
     },
@@ -93,13 +138,20 @@ export const projectFinancialChargeSpendBasisMinorUnits = (
   basisPoints: number
 ): number | undefined => {
   if (!breakdown || breakdown.status !== 'complete') return undefined;
+  if (
+    (breakdown.azureNativeDiscountEligible !== undefined || breakdown.azureNativeDiscountEligibility !== undefined) &&
+    !isAzureFinancialChargeSpendBreakdownV1(breakdown)
+  )
+    return undefined;
   const native = breakdown.azureNative[basis];
   const marketplace = breakdown.marketplace[basis];
   const unknown = breakdown.unknown[basis];
   if (native.status !== 'available' || marketplace.status !== 'available' || unknown.status !== 'available') return undefined;
+  const eligible = breakdown.azureNativeDiscountEligible?.[basis];
   return projectNativeDiscountSourceMinorUnits(
     {
       nativeMinorUnits: native.totalMinorUnits,
+      ...(eligible?.status === 'available' ? { nativeDiscountEligibleMinorUnits: eligible.totalMinorUnits } : {}),
       marketplaceMinorUnits: marketplace.totalMinorUnits,
       unknownMinorUnits: unknown.totalMinorUnits,
     },
@@ -133,7 +185,8 @@ export const toNativeDiscountMinorUnits = (amount: number, minorUnitScale = 2): 
 
 /**
  * Applies the discount to a decimal amount known to be entirely native (for example Azure-native
- * recommendation savings, commitment or licensing figures). Returns the discounted decimal amount.
+ * eligible recommendation savings or licensing figures). Eligibility is proved by callers; a native
+ * financial source alone does not prove Reservation/SavingsPlan amounts eligible.
  */
 export const applyNativeDiscountToNativeAmount = (amount: number, basisPoints: number, minorUnitScale = 2): number | undefined => {
   const minorUnits = toNativeDiscountMinorUnits(amount, minorUnitScale);

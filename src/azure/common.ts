@@ -1,6 +1,8 @@
 import type { CostComposition } from './costComposition.js';
 import {
   isAzureProviderScopeFinancialChargeSpendBreakdownV1,
+  isAzureNativeDiscountEligibilityV1,
+  type AzureNativeDiscountEligibilityV1,
   type AzureProviderScopeFinancialChargeSpendBreakdownV1,
 } from './financialChargePolicy.js';
 
@@ -15,6 +17,11 @@ export interface AzureNativeFinancialSummaryV1 {
   status: 'complete' | 'partial';
   cost?: number;
   costAmortized?: number;
+  /** Unadjusted eligible subset of cost for this exact display window; excludes known Reservation/SavingsPlan charges. */
+  azureNativeDiscountEligibleCost?: number;
+  /** Independent amortized eligible subset; omission is not zero or billed evidence. */
+  azureNativeDiscountEligibleCostAmortized?: number;
+  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
   resourceTypes: ResourceCostType[];
 }
@@ -26,14 +33,41 @@ const hasExactFields = (value: Record<string, unknown>, required: readonly strin
 };
 const isOptionalFiniteNumber = (value: unknown): value is number | undefined =>
   value === undefined || (typeof value === 'number' && Number.isFinite(value));
-const isResourceCostType = (value: unknown): value is ResourceCostType =>
+const hasValidEligibleAmounts = (value: Record<string, unknown>): boolean =>
+  isOptionalFiniteNumber(value.azureNativeDiscountEligibleCost) &&
+  isOptionalFiniteNumber(value.azureNativeDiscountEligibleCostAmortized) &&
+  (value.azureNativeDiscountEligibleCost === undefined || typeof value.cost === 'number') &&
+  (value.azureNativeDiscountEligibleCostAmortized === undefined || typeof value.costAmortized === 'number') &&
+  (value.azureNativeDiscountEligibility === undefined || isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility)) &&
+  (value.azureNativeDiscountEligibility === undefined ||
+    ((value.cost === undefined || value.azureNativeDiscountEligibleCost !== undefined) &&
+      (value.costAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized !== undefined))) &&
+  (value.azureNativeDiscountEligibility !== 'none-eligible' ||
+    ((value.azureNativeDiscountEligibleCost === undefined || value.azureNativeDiscountEligibleCost === 0) &&
+      (value.azureNativeDiscountEligibleCostAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized === 0)));
+/** Exact validator for one display-summary service row, including optional eligibility evidence. */
+export const isResourceCostType = (value: unknown): value is ResourceCostType =>
   isRecord(value) &&
-  hasExactFields(value, ['name'], ['cost', 'costAmortized', 'costKind', 'commitmentPurchaseCost', 'commitmentPurchaseCostAmortized']) &&
+  hasExactFields(
+    value,
+    ['name'],
+    [
+      'cost',
+      'costAmortized',
+      'costKind',
+      'commitmentPurchaseCost',
+      'commitmentPurchaseCostAmortized',
+      'azureNativeDiscountEligibleCost',
+      'azureNativeDiscountEligibleCostAmortized',
+      'azureNativeDiscountEligibility',
+    ]
+  ) &&
   typeof value.name === 'string' &&
   value.name.length > 0 &&
   value.name === value.name.trim() &&
   isOptionalFiniteNumber(value.cost) &&
   isOptionalFiniteNumber(value.costAmortized) &&
+  hasValidEligibleAmounts(value) &&
   isOptionalFiniteNumber(value.commitmentPurchaseCost) &&
   isOptionalFiniteNumber(value.commitmentPurchaseCostAmortized) &&
   (value.costKind === undefined || value.costKind === 'usage' || value.costKind === 'commitment-purchase' || value.costKind === 'mixed');
@@ -41,15 +75,36 @@ const isResourceCostType = (value: unknown): value is ResourceCostType =>
 /** Exact validator for one Azure-native daily/month display projection. */
 export const isAzureNativeFinancialSummaryV1 = (value: unknown): value is AzureNativeFinancialSummaryV1 =>
   isRecord(value) &&
-  hasExactFields(value, ['contractVersion', 'policyRef', 'status', 'resourceTypes'], ['cost', 'costAmortized', 'financialChargeSpend']) &&
+  hasExactFields(
+    value,
+    ['contractVersion', 'policyRef', 'status', 'resourceTypes'],
+    [
+      'cost',
+      'costAmortized',
+      'financialChargeSpend',
+      'azureNativeDiscountEligibleCost',
+      'azureNativeDiscountEligibleCostAmortized',
+      'azureNativeDiscountEligibility',
+    ]
+  ) &&
   value.contractVersion === 'azure-native-financial-summary/v1' &&
   value.policyRef === 'azure-cloud-services-excluding-marketplace/v1' &&
   (value.status === 'complete' || value.status === 'partial') &&
   isOptionalFiniteNumber(value.cost) &&
   isOptionalFiniteNumber(value.costAmortized) &&
+  hasValidEligibleAmounts(value) &&
+  (value.azureNativeDiscountEligibility !== 'all-eligible' ||
+    ((value.cost === undefined || value.azureNativeDiscountEligibleCost === value.cost) &&
+      (value.costAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized === value.costAmortized))) &&
   (value.financialChargeSpend === undefined || isAzureProviderScopeFinancialChargeSpendBreakdownV1(value.financialChargeSpend)) &&
   Array.isArray(value.resourceTypes) &&
-  value.resourceTypes.every(isResourceCostType);
+  value.resourceTypes.every(
+    row =>
+      isResourceCostType(row) &&
+      (row.azureNativeDiscountEligibility !== 'all-eligible' ||
+        ((row.cost === undefined || row.azureNativeDiscountEligibleCost === row.cost) &&
+          (row.costAmortized === undefined || row.azureNativeDiscountEligibleCostAmortized === row.costAmortized)))
+  );
 
 export interface AzureLocation {
   /** e.g. "eastus" */
@@ -83,6 +138,11 @@ export interface ResourceCostType {
   cost?: number;
   /** Amortized cost, when available (e.g. 100). */
   costAmortized?: number;
+  /** Proven Azure-native discount-eligible portion of this row's billed cost; not an additional charge. */
+  azureNativeDiscountEligibleCost?: number;
+  /** Independent eligible portion of this row's amortized cost. */
+  azureNativeDiscountEligibleCostAmortized?: number;
+  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   /** Optional classification for non-usage cost shown in dashboards. */
   costKind?: 'usage' | 'commitment-purchase' | 'mixed';
   /** Portion of cost attributable to commitment purchases such as RI or savings plan orders. */

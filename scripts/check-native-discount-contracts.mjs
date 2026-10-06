@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 
 import {
   applyNativeDiscountMinorUnits,
+  isAzureNativeDiscountEligible,
+  isAzureNativeSpendFullyDiscountEligible,
   applyNativeDiscountToNativeAmount,
   isValidNativeDiscountPercent,
   projectDecompositionTreeSourceBasisMinorUnits,
@@ -42,6 +44,49 @@ assert.equal(applyNativeDiscountMinorUnits(100.5, 500), undefined);
 assert.equal(applyNativeDiscountMinorUnits(4_207_264, 500), 3_996_901);
 
 // Marketplace and unknown amounts are unchanged.
+assert.equal(isAzureNativeDiscountEligible('azure-native', 'Reservation'), false);
+assert.equal(isAzureNativeDiscountEligible('azure-native', ' SavingsPlan '), false);
+assert.equal(isAzureNativeDiscountEligible('azure-native', undefined), true);
+assert.equal(isAzureNativeDiscountEligible('marketplace', 'OnDemand'), false);
+assert.equal(isAzureNativeDiscountEligible('unknown', 'OnDemand'), false);
+assert.equal(
+  projectNativeDiscountSourceMinorUnits(
+    { nativeMinorUnits: 10_000, nativeDiscountEligibleMinorUnits: 6_000, marketplaceMinorUnits: 3_000, unknownMinorUnits: -500 },
+    500
+  ),
+  12_200
+);
+assert.equal(
+  projectNativeDiscountSourceMinorUnits(
+    { nativeMinorUnits: 10_000, nativeDiscountEligibleMinorUnits: 0, marketplaceMinorUnits: 0, unknownMinorUnits: 0 },
+    500
+  ),
+  10_000
+);
+assert.equal(
+  projectNativeDiscountSourceMinorUnits(
+    { nativeMinorUnits: 7_500, nativeDiscountEligibleMinorUnits: 10_000, marketplaceMinorUnits: 0, unknownMinorUnits: 0 },
+    500
+  ),
+  7_000,
+  'excluded refunds make eligible larger than native net'
+);
+assert.equal(
+  projectNativeDiscountSourceMinorUnits(
+    { nativeMinorUnits: -4_000, nativeDiscountEligibleMinorUnits: -2_000, marketplaceMinorUnits: -500, unknownMinorUnits: 0 },
+    500
+  ),
+  -4_400,
+  'signed eligible refunds receive the factor'
+);
+assert.equal(
+  projectNativeDiscountSourceMinorUnits(
+    { nativeMinorUnits: 10_000, nativeDiscountEligibleMinorUnits: null, marketplaceMinorUnits: 0, unknownMinorUnits: 0 },
+    500
+  ),
+  undefined,
+  'malformed supplied subset must not use legacy fallback'
+);
 assert.equal(projectNativeDiscountSourceMinorUnits({ nativeMinorUnits: 10_000, marketplaceMinorUnits: 3_000, unknownMinorUnits: -500 }, 500), 12_000);
 
 // Cost Tree basis: partial sources are unavailable.
@@ -55,6 +100,26 @@ const completeBasis = {
   status: 'complete',
 };
 assert.equal(projectDecompositionTreeSourceBasisMinorUnits(completeBasis, 500), 12_500);
+assert.equal(
+  projectDecompositionTreeSourceBasisMinorUnits(
+    { ...completeBasis, azureNativeDiscountEligibleMinorUnits: 6_000, azureNativeDiscountEligibility: 'mixed' },
+    500
+  ),
+  12_700
+);
+assert.equal(
+  projectDecompositionTreeSourceBasisMinorUnits({ ...completeBasis, azureNativeDiscountEligibility: 'none-eligible' }, 500),
+  undefined,
+  'membership without its amount cannot fall back'
+);
+assert.equal(
+  projectDecompositionTreeSourceBasisMinorUnits(
+    { ...completeBasis, azureNativeDiscountEligibleMinorUnits: 6_000, azureNativeDiscountEligibility: 'all-eligible' },
+    500
+  ),
+  undefined,
+  'all-eligible must reconcile to native'
+);
 assert.equal(
   projectDecompositionTreeSourceBasisMinorUnits(
     { ...completeBasis, unknownMinorUnits: 0, unknownAbsoluteMinorUnits: 400, unknownNonZeroRowCount: 2, status: 'partial' },
@@ -76,6 +141,46 @@ const breakdown = {
 assert.equal(projectFinancialChargeSpendBasisMinorUnits(breakdown, 'billed', 500), 12_500);
 assert.equal(projectFinancialChargeSpendBasisMinorUnits(breakdown, 'amortized', 500), undefined, 'unavailable basis stays unavailable');
 assert.equal(projectFinancialChargeSpendBasisMinorUnits({ ...breakdown, status: 'partial' }, 'billed', 500), undefined);
+
+const eligibleBreakdown = {
+  ...breakdown,
+  contractVersion: 'financial-charge-spend/v1',
+  policyRef: 'azure-cloud-services-excluding-marketplace/v1',
+  generationId: 'fictional-generation',
+  subject: { kind: 'provider-scope', providerScopeId: 'fictional-subscription' },
+  period: { startDate: '2026-09-01', endDateExclusive: '2026-10-01' },
+  currencyCode: 'NZD',
+  minorUnitScale: 2,
+  unknownMaterial: { nonZeroRowCount: 0, billedAbsoluteMinorUnits: 0, amortizedAbsoluteMinorUnits: 0 },
+  azureNativeDiscountEligible: { billed: available(6_000), amortized: { status: 'unavailable', reasonCode: 'billing-unavailable' } },
+  azureNativeDiscountEligibility: 'mixed',
+};
+assert.equal(projectFinancialChargeSpendBasisMinorUnits(eligibleBreakdown, 'billed', 500), 12_700);
+assert.equal(isAzureNativeSpendFullyDiscountEligible(eligibleBreakdown), false);
+const cancellingCommitmentRows = { ...eligibleBreakdown, azureNativeDiscountEligible: eligibleBreakdown.azureNative };
+assert.equal(isAzureNativeSpendFullyDiscountEligible(cancellingCommitmentRows), false, 'equal signed totals do not prove gross membership');
+assert.equal(isAzureNativeSpendFullyDiscountEligible({ ...cancellingCommitmentRows, azureNativeDiscountEligibility: 'all-eligible' }), true);
+assert.equal(isAzureNativeSpendFullyDiscountEligible(breakdown), true, 'legacy rate borrowing is unchanged');
+assert.equal(
+  projectFinancialChargeSpendBasisMinorUnits({ ...eligibleBreakdown, azureNativeDiscountEligible: undefined }, 'billed', 500),
+  undefined,
+  'membership-only supplied evidence is malformed'
+);
+assert.equal(
+  projectFinancialChargeSpendBasisMinorUnits(
+    {
+      ...eligibleBreakdown,
+      azureNativeDiscountEligible: {
+        ...eligibleBreakdown.azureNativeDiscountEligible,
+        billed: { status: 'unavailable', reasonCode: 'not-produced' },
+      },
+    },
+    'billed',
+    500
+  ),
+  12_500,
+  'unavailable eligibility preserves legacy total fallback'
+);
 
 // Decimal amounts (native-only figures such as savings).
 assert.equal(toNativeDiscountMinorUnits(1.005), 101, 'exact decimal text avoids binary rounding');

@@ -6,6 +6,8 @@ import {
   projectNativeDiscountSourceMinorUnits,
   toNativeDiscountBasisPoints,
   toNativeDiscountMinorUnits,
+  isAzureNativeDiscountEligible,
+  isAzureNativeSpendFullyDiscountEligible,
   isNativeDiscountProjectionV1,
   formatNativeDiscountProjectionHeader,
   parseNativeDiscountProjectionHeader,
@@ -18,6 +20,27 @@ const projected: number | undefined = projectNativeDiscountSourceMinorUnits(
   { nativeMinorUnits: 10_000, marketplaceMinorUnits: 3_000, unknownMinorUnits: 0 },
   500
 );
+const eligibleProjection: number | undefined = projectNativeDiscountSourceMinorUnits(
+  { nativeMinorUnits: 10_000, nativeDiscountEligibleMinorUnits: 6_000, marketplaceMinorUnits: 3_000, unknownMinorUnits: -500 },
+  500
+);
+void eligibleProjection;
+const eligibleBasis: DecompositionTreeFinancialChargeSourceBasisCostsV1 = {
+  allChargeMinorUnits: 7_500,
+  azureNativeMinorUnits: 7_500,
+  azureNativeDiscountEligibleMinorUnits: 10_000,
+  azureNativeDiscountEligibility: 'mixed',
+  marketplaceMinorUnits: 0,
+  unknownMinorUnits: 0,
+  unknownAbsoluteMinorUnits: 0,
+  unknownNonZeroRowCount: 0,
+  status: 'complete',
+};
+const signedSubsetProjection: number | undefined = projectDecompositionTreeSourceBasisMinorUnits(eligibleBasis, 500);
+const reservationEligible: boolean = isAzureNativeDiscountEligible('azure-native', 'Reservation');
+void signedSubsetProjection;
+void reservationEligible;
+void isAzureNativeSpendFullyDiscountEligible;
 const partialBasis: DecompositionTreeFinancialChargeSourceBasisCostsV1 = {
   allChargeMinorUnits: 100,
   azureNativeMinorUnits: 80,

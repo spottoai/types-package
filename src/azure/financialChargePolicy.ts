@@ -6,6 +6,10 @@ export const AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 = 'azure-c
 
 export type AzureFinancialChargePolicyRefV1 = typeof AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1;
 export type AzureFinancialChargeSourceV1 = 'azure-native' | 'marketplace' | 'unknown';
+export type AzureNativeDiscountEligibilityV1 = 'all-eligible' | 'none-eligible' | 'mixed';
+/** Gross membership proof; signed totals cannot prove a uniform discount. */
+export const isAzureNativeDiscountEligibilityV1 = (value: unknown): value is AzureNativeDiscountEligibilityV1 =>
+  value === 'all-eligible' || value === 'none-eligible' || value === 'mixed';
 export type AzureFinancialChargeSourceUnknownReasonV1 = 'publisher-type-missing' | 'publisher-type-unsupported' | 'publisher-type-unrecognized';
 
 /** One rolling-spend basis split by billing-backed and estimated provenance. */
@@ -76,6 +80,8 @@ export interface AzureFinancialChargeSpendBreakdownV1<TSubject extends AzureFina
    * Never add this subset to allCharge or substitute billed for amortized.
    */
   azureNativeDiscountEligible?: AzureFinancialChargeSpendSourceTotalsV1;
+  /** Membership of native input rows, even when amounts cancel or are zero. */
+  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   marketplace: AzureFinancialChargeSpendSourceTotalsV1;
   unknown: AzureFinancialChargeSpendSourceTotalsV1;
   unknownMaterial: AzureFinancialChargeUnknownMaterialV1;
@@ -110,6 +116,7 @@ export interface DecompositionTreeFinancialChargeSourceBasisCostsV1 {
    * this subset can exceed the signed native net when excluded refunds are present.
    */
   azureNativeDiscountEligibleMinorUnits?: number;
+  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   marketplaceMinorUnits: number;
   unknownMinorUnits: number;
   /** Sum of absolute unknown-source amounts, so offsetting unknown rows stay visible. */
@@ -200,6 +207,7 @@ export interface AzureFinancialChargeSourceTotalsV1 {
    * Commitments remain Azure-native in coverage and savings policy.
    */
   azureNativeDiscountEligibleMinorUnits?: number;
+  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   marketplaceMinorUnits: number;
   unknownMinorUnits: number;
   /** Sum of absolute values for material unknown-source rows, even when their signed net is zero. */
@@ -424,7 +432,7 @@ export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is
         'unknown',
         'unknownMaterial',
       ],
-      ['azureNativeDiscountEligible']
+      ['azureNativeDiscountEligible', 'azureNativeDiscountEligibility']
     ) ||
     value.contractVersion !== 'financial-charge-spend/v1' ||
     value.policyRef !== AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1 ||
@@ -445,6 +453,8 @@ export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is
     !isSpendSourceTotals(value.marketplace) ||
     !isSpendSourceTotals(value.unknown) ||
     (value.azureNativeDiscountEligible !== undefined && !isSpendSourceTotals(value.azureNativeDiscountEligible)) ||
+    (value.azureNativeDiscountEligibility !== undefined &&
+      (!isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility) || value.azureNativeDiscountEligible === undefined)) ||
     !isUnknownMaterial(value.unknownMaterial)
   ) {
     return false;
@@ -455,6 +465,13 @@ export const isAzureFinancialChargeSpendBreakdownV1 = (value: unknown): value is
   for (const basis of ['billed', 'amortized'] as const) {
     const eligible = breakdown.azureNativeDiscountEligible?.[basis];
     if (eligible?.status === 'available' && breakdown.azureNative[basis].status !== 'available') return false;
+    const nativeBasis = breakdown.azureNative[basis];
+    if (eligible?.status === 'available' && nativeBasis.status === 'available') {
+      for (const key of ['totalMinorUnits', 'billingBackedMinorUnits', 'estimatedMinorUnits'] as const) {
+        if (breakdown.azureNativeDiscountEligibility === 'all-eligible' && eligible[key] !== nativeBasis[key]) return false;
+        if (breakdown.azureNativeDiscountEligibility === 'none-eligible' && eligible[key] !== 0) return false;
+      }
+    }
     const partitions = [breakdown.allCharge[basis], ...sources.map(source => source[basis])];
     if (!partitions.every(partition => partition.status === partitions[0].status)) return false;
     if (partitions[0].status === 'unavailable') continue;
@@ -521,11 +538,13 @@ const isTreeSourceBasisCosts = (value: unknown): value is DecompositionTreeFinan
         'unknownNonZeroRowCount',
         'status',
       ],
-      ['azureNativeDiscountEligibleMinorUnits']
+      ['azureNativeDiscountEligibleMinorUnits', 'azureNativeDiscountEligibility']
     ) ||
     !isSafeInteger(value.allChargeMinorUnits) ||
     !isSafeInteger(value.azureNativeMinorUnits) ||
     (value.azureNativeDiscountEligibleMinorUnits !== undefined && !isSafeInteger(value.azureNativeDiscountEligibleMinorUnits)) ||
+    (value.azureNativeDiscountEligibility !== undefined &&
+      (!isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility) || value.azureNativeDiscountEligibleMinorUnits === undefined)) ||
     !isSafeInteger(value.marketplaceMinorUnits) ||
     !isSafeInteger(value.unknownMinorUnits) ||
     !isNonNegativeSafeInteger(value.unknownAbsoluteMinorUnits) ||
@@ -537,6 +556,9 @@ const isTreeSourceBasisCosts = (value: unknown): value is DecompositionTreeFinan
   if (checkedSafeIntegerSum([value.azureNativeMinorUnits, value.marketplaceMinorUnits, value.unknownMinorUnits]) !== value.allChargeMinorUnits) {
     return false;
   }
+  if (value.azureNativeDiscountEligibility === 'all-eligible' && value.azureNativeDiscountEligibleMinorUnits !== value.azureNativeMinorUnits)
+    return false;
+  if (value.azureNativeDiscountEligibility === 'none-eligible' && value.azureNativeDiscountEligibleMinorUnits !== 0) return false;
   if (Math.abs(value.unknownMinorUnits) > value.unknownAbsoluteMinorUnits) return false;
   return value.status === 'complete'
     ? value.unknownAbsoluteMinorUnits === 0 && value.unknownNonZeroRowCount === 0
@@ -664,7 +686,7 @@ const isSourceTotals = (value: unknown): value is AzureFinancialChargeSourceTota
         'unknownRowCount',
         'unknownNonZeroRowCount',
       ],
-      ['azureNativeDiscountEligibleMinorUnits']
+      ['azureNativeDiscountEligibleMinorUnits', 'azureNativeDiscountEligibility']
     )
   ) {
     return false;
@@ -681,10 +703,15 @@ const isSourceTotals = (value: unknown): value is AzureFinancialChargeSourceTota
   if (
     !signedValues.every(isSafeInteger) ||
     !countValues.every(isNonNegativeSafeInteger) ||
-    (value.azureNativeDiscountEligibleMinorUnits !== undefined && !isSafeInteger(value.azureNativeDiscountEligibleMinorUnits))
+    (value.azureNativeDiscountEligibleMinorUnits !== undefined && !isSafeInteger(value.azureNativeDiscountEligibleMinorUnits)) ||
+    (value.azureNativeDiscountEligibility !== undefined &&
+      (!isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility) || value.azureNativeDiscountEligibleMinorUnits === undefined))
   )
     return false;
   const totals = value as unknown as AzureFinancialChargeSourceTotalsV1;
+  if (totals.azureNativeDiscountEligibility === 'all-eligible' && totals.azureNativeDiscountEligibleMinorUnits !== totals.azureNativeMinorUnits)
+    return false;
+  if (totals.azureNativeDiscountEligibility === 'none-eligible' && totals.azureNativeDiscountEligibleMinorUnits !== 0) return false;
   return (
     totals.unknownNonZeroRowCount <= totals.unknownRowCount &&
     totals.rowCount === totals.azureNativeRowCount + totals.marketplaceRowCount + totals.unknownRowCount &&

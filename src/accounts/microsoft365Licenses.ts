@@ -110,6 +110,7 @@ export type Microsoft365LicenseProductFamily =
   | 'other';
 /** verified: taken from the publisher's current price list. reference: long-standing list price that has not been re-verified this cycle. */
 export type Microsoft365LicensePriceConfidence = 'verified' | 'reference';
+export type Microsoft365LicensePriceDerivation = 'usd_list' | 'observed_local' | 'market_factor';
 export interface Microsoft365LicenseProductPricing {
   skuId: string;
   skuPartNumber: string;
@@ -117,15 +118,21 @@ export interface Microsoft365LicenseProductPricing {
   family: Microsoft365LicenseProductFamily;
   category: Microsoft365LicenseProductCategory;
   priceConfidence: Microsoft365LicensePriceConfidence | null;
+  /**
+   * How the unit price in this currency was obtained: the USD list price itself, a local price observed on the
+   * publisher's site, or the USD price converted with a calibrated market factor. `priceConfidence` describes the
+   * underlying USD list price only.
+   */
+  priceDerivation?: Microsoft365LicensePriceDerivation | null;
   /** Per user per month in `Microsoft365LicensePricing.currency`, annual commitment, excluding tax. */
   unitPriceMonthly: number | null;
   purchasedUnits: number | null;
   assignedUnits: number | null;
   unassignedUnits: number | null;
-  /** Assignments on disabled accounts in the listed account rows. */
-  disabledAccountUnits: number;
-  /** Assignments on enabled accounts whose last successful sign-in is older than 90 days. */
-  inactiveAccountUnits: number;
+  /** Assignments on disabled accounts in the listed account rows; null when user evidence is unavailable. */
+  disabledAccountUnits: number | null;
+  /** Assignments on enabled accounts whose last successful sign-in is older than 90 days; null when sign-in evidence is unavailable. */
+  inactiveAccountUnits: number | null;
   monthlyCost: number | null;
   unassignedMonthlyCost: number | null;
   disabledMonthlyCost: number | null;
@@ -144,21 +151,25 @@ export interface Microsoft365LicensePricing {
   products: Microsoft365LicenseProductPricing[];
   /** Estimated list price per month for each listed account id with at least one priced license. */
   accountMonthlyCosts: Record<string, number>;
+  /**
+   * Totals are null when the evidence they need is unavailable (denied, failed or partial sources, or unknown
+   * quantities), never a zero. Account-based counts are minimums when the matching completeness flag is false.
+   */
   summary: {
-    paidProductCount: number;
-    unpricedProductCount: number;
-    purchasedPaidUnits: number;
-    assignedPaidUnits: number;
-    unassignedPaidUnits: number;
-    monthlyCost: number;
-    unassignedMonthlyCost: number;
-    disabledAccountCount: number;
-    disabledMonthlyCost: number;
-    inactiveAccountCount: number;
-    inactiveMonthlyCost: number;
-    /** False when account rows were omitted from the view, so disabled/inactive totals are minimums. */
+    paidProductCount: number | null;
+    unpricedProductCount: number | null;
+    purchasedPaidUnits: number | null;
+    assignedPaidUnits: number | null;
+    unassignedPaidUnits: number | null;
+    monthlyCost: number | null;
+    unassignedMonthlyCost: number | null;
+    disabledAccountCount: number | null;
+    disabledMonthlyCost: number | null;
+    inactiveAccountCount: number | null;
+    inactiveMonthlyCost: number | null;
+    /** True only when user and sign-in sources are complete, every listed account is known and no rows were omitted. */
     accountsComplete: boolean;
-    /** True when every disabled licensed account is in the listed rows, even if other rows were omitted. */
+    /** True when every disabled licensed account is known and listed, even if other rows were omitted. */
     disabledAccountsComplete: boolean;
   };
 }
@@ -225,8 +236,8 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
     return false;
   const summary = value.summary;
   if (
-    !PRICING_SUMMARY_COUNTS.every(key => count(summary[key])) ||
-    !PRICING_SUMMARY_MONEY.every(key => money(summary[key])) ||
+    !PRICING_SUMMARY_COUNTS.every(key => nullableCount(summary[key])) ||
+    !PRICING_SUMMARY_MONEY.every(key => nullableMoney(summary[key])) ||
     typeof summary.accountsComplete !== 'boolean' ||
     typeof summary.disabledAccountsComplete !== 'boolean'
   )
@@ -244,9 +255,12 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       PRODUCT_FAMILIES.includes(row.family as Microsoft365LicenseProductFamily) &&
       ['paid', 'free', 'capacity', 'unpriced'].includes(String(row.category)) &&
       (row.priceConfidence === null || row.priceConfidence === 'verified' || row.priceConfidence === 'reference') &&
+      (row.priceDerivation === undefined ||
+        row.priceDerivation === null ||
+        ['usd_list', 'observed_local', 'market_factor'].includes(String(row.priceDerivation))) &&
       PRODUCT_COUNTS.every(key => nullableCount(row[key])) &&
-      count(row.disabledAccountUnits) &&
-      count(row.inactiveAccountUnits) &&
+      nullableCount(row.disabledAccountUnits) &&
+      nullableCount(row.inactiveAccountUnits) &&
       PRODUCT_MONEY.every(key => nullableMoney(row[key]))
   );
 }
