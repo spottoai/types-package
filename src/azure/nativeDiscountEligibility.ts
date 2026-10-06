@@ -1,6 +1,12 @@
 import { isAzureNativeDiscountEligibilityV1, type AzureNativeDiscountEligibilityV1 } from './financialChargePolicy.js';
 
-/** Optional eligibility on an existing billing/display row; amounts use the same major units as cost/costAmortized. */
+/**
+ * Optional eligibility on an existing billing/display row; amounts use the same major units as cost/costAmortized.
+ * Eligible means proven Azure-native, excluding known Reservation/SavingsPlan PricingModel charges (including
+ * purchases/usage/refunds). Marketplace/unknown-source charges are excluded. Missing native models keep legacy
+ * membership, not an inferred OnDemand classification. Source/subject/generation/period/currency inherit the
+ * owning unadjusted row/artifact. Aggregate membership must come from its input rows, never a synthetic model.
+ */
 export interface AzureNativeDiscountEligibleCostV1 {
   /** Signed eligible subset of this row's billed cost. Absence is unavailable, not zero. */
   azureNativeDiscountEligibleCost?: number;
@@ -38,6 +44,7 @@ export type AzureNativeDiscountEligibleSpendFieldV1 = (typeof AZURE_NATIVE_DISCO
  * Unadjusted major-unit eligible subsets keyed by the corresponding existing spend field.
  * Each present key requires that base field on the enclosing object. Missing keys are unavailable;
  * zero and signed refunds are valid, including subsets larger than the signed all-charge total.
+ * Membership follows AzureNativeDiscountEligibleCostV1's native-source/known-commitment rule.
  * Source/generation/subject/currency/period inherit the enclosing display object; this does not replace
  * formal financial evidence, add charges, or authorize a uniform rate on forecasts/unmapped fields.
  */
@@ -72,8 +79,11 @@ export const hasValidAzureNativeDiscountEligibleCostV1 = (value: unknown): boole
     if (value.azureNativeDiscountEligibility === 'none-eligible' && eligible !== 0) return false;
   }
   if (value.azureNativeDiscountEligibility === undefined) return true;
-  return present && isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility) && COST_FIELDS.every((key, index) =>
-    value[key] === undefined || (isFiniteNumber(value[key]) && value[ELIGIBLE_COST_FIELDS[index]] !== undefined));
+  return (
+    present &&
+    isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility) &&
+    COST_FIELDS.every((key, index) => value[key] === undefined || (isFiniteNumber(value[key]) && value[ELIGIBLE_COST_FIELDS[index]] !== undefined))
+  );
 };
 
 /** Exact nested map validator. An empty supplied map is not produced eligibility evidence. */

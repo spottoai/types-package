@@ -9,6 +9,9 @@ import {
   isAzureFinancialChargeSpendBreakdownV1,
   isAzureNativeFinancialSummaryV1,
   isAzureNativeSubscriptionFinancialStatsV1,
+  hasValidAzureNativeDiscountEligibleCostV1,
+  isAzureNativeDiscountEligibleSpendV1,
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1,
   isAzureResourceFinancialChargeSpendBreakdownForResourceV1,
   isAzurePolicyBoundSavingsAggregateV1,
   isAzurePublisherTypeEvidenceV1,
@@ -593,6 +596,157 @@ assert.equal(
   }),
   false,
   'company total requires coordinate-compatible scope periods'
+);
+
+// Future runtime vectors for the reviewer follow-up. Not executed during contract-only development.
+assert.equal(hasValidAzureNativeDiscountEligibleCostV1({ cost: 100 }), true, 'legacy billing row remains valid');
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({
+    cost: 75,
+    costAmortized: 45,
+    azureNativeDiscountEligibleCost: 100,
+    azureNativeDiscountEligibleCostAmortized: 80,
+    azureNativeDiscountEligibility: 'mixed',
+  }),
+  true,
+  'excluded refunds can make eligible larger than net, independently per basis'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: -40, azureNativeDiscountEligibleCost: -20, azureNativeDiscountEligibility: 'mixed' }),
+  true,
+  'signed eligible refunds retained'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibleCost: 0, azureNativeDiscountEligibility: 'none-eligible' }),
+  true,
+  'excluded-only aggregate carries explicit zero'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 150, azureNativeDiscountEligibleCost: 100, azureNativeDiscountEligibility: 'all-eligible' }),
+  true,
+  'native membership does not classify the Marketplace share of an all-charge row'
+);
+for (const invalid of [null, '100', NaN, Infinity]) {
+  assert.equal(hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibleCost: invalid }), false);
+  assert.equal(isAzureNativeDiscountEligibleSpendV1({ spend30Days: invalid }), false);
+}
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibility: 'mixed' }),
+  false,
+  'membership-only data cannot become legacy fallback'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({
+    cost: 100,
+    costAmortized: 80,
+    azureNativeDiscountEligibleCost: 60,
+    azureNativeDiscountEligibility: 'mixed',
+  }),
+  false,
+  'gross cost proof requires evidence for each available basis'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibleCostAmortized: 60 }),
+  false,
+  'amortized eligibility cannot create an unavailable basis'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibleCost: 60, azureNativeDiscountEligibility: 'none-eligible' }),
+  false
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleCostV1({ cost: 100, azureNativeDiscountEligibleCost: 0, azureNativeDiscountEligibility: 'future-model' }),
+  false
+);
+const displayGroup = {
+  type: 'fictional-type',
+  resources: 1,
+  spend30Days: 75,
+  spend30DaysAmortized: 45,
+  spendPrevious30Days: -20,
+  spend7Days: 10,
+  azureNativeDiscountEligible: { spend30Days: 100, spend30DaysAmortized: 80, spendPrevious30Days: -10, spend7Days: 0 },
+  azureNativeDiscountEligibility: 'mixed',
+};
+assert.equal(hasValidAzureNativeDiscountEligibleSpendProjectionV1({ type: 'fictional-type', spend30Days: 75 }), true, 'legacy group valid');
+assert.equal(hasValidAzureNativeDiscountEligibleSpendProjectionV1(displayGroup), true, 'each window and basis has its own subset');
+assert.equal(
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1({
+    ...displayGroup,
+    azureNativeDiscountEligible: { spend30Days: 0 },
+    azureNativeDiscountEligibility: 'none-eligible',
+  }),
+  true,
+  'partial coordinate coverage does not imply missing coordinates are zero'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1({
+    ...displayGroup,
+    azureNativeDiscountEligible: { spend30Days: 0 },
+    azureNativeDiscountEligibility: 'all-eligible',
+  }),
+  true,
+  'all-charge groups still need native/source proof before uniform projection'
+);
+for (const invalid of [null, {}, { resources: 1 }, { spend30Days: null }, { spend30Days: undefined }, { spend30Days: 100, unknownPeriod: 1 }]) {
+  assert.equal(isAzureNativeDiscountEligibleSpendV1(invalid), false, 'exact supplied coordinate map rejects malformed/empty data');
+}
+assert.equal(hasValidAzureNativeDiscountEligibleSpendProjectionV1({ spend30Days: 75, azureNativeDiscountEligibility: 'mixed' }), false);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1({ ...displayGroup, spend7Days: undefined }),
+  false,
+  'unmapped base cannot inherit another period'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1({ ...displayGroup, spend30DaysAmortized: null }),
+  false,
+  'null basis cannot gain eligible evidence'
+);
+assert.equal(
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1({ ...displayGroup, azureNativeDiscountEligibility: 'none-eligible' }),
+  false,
+  'none-eligible conflicts with a nonzero subset'
+);
+assert.equal(hasValidAzureNativeDiscountEligibleSpendProjectionV1({ ...displayGroup, azureNativeDiscountEligibility: null }), false);
+const nativeStatsWithGroup = {
+  ...azureNativeSubscriptionFinancialStats,
+  resourcesByType: [displayGroup],
+  resourcesByLocation: [],
+  spend7Days: 10,
+  azureNativeDiscountEligible: { spend7Days: 0 },
+  azureNativeDiscountEligibility: 'mixed',
+};
+assert.equal(isAzureNativeSubscriptionFinancialStatsV1(nativeStatsWithGroup), true);
+assert.equal(
+  isAzureNativeSubscriptionFinancialStatsV1({
+    ...nativeStatsWithGroup,
+    azureNativeDiscountEligible: { spend7Days: 10 },
+    azureNativeDiscountEligibility: 'all-eligible',
+  }),
+  true
+);
+assert.equal(
+  isAzureNativeSubscriptionFinancialStatsV1({ ...nativeStatsWithGroup, azureNativeDiscountEligibility: 'all-eligible' }),
+  false,
+  'native-only all-eligible subset must equal its own covered base'
+);
+assert.equal(
+  isAzureNativeSubscriptionFinancialStatsV1({
+    ...nativeStatsWithGroup,
+    resourcesByType: [{ ...displayGroup, azureNativeDiscountEligibility: 'all-eligible' }],
+  }),
+  false,
+  'native-only groups also reconcile all-eligible covered amounts'
+);
+assert.equal(
+  isAzureNativeSubscriptionFinancialStatsV1({
+    ...nativeStatsWithGroup,
+    resourcesByLocation: [
+      { location: 'fictional-region', spend30Days: 75, azureNativeDiscountEligible: { spend30Days: 100 }, azureNativeDiscountEligibility: 'invalid' },
+    ],
+  }),
+  false,
+  'supplied nested group metadata validated'
 );
 
 console.log('Financial charge policy contract checks passed.');

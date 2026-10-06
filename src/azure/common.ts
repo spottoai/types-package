@@ -1,27 +1,21 @@
 import type { CostComposition } from './costComposition.js';
 import {
   isAzureProviderScopeFinancialChargeSpendBreakdownV1,
-  isAzureNativeDiscountEligibilityV1,
-  type AzureNativeDiscountEligibilityV1,
   type AzureProviderScopeFinancialChargeSpendBreakdownV1,
 } from './financialChargePolicy.js';
+import { hasValidAzureNativeDiscountEligibleCostV1, type AzureNativeDiscountEligibleCostV1 } from './nativeDiscountEligibility.js';
 
 /**
  * Non-authoritative daily/month display projection. It inherits period and
  * currency from the containing summary entry. Formal reports and billing must
  * use `financialChargeSpend` when present, never these major-unit fields.
  */
-export interface AzureNativeFinancialSummaryV1 {
+export interface AzureNativeFinancialSummaryV1 extends AzureNativeDiscountEligibleCostV1 {
   contractVersion: 'azure-native-financial-summary/v1';
   policyRef: 'azure-cloud-services-excluding-marketplace/v1';
   status: 'complete' | 'partial';
   cost?: number;
   costAmortized?: number;
-  /** Unadjusted eligible subset of cost for this exact display window; excludes known Reservation/SavingsPlan charges. */
-  azureNativeDiscountEligibleCost?: number;
-  /** Independent amortized eligible subset; omission is not zero or billed evidence. */
-  azureNativeDiscountEligibleCostAmortized?: number;
-  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
   resourceTypes: ResourceCostType[];
 }
@@ -33,18 +27,6 @@ const hasExactFields = (value: Record<string, unknown>, required: readonly strin
 };
 const isOptionalFiniteNumber = (value: unknown): value is number | undefined =>
   value === undefined || (typeof value === 'number' && Number.isFinite(value));
-const hasValidEligibleAmounts = (value: Record<string, unknown>): boolean =>
-  isOptionalFiniteNumber(value.azureNativeDiscountEligibleCost) &&
-  isOptionalFiniteNumber(value.azureNativeDiscountEligibleCostAmortized) &&
-  (value.azureNativeDiscountEligibleCost === undefined || typeof value.cost === 'number') &&
-  (value.azureNativeDiscountEligibleCostAmortized === undefined || typeof value.costAmortized === 'number') &&
-  (value.azureNativeDiscountEligibility === undefined || isAzureNativeDiscountEligibilityV1(value.azureNativeDiscountEligibility)) &&
-  (value.azureNativeDiscountEligibility === undefined ||
-    ((value.cost === undefined || value.azureNativeDiscountEligibleCost !== undefined) &&
-      (value.costAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized !== undefined))) &&
-  (value.azureNativeDiscountEligibility !== 'none-eligible' ||
-    ((value.azureNativeDiscountEligibleCost === undefined || value.azureNativeDiscountEligibleCost === 0) &&
-      (value.azureNativeDiscountEligibleCostAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized === 0)));
 /** Exact validator for one display-summary service row, including optional eligibility evidence. */
 export const isResourceCostType = (value: unknown): value is ResourceCostType =>
   isRecord(value) &&
@@ -67,7 +49,7 @@ export const isResourceCostType = (value: unknown): value is ResourceCostType =>
   value.name === value.name.trim() &&
   isOptionalFiniteNumber(value.cost) &&
   isOptionalFiniteNumber(value.costAmortized) &&
-  hasValidEligibleAmounts(value) &&
+  hasValidAzureNativeDiscountEligibleCostV1(value) &&
   isOptionalFiniteNumber(value.commitmentPurchaseCost) &&
   isOptionalFiniteNumber(value.commitmentPurchaseCostAmortized) &&
   (value.costKind === undefined || value.costKind === 'usage' || value.costKind === 'commitment-purchase' || value.costKind === 'mixed');
@@ -92,7 +74,7 @@ export const isAzureNativeFinancialSummaryV1 = (value: unknown): value is AzureN
   (value.status === 'complete' || value.status === 'partial') &&
   isOptionalFiniteNumber(value.cost) &&
   isOptionalFiniteNumber(value.costAmortized) &&
-  hasValidEligibleAmounts(value) &&
+  hasValidAzureNativeDiscountEligibleCostV1(value) &&
   (value.azureNativeDiscountEligibility !== 'all-eligible' ||
     ((value.cost === undefined || value.azureNativeDiscountEligibleCost === value.cost) &&
       (value.costAmortized === undefined || value.azureNativeDiscountEligibleCostAmortized === value.costAmortized))) &&
@@ -131,18 +113,13 @@ export interface MonthSummaryEntry {
   composition?: CostComposition;
 }
 
-export interface ResourceCostType {
+export interface ResourceCostType extends AzureNativeDiscountEligibleCostV1 {
   /** e.g. "Virtual Machines" */
   name: string;
   /** Actual cost, when available (e.g. 100). */
   cost?: number;
   /** Amortized cost, when available (e.g. 100). */
   costAmortized?: number;
-  /** Proven Azure-native discount-eligible portion of this row's billed cost; not an additional charge. */
-  azureNativeDiscountEligibleCost?: number;
-  /** Independent eligible portion of this row's amortized cost. */
-  azureNativeDiscountEligibleCostAmortized?: number;
-  azureNativeDiscountEligibility?: AzureNativeDiscountEligibilityV1;
   /** Optional classification for non-usage cost shown in dashboards. */
   costKind?: 'usage' | 'commitment-purchase' | 'mixed';
   /** Portion of cost attributable to commitment purchases such as RI or savings plan orders. */

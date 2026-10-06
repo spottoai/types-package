@@ -13,12 +13,71 @@ import type {
   DecompositionTreeFinancialChargeSourceCostsV1,
   DecompositionTreeNodeFinancialChargeSourceCostsV1,
   RecommendationResource,
+  ResourceSpend,
+  ResourcesByType,
+  ResourceByLocation,
+  AzureNativeDiscountEligibleSpendV1,
 } from '../index.js';
 import {
   isAzureFinancialChargeSpendBreakdownV1,
   isDecompositionTreeFinancialChargeSourceCostsV1,
   isDecompositionTreeNodeFinancialChargeSourceCostsV1,
+  hasValidAzureNativeDiscountEligibleCostV1,
+  hasValidAzureNativeDiscountEligibleSpendProjectionV1,
 } from '../index.js';
+
+// Fictional merged meter: eligible 100, excluded refund -25; billed/amortized remain independent.
+const mergedMeterEligibility: Pick<
+  ResourceSpend,
+  'cost' | 'costAmortized' | 'azureNativeDiscountEligibleCost' | 'azureNativeDiscountEligibleCostAmortized' | 'azureNativeDiscountEligibility'
+> = {
+  cost: 75,
+  costAmortized: 45,
+  azureNativeDiscountEligibleCost: 100,
+  azureNativeDiscountEligibleCostAmortized: 80,
+  azureNativeDiscountEligibility: 'mixed',
+};
+const typeEligibility: ResourcesByType = {
+  type: 'fictional-type',
+  resources: 1,
+  spend30Days: 75,
+  spend30DaysAmortized: 45,
+  spend7Days: 10,
+  spendPrevious30Days: -20,
+  spend30DaysActual: 70,
+  spend30DaysEstimated: 5,
+  azureNativeDiscountEligible: {
+    spend30Days: 100,
+    spend30DaysAmortized: 80,
+    spend7Days: 0,
+    spendPrevious30Days: -10,
+    spend30DaysActual: 95,
+    spend30DaysEstimated: 5,
+  },
+  azureNativeDiscountEligibility: 'mixed',
+};
+const locationEligibility: ResourceByLocation = {
+  location: 'fictional-location',
+  resources: 0,
+  spend30Days: 0,
+  azureNativeDiscountEligible: { spend30Days: 0 },
+  azureNativeDiscountEligibility: 'none-eligible',
+};
+const invalidEligibilityKey: AzureNativeDiscountEligibleSpendV1 = {
+  // @ts-expect-error Resource counts are not financial coordinates.
+  resources: 1,
+};
+const invalidEligibilityAmount: AzureNativeDiscountEligibleSpendV1 = {
+  // @ts-expect-error Display eligibility amounts are numeric major units.
+  spend30Days: '100',
+};
+const costEligibilityValid: boolean = hasValidAzureNativeDiscountEligibleCostV1(mergedMeterEligibility);
+const groupEligibilityValid: boolean = hasValidAzureNativeDiscountEligibleSpendProjectionV1(typeEligibility);
+void locationEligibility;
+void invalidEligibilityKey;
+void invalidEligibilityAmount;
+void costEligibilityValid;
+void groupEligibilityValid;
 
 const rollingSpendBreakdown: AzureProviderScopeFinancialChargeSpendBreakdownV1 = {
   contractVersion: 'financial-charge-spend/v1',

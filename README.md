@@ -68,6 +68,31 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+Azure financial evidence supports optional native-discount eligibility subtotals.
+`AzureFinancialChargeSpendBreakdownV1.azureNativeDiscountEligible` carries independent
+billed/amortized and billing-backed/estimated amounts; Cost Tree basis amounts and
+report source totals expose `azureNativeDiscountEligibleMinorUnits`. Existing
+daily/monthly summaries and service rows expose eligible billed/amortized major-unit
+attributes. These unadjusted subsets exclude known Reservation/SavingsPlan charges.
+Optional `azureNativeDiscountEligibility` retains gross membership as `all-eligible`,
+`none-eligible` or `mixed`, including zero-cost and cancelling excluded rows.
+The shared calculation discounts only the available eligible subset; uniform-rate
+shortcuts require all-eligible proof when new evidence is supplied. Missing models
+and absent/unavailable eligibility retain legacy behavior; missing subtotals are not
+zero. Exact validators accept legacy omission and reject malformed extensions.
+Upgrade readers before producers emit the fields, because earlier exact validators
+do not recognize them. Local source/build changes require a new package release and
+consumer adoption before deployment. See the [contract and calculation plan](specs/billing/azure-native-discount-eligibility.md).
+
+The reviewer follow-up adds optional eligible cost attributes to existing merged
+`ResourceSpend` rows. Type/location breakdowns and native dashboard stats carry an
+optional `azureNativeDiscountEligible` map whose keys match their existing spend
+fields, preserving each period, basis and provenance independently. Zero and signed
+refunds remain evidence; missing coordinates stay unavailable. Extension validators
+check finite matching base amounts and reject malformed maps and membership flags.
+These contracts require a new package release and reader adoption before producers
+emit them; adding the contract does not implement the engine/API review fixes.
+
 Trend Tracker uses one root-exported `PortalViewHistoryManifest` contract for
 Azure subscriptions and AWS accounts. Both retain the same `summary`,
 `resources`, and `recommendations` view bodies with daily, weekly, and monthly
