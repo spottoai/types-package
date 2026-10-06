@@ -3,6 +3,7 @@ import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
+import { hasValidAzureNativeDiscountEligibleSpendProjectionV1, type AzureNativeDiscountEligibleSpendProjectionV1 } from './nativeDiscountEligibility.js';
 import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
@@ -119,7 +120,7 @@ export interface ResourceInventoryStats {
  * group arrays inherit period/currency from the containing subscription view.
  * Billing and formal reports must use `financialChargeSpend` when present.
  */
-export interface AzureNativeSubscriptionFinancialStatsV1 {
+export interface AzureNativeSubscriptionFinancialStatsV1 extends AzureNativeDiscountEligibleSpendProjectionV1 {
   contractVersion: 'azure-native-subscription-financial-stats/v1';
   policyRef: 'azure-cloud-services-excluding-marketplace/v1';
   /** Partial means material rows with unknown publisher provenance were excluded. */
@@ -163,7 +164,7 @@ const isFinancialStatsRecord = (value: unknown): value is Record<string, unknown
 export const isAzureNativeSubscriptionFinancialStatsV1 = (value: unknown): value is AzureNativeSubscriptionFinancialStatsV1 => {
   if (!isFinancialStatsRecord(value)) return false;
   const required = ['contractVersion', 'policyRef', 'status', 'resourcesByLocation', 'resourcesByType'];
-  const allowed = new Set([...required, 'financialChargeSpend', ...AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS]);
+  const allowed = new Set([...required, 'financialChargeSpend', 'azureNativeDiscountEligible', 'azureNativeDiscountEligibility', ...AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS]);
   if (!required.every(field => Object.prototype.hasOwnProperty.call(value, field)) || !Object.keys(value).every(field => allowed.has(field))) {
     return false;
   }
@@ -174,6 +175,11 @@ export const isAzureNativeSubscriptionFinancialStatsV1 = (value: unknown): value
     (value.financialChargeSpend === undefined || isAzureProviderScopeFinancialChargeSpendBreakdownV1(value.financialChargeSpend)) &&
     Array.isArray(value.resourcesByLocation) &&
     Array.isArray(value.resourcesByType) &&
+    hasValidAzureNativeDiscountEligibleSpendProjectionV1(value) &&
+    [...value.resourcesByLocation, ...value.resourcesByType].every(group =>
+      !isFinancialStatsRecord(group) ||
+      (group.azureNativeDiscountEligible === undefined && group.azureNativeDiscountEligibility === undefined) ||
+      hasValidAzureNativeDiscountEligibleSpendProjectionV1(group)) &&
     AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS.every(
       field => value[field] === undefined || (typeof value[field] === 'number' && Number.isFinite(value[field]))
     )

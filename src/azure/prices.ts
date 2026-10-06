@@ -3,6 +3,7 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
 import type { CostComposition } from './costComposition.js';
 import type { AzureFinancialChargeClassificationV1 } from './financialChargePolicy.js';
+import type { AzureNativeDiscountEligibleCostV1 } from './nativeDiscountEligibility.js';
 
 export type ResourceCostSource = SpendDataSource;
 
@@ -387,7 +388,7 @@ export interface TargetCostSummary {
   businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
 
-export interface ResourceSpend {
+export interface ResourceSpend extends AzureNativeDiscountEligibleCostV1 {
   /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
   cost: number;
   /** the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account) */

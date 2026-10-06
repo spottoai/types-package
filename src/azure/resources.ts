@@ -1,6 +1,7 @@
 import type { RecommendationEffortEstimateBreakdown } from './recommendations';
+import type { AzureNativeDiscountEligibleSpendProjectionV1 } from './nativeDiscountEligibility.js';
 
-export interface ResourcesByType {
+export interface ResourcesByType extends AzureNativeDiscountEligibleSpendProjectionV1 {
   type: string;
   resources: number;
   /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
@@ -13,6 +14,11 @@ export interface ResourcesByType {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** Billing-backed/estimated portions of this group's own rolling 30-day spend. */
+  spend30DaysActual?: number;
+  spend30DaysAmortizedActual?: number;
+  spend30DaysEstimated?: number;
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;
@@ -24,7 +30,7 @@ export interface ResourcesByType {
   spendPrevious7DaysAmortized?: number;
 }
 
-export interface ResourceByLocation {
+export interface ResourceByLocation extends AzureNativeDiscountEligibleSpendProjectionV1 {
   location: string;
   resources: number;
   /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
@@ -37,6 +43,11 @@ export interface ResourceByLocation {
   /** total spend over the last 30 days */
   spend30Days?: number;
   spend30DaysAmortized?: number;
+  /** Billing-backed/estimated portions of this group's own rolling 30-day spend. */
+  spend30DaysActual?: number;
+  spend30DaysAmortizedActual?: number;
+  spend30DaysEstimated?: number;
+  spend30DaysAmortizedEstimated?: number;
   /** total spend over the previous 30 days */
   spendPrevious30Days?: number;
   spendPrevious30DaysAmortized?: number;

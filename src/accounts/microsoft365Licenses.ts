@@ -258,10 +258,15 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
     (summary.pricedPaidProductCount !== undefined && !nullableCount(summary.pricedPaidProductCount)) ||
     (summary.pricedPaidUnits !== undefined && !nullableCount(summary.pricedPaidUnits)) ||
     (summary.pricesComplete !== undefined && typeof summary.pricesComplete !== 'boolean') ||
-    (typeof summary.pricedPaidProductCount === 'number' && typeof summary.paidProductCount === 'number' && summary.pricedPaidProductCount > summary.paidProductCount) ||
-    (typeof summary.pricedPaidUnits === 'number' && typeof summary.purchasedPaidUnits === 'number' && summary.pricedPaidUnits > summary.purchasedPaidUnits) ||
+    (typeof summary.pricedPaidProductCount === 'number' &&
+      typeof summary.paidProductCount === 'number' &&
+      summary.pricedPaidProductCount > summary.paidProductCount) ||
+    (typeof summary.pricedPaidUnits === 'number' &&
+      typeof summary.purchasedPaidUnits === 'number' &&
+      summary.pricedPaidUnits > summary.purchasedPaidUnits) ||
     ![value.paidAccountIds, value.partialAccountPriceIds].every(ids => ids === undefined || rows(ids, id => text(id) && !!id))
-  ) return false;
+  )
+    return false;
   const costs = Object.entries(value.accountMonthlyCosts);
   if (costs.length > 2000 || !costs.every(([key, cost]) => text(key) && !!key && money(cost))) return false;
   return rows(
