@@ -161,6 +161,8 @@ export interface WorkItemShareProjection {
   impact?: string;
   effort?: string;
   status?: string;
+  /** Display metadata for scope wording; absent for unknown or mixed sources. Never determines authorization. */
+  cloudProviderName?: 'aws' | 'azure';
   subscriptionIds: string[];
   subscriptionNames: string[];
   subscriptionCount: number;

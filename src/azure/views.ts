@@ -107,6 +107,12 @@ export interface AzureResourcePortalItem {
   label3?: string;
   /** e.g. "F1" or "P1" */
   sku?: string;
+  /**
+   * Allowlisted display properties supplied by the owning provider projection.
+   * Keys and values are human-readable strings, shared with resource details;
+   * executable provider configuration, credentials and arbitrary raw inventory are excluded.
+   */
+  properties?: Record<string, string>;
   /** e.g. "App Service" or "Function App" */
   serviceName?: string;
   /** e.g. "appservice" or "functionapp" */
