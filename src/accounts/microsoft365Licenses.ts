@@ -46,6 +46,8 @@ export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSou
 export interface Microsoft365LicenseRow {
   skuId: string;
   skuPartNumber: string;
+  /** Engine-resolved display name; absent on older views or when product identity is unknown. */
+  productName?: string;
   appliesTo: string | null;
   capabilityStatus: string | null;
   enabledUnits: number | null;
@@ -463,6 +465,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         !!row.skuId &&
         text(row.skuPartNumber) &&
         nullableText(row.appliesTo) &&
+        optional(row.productName, text) &&
         nullableText(row.capabilityStatus) &&
         ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
         optional(
