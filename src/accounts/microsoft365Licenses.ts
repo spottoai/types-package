@@ -1,3 +1,12 @@
+import {
+  isMicrosoft365AccountCapabilities,
+  isMicrosoft365CapabilityProjection,
+  isMicrosoft365ProductCapabilities,
+  type Microsoft365AccountCapabilities,
+  type Microsoft365CapabilityProjection,
+  type Microsoft365ProductCapabilities,
+} from './microsoft365Capabilities';
+
 export const MICROSOFT_365_LICENSE_SOURCES = [
   'subscribedSkus',
   'users',
@@ -44,6 +53,8 @@ export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSou
   omittedRowCount: number;
 }
 export interface Microsoft365LicenseRow {
+  /** Live tenant service-plan evidence; absent on older snapshots. */
+  capabilities?: Microsoft365ProductCapabilities;
   skuId: string;
   skuPartNumber: string;
   /** Engine-resolved display name; absent on older views or when product identity is unknown. */
@@ -69,6 +80,8 @@ export interface Microsoft365LicenseRenewal {
   nextLifecycleDateTime: string | null;
 }
 export interface Microsoft365LicensedAccountRow {
+  /** Assignment enablement; neither provisioning success nor measured deployment/usage. */
+  capabilities?: Microsoft365AccountCapabilities;
   id: string;
   displayName: string | null;
   userPrincipalName: string | null;
@@ -87,6 +100,8 @@ export interface Microsoft365UsageRow {
 }
 export type Microsoft365UsageSource = 'officeActiveUsers' | 'officeAppUsage' | 'copilotUsage';
 export interface Microsoft365LicenseView {
+  /** Independent capability facts/notices; never silently added to monetary totals. */
+  capabilities?: Microsoft365CapabilityProjection;
   schemaVersion: 'microsoft-365-license-view/v1';
   tenantId: string;
   generatedAt: string;
@@ -466,6 +481,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         text(row.skuPartNumber) &&
         nullableText(row.appliesTo) &&
         optional(row.productName, text) &&
+        optional(row.capabilities, isMicrosoft365ProductCapabilities) &&
         nullableText(row.capabilityStatus) &&
         ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
         optional(
@@ -497,6 +513,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         nullableBoolean(row.accountEnabled) &&
         (row.lastSuccessfulSignInAt === null || date(row.lastSuccessfulSignInAt)) &&
         nullableBoolean(row.signInOlderThan90Days) &&
+        optional(row.capabilities, isMicrosoft365AccountCapabilities) &&
         (row.skuIds === null || (Array.isArray(row.skuIds) && row.skuIds.length <= 128 && row.skuIds.every(text)))
     )
   )
@@ -522,6 +539,42 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     return false;
   if (value.pricing !== undefined && !isMicrosoft365LicensePricing(value.pricing)) return false;
   if (value.insights !== undefined && !isMicrosoft365LicenseInsights(value.insights)) return false;
+  if (value.capabilities !== undefined) {
+    if (!isMicrosoft365CapabilityProjection(value.capabilities)) return false;
+    const definitions = new Set(value.capabilities.definitions.map(definition => definition.id));
+    const licenses = value.licenses as Microsoft365LicenseRow[];
+    const accounts = value.accounts as Microsoft365LicensedAccountRow[];
+    const skuIds = new Set(licenses.map(row => row.skuId));
+    const accountIds = new Set(accounts.map(row => row.id));
+    if (
+      !licenses.every(
+        row =>
+          (row.capabilities?.plans ?? []).every(plan => plan.capabilityId === null || definitions.has(plan.capabilityId)) &&
+          (!row.capabilities?.comparison ||
+            [...row.capabilities.comparison.addedCapabilityIds, ...row.capabilities.comparison.lostCapabilityIds].every(id => definitions.has(id)))
+      ) ||
+      !accounts.every(
+        row =>
+          !row.capabilities ||
+          [
+            row.capabilities.enabledIds,
+            row.capabilities.disabledIds,
+            row.capabilities.unknownIds,
+            row.capabilities.errorIds,
+            row.capabilities.unavailableIds,
+          ]
+            .flat()
+            .every(id => definitions.has(id))
+      ) ||
+      !value.capabilities.notices.every(
+        notice =>
+          skuIds.has(notice.skuId) &&
+          (notice.accountId === undefined || accountIds.has(notice.accountId)) &&
+          (notice.coveredBySkuIds ?? []).every(id => skuIds.has(id))
+      )
+    )
+      return false;
+  }
   if (
     value.organization !== undefined &&
     (!isRecord(value.organization) || !nullableText(value.organization.displayName) || !nullableText(value.organization.defaultDomain))

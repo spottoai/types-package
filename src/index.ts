@@ -1,5 +1,6 @@
 /** Main entry point - export all interfaces from this package */
 export * from './accounts/microsoft365Licenses';
+export * from './accounts/microsoft365Capabilities';
 export * from './azure/common';
 export * from './azure/costComposition';
 export * from './azure/financialChargePolicy';
