@@ -112,6 +112,9 @@ export interface Microsoft365LicenseView {
     productCount: number | null;
     licensedAccountCount: number | null;
     disabledLicensedAccountCount: number | null;
+    /** Confirmed full-population minimum when an exact total is unavailable; independent of detail truncation. */
+    observedLicensedAccountCount?: number;
+    observedDisabledLicensedAccountCount?: number;
     accountsWithUnknownAssignments: number | null;
   };
   licenses: Microsoft365LicenseRow[];
@@ -468,9 +471,21 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     !isRecord(value.summary) ||
     !['productCount', 'licensedAccountCount', 'disabledLicensedAccountCount', 'accountsWithUnknownAssignments'].every(key =>
       nullableCount((value.summary as Record<string, unknown>)[key])
-    )
+    ) ||
+    !optional(value.summary.observedLicensedAccountCount, count) ||
+    !optional(value.summary.observedDisabledLicensedAccountCount, count)
   )
     return false;
+  const summary = value.summary;
+  for (const [exact, minimum] of [
+    [summary.licensedAccountCount, summary.observedLicensedAccountCount],
+    [summary.disabledLicensedAccountCount, summary.observedDisabledLicensedAccountCount],
+  ]) {
+    if (typeof exact === 'number' && typeof minimum === 'number' && minimum > exact) return false;
+  }
+  const licensed = summary.licensedAccountCount ?? summary.observedLicensedAccountCount;
+  const disabled = summary.disabledLicensedAccountCount ?? summary.observedDisabledLicensedAccountCount;
+  if (typeof licensed === 'number' && typeof disabled === 'number' && disabled > licensed) return false;
   if (
     !rows(
       value.licenses,
@@ -571,7 +586,8 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
           skuIds.has(notice.skuId) &&
           (notice.accountId === undefined || accountIds.has(notice.accountId)) &&
           (notice.coveredBySkuIds ?? []).every(id => skuIds.has(id))
-      )
+      ) ||
+      !value.capabilities.summary.every(row => (row.includedSkuIds ?? []).every(id => skuIds.has(id)))
     )
       return false;
   }

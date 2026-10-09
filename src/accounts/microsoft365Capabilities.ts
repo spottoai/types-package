@@ -68,6 +68,8 @@ export interface Microsoft365CapabilityProjection {
   summary: Array<{
     capabilityId: string;
     includedProductCount: number;
+    /** Contributing owned SKU IDs after curated tier expansion; bounded detail, not an entitlement rule for readers. */
+    includedSkuIds?: string[];
     enabledAccountCount: number | null;
     /** Confirmed minimum before portal detail truncation. */
     observedEnabledAccountCount: number;
@@ -182,6 +184,8 @@ export function isMicrosoft365CapabilityProjection(value: unknown): value is Mic
         record(row) &&
         definitions.has(row.capabilityId) &&
         count(row.includedProductCount) &&
+        optional(row.includedSkuIds, ids) &&
+        (!Array.isArray(row.includedSkuIds) || row.includedSkuIds.length <= Number(row.includedProductCount)) &&
         count(row.observedEnabledAccountCount) &&
         (row.enabledAccountCount === null || (count(row.enabledAccountCount) && row.enabledAccountCount === row.observedEnabledAccountCount)) &&
         (value.accountsComplete || row.enabledAccountCount === null)

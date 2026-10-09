@@ -69,6 +69,9 @@ for (const module of [esm, cjs]) {
   assert(module.isMicrosoft365ProductCapabilities(product), 'Pending provisioning is valid included capability evidence.');
   assert(!module.isMicrosoft365ProductCapabilities({ ...product, plans: [product.plans[0], product.plans[0]] }));
   assert(module.isMicrosoft365CapabilityProjection(projection));
+  assert(module.isMicrosoft365CapabilityProjection({ ...projection, summary: [{ ...projection.summary[0], includedSkuIds: ['sku'] }] }));
+  assert(!module.isMicrosoft365CapabilityProjection({ ...projection, summary: [{ ...projection.summary[0], includedSkuIds: ['sku', 'other'] }] }));
+  assert(!module.isMicrosoft365CapabilityProjection({ ...projection, summary: [{ ...projection.summary[0], includedSkuIds: ['sku', 'sku'] }] }));
   assert(!module.isMicrosoft365CapabilityProjection({ ...projection, observedNoticeCount: 0 }), 'Notice omissions reconcile.');
   assert(
     !module.isMicrosoft365CapabilityProjection({ ...projection, accountsComplete: false }),
