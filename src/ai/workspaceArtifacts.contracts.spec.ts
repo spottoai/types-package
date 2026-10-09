@@ -326,3 +326,62 @@ void genericIntent;
 void unsafeIntent;
 void mismatchedRecipe;
 void missingSnapshot;
+
+// 1.1.24 interactive answers: section anchors, drill-down, composition parts and table sparklines.
+const anchoredCompositionArtifact: AIChatWorkspaceArtifact = {
+  ...genericChartArtifact,
+  artifactId: 'artifact-composition-1',
+  placement: { region: 'afterAnswer', order: 2, anchor: { kind: 'afterSection', sectionLabel: 'Recovery readiness' } },
+  snapshot: {
+    payload: {
+      chartType: 'composition',
+      valueFormat: 'number',
+      series: [
+        {
+          key: 'share',
+          label: 'Resources',
+          points: [
+            { x: 'Protected', y: 13 },
+            { x: 'Not protected', y: 12 },
+          ],
+        },
+      ],
+      xAxis: { type: 'category', label: 'Recovery status' },
+      yAxis: { type: 'number', label: 'Resources' },
+      drillDown: { drillDownId: 'dimension.breakdown@1', elementKeys: ['e0', ''], prompts: ['Which resources are protected?', ''] },
+    },
+  },
+};
+
+const sparklineTableArtifact: AIChatWorkspaceArtifact = {
+  ...genericTableArtifact,
+  artifactId: 'artifact-sparkline-1',
+  snapshot: {
+    payload: {
+      columns: [
+        { key: 'name', label: 'Name', type: 'string' },
+        { key: 'utilizationPercentP95', label: 'Utilization (p95, 30 days)', type: 'number', kind: 'percent' },
+      ],
+      rows: [
+        { name: 'app-plan-1', utilizationPercentP95: 8.3 },
+        { name: 'app-plan-2', utilizationPercentP95: null },
+      ],
+      sparklines: { utilizationPercentP95: { values: [[5.1, null, 8.3], null], axisMax: 100 } },
+      drillDown: { drillDownId: 'subject.explain@1', elementKeys: ['e0', 'e1'], prompts: ['Tell me more about app-plan-1.', 'Tell me more about app-plan-2.'] },
+    },
+  },
+};
+
+const terminalWithNextActions: Pick<AIChatTerminalSnapshot, 'nextActions'> = {
+  nextActions: [
+    {
+      actionId: 'cost.analysis',
+      label: 'Open Cost Analysis',
+      link: { kind: 'internal', label: 'Open Cost Analysis', portalRoute: '/company/company-1/cost-analysis' },
+    },
+  ],
+};
+
+void anchoredCompositionArtifact;
+void sparklineTableArtifact;
+void terminalWithNextActions;

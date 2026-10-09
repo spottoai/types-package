@@ -1,3 +1,4 @@
+import type { AIChatAnswerNextActionV1, AIChatFollowUpSuggestionV1 } from './followUps.js';
 import type { AIChatGroundingSummary } from './grounding.js';
 import type { AIChatWorkspaceArtifact, AIChatWorkspaceArtifactSummary, AIChatWorkspaceArtifactViewIdentity } from './workspaceArtifacts.js';
 import type { AIChatCitation, AIChatEvidenceCoverage } from './index.js';
@@ -37,8 +38,20 @@ export interface AIChatHistoryLatestResponseArtifact {
   workspaceArtifacts?: AIChatWorkspaceArtifact[];
 }
 
+/**
+ * The latest answer's follow-up questions and navigation buttons, re-validated on read so a reloaded conversation
+ * offers the same choices the live answer did (1.1.24).
+ */
+export interface AIChatHistoryLatestAnswerInteractions {
+  turnId?: string;
+  responseId: string;
+  followUpSuggestions: AIChatFollowUpSuggestionV1[];
+  nextActions: AIChatAnswerNextActionV1[];
+}
+
 /** Additive artifact fields carried by the conversation-history response. */
 export interface AIChatConversationHistoryArtifactProjection {
+  latestAnswerInteractions?: AIChatHistoryLatestAnswerInteractions;
   /** @deprecated Use `responseArtifacts`; retained during the API/Portal migration. */
   latestResponseArtifact?: AIChatHistoryLatestResponseArtifact;
   /**

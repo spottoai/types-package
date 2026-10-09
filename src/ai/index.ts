@@ -1,6 +1,6 @@
 /** Common AI interfaces shared between frontend and backend */
 
-import type { AIChatFollowUpSuggestionV1 } from './followUps.js';
+import type { AIChatAnswerNextActionV1, AIChatDrillDownInvocationV1, AIChatFollowUpSuggestionV1 } from './followUps.js';
 import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
 import type {
   AIChatWorkspaceArtifact,
@@ -1053,6 +1053,8 @@ interface AIChatRunStartRequestPage extends AIChatRequestBase {
   action: 'start';
   chatMode: 'page';
   input: string;
+  /** A click on a visual of an earlier turn; the server rebuilds the question and ignores `input`. */
+  drillDown?: AIChatDrillDownInvocationV1;
   pageContext: PageContext;
   outputContract?: AIChatOutputContract;
   workspaceScope?: never;
@@ -1063,6 +1065,8 @@ interface AIChatRunStartRequestWorkspace extends AIChatRequestBase {
   action: 'start';
   chatMode: 'workspace';
   input: string;
+  /** A click on a visual of an earlier turn; the server rebuilds the question and ignores `input`. */
+  drillDown?: AIChatDrillDownInvocationV1;
   /**
    * Workspace turns may still include page context when launched from a page,
    * but pure workspace turns rely on workspaceScope alone.
@@ -1200,6 +1204,8 @@ export interface AIChatTerminalSnapshot {
   workspaceArtifacts?: AIChatWorkspaceArtifact[];
   /** Follow-up questions derived from this answer; absent when none were produced. */
   followUpSuggestions?: AIChatFollowUpSuggestionV1[];
+  /** Navigation buttons for this answer (at most three); absent when none apply. */
+  nextActions?: AIChatAnswerNextActionV1[];
 }
 
 /**

@@ -1,4 +1,5 @@
 import { hasExactKeys, isBoundedString, isRecord } from '../environment/internal.js';
+import type { AIChatWorkspaceInternalLink } from './workspaceArtifacts.js';
 
 export const AI_CHAT_FOLLOW_UP_LIMITS_V1 = Object.freeze({
   suggestions: 3,
@@ -28,3 +29,24 @@ export const isAIChatFollowUpSuggestions = (value: unknown): value is AIChatFoll
   value.every(isSuggestion) &&
   new Set(value.map(suggestion => suggestion.suggestionId)).size === value.length &&
   new Set(value.map(suggestion => suggestion.text.toLowerCase())).size === value.length;
+
+/**
+ * An answer-level navigation button (interactive answers, 1.1.24). Built by the server from the turn's own visuals and
+ * resolved scope, never named by the model; the route is always a company-anchored Portal route, which the Portal
+ * re-checks against its own allowlist.
+ */
+export interface AIChatAnswerNextActionV1 {
+  actionId: string;
+  /** Title Case, at most 40 characters, product-agnostic. */
+  label: string;
+  link: AIChatWorkspaceInternalLink;
+}
+
+export const AI_CHAT_ANSWER_NEXT_ACTION_LIMITS_V1 = Object.freeze({ actions: 3, labelChars: 40 } as const);
+
+/** A drill-down click: opaque references only. The server rebuilds the question from its stored binding. */
+export interface AIChatDrillDownInvocationV1 {
+  turnId: string;
+  artifactId: string;
+  elementKey: string;
+}
