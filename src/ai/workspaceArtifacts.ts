@@ -760,6 +760,11 @@ export interface AIChatWorkspaceArtifactSummary {
   coverage: AIChatWorkspaceCoverage;
   truncated?: AIChatWorkspaceArtifactTruncation;
   supportedActions: Array<'expand' | 'refresh' | 'downloadCsv' | 'downloadPng' | 'downloadDocx'>;
+  /**
+   * Where the artifact sat in its answer (1.1.28), so a reloaded answer keeps visuals after their sections and can
+   * still be presented as slides before each visual is lazily loaded. Optional: older summaries have none.
+   */
+  placement?: AIChatWorkspaceArtifactPlacement;
 }
 
 export type AIChatWorkspaceArtifactFailureReason = 'validationFailed' | 'budgetExceeded' | 'unavailable' | 'unsupported';
