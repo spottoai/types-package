@@ -94,3 +94,38 @@ for (const validate of [isMicrosoft365LicenseView, cjs.isMicrosoft365LicenseView
   }
 }
 console.log('Microsoft 365 product-name contracts: legacy snapshots, unknown quantities and CJS/ESM validators pass.');
+
+const esm = await import('../dist/esm/entries/root.js');
+for (const { withMicrosoft365AccountPricing } of [esm, cjs]) {
+  const product = {
+    skuId: 'mixed',
+    category: 'paid',
+    purchasedUnits: 10,
+    assignedUnits: 12,
+    unitPriceMonthly: 39,
+  };
+  const trialView = {
+    accounts: [
+      { id: 'trial-or-paid', skuIds: ['mixed'] },
+      { id: 'paid', skuIds: ['commercial'] },
+    ],
+    coverage: legacyView.coverage,
+    licenses: [{ skuId: 'mixed', renewals: [{ status: 'Enabled', isTrial: true, totalLicenses: 2 }] }],
+  };
+  const priced = withMicrosoft365AccountPricing({ ...legacy, products: [product, { ...product, skuId: 'commercial' }] }, trialView);
+  assert.deepEqual(priced.accountMonthlyCosts, { paid: 39 });
+  assert.equal(priced.paidAccountIds, undefined, 'Ambiguous membership must not be presented as an exhaustive paid set.');
+  assert.deepEqual(priced.partialAccountPriceIds, ['trial-or-paid']);
+  // Old callers without license metadata must also respect a producer's withheld allocation.
+  const withheld = withMicrosoft365AccountPricing(
+    { ...legacy, products: [{ ...product, assignedUnits: null }] },
+    {
+      accounts: [trialView.accounts[0]],
+      coverage: trialView.coverage,
+    }
+  );
+  assert.deepEqual(withheld.accountMonthlyCosts, {});
+  assert.equal(withheld.paidAccountIds, undefined);
+  assert.deepEqual(withheld.partialAccountPriceIds, ['trial-or-paid']);
+}
+console.log('Microsoft 365 account pricing: ambiguous trial allocation is unavailable in CJS and ESM.');

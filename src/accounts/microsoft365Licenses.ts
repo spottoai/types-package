@@ -612,12 +612,27 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
  */
 export function withMicrosoft365AccountPricing(
   pricing: Microsoft365LicensePricing,
-  view: Pick<Microsoft365LicenseView, 'accounts' | 'coverage'>
+  view: Pick<Microsoft365LicenseView, 'accounts' | 'coverage'> & Partial<Pick<Microsoft365LicenseView, 'licenses'>>
 ): Microsoft365LicensePricing {
   const products = new Map(pricing.products.map(product => [product.skuId, product]));
+  // Graph supplies aggregate trial stock, but does not identify which accounts consume paid seats.
+  // licenses is additive for older callers; a withheld assigned quantity also prevents false attribution.
+  const ambiguousSkuIds = new Set(
+    view.licenses
+      ?.filter(license =>
+        license.renewals?.some(
+          renewal =>
+            renewal.isTrial === true &&
+            ['Enabled', 'Warning'].includes(renewal.status ?? '') &&
+            (renewal.totalLicenses === null || renewal.totalLicenses > 0)
+        )
+      )
+      .map(license => license.skuId) ?? []
+  );
   const inventoryKnown = view.coverage.subscribedSkus.state === 'complete' && view.coverage.subscribedSkus.omittedRowCount === 0;
   const accountMonthlyCosts: Record<string, number> = {};
   const paidAccountIds: string[] = [];
+  let paidMembershipKnown = true;
   const partialAccountPriceIds: string[] = [];
   for (const account of view.accounts) {
     let cost = 0;
@@ -627,6 +642,11 @@ export function withMicrosoft365AccountPricing(
       const product = products.get(skuId);
       if (!product || product.category === 'unpriced') partial = true;
       if (product?.category !== 'paid') continue;
+      if (ambiguousSkuIds.has(skuId) || product.assignedUnits === null) {
+        partial = true;
+        paidMembershipKnown = false;
+        continue;
+      }
       paid = true;
       if (product.unitPriceMonthly === null) partial = true;
       else cost += product.unitPriceMonthly;
@@ -635,5 +655,10 @@ export function withMicrosoft365AccountPricing(
     if (paid) paidAccountIds.push(account.id);
     if (partial) partialAccountPriceIds.push(account.id);
   }
-  return { ...pricing, accountMonthlyCosts, paidAccountIds: inventoryKnown ? paidAccountIds : undefined, partialAccountPriceIds };
+  return {
+    ...pricing,
+    accountMonthlyCosts,
+    paidAccountIds: inventoryKnown && paidMembershipKnown ? paidAccountIds : undefined,
+    partialAccountPriceIds,
+  };
 }
