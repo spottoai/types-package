@@ -580,13 +580,26 @@ export interface AIChatWorkspaceScenarioOption {
   requires?: string[];
 }
 
+/** One choice of a what-if comparison (a VM's size, its OS disk tier). */
+export interface AIChatWorkspaceScenarioDimension {
+  key: string;
+  label: string;
+  currentOptionId: string;
+  /**
+   * The option the comparison opens on (1.1.31), when the question is about one option ("What would change if vm-app-01
+   * moved to Standard_D4as_v4?"). Must be one of `options`. Without it the client opens on the first recommended option.
+   */
+  selectedOptionId?: string;
+  options: AIChatWorkspaceScenarioOption[];
+}
+
 export interface AIChatWorkspaceScenarioPayload {
   subjectLabel: string;
   currencyCode: string;
   costBasis: 'list' | 'billed' | 'estimated';
   costNote?: string;
   /** 1..3 choices of 2..12 options each. */
-  dimensions: Array<{ key: string; label: string; currentOptionId: string; options: AIChatWorkspaceScenarioOption[] }>;
+  dimensions: AIChatWorkspaceScenarioDimension[];
   metrics: Array<{
     key: string;
     label: string;

@@ -405,6 +405,7 @@ const scenarioArtifact: AIChatWorkspaceArtifact = {
           key: 'size',
           label: 'Size',
           currentOptionId: 'size-0',
+          selectedOptionId: 'size-1',
           options: [
             { optionId: 'size-0', label: 'Standard_E4ds_v5', group: 'current', monthlyCost: 496, provides: ['premiumDisk'] },
             { optionId: 'size-1', label: 'Standard_E4s_v5', group: 'recommended', monthlyCost: 429, values: { memoryGB: 32 } },
