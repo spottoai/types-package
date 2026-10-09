@@ -22,7 +22,9 @@ export type AIChatWorkspacePresentation =
   | 'resourceList'
   | 'decisionBrief'
   | 'kpi'
-  | 'report';
+  | 'report'
+  | 'scenario'
+  | 'recommendations';
 
 export type AIChatWorkspaceTimeRangePreset = 'P7D' | 'P30D' | 'P90D' | 'P180D' | 'P1Y' | 'currentBillingPeriod' | 'previousBillingPeriod';
 
@@ -170,9 +172,32 @@ export const AI_CHAT_WORKSPACE_CAPABILITIES = [
     presentations: ['kpi'],
     dataModes: ['snapshot'],
   },
+  /** A server-priced what-if comparison (for example a VM's sizes and OS disk tiers); the client only selects and sums. */
+  {
+    viewId: 'genericScenario',
+    version: 1,
+    artifactKind: 'scenario',
+    presentations: ['scenario'],
+    dataModes: ['snapshot'],
+  },
+  /** Up to five recommendation cards a reader can open, ask about or prioritise. */
+  {
+    viewId: 'genericRecommendations',
+    version: 1,
+    artifactKind: 'recommendations',
+    presentations: ['recommendations'],
+    dataModes: ['snapshot'],
+  },
 ] as const;
 
-export const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = ['genericTable', 'genericBarChart', 'genericLineChart', 'genericKpi'] as const;
+export const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = [
+  'genericTable',
+  'genericBarChart',
+  'genericLineChart',
+  'genericKpi',
+  'genericScenario',
+  'genericRecommendations',
+] as const;
 export const AI_CHAT_REPORT_STRATEGY_IDS = [
   'security.landscape@1',
   'cost.changeWaterfall@1',

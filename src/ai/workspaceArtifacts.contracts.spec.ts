@@ -11,7 +11,7 @@ import {
   type AIChatWorkspaceViewId,
 } from '../index';
 
-const capabilityCount: 19 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
+const capabilityCount: 21 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
 const viewId: AIChatWorkspaceViewId = 'azure.cost.subscriptionSpendTrend';
 
 const costRecipe: AIChatWorkspaceLiveViewRecipe = {
@@ -382,6 +382,75 @@ const terminalWithNextActions: Pick<AIChatTerminalSnapshot, 'nextActions'> = {
   ],
 };
 
+// 1.1.27: the what-if comparison and recommendation cards are registered generic views.
+const scenarioArtifact: AIChatWorkspaceArtifact = {
+  schemaVersion: 1,
+  artifactId: 'artifact-scenario-1',
+  turnId: 'turn-1',
+  kind: 'scenario',
+  dataMode: 'snapshot',
+  view: { viewId: 'genericScenario', version: 1 },
+  title: 'What would resizing vm-app-01 change?',
+  createdAt: '2026-10-09T00:00:00.000Z',
+  accessibleSummary: 'vm-app-01 runs Standard_E4ds_v5 at 496 NZD a month at list price.',
+  placement: { region: 'afterAnswer', order: 1 },
+  provenance: { citationIds: ['citation-1'], sourceTypes: ['operational'], coverage: 'complete' },
+  snapshot: {
+    payload: {
+      subjectLabel: 'vm-app-01',
+      currencyCode: 'NZD',
+      costBasis: 'list',
+      dimensions: [
+        {
+          key: 'size',
+          label: 'Size',
+          currentOptionId: 'size-0',
+          options: [
+            { optionId: 'size-0', label: 'Standard_E4ds_v5', group: 'current', monthlyCost: 496, provides: ['premiumDisk'] },
+            { optionId: 'size-1', label: 'Standard_E4s_v5', group: 'recommended', monthlyCost: 429, values: { memoryGB: 32 } },
+          ],
+        },
+      ],
+      metrics: [{ key: 'memoryGB', label: 'Memory', format: 'gb', better: 'higher' }],
+      drillDown: { drillDownId: 'option.explain@1', elementKeys: ['', 'e1'], prompts: ['', 'What would change if vm-app-01 moved to Standard_E4s_v5?'] },
+    },
+  },
+};
+
+const recommendationCardsArtifact: AIChatWorkspaceArtifact = {
+  schemaVersion: 1,
+  artifactId: 'artifact-recommendations-1',
+  turnId: 'turn-1',
+  kind: 'recommendations',
+  dataMode: 'snapshot',
+  view: { viewId: 'genericRecommendations', version: 1 },
+  title: 'Recommendations to act on first',
+  createdAt: '2026-10-09T00:00:00.000Z',
+  accessibleSummary: 'Enable Azure Hybrid Benefit for Windows Virtual Machine.',
+  placement: { region: 'afterAnswer', order: 2 },
+  provenance: { citationIds: ['citation-1'], sourceTypes: ['operational'], coverage: 'complete' },
+  links: {
+    'rec-0': { kind: 'internal', label: 'Open Recommendation', portalRoute: '/company/company-1/recommendations/rec-1?subscriptions=sub-1' },
+  },
+  snapshot: {
+    payload: {
+      items: [
+        {
+          recommendationId: 'rec-1',
+          subscriptionId: 'sub-1',
+          title: 'Enable Azure Hybrid Benefit for Windows Virtual Machine',
+          impact: 'Medium',
+          effort: 'Low',
+          savings: { monthly: 3251, currencyCode: 'NZD' },
+          linkKey: 'rec-0',
+        },
+      ],
+    },
+  },
+};
+
 void anchoredCompositionArtifact;
+void scenarioArtifact;
+void recommendationCardsArtifact;
 void sparklineTableArtifact;
 void terminalWithNextActions;
