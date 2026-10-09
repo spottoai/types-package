@@ -15,6 +15,10 @@ const isMoneyRange = (value: unknown): value is CanonicalMoneyRangeV2 => {
 export const isReportPortfolioSavingsContribution = (value: unknown): value is PortfolioSavingsContributionV2 =>
   isRecord(value) &&
   value.semantics === 'portfolio-contribution' &&
+  (value.estimateAuthority === undefined ||
+    value.estimateAuthority === 'billed-resource-spend' ||
+    value.estimateAuthority === 'provider-estimate' ||
+    value.estimateAuthority === 'mixed') &&
   isMoneyRange(value.range) &&
   Array.isArray(value.allocationIds) &&
   value.allocationIds.length <= 10000 &&

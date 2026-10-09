@@ -424,6 +424,13 @@ export interface RecommendationSummary {
 }
 
 export interface RecommendationWithResources {
+  /** Effective provider-scope state after an authorized owner-bound read; dates are ISO UTC wire strings. */
+  recommendationState?: {
+    status: 'Active' | 'Dismissed';
+    /** Future dismissal end denotes Snoozed; expired dismissal reads Active without an effective end. */
+    statusEndAt?: string;
+    updatedAt?: string;
+  };
   recommendation: Recommendation;
   /** Total affected resources when the resources array is trimmed or sampled. */
   resourcesCount?: number;
@@ -576,7 +583,8 @@ export interface RecommendationResource {
     product: string;
     aliases?: string[];
   };
-  spend: number;
+  /** Billed spend when proved by the producer; unresolved resource evidence omits it rather than fabricating zero. */
+  spend?: number;
   /** Absent when the producer has no amortized evidence for every contributing billing row. */
   spendAmortized?: number;
   /** Rolling 30-day source partition used to present proved Azure-native resource spend. */
@@ -606,6 +614,8 @@ export interface RecommendationResource {
 }
 
 export interface RecommendationsView extends AzurePortalVersionedArtifact {
+  /** Current Azure scope state is awaiting matching publication; comment-only changes do not set this flag. */
+  recommendationStatePendingPublication?: boolean;
   recommendations: RecommendationWithResources[];
   securityImpactDetails?: SecurityImpact[];
   subscriptionSecurityStatus?: SubscriptionSecurityStatus;

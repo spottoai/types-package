@@ -1,4 +1,6 @@
 export interface Budget {
+  /** Internal marker for a Spotto-suggested budget; not customer-visible text. */
+  generatedBySpotto?: boolean;
   name: string;
   startDate: string;
   endDate: string;

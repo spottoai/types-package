@@ -64,7 +64,8 @@ export type DataProtectionFinding =
   | 'backup_cost_allocated'
   | 'backup_estimate_unavailable'
   | 'source_resource_unresolved'
-  | 'collection_partial';
+  | 'collection_partial'
+  | 'inventory_stale';
 
 export interface DataProtectionCostAllocationRule {
   method: DataProtectionCostAllocationMethod;

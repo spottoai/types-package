@@ -19,7 +19,7 @@ export interface SecureScoreEvidence {
   providerName?: ArtifactProvider;
   source?: SecurityScoreSource;
   method?: 'provider-reported' | 'control-pass-rate';
-  /** Machine-readable reason for unavailable, stale, or partial evidence. */
+  /** Machine-readable reason for unavailable, stale, or partial evidence. Security Hub uses `access-denied` for denied collection and `no-enabled-standards` when no standards are enabled. */
   reason?: string;
   /** AWS control evidence, never synthetic Azure score points. */
   controlCounts?: SecurityControlCounts;

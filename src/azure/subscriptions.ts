@@ -76,6 +76,10 @@ export interface SubscriptionScope {
   secureScore?: number;
   secureScoreEvidence?: SecureScoreEvidence;
   totalCost?: number;
+  /** Observed rolling 30-day aggregated billing row count; absent when unavailable. */
+  billingItems?: number;
+  /** Observed rolling 30-day collected activity event count; absent when unavailable. */
+  activityItems?: number;
 }
 
 /** Public subscription-scope response with authoritative readiness. */

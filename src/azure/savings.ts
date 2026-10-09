@@ -11,6 +11,8 @@ export interface CanonicalMoneyRangeV2 {
   maxSavingsMinorUnits: number;
 }
 
+export type SavingsEstimateAuthorityV2 = 'billed-resource-spend' | 'provider-estimate';
+
 export type SavingsCombinationPolicyV2 = 'additive' | 'exclusive' | 'conditional';
 
 /** A recommendation evaluated in isolation. This value is not portfolio-additive. */
@@ -24,6 +26,8 @@ export interface ScenarioSavingsPotentialV2 {
 /** Savings attributed by the producer from canonical allocations. This value is portfolio-additive. */
 export interface PortfolioSavingsContributionV2 {
   semantics: 'portfolio-contribution';
+  /** Origin of the additive estimate; absent on legacy billing-backed producers. */
+  estimateAuthority?: SavingsEstimateAuthorityV2 | 'mixed';
   allocationIds: string[];
   range: CanonicalMoneyRangeV2;
 }
@@ -63,8 +67,10 @@ export interface SavingsAggregateV2 {
   scopeKey: string;
   scope: SavingsScopeV2;
   allocationCount: number;
-  /** A partial ledger is audit evidence, never a complete scope savings headline. AWS producers must supply this. */
+  /** Partial totals are an estimated subtotal over recommendations that have an estimate; legacy scalars (`savings`, `costSavingsSummary`, `savingsByCurrency`) are complete-only. */
   coverage?: { status: 'complete' | 'partial'; unavailableClaimCount: number };
+  /** Origin of this additive total; absent on legacy billing-backed producers. */
+  estimateAuthority?: SavingsEstimateAuthorityV2 | 'mixed';
   totals: CanonicalMoneyRangeV2;
 }
 
@@ -81,6 +87,8 @@ export interface CanonicalSavingsAllocationProvenanceV2 {
   source: string;
   evidenceIds?: string[];
   stableSavingsBasis: boolean;
+  /** AWS always supplies this; omission means billed-resource-spend for legacy producers. */
+  estimateAuthority?: SavingsEstimateAuthorityV2;
   /** Billing basis of the captured owner spending cap; the source estimate may have its own authority. */
   spendBasis?: 'billed' | 'amortized';
   /** Exact accepted billing generations checked against the captured owner spending evidence. */
