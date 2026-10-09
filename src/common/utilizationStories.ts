@@ -4,7 +4,7 @@
  * (`azure-portal/subscriptions/{id}/stories/{storyKey}.json`), the bounded story samples embedded
  * in the subscription report evidence pack, and the cloud-engine config schemas that drive them.
  *
- * Provider-neutral (`provider` on every profile); depends only on other `common/` modules.
+ * Provider-neutral (`provider` on every profile); reuses the shared savings authority vocabulary via a type-only import.
  * Spec: `Specs/reporting/utilization-stories-types-package.md` (parent: core `specs/reporting/utilization-stories.md`).
  *
  * Producer: cloud-engine (`UtilizationProfileBuilder`, `StoryAccumulator`). Consumers: api (story routes), ui
@@ -13,6 +13,7 @@
  * All contracts are additive: consumers must tolerate unknown fields, and every optional field may be absent on
  * artifacts produced by older engine versions.
  */
+import type { SavingsEstimateAuthorityV2 } from '../azure/savings';
 import type { MetricStats } from './metricStats';
 import type { ReportBoundedRows } from './boundedRows';
 
@@ -210,7 +211,7 @@ export type SkuOptionKind = 'same-shape' | 'fits-usage' | 'trade-off' | 'cross-p
  * - `billed`: the published saving against the resource's billed (cash) spend in the window.
  * Absent on artifacts from older producers: the portal signal was list-based, story rows billed-based.
  */
-export type SkuSavingsBasis = 'list' | 'billed';
+export type SkuSavingsBasis = 'list' | 'billed' | 'provider-estimate';
 /**
  * Estimated p95 utilisation on the option, in percent: current p95 × current capacity ÷ option capacity (vCPUs for
  * `cpu`, memory GB for `memory`). An estimate: it assumes the load moves unchanged and scales linearly, ignoring
@@ -579,7 +580,14 @@ export const STORY_LIMITS = {
   historyFingerprints: 2000,
 } as const;
 
+export interface StorySavingsCoverage {
+  status: 'complete' | 'partial';
+  estimateAuthority?: SavingsEstimateAuthorityV2 | 'mixed';
+}
+
 export interface StorySectionFinancials {
+  /** Coverage and provenance of the known savings subtotal; omission retains legacy semantics. */
+  savingsCoverage?: StorySavingsCoverage;
   /** Totals across the full section, including omitted rows. */
   spend30d: number;
   /** Null when the full section's savings authority is unavailable; measured zero remains numeric. */
@@ -608,6 +616,8 @@ export interface StoryColumn {
   hint?: string;
 }
 export interface StorySummary {
+  /** Coverage and provenance of known savings; unknown amounts remain absent or null. */
+  savingsCoverage?: StorySavingsCoverage;
   /** Rows per story bucket (verdict, fit, status, ...) plus the totals `resources` and `withSavings`. */
   counts: Record<string, number>;
   /** Monetary summary coordinates retain explicit unavailability, never unknown-as-zero. */

@@ -2,6 +2,8 @@ import {
   ProviderName,
   ProviderScopeType,
   type AwsProviderSyncProgress,
+  type CloudAccountSyncRequestReceipt,
+  type CloudAccountTenantSyncAcceptedResponse,
   type AzureProviderSyncProgress,
   type ProviderSyncProgress,
   type ProviderSyncStageProgress,
@@ -39,6 +41,7 @@ const awsStage = {
   startedAt: '2026-07-30T01:00:00.000Z',
   updatedAt: '2026-07-30T01:02:00.000Z',
   subSteps: [awsViewCheckpoint],
+  subStepsTruncated: true,
 } satisfies ProviderSyncStageProgress;
 
 const awsSyncProgress = {
@@ -47,6 +50,7 @@ const awsSyncProgress = {
   scopeType: ProviderScopeType.Account,
   cloudAccountId: 'aws-cloud-account-123',
   runId: 'run-123',
+  requestCorrelationId: 'opaque-api-command-correlation',
   overallStatus: 'processing',
   statusLabel: 'Scanning AWS account',
   hasIssues: true,
@@ -121,7 +125,51 @@ const invalidProgressWithRawFailureReason: AwsProviderSyncProgress = {
   failureReason: 'AccessDenied: internal provider context',
 };
 
+const acceptedReceipt = {
+  requestId: 'api-command-123',
+  requestedAt: '2026-07-30T00:59:00.000Z',
+  requestCorrelationId: 'opaque-api-command-correlation',
+} satisfies CloudAccountSyncRequestReceipt;
+
+const acceptedResponse = {
+  ...acceptedReceipt,
+  status: 'Queued',
+} satisfies CloudAccountTenantSyncAcceptedResponse;
+
+const receiptWithAdmittedProgress = {
+  ...acceptedReceipt,
+  progress: awsSyncProgress,
+} satisfies CloudAccountSyncRequestReceipt;
+
+const invalidCorrelation: AwsProviderSyncProgress = {
+  ...awsSyncProgress,
+  // @ts-expect-error Public correlation must be an opaque string, not an internal object.
+  requestCorrelationId: { requestId: 'engine-request' },
+};
+
+const invalidTruncation: ProviderSyncStageProgress = {
+  ...awsStage,
+  // @ts-expect-error Activity detail coverage is explicit and must be boolean.
+  subStepsTruncated: 'partial',
+};
+
+const invalidAcceptedStatus: CloudAccountTenantSyncAcceptedResponse = {
+  ...acceptedResponse,
+  // @ts-expect-error The accepted queue response retains the existing Queued status.
+  status: 'Completed',
+};
+
+// @ts-expect-error A successful accepted receipt must retain its observation timestamp and correlation.
+const invalidReceipt: CloudAccountSyncRequestReceipt = { requestId: 'api-command-123' };
+
 void [
+  acceptedReceipt,
+  acceptedResponse,
+  receiptWithAdmittedProgress,
+  invalidCorrelation,
+  invalidTruncation,
+  invalidAcceptedStatus,
+  invalidReceipt,
   providerSyncProgress,
   sharedProgressStatus,
   subscriptionStepStatus,

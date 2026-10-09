@@ -239,6 +239,28 @@ const reject = (mutate, pattern) => {
   assert.throws(() => validateAwsPortalOrganizationCommitmentsPlanningArtifact(value, expected), pattern);
 };
 
+// Annual contractual cost is additive on the whole inventory row, including genuine zero.
+for (const amount of [0, 3000]) {
+  const annual = structuredClone(artifact);
+  annual.inventory[0].annualCommittedCost = { amount, currency: 'NZD' };
+  assert.equal(validateAwsPortalOrganizationCommitmentsPlanningArtifact(annual, expected), annual);
+  const esm = await import('../dist/esm/entries/aws.js');
+  assert.equal(esm.validateAwsPortalOrganizationCommitmentsPlanningArtifact(annual, expected), annual);
+}
+for (const money of [
+  { amount: '3000', currency: 'NZD' },
+  { amount: NaN, currency: 'NZD' },
+  { amount: 3000, currency: '' },
+  { amount: 3000, currency: 123 },
+  { amount: 3000, currency: 'NZD', secret: 'forbidden' },
+]) {
+  reject(value => { value.inventory[0].annualCommittedCost = money; }, /annualCommittedCost/);
+  const annual = structuredClone(artifact);
+  annual.inventory[0].annualCommittedCost = money;
+  const esm = await import('../dist/esm/entries/aws.js');
+  assert.throws(() => esm.validateAwsPortalOrganizationCommitmentsPlanningArtifact(annual, expected), /annualCommittedCost/);
+}
+
 reject(value => {
   value.providerScope.companyId = 'company-other';
 }, /expected\.companyId must match/);

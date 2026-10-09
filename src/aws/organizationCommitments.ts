@@ -243,6 +243,8 @@ export interface AwsOrganizationCommitmentsInventoryItem<AccountId extends strin
   term?: string;
   termMonths?: number;
   billingPlan?: string;
+  /** Annual contractual cost of this whole row (per-instance annual amount times quantity). Omit when quantity, term or price evidence is missing. */
+  annualCommittedCost?: CommitmentsMoneyAmount;
   utilization?: IBenefitUtilization;
 }
 

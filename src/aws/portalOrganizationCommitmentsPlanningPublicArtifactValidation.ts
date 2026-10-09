@@ -184,6 +184,7 @@ function validateInventory(value: unknown, field: string): void {
       'term',
       'termMonths',
       'billingPlan',
+      'annualCommittedCost',
       'utilization',
     ],
     field
@@ -212,6 +213,7 @@ function validateInventory(value: unknown, field: string): void {
   optionalString(item.term, `${field}.term`);
   optionalNumber(item.termMonths, `${field}.termMonths`);
   optionalString(item.billingPlan, `${field}.billingPlan`);
+  optionalRecord(item.annualCommittedCost, `${field}.annualCommittedCost`, validateMoney);
   optionalRecord(item.utilization, `${field}.utilization`, validateUtilization);
 }
 

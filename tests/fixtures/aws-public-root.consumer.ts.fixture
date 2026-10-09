@@ -357,3 +357,31 @@ void [
   packedAwsPublicArtifact,
   packedRelationshipScope,
 ];
+
+// New parity fields remain optional for existing Azure callers and share one contract across providers.
+import type {
+  AwsResourceCostItemsDescriptorV1,
+  AwsResourceCostItemsChunkV1,
+  Budget,
+  DataProtectionFinding,
+  RecommendationWithResources,
+  RecommendationsView,
+  SavingsEstimateAuthorityV2,
+  StorySavingsCoverage,
+  SkuSavingsBasis,
+} from '@spottoai/types-package';
+import type { AwsResourceCostItemsChunkV1 as AwsChunkFromSubpath } from '@spottoai/types-package/aws';
+const costDescriptor: AwsResourceCostItemsDescriptorV1 = { schemaVersion: 1, kind: 'sha256-prefix2', chunks: { ab: 'ab-digest.json.gz' } };
+const costChunk: AwsResourceCostItemsChunkV1 = { schemaVersion: 1, accountId: '111122223333', bucket: 'ab', currency: 'NZD', itemsByResourceId: {} };
+const subpathChunk: AwsChunkFromSubpath = costChunk;
+const estimateAuthority: SavingsEstimateAuthorityV2 = 'provider-estimate';
+const partialSavings: StorySavingsCoverage = { status: 'partial', estimateAuthority };
+const skuSavingsBasis: SkuSavingsBasis = 'provider-estimate';
+const scopeState: NonNullable<RecommendationWithResources['recommendationState']> = { status: 'Dismissed', statusEndAt: '2026-10-10T00:00:00.000Z', updatedAt: '2026-10-09T00:00:00.000Z' };
+const pendingPublication: RecommendationsView['recommendationStatePendingPublication'] = true;
+const generatedBudget: Budget['generatedBySpotto'] = true;
+const staleFinding: DataProtectionFinding = 'inventory_stale';
+void [costDescriptor, costChunk, subpathChunk, partialSavings, skuSavingsBasis, scopeState, pendingPublication, generatedBudget, staleFinding];
+// @ts-expect-error Snoozed is represented as Dismissed with a future end, not as a stored status.
+const invalidScopeState: NonNullable<RecommendationWithResources['recommendationState']> = { status: 'Snoozed' };
+void invalidScopeState;

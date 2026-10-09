@@ -62,6 +62,10 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
   secureScore?: number;
   secureScoreEvidence?: SecureScoreEvidence;
   spend30Days?: number;
+  /** Rolling 30-day count of aggregated expense rows, as in Azure subscription billingItems; absent when unknown. */
+  billingItems?: number;
+  /** Rolling 30-day count of collected activity events, as in Azure subscription activityItems; absent when unknown. */
+  activityItems?: number;
 }
 
 /** Partial provider-scope display update; omitted fields stay unchanged and null clears an override. */

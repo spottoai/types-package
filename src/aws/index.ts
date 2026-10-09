@@ -10,3 +10,4 @@ export * from './portalOrganizationCommitmentsPlanningPublicArtifactValidation';
 export * from './publicArtifacts';
 export * from './requests';
 export * from './resourceGraph';
+export * from './resourceCostItems';

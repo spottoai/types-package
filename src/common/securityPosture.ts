@@ -103,7 +103,7 @@ export interface SecurityPostureArtifact {
   companyId?: string;
   generatedAt: string;
   status: SecurityPostureStatus;
-  /** Set only for a complete, current observation; genuine zero is valid. */
+  /** Score over current contributing regions, including partial regional coverage declared in secureScoreEvidence; genuine zero is valid. */
   secureScore?: number;
   secureScoreEvidence: SecureScoreEvidence;
   /** All finding sources; optional source gaps do not invalidate otherwise complete score evidence. */

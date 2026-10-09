@@ -52,6 +52,8 @@ export interface ProviderSyncStageProgress extends ProviderSyncProgressForbidden
   issue?: SyncProgressIssue;
   failure?: ProviderSyncProgressFailure;
   subSteps?: ProviderSyncSubStepProgress[];
+  /** Details are summarized or capped; work-item counts still cover the entire stage. */
+  subStepsTruncated?: boolean;
 }
 
 /** Aggregate counts for the stages selected for one provider sync run. */
@@ -66,6 +68,8 @@ export interface ProviderSyncProgressSummary {
 interface ProviderSyncProgressBase extends ProviderSyncProgressForbiddenInternalFields {
   cloudAccountId: string;
   runId?: string;
+  /** Opaque correlation with the accepted API command, never a raw engine request ID. */
+  requestCorrelationId?: string;
   overallStatus: SyncProgressStatus;
   statusLabel: string;
   hasIssues?: boolean;
@@ -96,3 +100,17 @@ export interface AwsProviderSyncProgress extends ProviderSyncProgressBase {
 
 /** Provider-neutral public sync progress returned by API provider strategies. */
 export type ProviderSyncProgress = AzureProviderSyncProgress | AwsProviderSyncProgress;
+
+/** Accepted API command identity; distinct from an engine-owned saga request ID. */
+export interface CloudAccountSyncRequestReceipt {
+  requestId: string;
+  requestedAt: string;
+  requestCorrelationId: string;
+  /** Present only when the provider's authoritative admitted plan is already available. */
+  progress?: ProviderSyncProgress;
+}
+
+/** Successful POST cloud-account tenant-sync response for either provider. */
+export interface CloudAccountTenantSyncAcceptedResponse extends CloudAccountSyncRequestReceipt {
+  status: 'Queued';
+}

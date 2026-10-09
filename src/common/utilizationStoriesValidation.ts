@@ -95,7 +95,7 @@ const SKU_CAPABILITY_MATERIALITIES = new Set(['used', 'not-used', 'unknown']);
 const RIGHT_SIZE_ASSESSMENT_STATUSES = new Set(['recommended', 'no-change', 'insufficient-data', 'not-supported']);
 const CAPABILITY_STATES = new Set(['enabled', 'disabled', 'partial', 'unknown', 'not-applicable']);
 const RIGHT_SKU_VERDICTS = new Set(['modernise', 'downsize', 'consider', 'keep', 'blocked-by-commitment']);
-const SKU_SAVINGS_BASES = new Set(['list', 'billed']);
+const SKU_SAVINGS_BASES = new Set(['list', 'billed', 'provider-estimate']);
 const COMMITMENT_BLOCK_REASONS = new Set(['reservation', 'cost-not-lower']);
 const RIGHT_SIZE_REJECTION_REASONS = new Set(['observed-fit', 'no-saving']);
 const SIGNAL_ACTION_REASONS = new Set(['observed-fit', 'no-saving', 'blocked-by-commitment']);
@@ -674,8 +674,18 @@ export const storyRowGuard = (storyKey: string, days?: number, provider?: Provid
   }
 };
 
+const isOptionalStorySavingsCoverage = (value: unknown): boolean =>
+  value === undefined ||
+  (isRecord(value) &&
+    (value.status === 'complete' || value.status === 'partial') &&
+    (value.estimateAuthority === undefined ||
+      value.estimateAuthority === 'billed-resource-spend' ||
+      value.estimateAuthority === 'provider-estimate' ||
+      value.estimateAuthority === 'mixed'));
+
 export const isStorySummary = (value: unknown): value is StorySummary =>
   isRecord(value) &&
+  isOptionalStorySavingsCoverage(value.savingsCoverage) &&
   isRecord(value.counts) &&
   Object.values(value.counts).every(isCount) &&
   (value.actionable === undefined ||
@@ -685,7 +695,12 @@ export const isStorySummary = (value: unknown): value is StorySummary =>
   isOptionalText(value.note);
 
 const isStorySectionFinancials = (value: unknown): boolean =>
-  value === undefined || (isRecord(value) && isFiniteNumber(value.spend30d) && isNullableNumber(value.savingsMax) && isString(value.currency));
+  value === undefined ||
+  (isRecord(value) &&
+    isOptionalStorySavingsCoverage(value.savingsCoverage) &&
+    isFiniteNumber(value.spend30d) &&
+    isNullableNumber(value.savingsMax) &&
+    isString(value.currency));
 
 export const isStorySection = (
   value: unknown,
