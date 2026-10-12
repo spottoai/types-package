@@ -127,10 +127,11 @@ for (const [label, jobs, scheduler] of variants) {
   for (const row of [accepted, running, sourceReady, generated, pending]) {
     const projection = await jobs.buildReportJobProjectionV1(row);
     eq(jobs.isReportJobProjectionV1(projection), true, 'safe public projection');
+    eq('requestJson' in projection || 'leaseOwner' in projection || 'configuration' in projection, false, 'private execution fields hidden');
     eq(
-      'requestJson' in projection || 'leaseOwner' in projection || 'configuration' in projection || 'downloadUrl' in projection,
-      false,
-      'private fields/download hidden until complete'
+      'downloadUrl' in projection,
+      ['generated', 'completed', 'completed-with-notification-errors'].includes(row.status),
+      'download starts at durable artifact'
     );
   }
   const projection = await jobs.buildReportJobProjectionV1(completed);

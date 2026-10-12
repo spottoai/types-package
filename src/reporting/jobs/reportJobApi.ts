@@ -280,7 +280,10 @@ export const isReportJobProjectionV1 = (value: unknown): value is ReportJobProje
         !isIsoUtcTimestamp(value.generatedAtUtc))
     )
       return false;
-    return value.downloadUrl === undefined || (completed && value.downloadUrl === downloadPath(value.companyId, value.jobId));
+    return (
+      value.downloadUrl === undefined ||
+      ((completed || value.status === 'generated') && value.downloadUrl === downloadPath(value.companyId, value.jobId))
+    );
   } catch {
     return false;
   }
@@ -312,7 +315,7 @@ export const buildReportJobProjectionV1 = async (entity: unknown): Promise<Repor
   }
   if (row.notificationDestinationCounts !== undefined)
     projection.notificationDestinationCounts = parseReportJobNotificationDestinationCountsV1(row.notificationDestinationCounts) ?? undefined;
-  if (row.status === 'completed' || row.status === 'completed-with-notification-errors')
+  if (row.status === 'generated' || row.status === 'completed' || row.status === 'completed-with-notification-errors')
     projection.downloadUrl = downloadPath(row.companyId, row.jobId);
   if (!isReportJobProjectionV1(projection)) throw new Error('Invalid report job projection.');
   return projection;

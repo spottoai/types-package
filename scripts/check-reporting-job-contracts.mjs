@@ -425,6 +425,23 @@ const checkJobs = async (jobs, label) => {
   }
 
   assert.equal(jobs.isIanaTimeZone('America/Argentina/Buenos_Aires'), true);
+  const recovery = await jobs.buildReportJobRecoveryPointerV1({ companyId: COMPANY, jobId: apiRow.jobId, createdAtUtc: apiRow.requestedAtUtc });
+  assert.equal(recovery.PartitionKey, `report-pub-${sha256(COMPANY).slice(0, 1)}`);
+  assert.equal(recovery.RowKey, `${sha256(COMPANY).slice(0, 16)}-${apiRow.jobId}`);
+  assert.equal(jobs.REPORT_JOB_RECOVERY_SHARDS.length, 16);
+  assert.equal((await jobs.parseReportJobRecoveryPointerV1(recovery)).ok, true);
+  assert.equal((await jobs.parseReportJobRecoveryPointerV1({ ...jobs.toReportTableSdkEntity(recovery), etag: 'W/"test"' })).ok, true);
+  for (const invalid of [
+    { ...recovery, companyId: 'comp-other' },
+    { ...recovery, RowKey: 'foreign' },
+    { ...recovery, recoveryAttemptCount: -1 },
+    { ...recovery, recoveryAttemptCount: 0.5 },
+    { ...recovery, leaseOwner: 'worker' },
+    { ...recovery, leaseExpiresAtUtc: apiRow.requestedAtUtc },
+    { ...recovery, nextAttemptAtUtc: 'invalid' },
+    { ...recovery, email: 'private@example.com' },
+  ])
+    assert.equal((await jobs.parseReportJobRecoveryPointerV1(invalid)).ok, false, `${label} recovery accepted unsafe data`);
   assert.equal(jobs.isIanaTimeZone('Etc/GMT+10'), true);
   return {
     canonical,
