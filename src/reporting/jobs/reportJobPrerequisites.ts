@@ -50,7 +50,13 @@ export const validateCurrentStateReportPrerequisitesV1 = (
   };
   const defaultProvider = usableProvider(input.providerName) ?? usableProvider(input.parentCompanyName);
   const preparedBy = input.preparedBy === undefined ? (defaultProvider ? `${defaultProvider} pre-sales team` : '') : input.preparedBy.trim();
-  if (!preparedBy || preparedBy.length > 120 || /[<>\u0000-\u001f\u007f]/u.test(preparedBy)) return { ok: false, failureCode: 'no-prepared-by' };
+  if (
+    !preparedBy ||
+    preparedBy.length > 120 ||
+    /[<>]/u.test(preparedBy) ||
+    Array.from(preparedBy).some(character => character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127)
+  )
+    return { ok: false, failureCode: 'no-prepared-by' };
   // A different hourly-rate currency remains valid: reports expose an unconverted rate and never invent FX.
   return { ok: true };
 };
