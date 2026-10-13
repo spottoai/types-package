@@ -600,6 +600,34 @@ export interface VmBurstableFitEvidence {
   observedHours: number;
   observed: VmBurstableCreditScenarioEvidence;
   growthStress: VmBurstableCreditScenarioEvidence;
+  /** Hour-by-hour credit bank simulation behind this verdict, for charting. */
+  creditTrace?: VmBurstableCreditTrace;
+}
+
+/**
+ * Hourly credit bank trace from the same simulation that produced the burstable verdict.
+ * Arrays are aligned: index i covers the hour starting at `startMs + i * stepMs`.
+ * Hours with no CPU data are `null` (the bank is carried forward unchanged).
+ */
+export interface VmBurstableCreditTrace {
+  startMs: number;
+  stepMs: number;
+  maxBankedCredits: number;
+  initialCredits: number;
+  /** Hours a full bank lasts with the VM at 100% CPU. */
+  burstRunwayHours?: number;
+  /** Hours excluded from the steady-state minimums because the bank starts at its initial credits after a resize. */
+  warmUpHours: number;
+  /** Lowest bank level after the warm-up, as % of a full bank. */
+  steadyStateMinimumPercent: number;
+  /** Lowest bank level after the warm-up under growth stress, as % of a full bank. */
+  growthSteadyStateMinimumPercent: number;
+  /** Projected CPU % on the candidate size, whole percent. */
+  cpuPercent: Array<number | null>;
+  /** Bank level at the end of each hour, whole % of a full bank. */
+  bankPercent: Array<number | null>;
+  /** Bank level at the end of each hour under growth stress, whole % of a full bank. */
+  growthBankPercent: Array<number | null>;
 }
 
 export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
