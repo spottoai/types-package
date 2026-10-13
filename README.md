@@ -1,5 +1,9 @@
 # Types Package
 
+## Feature flag policy
+
+Do not add feature flags, feature enablement settings, or rollout allowlists unless the user explicitly requests them. Implement requested features through the normal application workflows. Approval of a feature, specification, or implementation plan does not authorize adding feature flags.
+
 A shared TypeScript interfaces package. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
 
 ## Features
@@ -75,6 +79,20 @@ Monthly history accepts aggregate usage only and rejects profile data, breakdown
 daily report rows and per-account prices. `npm run check:microsoft365-license-contracts`
 checks the CJS and ESM validators; `npm test` also compiles the packed consumer.
 See [the contract extension and consumer handoff](specs/licensing/microsoft-365-improvements-types.md).
+
+The root also exports `Microsoft365LicenseSummaryView` and
+`Microsoft365LicenseAccountsView` with their matching `is...` guards. The new
+summary schema contains aggregate usage, product/capability facts, full currency
+estimates and anonymous insight patterns; it rejects accounts, raw reports,
+person findings/notices and person prices, including nested extra fields. The
+accounts schema carries up to 5,000 people with profiles, workload and sign-in
+evidence, retained-person findings/notices and optional selected-currency prices.
+Both require `generatedAt`, `tenantSyncRunId` and reconciled `accountDetails` counts.
+Readers compare both scan stamps before combining the artifacts. Anonymous
+workload aggregates explicitly use `report_rows` as their basis and never claim a
+licensed-account denominator. The legacy `Microsoft365LicenseView` schema and
+its 2,000-row limit remain compatible. These source changes require a new release
+and coordinated engine/API/UI adoption; package version 1.1.36 is unchanged.
 
 Azure financial evidence supports optional native-discount eligibility subtotals.
 `AzureFinancialChargeSpendBreakdownV1.azureNativeDiscountEligible` carries independent

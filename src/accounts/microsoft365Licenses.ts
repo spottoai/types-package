@@ -474,6 +474,43 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
   );
 }
 
+/** Validates one person-level finding; collection limits belong to each envelope. */
+export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365LicenseInsight {
+  return (
+    isRecord(row) &&
+    text(row.accountId) &&
+    !!row.accountId &&
+    text(row.skuId) &&
+    !!row.skuId &&
+    (row.kind === 'overlap' || row.kind === 'downgrade') &&
+    text(row.ruleId) &&
+    !!row.ruleId &&
+    optional(row.coveredBySkuIds, ids => Array.isArray(ids) && ids.length <= 16 && ids.every(id => text(id) && !!id)) &&
+    optional(row.targetSkuPartNumber, nullableText) &&
+    optional(row.targetProductName, nullableText) &&
+    optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
+    optional(
+      row.evidence,
+      evidence =>
+        isRecord(evidence) &&
+        ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
+        nullableCount(evidence.mailboxUsedBytes) &&
+        nullableCount(evidence.oneDriveUsedBytes) &&
+        typeof evidence.storageChecked === 'boolean'
+    ) &&
+    optional(
+      row.blockedBy,
+      reasons =>
+        row.kind === 'downgrade' &&
+        Array.isArray(reasons) &&
+        reasons.length > 0 &&
+        reasons.length <= 2 &&
+        new Set(reasons).size === reasons.length &&
+        reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')
+    )
+  );
+}
+
 /** Validates bounded duplicate and downgrade findings. */
 export function isMicrosoft365LicenseInsights(value: unknown): value is Microsoft365LicenseInsights {
   return (
@@ -485,41 +522,31 @@ export function isMicrosoft365LicenseInsights(value: unknown): value is Microsof
     nullableCount(value.downgradeCandidateCount) &&
     optional(value.downgradeBlockedCount, nullableCount) &&
     ['available', 'report_unavailable', 'identities_concealed'].includes(String(value.downgradeEvidence)) &&
-    rows(
-      value.findings,
-      row =>
-        isRecord(row) &&
-        text(row.accountId) &&
-        !!row.accountId &&
-        text(row.skuId) &&
-        !!row.skuId &&
-        (row.kind === 'overlap' || row.kind === 'downgrade') &&
-        text(row.ruleId) &&
-        !!row.ruleId &&
-        optional(row.coveredBySkuIds, ids => Array.isArray(ids) && ids.length <= 16 && ids.every(id => text(id) && !!id)) &&
-        optional(row.targetSkuPartNumber, nullableText) &&
-        optional(row.targetProductName, nullableText) &&
-        optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
-        optional(
-          row.evidence,
-          evidence =>
-            isRecord(evidence) &&
-            ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
-            nullableCount(evidence.mailboxUsedBytes) &&
-            nullableCount(evidence.oneDriveUsedBytes) &&
-            typeof evidence.storageChecked === 'boolean'
-        ) &&
-        optional(
-          row.blockedBy,
-          reasons =>
-            row.kind === 'downgrade' &&
-            Array.isArray(reasons) &&
-            reasons.length > 0 &&
-            reasons.length <= 2 &&
-            new Set(reasons).size === reasons.length &&
-            reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')
-        )
-    )
+    rows(value.findings, isMicrosoft365LicenseInsight)
+  );
+}
+
+/** Validates one licensed account; collection limits belong to each envelope. */
+export function isMicrosoft365LicensedAccountRow(row: unknown): row is Microsoft365LicensedAccountRow {
+  return (
+    isRecord(row) &&
+    text(row.id) &&
+    !!row.id &&
+    nullableText(row.displayName) &&
+    nullableText(row.userPrincipalName) &&
+    nullableBoolean(row.accountEnabled) &&
+    (row.lastSuccessfulSignInAt === null || date(row.lastSuccessfulSignInAt)) &&
+    nullableBoolean(row.signInOlderThan90Days) &&
+    optional(row.capabilities, isMicrosoft365AccountCapabilities) &&
+    optional(row.userType, type => type === null || type === 'Member' || type === 'Guest') &&
+    optional(row.createdAt, created => created === null || date(created)) &&
+    optional(
+      row.signInStatus,
+      status => typeof status === 'string' && ['recent', 'older_than_90_days', 'never_signed_in', 'new_account', 'unknown'].includes(status)
+    ) &&
+    optional(row.profile, isMicrosoft365AccountProfile) &&
+    optional(row.usage, isMicrosoft365AccountUsage) &&
+    (row.skuIds === null || (Array.isArray(row.skuIds) && row.skuIds.length <= 128 && row.skuIds.every(text)))
   );
 }
 
@@ -618,31 +645,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     )
   )
     return false;
-  if (
-    !rows(
-      value.accounts,
-      row =>
-        isRecord(row) &&
-        text(row.id) &&
-        !!row.id &&
-        nullableText(row.displayName) &&
-        nullableText(row.userPrincipalName) &&
-        nullableBoolean(row.accountEnabled) &&
-        (row.lastSuccessfulSignInAt === null || date(row.lastSuccessfulSignInAt)) &&
-        nullableBoolean(row.signInOlderThan90Days) &&
-        optional(row.capabilities, isMicrosoft365AccountCapabilities) &&
-        optional(row.userType, type => type === null || type === 'Member' || type === 'Guest') &&
-        optional(row.createdAt, created => created === null || date(created)) &&
-        optional(
-          row.signInStatus,
-          status => typeof status === 'string' && ['recent', 'older_than_90_days', 'never_signed_in', 'new_account', 'unknown'].includes(status)
-        ) &&
-        optional(row.profile, isMicrosoft365AccountProfile) &&
-        optional(row.usage, isMicrosoft365AccountUsage) &&
-        (row.skuIds === null || (Array.isArray(row.skuIds) && row.skuIds.length <= 128 && row.skuIds.every(text)))
-    )
-  )
-    return false;
+  if (!rows(value.accounts, isMicrosoft365LicensedAccountRow)) return false;
   if (
     !isRecord(value.reports) ||
     !['officeActiveUsers', 'officeAppUsage', 'copilotUsage'].every(name =>

@@ -187,7 +187,200 @@ const monthOf = document => {
   return { ...month, pricing: pricingByCurrency.AUD };
 };
 
+const splitSummary = () => {
+  const { accounts, reports, ...aggregate } = view();
+  const { accountMonthlyCosts, ...aggregatePricing } = pricing();
+  return {
+    ...aggregate,
+    schemaVersion: 'microsoft-365-license-summary/v1',
+    tenantSyncRunId: 'scan-one',
+    accountDetails: { observedRowCount: 1, returnedRowCount: 1, omittedRowCount: 0 },
+    pricingByCurrency: { AUD: aggregatePricing },
+    insights: {
+      rulesVersion: 'rules-v1',
+      overlapAssignmentCount: 0,
+      overlapAccountCount: 0,
+      downgradeCandidateCount: 1,
+      downgradeBlockedCount: 0,
+      downgradeEvidence: 'available',
+      observedFindingCount: 1,
+      patterns: [
+        { kind: 'downgrade', ruleId: 'e3-to-f3', skuId: 'sku-one', targetSkuId: null, targetSkuPartNumber: 'SPE_F1', coveredBySkuIds: [], count: 1 },
+      ],
+    },
+    capabilities: { catalogueVersion: 'capabilities-v1', definitions: [], accountsComplete: true, summary: [], observedNoticeCount: 0 },
+  };
+};
+const splitAccounts = (length = 1) => ({
+  schemaVersion: 'microsoft-365-license-accounts/v1',
+  tenantId: 'tenant-one',
+  generatedAt: '2026-10-13T00:00:00Z',
+  tenantSyncRunId: 'scan-one',
+  accountDetails: { observedRowCount: length, returnedRowCount: length, omittedRowCount: 0 },
+  accounts: Array.from({ length }, (_, i) => ({
+    ...account(),
+    id: `account-${i}`,
+    profile: profile(),
+    usage: accountUsage(),
+    signInStatus: 'recent',
+  })),
+});
+
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: split summary retains all 16 market estimates without person prices`, () => {
+    const document = splitSummary();
+    const currencies = ['USD', 'NZD', 'AUD', 'GBP', 'EUR', 'CAD', 'JPY', 'INR', 'BRL', 'MXN', 'ZAR', 'CHF', 'SEK', 'NOK', 'DKK', 'SGD'];
+    document.pricingByCurrency = Object.fromEntries(currencies.map(currency => [currency, { ...document.pricingByCurrency.AUD, currency }]));
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
+    assert.equal(Object.keys(document.pricingByCurrency).length, 16);
+    document.pricingByCurrency.HKD = { ...document.pricingByCurrency.USD, currency: 'HKD' };
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), false);
+  });
+  test(`${format}: split summary rejects person fields throughout nested aggregate structures`, () => {
+    const mutations = [
+      doc => {
+        doc.accounts = [];
+      },
+      doc => {
+        doc.reports = {};
+      },
+      doc => {
+        doc.insights.findings = [];
+      },
+      doc => {
+        doc.capabilities.notices = [];
+      },
+      doc => {
+        doc.pricingByCurrency.AUD.accountMonthlyCosts = {};
+      },
+      doc => {
+        doc.pricingByCurrency.AUD.paidAccountIds = [];
+      },
+      doc => {
+        doc.pricingByCurrency.AUD.partialAccountPriceIds = [];
+      },
+      doc => {
+        doc.pricingByCurrency.AUD.products[0].accountId = 'private';
+      },
+      doc => {
+        doc.pricingByCurrency.AUD.summary.accountIds = [];
+      },
+      doc => {
+        doc.coverage.users.data = [];
+      },
+      doc => {
+        doc.coverage.users.recovery.accountId = 'private';
+      },
+      doc => {
+        doc.licenses[0].accountId = 'private';
+      },
+      doc => {
+        doc.licenses[0].capabilities = { state: 'complete', plans: [], omittedPlanCount: 0, accountId: 'private' };
+      },
+      doc => {
+        doc.licenses[0].renewals = [{ status: 'Enabled', isTrial: false, totalLicenses: 1, nextLifecycleDateTime: null, accountId: 'private' }];
+      },
+      doc => {
+        doc.insights.patterns[0].accountId = 'private';
+      },
+      doc => {
+        doc.organization = { displayName: 'Org', defaultDomain: null, accounts: [] };
+      },
+    ];
+    for (const [index, mutate] of mutations.entries()) {
+      const document = splitSummary();
+      mutate(document);
+      assert.equal(api.isMicrosoft365LicenseSummaryView(document), false, `summary privacy mutation ${index}`);
+    }
+  });
+  test(`${format}: split accounts supports 5,000 complete profiles, workloads, findings and selected prices`, () => {
+    const document = splitAccounts(5000);
+    document.insights = {
+      rulesVersion: 'rules-v1',
+      findings: document.accounts.map(row => ({
+        accountId: row.id,
+        skuId: 'sku-one',
+        kind: 'overlap',
+        ruleId: 'overlap',
+        coveredBySkuIds: ['sku-two'],
+      })),
+    };
+    document.pricing = {
+      currency: 'NZD',
+      accountMonthlyCosts: Object.fromEntries(document.accounts.map(row => [row.id, 0])),
+      paidAccountIds: document.accounts.map(row => row.id),
+      partialAccountPriceIds: [],
+    };
+    assert.equal(api.isMicrosoft365LicenseAccountsView(document), true);
+    assert.equal(api.isMicrosoft365LicenseView({ ...view(), accounts: document.accounts.slice(0, 2001) }), false);
+    assert.equal(api.isMicrosoft365LicenseAccountsView(splitAccounts(5001)), false);
+    document.insights.findings[0].accountId = 'outside-returned-population';
+    assert.equal(api.isMicrosoft365LicenseAccountsView(document), false);
+  });
+  test(`${format}: split identity, counts, duplicate patterns and price references are guarded`, () => {
+    for (const guard of ['isMicrosoft365LicenseSummaryView', 'isMicrosoft365LicenseAccountsView']) {
+      const make = guard.endsWith('SummaryView') ? splitSummary : splitAccounts;
+      for (const key of ['generatedAt', 'tenantSyncRunId']) {
+        const document = make();
+        delete document[key];
+        assert.equal(api[guard](document), false);
+        document[key] = '';
+        assert.equal(api[guard](document), false);
+      }
+      const document = make();
+      document.accountDetails.omittedRowCount = 1;
+      assert.equal(api[guard](document), false);
+    }
+    const summary = splitSummary();
+    summary.insights.patterns.push({ ...summary.insights.patterns[0] });
+    assert.equal(api.isMicrosoft365LicenseSummaryView(summary), false);
+    const people = splitAccounts();
+    people.accounts.push({ ...people.accounts[0] });
+    people.accountDetails = { observedRowCount: 2, returnedRowCount: 2, omittedRowCount: 0 };
+    assert.equal(api.isMicrosoft365LicenseAccountsView(people), false);
+    const priced = splitAccounts();
+    priced.pricing = { currency: 'USD', accountMonthlyCosts: { unknown: 5 } };
+    assert.equal(api.isMicrosoft365LicenseAccountsView(priced), false);
+  });
+  test(`${format}: anonymous workloads retain concealed report-row counts without licensing claims`, () => {
+    const document = splitSummary();
+    document.usage = { ...summaryUsage(), evidence: 'identities_concealed', matchedAccountCount: null, status: null, workloadActive: null };
+    const workload = { active: 1, inactive: 2, noRecordedActivity: 3, unknown: 4 };
+    document.usage.anonymousWorkloads = {
+      basis: 'report_rows',
+      reportRefreshDate: '2026-10-12',
+      windowDays: 30,
+      observedRowCount: 10,
+      workloads: Object.fromEntries(['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'].map(key => [key, { ...workload }])),
+    };
+    document.usage.signIn.basis = 'observed_licensed_accounts';
+    document.usage.signIn.observedLicensedAccountCount = 1;
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
+    document.usage.anonymousWorkloads.workloads.exchange.unknown = 0;
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), false);
+    document.usage.anonymousWorkloads.workloads.exchange.unknown = 4;
+    document.usage.anonymousWorkloads.workloads.exchange.accountIds = [];
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), false);
+  });
+  test(`${format}: capability notices exceed legacy detail cap and retain honest omissions`, () => {
+    const document = splitAccounts();
+    document.capabilities = {
+      catalogueVersion: 'cap-v1',
+      observedNoticeCount: 2002,
+      omittedNoticeCount: 1,
+      notices: Array.from({ length: 2001 }, () => ({
+        kind: 'assignment_error',
+        accountId: 'account-0',
+        skuId: 'sku-one',
+        title: 'Failure',
+        detail: 'Provider evidence',
+      })),
+    };
+    assert.equal(api.isMicrosoft365LicenseAccountsView(document), true);
+    document.capabilities.notices[0].accountId = 'unknown';
+    assert.equal(api.isMicrosoft365LicenseAccountsView(document), false);
+  });
+
   test(`${format}: legacy views and history remain valid`, () => {
     assert.equal(api.isMicrosoft365LicenseView(view()), true);
     assert.equal(api.isMicrosoft365LicenseHistorySnapshot(snapshot()), true);

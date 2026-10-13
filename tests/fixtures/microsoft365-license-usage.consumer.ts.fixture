@@ -19,7 +19,30 @@ import {
   type Microsoft365LicenseHistoryMonth,
   type Microsoft365LicenseHistoryUsage,
   type Microsoft365LicenseInsight,
+  isMicrosoft365LicenseSummaryView,
+  isMicrosoft365LicenseAccountsView,
+  type Microsoft365LicenseSummaryView,
+  type Microsoft365LicenseAccountsView,
+  type Microsoft365LicenseInsightPattern,
 } from '@spottoai/types-package';
+
+declare const splitSummary: Microsoft365LicenseSummaryView;
+declare const splitAccounts: Microsoft365LicenseAccountsView;
+const splitPattern: Microsoft365LicenseInsightPattern = {
+  kind: 'downgrade', ruleId: 'e3-to-f3', skuId: 'sku-one', targetSkuId: null,
+  targetSkuPartNumber: 'SPE_F1', targetProductName: 'Microsoft 365 F3', coveredBySkuIds: [], count: 1,
+};
+splitSummary.tenantSyncRunId = splitAccounts.tenantSyncRunId;
+splitSummary.generatedAt = splitAccounts.generatedAt;
+splitSummary.accountDetails.returnedRowCount = splitAccounts.accounts.length;
+splitAccounts.pricing = {currency:'NZD',accountMonthlyCosts:{'fictional-account':0},partialAccountPriceIds:[]};
+// @ts-expect-error Aggregate summaries cannot contain people.
+splitSummary.accounts = [];
+// @ts-expect-error Aggregate summaries cannot contain raw Graph reports.
+splitSummary.reports = {};
+// @ts-expect-error Summary prices cannot contain person-level monetary maps.
+splitSummary.pricing!.accountMonthlyCosts = {};
+void [isMicrosoft365LicenseSummaryView,isMicrosoft365LicenseAccountsView,splitPattern];
 
 const profile: Microsoft365AccountProfile = {
   department: 'Finance',

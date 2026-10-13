@@ -560,7 +560,7 @@ try {
     const imports = moduleMode === 'esm'
       ? "import * as root from '@spottoai/types-package';"
       : "const root = require('@spottoai/types-package');";
-    const checks = "const usage = {status:'unknown',lastActivityDate:null,platforms:null,mailbox:null,oneDrive:null,copilotLastActivityDate:null}; if (!root.isMicrosoft365AccountUsage(usage) || root.isMicrosoft365AccountUsage({...usage,status:['active']}) || !root.MICROSOFT_365_LICENSE_SOURCES.includes('officeActiveUserCounts') || !root.isMicrosoft365UsageDate('2026-10-13') || root.isMicrosoft365UsageDate('2026-02-30')) process.exit(1);";
+    const checks = "const usage = {status:'unknown',lastActivityDate:null,platforms:null,mailbox:null,oneDrive:null,copilotLastActivityDate:null}; if (typeof root.isMicrosoft365LicenseSummaryView !== 'function' || typeof root.isMicrosoft365LicenseAccountsView !== 'function' || root.MICROSOFT_365_LICENSE_ACCOUNT_ROW_LIMIT !== 5000 || !root.isMicrosoft365AccountUsage(usage) || root.isMicrosoft365AccountUsage({...usage,status:['active']}) || !root.MICROSOFT_365_LICENSE_SOURCES.includes('officeActiveUserCounts') || !root.isMicrosoft365UsageDate('2026-10-13') || root.isMicrosoft365UsageDate('2026-02-30')) process.exit(1);";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
   }
   process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs consumer fixture verified.\n');

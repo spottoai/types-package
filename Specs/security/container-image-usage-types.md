@@ -1,4 +1,4 @@
-Status: implemented; package release outstanding
+Status: implemented; registry package verified; consumer deployment assessment outstanding
 Last updated: 2026-10-13
 Owner: Platform
 Domain: security
@@ -49,7 +49,7 @@ Implemented provider-neutral contracts and exact-shape validators in `src/common
 
 Build regenerated 227 tracked outputs and 341 new outputs from the current source tree, much of which was already committed and newer than checked-in dist. Concurrent unrelated Microsoft 365 contract edits also appeared after the initial baseline and were preserved. Feature-owned outputs account for 5 tracked and 5 new files. No unrelated source was changed by this task. Exact generated-path inventory and ownership classification are in the ignored engine evidence file `apps/azure/samples/acr-investigation/implementation-baseline/types-package-generated-dist-drift.json`. Generated dependencies are retained so the local packed package remains runnable; release review must assess the existing source/dist drift.
 
-Package release/version pinning and deployed consumer support remain Outstanding. Successful local package checks do not establish deployment.
+Registry release and consumer dependency declarations/locks are verified at 1.1.36 in the final proof below. Runtime adoption and deployment remain separate assessments; successful package checks do not establish deployment.
 
 
 ## Generic containment ruling — 2026-10-13
@@ -60,3 +60,20 @@ Every node still has exactly one containment parent except the single scope root
 
 Fail-first evidence: the new image/resource ownership assertion failed with `synthetic nodes cannot be contained by resource nodes` before the validator change. Focused generic/AWS graph and artifact-usage checks pass after implementation; tests preserve cross-Region and original resource-parent restrictions and reject same-Region detached cycles, cycle-dependent workloads and orphan synthetics. A reversed-node-order 5,000-level ownership chain passes. Packed CommonJS/ESM graph consumption verification passed via `npm run check:packed-exports`, including typed public imports and all existing runtime probes. Focused ESLint and `git diff --check` also passed. The local 1.1.35 tarball was refreshed with the generic containment change; SHA-256 `903d10c027a836edd894ebc709b90bbefd46b2b66113b49df3bc1cd9c9966fee`. The full package gate is deferred to the final integration tree as requested.
 
+
+## Final package drift diagnosis and proof — 2026-10-13
+
+The integration gate's final scoreboard check failed after compiled output was replaced concurrently: current source still exported `RegulatoryScoreboardOverlappingSubscriptionsError` from the scoreboard merge module and root barrel, while `dist/index.js` had reverted to older output without scoreboard/graph/artifact exports; several generated dependency modules were also missing. Requiring that stale root additionally failed for missing `azure/reportEvidence`. This was compiled-output drift, with no artifact-owned source fix needed. An external release commit `5aa0512` changed package/lock version to 1.1.36 during integration; this task did not change versions, reset unrelated work, publish or commit.
+
+Current 1.1.36 verification passed: `npm run check:packed-exports` (includes source build/typechecks, packed ESM/CommonJS/TypeScript public imports), followed by `node scripts/check-regulatory-scoreboard-contracts.mjs`, `node scripts/check-resource-graph-contracts.mjs` and `node scripts/check-resource-artifact-usage-contracts.mjs`. A direct ESM named-import probe also confirmed the scoreboard class and artifact/graph validators were exported functions. No full package gate was repeated.
+
+The current local tarball is `apps/azure/samples/acr-investigation/implementation-baseline/spottoai-types-package-1.1.36.tgz` in cloud-engine, SHA-256 `38f361ad2a956f123275ac7fb3b358d3870079419c91ac43e521f2c5ac2fd15c`. Local packed proof does not establish registry publication or production deployment. Earlier explicitly restored 1.1.35 consumers remain distinct from this current-version proof.
+
+
+## Registry publication and pins verified — 2026-10-13
+
+Read-only GitHub Packages metadata and version-specific download verified `@spottoai/types-package@1.1.36`. The types-package checkout's user scope registry resolves to npmjs (older beta channel), so the authoritative query used cloud-engine's existing GitHub Packages configuration without mutating any npm configuration. Registry SHA1 `6fc688d7f1f182363fd3da55d377963dee9d0c5c` and SHA512 integrity matched the downloaded bytes; tarball SHA-256 is `83a9fd79430f41ef0947b3bc19192aa42f9a408160f27cdb5890eef397b1f82c`.
+
+All 21 narrow artifact runtime exports match the local package. Fifteen selected artifact/graph CommonJS, ESM and declaration outputs, including common/root barrels, are byte-identical to the verified local 1.1.36 package. Both packages passed actual self-export CommonJS and ESM import checks, scope-bound manifest/index/page validation, restricted-count and configured-as-runtime rejections, synthetic resource/child ownership, containment cycle rejection, preserved resource-parent policy, and scoreboard class availability.
+
+Evidence/replay: ignored `cloud-engine/apps/azure/samples/acr-investigation/implementation-baseline/registry-proof/registry-artifact-contract-proof.json` and `verify-registry-contracts.mjs`. The parent independently verified engine root/app, API and UI declarations/locks already pin 1.1.36. Registry publication and dependency pins are therefore verified; runtime adoption of published outputs and deployment remain separate. No consumer dependency copies, manifest/lock/config edits, publication or Git actions were performed by this diagnostic task.

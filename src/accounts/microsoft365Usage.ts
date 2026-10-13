@@ -66,7 +66,14 @@ export interface Microsoft365UsageSummary {
   /** Accounts holding a Copilot-family SKU; activity measured within 28 days of that report's refresh date. */
   copilot: { licensedAccountCount: number; activeAccountCount: number; idleAccountCount: number } | null;
   /** Independent of Reports.Read.All, using account/sign-in evidence. */
-  signIn: { neverSignedInCount: number; newAccountCount: number; guestWithPaidLicenseCount: number } | null;
+  signIn: {
+    neverSignedInCount: number;
+    newAccountCount: number;
+    guestWithPaidLicenseCount: number;
+    /** Counts are minima when assignment evidence proves only an observed licensed population. */
+    basis?: 'licensed_accounts' | 'observed_licensed_accounts';
+    observedLicensedAccountCount?: number;
+  } | null;
   /** Up to 180 tenant daily active-user counts, oldest first; not stored in monthly history. */
   dailyActive?: {
     date: string;
@@ -192,7 +199,14 @@ export function isMicrosoft365UsageSummary(value: unknown): value is Microsoft36
     !nullableBlock(value.workloadActive, ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage']) ||
     !nullableBlock(value.mailbox, ['measuredCount', 'totalUsedBytes', 'overF3LimitCount']) ||
     !nullableBlock(value.oneDrive, ['measuredCount', 'totalUsedBytes', 'overF3LimitCount']) ||
-    !nullableBlock(value.signIn, ['neverSignedInCount', 'newAccountCount', 'guestWithPaidLicenseCount'])
+    !(
+      value.signIn === null ||
+      (isRecord(value.signIn) &&
+        onlyKeys(value.signIn, ['neverSignedInCount', 'newAccountCount', 'guestWithPaidLicenseCount', 'basis', 'observedLicensedAccountCount']) &&
+        ['neverSignedInCount', 'newAccountCount', 'guestWithPaidLicenseCount'].every(key => count((value.signIn as Record<string, unknown>)[key])) &&
+        (value.signIn.basis === undefined || value.signIn.basis === 'licensed_accounts' || value.signIn.basis === 'observed_licensed_accounts') &&
+        (value.signIn.observedLicensedAccountCount === undefined || count(value.signIn.observedLicensedAccountCount)))
+    )
   )
     return false;
   if (value.dailyActive === undefined) return true;

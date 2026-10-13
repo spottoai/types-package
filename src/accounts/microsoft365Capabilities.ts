@@ -193,22 +193,26 @@ export function isMicrosoft365CapabilityProjection(value: unknown): value is Mic
   )
     return false;
   if (value.observedNoticeCount !== value.notices.length + value.omittedNoticeCount) return false;
-  return value.notices.every(
-    notice =>
-      record(notice) &&
-      typeof notice.kind === 'string' &&
-      ['assignment_error', 'retired_service', 'redundant_addon'].includes(notice.kind) &&
-      text(notice.skuId) &&
-      text(notice.title) &&
-      text(notice.detail) &&
-      optional(notice.accountId, text) &&
-      optional(notice.assignedByGroup, group => group === null || text(group)) &&
-      optional(notice.code, text) &&
-      optional(notice.sourceUrl, url) &&
-      optional(notice.retiredAt, date => text(date) && /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date))) &&
-      optional(notice.coveredBySkuIds, ids) &&
-      (notice.kind === 'retired_service' || text(notice.accountId)) &&
-      (notice.kind !== 'retired_service' || (url(notice.sourceUrl) && text(notice.retiredAt))) &&
-      (notice.kind !== 'redundant_addon' || (ids(notice.coveredBySkuIds) && notice.coveredBySkuIds.length > 0))
+  return value.notices.every(isMicrosoft365CapabilityNotice);
+}
+
+/** Validates one informational capability notice independently of an account-detail cap. */
+export function isMicrosoft365CapabilityNotice(notice: unknown): notice is Microsoft365CapabilityNotice {
+  return (
+    record(notice) &&
+    typeof notice.kind === 'string' &&
+    ['assignment_error', 'retired_service', 'redundant_addon'].includes(notice.kind) &&
+    text(notice.skuId) &&
+    text(notice.title) &&
+    text(notice.detail) &&
+    optional(notice.accountId, text) &&
+    optional(notice.assignedByGroup, group => group === null || text(group)) &&
+    optional(notice.code, text) &&
+    optional(notice.sourceUrl, url) &&
+    optional(notice.retiredAt, date => text(date) && /^\d{4}-\d{2}-\d{2}$/.test(date) && Number.isFinite(Date.parse(date))) &&
+    optional(notice.coveredBySkuIds, ids) &&
+    (notice.kind === 'retired_service' || text(notice.accountId)) &&
+    (notice.kind !== 'retired_service' || (url(notice.sourceUrl) && text(notice.retiredAt))) &&
+    (notice.kind !== 'redundant_addon' || (ids(notice.coveredBySkuIds) && notice.coveredBySkuIds.length > 0))
   );
 }
