@@ -1,0 +1,106 @@
+import {
+  type ResourceArtifactUsageManifest,
+  type ResourceArtifactUsagePointer,
+  type ResourceArtifactUsageIndex,
+  type ResourceArtifactSummary,
+  type ResourceArtifactFinding,
+  type ResourceArtifactUsageEvidence,
+  type ResourceArtifactDetailPage,
+  type ResourceArtifactSourceCoverage,
+  type ResourceGraphArtifact,
+  validateResourceArtifactUsageManifest,
+  validateResourceArtifactDetailPage,
+} from '@spottoai/types-package';
+import {
+  resourceArtifactUsageRunPrefix,
+  isResourceArtifactUsageManifest,
+  validateResourceArtifactUsagePointer,
+  validateResourceArtifactUsageIndex,
+  validateResourceArtifactUsageEvidence,
+} from '@spottoai/types-package/common/resource-artifact-usage';
+
+const binding = {
+  schemaVersion: 1 as const,
+  companyId: 'company-1',
+  provider: 'azure' as const,
+  accountId: 'subscription-1',
+  artifactGeneration: { runId: 'semantic/run-1', generatedAt: '2026-10-13T00:00:00.000Z' },
+};
+const source: ResourceArtifactSourceCoverage = {
+  sourceId: 'runtime-observation',
+  scope: {},
+  status: 'unsupported',
+  reason: 'runtime-not-collected',
+  observedAt: binding.artifactGeneration.generatedAt,
+  supportedWorkloadClasses: [],
+  collectedWorkloadClasses: [],
+};
+declare const manifest: ResourceArtifactUsageManifest;
+declare const pointer: ResourceArtifactUsagePointer;
+declare const index: ResourceArtifactUsageIndex;
+declare const summary: ResourceArtifactSummary;
+declare const finding: ResourceArtifactFinding;
+declare const usage: ResourceArtifactUsageEvidence;
+declare const overlay: ResourceGraphArtifact;
+const page: ResourceArtifactDetailPage = {
+  ...binding,
+  artifactId: summary.id,
+  section: 'findings',
+  page: 0,
+  rows: [finding],
+  count: 1,
+  completeness: 'partial',
+};
+const summaryPage: ResourceArtifactDetailPage = {
+  ...binding,
+  artifactId: summary.id,
+  section: 'summary',
+  page: 0,
+  rows: [summary],
+  count: 1,
+  completeness: 'complete',
+};
+const usagePage: ResourceArtifactDetailPage = {
+  ...binding,
+  artifactId: summary.id,
+  section: 'usages',
+  page: 0,
+  rows: [usage],
+  count: 1,
+  completeness: 'partial',
+};
+const configured: false = usage.runtimeDigestObserved;
+// @ts-expect-error Configured evidence can never claim a runtime digest observation.
+const runtime: ResourceArtifactUsageEvidence = { ...usage, runtimeDigestObserved: true };
+// @ts-expect-error Restricted security cannot expose finding counts.
+const restricted: ResourceArtifactSummary = { ...summary, security: { status: 'restricted', packageFindingCount: 0 } };
+// @ts-expect-error Findings rows must use finding contracts rather than summaries.
+const mismatched: ResourceArtifactDetailPage = {
+  ...binding,
+  artifactId: summary.id,
+  section: 'findings',
+  page: 0,
+  rows: [summary],
+  completeness: 'complete',
+};
+if (page.section === 'findings') {
+  const softwareName: string | undefined = page.rows[0]?.softwareName;
+  void softwareName;
+}
+void [
+  source,
+  overlay,
+  configured,
+  runtime,
+  restricted,
+  mismatched,
+  summaryPage,
+  usagePage,
+  resourceArtifactUsageRunPrefix(binding.artifactGeneration.runId),
+  validateResourceArtifactUsageManifest(manifest, binding),
+  isResourceArtifactUsageManifest(manifest, binding),
+  validateResourceArtifactUsagePointer(pointer, binding),
+  validateResourceArtifactUsageIndex(index, binding),
+  validateResourceArtifactUsageEvidence(usage),
+  validateResourceArtifactDetailPage(page, { ...binding, artifactId: summary.id, section: 'findings', page: 0 }),
+];

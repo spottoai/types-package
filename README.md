@@ -68,6 +68,14 @@ The root entry point also exports the provider-neutral artifact generation,
 manifest, descriptor, and completed-pointer contracts. Storage paths and
 runtime persistence records deliberately remain owned by the producing engine.
 
+Microsoft 365 license contracts include optional account profiles and joined usage,
+full-population usage summaries, per-product usage, downgrade storage evidence,
+and per-currency review-value breakdowns. Missing evidence stays null or unknown.
+Monthly history accepts aggregate usage only and rejects profile data, breakdowns,
+daily report rows and per-account prices. `npm run check:microsoft365-license-contracts`
+checks the CJS and ESM validators; `npm test` also compiles the packed consumer.
+See [the contract extension and consumer handoff](specs/licensing/microsoft-365-improvements-types.md).
+
 Azure financial evidence supports optional native-discount eligibility subtotals.
 `AzureFinancialChargeSpendBreakdownV1.azureNativeDiscountEligible` carries independent
 billed/amortized and billing-backed/estimated amounts; Cost Tree basis amounts and
@@ -83,6 +91,17 @@ zero. Exact validators accept legacy omission and reject malformed extensions.
 Upgrade readers before producers emit the fields, because earlier exact validators
 do not recognize them. Local source/build changes require a new package release and
 consumer adoption before deployment. See the [contract and calculation plan](specs/billing/azure-native-discount-eligibility.md).
+
+Report spend periods optionally carry a bounded `resourceTypes` catalogue of
+`ReportSpendResourceType` totals. Each retained type covers all accepted charges
+for that type and period, including resources no longer in inventory; limiting
+the catalogue never limits those totals. Rows reuse `ReportSpendAmounts` for exact
+decimal money, billed/amortized bases, billing-backed/estimated components,
+coverage and availability. They inherit the period's estimate lens and projection
+currency. Type and service catalogues describe the same spend and must not be
+added together. Missing types are unavailable evidence, not proved zeros.
+Readers must adopt the updated validator before producers emit the optional field.
+See the [resource-type spend contract](specs/reporting/report-resource-type-spend-types.md).
 
 The reviewer follow-up adds optional eligible cost attributes to existing merged
 `ResourceSpend` rows. Type/location breakdowns and native dashboard stats carry an
@@ -413,3 +432,9 @@ Packages. Older `1.0.2-beta.N` versions remain on registry.npmjs.org only; use t
 ## License
 
 MIT License - see LICENSE file for details
+
+### Resource artifact usage contracts
+
+Import `ResourceArtifactUsageManifest`, `ResourceArtifactUsagePointer`, `ResourceArtifactUsageIndex`, `ResourceArtifactSummary`, `ResourceArtifactFinding`, `ResourceArtifactUsageEvidence` and `ResourceArtifactDetailPage` from the root or `@spottoai/types-package/common/resource-artifact-usage`. The narrow subpath also exports the matching `validateResourceArtifact...` functions (empty error array means valid), predicates and `resourceArtifactUsageRunPrefix`.
+
+Stored documents bind company, provider, account and immutable generation. File descriptors bind decoded `JSON.stringify(parsedBody)` UTF-8 bytes before gzip. Configured references always retain `runtimeDigestObserved: false`; independent source coverage and count completeness preserve partial or unavailable observations. Restricted security summaries contain no counts. See [shared artifact usage spec](specs/security/container-image-usage-types.md) for the exact consumer handoff and validation evidence.

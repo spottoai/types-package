@@ -1,0 +1,380 @@
+{
+  "binding": {
+    "schemaVersion": 1,
+    "companyId": "company-1",
+    "provider": "azure",
+    "accountId": "sub-1",
+    "artifactGeneration": {
+      "runId": "run-1",
+      "generatedAt": "2026-10-13T00:00:00.000Z"
+    }
+  },
+  "source": {
+    "sourceId": "image-inventory",
+    "scope": {
+      "resourceIds": [
+        "registry-1"
+      ]
+    },
+    "status": "available",
+    "observedAt": "2026-10-13T00:00:00.000Z",
+    "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+    "supportedWorkloadClasses": [],
+    "collectedWorkloadClasses": []
+  },
+  "summary": {
+    "id": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "artifactKind": "container-image",
+    "name": "app@sha256:abc",
+    "ownerResourceId": "registry-1",
+    "region": "australiaeast",
+    "attributes": {
+      "registryHost": "example.azurecr.io",
+      "repository": "App",
+      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "aliases": [
+      {
+        "name": "Release",
+        "observedAt": "2026-10-13T00:00:00.000Z"
+      }
+    ],
+    "usageCount": 1,
+    "usageCompleteness": "complete",
+    "sourceCoverage": [
+      {
+        "sourceId": "image-inventory",
+        "scope": {
+          "resourceIds": [
+            "registry-1"
+          ]
+        },
+        "status": "available",
+        "observedAt": "2026-10-13T00:00:00.000Z",
+        "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+        "supportedWorkloadClasses": [],
+        "collectedWorkloadClasses": []
+      }
+    ],
+    "security": {
+      "status": "available",
+      "packageFindingCount": 1,
+      "cveCount": 1,
+      "severityCounts": {
+        "high": 1
+      },
+      "observedAt": "2026-10-13T00:00:00.000Z"
+    }
+  },
+  "finding": {
+    "id": "finding-1",
+    "providerFindingId": "assessment-1",
+    "sourceId": "vulnerability-findings",
+    "status": "active",
+    "softwareName": "openssl",
+    "detectedVersions": [
+      "1"
+    ],
+    "fixedVersion": "2",
+    "cves": [
+      {
+        "id": "CVE-2026-1",
+        "severity": "high",
+        "fixStatus": "available"
+      }
+    ],
+    "observedAt": "2026-10-13T00:00:00.000Z"
+  },
+  "usage": {
+    "id": "usage-1",
+    "sourceId": "workload-config",
+    "resourceId": "app-1",
+    "resourceName": "app",
+    "reference": "example.azurecr.io/App:Release",
+    "tag": "Release",
+    "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "observedAt": "2026-10-13T00:00:00.000Z",
+    "resolvedAt": "2026-10-13T00:00:00.000Z",
+    "resolutionState": "configured-tag-resolved",
+    "runtimeDigestObserved": false
+  },
+  "manifest": {
+    "schemaVersion": 1,
+    "companyId": "company-1",
+    "provider": "azure",
+    "accountId": "sub-1",
+    "artifactGeneration": {
+      "runId": "run-1",
+      "generatedAt": "2026-10-13T00:00:00.000Z"
+    },
+    "baseRelationshipSnapshotId": "base-1",
+    "sourceCoverage": [
+      {
+        "sourceId": "image-inventory",
+        "scope": {
+          "resourceIds": [
+            "registry-1"
+          ]
+        },
+        "status": "available",
+        "observedAt": "2026-10-13T00:00:00.000Z",
+        "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+        "supportedWorkloadClasses": [],
+        "collectedWorkloadClasses": []
+      }
+    ],
+    "expiresAt": "2026-10-14T00:00:00.000Z",
+    "paging": {
+      "maxRows": 200,
+      "maxDecodedBytes": 2097152
+    },
+    "files": [
+      {
+        "role": "graph",
+        "path": "runs/r1-cnVuLTE/artifact-usage/graph.json.gz",
+        "byteLength": 100,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "role": "index",
+        "path": "runs/r1-cnVuLTE/artifact-usage/index.json.gz",
+        "byteLength": 100,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      {
+        "role": "summary",
+        "path": "runs/r1-cnVuLTE/artifact-usage/details/artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/summary.json.gz",
+        "byteLength": 100,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "artifactId": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      {
+        "role": "findings",
+        "path": "runs/r1-cnVuLTE/artifact-usage/details/artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/findings/0.json.gz",
+        "byteLength": 100,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "artifactId": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "page": 0
+      },
+      {
+        "role": "usages",
+        "path": "runs/r1-cnVuLTE/artifact-usage/details/artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/usages/0.json.gz",
+        "byteLength": 100,
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "artifactId": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "page": 0
+      }
+    ]
+  },
+  "index": {
+    "schemaVersion": 1,
+    "companyId": "company-1",
+    "provider": "azure",
+    "accountId": "sub-1",
+    "artifactGeneration": {
+      "runId": "run-1",
+      "generatedAt": "2026-10-13T00:00:00.000Z"
+    },
+    "baseRelationshipSnapshotId": "base-1",
+    "artifacts": [
+      {
+        "id": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "artifactKind": "container-image",
+        "name": "app@sha256:abc",
+        "ownerResourceId": "registry-1",
+        "region": "australiaeast",
+        "attributes": {
+          "registryHost": "example.azurecr.io",
+          "repository": "App",
+          "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        },
+        "aliases": [
+          {
+            "name": "Release",
+            "observedAt": "2026-10-13T00:00:00.000Z"
+          }
+        ],
+        "usageCount": 1,
+        "usageCompleteness": "complete",
+        "sourceCoverage": [
+          {
+            "sourceId": "image-inventory",
+            "scope": {
+              "resourceIds": [
+                "registry-1"
+              ]
+            },
+            "status": "available",
+            "observedAt": "2026-10-13T00:00:00.000Z",
+            "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+            "supportedWorkloadClasses": [],
+            "collectedWorkloadClasses": []
+          }
+        ],
+        "security": {
+          "status": "available",
+          "packageFindingCount": 1,
+          "cveCount": 1,
+          "severityCounts": {
+            "high": 1
+          },
+          "observedAt": "2026-10-13T00:00:00.000Z"
+        }
+      }
+    ],
+    "resourceArtifacts": {
+      "registry-1": [
+        "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "app-1": [
+        "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ]
+    }
+  },
+  "page": {
+    "schemaVersion": 1,
+    "companyId": "company-1",
+    "provider": "azure",
+    "accountId": "sub-1",
+    "artifactGeneration": {
+      "runId": "run-1",
+      "generatedAt": "2026-10-13T00:00:00.000Z"
+    },
+    "artifactId": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "section": "findings",
+    "page": 0,
+    "rows": [
+      {
+        "id": "finding-1",
+        "providerFindingId": "assessment-1",
+        "sourceId": "vulnerability-findings",
+        "status": "active",
+        "softwareName": "openssl",
+        "detectedVersions": [
+          "1"
+        ],
+        "fixedVersion": "2",
+        "cves": [
+          {
+            "id": "CVE-2026-1",
+            "severity": "high",
+            "fixStatus": "available"
+          }
+        ],
+        "observedAt": "2026-10-13T00:00:00.000Z"
+      }
+    ],
+    "count": 1,
+    "completeness": "complete"
+  },
+  "pointer": {
+    "schemaVersion": 1,
+    "companyId": "company-1",
+    "provider": "azure",
+    "accountId": "sub-1",
+    "artifactGeneration": {
+      "runId": "run-1",
+      "generatedAt": "2026-10-13T00:00:00.000Z"
+    },
+    "manifest": {
+      "path": "runs/r1-cnVuLTE/artifact-usage/manifest.json",
+      "byteLength": 100,
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "completedAt": "2026-10-13T00:00:00.000Z"
+  },
+  "examples": {
+    "indexSummary": {
+      "id": "artifact:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "artifactKind": "container-image",
+      "name": "app@sha256:abc",
+      "ownerResourceId": "registry-1",
+      "region": "australiaeast",
+      "attributes": {
+        "registryHost": "example.azurecr.io",
+        "repository": "App",
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "aliases": [
+        {
+          "name": "Release",
+          "observedAt": "2026-10-13T00:00:00.000Z"
+        }
+      ],
+      "usageCount": 1,
+      "usageCompleteness": "complete",
+      "sourceCoverage": [
+        {
+          "sourceId": "image-inventory",
+          "scope": {
+            "resourceIds": [
+              "registry-1"
+            ]
+          },
+          "status": "available",
+          "observedAt": "2026-10-13T00:00:00.000Z",
+          "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+          "supportedWorkloadClasses": [],
+          "collectedWorkloadClasses": []
+        }
+      ],
+      "security": {
+        "status": "available",
+        "packageFindingCount": 1,
+        "cveCount": 1,
+        "severityCounts": {
+          "high": 1
+        },
+        "observedAt": "2026-10-13T00:00:00.000Z"
+      },
+      "childArtifactIds": [
+        "artifact:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      ]
+    },
+    "childSummary": {
+      "id": "artifact:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "artifactKind": "container-image",
+      "name": "App-platform-child",
+      "ownerResourceId": "registry-1",
+      "region": "australiaeast",
+      "attributes": {
+        "registryHost": "example.azurecr.io",
+        "repository": "App",
+        "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "aliases": [
+        {
+          "name": "Release",
+          "observedAt": "2026-10-13T00:00:00.000Z"
+        }
+      ],
+      "usageCount": 1,
+      "usageCompleteness": "complete",
+      "sourceCoverage": [
+        {
+          "sourceId": "image-inventory",
+          "scope": {
+            "resourceIds": [
+              "registry-1"
+            ]
+          },
+          "status": "available",
+          "observedAt": "2026-10-13T00:00:00.000Z",
+          "lastSuccessfulAt": "2026-10-13T00:00:00.000Z",
+          "supportedWorkloadClasses": [],
+          "collectedWorkloadClasses": []
+        }
+      ],
+      "security": {
+        "status": "available",
+        "packageFindingCount": 1,
+        "cveCount": 1,
+        "severityCounts": {
+          "high": 1
+        },
+        "observedAt": "2026-10-13T00:00:00.000Z"
+      }
+    },
+    "semanticRun": "scope/subscription/run#1"
+  }
+}

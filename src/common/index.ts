@@ -13,3 +13,4 @@ export * from './syncProgress';
 export * from './securityPosture';
 export * from './cloudGovernance';
 export * from './serviceRetirement';
+export * from './resourceArtifactUsage';

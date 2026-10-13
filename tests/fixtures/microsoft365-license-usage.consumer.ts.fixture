@@ -1,0 +1,156 @@
+import {
+  isMicrosoft365LicenseView,
+  isMicrosoft365LicensePricing,
+  isMicrosoft365LicenseHistorySnapshot,
+  isMicrosoft365LicenseHistory,
+  isMicrosoft365AccountUsage,
+  isMicrosoft365UsageSummary,
+  type Microsoft365AccountProfile,
+  type Microsoft365AccountUsage,
+  type Microsoft365SignInStatus,
+  type Microsoft365UsageStatus,
+  type Microsoft365UsageSummary,
+  type Microsoft365LicenseBreakdownRow,
+  type Microsoft365LicenseProductUsage,
+  type Microsoft365LicenseArtifact,
+  type Microsoft365LicenseView,
+  type Microsoft365LicenseCoverage,
+  type Microsoft365LicenseHistorySnapshot,
+  type Microsoft365LicenseHistoryMonth,
+  type Microsoft365LicenseHistoryUsage,
+  type Microsoft365LicenseInsight,
+} from '@spottoai/types-package';
+
+const profile: Microsoft365AccountProfile = {
+  department: 'Finance',
+  jobTitle: null,
+  officeLocation: null,
+  city: null,
+  country: null,
+  usageLocation: 'AU',
+  companyName: null,
+  domain: 'contoso.com',
+};
+const usage: Microsoft365AccountUsage = {
+  status: 'unknown',
+  lastActivityDate: null,
+  platforms: null,
+  mailbox: null,
+  oneDrive: null,
+  copilotLastActivityDate: null,
+};
+const signIn: Microsoft365SignInStatus = 'never_signed_in';
+const status: Microsoft365UsageStatus = 'no_recorded_activity';
+const summary: Microsoft365UsageSummary = {
+  evidence: 'report_unavailable',
+  reportRefreshDate: null,
+  windowDays: 30,
+  enabledLicensedAccountCount: null,
+  matchedAccountCount: null,
+  status: null,
+  signedInButNoOfficeActivityCount: null,
+  workloadActive: null,
+  platforms: null,
+  mailbox: null,
+  oneDrive: null,
+  copilot: null,
+  signIn: { neverSignedInCount: 1, newAccountCount: 0, guestWithPaidLicenseCount: 1 },
+};
+const product: Microsoft365LicenseProductUsage = { active: 0, inactive: 0, noRecordedActivity: 0, unknown: 1, signedInButNoOfficeActivity: 0 };
+const breakdown: Microsoft365LicenseBreakdownRow = {
+  key: '',
+  label: 'Not Set',
+  licensedAccountCount: 1,
+  paidSeatCount: 1,
+  monthlyCost: null,
+  reviewAccountCount: 1,
+  reviewMonthlyCost: null,
+};
+const finding: Microsoft365LicenseInsight = {
+  accountId: 'fictional-account',
+  skuId: 'sku-one',
+  kind: 'downgrade',
+  ruleId: 'e3-no-desktop-to-f3',
+  evidence: {
+    windows: false,
+    mac: false,
+    web: true,
+    mobile: null,
+    mailboxUsedBytes: 6442450944,
+    mailboxHasArchive: true,
+    oneDriveUsedBytes: null,
+    storageChecked: false,
+  },
+  blockedBy: ['mailbox_over_target_limit'],
+};
+const historyUsage: Microsoft365LicenseHistoryUsage = {
+  evidence: summary.evidence,
+  reportRefreshDate: summary.reportRefreshDate,
+  enabledLicensedAccountCount: summary.enabledLicensedAccountCount,
+  status: summary.status,
+  signedInButNoOfficeActivityCount: summary.signedInButNoOfficeActivityCount,
+  platforms: summary.platforms,
+  copilot: summary.copilot,
+};
+// Both stored and served month contracts carry the same aggregate-only additions.
+declare const storedMonth: Microsoft365LicenseHistorySnapshot;
+declare const servedMonth: Microsoft365LicenseHistoryMonth;
+storedMonth.usage = historyUsage;
+storedMonth.productUsage = { 'sku-one': product };
+servedMonth.usage = storedMonth.usage;
+servedMonth.productUsage = storedMonth.productUsage;
+declare const view: Microsoft365LicenseView;
+view.usage = summary;
+view.licenses[0].usage = product;
+view.accounts[0].profile = profile;
+view.accounts[0].usage = usage;
+view.accounts[0].userType = 'Guest';
+view.accounts[0].createdAt = null;
+view.accounts[0].signInStatus = signIn;
+declare const raw: Microsoft365LicenseArtifact;
+raw.reportIdentity.correlation = 'performed';
+raw.reportIdentity.correlation = 'identities_concealed';
+raw.sources.officeActiveUserCounts = {
+  endpoint: 'fictional',
+  requiredPermissions: [],
+  state: 'complete',
+  attemptedAt: '2026-10-13T00:00:00Z',
+  observedAt: null,
+  data: [],
+  period: 'D180',
+};
+declare const coverage: Microsoft365LicenseCoverage;
+coverage.notes = ['workload_dates_omitted_for_size'];
+declare const estimate: NonNullable<Microsoft365LicenseView['pricing']>;
+estimate.breakdowns = { domain: [breakdown], department: [], country: [] };
+estimate.summary.noOfficeActivityAccountCount = 1;
+estimate.summary.noOfficeActivityMonthlyCost = null;
+estimate.products[0].noOfficeActivityMonthlyCost = null;
+
+// A history month may not carry person-level breakdowns or redundant daily report rows.
+// @ts-expect-error History usage intentionally excludes dailyActive.
+historyUsage.dailyActive = [];
+// @ts-expect-error History usage intentionally excludes profile data.
+historyUsage.profile = profile;
+// @ts-expect-error Only Graph report periods in the collected contract are supported.
+coverage.period = 'D365';
+// @ts-expect-error Unknown usage status is not an arbitrary string.
+usage.status = 'not_active';
+
+void [
+  profile,
+  usage,
+  signIn,
+  status,
+  summary,
+  product,
+  breakdown,
+  finding,
+  historyUsage,
+  isMicrosoft365LicenseView,
+  isMicrosoft365LicensePricing,
+  isMicrosoft365LicenseHistorySnapshot,
+  isMicrosoft365LicenseHistory,
+  isMicrosoft365AccountUsage,
+  isMicrosoft365UsageSummary,
+];

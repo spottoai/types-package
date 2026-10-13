@@ -6,6 +6,19 @@ import {
   type Microsoft365CapabilityProjection,
   type Microsoft365ProductCapabilities,
 } from './microsoft365Capabilities';
+import {
+  isMicrosoft365AccountProfile,
+  isMicrosoft365AccountUsage,
+  isMicrosoft365LicenseBreakdownRow,
+  isMicrosoft365LicenseProductUsage,
+  isMicrosoft365UsageSummary,
+  type Microsoft365AccountProfile,
+  type Microsoft365AccountUsage,
+  type Microsoft365LicenseBreakdownRow,
+  type Microsoft365LicenseProductUsage,
+  type Microsoft365SignInStatus,
+  type Microsoft365UsageSummary,
+} from './microsoft365Usage';
 
 export const MICROSOFT_365_LICENSE_SOURCES = [
   'subscribedSkus',
@@ -17,10 +30,20 @@ export const MICROSOFT_365_LICENSE_SOURCES = [
   'copilotUsage',
   'subscriptions',
   'organization',
+  // Append only: engine collection checkpoints address sources by position.
+  'mailboxUsage',
+  'oneDriveUsage',
+  'officeActiveUserCounts',
 ] as const;
 export type Microsoft365SourceName = (typeof MICROSOFT_365_LICENSE_SOURCES)[number];
 /** Sources added after the first release. Artifacts and views collected earlier do not have them. */
-export const MICROSOFT_365_LATER_LICENSE_SOURCES = ['subscriptions', 'organization'] as const;
+export const MICROSOFT_365_LATER_LICENSE_SOURCES = [
+  'subscriptions',
+  'organization',
+  'mailboxUsage',
+  'oneDriveUsage',
+  'officeActiveUserCounts',
+] as const;
 export type Microsoft365LaterSourceName = (typeof MICROSOFT_365_LATER_LICENSE_SOURCES)[number];
 /** Per-source record in which later sources are optional. */
 export type Microsoft365SourceRecord<T> = Record<Exclude<Microsoft365SourceName, Microsoft365LaterSourceName>, T> &
@@ -36,7 +59,7 @@ export interface Microsoft365LicenseSource {
   attemptedAt: string;
   observedAt: string | null;
   data: Record<string, unknown>[] | null;
-  period?: 'D30' | 'D28';
+  period?: 'D30' | 'D28' | 'D180';
   recovery?: { action: Microsoft365RecoveryAction; optional: boolean };
 }
 export interface Microsoft365LicenseArtifact {
@@ -45,14 +68,21 @@ export interface Microsoft365LicenseArtifact {
   generatedAt: string;
   tenantSyncRunId?: string;
   sources: Microsoft365SourceRecord<Microsoft365LicenseSource>;
-  reportIdentity: { concealment: 'concealed' | 'identifiable' | 'unknown'; correlation: 'not_performed' };
+  reportIdentity: {
+    concealment: 'concealed' | 'identifiable' | 'unknown';
+    correlation: 'not_performed' | 'performed' | 'identities_concealed';
+  };
 }
 export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSource, 'data' | 'endpoint' | 'recovery'> {
   recovery: { action: Microsoft365RecoveryAction; optional: boolean };
   observedRowCount: number | null;
   omittedRowCount: number;
+  /** Users coverage records account workload dates omitted by the view's byte guard. */
+  notes?: 'workload_dates_omitted_for_size'[];
 }
 export interface Microsoft365LicenseRow {
+  /** Full-population counts for enabled accounts holding this SKU; null when usage evidence is unavailable. */
+  usage?: Microsoft365LicenseProductUsage | null;
   /** Live tenant service-plan evidence; absent on older snapshots. */
   capabilities?: Microsoft365ProductCapabilities;
   skuId: string;
@@ -89,6 +119,12 @@ export interface Microsoft365LicensedAccountRow {
   skuIds: string[] | null;
   lastSuccessfulSignInAt: string | null;
   signInOlderThan90Days: boolean | null;
+  userType?: 'Member' | 'Guest' | null;
+  createdAt?: string | null;
+  /** Derived from the same evidence and 90-day thresholds as signInOlderThan90Days. */
+  signInStatus?: Microsoft365SignInStatus;
+  profile?: Microsoft365AccountProfile;
+  usage?: Microsoft365AccountUsage;
 }
 export interface Microsoft365UsageRow {
   key: string;
@@ -100,6 +136,8 @@ export interface Microsoft365UsageRow {
 }
 export type Microsoft365UsageSource = 'officeActiveUsers' | 'officeAppUsage' | 'copilotUsage';
 export interface Microsoft365LicenseView {
+  /** Full-population usage counts computed before account/report detail trimming. */
+  usage?: Microsoft365UsageSummary;
   /** Independent capability facts/notices; never silently added to monetary totals. */
   capabilities?: Microsoft365CapabilityProjection;
   schemaVersion: 'microsoft-365-license-view/v1';
@@ -157,6 +195,20 @@ export interface Microsoft365LicenseInsight {
   targetProductName?: string | null;
   /** True when the assignment comes only from group-based licensing, so the change belongs on the group. */
   assignedByGroup?: boolean;
+  /** Facts supporting the downgrade review, independent of whether a target storage limit blocked it. */
+  evidence?: {
+    windows: boolean | null;
+    mac: boolean | null;
+    web: boolean | null;
+    mobile: boolean | null;
+    mailboxUsedBytes: number | null;
+    mailboxHasArchive: boolean | null;
+    oneDriveUsedBytes: number | null;
+    /** True only when every applicable target storage limit was checked. */
+    storageChecked: boolean;
+  };
+  /** Informational downgrade finding, excluded from candidate counts and savings. */
+  blockedBy?: ('mailbox_over_target_limit' | 'onedrive_over_target_limit')[];
 }
 export interface Microsoft365LicenseInsights {
   rulesVersion: string;
@@ -165,6 +217,8 @@ export interface Microsoft365LicenseInsights {
   overlapAccountCount: number | null;
   /** Accounts with at least one downgrade suggestion. */
   downgradeCandidateCount: number | null;
+  /** Accounts blocked by a target storage limit; excluded from downgradeCandidateCount. */
+  downgradeBlockedCount?: number | null;
   downgradeEvidence: Microsoft365DowngradeEvidence;
   /** Findings for the listed account and product rows only. */
   findings: Microsoft365LicenseInsight[];
@@ -220,6 +274,8 @@ export interface Microsoft365LicenseProductPricing {
   unassignedMonthlyCost: number | null;
   disabledMonthlyCost: number | null;
   inactiveMonthlyCost: number | null;
+  /** Recently signed-in enabled seats with no Office activity in 30 days. Review value, never reclaim. */
+  noOfficeActivityMonthlyCost?: number | null;
   /** Redundant assignments on enabled, recently active accounts (disjoint from disabled and inactive); absent on older snapshots. */
   overlapAccountUnits?: number | null;
   overlapMonthlyCost?: number | null;
@@ -228,6 +284,13 @@ export interface Microsoft365LicenseProductPricing {
   downgradeMonthlySaving?: number | null;
 }
 export interface Microsoft365LicensePricing {
+  /** Full-population account groups with monthly list-price estimates in this entry's currency. Never stored in history. */
+  breakdowns?: {
+    domain: Microsoft365LicenseBreakdownRow[];
+    department: Microsoft365LicenseBreakdownRow[];
+    /** Country, falling back to usageLocation. */
+    country: Microsoft365LicenseBreakdownRow[];
+  };
   basis: 'list_price_estimate';
   /** Price list identifier, for example `microsoft-2026-07`. */
   priceListVersion: string;
@@ -271,6 +334,10 @@ export interface Microsoft365LicensePricing {
     disabledMonthlyCost: number | null;
     inactiveAccountCount: number | null;
     inactiveMonthlyCost: number | null;
+    /** Recently signed-in enabled accounts with no Office activity; disjoint from disabled and 90-day sign-in groups. */
+    noOfficeActivityAccountCount?: number | null;
+    /** Priced value of the above seats, excluding tax; a review figure, never added to reclaim. */
+    noOfficeActivityMonthlyCost?: number | null;
     /** Value of duplicate assignments; adds to the other reclaim values. Absent on older snapshots. */
     overlapMonthlyCost?: number | null;
     /** Saving if every priced downgrade candidate moved to its suggested product; not part of the reclaim total. */
@@ -310,9 +377,9 @@ const PRICING_SUMMARY_COUNTS = [
   'inactiveAccountCount',
 ] as const;
 const PRICING_SUMMARY_MONEY = ['monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
-const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving'] as const;
+const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 'noOfficeActivityMonthlyCost'] as const;
 const OPTIONAL_PRODUCT_COUNTS = ['overlapAccountUnits', 'downgradeAccountUnits'] as const;
-const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving'] as const;
+const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 'noOfficeActivityMonthlyCost'] as const;
 const optional = (value: unknown, predicate: (value: unknown) => boolean): boolean => value === undefined || predicate(value);
 const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'] as const;
 const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
@@ -351,6 +418,7 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
     !PRICING_SUMMARY_COUNTS.every(key => nullableCount(summary[key])) ||
     !PRICING_SUMMARY_MONEY.every(key => nullableMoney(summary[key])) ||
     !OPTIONAL_SUMMARY_MONEY.every(key => optional(summary[key], nullableMoney)) ||
+    !optional(summary.noOfficeActivityAccountCount, nullableCount) ||
     typeof summary.accountsComplete !== 'boolean' ||
     typeof summary.disabledAccountsComplete !== 'boolean'
   )
@@ -370,6 +438,17 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
     return false;
   const costs = Object.entries(value.accountMonthlyCosts);
   if (costs.length > 2000 || !costs.every(([key, cost]) => text(key) && !!key && money(cost))) return false;
+  if (
+    value.breakdowns !== undefined &&
+    (!isRecord(value.breakdowns) ||
+      !Object.keys(value.breakdowns).every(key => ['domain', 'department', 'country'].includes(key)) ||
+      !['domain', 'department', 'country'].every(key => {
+        const groups = (value.breakdowns as Record<string, unknown>)[key];
+        // Up to 25 ordinary groups plus the always-retained Not Set and synthetic Other rows.
+        return Array.isArray(groups) && groups.length <= 27 && groups.every(isMicrosoft365LicenseBreakdownRow);
+      }))
+  )
+    return false;
   return rows(
     value.products,
     row =>
@@ -404,6 +483,7 @@ export function isMicrosoft365LicenseInsights(value: unknown): value is Microsof
     nullableCount(value.overlapAssignmentCount) &&
     nullableCount(value.overlapAccountCount) &&
     nullableCount(value.downgradeCandidateCount) &&
+    optional(value.downgradeBlockedCount, nullableCount) &&
     ['available', 'report_unavailable', 'identities_concealed'].includes(String(value.downgradeEvidence)) &&
     rows(
       value.findings,
@@ -419,7 +499,26 @@ export function isMicrosoft365LicenseInsights(value: unknown): value is Microsof
         optional(row.coveredBySkuIds, ids => Array.isArray(ids) && ids.length <= 16 && ids.every(id => text(id) && !!id)) &&
         optional(row.targetSkuPartNumber, nullableText) &&
         optional(row.targetProductName, nullableText) &&
-        optional(row.assignedByGroup, flag => typeof flag === 'boolean')
+        optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
+        optional(
+          row.evidence,
+          evidence =>
+            isRecord(evidence) &&
+            ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
+            nullableCount(evidence.mailboxUsedBytes) &&
+            nullableCount(evidence.oneDriveUsedBytes) &&
+            typeof evidence.storageChecked === 'boolean'
+        ) &&
+        optional(
+          row.blockedBy,
+          reasons =>
+            row.kind === 'downgrade' &&
+            Array.isArray(reasons) &&
+            reasons.length > 0 &&
+            reasons.length <= 2 &&
+            new Set(reasons).size === reasons.length &&
+            reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')
+        )
     )
   );
 }
@@ -438,7 +537,8 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
   if (
     !isRecord(value.reportIdentity) ||
     !['concealed', 'identifiable', 'unknown'].includes(String(value.reportIdentity.concealment)) ||
-    value.reportIdentity.correlation !== 'not_performed'
+    typeof value.reportIdentity.correlation !== 'string' ||
+    !['not_performed', 'performed', 'identities_concealed'].includes(value.reportIdentity.correlation)
   )
     return false;
   if (
@@ -462,7 +562,8 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         (source.reason === undefined || text(source.reason)) &&
         (source.httpStatus === undefined ||
           (typeof source.httpStatus === 'number' && Number.isInteger(source.httpStatus) && source.httpStatus >= 100 && source.httpStatus <= 599)) &&
-        (source.period === undefined || source.period === 'D30' || source.period === 'D28')
+        (source.period === undefined || source.period === 'D30' || source.period === 'D28' || source.period === 'D180') &&
+        optional(source.notes, notes => Array.isArray(notes) && notes.length <= 1 && notes.every(note => note === 'workload_dates_omitted_for_size'))
       );
     })
   )
@@ -497,6 +598,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         nullableText(row.appliesTo) &&
         optional(row.productName, text) &&
         optional(row.capabilities, isMicrosoft365ProductCapabilities) &&
+        optional(row.usage, usage => usage === null || isMicrosoft365LicenseProductUsage(usage)) &&
         nullableText(row.capabilityStatus) &&
         ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
         optional(
@@ -529,6 +631,14 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         (row.lastSuccessfulSignInAt === null || date(row.lastSuccessfulSignInAt)) &&
         nullableBoolean(row.signInOlderThan90Days) &&
         optional(row.capabilities, isMicrosoft365AccountCapabilities) &&
+        optional(row.userType, type => type === null || type === 'Member' || type === 'Guest') &&
+        optional(row.createdAt, created => created === null || date(created)) &&
+        optional(
+          row.signInStatus,
+          status => typeof status === 'string' && ['recent', 'older_than_90_days', 'never_signed_in', 'new_account', 'unknown'].includes(status)
+        ) &&
+        optional(row.profile, isMicrosoft365AccountProfile) &&
+        optional(row.usage, isMicrosoft365AccountUsage) &&
         (row.skuIds === null || (Array.isArray(row.skuIds) && row.skuIds.length <= 128 && row.skuIds.every(text)))
     )
   )
@@ -554,6 +664,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     return false;
   if (value.pricing !== undefined && !isMicrosoft365LicensePricing(value.pricing)) return false;
   if (value.insights !== undefined && !isMicrosoft365LicenseInsights(value.insights)) return false;
+  if (value.usage !== undefined && !isMicrosoft365UsageSummary(value.usage)) return false;
   if (value.capabilities !== undefined) {
     if (!isMicrosoft365CapabilityProjection(value.capabilities)) return false;
     const definitions = new Set(value.capabilities.definitions.map(definition => definition.id));

@@ -29,6 +29,9 @@
       "azure/recommendations": [
         "dist/azure/recommendations.d.ts"
       ],
+      "common/resource-artifact-usage": [
+        "dist/common/resourceArtifactUsage.d.ts"
+      ],
       "common/provider": [
         "dist/common/provider.d.ts"
       ],
@@ -74,6 +77,11 @@
       "import": "./dist/esm/entries/recommendations.js",
       "require": "./dist/azure/recommendations.js"
     },
+    "./common/resource-artifact-usage": {
+      "types": "./dist/common/resourceArtifactUsage.d.ts",
+      "import": "./dist/esm/common/resourceArtifactUsage.js",
+      "require": "./dist/common/resourceArtifactUsage.js"
+    },
     "./common/provider": {
       "types": "./dist/common/provider.d.ts",
       "import": "./dist/esm/entries/provider.js",
@@ -112,6 +120,7 @@
     "check:billing-cost-analysis-read-responses": "node scripts/check-billing-cost-analysis-read-responses.mjs",
     "check:packed-exports": "node scripts/check-packed-aws-exports.mjs",
     "check:aws-examples": "node scripts/check-aws-example-identifiers.mjs",
+    "check:resource-artifact-usage-contracts": "node scripts/check-resource-artifact-usage-contracts.mjs",
     "check:resource-graph-contracts": "node scripts/check-resource-graph-contracts.mjs",
     "check:azure-view-set-contracts": "node scripts/check-azure-view-set-contracts.mjs",
     "check:dev-1135-latest-contracts": "node scripts/check-dev-1135-latest-contracts.mjs",
@@ -125,8 +134,9 @@
     "check:scheduler-contracts": "node scripts/check-scheduler-contracts.mjs",
     "check:scheduler-tick-contracts": "node scripts/check-scheduler-tick-contracts.mjs",
     "check:reporting-job-contracts": "node scripts/check-reporting-job-contracts.mjs",
+    "check:microsoft365-license-contracts": "node --test scripts/check-microsoft365-license-contracts.mjs",
     "prepublishOnly": "npm run clean && npm run build && npm test",
-    "test": "npm run build && npm run check:alert-contracts && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:resource-size-options-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:aws-examples && npm run check:resource-graph-contracts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:environment-contracts && npm run check:financial-charge-policy-contracts && npm run check:native-discount-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:reporting-job-contracts && npm run check:packed-exports && npm run check:regulatory-scoreboard-contracts",
+    "test": "npm run build && npm run check:microsoft365-license-contracts && npm run check:alert-contracts && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:resource-size-options-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:aws-examples && npm run check:resource-graph-contracts && npm run check:resource-artifact-usage-contracts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:environment-contracts && npm run check:financial-charge-policy-contracts && npm run check:native-discount-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:reporting-job-contracts && npm run check:packed-exports && npm run check:regulatory-scoreboard-contracts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",

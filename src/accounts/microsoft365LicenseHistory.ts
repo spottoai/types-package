@@ -8,6 +8,12 @@ import {
   type Microsoft365LicenseView,
   type Microsoft365SourceRecord,
 } from './microsoft365Licenses';
+import {
+  isMicrosoft365LicenseHistoryUsage,
+  isMicrosoft365LicenseProductUsage,
+  type Microsoft365LicenseHistoryUsage,
+  type Microsoft365LicenseProductUsage,
+} from './microsoft365Usage';
 
 const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 const text = (value: unknown): value is string => typeof value === 'string' && value.length <= 512;
@@ -38,6 +44,9 @@ export type Microsoft365LicenseHistoryInsights = Pick<
  * list-price estimates computed that month, never account, user or usage-report rows.
  */
 export interface Microsoft365LicenseHistorySnapshot {
+  usage?: Microsoft365LicenseHistoryUsage;
+  /** Full-population counts keyed by lower-case skuId, with no account identities. */
+  productUsage?: Record<string, Microsoft365LicenseProductUsage>;
   schemaVersion: 'microsoft-365-license-history/v1';
   tenantId: string;
   month: Microsoft365LicenseHistoryMonthKey;
@@ -53,6 +62,8 @@ export interface Microsoft365LicenseHistorySnapshot {
 }
 /** One month served by the API in the requested estimate currency, oldest month first. */
 export interface Microsoft365LicenseHistoryMonth {
+  usage?: Microsoft365LicenseHistoryUsage;
+  productUsage?: Record<string, Microsoft365LicenseProductUsage>;
   month: Microsoft365LicenseHistoryMonthKey;
   generatedAt: string;
   coverage: Microsoft365SourceRecord<Microsoft365CoverageState>;
@@ -104,12 +115,38 @@ const isStoredHistoryPricing = (currency: string, value: unknown): boolean =>
   value.currency === currency &&
   Object.keys(value.accountMonthlyCosts).length === 0 &&
   value.paidAccountIds === undefined &&
-  value.partialAccountPriceIds === undefined;
+  value.partialAccountPriceIds === undefined &&
+  value.breakdowns === undefined;
+
+const onlyKeys = (value: Record<string, unknown>, keys: readonly string[]): boolean => Object.keys(value).every(key => keys.includes(key));
+const isProductUsage = (value: unknown): boolean => {
+  if (!isRecord(value)) return false;
+  const products = Object.entries(value);
+  return (
+    products.length <= 2000 &&
+    products.every(([skuId, usage]) => text(skuId) && !!skuId && skuId === skuId.toLowerCase() && isMicrosoft365LicenseProductUsage(usage))
+  );
+};
+const hasValidUsage = (value: Record<string, unknown>): boolean =>
+  optional(value.usage, isMicrosoft365LicenseHistoryUsage) && optional(value.productUsage, isProductUsage);
 
 /** Validates one stored tenant month at storage and API boundaries. */
 export function isMicrosoft365LicenseHistorySnapshot(value: unknown): value is Microsoft365LicenseHistorySnapshot {
   if (
     !isRecord(value) ||
+    !onlyKeys(value, [
+      'schemaVersion',
+      'tenantId',
+      'month',
+      'generatedAt',
+      'tenantSyncRunId',
+      'coverage',
+      'summary',
+      'insights',
+      'pricingByCurrency',
+      'usage',
+      'productUsage',
+    ]) ||
     value.schemaVersion !== 'microsoft-365-license-history/v1' ||
     !text(value.tenantId) ||
     !value.tenantId ||
@@ -120,6 +157,7 @@ export function isMicrosoft365LicenseHistorySnapshot(value: unknown): value is M
     !isHistoryCoverage(value.coverage) ||
     !isViewSummary(value.summary) ||
     !optional(value.insights, isHistoryInsights) ||
+    !hasValidUsage(value) ||
     !isRecord(value.pricingByCurrency)
   )
     return false;
@@ -144,14 +182,15 @@ export function isMicrosoft365LicenseHistory(value: unknown): value is Microsoft
   return value.months.every(month => {
     const valid =
       isRecord(month) &&
+      onlyKeys(month, ['month', 'generatedAt', 'coverage', 'summary', 'insights', 'pricing', 'usage', 'productUsage']) &&
       isMicrosoft365LicenseHistoryMonthKey(month.month) &&
       month.month > previous &&
       date(month.generatedAt) &&
       isHistoryCoverage(month.coverage) &&
       isViewSummary(month.summary) &&
       optional(month.insights, isHistoryInsights) &&
-      (month.pricing === null ||
-        (currency !== null && isMicrosoft365LicensePricing(month.pricing) && month.pricing.currency === currency));
+      hasValidUsage(month) &&
+      (month.pricing === null || (typeof currency === 'string' && isStoredHistoryPricing(currency, month.pricing)));
     if (valid) previous = month.month as string;
     return valid;
   });
