@@ -247,6 +247,104 @@ const service = { serviceKey: 'compute', name: 'Virtual Machines', amounts: work
 const withService = projection(workload);
 withService.periods[0].services = { rows: [service], totalCount: 2, omittedCount: 1 };
 assert.equal(types.isReportSpendProjection(withService), true, 'service omission disclosed without changing headline');
+
+const snapshotAmounts = amounts('370.22', '370.22');
+snapshotAmounts.retail = { status: 'unavailable' };
+const snapshotType = { resourceType: 'microsoft.compute/snapshots', amounts: snapshotAmounts };
+const withResourceTypes = projection(structuredClone(workload));
+withResourceTypes.periods[0].resourceTypes = { rows: [snapshotType], totalCount: 2, omittedCount: 1 };
+assert.equal(types.isReportSpendProjection(withResourceTypes), true, 'complete snapshot subtotal survives omitted type rows');
+assert.equal(esm.isReportSpendProjection(withResourceTypes), true, 'resource-type totals survive the ESM export');
+assert.equal(types.isSubscriptionReportEvidencePack(pack(withResourceTypes)), true, 'resource-type totals survive the enclosing pack');
+assert.equal(types.isReportSpendProjection(projection(workload)), true, 'legacy periods without resource-type totals remain valid');
+
+const resourceTypeProjection = rows => {
+  const value = projection(structuredClone(workload));
+  value.periods[0].resourceTypes = { rows, totalCount: rows.length, omittedCount: 0 };
+  return value;
+};
+assert.equal(types.isReportSpendProjection(resourceTypeProjection([])), true, 'empty type catalogue does not fabricate subtotals');
+assert.equal(
+  types.isReportSpendProjection(
+    resourceTypeProjection(Array.from({ length: 100 }, (_, index) => ({ resourceType: `provider/type-${index}`, amounts: snapshotAmounts })))
+  ),
+  true,
+  'exactly 100 type rows fit the bounded catalogue'
+);
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'AWS::EC2::Snapshot', amounts: snapshotAmounts }])),
+  true,
+  'resource-type vocabulary stays open across providers'
+);
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'microsoft.compute/snapshots', amounts: credit }])),
+  true,
+  'resource-type credits and proved zero remain valid'
+);
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'microsoft.compute/snapshots', amounts: partial }])),
+  true,
+  'partial type coverage stays explicit'
+);
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'microsoft.compute/snapshots', amounts: unknownAmortized }])),
+  true,
+  'missing type amortization remains unavailable'
+);
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'microsoft.compute/snapshots', amounts: eroad }])),
+  true,
+  'resource-type estimates retain provenance'
+);
+const unavailableType = structuredClone(snapshotAmounts);
+for (const key of ['billed', 'amortized']) {
+  unavailableType.composition[key] = basis(key);
+  unavailableType.coverage[key] = coverage();
+}
+assert.equal(
+  types.isReportSpendProjection(resourceTypeProjection([{ resourceType: 'microsoft.compute/snapshots', amounts: unavailableType }])),
+  true,
+  'unavailable type spend can be retained without a fabricated zero'
+);
+const rejectResourceTypes = (name, mutate) => {
+  const value = structuredClone(withResourceTypes);
+  mutate(value.periods[0].resourceTypes, value.periods[0]);
+  assert.equal(types.isReportSpendProjection(value), false, name);
+  assert.equal(types.isSubscriptionReportEvidencePack(pack(value)), false, `${name} at the enclosing pack boundary`);
+  negativeCases++;
+};
+for (const key of ['', '  ', ' microsoft.compute/snapshots', 'microsoft.compute/snapshots ', 'x'.repeat(501), null, 7]) {
+  rejectResourceTypes(`invalid resource type ${key}`, x => (x.rows[0].resourceType = key));
+}
+rejectResourceTypes('case-insensitive duplicate resource types', x => {
+  x.rows.push({ ...x.rows[0], resourceType: 'Microsoft.Compute/Snapshots' });
+  x.omittedCount = 0;
+});
+rejectResourceTypes('inconsistent type counts', x => (x.omittedCount = 0));
+rejectResourceTypes('unsafe type counts cannot fake reconciliation', x => {
+  x.totalCount = 1e100;
+  x.omittedCount = 1e100;
+});
+rejectResourceTypes('unbounded type rows', x => {
+  x.rows = Array.from({ length: 101 }, (_, index) => ({ resourceType: `provider/type-${index}`, amounts: snapshotAmounts }));
+  x.totalCount = 101;
+  x.omittedCount = 0;
+});
+rejectResourceTypes(
+  'wrong currency in a type subtotal',
+  x => (x.rows[0].amounts.composition.billed.actual.availability.component.currencyCode = 'USD')
+);
+rejectResourceTypes('numeric type money', x => (x.rows[0].amounts.composition.billed.actual.availability.component.amount = 370.22));
+rejectResourceTypes('unreconciled type composition', x => (x.rows[0].amounts.composition.billed.combined.component.amount = '371'));
+rejectResourceTypes('unavailable type coverage with available money', x => (x.rows[0].amounts.coverage.billed.actual = 'unavailable'));
+rejectResourceTypes('type estimate without provenance', x => {
+  x.rows[0].amounts = structuredClone(eroad);
+  delete x.rows[0].amounts.estimates.billed;
+});
+rejectResourceTypes('type lens differs from the period', x => (x.rows[0].amounts.composition.selectedLens = 'actual-only'));
+rejectResourceTypes('undeclared type field', x => (x.rows[0].snapshotCount = 28));
+rejectResourceTypes('type row missing its amounts', x => delete x.rows[0].amounts);
+invalidProjection('null resource-type catalogue', x => (x.periods[0].resourceTypes = null));
 invalidProjection('duplicate services', x => {
   x.periods[0].services = { rows: [service, service], totalCount: 2, omittedCount: 0 };
 });

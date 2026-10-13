@@ -5,6 +5,7 @@ import {
   type ReportSavingsBasis,
   type ReportSpendAmounts,
   type ReportSpendProjection,
+  type ReportSpendResourceType,
   type ReportSpendService,
 } from './reportSpend';
 import { isReportCalendarDate, isReportCurrency, isReportText, isReportUtcTimestamp, reportMoneyUnits } from './reportSpendValidationHelpers';
@@ -145,7 +146,7 @@ export const isReportSpendProjection = (value: unknown): value is ReportSpendPro
   for (const period of value.periods) {
     if (
       !isRecord(period) ||
-      !exactFields(period, ['kind', 'startDate', 'endDate', 'amounts'], ['services']) ||
+      !exactFields(period, ['kind', 'startDate', 'endDate', 'amounts'], ['services', 'resourceTypes']) ||
       !['calendar-month', 'billing-period', 'rolling-30-days'].includes(period.kind as string) ||
       !isReportCalendarDate(period.startDate) ||
       !isReportCalendarDate(period.endDate)
@@ -166,6 +167,30 @@ export const isReportSpendProjection = (value: unknown): value is ReportSpendPro
     seen.add(key);
     if (!isReportSpendAmounts(period.amounts, value.currency, value.generatedAt)) return false;
     available ||= hasReportSpendValue(period.amounts);
+    if (period.resourceTypes !== undefined) {
+      const resourceTypes = new Set<string>();
+      const selectedLens = period.amounts.composition.selectedLens;
+      if (
+        !isBoundedRows(period.resourceTypes, REPORT_SPEND_LIMITS.resourceTypesPerPeriod, (row): row is ReportSpendResourceType => {
+          if (
+            !isRecord(row) ||
+            !exactFields(row, ['resourceType', 'amounts']) ||
+            !isReportText(row.resourceType) ||
+            row.resourceType !== row.resourceType.trim() ||
+            resourceTypes.has(row.resourceType.toLowerCase()) ||
+            !isReportSpendAmounts(row.amounts, value.currency as string, value.generatedAt as string) ||
+            row.amounts.composition.selectedLens !== selectedLens
+          )
+            return false;
+          resourceTypes.add(row.resourceType.toLowerCase());
+          available ||= hasReportSpendValue(row.amounts);
+          return true;
+        }) ||
+        !Number.isSafeInteger(period.resourceTypes.totalCount) ||
+        !Number.isSafeInteger(period.resourceTypes.omittedCount)
+      )
+        return false;
+    }
     if (period.services !== undefined) {
       const serviceKeys = new Set<string>();
       if (

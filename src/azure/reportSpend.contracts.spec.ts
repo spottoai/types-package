@@ -5,6 +5,7 @@ import {
   type PublicCostComposition,
   type ReportSpendAmounts,
   type ReportSpendProjection,
+  type ReportSpendResourceType,
   type ReportSavingsBasis,
   type ReportDailySpendEntry,
   type SubscriptionReportingProjection,
@@ -47,6 +48,15 @@ const spend: ReportSpendProjection = {
 };
 const oldConsumer: Pick<SubscriptionReportingProjection, 'spend'> = {};
 const newConsumer: Pick<SubscriptionReportingProjection, 'spend'> = { spend };
+const snapshotSpend: ReportSpendResourceType = { resourceType: 'microsoft.compute/snapshots', amounts };
+const withResourceTypes: ReportSpendProjection = {
+  ...spend,
+  periods: [{ ...spend.periods[0], resourceTypes: { rows: [snapshotSpend], totalCount: 1, omittedCount: 0 } }],
+};
+// @ts-expect-error type subtotals require the existing explicit financial composition
+const missingTypeAmounts: ReportSpendResourceType = { resourceType: 'microsoft.compute/snapshots' };
+// @ts-expect-error provider resource-type identifiers remain strings, not numbers or a fixed enum
+const invalidResourceType: ReportSpendResourceType = { resourceType: 28, amounts };
 const daily: ReportDailySpendEntry = { date: '2026-08-01', cost: 1000, costAmortized: 3000, financials: amounts };
 const retailSavings: Pick<ReportCompactRecommendation, 'savingsBasis'> = { savingsBasis: 'retail' };
 const validBasis: ReportSavingsBasis = 'mixed';
@@ -57,6 +67,9 @@ const invalidMoney: typeof composition.billed.combined = { status: 'available', 
 void [
   oldConsumer,
   newConsumer,
+  withResourceTypes,
+  missingTypeAmounts,
+  invalidResourceType,
   daily,
   retailSavings,
   validBasis,

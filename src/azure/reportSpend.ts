@@ -1,7 +1,14 @@
 import type { CostBasis, PublicCostComposition, PublicMoneyComponent } from './costComposition';
 import type { ReportBoundedRows } from './reportEvidence';
 
-export const REPORT_SPEND_LIMITS = { periods: 14, servicesPerPeriod: 100, periodDays: 92, assumptions: 10, textLength: 500 } as const;
+export const REPORT_SPEND_LIMITS = {
+  periods: 14,
+  servicesPerPeriod: 100,
+  resourceTypesPerPeriod: 100,
+  periodDays: 92,
+  assumptions: 10,
+  textLength: 500,
+} as const;
 
 /** Completeness for the exact period and scope, not merely the presence of a numeric amount. */
 export type ReportSpendCoverage = 'complete' | 'partial' | 'unavailable';
@@ -58,6 +65,19 @@ export interface ReportSpendService {
   amounts: ReportSpendAmounts;
 }
 
+export interface ReportSpendResourceType {
+  /** Open provider resource-type identifier, trimmed and unique without regard to case within the period. */
+  resourceType: string;
+  /**
+   * Totals over all accepted charges for this type and period, including resources no longer in inventory.
+   * Source completeness is stated separately in coverage.
+   * Inherits the containing subscription scope, period, currency and estimate lens.
+   * Additive across distinct types on the same basis/source; never add to service rows or the period headline.
+   * Missing billing/estimates remain unavailable, not zero. Signed billing credits remain valid.
+   */
+  amounts: ReportSpendAmounts;
+}
+
 export interface ReportSpendPeriod {
   kind: 'calendar-month' | 'billing-period' | 'rolling-30-days';
   /** Inclusive YYYY-MM-DD boundaries. Calendar months are complete calendar intervals. */
@@ -66,6 +86,13 @@ export interface ReportSpendPeriod {
   amounts: ReportSpendAmounts;
   /** Display catalogue only; totals above always cover the whole declared scope, including omitted services. */
   services?: ReportBoundedRows<ReportSpendService>;
+  /**
+   * Alternative type breakdown of the same period spend, calculated before bounding the catalogue.
+   * Retained rows cover every accepted charge for their type, including deleted resources.
+   * Unclassified charges can remain outside this breakdown, so its sum need not equal the headline.
+   * Omission of a type or this field is unavailable evidence, not a proved zero.
+   */
+  resourceTypes?: ReportBoundedRows<ReportSpendResourceType>;
 }
 
 /**
