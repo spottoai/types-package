@@ -1,0 +1,472 @@
+{
+  "schemaVersion": 1,
+  "provider": "azure",
+  "accountId": "subscription-1",
+  "artifactGeneration": {
+    "runId": "portal-run-1",
+    "generatedAt": "2026-09-28T06:00:00.000Z"
+  },
+  "generatedAt": "2026-09-28T06:00:00.000Z",
+  "scope": {
+    "regions": [
+      "ap-southeast-2",
+      "global"
+    ]
+  },
+  "currency": "NZD",
+  "currencySymbol": "$",
+  "nodes": [
+    {
+      "id": "scope",
+      "kind": "scope",
+      "name": "123456789012",
+      "displayName": "Production"
+    },
+    {
+      "id": "region",
+      "kind": "region",
+      "region": "ap-southeast-2",
+      "name": "ap-southeast-2"
+    },
+    {
+      "id": "region-global",
+      "kind": "region",
+      "region": "global",
+      "name": "Global"
+    },
+    {
+      "id": "zone-a",
+      "kind": "zone",
+      "region": "ap-southeast-2",
+      "name": "ap-southeast-2a"
+    },
+    {
+      "id": "vpc",
+      "kind": "resource",
+      "family": "vpc",
+      "resourceType": "AWS::EC2::VPC",
+      "region": "ap-southeast-2",
+      "name": "vpc-123",
+      "nativeId": "arn:aws:ec2:ap-southeast-2:123456789012:vpc/vpc-123",
+      "role": "network-baseline",
+      "attributes": {
+        "cidrBlock": "10.0.0.0/16",
+        "isDefault": false,
+        "cidrBlockAssociations": [
+          {
+            "associationId": "a-1",
+            "cidrBlock": "10.0.0.0/16"
+          }
+        ]
+      }
+    },
+    {
+      "id": "instance",
+      "kind": "resource",
+      "family": "ec2-instance",
+      "resourceType": "AWS::EC2::Instance",
+      "region": "ap-southeast-2",
+      "name": "web-1",
+      "nativeId": "arn:aws:ec2:ap-southeast-2:123456789012:instance/i-123",
+      "role": "workload",
+      "tags": {
+        "Name": "web-1",
+        "Empty": ""
+      },
+      "attributes": {
+        "instanceType": "t3.micro",
+        "availabilityZone": "ap-southeast-2a",
+        "iamInstanceProfileArn": "arn:aws:iam::123456789012:instance-profile/web",
+        "roleArn": "arn:aws:iam::123456789012:role/web",
+        "managedPolicyArn": "arn:aws:iam::aws:policy/ReadOnlyAccess"
+      },
+      "costs": {
+        "spend30d": 12.5,
+        "spend30dAmortized": 11
+      }
+    },
+    {
+      "id": "agent",
+      "kind": "resource",
+      "family": "bedrock-agent",
+      "resourceType": "Microsoft.Web/sites",
+      "region": "ap-southeast-2",
+      "name": "support-agent",
+      "nativeId": "arn:aws:bedrock:ap-southeast-2:123456789012:agent/AGENT1",
+      "attributes": {
+        "agentStatus": "PREPARED",
+        "actionGroupNames": [
+          "lookup"
+        ],
+        "knowledgeBases": [
+          {
+            "knowledgeBaseId": "KB1",
+            "enabled": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "role",
+      "kind": "resource",
+      "family": "iam-role",
+      "resourceType": "AWS::IAM::Role",
+      "region": "global",
+      "name": "web",
+      "nativeId": "arn:aws:iam::123456789012:role/web"
+    },
+    {
+      "id": "bucket",
+      "kind": "resource",
+      "family": "s3-bucket",
+      "resourceType": "AWS::S3::Bucket",
+      "region": "ap-southeast-2",
+      "name": "assets",
+      "nativeId": "arn:aws:s3:::assets"
+    },
+    {
+      "id": "az-synthetic",
+      "kind": "synthetic",
+      "syntheticType": "db-subnet-group",
+      "region": "ap-southeast-2",
+      "name": "default-db-subnets"
+    },
+    {
+      "id": "image",
+      "kind": "synthetic",
+      "syntheticType": "container-image",
+      "region": "ap-southeast-2",
+      "name": "image",
+      "attributes": {
+        "artifactKind": "container-image"
+      }
+    },
+    {
+      "id": "slot",
+      "kind": "synthetic",
+      "syntheticType": "workload-child",
+      "region": "ap-southeast-2",
+      "name": "slot",
+      "role": "workload"
+    },
+    {
+      "id": "nested-artifact",
+      "kind": "synthetic",
+      "syntheticType": "artifact-child",
+      "region": "ap-southeast-2",
+      "name": "nested-artifact"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-region",
+      "from": "region",
+      "to": "scope",
+      "kind": "contains",
+      "relationshipTypes": [
+        "account-region"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "e-region-global",
+      "from": "region-global",
+      "to": "scope",
+      "kind": "contains",
+      "relationshipTypes": [
+        "account-region"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "e-zone",
+      "from": "zone-a",
+      "to": "region",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-zone"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "e-vpc",
+      "from": "vpc",
+      "to": "region",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-resource"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "persisted-inventory",
+          "sourceFamily": "vpc"
+        }
+      ]
+    },
+    {
+      "id": "e-instance",
+      "from": "instance",
+      "to": "zone-a",
+      "kind": "contains",
+      "relationshipTypes": [
+        "zone-placement"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "persisted-inventory",
+          "sourceFamily": "ec2-instance"
+        }
+      ]
+    },
+    {
+      "id": "e-agent",
+      "from": "agent",
+      "to": "region",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-resource"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "persisted-inventory",
+          "sourceFamily": "bedrock-agent"
+        }
+      ]
+    },
+    {
+      "id": "e-role",
+      "from": "role",
+      "to": "region-global",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-resource"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "persisted-inventory",
+          "sourceFamily": "iam-role"
+        }
+      ]
+    },
+    {
+      "id": "e-bucket",
+      "from": "bucket",
+      "to": "region",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-resource"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "persisted-inventory",
+          "sourceFamily": "s3-bucket"
+        }
+      ]
+    },
+    {
+      "id": "e-synthetic",
+      "from": "az-synthetic",
+      "to": "region",
+      "kind": "contains",
+      "relationshipTypes": [
+        "region-topology"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "d-instance-vpc",
+      "from": "instance",
+      "to": "vpc",
+      "kind": "depends_on",
+      "relationshipTypes": [
+        "vpc-membership"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "field-reference",
+          "sourceFamily": "ec2-instance",
+          "field": "vpcId",
+          "matchedValue": "vpc-123"
+        }
+      ]
+    },
+    {
+      "id": "d-agent-role",
+      "from": "agent",
+      "to": "role",
+      "kind": "depends_on",
+      "relationshipTypes": [
+        "agent-execution-role"
+      ],
+      "confidence": "medium",
+      "evidence": [
+        {
+          "method": "field-reference",
+          "sourceFamily": "bedrock-agent"
+        }
+      ]
+    },
+    {
+      "id": "c-image-owner",
+      "from": "image",
+      "to": "vpc",
+      "kind": "contains",
+      "relationshipTypes": [
+        "artifact-owner"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "c-slot-owner",
+      "from": "slot",
+      "to": "agent",
+      "kind": "contains",
+      "relationshipTypes": [
+        "workload-owner"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    },
+    {
+      "id": "c-nested-artifact",
+      "from": "nested-artifact",
+      "to": "image",
+      "kind": "contains",
+      "relationshipTypes": [
+        "artifact-member"
+      ],
+      "confidence": "high",
+      "evidence": [
+        {
+          "method": "request-scope",
+          "sourceFamily": "graph-scope"
+        }
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "sourceNodeId": "instance",
+      "relationshipType": "security-group-association",
+      "sourceFamily": "ec2-instance",
+      "field": "securityGroupIds",
+      "matchedValue": "sg-missing",
+      "expectedTargetFamily": "security-group"
+    }
+  ],
+  "coverage": {
+    "families": [
+      {
+        "family": "vpc",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": false
+      },
+      {
+        "family": "ec2-instance",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": false
+      },
+      {
+        "family": "bedrock-agent",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": false
+      },
+      {
+        "family": "iam-role",
+        "regions": [
+          "global"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": false
+      },
+      {
+        "family": "s3-bucket",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": false
+      },
+      {
+        "family": "nat-gateway",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "incomplete",
+        "reason": "permission-denied"
+      },
+      {
+        "family": "efs-file-system",
+        "regions": [
+          "ap-southeast-2"
+        ],
+        "status": "available",
+        "lastSuccessfulRefreshAt": "2026-09-28T06:00:00.000Z",
+        "emptyScope": true
+      }
+    ]
+  },
+  "stats": {
+    "totalNodes": 13,
+    "totalEdges": 14,
+    "unresolvedCount": 1,
+    "truncated": false,
+    "buildMs": 12,
+    "snapshotBytes": 4096
+  }
+}

@@ -51,3 +51,12 @@ Build regenerated 227 tracked outputs and 341 new outputs from the current sourc
 
 Package release/version pinning and deployed consumer support remain Outstanding. Successful local package checks do not establish deployment.
 
+
+## Generic containment ruling — 2026-10-13
+
+Integration exposed an existing neutral validator assumption: synthetic nodes could only be contained by structural Region/zone/group nodes. Approved artifact/workload ownership requires synthetic image-to-registry and missing-slot-to-application containment. `ResourceGraphArtifact` retains the same schema and open identifiers; generic validation now additionally permits a synthetic child's parent to be a resource or another synthetic node in the same Region. There are no provider/service enums or changes to legacy Azure graph formats. Ordinary resources retain Region/zone/group parents.
+
+Every node still has exactly one containment parent except the single scope root, which has none. Because synthetic-to-synthetic ownership removes the previous kind-order proof, validation now explicitly walks every containment chain to the scope, rejects cycles/detached hierarchies, and memoizes successful paths. The iterative algorithm uses linear time/memory and avoids stack overflow for deeply nested ownership.
+
+Fail-first evidence: the new image/resource ownership assertion failed with `synthetic nodes cannot be contained by resource nodes` before the validator change. Focused generic/AWS graph and artifact-usage checks pass after implementation; tests preserve cross-Region and original resource-parent restrictions and reject same-Region detached cycles, cycle-dependent workloads and orphan synthetics. A reversed-node-order 5,000-level ownership chain passes. Packed CommonJS/ESM graph consumption verification passed via `npm run check:packed-exports`, including typed public imports and all existing runtime probes. Focused ESLint and `git diff --check` also passed. The local 1.1.35 tarball was refreshed with the generic containment change; SHA-256 `903d10c027a836edd894ebc709b90bbefd46b2b66113b49df3bc1cd9c9966fee`. The full package gate is deferred to the final integration tree as requested.
+

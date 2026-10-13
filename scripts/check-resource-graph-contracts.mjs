@@ -296,6 +296,83 @@ node(neutral, 'agent').resourceType = 'Microsoft.Web/sites';
 assert.equal(validateResourceGraphArtifact(neutral, { provider: 'azure' }), neutral);
 assert.throws(() => validateResourceGraphArtifact(neutral, { provider: 'aws' }), /provider must match/);
 
+// Provider-neutral artifacts and workload children are owned by ordinary resources.
+const ownedArtifacts = structuredClone(neutral);
+ownedArtifacts.nodes.push(
+  { id: 'image', kind: 'synthetic', syntheticType: 'container-image', region, name: 'image', attributes: { artifactKind: 'container-image' } },
+  { id: 'slot', kind: 'synthetic', syntheticType: 'workload-child', region, name: 'slot', role: 'workload' },
+  { id: 'nested-artifact', kind: 'synthetic', syntheticType: 'artifact-child', region, name: 'nested-artifact' }
+);
+ownedArtifacts.edges.push(
+  contains('c-image-owner', 'image', 'vpc', 'artifact-owner'),
+  contains('c-slot-owner', 'slot', 'agent', 'workload-owner'),
+  contains('c-nested-artifact', 'nested-artifact', 'image', 'artifact-member')
+);
+ownedArtifacts.stats.totalNodes = ownedArtifacts.nodes.length;
+ownedArtifacts.stats.totalEdges = ownedArtifacts.edges.length;
+assert.equal(validateResourceGraphArtifact(ownedArtifacts, { provider: 'azure' }), ownedArtifacts);
+const rejectHierarchy = (label, mutate, pattern) => {
+  const value = structuredClone(ownedArtifacts);
+  mutate(value);
+  value.stats.totalNodes = value.nodes.length;
+  value.stats.totalEdges = value.edges.length;
+  assert.throws(() => validateResourceGraphArtifact(value, { provider: 'azure' }), pattern, label);
+};
+rejectHierarchy(
+  'same-region synthetic ownership cycle',
+  value => {
+    value.edges.find(edge => edge.id === 'c-image-owner').to = 'nested-artifact';
+  },
+  /containment.*cycle|contains.*cycle/
+);
+rejectHierarchy(
+  'unrooted cycle with an attached workload child',
+  value => {
+    value.edges.find(edge => edge.id === 'c-image-owner').to = 'nested-artifact';
+    value.edges.find(edge => edge.id === 'c-slot-owner').to = 'image';
+  },
+  /containment.*cycle|contains.*cycle/
+);
+rejectHierarchy(
+  'synthetic ownership cannot cross Regions',
+  value => {
+    value.edges.find(edge => edge.id === 'c-image-owner').to = 'role';
+  },
+  /containment must not cross Regions/
+);
+rejectHierarchy(
+  'resource parent policy remains structural',
+  value => {
+    value.edges.find(edge => edge.id === 'e-vpc').to = 'agent';
+  },
+  /resource nodes cannot be contained by resource nodes/
+);
+rejectHierarchy(
+  'resource cannot be contained by a synthetic workload',
+  value => {
+    value.edges.find(edge => edge.id === 'e-vpc').to = 'slot';
+  },
+  /resource nodes cannot be contained by synthetic nodes/
+);
+rejectHierarchy(
+  'orphaned synthetic cannot bypass root reachability',
+  value => {
+    value.edges = value.edges.filter(edge => edge.id !== 'c-image-owner');
+  },
+  /exactly 1 contains parent/
+);
+// An iterative root walk handles deeply nested generic synthetic ownership.
+const deeplyNested = structuredClone(ownedArtifacts);
+for (let depth = 0; depth < 5000; depth++) {
+  deeplyNested.nodes.push({ id: 'deep-' + depth, kind: 'synthetic', syntheticType: 'artifact-child', region, name: 'deep-' + depth });
+  deeplyNested.edges.push(contains('c-deep-' + depth, 'deep-' + depth, depth === 0 ? 'image' : 'deep-' + (depth - 1), 'artifact-member'));
+}
+// Reverse node order to ensure traversal does not rely on parents appearing first.
+deeplyNested.nodes.reverse();
+deeplyNested.stats.totalNodes = deeplyNested.nodes.length;
+deeplyNested.stats.totalEdges = deeplyNested.edges.length;
+assert.equal(validateResourceGraphArtifact(deeplyNested, { provider: 'azure' }), deeplyNested);
+
 // Scale: many families and nodes validate without a family list.
 const large = structuredClone(baseArtifact);
 for (let index = 0; index < 2_000; index += 1) {
@@ -315,4 +392,8 @@ large.stats.totalNodes = large.nodes.length;
 large.stats.totalEdges = large.edges.length;
 assert.equal(validateAwsResourceGraphArtifact(large).nodes.length, 2_010);
 
+if (process.env.WRITE_ARTIFACT_USAGE_GRAPH_FIXTURE === '1') {
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(new URL('../fixtures/resource-artifact-usage-graph.json', import.meta.url), JSON.stringify(ownedArtifacts, null, 2) + '\n');
+}
 process.stdout.write('Resource graph generic and AWS format checks passed.\n');

@@ -395,7 +395,8 @@ const checkDescriptor = (value: unknown, field: string, runId: string, keys: str
   const prefix = `${resourceArtifactUsageRunPrefix(runId)}/`;
   if (
     !path.startsWith(prefix) ||
-    /[\\%?#\s\u0000-\u001f]/.test(path) ||
+    /[\\%?#\s]/.test(path) ||
+    Array.from(path).some(character => character.charCodeAt(0) < 32) ||
     path.split('/').some(segment => !segment || segment === '.' || segment === '..')
   )
     throw new Error(`${field}.path must remain in its exact immutable run namespace.`);

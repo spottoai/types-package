@@ -96,14 +96,14 @@ const NODE_FIELDS: Record<ResourceGraphNodeKind, readonly NodeField[]> = {
   synthetic: ['family', 'syntheticType', 'nativeId', 'role', 'tags', 'attributes'],
 };
 
-/** Allowed `contains` parents: containment is strictly downward, so the graph stays acyclic. */
+/** Synthetic artifacts/workloads may have resource or synthetic owners; every hierarchy must reach the scope. */
 const CONTAINMENT_PARENTS: Record<ResourceGraphNodeKind, readonly ResourceGraphNodeKind[]> = {
   scope: [],
   region: ['scope'],
   zone: ['region'],
   group: ['region', 'zone'],
   resource: ['region', 'zone', 'group'],
-  synthetic: ['region', 'zone', 'group'],
+  synthetic: ['region', 'zone', 'group', 'resource', 'synthetic'],
 };
 
 const DEPENDENCY_KINDS: readonly ResourceGraphNodeKind[] = ['group', 'resource', 'synthetic'];
@@ -262,6 +262,7 @@ function validateEdges(value: unknown, nodes: ReadonlyMap<string, ValidatedNode>
   const edges = asArray(value, 'artifact.edges');
   const ids = new Set<string>();
   const parents = new Map<string, number>();
+  const parentByChild = new Map<string, string>();
   edges.forEach((entry, index) => {
     const field = `artifact.edges[${index}]`;
     const edge = asRecord(entry, field);
@@ -287,6 +288,7 @@ function validateEdges(value: unknown, nodes: ReadonlyMap<string, ValidatedNode>
         throw new Error(`${field} ${child.kind} nodes cannot be contained by ${parent.kind} nodes; contains edges point child to parent.`);
       if (parent.region !== undefined && child.region !== parent.region) throw new Error(`${field} containment must not cross Regions.`);
       parents.set(from, (parents.get(from) ?? 0) + 1);
+      parentByChild.set(from, to);
     } else if (!DEPENDENCY_KINDS.includes(child.kind) || !DEPENDENCY_KINDS.includes(parent.kind)) {
       throw new Error(`${field} depends_on edges must connect group, resource, or synthetic nodes.`);
     }
@@ -296,7 +298,29 @@ function validateEdges(value: unknown, nodes: ReadonlyMap<string, ValidatedNode>
     if ((parents.get(id) ?? 0) !== expected)
       throw new Error(`artifact node ${id} must have exactly ${expected} contains parent edge${expected === 1 ? '' : 's'}.`);
   });
+  validateContainmentHierarchy(nodes, parentByChild);
   return edges.length;
+}
+
+/** Iterative, memoized root walks validate deep ownership chains in linear time without recursion. */
+function validateContainmentHierarchy(nodes: ReadonlyMap<string, ValidatedNode>, parentByChild: ReadonlyMap<string, string>): void {
+  const rooted = new Set<string>();
+  nodes.forEach((node, id) => {
+    if (node.kind === 'scope') rooted.add(id);
+  });
+  for (const id of nodes.keys()) {
+    if (rooted.has(id)) continue;
+    const path = new Set<string>();
+    let current = id;
+    while (!rooted.has(current)) {
+      if (path.has(current)) throw new Error(`artifact containment hierarchy contains a cycle at node ${current}; every node must reach the scope.`);
+      path.add(current);
+      const parent = parentByChild.get(current);
+      if (parent === undefined) throw new Error(`artifact containment hierarchy for node ${id} must reach the scope.`);
+      current = parent;
+    }
+    path.forEach(nodeId => rooted.add(nodeId));
+  }
 }
 
 function validateEvidence(value: unknown, field: string): void {

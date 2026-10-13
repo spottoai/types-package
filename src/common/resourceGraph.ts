@@ -68,7 +68,11 @@ export interface ResourceGraphEvidence {
   matchedValue?: string;
 }
 
-/** `contains` edges point from the child to its parent. */
+/**
+ * `contains` edges point from child to parent and form a tree rooted at the scope.
+ * Synthetic artifacts and workload children may be owned by resources or other
+ * synthetic nodes in the same Region. Resource parent kinds remain structural.
+ */
 export interface ResourceGraphEdge {
   id: string;
   from: string;
