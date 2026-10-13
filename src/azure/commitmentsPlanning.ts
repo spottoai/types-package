@@ -15,6 +15,7 @@ export type CommitmentsPlanningVersion = '1.0' | '2.0';
 export type CommitmentsCommitmentFamily =
   | 'compute-reservation'
   | 'compute-savings-plan'
+  | 'database-savings-plan'
   | 'app-service-reservation'
   | 'managed-disk-reservation'
   | 'blob-storage-reserved-capacity'
@@ -589,8 +590,13 @@ export interface CommitmentsPurchaseRecommendationDiagnostics {
   notes?: string[];
 }
 
+/** Native coverage denominator, independent of billed or amortized monetary basis. */
+export type CommitmentsCoverageBasis = 'on-demand-equivalent-cost' | 'instance-hours';
+
 export interface CommitmentsCoverageSummary {
   commitmentFamily: CommitmentsCommitmentFamily;
+  /** Set only from authoritative denominator evidence; absent means unknown. */
+  coverageBasis?: CommitmentsCoverageBasis;
   basis?: BenefitCostBasis;
   windowStart?: string;
   windowEnd?: string;

@@ -4,6 +4,7 @@
 
 import { isArtifactOwnershipBinding, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { containsForbiddenArtifactControlData, type AllowedArtifactReferenceField } from '../common/artifactControlData.js';
+import { isSafeAwsBillingDriverResourceId } from './billingDriverResourceIdentity.js';
 import { isArtifactRevisionVector } from '../common/artifactEvidenceValidation.js';
 import {
   isBillingCompletedArtifactPublicationDecision,
@@ -11,10 +12,7 @@ import {
   type BillingCompletedArtifactPublicationDecision,
   type BillingPartialArtifactPublicationDecision,
 } from './billingArtifactEvidence.js';
-import {
-  isAzureFinancialChargeCoverageV1,
-  type AzureFinancialChargeCoverageV1,
-} from './financialChargePolicy.js';
+import { isAzureFinancialChargeCoverageV1, type AzureFinancialChargeCoverageV1 } from './financialChargePolicy.js';
 
 export type {
   BillingArtifactPublicationDecision,
@@ -177,6 +175,16 @@ export interface BillingChartViews {
 
 /** Interactive chart data for cost analysis. */
 export interface BillingChartData {
+  /** Monetary basis of chart values; absence does not authorize a basis fallback. */
+  costBasis?: 'billed' | 'amortized';
+  /** Customer-facing assessment state, without private publication or source identities. */
+  analysisAvailability?: {
+    status: 'available' | 'unavailable';
+    reason?: string;
+    assessmentScope?: 'recorded-consumption' | 'recorded-charges';
+    /** Projection may be withheld independently of a completed anomaly assessment. */
+    projectionUnavailableReason?: string;
+  };
   /** Absent forecasts do not imply a zero forecast. */
   forecastAvailability?: BillingForecastUnavailable;
   schemaVersion: number;
@@ -218,7 +226,7 @@ export interface BillingAnomalyDriverResource {
   name: string;
   /** Scope/category used by the analyzer for the resource row */
   resourceScope?: string;
-  /** Full cloud resource ID when the anomaly can be tied to a resource */
+  /** Recorded cloud/native ID; it does not establish discovery ownership. */
   resourceId?: string;
   /** Whether the driver row represents subscription-level spend */
   isSubscriptionLevel?: boolean;
@@ -226,8 +234,8 @@ export interface BillingAnomalyDriverResource {
   cost: number;
   /** Baseline cost for the resource */
   baseline: number | null;
-  /** Delta between current cost and baseline */
-  delta: number;
+  /** Delta between current cost and baseline; null when comparison is unassessed. */
+  delta: number | null;
   /** Percent change from baseline */
   percentChange: number | null;
   /** Whether the resource is new or previously idle */
@@ -280,7 +288,7 @@ export interface BillingAnomaly {
 }
 
 export interface BillingCostAnalysisMetadata {
-  /** Azure subscription ID */
+  /** Provider scope identifier: Azure subscription ID or AWS account ID. */
   subscriptionId: string;
   /** Opaque billing generation that produced this analysis. */
   billingGenerationId: string;
@@ -514,16 +522,7 @@ const allowedBillingCostAnalysisFields = (
     allowText(coverage, 'contractVersion', 'policyRef', 'status');
     allowChildren(coverage, 'coordinate', 'sourceTotals', 'unknownObjects');
     if (isRecord(coverage.coordinate)) {
-      allowControl(
-        coverage.coordinate,
-        'generationId',
-        'providerName',
-        'providerScopeId',
-        'basis',
-        'period',
-        'currencyCode',
-        'minorUnitScale'
-      );
+      allowControl(coverage.coordinate, 'generationId', 'providerName', 'providerScopeId', 'basis', 'period', 'currencyCode', 'minorUnitScale');
       allowText(coverage.coordinate, 'generationId', 'providerName', 'providerScopeId', 'basis', 'currencyCode');
       allowChildren(coverage.coordinate, 'period');
       if (isRecord(coverage.coordinate.period)) {
@@ -602,8 +601,11 @@ const allowedBillingCostAnalysisFields = (
   }
   if (isRecord(value.chartData)) {
     allowControl(value.chartData, 'schemaVersion');
-    allowText(value.chartData, 'source');
-    allowChildren(value.chartData, 'dataWindow', 'views', 'detectors', 'forecastAvailability');
+    allowText(value.chartData, 'source', 'costBasis');
+    allowChildren(value.chartData, 'dataWindow', 'views', 'detectors', 'forecastAvailability', 'analysisAvailability');
+    if (isRecord(value.chartData.analysisAvailability)) {
+      allowText(value.chartData.analysisAvailability, 'status', 'reason', 'assessmentScope', 'projectionUnavailableReason');
+    }
     if (isRecord(value.chartData.forecastAvailability)) {
       allowText(value.chartData.forecastAvailability, 'status', 'reasonCode', 'basis', 'currency', 'observedThroughDate', 'asOfDate');
     }
@@ -639,7 +641,12 @@ const allowedBillingCostAnalysisFields = (
       allowText(driver, 'type', 'name', 'summary');
       if (!isRecord(driver) || !Array.isArray(driver.resources)) continue;
       allowChildren(driver, 'resources');
-      for (const resource of driver.resources) allowText(resource, 'name', 'resourceScope', 'summary');
+      for (const resource of driver.resources) {
+        allowText(resource, 'name', 'resourceScope', 'summary');
+        if (validationBranch === 'business-v1' && isRecord(resource) && isSafeAwsBillingDriverResourceId(resource.resourceId, value.subscriptionId)) {
+          fields.push({ object: resource, key: 'resourceId', allowUriScheme: true, allowValidatedResourceId: true });
+        }
+      }
     }
   }
   return fields;
@@ -654,6 +661,7 @@ const containsForbiddenBillingCostAnalysisControlData = (
     requireSafeAzureResourceIds: true,
     forbiddenControlFields: BILLING_FORBIDDEN_CONTROL_FIELDS,
     requireAllowedFieldTraversalContext: true,
+    validatedResourceIdPath: ['anomalies', 'drivers', 'resources'],
   });
 
 const isTrend = (value: unknown): boolean =>
@@ -717,17 +725,38 @@ const isChartView = (value: unknown): boolean => {
 
 export function isBillingForecastUnavailable(value: unknown): value is BillingForecastUnavailable {
   if (!isRecord(value)) return false;
-  const date = (candidate: unknown): boolean => candidate === undefined ||
-    (typeof candidate === 'string' && /^\d{4}-\d{2}-\d{2}$/u.test(candidate) &&
-      Number.isFinite(Date.parse(candidate)) && new Date(candidate).toISOString().slice(0, 10) === candidate);
-  return value.status === 'unavailable' && value.reasonCode === 'billing-usage-coverage-unavailable' &&
-    value.basis === 'billed' && (value.currency === undefined ||
-      (typeof value.currency === 'string' && /^[A-Z]{3}$/u.test(value.currency))) &&
-    date(value.observedThroughDate) && date(value.asOfDate);
+  const date = (candidate: unknown): boolean =>
+    candidate === undefined ||
+    (typeof candidate === 'string' &&
+      /^\d{4}-\d{2}-\d{2}$/u.test(candidate) &&
+      Number.isFinite(Date.parse(candidate)) &&
+      new Date(candidate).toISOString().slice(0, 10) === candidate);
+  return (
+    value.status === 'unavailable' &&
+    value.reasonCode === 'billing-usage-coverage-unavailable' &&
+    value.basis === 'billed' &&
+    (value.currency === undefined || (typeof value.currency === 'string' && /^[A-Z]{3}$/u.test(value.currency))) &&
+    date(value.observedThroughDate) &&
+    date(value.asOfDate)
+  );
 }
 
 const isChartData = (value: unknown): value is Record<string, unknown> => {
   if (!isRecord(value) || !isPositiveInteger(value.schemaVersion) || !isNonEmptyString(value.source)) return false;
+  if (value.costBasis !== undefined && value.costBasis !== 'billed' && value.costBasis !== 'amortized') return false;
+  if (value.analysisAvailability !== undefined) {
+    const assessment = value.analysisAvailability;
+    if (
+      !isRecord(assessment) ||
+      !['available', 'unavailable'].includes(String(assessment.status)) ||
+      Object.keys(assessment).some(key => !['status', 'reason', 'assessmentScope', 'projectionUnavailableReason'].includes(key)) ||
+      (assessment.reason !== undefined && (!isNonEmptyString(assessment.reason) || !/^[a-z][a-z0-9-]{0,127}$/u.test(assessment.reason))) ||
+      (assessment.projectionUnavailableReason !== undefined &&
+        (!isNonEmptyString(assessment.projectionUnavailableReason) || !/^[a-z][a-z0-9-]{0,127}$/u.test(assessment.projectionUnavailableReason))) ||
+      (assessment.assessmentScope !== undefined && !['recorded-consumption', 'recorded-charges'].includes(String(assessment.assessmentScope)))
+    )
+      return false;
+  }
   if (
     !isRecord(value.dataWindow) ||
     !isFiniteNumber(value.dataWindow.startDate) ||
@@ -737,8 +766,11 @@ const isChartData = (value: unknown): value is Record<string, unknown> => {
     return false;
   }
   if (!isRecord(value.views) || !Object.values(value.views).every(view => view === undefined || isChartView(view))) return false;
-  if (value.forecastAvailability !== undefined &&
-    (!isBillingForecastUnavailable(value.forecastAvailability) || value.views.forecast_90_days !== undefined)) return false;
+  if (
+    value.forecastAvailability !== undefined &&
+    (!isBillingForecastUnavailable(value.forecastAvailability) || value.views.forecast_90_days !== undefined)
+  )
+    return false;
   if (!isRecord(value.detectors) || !isFiniteNumber(value.detectors.threshold) || !Array.isArray(value.detectors.methods)) return false;
   return value.detectors.methods.every(
     method =>
@@ -759,7 +791,7 @@ const isDriverResource = (value: unknown): boolean =>
   (value.isSubscriptionLevel === undefined || typeof value.isSubscriptionLevel === 'boolean') &&
   isFiniteNumber(value.cost) &&
   isNullableFiniteNumber(value.baseline) &&
-  isFiniteNumber(value.delta) &&
+  isNullableFiniteNumber(value.delta) &&
   isNullableFiniteNumber(value.percentChange) &&
   typeof value.isNew === 'boolean' &&
   isNonEmptyString(value.summary);
@@ -830,8 +862,11 @@ const hasValidMetadataEvidenceState = (
 const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown>): boolean => {
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
-  if (value.chartData.forecastAvailability !== undefined &&
-    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)) return false;
+  if (
+    value.chartData.forecastAvailability !== undefined &&
+    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)
+  )
+    return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
@@ -860,8 +895,11 @@ const hasOnlyFields = (value: Record<string, unknown>, allowedFields: ReadonlySe
 const hasValidBillingCostAnalysisPublicBusinessFields = (value: Record<string, unknown>): boolean => {
   if (!isPathSegment(value.subscriptionId)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
-  if (value.chartData.forecastAvailability !== undefined &&
-    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)) return false;
+  if (
+    value.chartData.forecastAvailability !== undefined &&
+    [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)
+  )
+    return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);

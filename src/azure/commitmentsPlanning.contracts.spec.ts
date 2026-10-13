@@ -8,6 +8,7 @@ import {
   type AwsCommitmentsPlanningView,
   type AwsCommitmentsPurchaseRecommendation,
   type AzureCommitmentsPlanningView,
+  type CommitmentsCoverageSummary,
   type CommitmentsFreshnessEntry,
   type CommitmentsFreshnessReasonCode,
   type CommitmentsFreshnessSummary,
@@ -350,3 +351,21 @@ const narrowedAge: number | undefined = isCommitmentsFreshnessEntry(guardedEntry
 const narrowedEntries: CommitmentsFreshnessEntry[] = isCommitmentsFreshnessSummary(guardedSummary) ? guardedSummary.entries : [];
 
 void [viewWithFreshness, invalidFreshnessReasonCode, invalidFreshnessAge, everyReasonCode, reasonCodes, narrowedAge, narrowedEntries];
+
+const nativeCostCoverage = {
+  commitmentFamily: 'database-savings-plan',
+  coverageBasis: 'on-demand-equivalent-cost',
+  coveragePercent: 70,
+} satisfies CommitmentsCoverageSummary;
+const nativeHourCoverage = {
+  commitmentFamily: 'compute-reservation',
+  coverageBasis: 'instance-hours',
+  coveragePercent: 80,
+} satisfies CommitmentsCoverageSummary;
+const unknownCoverage: CommitmentsCoverageSummary = { commitmentFamily: 'compute-savings-plan' };
+const invalidCoverage: CommitmentsCoverageSummary = {
+  commitmentFamily: 'compute-savings-plan',
+  // @ts-expect-error Billing basis cannot substitute for native denominator evidence.
+  coverageBasis: 'amortized',
+};
+void [nativeCostCoverage, nativeHourCoverage, unknownCoverage, invalidCoverage];

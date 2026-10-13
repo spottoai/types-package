@@ -4,6 +4,7 @@ import {
   buildAwsOrganizationCommitmentsSessionId,
   type AwsCommitmentsPlanningReadScope,
   type AwsOrganizationCommitmentsPlanningView,
+  type AwsOrganizationCommitmentsAllocationRecord,
   type AwsOrganizationCommitmentsRefreshAcceptedResponse,
   type AwsOrganizationCommitmentsRefreshCommand,
   type AwsOrganizationCommitmentsScopeListResponse,
@@ -15,6 +16,17 @@ const estateId = 'estate-example' as const;
 const organizationId = 'o-exampleorg123' as const;
 const managementAccountId = '111122223333' as const;
 const memberAccountId = '444455556666' as const;
+
+// Database plans keep their own population; they are not compute plans or RIs.
+const databaseAllocation = {
+  beneficiaryAccountId: memberAccountId,
+  benefitType: 'savings-plan',
+  commitmentFamily: 'database-savings-plan',
+  windowStart: '2026-09-01',
+  windowEnd: '2026-10-01',
+  eligibleCost: { amount: 11, currency: 'USD', source: 'amortized' },
+} satisfies AwsOrganizationCommitmentsAllocationRecord;
+void databaseAllocation;
 
 const command: AwsOrganizationCommitmentsRefreshCommand = {
   schemaVersion: 1,
