@@ -306,6 +306,8 @@ export interface DecompositionTreeEntry {
 }
 
 export interface DecompositionTreeSummary {
+  /** Tax treatment of this summary's spend totals and monetary tree nodes; excludes savings and prices. */
+  taxTreatment?: BillingTaxTreatment;
   id?: string;
   root?: DecompositionTreeNode;
   currency?: string;

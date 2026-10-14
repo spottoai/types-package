@@ -1,3 +1,5 @@
+import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
+
 export const DATA_PROTECTION_SCHEMA_VERSION = '2026-06-24' as const;
 export const DATA_PROTECTION_SOURCE = 'Spotto.DataProtectionPosture' as const;
 
@@ -20,11 +22,7 @@ export type DataProtectionCollectionProvider = 'recoveryServicesVault' | 'backup
 export type DataProtectionCostConfidence = 'exact' | 'allocated' | 'estimated' | 'unavailable';
 
 export type DataProtectionCostAllocationMethod =
-  | 'direct'
-  | 'protectedDataSizeWeighted'
-  | 'backupStorageWeighted'
-  | 'resourceSizeWeighted'
-  | 'evenSplit';
+  'direct' | 'protectedDataSizeWeighted' | 'backupStorageWeighted' | 'resourceSizeWeighted' | 'evenSplit';
 
 export type DataProtectionBackupCostScope = 'protectedResource' | 'parentResource' | 'vault' | 'allocatedFromVault' | 'platformNativeMeter';
 
@@ -157,6 +155,8 @@ export interface DataProtectionVaultCostSummary {
 }
 
 export interface DataProtectionCostSummary {
+  /** Tax treatment of actual and allocated last-30-day costs only; excludes hypothetical retail estimates. */
+  taxTreatment?: BillingTaxTreatment;
   /** Currency of the unprotected-resource estimate total; legacy producers use currencyCode. */
   estimatedCurrencyCode?: string;
   currencyCode?: string;
