@@ -1,9 +1,12 @@
 import type { RecommendationEffortEstimateBreakdown } from './recommendations';
 import type { AzureNativeDiscountEligibleSpendProjectionV1 } from './nativeDiscountEligibility.js';
+import type { KnownResourceGroupSpend } from '../common/knownResourceGroupSpend.js';
 
 export interface ResourcesByType extends AzureNativeDiscountEligibleSpendProjectionV1 {
   type: string;
   resources: number;
+  /** Qualified captured subtotal when complete group spend is unavailable. Counts are independent for each monetary basis. */
+  knownSpend30Days?: KnownResourceGroupSpend;
   /** effective spend baseline used by summaries (rolling 30-day window in current pipeline) */
   spendBilling?: number;
   /** amortized variant of spendBilling */

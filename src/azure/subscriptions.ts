@@ -1,3 +1,4 @@
+import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
 import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
@@ -56,6 +57,8 @@ export type CompanySubscriptionResponse = Omit<CompanySubscription, 'ready'> & {
 };
 
 export interface SubscriptionScope {
+  /** Tax treatment of totalCost only; never applies to savings, budgets or retail prices. */
+  taxTreatment?: BillingTaxTreatment;
   companyId: string;
   id: string;
   name: string;
@@ -227,6 +230,8 @@ export const isAzureNativeSubscriptionFinancialStatsV1 = (value: unknown): value
 };
 
 export interface SubscriptionStats {
+  /** Tax treatment of spend7/spend30/current/previous spend, their splits/composition and type/location spend. Excludes savings and recommendations. */
+  taxTreatment?: BillingTaxTreatment;
   /** Coverage qualification independent of imported arithmetic; absence never proves complete billing. */
   spend30DaysCoverage?: BillingSpendWindowCoverage;
   /** Total unique customer-visible resources for resourcesTotalBasis. */

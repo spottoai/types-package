@@ -1,3 +1,5 @@
+import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
+import type { AwsEstimatedBillingAuthorityBlock } from '../aws/billingEstimation.js';
 import type { CostComposition } from './costComposition.js';
 import {
   isAzureProviderScopeFinancialChargeSpendBreakdownV1,
@@ -96,6 +98,8 @@ export interface AzureLocation {
 }
 
 export interface MonthSummaryEntry {
+  /** Conditional estimate with its own tax treatment, distinct from the recorded monthly cost. */
+  estimatedBillingAuthority?: AwsEstimatedBillingAuthorityBlock;
   /** YYYY-MM format */
   month: string;
   /** sum of actual cost for the month */
@@ -129,6 +133,8 @@ export interface ResourceCostType extends AzureNativeDiscountEligibleCostV1 {
 }
 
 export interface MonthSummary {
+  /** Tax treatment of recorded entry cost/costAmortized and resourceTypes only. Nested estimates carry their own treatment. */
+  taxTreatment?: BillingTaxTreatment;
   entries: MonthSummaryEntry[];
   /** ISO date string */
   lastUpdated: string;
@@ -153,6 +159,8 @@ export interface DailySummaryEntry {
 }
 
 export interface DailySummary {
+  /** Tax treatment of entry cost/costAmortized and resourceTypes only; absence means unknown. */
+  taxTreatment?: BillingTaxTreatment;
   /** rolling last 30 days */
   entries: DailySummaryEntry[];
   /** ISO date string */

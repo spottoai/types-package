@@ -1,3 +1,4 @@
+import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
@@ -72,6 +73,8 @@ export interface ExecutiveSummary {
 }
 
 export interface AzureResourcesView extends AzurePortalVersionedArtifact {
+  /** Tax treatment of resource spend and miscCost only; excludes savings, budgets and retail prices. */
+  taxTreatment?: BillingTaxTreatment;
   subscription: SubscriptionSummaryLite;
   timestamp: string;
   resources: AzureResourcePortalItem[];
@@ -96,6 +99,8 @@ export interface AzureResourcesView extends AzurePortalVersionedArtifact {
  * such as icon, description, product, serviceName
  */
 export interface AzureResourcePortalItem {
+  /** Tax treatment of spend/spendAmortized, billing/estimated splits and composition only; excludes savings and retail prices. */
+  taxTreatment?: BillingTaxTreatment;
   /** e.g. "/subscriptions/12345678-1234-1234-1234-123456789012/resourceGroups/my-resource-group/providers/Microsoft.Web/sites/my-app-service" */
   id: string;
   /** e.g. "my-app-service" */
@@ -299,6 +304,8 @@ export interface AzureResourcePluginItem {
 }
 
 export interface AzureResourcePluginItemDetailed {
+  /** Tax treatment of this detail's rolling spend and actual/estimated spend fields; excludes prices and savings. */
+  taxTreatment?: BillingTaxTreatment;
   currency: string;
   currencySymbol: string;
   location: string;

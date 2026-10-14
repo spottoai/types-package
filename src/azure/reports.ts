@@ -1,3 +1,4 @@
+import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
 import { Tags } from '../tags';
 import type { CostDateBasis } from './prices';
 import type { CostComposition } from './costComposition.js';
@@ -105,6 +106,8 @@ export interface MeterDetail {
 }
 
 export interface DecompositionTree {
+  /** Tax treatment of totalSpend and current/previous node spend only; excludes savings and retail projections. */
+  taxTreatment?: BillingTaxTreatment;
   root: DecompositionTreeNode;
   period: {
     startDate: string;
