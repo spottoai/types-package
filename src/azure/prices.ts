@@ -1,4 +1,3 @@
-import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
 import { ActiveDates, SpecItem } from './common.js';
 import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
@@ -22,8 +21,6 @@ export interface CostDateRangeMetadata {
 }
 
 export interface CostDetails {
-  /** Tax treatment of rolling spend totals and spend rows; excludes retail prices and savings. */
-  taxTreatment?: BillingTaxTreatment;
   /** the amount spend on the resource over the last 30 days */
   dailySpend?: ResourceSpend[];
   /** the spend items aggregated for the last 30 days */
@@ -111,8 +108,6 @@ export interface SavingsPlan {
 }
 
 export interface CostSummaryDetails {
-  /** Tax treatment of total, totalPrevious, amortizedTotal and amortizedTotalPrevious; excludes savings. */
-  taxTreatment?: BillingTaxTreatment;
   /** Last 30 days */
   total?: number;
   /** Total cost in the previous 30 days */
@@ -165,8 +160,6 @@ export interface AzureResourceCostPeriodsCatalog {
 }
 
 export type ResourceCostPeriodDetails = ResourceCostPeriodMetadata & {
-  /** Tax treatment of total, amortizedTotal and the period's cost rows only. */
-  taxTreatment?: BillingTaxTreatment;
   resourceId: string;
   total: number;
   amortizedTotal: number;
@@ -396,8 +389,6 @@ export interface TargetCostSummary {
 }
 
 export interface ResourceSpend extends AzureNativeDiscountEligibleCostV1 {
-  /** Tax treatment of cost/costAmortized only; absence means unknown. */
-  taxTreatment?: BillingTaxTreatment;
   /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
   cost: number;
   /** the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account) */
@@ -463,8 +454,6 @@ export interface PricingResponse {
 }
 
 export interface MiscCost {
-  /** Tax treatment of rolling spend totals and spendSummary only; excludes savings. */
-  taxTreatment?: BillingTaxTreatment;
   spendSummary?: ResourceSpend[];
   totalSpend30Days?: number;
   totalSpend30DaysAmortized?: number;

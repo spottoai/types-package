@@ -1,5 +1,4 @@
 import type { SecureScoreEvidence } from '../azure/secureScore';
-import type { BillingTaxTreatment } from './billingTaxTreatment';
 
 export enum ProviderName {
   Azure = 'azure',
@@ -63,8 +62,6 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
   secureScore?: number;
   secureScoreEvidence?: SecureScoreEvidence;
   spend30Days?: number;
-  /** Tax treatment of spend30Days only; independent of savings, prices and configured budgets. */
-  taxTreatment?: BillingTaxTreatment;
   /** Rolling 30-day count of aggregated expense rows, as in Azure subscription billingItems; absent when unknown. */
   billingItems?: number;
   /** Rolling 30-day count of collected activity events, as in Azure subscription activityItems; absent when unknown. */

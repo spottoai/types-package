@@ -95,6 +95,7 @@ jspm_packages/
 samples/
 
 specs/*
+!specs/azure-compatible-costs-without-tax-metadata.md
 !specs/billing/
 specs/billing/*
 !specs/billing/azure-billing-optional-classification.md

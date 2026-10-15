@@ -1,4 +1,3 @@
-export * from './common/billingTaxTreatment';
 export * from './common/knownResourceGroupSpend';
 export * from './aws/billingEstimation';
 /** Main entry point - export all interfaces from this package */

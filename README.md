@@ -457,8 +457,8 @@ Import `ResourceArtifactUsageManifest`, `ResourceArtifactUsagePointer`, `Resourc
 
 Stored documents bind company, provider, account and immutable generation. File descriptors bind decoded `JSON.stringify(parsedBody)` UTF-8 bytes before gzip. Configured references always retain `runtimeDigestObserved: false`; independent source coverage and count completeness preserve partial or unavailable observations. Restricted security summaries contain no counts. See [shared artifact usage spec](specs/security/container-image-usage-types.md) for the exact consumer handoff and validation evidence.
 
-Billing spend containers and individual chart views expose optional
-`BillingTaxTreatment` (`excluding-tax` or `including-recorded-tax`). It scopes
-only the documented spend fields, independently of basis, currency, completeness
-and savings. Recorded monthly totals and nested estimates may differ; missing
-metadata is unknown. See [tax treatment and coordinated adoption](specs/billing-tax-treatment.md).
+All customer billing amounts, estimates and forecasts exclude tax. Billing
+contracts use the shape produced by `cloud-engine/apps/azure`, with no tax
+treatment fields or alternate tax modes. Basis, currency, coverage, period and
+source evidence remain independent requirements. See
+[Azure-compatible costs](specs/azure-compatible-costs-without-tax-metadata.md).

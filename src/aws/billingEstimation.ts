@@ -1,14 +1,11 @@
-import type { BillingTaxTreatment } from '../common/billingTaxTreatment.js';
-
 export interface AwsBillingEstimateDateRange {
   startDateInclusive: string;
   endDateInclusive: string;
   dayCount: number;
 }
 
-/** A conditional billing estimate; its own treatment is independent of recorded monthly totals. */
+/** A conditional billing estimate, with all amounts excluding tax. */
 export interface AwsEstimatedBillingAuthorityBlock {
-  taxTreatment: BillingTaxTreatment;
   costSource: 'estimated' | 'blended';
   costSourceConfidence: 'high' | 'medium' | 'low';
   estimatedCostMethod: 'billing_window_estimate' | 'pricing_reference' | 'usage_run_rate' | 'metrics_pricing' | 'mixed' | 'unknown';

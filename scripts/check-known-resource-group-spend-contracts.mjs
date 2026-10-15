@@ -4,7 +4,6 @@ for (const path of ['../dist/index.js', '../dist/esm/entries/root.js']) {
   const { isKnownResourceGroupSpend } = await import(path);
   assert.equal(typeof isKnownResourceGroupSpend, 'function');
   const known = {
-    taxTreatment: 'excluding-tax',
     currency: 'USD',
     totalResourceCount: 3,
     billedResourceCount: 2,
@@ -16,7 +15,6 @@ for (const path of ['../dist/index.js', '../dist/esm/entries/root.js']) {
   assert.equal(isKnownResourceGroupSpend({ ...known, amortizedResourceCount: 0, costAmortized: undefined }), true);
   for (const invalid of [
     undefined,
-    { ...known, taxTreatment: undefined },
     { ...known, taxTreatment: 'consumption-only' },
     { ...known, currency: '' },
     { ...known, currency: 'unknown' },

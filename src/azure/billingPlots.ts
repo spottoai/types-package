@@ -2,7 +2,6 @@
  * Billing cost analysis types for Azure cost visualization.
  */
 
-import { isBillingTaxTreatment, type BillingTaxTreatment } from '../common/billingTaxTreatment.js';
 import { isArtifactOwnershipBinding, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { containsForbiddenArtifactControlData, type AllowedArtifactReferenceField } from '../common/artifactControlData.js';
 import { isSafeAwsBillingDriverResourceId } from './billingDriverResourceIdentity.js';
@@ -121,8 +120,6 @@ export interface BillingForecastChartPoint {
 
 /** Historical daily chart view. */
 export interface BillingDailyChartView {
-  /** Tax treatment of this view’s historical cost fields; consumption-only is not a tax treatment. */
-  taxTreatment?: BillingTaxTreatment;
   aggregation: 'daily';
   /** Start date of the view window (Unix timestamp). */
   startDate: number;
@@ -136,8 +133,6 @@ export interface BillingDailyChartView {
 
 /** Monthly chart view. */
 export interface BillingMonthlyChartView {
-  /** Tax treatment of this view’s recorded monthly cost fields; independent of daily views. */
-  taxTreatment?: BillingTaxTreatment;
   aggregation: 'monthly';
   /** Start date of the view window (Unix timestamp). */
   startDate: number;
@@ -151,8 +146,6 @@ export interface BillingMonthlyChartView {
 
 /** Forecast chart view containing actual, fitted, and future forecast series. */
 export interface BillingForecastChartView {
-  /** Tax treatment of this view’s historical, fitted and forecast cost fields; independent of cost basis. */
-  taxTreatment?: BillingTaxTreatment;
   aggregation: 'daily';
   forecastMethod: string;
   /** Start date of the forecast view window (Unix timestamp). */
@@ -295,8 +288,6 @@ export interface BillingAnomaly {
 }
 
 export interface BillingCostAnalysisMetadata {
-  /** Tax treatment of header forecast amounts only; must match the forecast view. */
-  forecastTaxTreatment?: BillingTaxTreatment;
   /** Provider scope identifier: Azure subscription ID or AWS account ID. */
   subscriptionId: string;
   /** Opaque billing generation that produced this analysis. */
@@ -520,7 +511,7 @@ const allowedBillingCostAnalysisFields = (
     for (const key of keys) fields.push({ object, key, allowChildArtifactFields: true });
   };
 
-  allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod', 'forecastTaxTreatment');
+  allowText(value, 'subscriptionId', 'billingGenerationId', 'currencyCode', 'currencySymbol', 'forecastMethod');
   allowControl(value, 'schemaVersion', 'ownership', 'revision', 'artifactEvidence');
   allowChildren(value, 'ownership', 'revision', 'artifactEvidence', 'chartData', 'anomalies');
   if (isRecord(value.financialChargeCoverage)) {
@@ -621,7 +612,7 @@ const allowedBillingCostAnalysisFields = (
     if (isRecord(value.chartData.views)) {
       for (const [viewKey, view] of Object.entries(value.chartData.views)) {
         allowChildren(value.chartData.views, viewKey);
-        allowText(view, 'aggregation', 'forecastMethod', 'taxTreatment');
+        allowText(view, 'aggregation', 'forecastMethod');
         if (!isRecord(view)) continue;
         allowChildren(view, 'trend', 'points', 'actualPoints', 'forecastPoints', 'fittedPoints');
         allowText(view.trend, 'method');
@@ -713,7 +704,6 @@ const hasCommonChartViewFields = (value: Record<string, unknown>): boolean =>
 
 const isChartView = (value: unknown): boolean => {
   if (!isRecord(value) || (value.trend !== undefined && !isTrend(value.trend))) return false;
-  if (value.taxTreatment !== undefined && !isBillingTaxTreatment(value.taxTreatment)) return false;
   if (value.forecastMethod !== undefined) {
     return (
       value.aggregation === 'daily' &&
@@ -869,26 +859,6 @@ const hasValidMetadataEvidenceState = (
   );
 };
 
-/** Labelled forecast headers and views must describe the same selected spend. */
-const hasConsistentForecastTaxTreatment = (value: Record<string, unknown>): boolean => {
-  const chartData = value.chartData;
-  const views = isRecord(chartData) ? chartData.views : undefined;
-  const forecast = isRecord(views) ? views.forecast_90_days : undefined;
-  const viewTreatment = isRecord(forecast) ? forecast.taxTreatment : undefined;
-  const treatment = value.forecastTaxTreatment;
-  const hasHeader = [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(
-    field => field !== undefined
-  );
-  if (treatment === undefined && (!hasHeader || viewTreatment === undefined)) return true;
-  return (
-    isBillingTaxTreatment(treatment) &&
-    treatment === viewTreatment &&
-    isRecord(forecast) &&
-    isNonEmptyString(forecast.forecastMethod) &&
-    isFiniteNumber(value.forecastMonthTotal)
-  );
-};
-
 const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown>): boolean => {
   if (!isPathSegment(value.subscriptionId) || !isPathSegment(value.billingGenerationId)) return false;
   if (!isChartData(value.chartData) || !Array.isArray(value.anomalies) || !value.anomalies.every(isAnomaly)) return false;
@@ -897,7 +867,6 @@ const hasValidBillingCostAnalysisBusinessFields = (value: Record<string, unknown
     [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)
   )
     return false;
-  if (!hasConsistentForecastTaxTreatment(value)) return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
@@ -914,7 +883,6 @@ const BILLING_PUBLIC_BUSINESS_FIELDS = new Set([
   'currencyCode',
   'currencySymbol',
   'forecastMethod',
-  'forecastTaxTreatment',
   'forecastMonthTotal',
   'forecastRemaining',
   'forecastPeriodEnd',
@@ -932,7 +900,6 @@ const hasValidBillingCostAnalysisPublicBusinessFields = (value: Record<string, u
     [value.forecastMethod, value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].some(field => field !== undefined)
   )
     return false;
-  if (!hasConsistentForecastTaxTreatment(value)) return false;
   if (!isNonEmptyString(value.currencyCode) || !isNonEmptyString(value.currencySymbol)) return false;
   if (value.forecastMethod !== undefined && !isNonEmptyString(value.forecastMethod)) return false;
   return [value.forecastMonthTotal, value.forecastRemaining, value.forecastPeriodEnd].every(isOptionalFiniteNumber);
