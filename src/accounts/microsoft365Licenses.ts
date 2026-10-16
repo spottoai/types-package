@@ -2,7 +2,6 @@ import {
   isMicrosoft365PricingOverride,
   isMicrosoft365PricingProjection,
   isMicrosoft365PricingRevision,
-  type Microsoft365PricingOverride,
   type Microsoft365PricingProjection,
 } from './microsoft365PricingOverrides';
 import { isMicrosoft365PricingFacts, type Microsoft365PricingFacts } from './microsoft365PricingFacts';
@@ -144,6 +143,8 @@ export interface Microsoft365UsageRow {
 }
 export type Microsoft365UsageSource = 'officeActiveUsers' | 'officeAppUsage' | 'copilotUsage';
 export interface Microsoft365LicenseView {
+  /** Default estimate market derived from the tenant organization's country; not invoice currency evidence. */
+  marketCurrency?: string;
   pricingFacts?: Microsoft365PricingFacts;
   pricingRevision?: string;
   /** Full-population usage counts computed before account/report detail trimming. */
@@ -258,7 +259,6 @@ export type Microsoft365LicensePriceConfidence = 'verified' | 'reference';
 export type Microsoft365LicensePriceDerivation = 'usd_list' | 'observed_local' | 'market_factor' | 'customer_override';
 export interface Microsoft365LicenseProductPricing {
   referenceUnitPriceMonthly?: number | null;
-  priceOverride?: Microsoft365PricingOverride;
   skuId: string;
   skuPartNumber: string;
   productName: string;
@@ -296,6 +296,8 @@ export interface Microsoft365LicenseProductPricing {
   downgradeMonthlySaving?: number | null;
 }
 export interface Microsoft365LicensePricing {
+  /** Known non-saving target edges; consumers suppress these findings instead of recommending a zero-value downgrade. */
+  nonSavingDowngradeEdges?: import('./microsoft365PricingFacts').Microsoft365PricingEdge[];
   /** Full-population account groups with monthly list-price estimates in this entry's currency. Never stored in history. */
   breakdowns?: {
     domain: Microsoft365LicenseBreakdownRow[];
@@ -319,7 +321,7 @@ export interface Microsoft365LicensePricing {
    * Estimated list price per month for each listed account id with at least one priced license. The engine stores
    * this empty (and omits the two id lists below) in `pricingByCurrency`, because one copy per currency would crowd
    * accounts out of the bounded snapshot; the API adds all three for the served currency with
-   * `withMicrosoft365AccountPricing`.
+   * `withMicrosoft365AccountPricing` from `@spottoai/platform/calc/licensing`.
    */
   accountMonthlyCosts: Record<string, number>;
   /** Accounts holding commercially paid licenses, including paid products without a market price. */
@@ -466,6 +468,22 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
   )
     return false;
   if (!optional(value.projection, isMicrosoft365PricingProjection) || !optional(value.breakdownsUnavailableReason, text)) return false;
+  if (
+    value.nonSavingDowngradeEdges !== undefined &&
+    (!Array.isArray(value.nonSavingDowngradeEdges) ||
+      value.nonSavingDowngradeEdges.length > 100000 ||
+      !value.nonSavingDowngradeEdges.every(
+        edge =>
+          isRecord(edge) &&
+          text(edge.skuId) &&
+          !!edge.skuId &&
+          (edge.targetSkuId === undefined || edge.targetSkuId === null || text(edge.targetSkuId)) &&
+          nullableText(edge.targetSkuPartNumber) &&
+          count(edge.count) &&
+          Object.keys(edge).every(key => ['skuId', 'targetSkuId', 'targetSkuPartNumber', 'count'].includes(key))
+      ))
+  )
+    return false;
   return rows(
     value.products,
     row =>
@@ -583,7 +601,8 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
     !text(value.tenantId) ||
     !value.tenantId ||
     !date(value.generatedAt) ||
-    (value.tenantSyncRunId !== undefined && !text(value.tenantSyncRunId))
+    (value.tenantSyncRunId !== undefined && !text(value.tenantSyncRunId)) ||
+    !optional(value.marketCurrency, currency => typeof currency === 'string' && /^[A-Z]{3}$/.test(currency))
   )
     return false;
   if (
@@ -749,6 +768,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
  * prices. An account's cost is the sum of its priced paid products; any product without a known price (or an
  * unknown assignment list) makes its value partial. Paid account ids need complete inventory evidence.
  */
+/** @deprecated Compatibility for older consumers; current valuation lives in @spottoai/platform/calc/licensing. */
 export function withMicrosoft365AccountPricing(
   pricing: Microsoft365LicensePricing,
   view: Pick<Microsoft365LicenseView, 'accounts' | 'coverage'> & Partial<Pick<Microsoft365LicenseView, 'licenses'>>

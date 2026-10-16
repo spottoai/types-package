@@ -179,6 +179,7 @@ const LICENSE_KEYS = [
   'renewals',
 ];
 const PRICING_KEYS = [
+  'nonSavingDowngradeEdges',
   'projection',
   'breakdownsUnavailableReason',
   'breakdowns',
@@ -365,6 +366,7 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
   if (
     !exact(value, [
       'schemaVersion',
+      'marketCurrency',
       'tenantId',
       'generatedAt',
       'tenantSyncRunId',

@@ -3,9 +3,9 @@ export interface Microsoft365PricingOverride {
   skuId: string;
   currency: string;
   unitPriceMonthly: number;
-  /** UTC date, inclusive. */
-  effectiveFrom: string;
-  /** UTC date, exclusive; null means no configured end. */
+  /** Inclusive calendar-month boundary; null applies to every earlier month. Legacy day dates remain readable. */
+  effectiveFrom: string | null;
+  /** Exclusive calendar-month boundary; null means no configured end. */
   effectiveTo: string | null;
   source: string;
 }
@@ -17,16 +17,22 @@ export interface Microsoft365PricingOverridesConfiguration {
   revision: string;
   overrides: Microsoft365PricingOverride[];
   updatedAt: string | null;
-  updatedBy: string | null;
+  updatedBy?: string | null;
 }
 
 export interface Microsoft365PricingConfigurationResponse {
+  /** Saved content is unreadable; managers may reset it using configuration.revision (the raw storage ETag). */
+  unavailableReason?: 'invalid_configuration';
   configuration: Microsoft365PricingOverridesConfiguration;
   products: Array<{
     skuId: string;
     skuPartNumber: string;
     productName: string;
     category: 'paid' | 'free' | 'capacity' | 'unpriced';
+    held?: boolean;
+    purchasedUnits?: number | null;
+    /** Only these supported markets allow a new or changed agreed rate for this product. */
+    priceableCurrencies?: string[];
     referencePrices: Record<string, number | null>;
   }>;
   currencies: string[];
@@ -40,6 +46,13 @@ export interface Microsoft365PricingValidationError {
 }
 
 export interface Microsoft365PricingPreviewResponse {
+  /** Current quantities valued by the portable projector; an estimate correction, never a claimed saving. */
+  impact?: {
+    currency: string;
+    referenceMonthlyCost: number | null;
+    agreedMonthlyCost: number | null;
+    products: { skuId: string; referenceMonthlyCost: number | null; agreedMonthlyCost: number | null }[];
+  };
   revision: string;
   overrides: Microsoft365PricingOverride[];
   rows: Array<Microsoft365PricingOverride & { row: number }>;
@@ -76,8 +89,10 @@ export function isMicrosoft365PricingOverride(value: unknown): value is Microsof
     Number.isFinite(value.unitPriceMonthly) &&
     value.unitPriceMonthly >= 0 &&
     value.unitPriceMonthly <= 1_000_000 &&
-    isMicrosoft365PricingDate(value.effectiveFrom) &&
-    (value.effectiveTo === null || (isMicrosoft365PricingDate(value.effectiveTo) && value.effectiveTo > value.effectiveFrom)) &&
+    Math.abs(value.unitPriceMonthly * 10000 - Math.round(value.unitPriceMonthly * 10000)) < 0.000001 &&
+    (value.effectiveFrom === null || isMicrosoft365PricingDate(value.effectiveFrom)) &&
+    (value.effectiveTo === null ||
+      (isMicrosoft365PricingDate(value.effectiveTo) && (value.effectiveFrom === null || value.effectiveTo > value.effectiveFrom))) &&
     typeof value.source === 'string' &&
     value.source.length <= 256
   );
@@ -95,7 +110,7 @@ export function isMicrosoft365PricingOverridesConfiguration(value: unknown): val
     value.overrides.length > 1000 ||
     !value.overrides.every(isMicrosoft365PricingOverride) ||
     !(value.updatedAt === null || (text(value.updatedAt) && Number.isFinite(Date.parse(value.updatedAt)))) ||
-    !(value.updatedBy === null || text(value.updatedBy, 512))
+    !(value.updatedBy === undefined || value.updatedBy === null || text(value.updatedBy, 512))
   )
     return false;
   const intervals = new Map<string, Microsoft365PricingOverride[]>();
@@ -106,10 +121,11 @@ export function isMicrosoft365PricingOverridesConfiguration(value: unknown): val
     intervals.set(key, group);
   }
   for (const entries of intervals.values()) {
-    const ordered = [...entries].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
+    const ordered = [...entries].sort((a, b) => (a.effectiveFrom ?? '').localeCompare(b.effectiveFrom ?? ''));
     for (let index = 1; index < ordered.length; index++) {
       const previous = ordered[index - 1];
-      if (previous.effectiveTo === null || previous.effectiveTo > ordered[index].effectiveFrom) return false;
+      if (previous.effectiveTo === null || ordered[index].effectiveFrom === null || previous.effectiveTo > ordered[index].effectiveFrom!)
+        return false;
     }
   }
   return true;

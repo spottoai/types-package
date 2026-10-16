@@ -1,6 +1,8 @@
 /** Price-independent full-population evidence. No account identifiers or raw reports. */
 export interface Microsoft365PricingEdge {
   skuId: string;
+  /** Stable target identity, when the reviewed catalogue uniquely resolves it. Older snapshots omit it. */
+  targetSkuId?: string | null;
   /** Null means removal without a replacement product. */
   targetSkuPartNumber: string | null;
   count: number;
@@ -24,6 +26,10 @@ export const MICROSOFT_365_PRICING_FACT_GROUP_LIMIT = 10000;
 export const MICROSOFT_365_PRICING_FACT_CONTRIBUTION_LIMIT = 100000;
 
 export interface Microsoft365PricingFacts {
+  /** Overflow retains reference-ranked named groups and a quantity-complete Other tail. */
+  groupRanking?: 'reference_price';
+  /** Reviewed catalogue identities allow agreed rates for products not held yet. No grant/pricing eligibility is inferred. */
+  targetProducts?: { skuId: string; skuPartNumber: string; productName: string; referencePrices: Record<string, number | null> }[];
   schemaVersion: 'microsoft-365-pricing-facts/v1';
   /** Availability is independent of whether the original market contained a unit price. */
   evidence: {
@@ -33,6 +39,8 @@ export interface Microsoft365PricingFacts {
     overlapKnown: boolean;
     downgradeKnown: boolean;
     ambiguousPaidAllocation: boolean;
+    /** Producer captured review and group quantities for products without a reference price. Older snapshots omit this. */
+    unpricedQuantitiesKnown?: true;
   };
   products: { skuId: string; noOfficeActivityUnits: number | null }[];
   noOfficeActivityAccountCount: number | null;
@@ -53,8 +61,12 @@ const text = (value: unknown): value is string => typeof value === 'string' && v
 const sku = (value: unknown): value is string => text(value) && value.length > 0 && value === value.toLowerCase();
 const edge = (value: unknown, finding = false): boolean =>
   record(value) &&
-  keys(value, finding ? ['kind', 'skuId', 'targetSkuPartNumber', 'count'] : ['skuId', 'targetSkuPartNumber', 'count']) &&
+  keys(
+    value,
+    finding ? ['kind', 'skuId', 'targetSkuId', 'targetSkuPartNumber', 'count'] : ['skuId', 'targetSkuId', 'targetSkuPartNumber', 'count']
+  ) &&
   sku(value.skuId) &&
+  (value.targetSkuId === undefined || value.targetSkuId === null || sku(value.targetSkuId)) &&
   (value.targetSkuPartNumber === null || text(value.targetSkuPartNumber)) &&
   count(value.count);
 const units = (value: unknown): boolean =>
@@ -74,15 +86,46 @@ export function isMicrosoft365PricingFacts(value: unknown): value is Microsoft36
       'targetUnitPrices',
       'groups',
       'groupsUnavailableReason',
+      'groupRanking',
+      'targetProducts',
     ]) ||
     value.schemaVersion !== 'microsoft-365-pricing-facts/v1' ||
     !record(value.evidence) ||
-    !keys(value.evidence, ['inventoryKnown', 'usersKnown', 'signInsKnown', 'overlapKnown', 'downgradeKnown', 'ambiguousPaidAllocation'])
+    !keys(value.evidence, [
+      'inventoryKnown',
+      'usersKnown',
+      'signInsKnown',
+      'overlapKnown',
+      'downgradeKnown',
+      'ambiguousPaidAllocation',
+      'unpricedQuantitiesKnown',
+    ])
   )
     return false;
   for (const key of ['inventoryKnown', 'usersKnown', 'signInsKnown', 'overlapKnown', 'downgradeKnown', 'ambiguousPaidAllocation']) {
     if (typeof value.evidence[key] !== 'boolean') return false;
   }
+  if (value.groupRanking !== undefined && value.groupRanking !== 'reference_price') return false;
+  if (value.evidence.unpricedQuantitiesKnown !== undefined && value.evidence.unpricedQuantitiesKnown !== true) return false;
+  if (
+    value.targetProducts !== undefined &&
+    (!Array.isArray(value.targetProducts) ||
+      value.targetProducts.length > 2000 ||
+      !value.targetProducts.every(
+        row =>
+          record(row) &&
+          keys(row, ['skuId', 'skuPartNumber', 'productName', 'referencePrices']) &&
+          sku(row.skuId) &&
+          text(row.skuPartNumber) &&
+          !!row.skuPartNumber &&
+          text(row.productName) &&
+          record(row.referencePrices) &&
+          Object.keys(row.referencePrices).length <= 32 &&
+          Object.entries(row.referencePrices).every(([currency, rate]) => /^[A-Z]{3}$/.test(currency) && nullableMoney(rate))
+      ) ||
+      !unique(value.targetProducts.map(row => row.skuId)))
+  )
+    return false;
   if (
     !Array.isArray(value.products) ||
     value.products.length > 2000 ||
@@ -106,6 +149,7 @@ export function isMicrosoft365PricingFacts(value: unknown): value is Microsoft36
   )
     return false;
   const targetParts = new Set<string>(value.downgradeEdges.flatMap(row => (row.targetSkuPartNumber === null ? [] : [row.targetSkuPartNumber])));
+  for (const row of (value.targetProducts ?? []) as NonNullable<Microsoft365PricingFacts['targetProducts']>) targetParts.add(row.skuPartNumber);
   if (
     !record(value.targetUnitPrices) ||
     Object.keys(value.targetUnitPrices).length > 32 ||

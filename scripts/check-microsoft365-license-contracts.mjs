@@ -250,6 +250,8 @@ for (const [format, api] of Object.entries(formats)) {
       })),
     };
     assert(api.isMicrosoft365LicenseSummaryView(document));
+    assert(api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'NZD' }), 'Tenant market currency is safe aggregate evidence');
+    assert(!api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'nzd' }), 'Market currency is an ISO currency code');
     for (const patch of [
       { basis: ['customer_price_estimate'] },
       { term: ['customer_agreement'] },
