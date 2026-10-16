@@ -1,3 +1,5 @@
+import { isMicrosoft365PricingFacts } from './microsoft365PricingFacts';
+import { isMicrosoft365PricingRevision, isMicrosoft365PricingProjection, type Microsoft365PricingProjection } from './microsoft365PricingOverrides';
 import {
   MICROSOFT_365_LICENSE_SOURCES,
   isMicrosoft365LicenseInsight,
@@ -87,6 +89,8 @@ export interface Microsoft365LicenseSummaryView
 
 /** API enrichment in one selected currency; monthly list-price estimates, annual commitment, excluding tax. */
 export interface Microsoft365LicenseAccountPricing {
+  basis?: Microsoft365LicensePricing['basis'];
+  projection?: Microsoft365PricingProjection;
   currency: string;
   accountMonthlyCosts: Record<string, number>;
   paidAccountIds?: string[];
@@ -95,6 +99,7 @@ export interface Microsoft365LicenseAccountPricing {
 
 /** Independently loaded people detail. Readers compare both scan stamps before combining siblings. */
 export interface Microsoft365LicenseAccountsView {
+  pricingRevision?: string;
   schemaVersion: 'microsoft-365-license-accounts/v1';
   tenantId: string;
   generatedAt: string;
@@ -173,8 +178,21 @@ const LICENSE_KEYS = [
   'suspendedUnits',
   'renewals',
 ];
-const PRICING_KEYS = ['breakdowns', 'basis', 'priceListVersion', 'currency', 'currencyFallback', 'term', 'products', 'summary'];
+const PRICING_KEYS = [
+  'projection',
+  'breakdownsUnavailableReason',
+  'breakdowns',
+  'basis',
+  'priceListVersion',
+  'currency',
+  'currencyFallback',
+  'term',
+  'products',
+  'summary',
+];
 const PRODUCT_PRICE_KEYS = [
+  'referenceUnitPriceMonthly',
+  'priceOverride',
   'skuId',
   'skuPartNumber',
   'productName',
@@ -361,6 +379,8 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
       'capabilities',
       'usage',
       'accountDetails',
+      'pricingFacts',
+      'pricingRevision',
     ]) ||
     value.schemaVersion !== 'microsoft-365-license-summary/v1' ||
     !identity(value) ||
@@ -380,6 +400,8 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
         )
     ) ||
     !optional(value.organization, organization => exact(organization, ['displayName', 'defaultDomain'])) ||
+    !optional(value.pricingFacts, isMicrosoft365PricingFacts) ||
+    !optional(value.pricingRevision, isMicrosoft365PricingRevision) ||
     !optional(value.pricing, isMicrosoft365LicenseSummaryPricing) ||
     !optional(value.insights, summaryInsights) ||
     !optional(value.capabilities, summaryCapabilities)
@@ -441,6 +463,7 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
 
 /** Validates up to 5,000 people and keeps findings/notices/prices within the returned account set. */
 export function isMicrosoft365LicenseAccountsView(value: unknown): value is Microsoft365LicenseAccountsView {
+  if (record(value) && !optional(value.pricingRevision, isMicrosoft365PricingRevision)) return false;
   if (
     !exact(value, [
       'schemaVersion',
@@ -448,6 +471,7 @@ export function isMicrosoft365LicenseAccountsView(value: unknown): value is Micr
       'generatedAt',
       'tenantSyncRunId',
       'accountDetails',
+      'pricingRevision',
       'accounts',
       'insights',
       'capabilities',
@@ -492,7 +516,12 @@ export function isMicrosoft365LicenseAccountsView(value: unknown): value is Micr
   return optional(
     value.pricing,
     pricing =>
-      exact(pricing, ['currency', 'accountMonthlyCosts', 'paidAccountIds', 'partialAccountPriceIds']) &&
+      exact(pricing, ['currency', 'accountMonthlyCosts', 'paidAccountIds', 'partialAccountPriceIds', 'basis', 'projection']) &&
+      optional(
+        pricing.basis,
+        basis => typeof basis === 'string' && ['list_price_estimate', 'customer_price_estimate', 'mixed_price_estimate'].includes(basis)
+      ) &&
+      optional(pricing.projection, isMicrosoft365PricingProjection) &&
       currency(pricing.currency) &&
       record(pricing.accountMonthlyCosts) &&
       Object.keys(pricing.accountMonthlyCosts).length <= MICROSOFT_365_LICENSE_ACCOUNT_ROW_LIMIT &&

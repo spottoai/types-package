@@ -1,4 +1,12 @@
 import {
+  isMicrosoft365PricingOverride,
+  isMicrosoft365PricingProjection,
+  isMicrosoft365PricingRevision,
+  type Microsoft365PricingOverride,
+  type Microsoft365PricingProjection,
+} from './microsoft365PricingOverrides';
+import { isMicrosoft365PricingFacts, type Microsoft365PricingFacts } from './microsoft365PricingFacts';
+import {
   isMicrosoft365AccountCapabilities,
   isMicrosoft365CapabilityProjection,
   isMicrosoft365ProductCapabilities,
@@ -136,6 +144,8 @@ export interface Microsoft365UsageRow {
 }
 export type Microsoft365UsageSource = 'officeActiveUsers' | 'officeAppUsage' | 'copilotUsage';
 export interface Microsoft365LicenseView {
+  pricingFacts?: Microsoft365PricingFacts;
+  pricingRevision?: string;
   /** Full-population usage counts computed before account/report detail trimming. */
   usage?: Microsoft365UsageSummary;
   /** Independent capability facts/notices; never silently added to monetary totals. */
@@ -245,8 +255,10 @@ export type Microsoft365LicenseProductFamily =
   | 'other';
 /** verified: taken from the publisher's current price list. reference: long-standing list price that has not been re-verified this cycle. */
 export type Microsoft365LicensePriceConfidence = 'verified' | 'reference';
-export type Microsoft365LicensePriceDerivation = 'usd_list' | 'observed_local' | 'market_factor';
+export type Microsoft365LicensePriceDerivation = 'usd_list' | 'observed_local' | 'market_factor' | 'customer_override';
 export interface Microsoft365LicenseProductPricing {
+  referenceUnitPriceMonthly?: number | null;
+  priceOverride?: Microsoft365PricingOverride;
   skuId: string;
   skuPartNumber: string;
   productName: string;
@@ -291,14 +303,16 @@ export interface Microsoft365LicensePricing {
     /** Country, falling back to usageLocation. */
     country: Microsoft365LicenseBreakdownRow[];
   };
-  basis: 'list_price_estimate';
+  basis: 'list_price_estimate' | 'customer_price_estimate' | 'mixed_price_estimate';
+  projection?: Microsoft365PricingProjection;
+  breakdownsUnavailableReason?: 'pricing_facts_unavailable' | 'group_limit_exceeded' | 'contribution_limit_exceeded';
   /** Price list identifier, for example `microsoft-2026-07`. */
   priceListVersion: string;
   /** ISO currency of every amount. */
   currency: string;
   /** Legacy USD substitution flag. Current producers return false and never substitute another currency. */
   currencyFallback: boolean;
-  term: 'annual_commitment';
+  term: 'annual_commitment' | 'customer_agreement' | 'mixed';
   /** Product rows sorted by unused monthly value, highest first. */
   products: Microsoft365LicenseProductPricing[];
   /**
@@ -403,8 +417,10 @@ const PRODUCT_FAMILIES: readonly Microsoft365LicenseProductFamily[] = [
 export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft365LicensePricing {
   if (
     !isRecord(value) ||
-    value.basis !== 'list_price_estimate' ||
-    value.term !== 'annual_commitment' ||
+    typeof value.basis !== 'string' ||
+    !['list_price_estimate', 'customer_price_estimate', 'mixed_price_estimate'].includes(value.basis) ||
+    typeof value.term !== 'string' ||
+    !['annual_commitment', 'customer_agreement', 'mixed'].includes(value.term) ||
     !text(value.priceListVersion) ||
     typeof value.currency !== 'string' ||
     !/^[A-Z]{3}$/.test(value.currency) ||
@@ -449,6 +465,7 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       }))
   )
     return false;
+  if (!optional(value.projection, isMicrosoft365PricingProjection) || !optional(value.breakdownsUnavailableReason, text)) return false;
   return rows(
     value.products,
     row =>
@@ -462,9 +479,12 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       (row.priceConfidence === null || row.priceConfidence === 'verified' || row.priceConfidence === 'reference') &&
       (row.priceCheckedAt === undefined || row.priceCheckedAt === null || date(row.priceCheckedAt)) &&
       (row.priceSource === undefined || nullableText(row.priceSource)) &&
+      optional(row.referenceUnitPriceMonthly, nullableMoney) &&
+      optional(row.priceOverride, isMicrosoft365PricingOverride) &&
       (row.priceDerivation === undefined ||
         row.priceDerivation === null ||
-        ['usd_list', 'observed_local', 'market_factor'].includes(String(row.priceDerivation))) &&
+        (typeof row.priceDerivation === 'string' &&
+          ['usd_list', 'observed_local', 'market_factor', 'customer_override'].includes(row.priceDerivation))) &&
       PRODUCT_COUNTS.every(key => nullableCount(row[key])) &&
       nullableCount(row.disabledAccountUnits) &&
       nullableCount(row.inactiveAccountUnits) &&
@@ -552,6 +572,11 @@ export function isMicrosoft365LicensedAccountRow(row: unknown): row is Microsoft
 
 /** Validates the bounded engine projection at API/storage boundaries. */
 export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365LicenseView {
+  if (
+    isRecord(value) &&
+    (!optional(value.pricingFacts, isMicrosoft365PricingFacts) || !optional(value.pricingRevision, isMicrosoft365PricingRevision))
+  )
+    return false;
   if (
     !isRecord(value) ||
     value.schemaVersion !== 'microsoft-365-license-view/v1' ||
@@ -751,6 +776,7 @@ export function withMicrosoft365AccountPricing(
   for (const account of view.accounts) {
     let cost = 0;
     let paid = false;
+    let hasKnownPrice = false;
     let partial = account.skuIds === null;
     for (const skuId of account.skuIds ?? []) {
       const product = products.get(skuId);
@@ -763,9 +789,12 @@ export function withMicrosoft365AccountPricing(
       }
       paid = true;
       if (product.unitPriceMonthly === null) partial = true;
-      else cost += product.unitPriceMonthly;
+      else {
+        cost += product.unitPriceMonthly;
+        hasKnownPrice = true;
+      }
     }
-    if (cost > 0) accountMonthlyCosts[account.id] = Math.round(cost * 100) / 100;
+    if (hasKnownPrice) accountMonthlyCosts[account.id] = Math.round(cost * 100) / 100;
     if (paid) paidAccountIds.push(account.id);
     if (partial) partialAccountPriceIds.push(account.id);
   }

@@ -116,6 +116,16 @@ for (const { withMicrosoft365AccountPricing } of [esm, cjs]) {
   assert.deepEqual(priced.accountMonthlyCosts, { paid: 39 });
   assert.equal(priced.paidAccountIds, undefined, 'Ambiguous membership must not be presented as an exhaustive paid set.');
   assert.deepEqual(priced.partialAccountPriceIds, ['trial-or-paid']);
+  const zero = withMicrosoft365AccountPricing(
+    { ...legacy, products: [{ ...product, skuId: 'grant', unitPriceMonthly: 0 }] },
+    { accounts: [{ id: 'grant-account', skuIds: ['grant'] }], coverage: trialView.coverage }
+  );
+  assert.deepEqual(zero.accountMonthlyCosts, { 'grant-account': 0 }, 'A known zero rate must retain a known zero account value.');
+  const unknownPrice = withMicrosoft365AccountPricing(
+    { ...legacy, products: [{ ...product, skuId: 'unknown-rate', unitPriceMonthly: null }] },
+    { accounts: [{ id: 'unknown-account', skuIds: ['unknown-rate'] }], coverage: trialView.coverage }
+  );
+  assert.deepEqual(unknownPrice.accountMonthlyCosts, {}, 'A missing rate must not become a zero account value.');
   // Old callers without license metadata must also respect a producer's withheld allocation.
   const withheld = withMicrosoft365AccountPricing(
     { ...legacy, products: [{ ...product, assignedUnits: null }] },

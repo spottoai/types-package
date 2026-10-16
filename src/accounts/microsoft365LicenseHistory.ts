@@ -1,3 +1,5 @@
+import { isMicrosoft365PricingFacts, type Microsoft365PricingFacts } from './microsoft365PricingFacts';
+import { isMicrosoft365PricingRevision } from './microsoft365PricingOverrides';
 import {
   isMicrosoft365LicensePricing,
   MICROSOFT_365_LATER_LICENSE_SOURCES,
@@ -44,6 +46,7 @@ export type Microsoft365LicenseHistoryInsights = Pick<
  * list-price estimates computed that month, never account, user or usage-report rows.
  */
 export interface Microsoft365LicenseHistorySnapshot {
+  pricingFacts?: Microsoft365PricingFacts;
   usage?: Microsoft365LicenseHistoryUsage;
   /** Full-population counts keyed by lower-case skuId, with no account identities. */
   productUsage?: Record<string, Microsoft365LicenseProductUsage>;
@@ -62,6 +65,7 @@ export interface Microsoft365LicenseHistorySnapshot {
 }
 /** One month served by the API in the requested estimate currency, oldest month first. */
 export interface Microsoft365LicenseHistoryMonth {
+  pricingFacts?: Microsoft365PricingFacts;
   usage?: Microsoft365LicenseHistoryUsage;
   productUsage?: Record<string, Microsoft365LicenseProductUsage>;
   month: Microsoft365LicenseHistoryMonthKey;
@@ -73,6 +77,7 @@ export interface Microsoft365LicenseHistoryMonth {
   pricing: Microsoft365LicensePricing | null;
 }
 export interface Microsoft365LicenseHistory {
+  pricingRevision?: string;
   schemaVersion: 'microsoft-365-license-history-series/v1';
   tenantId: string;
   /** Requested estimate currency; null serves quantities only. */
@@ -128,7 +133,9 @@ const isProductUsage = (value: unknown): boolean => {
   );
 };
 const hasValidUsage = (value: Record<string, unknown>): boolean =>
-  optional(value.usage, isMicrosoft365LicenseHistoryUsage) && optional(value.productUsage, isProductUsage);
+  optional(value.usage, isMicrosoft365LicenseHistoryUsage) &&
+  optional(value.productUsage, isProductUsage) &&
+  optional(value.pricingFacts, facts => isMicrosoft365PricingFacts(facts) && facts.groups === undefined);
 
 /** Validates one stored tenant month at storage and API boundaries. */
 export function isMicrosoft365LicenseHistorySnapshot(value: unknown): value is Microsoft365LicenseHistorySnapshot {
@@ -146,6 +153,7 @@ export function isMicrosoft365LicenseHistorySnapshot(value: unknown): value is M
       'pricingByCurrency',
       'usage',
       'productUsage',
+      'pricingFacts',
     ]) ||
     value.schemaVersion !== 'microsoft-365-license-history/v1' ||
     !text(value.tenantId) ||
@@ -174,7 +182,8 @@ export function isMicrosoft365LicenseHistory(value: unknown): value is Microsoft
     !value.tenantId ||
     !(value.currency === null || (typeof value.currency === 'string' && /^[A-Z]{3}$/.test(value.currency))) ||
     !Array.isArray(value.months) ||
-    value.months.length > 60
+    value.months.length > 60 ||
+    !optional(value.pricingRevision, isMicrosoft365PricingRevision)
   )
     return false;
   const currency = value.currency;
@@ -182,7 +191,7 @@ export function isMicrosoft365LicenseHistory(value: unknown): value is Microsoft
   return value.months.every(month => {
     const valid =
       isRecord(month) &&
-      onlyKeys(month, ['month', 'generatedAt', 'coverage', 'summary', 'insights', 'pricing', 'usage', 'productUsage']) &&
+      onlyKeys(month, ['month', 'generatedAt', 'coverage', 'summary', 'insights', 'pricing', 'usage', 'productUsage', 'pricingFacts']) &&
       isMicrosoft365LicenseHistoryMonthKey(month.month) &&
       month.month > previous &&
       date(month.generatedAt) &&

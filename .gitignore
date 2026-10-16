@@ -105,6 +105,7 @@ specs/licensing/*
 !specs/licensing/microsoft-365-license-view-types.md
 !specs/licensing/microsoft-365-license-capability-insights-types.md
 !specs/licensing/microsoft-365-improvements-types.md
+!specs/licensing/microsoft-365-custom-pricing-types.md
 !specs/cloud-accounts/
 specs/cloud-accounts/*
 !specs/cloud-accounts/microsoft-365-default-permissions-types.md

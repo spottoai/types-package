@@ -227,6 +227,142 @@ const splitAccounts = (length = 1) => ({
 });
 
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: customer pricing retains source evidence, zero and projection revisions`, () => {
+    const document = splitSummary();
+    document.pricingRevision = 'rates-a:2026-10-16';
+    document.pricing = {
+      ...document.pricingByCurrency.AUD,
+      basis: 'customer_price_estimate',
+      term: 'customer_agreement',
+      projection: { status: 'applied', revision: document.pricingRevision, asOf: '2026-10-16' },
+      products: document.pricingByCurrency.AUD.products.map(row => ({
+        ...row,
+        referenceUnitPriceMonthly: row.unitPriceMonthly,
+        unitPriceMonthly: 0,
+        priceOverride: {
+          skuId: row.skuId,
+          currency: 'AUD',
+          unitPriceMonthly: 0,
+          effectiveFrom: '2026-10-01',
+          effectiveTo: null,
+          source: 'Grant confirmation',
+        },
+      })),
+    };
+    assert(api.isMicrosoft365LicenseSummaryView(document));
+    for (const patch of [
+      { basis: ['customer_price_estimate'] },
+      { term: ['customer_agreement'] },
+      { projection: { ...document.pricing.projection, status: ['applied'] } },
+    ]) {
+      assert(
+        !api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, ...patch } }),
+        'Pricing enums must be primitive strings'
+      );
+    }
+    const people = splitAccounts();
+    people.pricingRevision = document.pricingRevision;
+    people.pricing = {
+      currency: 'AUD',
+      basis: document.pricing.basis,
+      projection: document.pricing.projection,
+      accountMonthlyCosts: { 'account-0': 0 },
+    };
+    assert(api.isMicrosoft365LicenseAccountsView(people));
+    assert(!api.isMicrosoft365LicenseAccountsView({ ...people, pricingRevision: 123 }));
+    assert(!api.isMicrosoft365LicenseAccountsView({ ...people, pricingFacts: { accountId: 'private' } }));
+    const invalid = clone(document);
+    invalid.pricing.products[0].priceOverride.accountId = 'private';
+    assert(!api.isMicrosoft365LicenseSummaryView(invalid));
+  });
+  test(`${format}: pricing facts enforce aggregate privacy in current and history evidence`, () => {
+    const facts = {
+      schemaVersion: 'microsoft-365-pricing-facts/v1',
+      evidence: {
+        inventoryKnown: true,
+        usersKnown: true,
+        signInsKnown: true,
+        overlapKnown: true,
+        downgradeKnown: true,
+        ambiguousPaidAllocation: false,
+      },
+      products: [{ skuId: 'sku-one', noOfficeActivityUnits: 0 }],
+      noOfficeActivityAccountCount: 0,
+      downgradeEdges: [{ skuId: 'sku-one', targetSkuPartNumber: 'SPE_F1', count: 1 }],
+      targetUnitPrices: { AUD: { SPE_F1: 10 } },
+    };
+    const document = { ...splitSummary(), pricingFacts: facts };
+    assert(api.isMicrosoft365LicenseSummaryView(document));
+    assert(!api.isMicrosoft365LicenseSummaryView({ ...document, pricingFacts: { ...facts, accountId: 'private' } }));
+    for (const mutate of [
+      f => {
+        f.evidence.accountId = 'private';
+      },
+      f => {
+        f.products[0].accountId = 'private';
+      },
+      f => {
+        f.downgradeEdges[0].accountId = 'private';
+      },
+      f => {
+        f.products.push({ ...f.products[0] });
+      },
+      f => {
+        f.downgradeEdges.push({ ...f.downgradeEdges[0] });
+      },
+      f => {
+        f.products[0].noOfficeActivityUnits = -1;
+      },
+    ]) {
+      const invalid = clone(facts);
+      mutate(invalid);
+      assert(!api.isMicrosoft365PricingFacts(invalid));
+    }
+    const group = {
+      key: '',
+      label: 'Not Set',
+      licensedAccountCount: 1,
+      paidSeatCount: 1,
+      reviewAccountCount: 1,
+      unitsBySku: { 'sku-one': 1 },
+      fullReviewUnitsBySku: {},
+      findingReviewEdges: [{ ...facts.downgradeEdges[0], kind: 'downgrade' }],
+    };
+    const grouped = { ...facts, groups: { domain: [group], department: [], country: [] } };
+    assert(api.isMicrosoft365PricingFacts(grouped), 'Not Set empty group key is valid');
+    for (const mutate of [
+      f => {
+        f.groups.domain[0].accountId = 'private';
+      },
+      f => {
+        f.groups.domain.push(clone(group));
+      },
+      f => {
+        f.groups.domain[0].findingReviewEdges[0].accountId = 'private';
+      },
+      f => {
+        f.groups.domain[0].unitsBySku['unknown-sku'] = 1;
+      },
+      f => {
+        f.groups.domain[0].fullReviewUnitsBySku['sku-one'] = 2;
+      },
+      f => {
+        f.groups.domain[0].reviewAccountCount = 2;
+      },
+    ]) {
+      const invalid = clone(grouped);
+      mutate(invalid);
+      assert(!api.isMicrosoft365PricingFacts(invalid));
+    }
+
+    const history = { ...snapshot(), pricingFacts: facts };
+    assert(api.isMicrosoft365LicenseHistorySnapshot(history));
+    assert(
+      !api.isMicrosoft365LicenseHistorySnapshot({ ...history, pricingFacts: { ...facts, groups: { domain: [], department: [], country: [] } } })
+    );
+    assert(api.isMicrosoft365LicenseHistory({ ...series(monthOf(history)), pricingRevision: 'rates-a:2026-10-16' }));
+    assert(!api.isMicrosoft365LicenseHistory({ ...series(monthOf(history)), pricingRevision: 42 }));
+  });
   test(`${format}: split summary retains all 16 market estimates without person prices`, () => {
     const document = splitSummary();
     const currencies = ['USD', 'NZD', 'AUD', 'GBP', 'EUR', 'CAD', 'JPY', 'INR', 'BRL', 'MXN', 'ZAR', 'CHF', 'SEK', 'NOK', 'DKK', 'SGD'];

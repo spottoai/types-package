@@ -1,6 +1,6 @@
 # Microsoft 365 usage, profile and storage evidence contracts
 
-Status: implemented and verified locally; package-wide lint blocks release; publication and consumer adoption pending
+Status: initial usage contracts released as 1.1.36 and adopted; summary/accounts extension in progress locally, next publication pending
 Approved: Yes for types-package implementation — Jay requested "update the types-package then" on 2026-10-13.
 Last updated: 2026-10-13
 Owner: Platform
@@ -14,7 +14,19 @@ Extend the existing v1 license artifact/view/pricing/history contracts without c
 
 Missing evidence remains null or unknown; genuine zero and false remain valid. All additions on existing payloads are optional. Derived counts may exceed the 2,000 retained account rows. Money remains monthly list-price estimates in the containing currency, excluding tax; no Office activity is a review figure, never reclaim. Storage-blocked findings are informational and excluded from downgrade candidates and savings by the engine.
 
-## Contract decisions
+## Summary/accounts revision (2026-10-13)
+
+The approved parent now replaces portal byte trimming with two documents. `Microsoft365LicenseSummaryView` (`microsoft-365-license-summary/v1`) contains full-population aggregates, aggregate insight patterns, capability catalogue/summary and all pricing currencies, excluding person rows, findings, notices, account pricing maps and raw report tables. `Microsoft365LicenseAccountsView` (`microsoft-365-license-accounts/v1`) contains up to 5,000 person rows and their findings/notices, with optional API-selected person pricing.
+
+Both documents require the same `generatedAt` and `tenantSyncRunId`. Their `accountDetails` carries observed, returned and omitted row counts. Runtime guards independently validate the summary privacy boundary and person references. The old inline view remains readable with its existing 2,000-row guard. No new version number is assigned manually; this extension requires another package release before registry consumers can deploy it.
+
+Ruling: retain the existing supported bounds of 2,000 distinct products and 32 renewals per product in the new summary validator. The engine must reject unsupported output rather than trim it. Cost if wrong: an unusually broad catalogue or subscription history could prevent publication until these contract bounds are expanded; no summary data may be silently dropped.
+
+Concealed reports may expose `usage.anonymousWorkloads`, explicitly labelled `report_rows`, without claiming a join to enabled licensed people. Independent sign-in minima identify their observed licensed-account basis when exact assignment membership is unavailable. Person workload dates are preserved; the legacy omission note remains accepted only for compatibility.
+
+API readers must match both scan stamps before serving accounts, refuse stale pairs without people, and adapt old inline views only when a split accounts file is absent. Overview, Licenses, Word report, AI summary and history use aggregates. Person screens and CSV load accounts separately. History keeps its existing aggregate-only shape.
+
+## Initial 1.1.36 contract decisions (legacy view)
 
 - `Microsoft365AccountUsage.workloads` is optional as well as nullable, allowing the engine byte guard to omit workload dates before account rows. `coverage.users.notes` can record `workload_dates_omitted_for_size`; the UI translates that code into explanatory copy.
 - Summary/product usage counts are calculated by the engine over the complete population before detail trimming. Guards never compare these totals with the retained account list.
@@ -38,7 +50,7 @@ API history explicitly selects month fields, so it must pass through `usage` and
 
 Widening `Microsoft365SourceName` also requires extending exhaustive source maps when adopting the release: cloud-engine's collector `SOURCES`, API's `services/AI/tools/internal/toolHandlers/microsoft365LicenseToolHandlers.ts` source labels, and UI's `libs/reporting/src/reports/microsoft365Licenses/microsoft365LicensesReportPresentation.ts` labels. Existing pinned consumer releases remain unchanged in this task.
 
-## Close-down evidence
+## Initial contract verification evidence
 
 Fresh verification on 2026-10-13:
 
@@ -60,4 +72,11 @@ Fresh verification on 2026-10-13:
 | API/UI/engine/MCP behavior, Swagger, demo, live tenant checks | N/A | No consumer implementation, endpoints, permissions or product flows changed; these remain adoption work. |
 | Registry publication, commit/push/PR | N/A | Not requested; no patch bump, publication or git delivery action performed. |
 
-Package publication, consumer manifest updates, live tenant validation, engine behavior and demo content remain follow-up work outside this task. Package-wide release readiness remains outstanding until the unrelated lint failure is resolved.
+The evidence above belongs to the initial usage extension, subsequently released as 1.1.36. It does not certify the newer summary/accounts extension. Fresh split-contract and packed-consumer results are recorded during its implementation; publication and live consented-tenant validation remain separate rollout steps.
+
+## Split-contract verification
+
+- Full `npm test` passes on the split-contract tree, including 32 M365 CJS/ESM runtime checks and the packed NodeNext/CommonJS consumer fixture with summary privacy checks and 5,000-person declarations.
+- Whole-package `npm run lint`, targeted changed-source ESLint and scoped whitespace checks pass. The historical lint blocker above no longer applies to this tree.
+- Engine, API and UI were installed from the verified local tarball using no-save/no-lock installs. Registry manifests stay unchanged; this is local consumer verification, not evidence of a new published release.
+- Independent consumer review and broad consumer gates are recorded in the engine implementation ledger. Publication of the extension remains outstanding.
