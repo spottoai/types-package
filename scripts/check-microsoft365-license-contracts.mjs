@@ -544,6 +544,16 @@ for (const [format, api] of Object.entries(formats)) {
     assert.equal(api.isMicrosoft365LicenseView(document), true);
     delete document.accounts[0].usage.workloads;
     assert.equal(api.isMicrosoft365LicenseView(document), true);
+    document.accounts[0].usage.workloadLicenses = {
+      exchange: { licensed: true, assignedOn: '2025-03-01' },
+      oneDrive: { licensed: false, assignedOn: null },
+      sharePoint: { licensed: null, assignedOn: null },
+      teams: { licensed: true, assignedOn: null },
+      vivaEngage: { licensed: false, assignedOn: null },
+    };
+    assert.equal(api.isMicrosoft365LicenseView(document), true);
+    document.accounts[0].usage.workloadLicenses = null;
+    assert.equal(api.isMicrosoft365LicenseView(document), true);
     document.accounts[0].usage = {
       status: 'unknown',
       lastActivityDate: null,
@@ -597,6 +607,22 @@ for (const [format, api] of Object.entries(formats)) {
       },
       doc => {
         doc.accounts[0].usage.lastActivityDate = '2026-02-30';
+      },
+      doc => {
+        doc.accounts[0].usage.workloadLicenses = { exchange: { licensed: true, assignedOn: null } };
+      },
+      doc => {
+        const licenses = Object.fromEntries(
+          ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'].map(key => [key, { licensed: true, assignedOn: null }])
+        );
+        licenses.teams = { licensed: 'True', assignedOn: null };
+        doc.accounts[0].usage.workloadLicenses = licenses;
+      },
+      doc => {
+        const licenses = Object.fromEntries(
+          ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'].map(key => [key, { licensed: true, assignedOn: '2025-03-01T00:00:00Z' }])
+        );
+        doc.accounts[0].usage.workloadLicenses = licenses;
       },
       doc => {
         doc.accounts[0].usage.platforms.windows = 'No';

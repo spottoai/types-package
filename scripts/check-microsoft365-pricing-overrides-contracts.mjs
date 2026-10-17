@@ -50,7 +50,13 @@ for (const api of [esm, cjs]) {
   for (const invalid of [false, null, 1, 'true']) {
     assert(!api.isMicrosoft365PricingFacts({ ...targetFacts, evidence: { ...targetFacts.evidence, chargeableAccountCountsKnown: invalid } }));
   }
-  const suspended = { kind: 'suspended_subscription', skuId: 'source', accountId: 'account', title: 'Suspended subscription assignment', detail: 'Review coverage.' };
+  const suspended = {
+    kind: 'suspended_subscription',
+    skuId: 'source',
+    accountId: 'account',
+    title: 'Suspended subscription assignment',
+    detail: 'Review coverage.',
+  };
   assert(api.isMicrosoft365CapabilityNotice(suspended));
   assert(!api.isMicrosoft365CapabilityNotice({ ...suspended, accountId: undefined }));
   assert(

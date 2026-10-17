@@ -21,6 +21,16 @@ export type Microsoft365SignInStatus = 'recent' | 'older_than_90_days' | 'never_
  */
 export type Microsoft365UsageStatus = 'active' | 'inactive' | 'no_recorded_activity' | 'unknown';
 
+/** Office workloads reported per person by the Office 365 active users report. */
+export type Microsoft365UsageWorkload = 'exchange' | 'oneDrive' | 'sharePoint' | 'teams' | 'vivaEngage';
+export const MICROSOFT365_USAGE_WORKLOADS: readonly Microsoft365UsageWorkload[] = ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'];
+
+export interface Microsoft365WorkloadLicense {
+  licensed: boolean | null;
+  /** Date the workload license was assigned, yyyy-mm-dd; null when unlicensed or not reported. */
+  assignedOn: string | null;
+}
+
 export interface Microsoft365AccountUsage {
   status: Microsoft365UsageStatus;
   /** Latest workload date, yyyy-mm-dd; null when none or unknown. */
@@ -33,6 +43,12 @@ export interface Microsoft365AccountUsage {
     teams: string | null;
     vivaEngage: string | null;
   } | null;
+  /**
+   * Per-workload license from the Office 365 active users report ("Has … License" and "… License Assign Date").
+   * licensed is null when the report value is blank or unrecognised; assignedOn is yyyy-mm-dd or null.
+   * Omitted by engines that predate the field; null when the account has no matched active-users row.
+   */
+  workloadLicenses?: Record<Microsoft365UsageWorkload, Microsoft365WorkloadLicense> | null;
   platforms: { windows: boolean | null; mac: boolean | null; web: boolean | null; mobile: boolean | null } | null;
   mailbox: { usedBytes: number | null; quotaBytes: number | null; hasArchive: boolean | null } | null;
   oneDrive: { usedBytes: number | null; allocatedBytes: number | null } | null;
@@ -133,14 +149,25 @@ export function isMicrosoft365AccountProfile(value: unknown): value is Microsoft
   );
 }
 
+export function isMicrosoft365WorkloadLicense(value: unknown): value is Microsoft365WorkloadLicense {
+  return (
+    isRecord(value) &&
+    onlyKeys(value, ['licensed', 'assignedOn']) &&
+    nullableBoolean(value.licensed) &&
+    nullableDate(value.assignedOn)
+  );
+}
+
 export function isMicrosoft365AccountUsage(value: unknown): value is Microsoft365AccountUsage {
   return (
     isRecord(value) &&
-    onlyKeys(value, ['status', 'lastActivityDate', 'workloads', 'platforms', 'mailbox', 'oneDrive', 'copilotLastActivityDate']) &&
+    onlyKeys(value, ['status', 'lastActivityDate', 'workloads', 'workloadLicenses', 'platforms', 'mailbox', 'oneDrive', 'copilotLastActivityDate']) &&
     typeof value.status === 'string' &&
     ['active', 'inactive', 'no_recorded_activity', 'unknown'].includes(value.status) &&
     nullableDate(value.lastActivityDate) &&
     (value.workloads === undefined || nullableBlock(value.workloads, ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'], nullableDate)) &&
+    (value.workloadLicenses === undefined ||
+      nullableBlock(value.workloadLicenses, MICROSOFT365_USAGE_WORKLOADS, isMicrosoft365WorkloadLicense)) &&
     nullableBlock(value.platforms, ['windows', 'mac', 'web', 'mobile'], nullableBoolean) &&
     (value.mailbox === null ||
       (isRecord(value.mailbox) &&
