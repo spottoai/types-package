@@ -41,6 +41,8 @@ export interface Microsoft365PricingFacts {
     ambiguousPaidAllocation: boolean;
     /** Producer captured review and group quantities for products without a reference price. Older snapshots omit this. */
     unpricedQuantitiesKnown?: true;
+    /** Producer counted disabled/inactive/no-Office account unions across paid AND unpriced chargeable products. Older snapshots omit this. */
+    chargeableAccountCountsKnown?: true;
   };
   products: { skuId: string; noOfficeActivityUnits: number | null }[];
   noOfficeActivityAccountCount: number | null;
@@ -99,6 +101,7 @@ export function isMicrosoft365PricingFacts(value: unknown): value is Microsoft36
       'downgradeKnown',
       'ambiguousPaidAllocation',
       'unpricedQuantitiesKnown',
+      'chargeableAccountCountsKnown',
     ])
   )
     return false;
@@ -107,6 +110,7 @@ export function isMicrosoft365PricingFacts(value: unknown): value is Microsoft36
   }
   if (value.groupRanking !== undefined && value.groupRanking !== 'reference_price') return false;
   if (value.evidence.unpricedQuantitiesKnown !== undefined && value.evidence.unpricedQuantitiesKnown !== true) return false;
+  if (value.evidence.chargeableAccountCountsKnown !== undefined && value.evidence.chargeableAccountCountsKnown !== true) return false;
   if (
     value.targetProducts !== undefined &&
     (!Array.isArray(value.targetProducts) ||

@@ -95,6 +95,9 @@ jspm_packages/
 samples/
 
 specs/*
+!Specs/monitor/
+Specs/monitor/*
+!Specs/monitor/perimeter-connectivity-types.md
 !specs/azure-compatible-costs-without-tax-metadata.md
 !specs/billing/
 specs/billing/*

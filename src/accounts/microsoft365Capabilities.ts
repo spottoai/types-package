@@ -47,7 +47,7 @@ export interface Microsoft365AccountCapabilities {
   errorIds: string[];
   unavailableIds: string[];
 }
-export type Microsoft365CapabilityNoticeKind = 'assignment_error' | 'retired_service' | 'redundant_addon';
+export type Microsoft365CapabilityNoticeKind = 'assignment_error' | 'retired_service' | 'redundant_addon' | 'suspended_subscription';
 /** Notices never contribute directly to additive unused-license money. */
 export interface Microsoft365CapabilityNotice {
   kind: Microsoft365CapabilityNoticeKind;
@@ -201,7 +201,7 @@ export function isMicrosoft365CapabilityNotice(notice: unknown): notice is Micro
   return (
     record(notice) &&
     typeof notice.kind === 'string' &&
-    ['assignment_error', 'retired_service', 'redundant_addon'].includes(notice.kind) &&
+    ['assignment_error', 'retired_service', 'redundant_addon', 'suspended_subscription'].includes(notice.kind) &&
     text(notice.skuId) &&
     text(notice.title) &&
     text(notice.detail) &&

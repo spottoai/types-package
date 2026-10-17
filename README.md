@@ -200,6 +200,17 @@ coverage does not establish complete collection, and complete collection does
 not establish effective network reachability. See
 `specs/monitor/aws-perimeter-insights-types.md`.
 
+Perimeter items can additionally carry optional `connectivity` evidence: a
+catalogue of configured traffic paths with separate public/backend ports,
+ordered resource identities, destination attachment state and observed workload
+power state. Exposure `trafficPathIds` link each finding to its relevant paths.
+Detached NICs, unconfigured backends and unresolved targets remain distinct;
+unknown or stale evidence never authorizes reducing severity. Legacy Azure/AWS
+payloads and the existing schema identifier remain compatible. These are types,
+not runtime validators or reachability/severity calculations. A new package
+release and engine/API/UI adoption are required before the report changes.
+See [the connectivity contract and consumer handoff](Specs/monitor/perimeter-connectivity-types.md).
+
 Background report jobs (`ReportJobSpecV1`, `ReportJobRequestedV1`, the
 `reportjobs` row, statuses and failure codes, and the `jobId` identity
 functions) live in `@spottoai/types-package/reporting-jobs`, which is not

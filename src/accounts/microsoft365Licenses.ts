@@ -324,14 +324,14 @@ export interface Microsoft365LicensePricing {
    * `withMicrosoft365AccountPricing` from `@spottoai/platform/calc/licensing`.
    */
   accountMonthlyCosts: Record<string, number>;
-  /** Accounts holding commercially paid licenses, including paid products without a market price. */
+  /** Accounts holding chargeable paid or unpriced licenses, independent of market prices; excludes confirmed nonpaid trial stock. */
   paidAccountIds?: string[];
   /** Accounts whose assigned products include a missing or unknown price; their monetary values are partial. */
   partialAccountPriceIds?: string[];
   /**
    * Totals are null when the evidence they need is unavailable (denied, failed or partial sources, or unknown
    * quantities), never a zero. Money is a subtotal of priced products; pricesComplete and pricedPaidUnits disclose gaps.
-   * Seat totals include paid products without a market price. Account-based counts are minimums when their completeness flag is false.
+   * Current seat totals include paid and unpriced chargeable products, independent of market prices. Account-based counts are minimums when their completeness flag is false.
    */
   summary: {
     paidProductCount: number | null;

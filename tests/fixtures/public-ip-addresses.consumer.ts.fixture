@@ -6,6 +6,11 @@ import {
   type PublicIpAddressesCoverage,
   type PublicIpAddressesRemediationOption,
   type PublicIpAddressesSecurityGroupRuleMetadata,
+  type PublicIpAddressesConnectivity,
+  type PublicIpAddressesResourceReference,
+  type PublicIpAddressesTrafficPath,
+  type PublicIpAddressesTrafficPathDestination,
+  type PublicIpAddressesWorkload,
 } from '@spottoai/types-package';
 
 const schemaVersion: '2026-05-02.public-ip-addresses-v1' = PUBLIC_IP_ADDRESSES_SCHEMA_VERSION;
@@ -191,7 +196,14 @@ const otherExposure: PublicIpAddressesExposure = {
 const brokerReport: PublicIpAddressesReport = {
   ...awsReport,
   summary: { ...awsReport.summary, exposedKafka: 1, exposedOther: 1 },
-  items: [{ ...awsReport.items[0], associatedService: 'message_broker', exposures: [kafkaExposure, otherExposure], concerns: ['kafka_exposed', 'other_exposed'] }],
+  items: [
+    {
+      ...awsReport.items[0],
+      associatedService: 'message_broker',
+      exposures: [kafkaExposure, otherExposure],
+      concerns: ['kafka_exposed', 'other_exposed'],
+    },
+  ],
 };
 const omittedNewCounts: Pick<PublicIpAddressesReport['summary'], 'exposedKafka' | 'exposedOther'> = {};
 const invalidExposureKind: PublicIpAddressesExposure = {
@@ -220,3 +232,59 @@ const invalidCount: typeof omittedNewCounts = {
   exposedOther: '1',
 };
 void [brokerReport, omittedNewCounts, invalidExposureKind, invalidPort, invalidReachability, invalidBrokerService, invalidConcern, invalidCount];
+
+// The published root must expose the new types while legacy Azure/AWS reports still compile.
+const nic: PublicIpAddressesResourceReference = { id: 'native-nic-id', name: 'nic', type: 'microsoft.network/networkinterfaces' };
+const workload: PublicIpAddressesWorkload = {
+  resource: { id: 'native-workload-id', name: 'vm', type: 'microsoft.compute/virtualmachines' },
+  powerState: 'deallocated',
+  powerStateObservedAt: '2026-10-14T00:00:00.000Z',
+  powerStateSource: 'azure_resource_graph',
+};
+const destinations: PublicIpAddressesTrafficPathDestination[] = [
+  { status: 'workload', workload },
+  { status: 'detached_nic', networkInterface: nic, reason: 'Complete inventory proves no workload attachment.' },
+  { status: 'no_backend', reason: 'The rule has no configured target.' },
+  { status: 'unresolved', referencedResource: nic, reason: 'Collection unavailable.' },
+];
+const path: PublicIpAddressesTrafficPath = {
+  id: 'rule:target',
+  rule: null,
+  hops: [{ id: 'native-load-balancer-id', name: 'lb', type: 'microsoft.network/loadbalancers' }, nic, workload.resource],
+  frontendPortRanges: [{ value: '52565', from: 52565, to: 52565 }],
+  backendPortRanges: [{ value: '3389', from: 3389, to: 3389 }],
+  protocol: 'tcp',
+  observedAt: '2026-10-14T00:00:00.000Z',
+  evidence: ['native forwarding and attachment observations'],
+  destination: destinations[0],
+};
+const connectivity: PublicIpAddressesConnectivity = {
+  assessedAt: '2026-10-14T00:05:00.000Z',
+  freshness: 'unknown',
+  coverage: { status: 'partial', sources: [], issues: [] },
+  paths: destinations.map((destination, index) => ({
+    ...path,
+    id: `path:${index}`,
+    hops: path.hops.slice(0, destination.status === 'workload' ? 3 : destination.status === 'detached_nic' ? 2 : 1),
+    destination,
+  })),
+};
+const extendedReport: PublicIpAddressesReport = {
+  ...awsReport,
+  items: [
+    {
+      ...awsReport.items[0],
+      connectivity,
+      exposures: [{ ...awsListener, trafficPathIds: ['path:0'] }],
+      remediationOptions: [
+        { kind: 'remove_unused_network_resources', label: 'Review cleanup', summary: 'Review before removal.', suitability: 'conditional' },
+      ],
+    },
+  ],
+};
+const legacyConnectivityFields: Pick<PublicIpAddressesReport['items'][number], 'connectivity'> = {};
+// @ts-expect-error unresolved evidence cannot masquerade as a resolved workload without state.
+const invalidDestination: PublicIpAddressesTrafficPathDestination = { status: 'workload' };
+// @ts-expect-error a no-backend destination cannot contain a workload.
+const conflictingDestination: PublicIpAddressesTrafficPathDestination = { status: 'no_backend', reason: 'None.', workload };
+void [extendedReport, legacyConnectivityFields, invalidDestination, conflictingDestination];

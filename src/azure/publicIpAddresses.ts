@@ -1,3 +1,5 @@
+import type { ArtifactFreshnessVerdict } from '../common/artifactEvidence.js';
+
 export const PUBLIC_IP_ADDRESSES_SCHEMA_VERSION = '2026-05-02.public-ip-addresses-v1' as const;
 
 export const PUBLIC_IP_ADDRESSES_PORTAL_FILE = 'public-ip-addresses.json' as const;
@@ -51,6 +53,7 @@ export type PublicIpAddressesRemediationOptionKind =
   | 'restrict_ingress_allowlist'
   | 'private_session_access'
   | 'remove_public_ip'
+  | 'remove_unused_network_resources'
   | 'front_with_app_gateway_waf'
   | 'front_with_waf'
   | 'document_exception';
@@ -192,6 +195,100 @@ export interface PublicIpAddressesExposureScope {
   resourceType?: string;
 }
 
+/** Native resource identity; ARM IDs, ARNs and other provider IDs are not interchangeable. */
+export interface PublicIpAddressesResourceReference {
+  id: string;
+  name: string | null;
+  type: string | null;
+}
+
+/** Normalized observed runtime state, independent of provisioning success or backend health. */
+export type PublicIpAddressesWorkloadPowerState = 'running' | 'stopped' | 'deallocated' | 'starting' | 'stopping' | 'deallocating' | 'unknown';
+
+export interface PublicIpAddressesWorkload {
+  resource: PublicIpAddressesResourceReference;
+  powerState: PublicIpAddressesWorkloadPowerState;
+  /** UTC observation time of the runtime state, not the report's publication time. Null means unknown. */
+  powerStateObservedAt: string | null;
+  /** Source of the state observation (for example azure_resource_graph). Null means unavailable. */
+  powerStateSource: string | null;
+  nativePowerState?: string;
+}
+
+/**
+ * Attachment evidence, not a reachability or severity verdict. A missing referenced
+ * resource is unresolved unless complete evidence independently proves detachment.
+ */
+export type PublicIpAddressesTrafficPathDestination =
+  | {
+      status: 'workload';
+      workload: PublicIpAddressesWorkload;
+      networkInterface?: never;
+      referencedResource?: never;
+      reason?: string;
+    }
+  | {
+      /** Current NIC and workload inventories prove no workload is attached. */
+      status: 'detached_nic';
+      networkInterface: PublicIpAddressesResourceReference;
+      workload?: never;
+      referencedResource?: never;
+      reason: string;
+    }
+  | {
+      /** Complete forwarding evidence proves no target; an empty LB pool alone is insufficient. */
+      status: 'no_backend';
+      workload?: never;
+      networkInterface?: never;
+      referencedResource?: never;
+      reason: string;
+    }
+  | {
+      status: 'unresolved';
+      referencedResource?: PublicIpAddressesResourceReference;
+      workload?: never;
+      networkInterface?: never;
+      reason: string;
+    };
+
+/** One configured rule-to-destination path; this does not prove live traffic or end-to-end access. */
+export interface PublicIpAddressesTrafficPath {
+  /** Opaque, unique within the item's catalogue; distinguish each rule/frontend/target combination. */
+  id: string;
+  /** Native forwarding/listener/security rule, or null for a direct path or unavailable rule identity. */
+  rule: PublicIpAddressesResourceReference | null;
+  /** Ordered resources after the public endpoint, ending at the last resolved resource. */
+  hops: PublicIpAddressesResourceReference[];
+  /** Public entry ports. Null means unavailable, never all ports or proof of no forwarding. */
+  frontendPortRanges: PublicIpAddressesPortRange[] | null;
+  /** Translated destination ports; classify the backend service independently of the public port. */
+  backendPortRanges: PublicIpAddressesPortRange[] | null;
+  protocol: PublicIpAddressesExposureProtocol;
+  /** UTC observation time of forwarding/attachment evidence. Null means unknown. */
+  observedAt: string | null;
+  evidence: string[];
+  destination: PublicIpAddressesTrafficPathDestination;
+}
+
+export interface PublicIpAddressesConnectivity {
+  /** Assessment time only; it must not replace forwarding or power-state observation times. */
+  assessedAt: string;
+  /** Freshness of all evidence needed by the assessment; consumers must re-evaluate it as observations age. */
+  freshness: ArtifactFreshnessVerdict;
+  /**
+   * Completeness of all relevant forwarding rules, destinations and required workload
+   * observations. Truncation is partial. Report-wide coverage cannot replace this evidence.
+   */
+  coverage: PublicIpAddressesCoverage;
+  /**
+   * One catalogue for the item, including uncategorized forwarding. Empty/missing paths
+   * do not independently prove safety. Only complete, current evidence can support a
+   * downgrade, considering every path relevant to an exposure. Unknown/transitional
+   * workload states cannot establish inactivity; running does not establish reachability.
+   */
+  paths: PublicIpAddressesTrafficPath[];
+}
+
 /** Native security-group evidence. Azure NSG rule evidence retains its nsgRule shape. */
 export interface PublicIpAddressesSecurityGroupRuleMetadata {
   id?: string;
@@ -220,6 +317,12 @@ export interface PublicIpAddressesExposure {
   scope?: PublicIpAddressesExposureScope;
   effectiveReachability?: PublicIpAddressesEffectiveReachability;
   reason?: string;
+  /**
+   * IDs of every relevant path in the owning item's connectivity catalogue. Each ID
+   * must resolve there. Omission or an empty list means linkage is unknown, never no
+   * destinations; do not reduce this exposure's severity using unrelated paths.
+   */
+  trafficPathIds?: string[];
 }
 
 export interface PublicIpAddressesReferenceLink {
@@ -275,6 +378,8 @@ export interface PublicIpAddressesItem {
   remediationOptions?: PublicIpAddressesRemediationOption[];
   concerns: PublicIpAddressesConcern[];
   tags: Record<string, string>;
+  /** Optional for legacy Azure/AWS producers; omission means unknown connectivity. */
+  connectivity?: PublicIpAddressesConnectivity;
 }
 
 export interface PublicIpAddressesReport {

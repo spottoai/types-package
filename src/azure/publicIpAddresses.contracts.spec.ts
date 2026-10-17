@@ -1,5 +1,12 @@
 import type { PublicIpAddressesReport } from './publicIpAddresses';
 import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION } from './publicIpAddresses';
+import type {
+  PublicIpAddressesConnectivity,
+  PublicIpAddressesResourceReference,
+  PublicIpAddressesTrafficPath,
+  PublicIpAddressesTrafficPathDestination,
+  PublicIpAddressesWorkload,
+} from './publicIpAddresses';
 
 const publicIpAddressesReport: PublicIpAddressesReport = {
   schemaVersion: PUBLIC_IP_ADDRESSES_SCHEMA_VERSION,
@@ -346,70 +353,78 @@ const awsPublicIpAddressesReport: PublicIpAddressesReport = {
       { family: 'ec2-security-groups', location: 'ap-southeast-2', status: 'partial', reason: 'One security group reference is unresolved.' },
       { family: 'elbv2-listeners', location: 'ap-southeast-2', status: 'missing', reason: 'Collection was denied.' },
     ],
-    issues: [{
-      code: 'missing_security_group',
-      message: 'Referenced security group was not collected; absence of exposure findings does not establish safety.',
-      resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
-      family: 'ec2-security-groups',
-      location: 'ap-southeast-2',
-    }],
-  },
-  items: [{
-    ...publicIpAddressesReport.items[0],
-    id: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
-    name: 'production',
-    resourceGroup: null,
-    location: 'ap-southeast-2',
-    sku: { name: null, tier: null },
-    zones: [],
-    allocationMethod: null,
-    ipVersion: null,
-    ipAddress: null,
-    fqdn: 'production.example.us-east-1.rds.amazonaws.com',
-    assignment: {
-      via: 'direct_ip_configuration',
-      resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
-      resourceName: 'production',
-      resourceType: 'AWS::RDS::DBInstance',
-      parentResourceId: null,
-      parentResourceName: null,
-      parentResourceType: null,
-      evidence: ['rds:PubliclyAccessible'],
-    },
-    associatedResource: 'production',
-    associatedResourceType: 'AWS::RDS::DBInstance',
-    associatedService: 'database',
-    exposures: [{
-      kind: 'database',
-      evidenceSource: 'security_group_rule',
-      evidence: 'Security group allows TCP/5432 from 0.0.0.0/0.',
-      confidence: 'medium',
-      sourceKind: 'internet',
-      sourcePrefixes: ['0.0.0.0/0'],
-      destinationPortRanges: [{ value: '5432', from: 5432, to: 5432 }],
-      protocol: 'tcp',
-      effectiveReachability: 'possible',
-      securityGroupRule: {
-        id: 'sgr-0123456789abcdef0',
-        name: 'public-postgres',
-        groupId: 'sg-0123456789abcdef0',
-        groupName: 'database',
-        direction: 'inbound',
-        access: 'allow',
-        sourceAddressPrefixes: ['0.0.0.0/0'],
-        destinationPortRanges: ['5432'],
-        protocol: 'tcp',
-        description: 'Public database access',
+    issues: [
+      {
+        code: 'missing_security_group',
+        message: 'Referenced security group was not collected; absence of exposure findings does not establish safety.',
+        resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+        family: 'ec2-security-groups',
+        location: 'ap-southeast-2',
       },
-    }],
-    concerns: ['database_exposed'],
-    remediationOptions: [{
-      kind: 'restrict_ingress_allowlist',
-      label: 'Restrict ingress to approved sources',
-      summary: 'Limit database ingress to approved private networks or CIDR ranges.',
-      suitability: 'recommended',
-    }],
-  }],
+    ],
+  },
+  items: [
+    {
+      ...publicIpAddressesReport.items[0],
+      id: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+      name: 'production',
+      resourceGroup: null,
+      location: 'ap-southeast-2',
+      sku: { name: null, tier: null },
+      zones: [],
+      allocationMethod: null,
+      ipVersion: null,
+      ipAddress: null,
+      fqdn: 'production.example.us-east-1.rds.amazonaws.com',
+      assignment: {
+        via: 'direct_ip_configuration',
+        resourceId: 'arn:aws:rds:ap-southeast-2:123456789012:db:production',
+        resourceName: 'production',
+        resourceType: 'AWS::RDS::DBInstance',
+        parentResourceId: null,
+        parentResourceName: null,
+        parentResourceType: null,
+        evidence: ['rds:PubliclyAccessible'],
+      },
+      associatedResource: 'production',
+      associatedResourceType: 'AWS::RDS::DBInstance',
+      associatedService: 'database',
+      exposures: [
+        {
+          kind: 'database',
+          evidenceSource: 'security_group_rule',
+          evidence: 'Security group allows TCP/5432 from 0.0.0.0/0.',
+          confidence: 'medium',
+          sourceKind: 'internet',
+          sourcePrefixes: ['0.0.0.0/0'],
+          destinationPortRanges: [{ value: '5432', from: 5432, to: 5432 }],
+          protocol: 'tcp',
+          effectiveReachability: 'possible',
+          securityGroupRule: {
+            id: 'sgr-0123456789abcdef0',
+            name: 'public-postgres',
+            groupId: 'sg-0123456789abcdef0',
+            groupName: 'database',
+            direction: 'inbound',
+            access: 'allow',
+            sourceAddressPrefixes: ['0.0.0.0/0'],
+            destinationPortRanges: ['5432'],
+            protocol: 'tcp',
+            description: 'Public database access',
+          },
+        },
+      ],
+      concerns: ['database_exposed'],
+      remediationOptions: [
+        {
+          kind: 'restrict_ingress_allowlist',
+          label: 'Restrict ingress to approved sources',
+          summary: 'Limit database ingress to approved private networks or CIDR ranges.',
+          suitability: 'recommended',
+        },
+      ],
+    },
+  ],
 };
 
 const awsListenerExposure: PublicIpAddressesReport['items'][number]['exposures'][number] = {
@@ -420,17 +435,20 @@ const awsListenerExposure: PublicIpAddressesReport['items'][number]['exposures']
   effectiveReachability: 'possible',
 };
 
-const awsPrivateSessionOption: PublicIpAddressesReport['items'][number]['remediationOptions'] = [{
-  kind: 'private_session_access',
-  label: 'Use private session access',
-  summary: 'Use AWS Systems Manager Session Manager for administration.',
-  suitability: 'conditional',
-}, {
-  kind: 'front_with_waf',
-  label: 'Protect web ingress with a WAF',
-  summary: 'Use a compatible web application firewall for HTTPS services.',
-  suitability: 'conditional',
-}];
+const awsPrivateSessionOption: PublicIpAddressesReport['items'][number]['remediationOptions'] = [
+  {
+    kind: 'private_session_access',
+    label: 'Use private session access',
+    summary: 'Use AWS Systems Manager Session Manager for administration.',
+    suitability: 'conditional',
+  },
+  {
+    kind: 'front_with_waf',
+    label: 'Protect web ingress with a WAF',
+    summary: 'Use a compatible web application firewall for HTTPS services.',
+    suitability: 'conditional',
+  },
+];
 
 const invalidCoverage: NonNullable<PublicIpAddressesReport['coverage']> = {
   // @ts-expect-error report coverage never represents missing evidence as healthy.
@@ -517,4 +535,156 @@ void [
   invalidKafkaReachability,
   invalidMessageBrokerConcern,
   invalidKafkaCount,
+];
+
+const pathNic: PublicIpAddressesResourceReference = {
+  id: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Network/networkInterfaces/nic',
+  name: 'nic',
+  type: 'microsoft.network/networkinterfaces',
+};
+const runningWorkload: PublicIpAddressesWorkload = {
+  resource: {
+    id: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Compute/virtualMachines/vm',
+    name: 'vm',
+    type: 'microsoft.compute/virtualmachines',
+  },
+  powerState: 'running',
+  powerStateObservedAt: '2026-10-14T02:00:00.000Z',
+  powerStateSource: 'azure_resource_graph',
+  nativePowerState: 'PowerState/running',
+};
+const remappedRdpPath: PublicIpAddressesTrafficPath = {
+  id: 'nat-rdp:nic',
+  rule: {
+    id: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Network/loadBalancers/lb/inboundNatRules/rdp',
+    name: 'rdp',
+    type: 'microsoft.network/loadbalancers/inboundnatrules',
+  },
+  hops: [
+    {
+      id: '/subscriptions/sub-123/resourceGroups/rg/providers/Microsoft.Network/loadBalancers/lb',
+      name: 'lb',
+      type: 'microsoft.network/loadbalancers',
+    },
+    pathNic,
+    runningWorkload.resource,
+  ],
+  frontendPortRanges: [{ value: '52565', from: 52565, to: 52565 }],
+  backendPortRanges: [{ value: '3389', from: 3389, to: 3389 }],
+  protocol: 'tcp',
+  observedAt: '2026-10-14T02:00:00.000Z',
+  evidence: ['inboundNatRules.backendIPConfiguration', 'networkInterface.virtualMachine'],
+  destination: { status: 'workload', workload: runningWorkload },
+};
+const inactiveDestinations: PublicIpAddressesTrafficPathDestination[] = [
+  {
+    status: 'workload',
+    workload: { ...runningWorkload, powerState: 'deallocated', nativePowerState: 'PowerState/deallocated' },
+  },
+  { status: 'detached_nic', networkInterface: pathNic, reason: 'Current NIC and VM inventories prove that the NIC has no attached workload.' },
+  { status: 'no_backend', reason: 'The rule has no configured target in complete forwarding evidence.' },
+];
+const unknownDestination: PublicIpAddressesTrafficPathDestination = {
+  status: 'unresolved',
+  referencedResource: pathNic,
+  reason: 'The referenced NIC could not be collected.',
+};
+const unknownWorkload: PublicIpAddressesWorkload = {
+  resource: runningWorkload.resource,
+  powerState: 'unknown',
+  powerStateObservedAt: null,
+  powerStateSource: null,
+};
+const mixedConnectivity: PublicIpAddressesConnectivity = {
+  assessedAt: '2026-10-14T02:05:00.000Z',
+  freshness: 'current',
+  coverage: {
+    status: 'complete',
+    sources: [{ family: 'forwarding-and-workload-state', location: 'australiaeast', status: 'complete' }],
+    issues: [],
+  },
+  paths: [
+    remappedRdpPath,
+    ...inactiveDestinations.map((destination, index) => ({
+      ...remappedRdpPath,
+      id: `inactive:${index}`,
+      hops: remappedRdpPath.hops.slice(0, destination.status === 'workload' ? 3 : destination.status === 'detached_nic' ? 2 : 1),
+      destination,
+    })),
+  ],
+};
+const partialConnectivity: PublicIpAddressesConnectivity = {
+  ...mixedConnectivity,
+  freshness: 'unknown',
+  coverage: { status: 'partial', sources: [], issues: [{ code: 'missing_nic', message: 'Destination is unknown.' }] },
+  paths: [{ ...remappedRdpPath, hops: remappedRdpPath.hops.slice(0, 1), destination: unknownDestination }],
+};
+const exposureWithPaths: PublicIpAddressesReport['items'][number]['exposures'][number] = {
+  ...publicIpAddressesReport.items[0].exposures[0],
+  trafficPathIds: ['nat-rdp:nic'],
+};
+const reportWithConnectivity: PublicIpAddressesReport = {
+  ...publicIpAddressesReport,
+  items: [{ ...publicIpAddressesReport.items[0], connectivity: mixedConnectivity, exposures: [exposureWithPaths] }],
+};
+const legacyConnectivityOmission: Pick<PublicIpAddressesReport['items'][number], 'connectivity'> = {};
+const legacyExposurePathsOmission: Pick<PublicIpAddressesReport['items'][number]['exposures'][number], 'trafficPathIds'> = {};
+const cleanupRemediation: PublicIpAddressesReport['items'][number]['remediationOptions'] = [
+  {
+    kind: 'remove_unused_network_resources',
+    label: 'Review unused network resources',
+    summary: 'Review dependencies before removing unused forwarding resources.',
+    suitability: 'recommended',
+  },
+];
+
+// @ts-expect-error a resolved workload destination must carry workload identity and observed state.
+const missingWorkload: PublicIpAddressesTrafficPathDestination = { status: 'workload' };
+// @ts-expect-error a detached NIC destination must identify the NIC and explain the proof.
+const missingDetachedNic: PublicIpAddressesTrafficPathDestination = { status: 'detached_nic', reason: 'Detached.' };
+// @ts-expect-error no-backend evidence cannot also carry an attached workload.
+const contradictoryDestination: PublicIpAddressesTrafficPathDestination = { status: 'no_backend', reason: 'No target.', workload: runningWorkload };
+// @ts-expect-error detached evidence cannot also carry an attached workload, including through a spread.
+const contradictoryDetached: PublicIpAddressesTrafficPathDestination = {
+  ...inactiveDestinations[1],
+  status: 'detached_nic',
+  networkInterface: pathNic,
+  reason: 'Detached.',
+  workload: runningWorkload,
+};
+// @ts-expect-error unresolved destinations must explain the missing evidence.
+const unexplainedUnknown: PublicIpAddressesTrafficPathDestination = { status: 'unresolved' };
+const invalidPowerState: PublicIpAddressesWorkload = {
+  ...runningWorkload,
+  // @ts-expect-error Azure provisioning success does not establish VM power state.
+  powerState: 'Succeeded',
+};
+const invalidBackendPort: PublicIpAddressesTrafficPath = {
+  ...remappedRdpPath,
+  // @ts-expect-error both port mappings retain numeric bounds.
+  backendPortRanges: [{ value: '3389', from: '3389', to: 3389 }],
+};
+const invalidConnectivityFreshness: PublicIpAddressesConnectivity = {
+  ...mixedConnectivity,
+  // @ts-expect-error use the established artifact freshness vocabulary.
+  freshness: 'healthy',
+};
+// @ts-expect-error supplied connectivity requires collection coverage and freshness evidence.
+const missingConnectivityEvidence: PublicIpAddressesConnectivity = { paths: [remappedRdpPath] };
+void [
+  unknownWorkload,
+  partialConnectivity,
+  reportWithConnectivity,
+  legacyConnectivityOmission,
+  legacyExposurePathsOmission,
+  cleanupRemediation,
+  missingWorkload,
+  missingDetachedNic,
+  contradictoryDestination,
+  contradictoryDetached,
+  unexplainedUnknown,
+  invalidPowerState,
+  invalidBackendPort,
+  invalidConnectivityFreshness,
+  missingConnectivityEvidence,
 ];
