@@ -80,3 +80,8 @@ The evidence above belongs to the initial usage extension, subsequently released
 - Whole-package `npm run lint`, targeted changed-source ESLint and scoped whitespace checks pass. The historical lint blocker above no longer applies to this tree.
 - Engine, API and UI were installed from the verified local tarball using no-save/no-lock installs. Registry manifests stay unchanged; this is local consumer verification, not evidence of a new published release.
 - Independent consumer review and broad consumer gates are recorded in the engine implementation ledger. Publication of the extension remains outstanding.
+
+## Workload licenses (1.1.45, 2026-10-18)
+
+- Optional `Microsoft365AccountUsage.workloadLicenses`: `Record<Microsoft365UsageWorkload, { licensed: boolean | null; assignedOn: string | null }> | null`, with exported `MICROSOFT365_USAGE_WORKLOADS` and `isMicrosoft365WorkloadLicense`. Omitted by older engines; `null` when the account has no matched active-users row; a blank or unrecognised report flag is `null`, never `false`.
+- The account-usage guard still rejects unknown keys, so API, UI and engine must all be on 1.1.45 or later before a scan writes the field. Contract checks cover valid, null, missing-workload, string-flag and timestamp-date cases. See the [license view spec](../../../core/specs/licensing/microsoft-365-license-view/microsoft-365-license-view.md#usage--copilot-license-aware-usage).

@@ -1,0 +1,51 @@
+import {
+  parseAssessmentNativeScope,
+  parseFrameworkAssessmentDocument,
+  parseFrameworkCatalogueDocument,
+  parseFrameworkCatalogueIndexDocument,
+  parseFrameworkAssessmentSummaryDocument,
+  parseFrameworkFindingPageDocument,
+  parseScopeScanManifest,
+  parseScopeScanCompletion,
+  parseScopeScanStatusDocument,
+  parseScopeScanRawPageDocument,
+  parseScopeScanEvidencePageDocument,
+  parseLegacyFrameworkCatalogue,
+  parseLegacyFrameworkCatalogueIndex,
+  parseLegacyFrameworkIdentity,
+  type AssessmentNativeScope,
+  type FrameworkAssessmentDocument,
+  type FrameworkCatalogueDocument,
+  type FrameworkCatalogueIndexDocument,
+  type FrameworkAssessmentSummaryDocument,
+  type FrameworkFindingPageDocument,
+  type ScopeScanManifest,
+  type ScopeScanCompletion,
+  type ScopeScanStatusDocument,
+  type ScopeScanRawPageDocument,
+  type ScopeScanEvidencePageDocument,
+} from '@spottoai/types-package/framework-assessments';
+
+declare const external: unknown;
+const scope: AssessmentNativeScope = parseAssessmentNativeScope(external);
+const assessment: FrameworkAssessmentDocument = parseFrameworkAssessmentDocument(external);
+const generationSha256: string = assessment.generationSha256;
+const catalogue: FrameworkCatalogueDocument = parseFrameworkCatalogueDocument(external);
+const index: FrameworkCatalogueIndexDocument = parseFrameworkCatalogueIndexDocument(external);
+const summary: FrameworkAssessmentSummaryDocument = parseFrameworkAssessmentSummaryDocument(external);
+const page: FrameworkFindingPageDocument = parseFrameworkFindingPageDocument(external);
+const manifest: ScopeScanManifest = parseScopeScanManifest(external);
+const completion: ScopeScanCompletion = parseScopeScanCompletion(external);
+const status: ScopeScanStatusDocument = parseScopeScanStatusDocument(external);
+const raw: ScopeScanRawPageDocument = parseScopeScanRawPageDocument(external);
+const observations: ScopeScanEvidencePageDocument = parseScopeScanEvidencePageDocument(external);
+parseLegacyFrameworkCatalogue(external);
+parseLegacyFrameworkCatalogueIndex(external);
+parseLegacyFrameworkIdentity(external);
+// @ts-expect-error company is authorization context, not native identity.
+scope.companyId;
+// @ts-expect-error completion does not grant a caller-selected blob locator.
+completion.rawContainer;
+// @ts-expect-error collection certainty is mandatory on public findings.
+const incompleteFinding: FrameworkFindingPageDocument['items'][number] = { id: 'id' };
+void [assessment, generationSha256, catalogue, index, summary, page, manifest, status, raw, observations, incompleteFinding];

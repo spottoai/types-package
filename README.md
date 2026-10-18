@@ -6,6 +6,16 @@ Do not add feature flags, feature enablement settings, or rollout allowlists unl
 
 A shared TypeScript interfaces package. This package contains common interfaces that can be reused across your API, frontend, and backend projects.
 
+Assessment producers and readers share version 2 DTOs and runtime parsers through
+`@spottoai/types-package/framework-assessments`. The dependency-free subpath covers
+global catalogues, native-scope scan manifests and lifecycle status, framework
+assessments and compact availability summaries, and hash-addressed finding pages.
+Company identity appears only in scan audit context. Pages are bounded to 1 MiB
+decoded JSON and 1,000 items; applications verify content hashes and enforce
+authorization before storage reads. Legacy catalogue parsers use the same shared
+validation. `npm run check:framework-assessment-contracts` checks both builds;
+`npm run check:packed-exports` verifies the published subpath and declarations.
+
 ## Features
 
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services

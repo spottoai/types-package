@@ -397,6 +397,7 @@ try {
   await copyFile(join(packageRoot, 'fixtures/resource-artifact-usage.json'), join(consumerRoot, 'resource-artifact-usage.json'));
   await copyFile(join(packageRoot, 'fixtures/resource-artifact-usage-graph.json'), join(consumerRoot, 'resource-artifact-usage-graph.json'));
   await copyFile(join(packageRoot, 'tests/fixtures/activity-analysis.consumer.ts.fixture'), join(consumerRoot, 'activity-analysis.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/framework-assessments.consumer.ts.fixture'), join(consumerRoot, 'framework-assessments.consumer.ts'));
 
   run(
     npmCommand,
@@ -563,7 +564,16 @@ try {
     const checks = "const usage = {status:'unknown',lastActivityDate:null,platforms:null,mailbox:null,oneDrive:null,copilotLastActivityDate:null}; if (typeof root.isMicrosoft365LicenseSummaryView !== 'function' || typeof root.isMicrosoft365LicenseAccountsView !== 'function' || root.MICROSOFT_365_LICENSE_ACCOUNT_ROW_LIMIT !== 5000 || !root.isMicrosoft365AccountUsage(usage) || root.isMicrosoft365AccountUsage({...usage,status:['active']}) || !root.MICROSOFT_365_LICENSE_SOURCES.includes('officeActiveUserCounts') || !root.isMicrosoft365UsageDate('2026-10-13') || root.isMicrosoft365UsageDate('2026-02-30')) process.exit(1);";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
   }
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs consumer fixture verified.\n');
+  for (const moduleMode of ['esm', 'cjs']) {
+    const imports = moduleMode === 'esm'
+      ? "import * as assessments from '@spottoai/types-package/framework-assessments';"
+      : "const assessments = require('@spottoai/types-package/framework-assessments');";
+    const checks = "const scope = assessments.parseAssessmentNativeScope({providerName:'azure',scopeType:'subscription',scopeId:'sub-1'}); if(scope.scopeId!=='sub-1'||typeof assessments.parseScopeScanManifest!=='function'||typeof assessments.parseLegacyFrameworkCatalogue!=='function'||assessments.FRAMEWORK_ASSESSMENT_LIMITS.pageDecodedBytes!==1048576) process.exit(1); let rejected=false; try { assessments.parseAssessmentNativeScope({...scope,companyId:'foreign'}); } catch { rejected=true; } if(!rejected) process.exit(1);";
+    run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
+  }
+  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'framework-assessments.consumer.ts'], consumerRoot);
+  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', 'framework-assessments.consumer.ts'], consumerRoot);
+  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments consumer fixture verified.\n');
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }
