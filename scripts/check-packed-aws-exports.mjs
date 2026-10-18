@@ -537,6 +537,35 @@ try {
     ],
     consumerRoot
   );
+  const perimeterExportChecks = `
+    assert.equal(typeof root.isPerimeterServiceClassification, 'function');
+    assert.equal(typeof root.isPublicIpAddressesNetworkAccessEvaluation, 'function');
+    assert.equal(root.PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS.partitions, 64);
+    assert.equal(root.isPublicIpAddressesNetworkAccessEvaluation({
+      verdict: 'unverified', assessedAt: '2026-10-19T00:00:00.000Z', freshness: 'unknown', exhaustive: false,
+      coverage: { status: 'unavailable', sources: [], issues: [] }, partitions: [],
+      incompleteReasons: ['not_collected'], omitted: { partitions: 0, sources: 0 }
+    }), true);
+    assert.equal(root.isPerimeterServiceClassification({
+      id: 'https', label: 'HTTPS', category: 'web', basis: 'port', protocol: 'tcp',
+      frontendPortRanges: [{ value: '443', from: 443, to: 443 }], backendPortRanges: null
+    }), true);
+    assert.equal(root.isPublicIpAddressesNetworkAccessEvaluation({ verdict: 'blocked' }), false);
+  `;
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${perimeterExportChecks}`,
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${perimeterExportChecks}`],
+    consumerRoot
+  );
   const historyExportChecks =
     "assert.deepEqual(root.PORTAL_VIEW_HISTORY_CADENCES, ['daily', 'weekly', 'monthly']); assert.deepEqual(root.PORTAL_VIEW_HISTORY_ARTIFACTS, ['summary', 'resources', 'recommendations']); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES, 33554432); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES, 262144);";
   run(

@@ -223,6 +223,15 @@ not runtime validators or reachability/severity calculations. A new package
 release and engine/API/UI adoption are required before the report changes.
 See [the connectivity contract and consumer handoff](Specs/monitor/perimeter-connectivity-types.md).
 
+The unreleased paths foundation adds optional exposure `service` hints and path
+`networkAccess` evidence. Its root-exported extension guards validate bounded
+shapes, source references and internally consistent claims; they do not evaluate
+network rules, prove exhaustive collection or calculate priority. Configured
+filter verdicts are `allowed`, `blocked` and `unverified`, separate from live
+reachability. Source collection time remains distinct from assessment time, and
+readers must re-evaluate freshness as evidence ages. Existing Azure/AWS payloads
+can omit both extensions. See [the paths contract plan](specs/security/perimeter-insights-paths-types.md).
+
 Background report jobs (`ReportJobSpecV1`, `ReportJobRequestedV1`, the
 `reportjobs` row, statuses and failure codes, and the `jobId` identity
 functions) live in `@spottoai/types-package/reporting-jobs`, which is not

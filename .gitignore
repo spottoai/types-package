@@ -119,6 +119,7 @@ specs/reporting/*
 !specs/security/
 specs/security/*
 !specs/security/container-image-usage-types.md
+!specs/security/perimeter-insights-paths-types.md
 !Specs/governance/
 Specs/governance/*
 !Specs/governance/regulatory-compliance-scoreboard-types-package.md

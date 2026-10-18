@@ -1,4 +1,5 @@
 import type { ArtifactFreshnessVerdict } from '../common/artifactEvidence.js';
+import type { PerimeterServiceClassification, PublicIpAddressesNetworkAccessEvaluation } from './publicIpAddressesNetworkAccess';
 
 export const PUBLIC_IP_ADDRESSES_SCHEMA_VERSION = '2026-05-02.public-ip-addresses-v1' as const;
 
@@ -268,6 +269,8 @@ export interface PublicIpAddressesTrafficPath {
   observedAt: string | null;
   evidence: string[];
   destination: PublicIpAddressesTrafficPathDestination;
+  /** Optional configured inbound filtering evidence; omission means unverified. */
+  networkAccess?: PublicIpAddressesNetworkAccessEvaluation;
 }
 
 export interface PublicIpAddressesConnectivity {
@@ -323,6 +326,8 @@ export interface PublicIpAddressesExposure {
    * destinations; do not reduce this exposure's severity using unrelated paths.
    */
   trafficPathIds?: string[];
+  /** Optional configuration-derived service hint; kind remains compatible with legacy consumers. */
+  service?: PerimeterServiceClassification;
 }
 
 export interface PublicIpAddressesReferenceLink {

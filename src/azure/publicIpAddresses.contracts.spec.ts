@@ -7,6 +7,11 @@ import type {
   PublicIpAddressesTrafficPathDestination,
   PublicIpAddressesWorkload,
 } from './publicIpAddresses';
+import type {
+  PerimeterServiceClassification,
+  PublicIpAddressesNetworkAccessEvaluation,
+  PublicIpAddressesPacketPartition,
+} from './publicIpAddressesNetworkAccess';
 
 const publicIpAddressesReport: PublicIpAddressesReport = {
   schemaVersion: PUBLIC_IP_ADDRESSES_SCHEMA_VERSION,
@@ -687,4 +692,61 @@ void [
   invalidBackendPort,
   invalidConnectivityFreshness,
   missingConnectivityEvidence,
+];
+
+const configuredService: PerimeterServiceClassification = {
+  id: 'https',
+  label: 'HTTPS',
+  category: 'web',
+  basis: 'port',
+  protocol: 'tcp',
+  frontendPortRanges: [{ value: '443', from: 443, to: 443 }],
+  backendPortRanges: [{ value: '8443', from: 8443, to: 8443 }],
+};
+const unverifiedNetworkAccess: PublicIpAddressesNetworkAccessEvaluation = {
+  verdict: 'unverified',
+  assessedAt: '2026-10-19T00:00:00.000Z',
+  freshness: 'unknown',
+  exhaustive: false,
+  coverage: { status: 'unavailable', sources: [], issues: [] },
+  partitions: [],
+  incompleteReasons: ['not_collected'],
+  omitted: { partitions: 0, sources: 0 },
+};
+const configuredPath: PublicIpAddressesTrafficPath = { ...remappedRdpPath, networkAccess: unverifiedNetworkAccess };
+const configuredExposure: typeof exposureWithPaths = { ...exposureWithPaths, service: configuredService };
+// Legacy Azure and AWS objects remain valid with neither additive field.
+const legacyNetworkAccessOmission: Pick<PublicIpAddressesTrafficPath, 'networkAccess'> = {};
+const legacyServiceOmission: Pick<typeof exposureWithPaths, 'service'> = {};
+const invalidServiceCategory: PerimeterServiceClassification = {
+  ...configuredService,
+  // @ts-expect-error provider service names do not replace service categories.
+  category: 'azure_load_balancer',
+};
+const invalidNetworkVerdict: PublicIpAddressesNetworkAccessEvaluation = {
+  ...unverifiedNetworkAccess,
+  // @ts-expect-error filtering does not assert end-to-end reachability.
+  verdict: 'reachable',
+};
+// @ts-expect-error complete partitions cannot claim an unverified result.
+const contradictoryPartition: PublicIpAddressesPacketPartition = {
+  id: 'invalid',
+  complete: true,
+  verdict: 'unverified',
+  sourceSelectors: [],
+  sourcePortRanges: [],
+  backendPortRanges: [],
+  protocol: 'unknown',
+  decisions: [],
+  incompleteReasons: [],
+  omitted: { sourceSelectors: 0, sourcePortRanges: 0, backendPortRanges: 0, decisions: 0 },
+};
+void [
+  configuredPath,
+  configuredExposure,
+  legacyNetworkAccessOmission,
+  legacyServiceOmission,
+  invalidServiceCategory,
+  invalidNetworkVerdict,
+  contradictoryPartition,
 ];

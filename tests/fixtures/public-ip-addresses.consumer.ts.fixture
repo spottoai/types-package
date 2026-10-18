@@ -11,7 +11,43 @@ import {
   type PublicIpAddressesTrafficPath,
   type PublicIpAddressesTrafficPathDestination,
   type PublicIpAddressesWorkload,
+  type PerimeterServiceClassification,
+  type PublicIpAddressesNetworkAccessEvaluation,
+  type PublicIpAddressesPacketPartition,
+  isPerimeterServiceClassification,
+  isPublicIpAddressesNetworkAccessEvaluation,
+  PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS,
 } from '@spottoai/types-package';
+
+const serviceHint: PerimeterServiceClassification = {
+  id: 'https',
+  label: 'HTTPS',
+  category: 'web',
+  basis: 'port',
+  protocol: 'tcp',
+  frontendPortRanges: [{ value: '443', from: 443, to: 443 }],
+  backendPortRanges: [{ value: '8443', from: 8443, to: 8443 }],
+};
+const networkEvidence: PublicIpAddressesNetworkAccessEvaluation = {
+  verdict: 'unverified',
+  assessedAt: '2026-10-19T00:00:00.000Z',
+  freshness: 'unknown',
+  exhaustive: false,
+  coverage: { status: 'unavailable', sources: [], issues: [] },
+  partitions: [],
+  incompleteReasons: ['not_collected'],
+  omitted: { partitions: 0, sources: 0 },
+};
+const optionalService: Pick<PublicIpAddressesExposure, 'service'> = {};
+const optionalNetwork: Pick<PublicIpAddressesTrafficPath, 'networkAccess'> = {};
+const extensionGuard: (value: unknown) => value is PublicIpAddressesNetworkAccessEvaluation = isPublicIpAddressesNetworkAccessEvaluation;
+const serviceGuard: (value: unknown) => value is PerimeterServiceClassification = isPerimeterServiceClassification;
+const networkLimit: 64 = PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS.partitions;
+// @ts-expect-error network-filter verdicts cannot claim successful connections.
+const invalidFiltering: PublicIpAddressesNetworkAccessEvaluation = { ...networkEvidence, verdict: 'reachable' };
+// @ts-expect-error incomplete evidence cannot carry a known packet verdict.
+const invalidPartition: PublicIpAddressesPacketPartition = { complete: false, verdict: 'allowed' };
+void [serviceHint, networkEvidence, optionalService, optionalNetwork, extensionGuard, serviceGuard, networkLimit, invalidFiltering, invalidPartition];
 
 const schemaVersion: '2026-05-02.public-ip-addresses-v1' = PUBLIC_IP_ADDRESSES_SCHEMA_VERSION;
 const portalFile: 'public-ip-addresses.json' = PUBLIC_IP_ADDRESSES_PORTAL_FILE;
