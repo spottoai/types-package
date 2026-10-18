@@ -216,6 +216,8 @@ export interface ScopeScanStatusDocument {
   retryable: boolean;
   attempt: number;
 }
+/** Admission permits a request clock up to five minutes ahead of the collecting host. */
+export const ASSESSMENT_REQUEST_CLOCK_SKEW_MS = 5 * 60 * 1000;
 export const SUPPORTED_ASSESSMENT_SOURCE_VERSIONS: readonly string[] = Object.freeze(['5.45.0']);
 
 export const FRAMEWORK_ASSESSMENT_LIMITS = Object.freeze({

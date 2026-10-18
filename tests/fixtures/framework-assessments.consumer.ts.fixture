@@ -39,10 +39,10 @@ const completion: ScopeScanCompletion = parseScopeScanCompletion(external);
 const status: ScopeScanStatusDocument = parseScopeScanStatusDocument(external);
 const raw: ScopeScanRawPageDocument = parseScopeScanRawPageDocument(external);
 const observations: ScopeScanEvidencePageDocument = parseScopeScanEvidencePageDocument(external);
-const confidence: 'verified'|'unverified' = assessment.controls[0].confidence;
+const confidence: 'verified' | 'unverified' = assessment.controls[0].confidence;
 const findingCount: number = summary.frameworks[0].statusCounts.FAIL;
 const access = parseAssessmentAccess(external);
-parseScopeScanRawFinding(external,{scope,sourceVersion:'5.45.0',selectedCheckIds:[]});
+parseScopeScanRawFinding(external, { scope, sourceVersion: '5.45.0', selectedCheckIds: [] });
 const failure = new TerminalAssessmentError('invalid-evidence');
 // @ts-expect-error access evidence cannot carry arbitrary private storage locators.
 access.rawPath;
@@ -52,4 +52,19 @@ scope.companyId;
 completion.rawContainer;
 // @ts-expect-error collection certainty is mandatory on public findings.
 const incompleteFinding: FrameworkFindingPageDocument['items'][number] = { id: 'id' };
-void [confidence,findingCount,failure,assessment, generationSha256, catalogue, index, summary, page, manifest, status, raw, observations, incompleteFinding];
+void [
+  confidence,
+  findingCount,
+  failure,
+  assessment,
+  generationSha256,
+  catalogue,
+  index,
+  summary,
+  page,
+  manifest,
+  status,
+  raw,
+  observations,
+  incompleteFinding,
+];

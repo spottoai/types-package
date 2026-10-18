@@ -9,7 +9,21 @@ import type {
   ScopeScanRawPageDocument,
   ScopeScanStatusDocument,
 } from './contracts';
-import { choice, decodedBytes, identifier, input, invalid, list, number, record, shape, text, timestamp, unique } from './internal';
+import {
+  choice,
+  decodedBytes,
+  identifier,
+  input,
+  invalid,
+  list,
+  number,
+  record,
+  requestChronologyValid,
+  shape,
+  text,
+  timestamp,
+  unique,
+} from './internal';
 import {
   parseAssessmentNativeScope,
   parseAssessmentPageReference,
@@ -98,7 +112,7 @@ export const parseScopeScanManifest = (value: unknown): ScopeScanManifest => {
   // Raw pages preserve the scanner's sequence: identical quarantined/raw evidence can repeat content.
   unique(result.observationPages.map(page => page.sha256));
   if (
-    result.generatedAt < result.request.requestedAt ||
+    !requestChronologyValid(result.generatedAt, result.request.requestedAt) ||
     result.rawPages.reduce((sum, page) => sum + page.count, 0) !== result.rawFindingCount - result.quarantinedFindingCount ||
     result.observationPages.reduce((sum, page) => sum + page.count, 0) !== result.findingCount ||
     Object.values(result.statusCounts).reduce((sum, count) => sum + count, 0) !== result.findingCount ||
@@ -166,6 +180,6 @@ export const parseScopeScanStatusDocument = (value: unknown): ScopeScanStatusDoc
     attempt: number(row.attempt),
   };
   if (row.reason !== undefined) result.reason = identifier(row.reason, 1024);
-  if (result.updatedAt < result.requestedAt) return invalid('status chronology');
+  if (!requestChronologyValid(result.updatedAt, result.requestedAt)) return invalid('status chronology');
   return result;
 };

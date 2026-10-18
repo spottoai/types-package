@@ -1,5 +1,5 @@
 import { TerminalAssessmentError } from './failures';
-import { FRAMEWORK_ASSESSMENT_LIMITS as limits, type AssessmentJsonValue } from './contracts';
+import { ASSESSMENT_REQUEST_CLOCK_SKEW_MS, FRAMEWORK_ASSESSMENT_LIMITS as limits, type AssessmentJsonValue } from './contracts';
 
 export const invalid = (field: string): never => {
   throw new TerminalAssessmentError(`invalid-assessment-field:${field}`);
@@ -129,3 +129,7 @@ export const input = (value: unknown): AssessmentJsonValue => {
   if (decodedBytes(safe) > limits.documentDecodedBytes) return invalid('document size');
   return safe;
 };
+
+/** Request timestamps come from a separately clocked coordinator; observed timestamps retain host time. */
+export const requestChronologyValid = (observedAt: string, requestedAt: string): boolean =>
+  Date.parse(observedAt) + ASSESSMENT_REQUEST_CLOCK_SKEW_MS >= Date.parse(requestedAt);

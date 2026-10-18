@@ -18,7 +18,22 @@ import type {
   FrameworkControlStatusCounts,
   FrameworkCatalogueIndexEntry,
 } from './contracts';
-import { choice, decodedBytes, httpUrl, identifier, input, invalid, list, number, record, shape, text, timestamp, unique } from './internal';
+import {
+  choice,
+  decodedBytes,
+  httpUrl,
+  identifier,
+  input,
+  invalid,
+  list,
+  number,
+  record,
+  requestChronologyValid,
+  shape,
+  text,
+  timestamp,
+  unique,
+} from './internal';
 
 export const requireFrameworkId = (value: unknown): string => {
   const result = identifier(value, 64);
@@ -88,7 +103,7 @@ const source = (value: unknown): FrameworkAssessmentSource => {
     requestedAt: timestamp(row.requestedAt),
     assessedAt: timestamp(row.assessedAt),
   };
-  if (result.assessedAt < result.requestedAt) return invalid('assessment chronology');
+  if (!requestChronologyValid(result.assessedAt, result.requestedAt)) return invalid('assessment chronology');
   return result;
 };
 const finding = (value: unknown): FrameworkFinding => {

@@ -572,6 +572,16 @@ for (const [label, api] of [
     },
     status
   );
+  for (const millisecondsAhead of [60000, 300000]) {
+    const requestedAt = new Date(Date.parse(source.assessedAt) + millisecondsAhead).toISOString();
+    assert.doesNotThrow(() => api.parseScopeScanStatusDocument({ ...status, requestedAt }));
+    assert.doesNotThrow(() => api.parseScopeScanManifest({ ...manifest, request: { ...manifest.request, requestedAt } }));
+    assert.doesNotThrow(() => api.parseFrameworkAssessmentSource({ ...source, requestedAt }));
+  }
+  const excessiveSkew = new Date(Date.parse(source.assessedAt) + 300001).toISOString();
+  assert.throws(() => api.parseScopeScanStatusDocument({ ...status, requestedAt: excessiveSkew }));
+  assert.throws(() => api.parseScopeScanManifest({ ...manifest, request: { ...manifest.request, requestedAt: excessiveSkew } }));
+  assert.throws(() => api.parseFrameworkAssessmentSource({ ...source, requestedAt: excessiveSkew }));
   const before = structuredClone(assessment);
   const parsed = api.parseFrameworkAssessmentDocument(assessment);
   parsed.access.checks.push({ checkId: 'mutation', status: 'unknown' });
