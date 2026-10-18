@@ -12,8 +12,10 @@ global catalogues, native-scope scan manifests and lifecycle status, framework
 assessments and compact availability summaries, and hash-addressed finding pages.
 Company identity appears only in scan audit context. Pages are bounded to 1 MiB
 decoded JSON and 1,000 items; applications verify content hashes and enforce
-authorization before storage reads. Legacy catalogue parsers use the same shared
-validation. `npm run check:framework-assessment-contracts` checks both builds;
+authorization before storage reads. The only read contract is v2; no legacy parser
+exports remain. Controls carry explicit confidence; summaries include finding counts
+and access status/reason. Shared raw-row/access validators and typed terminal/retryable
+errors keep producers and readers aligned. `npm run check:framework-assessment-contracts` checks both builds;
 `npm run check:packed-exports` verifies the published subpath and declarations.
 
 ## Features

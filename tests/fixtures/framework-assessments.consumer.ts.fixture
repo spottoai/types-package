@@ -10,9 +10,9 @@ import {
   parseScopeScanStatusDocument,
   parseScopeScanRawPageDocument,
   parseScopeScanEvidencePageDocument,
-  parseLegacyFrameworkCatalogue,
-  parseLegacyFrameworkCatalogueIndex,
-  parseLegacyFrameworkIdentity,
+  parseScopeScanRawFinding,
+  parseAssessmentAccess,
+  TerminalAssessmentError,
   type AssessmentNativeScope,
   type FrameworkAssessmentDocument,
   type FrameworkCatalogueDocument,
@@ -39,13 +39,17 @@ const completion: ScopeScanCompletion = parseScopeScanCompletion(external);
 const status: ScopeScanStatusDocument = parseScopeScanStatusDocument(external);
 const raw: ScopeScanRawPageDocument = parseScopeScanRawPageDocument(external);
 const observations: ScopeScanEvidencePageDocument = parseScopeScanEvidencePageDocument(external);
-parseLegacyFrameworkCatalogue(external);
-parseLegacyFrameworkCatalogueIndex(external);
-parseLegacyFrameworkIdentity(external);
+const confidence: 'verified'|'unverified' = assessment.controls[0].confidence;
+const findingCount: number = summary.frameworks[0].statusCounts.FAIL;
+const access = parseAssessmentAccess(external);
+parseScopeScanRawFinding(external,{scope,sourceVersion:'5.45.0',selectedCheckIds:[]});
+const failure = new TerminalAssessmentError('invalid-evidence');
+// @ts-expect-error access evidence cannot carry arbitrary private storage locators.
+access.rawPath;
 // @ts-expect-error company is authorization context, not native identity.
 scope.companyId;
 // @ts-expect-error completion does not grant a caller-selected blob locator.
 completion.rawContainer;
 // @ts-expect-error collection certainty is mandatory on public findings.
 const incompleteFinding: FrameworkFindingPageDocument['items'][number] = { id: 'id' };
-void [assessment, generationSha256, catalogue, index, summary, page, manifest, status, raw, observations, incompleteFinding];
+void [confidence,findingCount,failure,assessment, generationSha256, catalogue, index, summary, page, manifest, status, raw, observations, incompleteFinding];
