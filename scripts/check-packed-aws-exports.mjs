@@ -392,12 +392,21 @@ try {
   await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
   await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
-  await copyFile(join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'), join(consumerRoot, 'microsoft365-license-usage.consumer.ts'));
-  await copyFile(join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'), join(consumerRoot, 'resource-artifact-usage.consumer.ts'));
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'),
+    join(consumerRoot, 'microsoft365-license-usage.consumer.ts')
+  );
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'),
+    join(consumerRoot, 'resource-artifact-usage.consumer.ts')
+  );
   await copyFile(join(packageRoot, 'fixtures/resource-artifact-usage.json'), join(consumerRoot, 'resource-artifact-usage.json'));
   await copyFile(join(packageRoot, 'fixtures/resource-artifact-usage-graph.json'), join(consumerRoot, 'resource-artifact-usage-graph.json'));
   await copyFile(join(packageRoot, 'tests/fixtures/activity-analysis.consumer.ts.fixture'), join(consumerRoot, 'activity-analysis.consumer.ts'));
-  await copyFile(join(packageRoot, 'tests/fixtures/framework-assessments.consumer.ts.fixture'), join(consumerRoot, 'framework-assessments.consumer.ts'));
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/framework-assessments.consumer.ts.fixture'),
+    join(consumerRoot, 'framework-assessments.consumer.ts')
+  );
 
   run(
     npmCommand,
@@ -451,19 +460,112 @@ try {
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
   // The narrow public governance contract must work in both module formats and legacy TS resolution.
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'cloud-governance.consumer.ts'], consumerRoot);
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'public-ip-addresses.consumer.ts'], consumerRoot);
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'resource-health.consumer.ts'], consumerRoot);
-  const healthExportChecks = "assert.equal(root.RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME, 'health-events.json'); assert.equal(root.RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME, 'health-availability-statuses.json'); assert.equal(root.AZURE_RESOURCE_HEALTH_EVENTS_SOURCE, 'Microsoft.ResourceHealth/events');";
-  run(process.execPath, ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${healthExportChecks}`], consumerRoot);
-  run(process.execPath, ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${healthExportChecks}`], consumerRoot);
-  run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, PUBLIC_IP_ADDRESSES_PORTAL_FILE } from '@spottoai/types-package'; assert.equal(PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
-  run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); assert.equal(root.PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(root.PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');"], consumerRoot);
-  const historyExportChecks = "assert.deepEqual(root.PORTAL_VIEW_HISTORY_CADENCES, ['daily', 'weekly', 'monthly']); assert.deepEqual(root.PORTAL_VIEW_HISTORY_ARTIFACTS, ['summary', 'resources', 'recommendations']); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES, 33554432); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES, 262144);";
-  run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; " + historyExportChecks], consumerRoot);
-  run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); " + historyExportChecks], consumerRoot);
-  run(process.execPath, ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as rootVersion } from '@spottoai/types-package'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as narrowVersion } from '@spottoai/types-package/governance'; assert.equal(rootVersion, 1); assert.equal(narrowVersion, rootVersion);`], consumerRoot);
-  run(process.execPath, ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); const narrow = require('@spottoai/types-package/governance'); assert.equal(root.CLOUD_GOVERNANCE_SCHEMA_VERSION, 1); assert.equal(narrow.CLOUD_GOVERNANCE_SCHEMA_VERSION, root.CLOUD_GOVERNANCE_SCHEMA_VERSION);`], consumerRoot);
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'cloud-governance.consumer.ts',
+    ],
+    consumerRoot
+  );
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'public-ip-addresses.consumer.ts',
+    ],
+    consumerRoot
+  );
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'resource-health.consumer.ts',
+    ],
+    consumerRoot
+  );
+  const healthExportChecks =
+    "assert.equal(root.RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME, 'health-events.json'); assert.equal(root.RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME, 'health-availability-statuses.json'); assert.equal(root.AZURE_RESOURCE_HEALTH_EVENTS_SOURCE, 'Microsoft.ResourceHealth/events');";
+  run(
+    process.execPath,
+    ['--input-type=module', '-e', `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${healthExportChecks}`],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${healthExportChecks}`],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import assert from 'node:assert/strict'; import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, PUBLIC_IP_ADDRESSES_PORTAL_FILE } from '@spottoai/types-package'; assert.equal(PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); assert.equal(root.PUBLIC_IP_ADDRESSES_SCHEMA_VERSION, '2026-05-02.public-ip-addresses-v1'); assert.equal(root.PUBLIC_IP_ADDRESSES_PORTAL_FILE, 'public-ip-addresses.json');",
+    ],
+    consumerRoot
+  );
+  const historyExportChecks =
+    "assert.deepEqual(root.PORTAL_VIEW_HISTORY_CADENCES, ['daily', 'weekly', 'monthly']); assert.deepEqual(root.PORTAL_VIEW_HISTORY_ARTIFACTS, ['summary', 'resources', 'recommendations']); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_ARTIFACT_JSON_BYTES, 33554432); assert.equal(root.PORTAL_VIEW_HISTORY_MAX_MANIFEST_JSON_BYTES, 262144);";
+  run(
+    process.execPath,
+    ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; " + historyExportChecks],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    ['-e', "const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); " + historyExportChecks],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as rootVersion } from '@spottoai/types-package'; import { CLOUD_GOVERNANCE_SCHEMA_VERSION as narrowVersion } from '@spottoai/types-package/governance'; assert.equal(rootVersion, 1); assert.equal(narrowVersion, rootVersion);`,
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); const narrow = require('@spottoai/types-package/governance'); assert.equal(root.CLOUD_GOVERNANCE_SCHEMA_VERSION, 1); assert.equal(narrow.CLOUD_GOVERNANCE_SCHEMA_VERSION, root.CLOUD_GOVERNANCE_SCHEMA_VERSION);`,
+    ],
+    consumerRoot
+  );
   run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedBillingV7ProbeSource}`], consumerRoot);
   run(
     process.execPath,
@@ -543,37 +645,132 @@ try {
     consumerRoot
   );
 
-  run(process.execPath, ['--input-type=module', '-e', "import * as jobs from '@spottoai/types-package/reporting-jobs'; import root from '@spottoai/types-package'; const id = await jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }); if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || typeof jobs.parseReportJobRowV1 !== 'function' || 'buildReportJobRowV1' in root || 'REPORTS_QUEUE_NAME' in jobs || 'REPORT_JOBS_TABLE' in jobs) process.exit(1);"], consumerRoot);
-  run(process.execPath, ['-e', "const jobs = require('@spottoai/types-package/reporting-jobs'); let storageResolved = true; try { require.resolve('@spottoai/types-package/reporting-storage'); } catch { storageResolved = false; } jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }).then(id => { if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || storageResolved) process.exit(1); });"], consumerRoot);
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import * as jobs from '@spottoai/types-package/reporting-jobs'; import root from '@spottoai/types-package'; const id = await jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }); if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || typeof jobs.parseReportJobRowV1 !== 'function' || 'buildReportJobRowV1' in root || 'REPORTS_QUEUE_NAME' in jobs || 'REPORT_JOBS_TABLE' in jobs) process.exit(1);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const jobs = require('@spottoai/types-package/reporting-jobs'); let storageResolved = true; try { require.resolve('@spottoai/types-package/reporting-storage'); } catch { storageResolved = false; } jobs.deriveReportJobIdentity({ instant: '2026-09-28T03:15:42.123Z', reportType: 'sdm', subscriptionIds: ['6B1C1F0E-3F2A-4E5B-9C8D-0A1B2C3D4E5F'] }).then(id => { if (id.jobId !== '9999998209434657876-sdm-7cc9a991cbd7375c' || storageResolved) process.exit(1); });",
+    ],
+    consumerRoot
+  );
 
   for (const moduleMode of ['esm', 'cjs']) {
-    const imports = moduleMode === 'esm'
-      ? "import * as jobs from '@spottoai/types-package/reporting-jobs'; import * as scheduler from '@spottoai/types-package/scheduler'; import root from '@spottoai/types-package';"
-      : "const jobs = require('@spottoai/types-package/reporting-jobs'); const scheduler = require('@spottoai/types-package/scheduler'); const root = require('@spottoai/types-package');";
-    const checks = "const spec = {schemaVersion:1,reportType:'sdm',scope:{cloudAccountIds:['ca-1'],subscriptionIds:['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f']},period:{kind:'previous-calendar-month'},configuration:{layout:'spotto-layout',cloudIqServiceProfile:{selectedServiceIds:[]}}}; const definition = {definitionType:'report-generation',name:'Report',timezone:'UTC',timing:{triggerType:'recurring',cadence:'monthly',dayOfMonth:'last',localTime:'09:00'},report:spec,initialMode:'active'}; if (!scheduler.isScheduleWriteRequest(definition) || !root.isReportGenerationScheduleWriteRequest(definition) || typeof jobs.validateReportJobUpdateV1 !== 'function' || typeof jobs.buildReportJobProjectionV1 !== 'function' || 'validateReportJobUpdateV1' in root) process.exit(1); jobs.buildReportJobAdmissionFingerprintV1({schemaVersion:1,report:spec}).then(hash => { if (!/^[0-9a-f]{64}$/.test(hash)) process.exit(1); });";
+    const imports =
+      moduleMode === 'esm'
+        ? "import * as jobs from '@spottoai/types-package/reporting-jobs'; import * as scheduler from '@spottoai/types-package/scheduler'; import root from '@spottoai/types-package';"
+        : "const jobs = require('@spottoai/types-package/reporting-jobs'); const scheduler = require('@spottoai/types-package/scheduler'); const root = require('@spottoai/types-package');";
+    const checks =
+      "const spec = {schemaVersion:1,reportType:'sdm',scope:{cloudAccountIds:['ca-1'],subscriptionIds:['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f']},period:{kind:'previous-calendar-month'},configuration:{layout:'spotto-layout',cloudIqServiceProfile:{selectedServiceIds:[]}}}; const definition = {definitionType:'report-generation',name:'Report',timezone:'UTC',timing:{triggerType:'recurring',cadence:'monthly',dayOfMonth:'last',localTime:'09:00'},report:spec,initialMode:'active'}; if (!scheduler.isScheduleWriteRequest(definition) || !root.isReportGenerationScheduleWriteRequest(definition) || typeof jobs.validateReportJobUpdateV1 !== 'function' || typeof jobs.buildReportJobProjectionV1 !== 'function' || 'validateReportJobUpdateV1' in root) process.exit(1); jobs.buildReportJobAdmissionFingerprintV1({schemaVersion:1,report:spec}).then(hash => { if (!/^[0-9a-f]{64}$/.test(hash)) process.exit(1); });";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
   }
-  run(process.execPath, ['-e', "const assert = require('node:assert/strict'); const fixture = require('./resource-artifact-usage.json'); const checks = (root, narrow) => { assert.equal(root.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION, 1); assert.equal(narrow.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION, 1); assert.deepEqual(narrow.validateResourceArtifactUsageManifest(fixture.manifest, fixture.binding), []); assert.deepEqual(root.validateResourceArtifactUsageIndex(fixture.index, fixture.binding), []); assert.deepEqual(narrow.validateResourceArtifactDetailPage(fixture.page, {...fixture.binding, artifactId:fixture.summary.id, section:'findings',page:0}), []); assert.ok(narrow.validateResourceArtifactUsageManifest({...fixture.manifest,companyId:'other'},fixture.binding).length); }; checks(require('@spottoai/types-package'),require('@spottoai/types-package/common/resource-artifact-usage')); const graph=require('./resource-artifact-usage-graph.json'); assert.equal(require('@spottoai/types-package').validateResourceGraphArtifact(graph,{provider:'azure'}),graph);"], consumerRoot);
-  run(process.execPath, ['--input-type=module', '-e', "import assert from 'node:assert/strict'; import {readFileSync} from 'node:fs'; import * as root from '@spottoai/types-package'; import * as narrow from '@spottoai/types-package/common/resource-artifact-usage'; const fixture=JSON.parse(readFileSync('./resource-artifact-usage.json','utf8')); assert.equal(root.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION,1); assert.equal(narrow.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION,1); assert.deepEqual(narrow.validateResourceArtifactUsageManifest(fixture.manifest,fixture.binding),[]); assert.deepEqual(root.validateResourceArtifactUsageIndex(fixture.index,fixture.binding),[]); assert.deepEqual(narrow.validateResourceArtifactDetailPage(fixture.page,{...fixture.binding,artifactId:fixture.summary.id,section:'findings',page:0}),[]); assert.ok(narrow.validateResourceArtifactUsageManifest({...fixture.manifest,companyId:'other'},fixture.binding).length); const graph=JSON.parse(readFileSync('./resource-artifact-usage-graph.json','utf8')); assert.equal(root.validateResourceGraphArtifact(graph,{provider:'azure'}),graph);"], consumerRoot);
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'resource-artifact-usage.consumer.ts'], consumerRoot);
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'microsoft365-license-usage.consumer.ts'], consumerRoot);
+  run(
+    process.execPath,
+    [
+      '-e',
+      "const assert = require('node:assert/strict'); const fixture = require('./resource-artifact-usage.json'); const checks = (root, narrow) => { assert.equal(root.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION, 1); assert.equal(narrow.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION, 1); assert.deepEqual(narrow.validateResourceArtifactUsageManifest(fixture.manifest, fixture.binding), []); assert.deepEqual(root.validateResourceArtifactUsageIndex(fixture.index, fixture.binding), []); assert.deepEqual(narrow.validateResourceArtifactDetailPage(fixture.page, {...fixture.binding, artifactId:fixture.summary.id, section:'findings',page:0}), []); assert.ok(narrow.validateResourceArtifactUsageManifest({...fixture.manifest,companyId:'other'},fixture.binding).length); }; checks(require('@spottoai/types-package'),require('@spottoai/types-package/common/resource-artifact-usage')); const graph=require('./resource-artifact-usage-graph.json'); assert.equal(require('@spottoai/types-package').validateResourceGraphArtifact(graph,{provider:'azure'}),graph);",
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import assert from 'node:assert/strict'; import {readFileSync} from 'node:fs'; import * as root from '@spottoai/types-package'; import * as narrow from '@spottoai/types-package/common/resource-artifact-usage'; const fixture=JSON.parse(readFileSync('./resource-artifact-usage.json','utf8')); assert.equal(root.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION,1); assert.equal(narrow.RESOURCE_ARTIFACT_USAGE_SCHEMA_VERSION,1); assert.deepEqual(narrow.validateResourceArtifactUsageManifest(fixture.manifest,fixture.binding),[]); assert.deepEqual(root.validateResourceArtifactUsageIndex(fixture.index,fixture.binding),[]); assert.deepEqual(narrow.validateResourceArtifactDetailPage(fixture.page,{...fixture.binding,artifactId:fixture.summary.id,section:'findings',page:0}),[]); assert.ok(narrow.validateResourceArtifactUsageManifest({...fixture.manifest,companyId:'other'},fixture.binding).length); const graph=JSON.parse(readFileSync('./resource-artifact-usage-graph.json','utf8')); assert.equal(root.validateResourceGraphArtifact(graph,{provider:'azure'}),graph);",
+    ],
+    consumerRoot
+  );
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'resource-artifact-usage.consumer.ts',
+    ],
+    consumerRoot
+  );
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'microsoft365-license-usage.consumer.ts',
+    ],
+    consumerRoot
+  );
   for (const moduleMode of ['esm', 'cjs']) {
-    const imports = moduleMode === 'esm'
-      ? "import * as root from '@spottoai/types-package';"
-      : "const root = require('@spottoai/types-package');";
-    const checks = "const usage = {status:'unknown',lastActivityDate:null,platforms:null,mailbox:null,oneDrive:null,copilotLastActivityDate:null}; if (typeof root.isMicrosoft365LicenseSummaryView !== 'function' || typeof root.isMicrosoft365LicenseAccountsView !== 'function' || root.MICROSOFT_365_LICENSE_ACCOUNT_ROW_LIMIT !== 5000 || !root.isMicrosoft365AccountUsage(usage) || root.isMicrosoft365AccountUsage({...usage,status:['active']}) || !root.MICROSOFT_365_LICENSE_SOURCES.includes('officeActiveUserCounts') || !root.isMicrosoft365UsageDate('2026-10-13') || root.isMicrosoft365UsageDate('2026-02-30')) process.exit(1);";
+    const imports = moduleMode === 'esm' ? "import * as root from '@spottoai/types-package';" : "const root = require('@spottoai/types-package');";
+    const checks =
+      "const usage = {status:'unknown',lastActivityDate:null,platforms:null,mailbox:null,oneDrive:null,copilotLastActivityDate:null}; if (typeof root.isMicrosoft365LicenseSummaryView !== 'function' || typeof root.isMicrosoft365LicenseAccountsView !== 'function' || root.MICROSOFT_365_LICENSE_ACCOUNT_ROW_LIMIT !== 5000 || !root.isMicrosoft365AccountUsage(usage) || root.isMicrosoft365AccountUsage({...usage,status:['active']}) || !root.MICROSOFT_365_LICENSE_SOURCES.includes('officeActiveUserCounts') || !root.isMicrosoft365UsageDate('2026-10-13') || root.isMicrosoft365UsageDate('2026-02-30')) process.exit(1);";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
   }
   for (const moduleMode of ['esm', 'cjs']) {
-    const imports = moduleMode === 'esm'
-      ? "import * as assessments from '@spottoai/types-package/framework-assessments';"
-      : "const assessments = require('@spottoai/types-package/framework-assessments');";
-    const checks = "const scope = assessments.parseAssessmentNativeScope({providerName:'azure',scopeType:'subscription',scopeId:'sub-1'}); if(scope.scopeId!=='sub-1'||typeof assessments.parseScopeScanManifest!=='function'||typeof assessments.parseLegacyFrameworkCatalogue!=='function'||assessments.FRAMEWORK_ASSESSMENT_LIMITS.pageDecodedBytes!==1048576) process.exit(1); let rejected=false; try { assessments.parseAssessmentNativeScope({...scope,companyId:'foreign'}); } catch { rejected=true; } if(!rejected) process.exit(1);";
+    const imports =
+      moduleMode === 'esm'
+        ? "import * as assessments from '@spottoai/types-package/framework-assessments';"
+        : "const assessments = require('@spottoai/types-package/framework-assessments');";
+    const checks =
+      "const scope = assessments.parseAssessmentNativeScope({providerName:'azure',scopeType:'subscription',scopeId:'sub-1'}); if(scope.scopeId!=='sub-1'||typeof assessments.parseScopeScanManifest!=='function'||typeof assessments.parseScopeScanRawFinding!=='function'||typeof assessments.parseAssessmentAccess!=='function'||assessments.parseLegacyFrameworkCatalogue!==undefined||assessments.FRAMEWORK_ASSESSMENT_LIMITS.pageDecodedBytes!==1048576) process.exit(1); let rejected=false; try { assessments.parseAssessmentNativeScope({...scope,companyId:'foreign'}); } catch { rejected=true; } if(!rejected) process.exit(1);";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
   }
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'commonjs', '--moduleResolution', 'node', 'framework-assessments.consumer.ts'], consumerRoot);
-  run(tscCommand, ['--noEmit', '--strict', '--skipLibCheck', '--target', 'ES2020', '--module', 'NodeNext', '--moduleResolution', 'NodeNext', 'framework-assessments.consumer.ts'], consumerRoot);
-  process.stdout.write('Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments consumer fixture verified.\n');
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'commonjs',
+      '--moduleResolution',
+      'node',
+      'framework-assessments.consumer.ts',
+    ],
+    consumerRoot
+  );
+  run(
+    tscCommand,
+    [
+      '--noEmit',
+      '--strict',
+      '--skipLibCheck',
+      '--target',
+      'ES2020',
+      '--module',
+      'NodeNext',
+      '--moduleResolution',
+      'NodeNext',
+      'framework-assessments.consumer.ts',
+    ],
+    consumerRoot
+  );
+  process.stdout.write(
+    'Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments consumer fixture verified.\n'
+  );
 } finally {
   await rm(tempRoot, { recursive: true, force: true });
 }

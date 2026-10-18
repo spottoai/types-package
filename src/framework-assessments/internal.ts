@@ -1,7 +1,8 @@
+import { TerminalAssessmentError } from './failures';
 import { FRAMEWORK_ASSESSMENT_LIMITS as limits, type AssessmentJsonValue } from './contracts';
 
 export const invalid = (field: string): never => {
-  throw new Error(`Invalid framework assessment field: ${field}.`);
+  throw new TerminalAssessmentError(`invalid-assessment-field:${field}`);
 };
 const forbidden = new Set(['__proto__', 'prototype', 'constructor']);
 const hasControls = (value: string, allowFormatting = false): boolean => {
@@ -24,12 +25,6 @@ export const shape = (value: unknown, required: readonly string[], optional: rea
   if (required.some(key => !Object.prototype.hasOwnProperty.call(row, key)) || Object.keys(row).some(key => !allowed.has(key)))
     return invalid('object keys');
   return row;
-};
-/** Legacy readers project known fields while the boundary's safe-JSON pass still inspects every field. */
-export const legacyShape = (value: unknown, required: readonly string[]): Record<string, unknown> => {
-  const row = record(value, required.join('/'));
-  if (required.some(key => !Object.prototype.hasOwnProperty.call(row, key))) return invalid('object keys');
-  return Object.fromEntries(required.map(key => [key, row[key]]));
 };
 export const text = (value: unknown, maximum: number = limits.textLength, allowEmpty = true): string => {
   if (typeof value !== 'string' || value.length > maximum || (!allowEmpty && (!value.trim() || value.trim() !== value))) return invalid('text');

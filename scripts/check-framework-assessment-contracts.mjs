@@ -5,16 +5,118 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 
 const require = createRequire(import.meta.url);
-const root = resolve(import.meta.dirname, '..');
+const root = process.env.FRAMEWORK_CONTRACT_ROOT ? resolve(process.env.FRAMEWORK_CONTRACT_ROOT) : resolve(import.meta.dirname, '..');
 const hash = 'a'.repeat(64);
 const scope = { providerName: 'azure', scopeType: 'subscription', scopeId: 'sub-1' };
-const reference = { sourceVersion: '5.45.0', bundleSha256: hash, frameworkId: 'future-framework', catalogueSha256: hash, catalogueContentSha256: hash };
-const source = { name: 'prowler', version: '5.45.0', requestId: 'request-1', eventId: 'event-1', requestedAt: '2026-10-18T00:00:00.000Z', assessedAt: '2026-10-18T00:01:00.000Z' };
-const finding = { id: hash, checkId: 'check-1', resourceId: '/subscriptions/sub-1/resourceGroups/rg', status: 'PASS', collectionStatus: 'verified', severity: 'low', message: 'Observed', controlIds: ['control-1'], resourceMatch: 'matched', resource: { name: 'resource', type: 'Example/type' } };
-const control = { controlId: 'control-1', status: 'passed', reason: 'all-required-checks-evaluated', requiredScopes: ['subscription'], statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 }, checkCounts: { evaluated: 1, blocked: 0, manual: 0, notApplicable: 0, notAssessed: 0 } };
-const catalogue = { schemaVersion: 2, sourceVersion: '5.45.0', frameworkId: 'future-framework', name: 'Future framework', version: '', description: '', catalogueSha256: hash, attribution: { project: 'Prowler', url: 'https://github.com/prowler-cloud/prowler' }, controls: [{ controlId: 'control-1', title: 'Control', description: '', checkIds: ['check-1'], attributes: [], metadata: {} }], checks: [{ checkId: 'check-1', title: 'Check', description: '', risk: '', severity: 'low', service: '', resourceType: '', categories: ['security'], references: ['https://example.test/reference'], scopeTypes: ['subscription'], remediation: { recommendation: { text: '', url: '' }, code: { cli: '', nativeIaC: '', other: '', terraform: '' } } }], unavailableCheckIds: [] };
-const index = { schemaVersion: 2, providerName: 'azure', sourceVersion: '5.45.0', bundleSha256: hash, frameworks: [{ frameworkId: catalogue.frameworkId, aliases: ['future'], name: catalogue.name, version: '', description: '', catalogueSha256: hash, catalogueContentSha256: hash, scopeTypes: ['subscription'] }] };
-const assessment = { schemaVersion: 2, generationSha256: hash, scope, frameworkId: catalogue.frameworkId, frameworkName: catalogue.name, frameworkVersion: '', catalogue: reference, source, coverage: 'complete', summary: { findingCount: 1, statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 } }, access: { status: 'complete', checks: [] }, controls: [control], findingPages: [{ sha256: hash, count: 1, decodedBytes: 512 }] };
+const reference = {
+  sourceVersion: '5.45.0',
+  bundleSha256: hash,
+  frameworkId: 'future-framework',
+  catalogueSha256: hash,
+  catalogueContentSha256: hash,
+};
+const source = {
+  name: 'prowler',
+  version: '5.45.0',
+  requestId: 'request-1',
+  eventId: 'event-1',
+  requestedAt: '2026-10-18T00:00:00.000Z',
+  assessedAt: '2026-10-18T00:01:00.000Z',
+};
+const finding = {
+  id: hash,
+  checkId: 'check-1',
+  resourceId: '/subscriptions/sub-1/resourceGroups/rg',
+  status: 'PASS',
+  collectionStatus: 'verified',
+  severity: 'low',
+  message: 'Observed',
+  controlIds: ['control-1'],
+  resourceMatch: 'matched',
+  resource: { name: 'resource', type: 'Example/type' },
+};
+const access = {
+  schemaVersion: 1,
+  provider: 'azure',
+  scopeType: 'subscription',
+  subscriptionId: scope.scopeId,
+  observedAt: source.assessedAt,
+  source: 'collector',
+  status: 'observations-available',
+  diagnosticsComplete: true,
+  suppressedFindingCount: 0,
+  checks: [{ checkId: 'check-1', status: 'evaluated' }],
+  issues: [],
+};
+const control = {
+  controlId: 'control-1',
+  status: 'passed',
+  confidence: 'verified',
+  reason: 'all-required-checks-evaluated',
+  requiredScopes: ['subscription'],
+  statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 },
+  checkCounts: { evaluated: 1, blocked: 0, manual: 0, notApplicable: 0, notAssessed: 0 },
+};
+const catalogue = {
+  schemaVersion: 2,
+  sourceVersion: '5.45.0',
+  frameworkId: 'future-framework',
+  name: 'Future framework',
+  version: '',
+  description: '',
+  catalogueSha256: hash,
+  attribution: { project: 'Prowler', url: 'https://github.com/prowler-cloud/prowler' },
+  controls: [{ controlId: 'control-1', title: 'Control', description: '', checkIds: ['check-1'], attributes: [], metadata: {} }],
+  checks: [
+    {
+      checkId: 'check-1',
+      title: 'Check',
+      description: '',
+      risk: '',
+      severity: 'low',
+      service: '',
+      resourceType: '',
+      categories: ['security'],
+      references: ['https://example.test/reference'],
+      scopeTypes: ['subscription'],
+      remediation: { recommendation: { text: '', url: '' }, code: { cli: '', nativeIaC: '', other: '', terraform: '' } },
+    },
+  ],
+  unavailableCheckIds: [],
+};
+const index = {
+  schemaVersion: 2,
+  providerName: 'azure',
+  sourceVersion: '5.45.0',
+  bundleSha256: hash,
+  frameworks: [
+    {
+      frameworkId: catalogue.frameworkId,
+      aliases: ['future'],
+      name: catalogue.name,
+      version: '',
+      description: '',
+      catalogueSha256: hash,
+      catalogueContentSha256: hash,
+      scopeTypes: ['subscription'],
+    },
+  ],
+};
+const assessment = {
+  schemaVersion: 2,
+  generationSha256: hash,
+  scope,
+  frameworkId: catalogue.frameworkId,
+  frameworkName: catalogue.name,
+  frameworkVersion: '',
+  catalogue: reference,
+  source,
+  coverage: 'complete',
+  summary: { findingCount: 1, statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 } },
+  access,
+  controls: [control],
+  findingPages: [{ sha256: hash, count: 1, decodedBytes: 512 }],
+};
 
 for (const [label, api] of [
   ['cjs', require(resolve(root, 'dist/framework-assessments/index.js'))],
@@ -22,58 +124,275 @@ for (const [label, api] of [
 ]) {
   assert.equal(api.canonicalAssessmentJson({ z: { b: 2, a: 1 }, a: ['é', 1] }), '{"a":["é",1],"z":{"a":1,"b":2}}');
   assert.equal(api.assessmentContentSha256({ b: 2, a: 1 }), createHash('sha256').update('{"a":1,"b":2}').digest('hex'));
-  assert.equal(api.canonicalAssessmentJson({ '10': 'ten', '2': 'two' }), '{"10":"ten","2":"two"}', 'canonical keys must sort lexically even when numeric');
+  assert.equal(
+    api.canonicalAssessmentJson({ 10: 'ten', 2: 'two' }),
+    '{"10":"ten","2":"two"}',
+    'canonical keys must sort lexically even when numeric'
+  );
   assert.deepEqual(api.parseFrameworkCatalogueDocument(catalogue), catalogue, label);
   assert.deepEqual(api.parseFrameworkCatalogueIndexDocument(index), index, label);
   assert.deepEqual(api.parseFrameworkAssessmentDocument(assessment), assessment, label);
   assert.deepEqual(api.parseFrameworkFindingPageDocument({ schemaVersion: 2, items: [finding] }), { schemaVersion: 2, items: [finding] });
-  assert.deepEqual(api.parseAssessmentNativeScope({ providerName: 'aws', scopeType: 'account', scopeId: '123456789012' }), { providerName: 'aws', scopeType: 'account', scopeId: '123456789012' });
-  const reject = (parser, mutate, fixture) => { const value = structuredClone(fixture); mutate(value); assert.throws(() => parser(value), label); };
-  reject(api.parseAssessmentNativeScope, v => { v.companyId = 'comp-foreign'; }, scope);
-  reject(api.parseAssessmentNativeScope, v => { v.scopeId = '../another'; }, scope);
-  reject(api.parseAssessmentNativeScope, v => { v.providerName = 'aws'; }, scope);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].checkIds = ['missing']; }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.checks.push(v.checks[0]); }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.checks[0].categories = ['']; }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].metadata = JSON.parse('{"__proto__":{}}'); }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].metadata = { constructor: {} }; }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].metadata = { n: Number.NaN }; }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].metadata.self = v.controls[0].metadata; }, catalogue);
-  reject(api.parseFrameworkCatalogueDocument, v => { v.controls[0].metadata = { Id: 'duplicate' }; }, catalogue);
-  for (const url of ['javascript:alert(1)', 'https://user:pass@example.test', 'https://example.test\\path', 'https://example.test/%zz', 'https://example.test:99999', 'http:///missing-host', 'https://bad host/', 'https://[::::]/', 'https://999.999.999.999/']) {
-    reject(api.parseFrameworkCatalogueDocument, v => { v.checks[0].references = [url]; }, catalogue);
+  assert.deepEqual(api.parseAssessmentNativeScope({ providerName: 'aws', scopeType: 'account', scopeId: '123456789012' }), {
+    providerName: 'aws',
+    scopeType: 'account',
+    scopeId: '123456789012',
+  });
+  const reject = (parser, mutate, fixture) => {
+    const value = structuredClone(fixture);
+    mutate(value);
+    assert.throws(() => parser(value), label);
+  };
+  reject(
+    api.parseAssessmentNativeScope,
+    v => {
+      v.companyId = 'comp-foreign';
+    },
+    scope
+  );
+  reject(
+    api.parseAssessmentNativeScope,
+    v => {
+      v.scopeId = '../another';
+    },
+    scope
+  );
+  reject(
+    api.parseAssessmentNativeScope,
+    v => {
+      v.providerName = 'aws';
+    },
+    scope
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].checkIds = ['missing'];
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.checks.push(v.checks[0]);
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.checks[0].categories = [''];
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].metadata = JSON.parse('{"__proto__":{}}');
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].metadata = { constructor: {} };
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].metadata = { n: Number.NaN };
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].metadata.self = v.controls[0].metadata;
+    },
+    catalogue
+  );
+  reject(
+    api.parseFrameworkCatalogueDocument,
+    v => {
+      v.controls[0].metadata = { Id: 'duplicate' };
+    },
+    catalogue
+  );
+  for (const url of [
+    'javascript:alert(1)',
+    'https://user:pass@example.test',
+    'https://example.test\\path',
+    'https://example.test/%zz',
+    'https://example.test:99999',
+    'http:///missing-host',
+    'https://bad host/',
+    'https://[::::]/',
+    'https://999.999.999.999/',
+  ]) {
+    reject(
+      api.parseFrameworkCatalogueDocument,
+      v => {
+        v.checks[0].references = [url];
+      },
+      catalogue
+    );
   }
-  reject(api.parseFrameworkCatalogueIndexDocument, v => { v.frameworks[0].aliases = [v.frameworks[0].frameworkId]; }, index);
-  reject(api.parseFrameworkAssessmentDocument, v => { v.summary.findingCount = 2; }, assessment);
-  reject(api.parseFrameworkAssessmentDocument, v => { delete v.generationSha256; }, assessment);
-  reject(api.parseFrameworkAssessmentDocument, v => { v.findingPages[0].count = 2; }, assessment);
-  reject(api.parseFrameworkAssessmentDocument, v => { v.catalogue.frameworkId = 'other'; }, assessment);
-  reject(api.parseFrameworkAssessmentDocument, v => { v.source.assessedAt = '2026-02-30T00:00:00.000Z'; }, assessment);
-  reject(api.parseFrameworkAssessmentDocument, v => { v.controls[0].status = 'passed'; v.controls[0].checkCounts.blocked = 1; }, assessment);
-  reject(api.parseFrameworkFinding, v => { v.companyId = 'company'; }, finding);
-  reject(api.parseFrameworkFinding, v => { v.controlIds.push(v.controlIds[0]); }, finding);
-  reject(api.parseFrameworkFinding, v => { v.checkId = 'check\u0000'; }, finding);
+  reject(
+    api.parseFrameworkCatalogueIndexDocument,
+    v => {
+      v.frameworks[0].aliases = [v.frameworks[0].frameworkId];
+    },
+    index
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      v.summary.findingCount = 2;
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      delete v.generationSha256;
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      v.findingPages[0].count = 2;
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      v.catalogue.frameworkId = 'other';
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      v.source.assessedAt = '2026-02-30T00:00:00.000Z';
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkAssessmentDocument,
+    v => {
+      v.controls[0].status = 'passed';
+      v.controls[0].checkCounts.blocked = 1;
+    },
+    assessment
+  );
+  reject(
+    api.parseFrameworkFinding,
+    v => {
+      v.companyId = 'company';
+    },
+    finding
+  );
+  reject(
+    api.parseFrameworkFinding,
+    v => {
+      v.controlIds.push(v.controlIds[0]);
+    },
+    finding
+  );
+  reject(
+    api.parseFrameworkFinding,
+    v => {
+      v.checkId = 'check\u0000';
+    },
+    finding
+  );
   assert.throws(() => api.parseFrameworkFindingPageDocument({ schemaVersion: 2, items: Array(1001).fill(finding) }));
   const largeFindings = Array.from({ length: 100 }, (_, i) => ({ ...finding, id: `finding-${i}`, message: 'x'.repeat(20000) }));
   assert.throws(() => api.parseFrameworkFindingPageDocument({ schemaVersion: 2, items: largeFindings }));
   assert.throws(() => api.parseAssessmentPageReference({ sha256: hash, count: 1, decodedBytes: 1048577 }));
   const accessor = { ...catalogue };
-  Object.defineProperty(accessor, 'description', { enumerable: true, get() { throw new Error('getter evaluated'); } });
-  assert.throws(() => api.parseFrameworkCatalogueDocument(accessor), error => !error.message.includes('getter evaluated'));
-  const legacy = { ...catalogue, schemaVersion: 1 };
-  assert.deepEqual(api.parseLegacyFrameworkCatalogue(legacy), legacy);
-  assert.deepEqual(api.parseLegacyFrameworkCatalogue({ ...legacy, privatePath: 'private/value' }), legacy);
-  reject(api.parseLegacyFrameworkCatalogue, v => { v.controls[0].metadata = { a: { a: { a: { a: { a: { a: { a: { a: { a: {} } } } } } } } } }; }, legacy);
-  const legacyIndex = { schemaVersion: 1, provider: 'azure', sourceVersion: '5.45.0', frameworks: index.frameworks.map(({ catalogueContentSha256, ...entry }) => entry) };
-  assert.deepEqual(api.parseLegacyFrameworkCatalogueIndex(legacyIndex), legacyIndex);
+  Object.defineProperty(accessor, 'description', {
+    enumerable: true,
+    get() {
+      throw new Error('getter evaluated');
+    },
+  });
+  assert.throws(
+    () => api.parseFrameworkCatalogueDocument(accessor),
+    error => !error.message.includes('getter evaluated')
+  );
+  assert.equal(api.parseLegacyFrameworkCatalogue, undefined);
+  assert.throws(() => api.parseFrameworkCatalogueDocument({ ...catalogue, schemaVersion: 1 }));
   assert.equal(api.requireFrameworkId('unknown-future-framework'), 'unknown-future-framework');
-  const summary = { schemaVersion: 2, scope, sourceVersion: '5.45.0', generationSha256: hash, frameworks: [{ frameworkId: catalogue.frameworkId, frameworkName: catalogue.name, frameworkVersion: '', catalogue: reference, source, coverage: 'complete', findingCount: 1, controlStatusCounts: { failed: 0, passed: 1, partial: 0, manual: 0, 'not-applicable': 0, 'not-assessed': 0 } }] };
+  const summary = {
+    schemaVersion: 2,
+    scope,
+    sourceVersion: '5.45.0',
+    generationSha256: hash,
+    frameworks: [
+      {
+        frameworkId: catalogue.frameworkId,
+        frameworkName: catalogue.name,
+        frameworkVersion: '',
+        catalogue: reference,
+        source,
+        coverage: 'complete',
+        findingCount: 1,
+        statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 },
+        access: { status: access.status },
+        controlStatusCounts: { failed: 0, passed: 1, partial: 0, manual: 0, 'not-applicable': 0, 'not-assessed': 0 },
+      },
+    ],
+  };
   assert.deepEqual(api.parseFrameworkAssessmentSummaryDocument(summary), summary);
-  reject(api.parseFrameworkAssessmentSummaryDocument, v => { v.frameworks[0].catalogue.sourceVersion = '6.0.0'; }, summary);
-  const observation = { id: hash, upstreamId: 'upstream-id', checkId: 'check-1', resourceId: finding.resourceId, status: 'PASS', collectionStatus: 'verified', severity: 'Low', message: 'Observed', reviewNotes: [], frameworkMappings: { 'Future-framework': ['control-1'] }, evidenceCount: 1 };
+  reject(
+    api.parseFrameworkAssessmentSummaryDocument,
+    v => {
+      v.frameworks[0].catalogue.sourceVersion = '6.0.0';
+    },
+    summary
+  );
+  const observation = {
+    id: hash,
+    upstreamId: 'upstream-id',
+    checkId: 'check-1',
+    resourceId: finding.resourceId,
+    status: 'PASS',
+    collectionStatus: 'verified',
+    severity: 'Low',
+    message: 'Observed',
+    reviewNotes: [],
+    frameworkMappings: { 'Future-framework': ['control-1'] },
+    evidenceCount: 1,
+  };
   assert.deepEqual(api.parseScopeScanEvidencePageDocument({ schemaVersion: 2, items: [observation] }), { schemaVersion: 2, items: [observation] });
-  assert.deepEqual(api.parseScopeScanRawPageDocument({ schemaVersion: 2, items: [{ arbitrary: [null, true, 1, 'source'] }] }), { schemaVersion: 2, items: [{ arbitrary: [null, true, 1, 'source'] }] });
-  const manifest = { schemaVersion: 2, scope, sourceVersion: '5.45.0', catalogueBundleSha256: hash, request: { requestId: source.requestId, requestedAt: source.requestedAt }, audit: { companyId: 'comp-audit-only' }, attemptId: 'attempt-1', generatedAt: source.assessedAt, exitCode: 0, rawFindingCount: 1, findingCount: 1, quarantinedFindingCount: 0, statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 }, access: { status: 'complete' }, selectedCheckIds: ['check-1'], rawPages: [{ sha256: hash, count: 1, decodedBytes: 100 }], observationPages: [{ sha256: hash, count: 1, decodedBytes: 500 }] };
+  assert.deepEqual(api.parseScopeScanRawPageDocument({ schemaVersion: 2, items: [{ arbitrary: [null, true, 1, 'source'] }] }), {
+    schemaVersion: 2,
+    items: [{ arbitrary: [null, true, 1, 'source'] }],
+  });
+  const manifest = {
+    schemaVersion: 2,
+    scope,
+    sourceVersion: '5.45.0',
+    catalogueBundleSha256: hash,
+    request: { requestId: source.requestId, requestedAt: source.requestedAt },
+    audit: { companyId: 'comp-audit-only' },
+    attemptId: 'attempt-1',
+    generatedAt: source.assessedAt,
+    exitCode: 0,
+    rawFindingCount: 1,
+    findingCount: 1,
+    quarantinedFindingCount: 0,
+    statusCounts: { PASS: 1, FAIL: 0, MANUAL: 0 },
+    access,
+    selectedCheckIds: ['check-1'],
+    rawPages: [{ sha256: hash, count: 1, decodedBytes: 100 }],
+    observationPages: [{ sha256: hash, count: 1, decodedBytes: 500 }],
+  };
   assert.deepEqual(api.parseScopeScanManifest(manifest), manifest);
   const repeatedRaw = structuredClone(manifest);
   repeatedRaw.rawPages.push(structuredClone(repeatedRaw.rawPages[0]));
@@ -84,21 +403,178 @@ for (const [label, api] of [
   repeatedEvidence.findingCount = 2;
   repeatedEvidence.statusCounts.PASS = 2;
   assert.throws(() => api.parseScopeScanManifest(repeatedEvidence), 'normalized evidence pages still require unique content');
-  reject(api.parseScopeScanManifest, v => { v.findingCount = 2; }, manifest);
-  reject(api.parseScopeScanManifest, v => { v.rawFindingCount = 0; }, manifest);
-  reject(api.parseScopeScanManifest, v => { v.rawPages[0].decodedBytes = 1048577; }, manifest);
-  reject(api.parseScopeScanManifest, v => { v.audit.bootstrapSubscriptionId = '../bad'; }, manifest);
-  const completion = { schemaVersion: 2, type: 'prowler.scope-scan.completed.v2', eventId: source.eventId, scope, requestId: source.requestId, attemptId: 'attempt-1', sourceVersion: '5.45.0', manifestSha256: hash, observedAt: source.assessedAt };
+  reject(
+    api.parseScopeScanManifest,
+    v => {
+      v.findingCount = 2;
+    },
+    manifest
+  );
+  reject(
+    api.parseScopeScanManifest,
+    v => {
+      v.rawFindingCount = 0;
+    },
+    manifest
+  );
+  reject(
+    api.parseScopeScanManifest,
+    v => {
+      v.rawPages[0].decodedBytes = 1048577;
+    },
+    manifest
+  );
+  reject(
+    api.parseScopeScanManifest,
+    v => {
+      v.audit.bootstrapSubscriptionId = '../bad';
+    },
+    manifest
+  );
+  const quarantinedManifest = structuredClone(manifest);
+  quarantinedManifest.rawFindingCount = 2;
+  quarantinedManifest.quarantinedFindingCount = 1;
+  assert.deepEqual(
+    api.parseScopeScanManifest(quarantinedManifest),
+    quarantinedManifest,
+    'omitted unsafe rows still count as quarantined raw findings'
+  );
+  reject(
+    api.parseFrameworkControlAssessment,
+    v => {
+      v.confidence = 'unverified';
+    },
+    control
+  );
+  assert.equal(
+    api.parseFrameworkControlAssessment({ ...control, status: 'failed', confidence: 'unverified', statusCounts: { PASS: 0, FAIL: 1, MANUAL: 0 } })
+      .status,
+    'failed'
+  );
+  const raw = {
+    cloud: { provider: 'azure', account: { uid: scope.scopeId } },
+    metadata: { event_code: 'check-1', product: { version: '5.45.0' } },
+    resources: [{ uid: finding.resourceId }],
+    status_code: 'PASS',
+    severity: 'Low',
+    message: 'Observed',
+    finding_info: { uid: 'upstream-id' },
+    unmapped: { compliance: { framework: ['control-1'] } },
+  };
+  const expected = { scope, sourceVersion: '5.45.0', selectedCheckIds: ['check-1'] };
+  assert.deepEqual(api.parseScopeScanRawFinding(raw, expected), {
+    checkId: 'check-1',
+    resourceId: finding.resourceId.toLowerCase(),
+    status: 'PASS',
+    severity: 'Low',
+    message: 'Observed',
+    upstreamId: 'upstream-id',
+    frameworkMappings: { framework: ['control-1'] },
+  });
+  assert.equal(api.parseScopeScanRawFinding({ ...raw, message: null }, expected), null);
+  assert.throws(
+    () => api.parseScopeScanRawFinding({ ...raw, cloud: { provider: 'aws', account: { uid: scope.scopeId } }, message: null }, expected),
+    api.TerminalAssessmentError
+  );
+  assert.throws(
+    () => api.parseScopeScanRawFinding({ ...raw, metadata: { ...raw.metadata, product: { version: '9.0.0' } } }, expected),
+    api.TerminalAssessmentError
+  );
+  const deep = structuredClone(raw);
+  deep.data = {};
+  let node = deep.data;
+  for (let i = 0; i < 12; i++) {
+    node.child = {};
+    node = node.child;
+  }
+  assert.equal(api.parseScopeScanRawFinding(deep, expected), null);
+  assert.throws(() => api.parseScopeScanRawItem(deep), api.TerminalAssessmentError);
+  assert.throws(() => api.parseScopeScanRawPageDocument({ schemaVersion: 2, items: [deep] }), api.TerminalAssessmentError);
+  assert.throws(() => api.parseAssessmentAccess({ ...access, rawPath: 'private/path' }), api.TerminalAssessmentError);
+  assert.throws(
+    () =>
+      api.parseAssessmentAccess({
+        ...access,
+        issues: [
+          { capability: 'reader', reason: 'collection-error', affectedCheckIds: ['check-1'], readPermissionGuidance: [], origin: 'arbitrary' },
+        ],
+      }),
+    api.TerminalAssessmentError
+  );
+  assert.throws(
+    () =>
+      api.parseAssessmentAccess({
+        ...access,
+        checks: [
+          { checkId: 'check-1', status: 'evaluated' },
+          { checkId: 'check-1', status: 'unknown' },
+        ],
+      }),
+    api.TerminalAssessmentError
+  );
+  const unknownAccess = structuredClone(access);
+  unknownAccess.checks[0].status = 'unknown';
+  assert.doesNotThrow(() => api.validateScopeScanAccess({ ...manifest, access: unknownAccess }, [observation]));
+  assert.throws(
+    () => api.validateScopeScanAccess({ ...manifest, access: { ...unknownAccess, diagnosticsComplete: false } }, [observation]),
+    api.TerminalAssessmentError
+  );
+  const completion = {
+    schemaVersion: 2,
+    type: 'prowler.scope-scan.completed.v2',
+    eventId: source.eventId,
+    scope,
+    requestId: source.requestId,
+    attemptId: 'attempt-1',
+    sourceVersion: '5.45.0',
+    manifestSha256: hash,
+    observedAt: source.assessedAt,
+  };
   assert.deepEqual(api.parseScopeScanCompletion(completion), completion);
-  reject(api.parseScopeScanCompletion, v => { v.rawContainer = 'private'; }, completion);
-  reject(api.parseScopeScanCompletion, v => { v.scope.companyId = 'comp'; }, completion);
-  const status = { schemaVersion: 2, scope, sourceVersion: '5.45.0', requestId: source.requestId, requestedAt: source.requestedAt, updatedAt: source.assessedAt, state: 'failed', reason: 'input-too-large', retryable: false, attempt: 1 };
+  reject(
+    api.parseScopeScanCompletion,
+    v => {
+      v.rawContainer = 'private';
+    },
+    completion
+  );
+  reject(
+    api.parseScopeScanCompletion,
+    v => {
+      v.scope.companyId = 'comp';
+    },
+    completion
+  );
+  const status = {
+    schemaVersion: 2,
+    scope,
+    sourceVersion: '5.45.0',
+    requestId: source.requestId,
+    requestedAt: source.requestedAt,
+    updatedAt: source.assessedAt,
+    state: 'failed',
+    reason: 'input-too-large',
+    retryable: false,
+    attempt: 1,
+  };
   assert.deepEqual(api.parseScopeScanStatusDocument(status), status);
-  reject(api.parseScopeScanStatusDocument, v => { v.retryable = 'false'; }, status);
-  reject(api.parseScopeScanStatusDocument, v => { v.updatedAt = '2026-10-17T00:00:00.000Z'; }, status);
+  reject(
+    api.parseScopeScanStatusDocument,
+    v => {
+      v.retryable = 'false';
+    },
+    status
+  );
+  reject(
+    api.parseScopeScanStatusDocument,
+    v => {
+      v.updatedAt = '2026-10-17T00:00:00.000Z';
+    },
+    status
+  );
   const before = structuredClone(assessment);
   const parsed = api.parseFrameworkAssessmentDocument(assessment);
-  parsed.access.checks.push('mutation');
+  parsed.access.checks.push({ checkId: 'mutation', status: 'unknown' });
   assert.deepEqual(assessment, before, 'parsed JSON must not alias caller-owned objects');
 }
 console.log('Framework assessment CJS/ESM contracts passed.');

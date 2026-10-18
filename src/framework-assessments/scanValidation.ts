@@ -1,4 +1,5 @@
 import { FRAMEWORK_ASSESSMENT_LIMITS as limits } from './contracts';
+import { parseAssessmentAccess } from './accessValidation';
 import type {
   AssessmentJsonValue,
   EvidenceObservation,
@@ -84,7 +85,7 @@ export const parseScopeScanManifest = (value: unknown): ScopeScanManifest => {
     findingCount: number(row.findingCount),
     quarantinedFindingCount: number(row.quarantinedFindingCount),
     statusCounts: parseFrameworkFindingStatusCounts(row.statusCounts),
-    access: record(row.access, 'access') as Record<string, AssessmentJsonValue>,
+    access: parseAssessmentAccess(row.access),
     selectedCheckIds: unique(list(row.selectedCheckIds).map(value => identifier(value))),
     rawPages: list(row.rawPages, limits.pages).map(parseAssessmentPageReference),
     observationPages: list(row.observationPages, limits.pages).map(parseAssessmentPageReference),
@@ -98,7 +99,7 @@ export const parseScopeScanManifest = (value: unknown): ScopeScanManifest => {
   unique(result.observationPages.map(page => page.sha256));
   if (
     result.generatedAt < result.request.requestedAt ||
-    result.rawPages.reduce((sum, page) => sum + page.count, 0) !== result.rawFindingCount ||
+    result.rawPages.reduce((sum, page) => sum + page.count, 0) !== result.rawFindingCount - result.quarantinedFindingCount ||
     result.observationPages.reduce((sum, page) => sum + page.count, 0) !== result.findingCount ||
     Object.values(result.statusCounts).reduce((sum, count) => sum + count, 0) !== result.findingCount ||
     result.quarantinedFindingCount > result.rawFindingCount

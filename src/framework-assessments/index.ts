@@ -3,3 +3,6 @@ export * from './contracts';
 export * from './validation';
 export * from './scanValidation';
 export * from './digest';
+export * from './accessValidation';
+export * from './rawValidation';
+export * from './failures';

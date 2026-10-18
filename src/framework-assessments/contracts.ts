@@ -96,6 +96,8 @@ export type FrameworkControlStatusCounts = Record<FrameworkControlStatus, number
 export interface FrameworkControlAssessment {
   controlId: string;
   status: FrameworkControlStatus;
+  /** Whether all evidence required to establish this control outcome was verified. */
+  confidence: 'verified' | 'unverified';
   reason: string;
   requiredScopes: AssessmentScopeType[];
   statusCounts: FrameworkFindingStatusCounts;
@@ -122,8 +124,7 @@ export interface FrameworkAssessmentDocument {
   source: FrameworkAssessmentSource;
   coverage: FrameworkAssessmentCoverage;
   summary: { findingCount: number; statusCounts: FrameworkFindingStatusCounts };
-  /** Legacy access details are bounded plain JSON pending a separate access-contract migration. */
-  access: { [key: string]: AssessmentJsonValue };
+  access: AssessmentAccess;
   controls: FrameworkControlAssessment[];
   findingPages: AssessmentPageReference[];
 }
@@ -136,6 +137,8 @@ export interface FrameworkAssessmentSummaryEntry {
   coverage: FrameworkAssessmentCoverage;
   findingCount: number;
   controlStatusCounts: FrameworkControlStatusCounts;
+  statusCounts: FrameworkFindingStatusCounts;
+  access: AssessmentAccessSummary;
 }
 export interface FrameworkAssessmentSummaryDocument {
   schemaVersion: 2;
@@ -177,7 +180,7 @@ export interface ScopeScanManifest {
   findingCount: number;
   quarantinedFindingCount: number;
   statusCounts: FrameworkFindingStatusCounts;
-  access: Record<string, AssessmentJsonValue>;
+  access: AssessmentAccess;
   selectedCheckIds: string[];
   rawPages: AssessmentPageReference[];
   observationPages: AssessmentPageReference[];
@@ -226,3 +229,56 @@ export const FRAMEWORK_ASSESSMENT_LIMITS = Object.freeze({
   jsonDepth: 12,
   jsonNodes: 500000,
 });
+
+export type AssessmentAccessStatus = 'observations-available' | 'partial' | 'blocked' | 'unknown';
+export interface AssessmentAccessSummary {
+  status: AssessmentAccessStatus;
+  reason?: string;
+}
+export interface AssessmentCollectionIssue {
+  capability: string;
+  reason: 'missing-permission' | 'access-denied' | 'authentication-failed' | 'license-required' | 'throttled' | 'collection-error';
+  httpStatus?: number;
+  providerErrorCode?: string;
+  origin?: 'service-collection' | 'provider-initialization' | 'tenant-domain-lookup' | 'check-execution' | 'output-transform';
+  checkId?: string;
+  droppedFindingCount?: number;
+  affectedCheckIds: string[];
+  readPermissionGuidance: readonly string[];
+}
+export interface AssessmentAccessCheck {
+  checkId: string;
+  status: 'evaluated' | 'blocked' | 'manual-review' | 'not-observed' | 'unknown';
+}
+export interface AssessmentAccessDetails extends AssessmentAccessSummary {
+  schemaVersion: 1;
+  provider: 'azure';
+  observedAt: string;
+  source: 'collector' | 'unavailable' | 'import';
+  diagnosticsComplete: boolean;
+  suppressedFindingCount: number;
+  checks: AssessmentAccessCheck[];
+  issues: AssessmentCollectionIssue[];
+  inventory?: {
+    status?: string;
+    availability?: string;
+    complete?: boolean;
+    rawSha256?: string;
+    observationSha256?: string;
+    conformedSha256?: string;
+    resourceCount?: number;
+    observedAt?: string;
+    reason?: string;
+  };
+}
+export type AssessmentAccess = AssessmentAccessDetails &
+  ({ scopeType: 'tenant'; tenantId: string } | { scopeType: 'subscription'; subscriptionId: string });
+export interface ParsedScopeScanRawFinding {
+  checkId: string;
+  resourceId: string;
+  status: FrameworkFindingStatus;
+  severity: string;
+  message: string;
+  upstreamId: string;
+  frameworkMappings: Record<string, string[]>;
+}

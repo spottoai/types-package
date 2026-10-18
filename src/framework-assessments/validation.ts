@@ -1,4 +1,5 @@
 import { FRAMEWORK_ASSESSMENT_LIMITS as limits } from './contracts';
+import { parseAssessmentAccess, parseAssessmentAccessSummary } from './accessValidation';
 import type {
   AssessmentNativeScope,
   AssessmentPageReference,
@@ -17,22 +18,7 @@ import type {
   FrameworkControlStatusCounts,
   FrameworkCatalogueIndexEntry,
 } from './contracts';
-import {
-  choice,
-  decodedBytes,
-  httpUrl,
-  identifier,
-  input,
-  invalid,
-  legacyShape,
-  list,
-  number,
-  record,
-  shape,
-  text,
-  timestamp,
-  unique,
-} from './internal';
+import { choice, decodedBytes, httpUrl, identifier, input, invalid, list, number, record, shape, text, timestamp, unique } from './internal';
 
 export const requireFrameworkId = (value: unknown): string => {
   const result = identifier(value, 64);
@@ -131,11 +117,12 @@ const finding = (value: unknown): FrameworkFinding => {
   return result;
 };
 const control = (value: unknown): FrameworkControlAssessment => {
-  const row = shape(value, ['controlId', 'status', 'reason', 'requiredScopes', 'statusCounts', 'checkCounts']);
+  const row = shape(value, ['controlId', 'status', 'confidence', 'reason', 'requiredScopes', 'statusCounts', 'checkCounts']);
   const checks = shape(row.checkCounts, ['evaluated', 'blocked', 'manual', 'notApplicable', 'notAssessed']);
   const result: FrameworkControlAssessment = {
     controlId: identifier(row.controlId),
     status: choice(row.status, controlStatuses),
+    confidence: choice(row.confidence, ['verified', 'unverified']),
     reason: identifier(row.reason, 1024),
     requiredScopes: scopes(row.requiredScopes),
     statusCounts: findingCounts(row.statusCounts),
@@ -149,7 +136,8 @@ const control = (value: unknown): FrameworkControlAssessment => {
   };
   if (
     result.status === 'passed' &&
-    (result.statusCounts.FAIL ||
+    (result.confidence !== 'verified' ||
+      result.statusCounts.FAIL ||
       result.statusCounts.MANUAL ||
       result.checkCounts.blocked ||
       result.checkCounts.manual ||
@@ -160,8 +148,9 @@ const control = (value: unknown): FrameworkControlAssessment => {
   if (result.status === 'failed' && !result.statusCounts.FAIL) return invalid('failed control evidence');
   return result;
 };
-const catalogue = (value: unknown, schemaVersion: 1 | 2): FrameworkCatalogueDocument | LegacyFrameworkCatalogueDocument => {
-  const catalogueShape = schemaVersion === 1 ? legacyShape : shape;
+const catalogue = (value: unknown): FrameworkCatalogueDocument => {
+  const catalogueShape = shape;
+  const schemaVersion = 2;
   let genericNodes = 0;
   // One budget covers generic attributes and metadata across every control.
   const genericJson = (value: unknown, depth = 0): AssessmentJsonValue => {
@@ -259,17 +248,8 @@ const catalogue = (value: unknown, schemaVersion: 1 | 2): FrameworkCatalogueDocu
     unavailableCheckIds,
   };
 };
-const indexEntry = (value: unknown, legacy: boolean): FrameworkCatalogueIndexEntry | LegacyFrameworkCatalogueIndexEntry => {
-  const row = (legacy ? legacyShape : shape)(value, [
-    'frameworkId',
-    'aliases',
-    'name',
-    'version',
-    'description',
-    'catalogueSha256',
-    'scopeTypes',
-    ...(legacy ? [] : ['catalogueContentSha256']),
-  ]);
+const indexEntry = (value: unknown): FrameworkCatalogueIndexEntry => {
+  const row = shape(value, ['frameworkId', 'aliases', 'name', 'version', 'description', 'catalogueSha256', 'scopeTypes', 'catalogueContentSha256']);
   const result = {
     frameworkId: requireFrameworkId(row.frameworkId),
     aliases: unique(list(row.aliases, 1000).map(requireFrameworkId)),
@@ -279,9 +259,9 @@ const indexEntry = (value: unknown, legacy: boolean): FrameworkCatalogueIndexEnt
     catalogueSha256: requireAssessmentHash(row.catalogueSha256),
     scopeTypes: scopes(row.scopeTypes),
   };
-  return legacy ? result : { ...result, catalogueContentSha256: requireAssessmentHash(row.catalogueContentSha256) };
+  return { ...result, catalogueContentSha256: requireAssessmentHash(row.catalogueContentSha256) };
 };
-const indexNames = (entries: LegacyFrameworkCatalogueIndexEntry[]): void => {
+const indexNames = (entries: FrameworkCatalogueIndexEntry[]): void => {
   unique(entries.flatMap(entry => [entry.frameworkId, ...entry.aliases]));
 };
 
@@ -292,12 +272,11 @@ export const parseFrameworkAssessmentSource = (value: unknown): FrameworkAssessm
 export const parseFrameworkFinding = (value: unknown): FrameworkFinding => finding(input(value));
 export const parseFrameworkControlAssessment = (value: unknown): FrameworkControlAssessment => control(input(value));
 export const parseFrameworkFindingStatusCounts = (value: unknown): FrameworkFindingStatusCounts => findingCounts(input(value));
-export const parseFrameworkCatalogueDocument = (value: unknown): FrameworkCatalogueDocument =>
-  catalogue(input(value), 2) as FrameworkCatalogueDocument;
+export const parseFrameworkCatalogueDocument = (value: unknown): FrameworkCatalogueDocument => catalogue(input(value));
 export const parseFrameworkCatalogueIndexDocument = (value: unknown): FrameworkCatalogueIndexDocument => {
   const row = shape(input(value), ['schemaVersion', 'providerName', 'sourceVersion', 'bundleSha256', 'frameworks']);
   if (row.schemaVersion !== 2) return invalid('schemaVersion');
-  const frameworks = list(row.frameworks, limits.frameworks).map(value => indexEntry(value, false) as FrameworkCatalogueIndexEntry);
+  const frameworks = list(row.frameworks, limits.frameworks).map(value => indexEntry(value));
   indexNames(frameworks);
   const providerName = choice(row.providerName, ['azure', 'aws']);
   if (frameworks.some(entry => entry.scopeTypes.some(kind => (providerName === 'azure' ? kind === 'account' : kind !== 'account'))))
@@ -339,13 +318,17 @@ export const parseFrameworkAssessmentDocument = (value: unknown): FrameworkAsses
     source: source(row.source),
     coverage: coverage(row.coverage),
     summary: { findingCount: number(summary.findingCount), statusCounts: findingCounts(summary.statusCounts) },
-    access: record(row.access, 'access') as Record<string, AssessmentJsonValue>,
+    access: parseAssessmentAccess(row.access),
     controls: list(row.controls).map(control),
     findingPages: list(row.findingPages, limits.pages).map(pageReference),
   };
   unique(result.controls.map(item => item.controlId));
   unique(result.findingPages.map(item => item.sha256));
   if (
+    result.access.provider !== result.scope.providerName ||
+    result.access.scopeType !== result.scope.scopeType ||
+    (result.access.scopeType === 'tenant' ? result.access.tenantId : result.access.subscriptionId) !== result.scope.scopeId ||
+    result.access.observedAt !== result.source.assessedAt ||
     result.frameworkId !== result.catalogue.frameworkId ||
     result.source.version !== result.catalogue.sourceVersion ||
     Object.values(result.summary.statusCounts).reduce((sum, count) => sum + count, 0) !== result.summary.findingCount ||
@@ -368,6 +351,8 @@ export const parseFrameworkAssessmentSummaryDocument = (value: unknown): Framewo
       'coverage',
       'findingCount',
       'controlStatusCounts',
+      'statusCounts',
+      'access',
     ]);
     const result = {
       frameworkId: requireFrameworkId(item.frameworkId),
@@ -378,8 +363,11 @@ export const parseFrameworkAssessmentSummaryDocument = (value: unknown): Framewo
       coverage: coverage(item.coverage),
       findingCount: number(item.findingCount),
       controlStatusCounts: controlCounts(item.controlStatusCounts),
+      statusCounts: findingCounts(item.statusCounts),
+      access: parseAssessmentAccessSummary(item.access),
     };
     if (
+      Object.values(result.statusCounts).reduce((sum, count) => sum + count, 0) !== result.findingCount ||
       result.frameworkId !== result.catalogue.frameworkId ||
       result.catalogue.sourceVersion !== sourceVersion ||
       result.source.version !== sourceVersion
@@ -397,45 +385,4 @@ export const parseFrameworkFindingPageDocument = (value: unknown): FrameworkFind
   unique(result.items.map(item => item.id));
   if (decodedBytes(result) > limits.pageDecodedBytes) return invalid('page size');
   return result;
-};
-
-export type LegacyFrameworkCatalogueDocument = Omit<FrameworkCatalogueDocument, 'schemaVersion'> & { schemaVersion: 1 };
-export type LegacyFrameworkCatalogueIndexEntry = Omit<FrameworkCatalogueIndexEntry, 'catalogueContentSha256'>;
-export interface LegacyFrameworkCatalogueIndexDocument {
-  schemaVersion: 1;
-  provider: 'azure';
-  sourceVersion: string;
-  frameworks: LegacyFrameworkCatalogueIndexEntry[];
-}
-export interface LegacyFrameworkIdentity {
-  schemaVersion: 1;
-  id: string;
-  name: string;
-  version: string;
-  scannerId: string;
-  mappingKey: string;
-  catalogueSha256: string;
-}
-export const parseLegacyFrameworkCatalogue = (value: unknown): LegacyFrameworkCatalogueDocument =>
-  catalogue(input(value), 1) as LegacyFrameworkCatalogueDocument;
-export const parseLegacyFrameworkCatalogueIndex = (value: unknown): LegacyFrameworkCatalogueIndexDocument => {
-  const row = legacyShape(input(value), ['schemaVersion', 'provider', 'sourceVersion', 'frameworks']);
-  if (row.schemaVersion !== 1 || row.provider !== 'azure') return invalid('legacy index identity');
-  const frameworks = list(row.frameworks, limits.frameworks).map(value => indexEntry(value, true) as LegacyFrameworkCatalogueIndexEntry);
-  indexNames(frameworks);
-  if (frameworks.some(entry => entry.scopeTypes.includes('account'))) return invalid('legacy provider scope');
-  return { schemaVersion: 1, provider: 'azure', sourceVersion: requireSourceVersion(row.sourceVersion), frameworks };
-};
-export const parseLegacyFrameworkIdentity = (value: unknown): LegacyFrameworkIdentity => {
-  const row = legacyShape(input(value), ['schemaVersion', 'id', 'name', 'version', 'scannerId', 'mappingKey', 'catalogueSha256']);
-  if (row.schemaVersion !== 1) return invalid('legacy identity');
-  return {
-    schemaVersion: 1,
-    id: requireFrameworkId(row.id),
-    name: text(row.name, 512, false),
-    version: text(row.version, 256),
-    scannerId: identifier(row.scannerId),
-    mappingKey: identifier(row.mappingKey),
-    catalogueSha256: requireAssessmentHash(row.catalogueSha256),
-  };
 };
