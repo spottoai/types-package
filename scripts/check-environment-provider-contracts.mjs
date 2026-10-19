@@ -11,6 +11,26 @@ const builds = [
 const aws = { kind: 'aws-account', companyId: 'company-1', accountId: '000123456789' };
 const azure = { kind: 'azure-subscription', tenantId: 'tenant-1', companyId: 'company-1', subscriptionId: 'sub-1' };
 const tenant = { kind: 'azure-tenant', tenantId: 'tenant-1' };
+for (const [build, api] of builds.filter(([name]) => name.startsWith('root'))) {
+  const evidenceMatch = {
+    safeLabel: 'AWS account security posture',
+    portalRoute: '/company/company-1/dashboard',
+    artifactKind: 'aws-account-security-posture',
+    sourceCompletedAt: '2026-10-19T00:00:00.000Z',
+    coverageStatus: 'partial',
+    truncated: false,
+    citationIds: ['environment-call-1'],
+  };
+  for (const artifactKind of [...api.ENVIRONMENT_ARTIFACT_KINDS_V1, ...api.ENVIRONMENT_AWS_ARTIFACT_KINDS_V1]) {
+    assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, artifactKind }), true, `${build}: citation kind ${artifactKind}`);
+  }
+  for (const artifactKind of ['aws-account-secrets', 'gcp-account-summary', 'AWS-account-summary', 'aws-account-summary/', '', null]) {
+    assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, artifactKind }), false, `${build}: unsupported citation kind ${artifactKind}`);
+  }
+  for (const extension of [{ scope: aws }, { resourceId: 'bucket-1' }, { sourceBinding: {} }, { storagePath: 'environment/runs/1' }]) {
+    assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, ...extension }), false, `${build}: citation does not expose identities`);
+  }
+}
 for (const [build, api] of builds) {
   for (const name of [
     'ENVIRONMENT_PROJECTION_CONTENT_REQUIRED_KEYS_V1',

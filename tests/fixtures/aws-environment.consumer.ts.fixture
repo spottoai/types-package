@@ -1,4 +1,6 @@
 import {
+  type AIEnvironmentEvidenceMatch,
+  isAIEnvironmentEvidenceMatch,
   isEnvironmentAwsAccountScopeV1,
   isEnvironmentAwsAccountSourceBindingV1,
   isEnvironmentAwsAccountCompiledGenerationPointerV1,
@@ -28,6 +30,16 @@ import {
 } from '@spottoai/types-package/environment';
 
 const scope: EnvironmentAwsAccountScopeV1 = { kind: 'aws-account', companyId: 'company-1', accountId: '000123456789' };
+const citation: AIEnvironmentEvidenceMatch = {
+  safeLabel: 'AWS account security posture',
+  portalRoute: '/company/company-1/dashboard',
+  artifactKind: 'aws-account-security-posture',
+  sourceCompletedAt: '2026-10-19T00:00:00.000Z',
+  coverageStatus: 'partial',
+  truncated: false,
+  citationIds: ['environment-call-1'],
+};
+void isAIEnvironmentEvidenceMatch(citation);
 const subject: string = buildEnvironmentAwsAccountScopeQualifiedSubjectV1(scope);
 const artifact = buildEnvironmentAwsLogicalArtifactReferenceV1('aws-account-summary', scope);
 const resource = buildEnvironmentAwsLogicalResourceReferenceV1(

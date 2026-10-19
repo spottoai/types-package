@@ -1,4 +1,6 @@
 import type { EnvironmentArtifactKindV1, EnvironmentCoverageStateV1 } from '../environment/contracts.js';
+import type { EnvironmentAwsArtifactKindV1 } from '../environment/awsContracts.js';
+import { isEnvironmentAwsArtifactKindV1 } from '../environment/awsReferences.js';
 import { hasExactKeys, isBoundedString, isCanonicalUtcTimestamp, isNonNegativeInteger, isRecord } from '../environment/internal.js';
 import { isEnvironmentArtifactKindV1, isEnvironmentPortalRouteV1, isEnvironmentSafeLabelV1 } from '../environment/validation.js';
 
@@ -49,7 +51,7 @@ export const AI_CHAT_GROUNDED_FIGURE_ANCHOR_ATTRIBUTE_V1 = 'data-spotto-figure';
 export interface AIEnvironmentEvidenceMatch {
   safeLabel: string;
   portalRoute: string;
-  artifactKind: EnvironmentArtifactKindV1;
+  artifactKind: EnvironmentArtifactKindV1 | EnvironmentAwsArtifactKindV1;
   sourceCompletedAt: string;
   coverageStatus: AIEnvironmentEvidenceCoverageStatusV1;
   truncated: boolean;
@@ -116,7 +118,7 @@ export const isAIEnvironmentEvidenceMatch = (value: unknown): value is AIEnviron
   hasExactKeys(value, ['safeLabel', 'portalRoute', 'artifactKind', 'sourceCompletedAt', 'coverageStatus', 'truncated', 'citationIds']) &&
   isEnvironmentSafeLabelV1(value.safeLabel) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
-  isEnvironmentArtifactKindV1(value.artifactKind) &&
+  (isEnvironmentArtifactKindV1(value.artifactKind) || isEnvironmentAwsArtifactKindV1(value.artifactKind)) &&
   isCanonicalUtcTimestamp(value.sourceCompletedAt) &&
   typeof value.coverageStatus === 'string' &&
   COVERAGE_STATUSES.has(value.coverageStatus) &&

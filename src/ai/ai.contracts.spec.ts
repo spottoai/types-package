@@ -38,6 +38,20 @@ const environmentMatch: AIEnvironmentEvidenceMatch = {
   citationIds: ['environment-call-1'],
 };
 
+const awsEnvironmentMatch: AIEnvironmentEvidenceMatch = {
+  ...environmentMatch,
+  safeLabel: 'Production AWS account environment',
+  artifactKind: 'aws-account-security-posture',
+};
+
+const invalidAwsEnvironmentMatch: AIEnvironmentEvidenceMatch = {
+  ...awsEnvironmentMatch,
+  // @ts-expect-error AWS environment kinds remain a closed catalogue.
+  artifactKind: 'aws-account-secrets',
+};
+
+void [awsEnvironmentMatch, invalidAwsEnvironmentMatch];
+
 const grounding: AIChatGroundingSummary = {
   status: 'verified',
   method: 'deterministic-citation-and-value',

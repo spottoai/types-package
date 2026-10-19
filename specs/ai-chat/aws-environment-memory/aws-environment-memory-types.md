@@ -1,6 +1,6 @@
 # AWS account environment memory contracts
 
-Status: published in 1.1.50 and included in 1.1.51; consumer adoption outstanding
+Status: original contracts published; AWS Chat citation extension verified, publication pending
 Last updated: 2026-10-19
 Owner: Platform
 Approved: Yes — Jay requested the spec and types-package reviewer revisions on 2026-10-19
@@ -40,6 +40,25 @@ implementation or consumer dependency change is included.
 
 ## Verification and handoff
 
+### AWS Chat citation follow-up
+
+AWS API/Chat implementation identified one omitted client contract in published
+1.1.53: `AIEnvironmentEvidenceMatch.artifactKind` and its runtime validator only
+accepted Azure artifact kinds. This bounded extension accepts the union of the
+existing Azure and AWS artifact catalogues, using their existing guards. The
+closed client-safe envelope stays unchanged: no provider scope, resource ID,
+publication receipt, storage path or runtime handle is exposed. Unsupported kinds
+and malformed metadata remain rejected. Existing Azure guards retain their narrow
+contracts. No new package dependency or manual version bump is included.
+
+Declaration and root CJS/ESM runtime regressions failed before the fix for AWS
+artifact kinds; the packed AWS consumer also checks the widened citation type.
+Fresh `npm test` passed, including the complete build/declaration and contract
+suite and installed-tarball CJS/ESM runtime and NodeNext/legacy CommonJS consumer
+checks. `npm run lint`, changed-file Prettier and `git diff --check` passed.
+The API has a development-only packed candidate; its delivery manifest must adopt
+the actual registry version after publication. No package was published here.
+
 Fresh revision verification on 2026-10-19:
 
 - `npm test` passed, including the complete contract suite and installed-tarball
@@ -68,7 +87,7 @@ for environment commit `9da8d5c` passed lint, build, contracts, publication and
 tagging; release commit `d05ebbe` records the version. The subsequent
 [1.1.51 release](https://github.com/spottoai/types-package/actions/runs/39186130589)
 also succeeded and includes the environment contracts. This checkout's manifest
-and delivery lock now select 1.1.51.
+and delivery lock now select 1.1.53; the citation follow-up above is unpublished.
 
 Consumers must adopt a verified exact published version in their own slices.
 The current platform, engine and API manifests still select older versions; no
