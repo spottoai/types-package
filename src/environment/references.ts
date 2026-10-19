@@ -9,9 +9,9 @@ import {
   type ParsedEnvironmentLogicalEvidenceReferenceV1,
   type ParsedEnvironmentLogicalResourceReferenceV1,
 } from './contracts.js';
-import { hasControlCharacter, isBoundedString, utf8ByteLength } from './internal.js';
+import { hasControlCharacter, isBoundedString } from './internal.js';
+import { encodeEnvironmentReferencePayload, decodeEnvironmentReferencePayload as decodePayload } from './referenceEncoding.js';
 
-const BASE64URL_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 const ARTIFACT_PREFIX = 'spotto://artifact/v1/';
 const RESOURCE_PREFIX = 'spotto://resource/v1/';
 const ARTIFACT_KINDS = new Set<string>(ENVIRONMENT_ARTIFACT_KINDS_V1);
@@ -29,106 +29,6 @@ const isCanonicalScopeQualifiedSubject = (value: string): boolean => {
     );
   } catch {
     return false;
-  }
-};
-
-const encodeUtf8 = (value: string): number[] => {
-  const bytes: number[] = [];
-  for (const character of value) {
-    const codePoint = character.codePointAt(0) as number;
-    if (codePoint <= 0x7f) bytes.push(codePoint);
-    else if (codePoint <= 0x7ff) bytes.push(0xc0 | (codePoint >> 6), 0x80 | (codePoint & 0x3f));
-    else if (codePoint <= 0xffff) bytes.push(0xe0 | (codePoint >> 12), 0x80 | ((codePoint >> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
-    else bytes.push(0xf0 | (codePoint >> 18), 0x80 | ((codePoint >> 12) & 0x3f), 0x80 | ((codePoint >> 6) & 0x3f), 0x80 | (codePoint & 0x3f));
-  }
-  return bytes;
-};
-
-const encodeBase64Url = (bytes: readonly number[]): string => {
-  let output = '';
-  for (let index = 0; index < bytes.length; index += 3) {
-    const first = bytes[index] as number;
-    const second = bytes[index + 1];
-    const third = bytes[index + 2];
-    output += BASE64URL_ALPHABET[first >> 2];
-    output += BASE64URL_ALPHABET[((first & 0x03) << 4) | ((second ?? 0) >> 4)];
-    if (second !== undefined) output += BASE64URL_ALPHABET[((second & 0x0f) << 2) | ((third ?? 0) >> 6)];
-    if (third !== undefined) output += BASE64URL_ALPHABET[third & 0x3f];
-  }
-  return output;
-};
-
-const decodeBase64Url = (value: string): number[] | null => {
-  if (!/^[A-Za-z0-9_-]+$/u.test(value) || value.length % 4 === 1) return null;
-  const bytes: number[] = [];
-  for (let index = 0; index < value.length; index += 4) {
-    const first = BASE64URL_ALPHABET.indexOf(value[index] as string);
-    const second = BASE64URL_ALPHABET.indexOf(value[index + 1] as string);
-    const thirdCharacter = value[index + 2];
-    const fourthCharacter = value[index + 3];
-    const third = thirdCharacter === undefined ? 0 : BASE64URL_ALPHABET.indexOf(thirdCharacter);
-    const fourth = fourthCharacter === undefined ? 0 : BASE64URL_ALPHABET.indexOf(fourthCharacter);
-    if (first < 0 || second < 0 || third < 0 || fourth < 0) return null;
-    bytes.push((first << 2) | (second >> 4));
-    if (thirdCharacter !== undefined) bytes.push(((second & 0x0f) << 4) | (third >> 2));
-    if (fourthCharacter !== undefined) bytes.push(((third & 0x03) << 6) | fourth);
-  }
-  return encodeBase64Url(bytes) === value ? bytes : null;
-};
-
-const decodeUtf8 = (bytes: readonly number[]): string | null => {
-  let output = '';
-  for (let index = 0; index < bytes.length; ) {
-    const first = bytes[index] as number;
-    let codePoint: number;
-    let continuationCount: number;
-    if (first <= 0x7f) {
-      codePoint = first;
-      continuationCount = 0;
-    } else if (first >= 0xc2 && first <= 0xdf) {
-      codePoint = first & 0x1f;
-      continuationCount = 1;
-    } else if (first >= 0xe0 && first <= 0xef) {
-      codePoint = first & 0x0f;
-      continuationCount = 2;
-    } else if (first >= 0xf0 && first <= 0xf4) {
-      codePoint = first & 0x07;
-      continuationCount = 3;
-    } else return null;
-    if (index + continuationCount >= bytes.length) return null;
-    for (let offset = 1; offset <= continuationCount; offset += 1) {
-      const next = bytes[index + offset] as number;
-      if ((next & 0xc0) !== 0x80) return null;
-      codePoint = (codePoint << 6) | (next & 0x3f);
-    }
-    if (
-      (continuationCount === 2 && codePoint < 0x800) ||
-      (continuationCount === 3 && codePoint < 0x10000) ||
-      (codePoint >= 0xd800 && codePoint <= 0xdfff) ||
-      codePoint > 0x10ffff
-    ) {
-      return null;
-    }
-    output += String.fromCodePoint(codePoint);
-    index += continuationCount + 1;
-  }
-  return output;
-};
-
-const decodePayload = (value: string): string | null => {
-  const bytes = decodeBase64Url(value);
-  if (bytes === null || bytes.length > ENVIRONMENT_CONTRACT_LIMITS_V1.logicalReferencePayloadBytes) return null;
-  const decoded = decodeUtf8(bytes);
-  if (decoded === null || encodeBase64Url(encodeUtf8(decoded)) !== value) return null;
-  return decoded;
-};
-
-const assertReferencePayload = (value: string, label: string, maximumScalars: number): void => {
-  if (!isBoundedString(value, maximumScalars, { trimmed: true, controls: true })) {
-    throw new TypeError(`${label} must be a non-empty, trimmed, bounded Unicode string without control characters.`);
-  }
-  if (utf8ByteLength(value) > ENVIRONMENT_CONTRACT_LIMITS_V1.logicalReferencePayloadBytes) {
-    throw new RangeError(`${label} exceeds the V1 logical-reference payload limit.`);
   }
 };
 
@@ -152,11 +52,13 @@ export const buildEnvironmentLogicalArtifactReferenceV1 = (
   canonicalScopeQualifiedSubject: string
 ): EnvironmentLogicalArtifactReferenceV1 => {
   if (!ARTIFACT_KINDS.has(artifactKind)) throw new TypeError('Unsupported V1 environment artifact kind.');
-  assertReferencePayload(canonicalScopeQualifiedSubject, 'Artifact subject', ENVIRONMENT_CONTRACT_LIMITS_V1.customerStringScalars);
+
+  // Bound untrusted input before JSON parsing. Encoding also validates Unicode and bytes.
+  const encodedSubject = encodeEnvironmentReferencePayload(canonicalScopeQualifiedSubject);
   if (!isCanonicalScopeQualifiedSubject(canonicalScopeQualifiedSubject)) {
     throw new TypeError('Artifact subject is not a canonical V1 scope-qualified subject.');
   }
-  return `${ARTIFACT_PREFIX}${artifactKind}/${encodeBase64Url(encodeUtf8(canonicalScopeQualifiedSubject))}`;
+  return `${ARTIFACT_PREFIX}${artifactKind}/${encodedSubject}`;
 };
 
 /** Parses a V1 logical artifact reference into its allowlisted kind and opaque subject. */
@@ -176,9 +78,11 @@ export const parseEnvironmentLogicalArtifactReferenceV1 = (value: unknown): Pars
 
 /** Builds an opaque logical Azure resource reference from a canonical resource ID. */
 export const buildEnvironmentLogicalResourceReferenceV1 = (canonicalAzureResourceId: string): EnvironmentLogicalResourceReferenceV1 => {
-  assertReferencePayload(canonicalAzureResourceId, 'Azure resource ID', ENVIRONMENT_CONTRACT_LIMITS_V1.scopeIdentifierScalars);
+  if (!isBoundedString(canonicalAzureResourceId, ENVIRONMENT_CONTRACT_LIMITS_V1.scopeIdentifierScalars, { trimmed: true, controls: true })) {
+    throw new TypeError('Azure resource ID must be bounded and safe.');
+  }
   if (!isCanonicalAzureResourceId(canonicalAzureResourceId)) throw new TypeError('Azure resource ID is not canonical or safe.');
-  return `${RESOURCE_PREFIX}${encodeBase64Url(encodeUtf8(canonicalAzureResourceId))}`;
+  return `${RESOURCE_PREFIX}${encodeEnvironmentReferencePayload(canonicalAzureResourceId)}`;
 };
 
 /** Parses a V1 logical resource reference into a canonical Azure resource ID. */

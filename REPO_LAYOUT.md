@@ -1,5 +1,5 @@
 Status: living
-Last updated: 2026-03-05
+Last updated: 2026-10-19
 Owner: Platform
 
 # types-package Repo Layout
@@ -39,6 +39,10 @@ Folder `README.md` files are authoritative for local implementation details.
   privileged-access projections, exported from the root and `/governance`.
   Provider collection/evaluation and artifact persistence remain engine-owned.
 - `src/ai/`, `src/common/`, `src/identity/`, `src/feedbacks/`, `src/unknown/` shared and specialized contracts.
+- `src/environment/` bounded Azure subscription/tenant and AWS account environment
+  contracts, strict provider-specific guards and canonical logical references,
+  exported from the root and `/environment`. AWS contract delivery is tracked in
+  `specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md`.
 
 ## Specs and tooling
 

@@ -59,6 +59,7 @@
     "src/common/cloudGovernance.contracts.spec.ts",
     "src/common/resourceGraph.contracts.spec.ts",
     "src/environment/environment.contracts.spec.ts",
+    "src/environment/awsEnvironment.contracts.spec.ts",
     "src/features-and-permissions/access.contracts.spec.ts",
     "src/identity/microsoftSignInAdminConsent.contracts.spec.ts",
     "src/portfolio/portfolioProjections.contracts.spec.ts",

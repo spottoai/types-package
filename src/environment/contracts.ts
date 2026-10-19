@@ -84,11 +84,7 @@ export type EnvironmentEffortV1 = (typeof ENVIRONMENT_EFFORTS_V1)[number];
 export type EnvironmentMoneyBasisV1 = 'billed' | 'amortized' | 'unknown';
 export type EnvironmentSavingsAdditivityV1 = 'additive' | 'scenario-non-additive';
 export type EnvironmentMoneyProvenanceV1 =
-  | 'subscription-summary'
-  | 'subscription-resources'
-  | 'cost-savings-summary'
-  | 'savings-aggregate'
-  | 'recommendation';
+  'subscription-summary' | 'subscription-resources' | 'cost-savings-summary' | 'savings-aggregate' | 'recommendation';
 
 export interface EnvironmentScopeV1 {
   kind: 'azure-subscription';
@@ -158,12 +154,12 @@ export interface EnvironmentSavingsBasisV1 {
   containsLegacySavings?: boolean;
 }
 
-export interface EnvironmentMoneyValueV1 {
+export interface EnvironmentMoneyValueV1<Provenance extends string = EnvironmentMoneyProvenanceV1> {
   amount: string;
   currencyCode: string;
   basis: EnvironmentMoneyBasisV1;
   period: string;
-  provenance: EnvironmentMoneyProvenanceV1;
+  provenance: Provenance;
   savingsAdditivity?: EnvironmentSavingsAdditivityV1;
   /** Observed money only: how the producer sourced the amount. */
   spendSource?: EnvironmentSpendSourceV1;
@@ -521,13 +517,17 @@ export interface EnvironmentSecureScoreSectionV1 {
   sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
 
-export interface EnvironmentSubscriptionProjectionV1 {
+export interface EnvironmentSubscriptionProjectionV1 extends EnvironmentProjectionContentV1 {
   schemaVersion: 1;
   scope: EnvironmentScopeV1;
   sourceBinding: EnvironmentSourceBindingV1;
   generatedAt: string;
   subscription: EnvironmentSubscriptionSummaryV1;
   sourceCoverage: EnvironmentSourceCoverageV1;
+}
+
+/** Bounded content shared by provider-specific environment envelopes. */
+export interface EnvironmentProjectionContentV1 {
   estateSummary: EnvironmentEstateSummaryV1;
   costSummary: EnvironmentCostSummaryV1;
   serviceFamilyRollups: EnvironmentBoundedListV1<EnvironmentCostRollupV1>;

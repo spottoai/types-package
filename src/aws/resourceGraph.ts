@@ -7,6 +7,7 @@ import {
 import type { AttributeValue } from '../common/resourceIdentity.js';
 import type { AwsPublicArtifactForbiddenCredentialFields } from './publicArtifacts.js';
 import { AWS_ACCOUNT_ID_PATTERN, AWS_REGION_PATTERN, isAwsCredentialKey, isForbiddenAwsPublicKey } from './validationHelpers.js';
+import { parseAwsArn } from './arn.js';
 
 /** CloudFormation-style resource type, for example `AWS::EC2::Instance`. */
 export const AWS_RESOURCE_TYPE_PATTERN = /^AWS::[A-Za-z0-9]+::[A-Za-z0-9]+$/;
@@ -22,7 +23,6 @@ export type AwsResourceGraphArtifact<AccountId extends string = string, RunId ex
 > &
   AwsPublicArtifactForbiddenCredentialFields;
 
-const ARN_PATTERN = /^arn:(aws(?:-[a-z0-9-]+)?):[^:]+:([^:]*):([^:]*):.+$/;
 const AVAILABILITY_ZONE_KEY_PATTERN = /(?:^a|A)vailabilityZone(?:Name)?s?$/;
 
 const AWS_RESOURCE_GRAPH_RULES: ResourceGraphValidationOptions<'aws'> = {
@@ -51,9 +51,9 @@ export function validateAwsResourceGraphArtifact(value: unknown): AwsResourceGra
  * (S3, IAM) are allowed; attribute references may also name AWS-owned (`aws`) resources.
  */
 function validateScopedArn(value: string, scope: ResourceGraphNodeScope, field: string, allowAwsOwned: boolean): void {
-  const match = ARN_PATTERN.exec(value);
-  if (!match) throw new Error(`${field} must be a canonical AWS ARN.`);
-  const [, , arnRegion, arnAccountId] = match;
+  const arn = parseAwsArn(value);
+  if (!arn) throw new Error(`${field} must be a canonical AWS ARN.`);
+  const { region: arnRegion, accountId: arnAccountId } = arn;
   const expectedRegion = scope.region === AWS_GLOBAL_REGION ? '' : scope.region;
   if (arnRegion !== '' && arnRegion !== expectedRegion) throw new Error(`${field} ARN Region must match its node Region.`);
   if (arnAccountId !== '' && arnAccountId !== scope.accountId && !(allowAwsOwned && arnAccountId === 'aws'))

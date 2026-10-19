@@ -126,6 +126,9 @@ Specs/governance/*
 !specs/ai-chat/
 specs/ai-chat/*
 !specs/ai-chat/ai-chat-analytical-artifacts-types-package.md
+!specs/ai-chat/aws-environment-memory/
+specs/ai-chat/aws-environment-memory/*
+!specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md
 !Specs/alerts/
 !Specs/alerts/*.md
 !Specs/data-quality/

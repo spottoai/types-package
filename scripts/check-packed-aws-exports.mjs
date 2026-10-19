@@ -385,6 +385,9 @@ try {
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/aws-environment.consumer.ts.fixture'), join(consumerRoot, 'aws-environment.consumer.ts'));
+  await copyFile(join(packageRoot, 'scripts/check-aws-environment-contracts.mjs'), join(consumerRoot, 'aws-environment.check.mjs'));
+  await copyFile(join(packageRoot, 'scripts/check-environment-provider-contracts.mjs'), join(consumerRoot, 'environment-provider.check.mjs'));
   await copyFile(portfolioFixturePath, join(consumerRoot, 'portfolio.consumer.ts'));
   await copyFile(governanceFixturePath, join(consumerRoot, 'cloud-governance.consumer.ts'));
   await copyFile(resourceStrategySchedulerFixturePath, join(consumerRoot, 'resource-strategy-scheduler.consumer.ts'));
@@ -438,6 +441,7 @@ try {
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
       'cloud-governance.consumer.ts',
+      'aws-environment.consumer.ts',
       'resource-strategy-scheduler.consumer.ts',
       'reporting-jobs.consumer.ts',
       'service-retirement.consumer.ts',
@@ -459,6 +463,8 @@ try {
     consumerRoot
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
+  run(process.execPath, ['aws-environment.check.mjs'], consumerRoot);
+  run(process.execPath, ['environment-provider.check.mjs'], consumerRoot);
   // The narrow public governance contract must work in both module formats and legacy TS resolution.
   run(
     tscCommand,
@@ -473,6 +479,7 @@ try {
       '--moduleResolution',
       'node',
       'cloud-governance.consumer.ts',
+      'aws-environment.consumer.ts',
     ],
     consumerRoot
   );

@@ -1,0 +1,97 @@
+import {
+  isEnvironmentAwsAccountScopeV1,
+  isEnvironmentAwsAccountSourceBindingV1,
+  isEnvironmentAwsAccountCompiledGenerationPointerV1,
+  isEnvironmentAwsAccountProjectionV1,
+  type EnvironmentAwsAccountScopeV1,
+  type EnvironmentAwsAccountSourceBindingV1,
+  type EnvironmentAwsAccountCompiledGenerationPointerV1,
+  type EnvironmentAwsAccountProjectionV1,
+  type EnvironmentScopeV1,
+} from '@spottoai/types-package';
+import {
+  ENVIRONMENT_AWS_ARTIFACT_KINDS_V1,
+  buildEnvironmentAwsAccountScopeQualifiedSubjectV1,
+  buildEnvironmentAwsLogicalArtifactReferenceV1,
+  buildEnvironmentAwsLogicalResourceReferenceV1,
+  parseEnvironmentAwsLogicalArtifactReferenceV1,
+  parseEnvironmentAwsLogicalResourceReferenceV1,
+  isEnvironmentAwsLogicalEvidenceReferenceV1,
+  isEnvironmentAwsAccountProjectionV1 as narrowProjectionGuard,
+  type EnvironmentAwsAccountProjectionV1 as NarrowProjection,
+  type EnvironmentAnyScopeV1,
+  parseEnvironmentAnyLogicalEvidenceReferenceV1,
+  isEnvironmentAwsResourceIdV1,
+  isEnvironmentAwsResourceTypeV1,
+  isEnvironmentAwsArtifactKindV1,
+  environmentAwsScopesEqual,
+} from '@spottoai/types-package/environment';
+
+const scope: EnvironmentAwsAccountScopeV1 = { kind: 'aws-account', companyId: 'company-1', accountId: '000123456789' };
+const subject: string = buildEnvironmentAwsAccountScopeQualifiedSubjectV1(scope);
+const artifact = buildEnvironmentAwsLogicalArtifactReferenceV1('aws-account-summary', scope);
+const resource = buildEnvironmentAwsLogicalResourceReferenceV1(
+  scope,
+  'AWS::Lambda::Function',
+  'arn:aws:lambda:ap-southeast-2:000123456789:function:MixedCaseFunction'
+);
+declare const unknownValue: unknown;
+if (isEnvironmentAwsAccountScopeV1(unknownValue)) {
+  const accountId: string = unknownValue.accountId;
+  void accountId;
+}
+if (isEnvironmentAwsAccountSourceBindingV1(unknownValue)) {
+  const binding: EnvironmentAwsAccountSourceBindingV1 = unknownValue;
+  void binding;
+}
+if (isEnvironmentAwsAccountCompiledGenerationPointerV1(unknownValue)) {
+  const pointer: EnvironmentAwsAccountCompiledGenerationPointerV1 = unknownValue;
+  void pointer;
+}
+if (isEnvironmentAwsAccountProjectionV1(unknownValue) && narrowProjectionGuard(unknownValue)) {
+  const projection: EnvironmentAwsAccountProjectionV1 = unknownValue;
+  const narrowProjection: NarrowProjection = projection;
+  const label: string = narrowProjection.account.safeLabel;
+  void label;
+}
+const parsed = parseEnvironmentAwsLogicalResourceReferenceV1(resource);
+if (parsed) {
+  const resourceType: string = parsed.resourceType;
+  const accountId: string = parsed.scope.accountId;
+  void [resourceType, accountId];
+}
+// @ts-expect-error Numeric account IDs lose leading zeros.
+const numericAccount: EnvironmentAwsAccountScopeV1 = { ...scope, accountId: 123456789 };
+// @ts-expect-error Existing Azure consumers retain Azure-specific scope typing.
+const azureScope: EnvironmentScopeV1 = scope;
+
+void [
+  ENVIRONMENT_AWS_ARTIFACT_KINDS_V1,
+  subject,
+  artifact,
+  resource,
+  parseEnvironmentAwsLogicalArtifactReferenceV1(artifact),
+  isEnvironmentAwsLogicalEvidenceReferenceV1(resource),
+  numericAccount,
+  azureScope,
+];
+
+const anyScope: EnvironmentAnyScopeV1 = scope;
+const anyEvidence = parseEnvironmentAnyLogicalEvidenceReferenceV1(resource);
+if (anyEvidence?.provider === 'aws') {
+  const scopedAccount: string = anyEvidence.scope.accountId;
+  void scopedAccount;
+}
+// @ts-expect-error Validator construction is internal in the root export.
+import type { EnvironmentProjectionValidationPolicyV1 } from '@spottoai/types-package';
+// @ts-expect-error Validator construction is internal in the environment export.
+import type { EnvironmentProjectionValidationPolicyV1 as NarrowInternalPolicy } from '@spottoai/types-package/environment';
+void [
+  anyScope,
+  isEnvironmentAwsResourceIdV1(scope, 'arn:aws:iam::aws:policy/ReadOnlyAccess'),
+  isEnvironmentAwsResourceTypeV1('AWS::EC2::Instance'),
+  isEnvironmentAwsArtifactKindV1('aws-account-security-posture'),
+  environmentAwsScopesEqual(scope, scope),
+  undefined as unknown as EnvironmentProjectionValidationPolicyV1,
+  undefined as unknown as NarrowInternalPolicy,
+];

@@ -1,6 +1,6 @@
 # Azure-compatible costs without tax metadata
 
-Status: implemented locally; coordinated package release and consumer adoption required
+Status: implemented; published package 1.1.41 adopted and verified
 Last updated: 2026-10-16
 Owner: Jay
 Parent: [Cross-repository contract](../../core/specs/billing/azure-compatible-costs-without-tax-metadata.md)
@@ -80,10 +80,20 @@ No compatibility reader, data rewrite, deployment or publication is performed.
 
 ## Generated output and local consumers
 The full verified build is preserved at workspace
-`.codex-local-packages/types-package-cost-shape`, with API/AWS/UI node_modules
-linked there. Restored 309 unrelated tracked dist changes and removed 361
+`.codex-local-packages/types-package-cost-shape`, used through temporary links during initial verification. Restored 309 unrelated tracked dist changes and removed 361
 unrelated rebuildable untracked outputs caused by a stale baseline distribution.
 Tax-related emitted files/deletion remain scoped in the diff. No source changes
-were reverted. Package/consumer versions and lockfiles are unchanged; publish and
-adopt a real registry release before delivery. Final consumer smoke: 28 API tests
+were reverted. The user subsequently published and adopted registry version 1.1.41;
+current installations and lockfiles are verified below. Final consumer smoke: 28 API tests
 pass after relinking.
+
+## Published package adoption verified (2026-10-16)
+Jay published the shared package and adopted it in cloud-engine-aws, UI and API.
+All three manifests select `^1.1.41`; their lockfiles and installed packages resolve
+to `1.1.41`. All installations are ordinary package directories, with no local
+symlinks. Every one of the 704 JavaScript/declaration files in each installation
+matches the previously verified complete build byte-for-byte. Fresh checks using
+these published installations pass: API 28 tests, AWS projector/reducer 51 tests,
+and UI aggregation/history 38 tests. No dependency manifests or lockfiles were
+modified by this verification. Application deployment and live derived-artifact
+regeneration have not been independently verified by this check.

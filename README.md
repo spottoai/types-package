@@ -20,6 +20,20 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 ## Features
 
+AWS account environment memory contracts are available from the root and
+`@spottoai/types-package/environment`: `EnvironmentAwsAccountScopeV1`,
+`EnvironmentAwsAccountSourceBindingV1`, `EnvironmentAwsAccountProjectionV1` and
+`EnvironmentAwsAccountCompiledGenerationPointerV1`, with matching guards and
+scoped logical-reference helpers. They bind derived documents to one completed
+direct Portal publication with exact source ETag receipts, preserve native
+identity case and monetary provenance, and reject cross-company/account evidence.
+Existing Azure environment contracts and guards retain their Azure scope. A reference is an identifier, never permission
+to read data; consumers must authorize scope, prove resource ownership and verify
+the exact publication receipts before and after reads. Provider-neutral scope
+and evidence helpers select Azure/AWS without widening the existing Azure guards.
+These source additions require a new package release and consumer adoption; runtime AWS memory remains planned. See the
+[types contract and handoff](specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md).
+
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
 - **Private Registry**: Published to GitHub Packages (not public npm)
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support
