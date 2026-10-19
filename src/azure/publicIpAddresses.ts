@@ -1,5 +1,6 @@
 import type { ArtifactFreshnessVerdict } from '../common/artifactEvidence.js';
 import type { PerimeterServiceClassification, PublicIpAddressesNetworkAccessEvaluation } from './publicIpAddressesNetworkAccess';
+import type { PublicIpAddressesGatewayRouteEvaluation } from './publicIpAddressesGatewayRoute';
 
 export const PUBLIC_IP_ADDRESSES_SCHEMA_VERSION = '2026-05-02.public-ip-addresses-v1' as const;
 
@@ -271,6 +272,8 @@ export interface PublicIpAddressesTrafficPath {
   destination: PublicIpAddressesTrafficPathDestination;
   /** Optional configured inbound filtering evidence; omission means unverified. */
   networkAccess?: PublicIpAddressesNetworkAccessEvaluation;
+  /** Optional configured gateway route/WAF evidence. Missing metadata is unassessed, never safe or unused. */
+  gatewayRoute?: PublicIpAddressesGatewayRouteEvaluation;
 }
 
 export interface PublicIpAddressesConnectivity {

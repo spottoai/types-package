@@ -17,6 +17,12 @@ import {
   isPerimeterServiceClassification,
   isPublicIpAddressesNetworkAccessEvaluation,
   PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS,
+  type PublicIpAddressesGatewayRouteEvaluation,
+  type PublicIpAddressesGatewayForwarding,
+  type PublicIpAddressesWafAssessment,
+  isPublicIpAddressesGatewayRouteEvaluation,
+  isPublicIpAddressesWafAssessment,
+  PUBLIC_IP_ADDRESSES_GATEWAY_ROUTE_LIMITS,
 } from '@spottoai/types-package';
 
 const serviceHint: PerimeterServiceClassification = {
@@ -40,6 +46,16 @@ const networkEvidence: PublicIpAddressesNetworkAccessEvaluation = {
 };
 const optionalService: Pick<PublicIpAddressesExposure, 'service'> = {};
 const optionalNetwork: Pick<PublicIpAddressesTrafficPath, 'networkAccess'> = {};
+const optionalGateway: Pick<PublicIpAddressesTrafficPath, 'gatewayRoute'> = {};
+const gatewayGuard: (value: unknown) => value is PublicIpAddressesGatewayRouteEvaluation = isPublicIpAddressesGatewayRouteEvaluation;
+const wafGuard: (value: unknown) => value is PublicIpAddressesWafAssessment = isPublicIpAddressesWafAssessment;
+const gatewayLimit: 3 = PUBLIC_IP_ADDRESSES_GATEWAY_ROUTE_LIMITS.associations;
+const gatewayForwarding: PublicIpAddressesGatewayForwarding = {
+  kind: 'unresolved', pool: null, settings: null, target: null, sourceIds: [], reason: 'not_collected',
+};
+// @ts-expect-error a redirect target cannot assert a detached workload.
+const invalidGatewayForwarding: PublicIpAddressesGatewayForwarding = { kind: 'detached_nic' };
+void [optionalGateway, gatewayGuard, wafGuard, gatewayLimit, gatewayForwarding, invalidGatewayForwarding];
 const extensionGuard: (value: unknown) => value is PublicIpAddressesNetworkAccessEvaluation = isPublicIpAddressesNetworkAccessEvaluation;
 const serviceGuard: (value: unknown) => value is PerimeterServiceClassification = isPerimeterServiceClassification;
 const networkLimit: 64 = PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS.partitions;

@@ -545,6 +545,21 @@ try {
     consumerRoot
   );
   const perimeterExportChecks = `
+    assert.equal(typeof root.isPublicIpAddressesGatewayRouteEvaluation, 'function');
+    assert.equal(typeof root.isPublicIpAddressesWafAssessment, 'function');
+    assert.equal(root.PUBLIC_IP_ADDRESSES_GATEWAY_ROUTE_LIMITS.associations, 3);
+    const waf = { state: 'unverified', associations: [], selectedAssociationId: null, sourceIds: [], incompleteReasons: ['not_collected'], omitted: { associations: 0 } };
+    assert.equal(root.isPublicIpAddressesWafAssessment(waf), true);
+    assert.equal(root.isPublicIpAddressesGatewayRouteEvaluation({
+      assessedAt: '2026-10-19T00:00:00.000Z', freshness: 'unknown',
+      coverage: { status: 'unavailable', sources: [], issues: [] },
+      gateway: { id: '/fictional/gateway', name: null, type: null },
+      listener: { resource: null, frontendIPConfiguration: null, protocol: 'unknown', port: null, hostNames: [] },
+      route: { kind: 'unknown', routingRule: null, priority: null, urlPathMap: null, pathRule: null, pathRuleOrder: null, pathPatterns: [], rewriteRuleSet: null, pathReevaluation: 'unknown' },
+      forwarding: { kind: 'unresolved', reason: 'not_collected', pool: null, settings: null, target: null, sourceIds: [] },
+      waf, incompleteReasons: ['not_collected'], omitted: { hostNames: 0, pathPatterns: 0, sources: 0 }
+    }), true);
+    assert.equal(root.isPublicIpAddressesGatewayRouteEvaluation({ forwarding: { kind: 'redirect' } }), false);
     assert.equal(typeof root.isPerimeterServiceClassification, 'function');
     assert.equal(typeof root.isPublicIpAddressesNetworkAccessEvaluation, 'function');
     assert.equal(root.PUBLIC_IP_ADDRESSES_NETWORK_ACCESS_LIMITS.partitions, 64);

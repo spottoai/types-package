@@ -625,8 +625,14 @@ export interface CloudAccount
   tenantId?: string;
   secret?: string;
   secretExpiresAt?: Date;
+  /** Server-authored creation time; preserved through edits and credential rotation. */
   createdAt: Date;
   updatedAt: Date;
+  /**
+   * Server-authored creator email, retained independently of the user directory.
+   * API-key callers use their authenticated synthetic email alias. Legacy rows
+   * may contain an empty value or an opaque user ID. Immutable after creation.
+   */
   createdBy: string;
   status: string;
   objectives?: SurveyResponse[];

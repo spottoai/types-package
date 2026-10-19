@@ -1,4 +1,9 @@
 import type { PublicIpAddressesReport } from './publicIpAddresses';
+import type {
+  PublicIpAddressesGatewayRouteEvaluation,
+  PublicIpAddressesWafAssessment,
+  PublicIpAddressesGatewayForwarding,
+} from './publicIpAddressesGatewayRoute';
 import { PUBLIC_IP_ADDRESSES_SCHEMA_VERSION } from './publicIpAddresses';
 import type {
   PublicIpAddressesConnectivity,
@@ -717,6 +722,41 @@ const configuredPath: PublicIpAddressesTrafficPath = { ...remappedRdpPath, netwo
 const configuredExposure: typeof exposureWithPaths = { ...exposureWithPaths, service: configuredService };
 // Legacy Azure and AWS objects remain valid with neither additive field.
 const legacyNetworkAccessOmission: Pick<PublicIpAddressesTrafficPath, 'networkAccess'> = {};
+const legacyGatewayOmission: Pick<PublicIpAddressesTrafficPath, 'gatewayRoute'> = {};
+const gatewayWaf: PublicIpAddressesWafAssessment = {
+  state: 'unverified',
+  associations: [],
+  selectedAssociationId: null,
+  sourceIds: [],
+  incompleteReasons: ['not_collected'],
+  omitted: { associations: 0 },
+};
+const gatewayEvidence: PublicIpAddressesGatewayRouteEvaluation = {
+  gateway: remappedRdpPath.hops[0],
+  assessedAt: '2026-10-19T00:00:00.000Z',
+  freshness: 'unknown',
+  coverage: { status: 'unavailable', sources: [], issues: [] },
+  listener: { resource: null, frontendIPConfiguration: null, protocol: 'unknown', port: null, hostNames: [] },
+  route: {
+    kind: 'unknown',
+    routingRule: null,
+    priority: null,
+    urlPathMap: null,
+    pathRule: null,
+    pathRuleOrder: null,
+    pathPatterns: [],
+    rewriteRuleSet: null,
+    pathReevaluation: 'unknown',
+  },
+  forwarding: { kind: 'unresolved', reason: 'not_collected', pool: null, settings: null, target: null, sourceIds: [] },
+  waf: gatewayWaf,
+  incompleteReasons: ['not_collected'],
+  omitted: { hostNames: 0, pathPatterns: 0, sources: 0 },
+};
+const gatewayPath: PublicIpAddressesTrafficPath = { ...remappedRdpPath, gatewayRoute: gatewayEvidence };
+// @ts-expect-error backend forwarding must carry a configured target.
+const invalidGatewayForwarding: PublicIpAddressesGatewayForwarding = { kind: 'backend', pool: remappedRdpPath.hops[0] };
+void [legacyGatewayOmission, gatewayWaf, gatewayPath, invalidGatewayForwarding];
 const legacyServiceOmission: Pick<typeof exposureWithPaths, 'service'> = {};
 const invalidServiceCategory: PerimeterServiceClassification = {
   ...configuredService,

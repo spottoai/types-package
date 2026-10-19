@@ -237,7 +237,7 @@ not runtime validators or reachability/severity calculations. A new package
 release and engine/API/UI adoption are required before the report changes.
 See [the connectivity contract and consumer handoff](Specs/monitor/perimeter-connectivity-types.md).
 
-The unreleased paths foundation adds optional exposure `service` hints and path
+The paths foundation adds optional exposure `service` hints and path
 `networkAccess` evidence. Its root-exported extension guards validate bounded
 shapes, source references and internally consistent claims; they do not evaluate
 network rules, prove exhaustive collection or calculate priority. Configured
@@ -245,6 +245,20 @@ filter verdicts are `allowed`, `blocked` and `unverified`, separate from live
 reachability. Source collection time remains distinct from assessment time, and
 readers must re-evaluate freshness as evidence ages. Existing Azure/AWS payloads
 can omit both extensions. See [the paths contract plan](specs/security/perimeter-insights-paths-types.md).
+
+The next, unpublished increment adds optional path `gatewayRoute` evidence for
+Application Gateway listeners, ordered path matches, configured backend targets,
+redirects and WAF policy associations. Root exports include
+`PublicIpAddressesGatewayRouteEvaluation`, `PublicIpAddressesWafAssessment`,
+`PUBLIC_IP_ADDRESSES_GATEWAY_ROUTE_LIMITS` and the corresponding
+`isPublicIpAddressesGatewayRouteEvaluation` / `isPublicIpAddressesWafAssessment`
+guards. Missing higher-scope WAF policy evidence remains unverified; Prevention
+describes configuration rather than guaranteed protection. Empty backend pools
+do not establish orphan cleanup, and configured FQDNs do not establish DNS or
+live reachability. Redirect URLs exclude credentials, query strings and
+fragments. Producers must establish collection coverage; readers must check
+observation freshness. Existing reports can omit this field. Publish the package
+before adopting it in the engine and downstream readers; no UI change is included.
 
 Background report jobs (`ReportJobSpecV1`, `ReportJobRequestedV1`, the
 `reportjobs` row, statuses and failure codes, and the `jobId` identity

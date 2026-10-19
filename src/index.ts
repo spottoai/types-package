@@ -111,6 +111,8 @@ export * from './azure/governance';
 export * from './azure/publicIpAddresses';
 export * from './azure/publicIpAddressesNetworkAccess';
 export * from './azure/publicIpAddressesNetworkAccessValidation';
+export * from './azure/publicIpAddressesGatewayRoute';
+export * from './azure/publicIpAddressesGatewayRouteValidation';
 export * from './azure/workManagement';
 export * from './azure/vmPatchManagement';
 export * from './aws';
