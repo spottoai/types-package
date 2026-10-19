@@ -1,0 +1,46 @@
+import type { BillingItemState, ResourceCostSummary, ResourceOperationalState } from '@spottoai/types-package';
+
+// The UI CostItem extends ResourceCostSummary and passes these fields to its state helpers.
+interface CostItem extends ResourceCostSummary {}
+type StateFields = Pick<CostItem,
+  'active' | 'resourceOperationalState' | 'billingItemState' | 'billingItemStateReason' |
+  'supersededOn' | 'replacementFamilyKey' | 'replacementItemKey'>;
+
+// An old billing meter can be superseded while its resource is still running.
+const replacedMeter: StateFields = {
+  active: false,
+  resourceOperationalState: 'active',
+  billingItemState: 'superseded',
+  billingItemStateReason: 'replacement',
+  supersededOn: 20260512,
+  replacementFamilyKey: 'vm-compute',
+  replacementItemKey: 'current-meter',
+};
+// Billing-row state and resource lifecycle are independent; active retains its row meaning.
+const stoppedResource: StateFields = { active: true, resourceOperationalState: 'inactive', billingItemState: 'current' };
+const absentEvidence: StateFields = { active: false };
+const unknownEvidence: StateFields = { active: true, resourceOperationalState: 'unknown' };
+const resourceStates: ResourceOperationalState[] = ['active', 'inactive', 'deleted', 'unknown'];
+const billingStates: BillingItemState[] = ['current', 'historical', 'superseded'];
+const reasons: NonNullable<ResourceCostSummary['billingItemStateReason']>[] =
+  ['replacement', 'ended_window', 'deleted_resource', 'inactive_resource'];
+
+// @ts-expect-error Billing-row state is not a resource operational state.
+const invalidResourceState: ResourceOperationalState = 'current';
+// @ts-expect-error Resource state is not a billing-row state.
+const invalidBillingState: BillingItemState = 'active';
+// @ts-expect-error Missing billing evidence is omission, not an invented state.
+const invalidUnknownBillingState: BillingItemState = 'unknown';
+const invalidReason: StateFields = {
+  active: false,
+  // @ts-expect-error Only the canonical billing-row reason vocabulary is accepted.
+  billingItemStateReason: 'retired',
+};
+const invalidSupersededDate: StateFields = {
+  active: false,
+  // @ts-expect-error The published date is a numeric UTC yyyymmdd, not an ISO string.
+  supersededOn: '2026-05-12',
+};
+
+void [replacedMeter, stoppedResource, absentEvidence, unknownEvidence, resourceStates, billingStates,
+  reasons, invalidResourceState, invalidBillingState, invalidUnknownBillingState, invalidReason, invalidSupersededDate];

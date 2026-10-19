@@ -1,0 +1,17 @@
+import type { SavingsUnavailableClaimDetail, SavingsUnavailableClaimEnvelope } from '@spottoai/types-package';
+
+const claim: SavingsUnavailableClaimDetail = {
+  claimId: 'stable-claim', recommendationId: 'affected-card', resourceId: null,
+  source: 'captured-provider', reason: 'missing-pricing-reference',
+};
+const envelope: SavingsUnavailableClaimEnvelope = {
+  providerName: 'aws', providerScopeId: '123456789012', scopeKey: 'aws:123456789012:subscription-full:all',
+  generationId: 'published-run', currency: 'USD', claimCount: 1, claims: [claim],
+};
+const invalidClaim: SavingsUnavailableClaimDetail = {
+  ...claim,
+  // @ts-expect-error Unknown producer absence states are not part of the public contract.
+  reason: 'assume-zero',
+};
+void envelope;
+void invalidClaim;

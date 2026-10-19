@@ -375,6 +375,8 @@ try {
   await mkdir(consumerRoot, { recursive: true });
   await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true, type: 'module' }, null, 2));
   await copyFile(awsFixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/savings-unavailable-claims.consumer.ts.fixture'), join(consumerRoot, 'savings-unavailable-claims.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/resource-state.consumer.ts.fixture'), join(consumerRoot, 'resource-state.consumer.ts'));
   await copyFile(resourceOptimizationFixturePath, join(consumerRoot, 'resource-optimization.consumer.ts'));
   await copyFile(recommendationTracksFixturePath, join(consumerRoot, 'recommendation-tracks.consumer.ts'));
   await copyFile(recommendationWorkflowApiFixturePath, join(consumerRoot, 'recommendation-workflow-api.consumer.ts'));
@@ -429,6 +431,8 @@ try {
       '--moduleResolution',
       'NodeNext',
       'aws-public-root.consumer.ts',
+      'savings-unavailable-claims.consumer.ts',
+      'resource-state.consumer.ts',
       'resource-optimization.consumer.ts',
       'recommendation-tracks.consumer.ts',
       'recommendation-workflow-api.consumer.ts',
@@ -512,6 +516,8 @@ try {
       '--moduleResolution',
       'node',
       'resource-health.consumer.ts',
+      'savings-unavailable-claims.consumer.ts',
+      'resource-state.consumer.ts',
     ],
     consumerRoot
   );
@@ -722,6 +728,12 @@ try {
     const checks =
       "const spec = {schemaVersion:1,reportType:'sdm',scope:{cloudAccountIds:['ca-1'],subscriptionIds:['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f']},period:{kind:'previous-calendar-month'},configuration:{layout:'spotto-layout',cloudIqServiceProfile:{selectedServiceIds:[]}}}; const definition = {definitionType:'report-generation',name:'Report',timezone:'UTC',timing:{triggerType:'recurring',cadence:'monthly',dayOfMonth:'last',localTime:'09:00'},report:spec,initialMode:'active'}; if (!scheduler.isScheduleWriteRequest(definition) || !root.isReportGenerationScheduleWriteRequest(definition) || typeof jobs.validateReportJobUpdateV1 !== 'function' || typeof jobs.buildReportJobProjectionV1 !== 'function' || 'validateReportJobUpdateV1' in root) process.exit(1); jobs.buildReportJobAdmissionFingerprintV1({schemaVersion:1,report:spec}).then(hash => { if (!/^[0-9a-f]{64}$/.test(hash)) process.exit(1); });";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
+    const coverageChecks = `
+const coverage = {state:'complete',timeWindow:{start:'2026-10-01T00:00:00.000Z',end:'2026-10-17T23:59:59.999Z'},expectedRegions:['ap-southeast-2'],gaps:[],gapCount:0,gapsTruncated:false};
+if (typeof root.isActivityLogCollectionCoverage !== 'function') throw new Error('Packed public activity coverage validator export is missing');
+if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollectionCoverage({...coverage,gapCount:1})) throw new Error('Packed public activity coverage validator accepts inconsistent source proof');
+`;
+    run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + coverageChecks], consumerRoot);
   }
   run(
     process.execPath,

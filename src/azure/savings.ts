@@ -52,6 +52,31 @@ export type RecommendationSavingsUnavailableReason =
 
 export type SavingsScopeKindV2 = 'subscription-full' | 'recommendation-query' | 'resource-query';
 
+/** Captured explanation for one unavailable economic claim, independent of card/resource counts. */
+export interface SavingsUnavailableClaimDetail {
+  /** Stable producer claim identity within the provider scope, not a recommendation card ID. */
+  claimId: string;
+  recommendationId: string;
+  /** Exact captured resource identity, or null when the claim has no identified resource. */
+  resourceId: string | null;
+  source: string;
+  reason: RecommendationSavingsUnavailableReason;
+}
+
+/** Per-card detail evidence. The canonical aggregate remains the monetary and coverage authority. */
+export interface SavingsUnavailableClaimEnvelope {
+  providerName: string;
+  providerScopeId: string;
+  /** Must match the selected canonical scope, including its filter fingerprint. */
+  scopeKey: string;
+  generationId: string;
+  /** Currency of the aggregate whose coverage this evidence explains. */
+  currency: string;
+  /** Full membership count. Clipped, duplicated or malformed lists cannot certify this count. */
+  claimCount: number;
+  claims: SavingsUnavailableClaimDetail[];
+}
+
 /** Identifies the complete result scope represented by a savings aggregate. */
 export interface SavingsScopeV2 {
   kind: SavingsScopeKindV2;

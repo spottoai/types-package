@@ -8,6 +8,8 @@ import type {
   SavingsAggregateSetV2,
   SavingsAggregateV2,
   ScenarioSavingsPotentialV2,
+  SavingsUnavailableClaimDetail,
+  SavingsUnavailableClaimEnvelope,
 } from '../index.js';
 
 const scenario: ScenarioSavingsPotentialV2 = {
@@ -176,3 +178,25 @@ const commitmentCoveredRecommendation: RecommendationWithResources = {
   scenarioSavings: scenario,
 };
 void commitmentCoveredRecommendation;
+
+const unavailableClaim: SavingsUnavailableClaimDetail = {
+  claimId: 'stable-claim', recommendationId: 'affected-card', resourceId: 'affected-resource',
+  source: 'captured-provider', reason: 'missing-billing-attribution',
+};
+const unavailableClaimEnvelope: SavingsUnavailableClaimEnvelope = {
+  providerName: 'aws', providerScopeId: '123456789012', scopeKey: 'aws:123456789012:subscription-full:all',
+  generationId: 'published-run', currency: 'USD', claimCount: 1, claims: [unavailableClaim],
+};
+const invalidClaimReason: SavingsUnavailableClaimDetail = {
+  ...unavailableClaim,
+  // @ts-expect-error A captured claim retains a declared public reason, not invented copy.
+  reason: 'assume-zero',
+};
+void unavailableClaimEnvelope;
+void invalidClaimReason;
+const missingClaimGeneration: SavingsUnavailableClaimEnvelope = {
+  ...unavailableClaimEnvelope,
+  // @ts-expect-error Explanations must bind the exact published generation.
+  generationId: undefined,
+};
+void missingClaimGeneration;

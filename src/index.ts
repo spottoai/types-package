@@ -16,6 +16,7 @@ export * from './azure/nativeDiscountEligibility';
 export * from './azure/activityLogs';
 export * from './azure/activityLogAnalysis';
 export * from './azure/activityLogAnalysisValidation';
+export { isActivityLogCollectionCoverage } from './azure/activityLogCollectionCoverageValidation';
 export * from './azure/budgets';
 export * from './azure/billingGeneration';
 export * from './azure/billingArtifactGeneration';
