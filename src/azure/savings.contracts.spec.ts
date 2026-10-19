@@ -168,3 +168,11 @@ const invalidSpendBasis: CanonicalSavingsAllocationV2['provenance'] = {
 };
 void incompatibleBasisReason;
 void invalidSpendBasis;
+
+const commitmentCoveredReason: RecommendationSavingsUnavailableReason = 'commitment-covered';
+const commitmentCoveredRecommendation: RecommendationWithResources = {
+  ...withheldRecommendation,
+  savingsUnavailableReason: commitmentCoveredReason,
+  scenarioSavings: scenario,
+};
+void commitmentCoveredRecommendation;

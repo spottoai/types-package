@@ -1,3 +1,5 @@
+import type { ActivityLogCollectionCoverage } from './activityLogs';
+
 export const ACTIVITY_LOG_TAXONOMY_VERSION = 'v1' as const;
 export const ACTIVITY_LOG_ANALYSIS_VERSION = 'v1' as const;
 export const CONFORMED_ACTIVITY_ANALYSIS_SCHEMA_VERSION = 1 as const;
@@ -242,6 +244,7 @@ export interface ConformedActivityAnalysisArtifact extends ActivityLogProviderSc
     classifiedRetainedEventCount: number;
     unclassifiedRetainedEventCount: number;
     classificationState: ActivityLogClassificationState;
+    collectionCoverage?: ActivityLogCollectionCoverage;
   };
   facets: ConformedActivityAnalysisFacets;
   activitySeries: ConformedActivitySeries[];

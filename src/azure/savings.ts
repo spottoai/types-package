@@ -45,6 +45,8 @@ export type RecommendationSavingsUnavailableReason =
   | 'billing-generation-mismatch'
   | 'incompatible-cost-basis'
   | 'below-minimum-spend'
+  /** Current commitments prevent a qualified immediate billed saving; other bases remain independent. */
+  | 'commitment-covered'
   | 'missing-pricing-reference'
   | 'unsupported-pricing';
 

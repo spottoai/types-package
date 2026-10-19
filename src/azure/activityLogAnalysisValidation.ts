@@ -1,3 +1,4 @@
+import { isActivityLogCollectionCoverage } from './activityLogCollectionCoverageValidation';
 import {
   ACTIVITY_LOG_ANALYSIS_VERSION,
   ACTIVITY_LOG_EXECUTION_ORIGINS,
@@ -391,8 +392,9 @@ export function isConformedActivityAnalysisArtifact(value: unknown): value is Co
         'unclassifiedRetainedEventCount',
         'classificationState',
       ],
-      ['sourceHighWatermark', 'sourceShardFingerprint']
+      ['sourceHighWatermark', 'sourceShardFingerprint', 'collectionCoverage']
     ) ||
+    (value.source.collectionCoverage !== undefined && (!isActivityLogCollectionCoverage(value.source.collectionCoverage) || value.source.collectionCoverage.timeWindow.start.slice(0, 7) !== month || value.source.collectionCoverage.timeWindow.end.slice(0, 7) !== month)) ||
     !isCount(value.source.portalProjectionSchemaVersion) ||
     !isCount(value.source.retainedEventCount) ||
     !isCount(value.source.classifiedRetainedEventCount) ||

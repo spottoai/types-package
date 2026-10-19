@@ -16,7 +16,24 @@ export type PortalActivityLogFeedMode = 'all-advanced' | 'changes-default' | 'se
 
 export type PortalActivityLogSuppressionReason = 'autoscale' | 'operational-lookup' | 'platform' | 'non-change';
 
+/** Committed source collection proof, independent of event classification. */
+export interface ActivityLogCollectionCoverage {
+  state: 'complete' | 'partial' | 'unavailable';
+  timeWindow: { start: string; end: string };
+  expectedRegions: string[];
+  gaps: Array<{
+    region?: string;
+    start: string;
+    end: string;
+    reason: 'not-collected' | 'coverage-gap' | 'revision-unavailable' | 'expected-regions-unavailable';
+  }>;
+  /** Total merged gap intervals, including details omitted by the 128-row bound. */
+  gapCount: number;
+  gapsTruncated: boolean;
+}
+
 export interface PortalActivityLogSource {
+  collectionCoverage?: ActivityLogCollectionCoverage;
   rawEventCount: number;
   retainedEventCount: number;
   changeCount: number;

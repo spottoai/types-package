@@ -320,6 +320,30 @@ assert.equal(isPortalActivityAnalysisResponse(response), true, 'accepts the comp
 assert.doesNotThrow(() => assertPortalActivityAnalysisResponse(response));
 assert.equal(JSON.stringify(response), before, 'validation does not mutate the response');
 assert.equal(isConformedActivityAnalysisArtifact(validConformedPowerArtifact()), true, 'accepts a truthful conformed power pattern');
+const collectionCoverage = {
+  state: 'partial', timeWindow: { start: '2026-09-01T00:00:00.000Z', end: '2026-09-30T23:59:59.999Z' },
+  expectedRegions: ['ap-southeast-2'],
+  gaps: [{ region: 'ap-southeast-2', start: '2026-09-18T00:00:00.000Z', end: '2026-09-23T23:59:59.999Z', reason: 'not-collected' }],
+  gapCount: 1, gapsTruncated: false,
+};
+const separatelyCovered = validConformedPowerArtifact();
+separatelyCovered.source.collectionCoverage = collectionCoverage;
+assert.equal(isConformedActivityAnalysisArtifact(separatelyCovered), true, 'fully classified events may have partial collection coverage');
+for (const mutate of [
+  value => { value.gaps[0].reason = 'access-denied'; },
+  value => { value.gaps[0].region = 'us-west-2'; },
+  value => { value.gaps[0].start = '2026-08-31T00:00:00.000Z'; },
+  value => { value.gapCount = 0; },
+  value => { value.gapsTruncated = true; },
+  value => { value.state = 'complete'; },
+  value => { value.gaps = Array.from({ length: 129 }, () => clone(value.gaps[0])); value.gapCount = 129; },
+  value => { value.secret = 'forbidden'; },
+]) {
+  const candidate = clone(separatelyCovered);
+  mutate(candidate.source.collectionCoverage);
+  assert.equal(isConformedActivityAnalysisArtifact(candidate), false, 'rejects malformed or unbounded collection coverage');
+}
+
 const widerConformedMetadata = validConformedPowerArtifact();
 widerConformedMetadata.activitySeries[0].scope.resourceName = 'n'.repeat(1_024);
 widerConformedMetadata.groups[0].scope.resourceName = 'n'.repeat(1_024);

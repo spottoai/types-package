@@ -120,3 +120,14 @@ const invalidPortalActivityLogSuppressionReason: PortalActivityLog = {
 void invalidPortalActivityLogSchemaVersion;
 void invalidPortalActivityLogActorType;
 void invalidPortalActivityLogSuppressionReason;
+
+const partialCollectedActivityLog: PortalActivityLog = {
+  ...portalActivityLog,
+  source: { ...portalActivityLog.source, collectionCoverage: {
+    state: 'partial', timeWindow: { start: '2026-09-01T00:00:00.000Z', end: '2026-09-30T23:59:59.999Z' },
+    expectedRegions: ['ap-southeast-2'],
+    gaps: [{ region: 'ap-southeast-2', start: '2026-09-18T00:00:00.000Z', end: '2026-09-23T23:59:59.999Z', reason: 'not-collected' }],
+    gapCount: 1, gapsTruncated: false,
+  } },
+};
+void partialCollectedActivityLog;

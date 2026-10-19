@@ -1,6 +1,6 @@
 # AWS account environment memory contracts
 
-Status: reviewer revisions implemented and verified locally; registry release/adoption outstanding
+Status: published in 1.1.50 and included in 1.1.51; consumer adoption outstanding
 Last updated: 2026-10-19
 Owner: Platform
 Approved: Yes — Jay requested the spec and types-package reviewer revisions on 2026-10-19
@@ -10,8 +10,8 @@ Parent: [AWS environment memory](../../../../core/specs/ai-chat/aws-environment-
 
 The parent owns architecture, source authority, coverage, security, rollout and
 sequential delivery. This child records only the dependency-free shared types
-slice. No builder/storage/API/Chat/MCP implementation, package publication,
-manual version bump or consumer dependency change is included.
+slice. Jay subsequently published the package. No builder/storage/API/Chat/MCP
+implementation or consumer dependency change is included.
 
 - Preserve existing Azure subscription/tenant contracts and acceptance behavior.
   Add parallel AWS account envelopes; account IDs remain twelve-digit strings.
@@ -61,7 +61,17 @@ Fresh revision verification on 2026-10-19:
   local generated exports. The pre-existing tax-metadata spec edit is preserved
   and remains outside this slice.
 
-Registry release must rebuild through normal automation and consumers must adopt
-an exact published version. No version bump or package publication is authorized
-by the current revision request. Runtime/shared-builder/API/Chat/MCP checks and
+## Published release
+
+Jay published these contracts as **1.1.50**. The [release workflow](https://github.com/spottoai/types-package/actions/runs/39178824758)
+for environment commit `9da8d5c` passed lint, build, contracts, publication and
+tagging; release commit `d05ebbe` records the version. The subsequent
+[1.1.51 release](https://github.com/spottoai/types-package/actions/runs/39186130589)
+also succeeded and includes the environment contracts. This checkout's manifest
+and delivery lock now select 1.1.51.
+
+Consumers must adopt a verified exact published version in their own slices.
+The current platform, engine and API manifests still select older versions; no
+dependency upgrades were performed here. Shared builder extraction with Azure
+adoption is the next planned implementation. Runtime/API/Chat/MCP checks and
 real Blob validation remain planned in their owning slices.
