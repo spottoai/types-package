@@ -49,6 +49,24 @@ publication, consumer installation or live runner change is included.
 
 ## Risks and remaining work
 
+- Follow-up export (2026-10-21): version 1.1.55 published the generic behavior
+  inside the complete business validator but did not expose its partial identity
+  helper. The API still carried an older private copy. Export the existing
+  `isSafeAwsBillingDriverResourceId` from the public root, with CJS/ESM, packed
+  declarations and positive/negative parity checks. No validator semantics or
+  wire shapes change. A new registry release is required before API adoption;
+  local packed-candidate checks do not establish delivery readiness.
+
+  Follow-up verification is complete: the missing export was RED against the
+  prior built root; isolated full `npm test` and lint now pass, including packed
+  CJS/ESM runtime and declaration/type-narrowing probes. All six owning source
+  files match the tested tarball source. The API's full `ci:quality` passes
+  against that fingerprinted local artifact (11,581 unit, 985 integration and
+  18 Worker runtime tests). A seven-repository consumer audit found no further
+  required shared fields, helpers or exports for the current AWS/API correction.
+  The prepared local tarball is not a registry release; publish one consolidated
+  new artifact before applying the API import and dependency adoption.
+
 - Widening the exemption could expose artifact controls: retain exact driver
   traversal context and test unsafe IDs and additive/aliased control fields.
 - Structural validity and accountless ARNs do not prove ownership: engine/analyzer must still bind

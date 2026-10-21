@@ -22,7 +22,9 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 Shared billing analysis business payloads validate recorded AWS ARN structure
 without a service catalogue. Region and account fields may be empty; any explicit
-account ID must match the billing account. Identifiers are display evidence;
+account ID must match the billing account. The public root helper
+`isSafeAwsBillingDriverResourceId` exposes the same structural policy for partial
+API projection checks; it requires an exact billing-account string. Identifiers are display evidence;
 producers still prove service semantics, ownership and captured source scope.
 Foreign account ARNs and artifact-control/path injection remain rejected. Resource
 comparisons retain signed changes and assessed zero separately from unassessed

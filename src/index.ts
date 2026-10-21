@@ -24,6 +24,7 @@ export * from './azure/billingArtifactLimits';
 export * from './azure/billingArtifactCanonicalization';
 export * from './azure/artifactRunReference';
 export * from './azure/billingPlots';
+export { isSafeAwsBillingDriverResourceId } from './azure/billingDriverResourceIdentity';
 export * from './azure/benefits';
 export * from './azure/commitmentsPlanning';
 export * from './azure/commitmentsPlanningValidation';

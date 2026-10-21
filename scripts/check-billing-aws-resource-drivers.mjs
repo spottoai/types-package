@@ -4,7 +4,8 @@ import { readFile } from 'node:fs/promises';
 const corpus = JSON.parse(await readFile(new URL('../fixtures/artifact-evidence-contract-corpus.json', import.meta.url), 'utf8'));
 const reference = corpus.fixtures.billingCostAnalysisMetadataV2;
 for (const entry of ['../dist/index.js', '../dist/esm/index.js']) {
-  const { isBillingCostAnalysisBusinessPayloadV1 } = await import(entry);
+  const { isBillingCostAnalysisBusinessPayloadV1, isSafeAwsBillingDriverResourceId } = await import(entry);
+  assert.equal(typeof isSafeAwsBillingDriverResourceId, 'function', 'public identity guard is available to API consumers');
   const accountId = '111122223333';
   const resourceId = `arn:aws:ec2:ap-southeast-2:${accountId}:instance/i-example`;
   const resource = {
@@ -85,6 +86,7 @@ for (const entry of ['../dist/index.js', '../dist/esm/index.js']) {
     'arn:aws-us-gov:apigateway:us-gov-west-1::/apis/a1b2c3',
     'arn:aws-cn:route53:::hostedzone/Z123EXAMPLE',
   ]) {
+    assert.equal(isSafeAwsBillingDriverResourceId(id, accountId), true, `public recorded identity ${id}`);
     assert.equal(isBillingCostAnalysisBusinessPayloadV1(withResource({ ...resource, resourceId: id })), true, `recorded native identity ${id}`);
   }
   for (const id of [
@@ -113,12 +115,15 @@ for (const entry of ['../dist/index.js', '../dist/esm/index.js']) {
     'i-example\nsecret',
     'a'.repeat(64),
   ]) {
+    assert.equal(isSafeAwsBillingDriverResourceId(id, accountId), false, `public unsafe identity ${JSON.stringify(id)}`);
     assert.equal(
       isBillingCostAnalysisBusinessPayloadV1(withResource({ ...resource, resourceId: id })),
       false,
       `unsafe or foreign identity ${JSON.stringify(id)}`
     );
   }
+  for (const account of ['', 'sub-123', null, 111122223333])
+    assert.equal(isSafeAwsBillingDriverResourceId(resourceId, account), false, 'public guard requires an exact account string');
   assert.equal(isBillingCostAnalysisBusinessPayloadV1({ ...payload, subscriptionId: 'sub-123' }), false, 'Azure scope never permits a native ARN');
   assert.equal(
     isBillingCostAnalysisBusinessPayloadV1({ ...payload, future: { resourceId } }),

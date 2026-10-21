@@ -95,7 +95,8 @@ for (const resourceId of [
   'arn:aws:route53:::hostedzone/Z123EXAMPLE'
 ]) {
   awsResourceDriver.resourceId = resourceId;
-  if (!root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
+  if (!root.isSafeAwsBillingDriverResourceId(resourceId, awsDriverPayload.subscriptionId) ||
+      !root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
     throw new Error('Packed AWS driver rejects a valid accountless ARN or assessed decrease');
   }
 }
@@ -106,7 +107,8 @@ for (const resourceId of [
   'https://storage.example.invalid/private'
 ]) {
   awsResourceDriver.resourceId = resourceId;
-  if (root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
+  if (root.isSafeAwsBillingDriverResourceId(resourceId, awsDriverPayload.subscriptionId) ||
+      root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
     throw new Error('Packed AWS driver accepts a foreign, malformed or unsafe identity');
   }
 }

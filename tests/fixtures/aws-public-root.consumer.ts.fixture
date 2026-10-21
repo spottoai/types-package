@@ -1,5 +1,6 @@
 import {
   ARTIFACT_GENERATION_SCHEMA_VERSION,
+  isSafeAwsBillingDriverResourceId,
   AWS_COMMAND_ACTIONS,
   AWS_COMMAND_ENTITIES,
   AWS_COMMAND_PROVIDER,
@@ -385,3 +386,9 @@ void [costDescriptor, costChunk, subpathChunk, partialSavings, skuSavingsBasis, 
 // @ts-expect-error Snoozed is represented as Dismissed with a future end, not as a stored status.
 const invalidScopeState: NonNullable<RecommendationWithResources['recommendationState']> = { status: 'Snoozed' };
 void invalidScopeState;
+
+const recordedBillingDriverId: unknown = 'arn:aws:future-service:us-east-1::/resource/example';
+if (isSafeAwsBillingDriverResourceId(recordedBillingDriverId, '111122223333')) {
+  const safeRecordedBillingDriverId: string = recordedBillingDriverId;
+  void safeRecordedBillingDriverId;
+}
