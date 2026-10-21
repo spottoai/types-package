@@ -20,6 +20,15 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 ## Features
 
+Shared billing analysis business payloads validate recorded AWS ARN structure
+without a service catalogue. Region and account fields may be empty; any explicit
+account ID must match the billing account. Identifiers are display evidence;
+producers still prove service semantics, ownership and captured source scope.
+Foreign account ARNs and artifact-control/path injection remain rejected. Resource
+comparisons retain signed changes and assessed zero separately from unassessed
+null. `npm run check:billing-aws-resource-drivers` checks both builds. See the
+[contract correction and consumer handoff](specs/billing/aws-billing-driver-resource-identities.md).
+
 AWS account environment memory contracts are available from the root and
 `@spottoai/types-package/environment`: `EnvironmentAwsAccountScopeV1`,
 `EnvironmentAwsAccountSourceBindingV1`, `EnvironmentAwsAccountProjectionV1` and

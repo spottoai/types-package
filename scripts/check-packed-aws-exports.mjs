@@ -65,6 +65,51 @@ if (JSON.stringify(root.BILLING_ARTIFACT_OBJECT_LIMITS_V1) !== JSON.stringify(bi
     root.isBillingAnalysisCurrentPointerV1(billingV7.observation)) {
   throw new Error('Packed billing v7 export/response/discovery probe failed');
 }
+const awsResourceDriver = {
+  name: 'recorded-resource', resourceId: '', cost: 0, baseline: 6,
+  delta: -6, percentChange: -100, isNew: false,
+  summary: 'Recorded spend decreased against the assessed baseline.'
+};
+const awsDriverPayload = {
+  ...billingV7.legacyBusiness,
+  subscriptionId: '111122223333',
+  anomalies: [{
+    date: 1789257600000, summary: 'Recorded spend decreased.', confidence: 'High', notes: [],
+    impact: {
+      cost: 0, delta: -6, baseline7Day: 6, baseline30Day: null,
+      percentChange: -100, previousDayCost: null, previousDayDelta: null,
+      monthToDateCost: 0, monthToDateBaseline: null, monthToDateDelta: null,
+      monthToDatePercentChange: null
+    },
+    drivers: [{
+      type: 'service', name: 'recorded-service', summary: 'Assessed resource decrease.',
+      cost: 0, baseline: 6, delta: -6, percentChange: -100,
+      shareOfImpactPercent: 100, isNew: false, resources: [awsResourceDriver]
+    }]
+  }]
+};
+for (const resourceId of [
+  'arn:aws:future-service:us-east-1::/resource/example',
+  'arn:aws:future-service:::resource/example',
+  'arn:aws:apigateway:us-east-1::/restapis/a1b2c3',
+  'arn:aws:route53:::hostedzone/Z123EXAMPLE'
+]) {
+  awsResourceDriver.resourceId = resourceId;
+  if (!root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
+    throw new Error('Packed AWS driver rejects a valid accountless ARN or assessed decrease');
+  }
+}
+for (const resourceId of [
+  'arn:aws:apigateway:us-east-1:123456789012:/restapis/a1b2c3',
+  'arn:aws:future-service:us-east-1:123456789012:resource/example',
+  'arn:aws:apigateway:us-east-1::/apis/../secret',
+  'https://storage.example.invalid/private'
+]) {
+  awsResourceDriver.resourceId = resourceId;
+  if (root.isBillingCostAnalysisBusinessPayloadV1(awsDriverPayload)) {
+    throw new Error('Packed AWS driver accepts a foreign, malformed or unsafe identity');
+  }
+}
 const exactInput = structuredClone(billingV7.inputManifest);
 exactInput.inputs[0].byteCount = billingV7.limits.inputObjectStoredBytes;
 const oversizedInput = structuredClone(exactInput);

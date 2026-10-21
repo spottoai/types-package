@@ -1,4 +1,4 @@
-/** Recorded AWS billing identities are display evidence, not proof of resource ownership. */
+/** Structural safety for recorded AWS IDs; service semantics and ownership require producer evidence. */
 export const isSafeAwsBillingDriverResourceId = (value: unknown, accountId: unknown): value is string => {
   if (
     typeof accountId !== 'string' ||
@@ -14,10 +14,10 @@ export const isSafeAwsBillingDriverResourceId = (value: unknown, accountId: unkn
     return false;
   if (value.startsWith('arn:')) {
     const arn =
-      /^arn:(aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b|aws-iso-e|aws-iso-f):([a-z0-9-]+):([a-z0-9-]*):(\d{12}|):([A-Za-z0-9][A-Za-z0-9._:/+-]*)$/u.exec(
+      /^arn:(?:aws|aws-cn|aws-us-gov|aws-iso|aws-iso-b|aws-iso-e|aws-iso-f):[a-z0-9-]+:[a-z0-9-]*:(\d{12}|):\/?[A-Za-z0-9][A-Za-z0-9._:/+=,@$-]*$/u.exec(
         value
       );
-    return Boolean(arn && (arn[4] === accountId || (arn[4] === '' && arn[2] === 's3' && arn[3] === '')));
+    return Boolean(arn && (arn[1] === '' || arn[1] === accountId));
   }
   return /^[A-Za-z0-9][A-Za-z0-9._-]*$/u.test(value) && !/^[a-f0-9]{64}$/iu.test(value);
 };

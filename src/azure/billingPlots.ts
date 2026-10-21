@@ -1,5 +1,5 @@
 /**
- * Billing cost analysis types for Azure cost visualization.
+ * Shared billing cost analysis types for Azure and AWS cost visualization.
  */
 
 import { isArtifactOwnershipBinding, type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
@@ -226,17 +226,21 @@ export interface BillingAnomalyDriverResource {
   name: string;
   /** Scope/category used by the analyzer for the resource row */
   resourceScope?: string;
-  /** Recorded cloud/native ID; it does not establish discovery ownership. */
+  /** Recorded cloud/native ID, including accountless AWS ARNs; not proof of discovery ownership. */
   resourceId?: string;
   /** Whether the driver row represents subscription-level spend */
   isSubscriptionLevel?: boolean;
-  /** Total cost attributed to the resource */
+  /**
+   * Cost attributed to the anomaly window, on the containing driver's basis
+   * and currency. A baseline-only resource may carry zero only when recorded
+   * input and source coverage establish it; missing evidence is not zero.
+   */
   cost: number;
   /** Baseline cost for the resource */
   baseline: number | null;
-  /** Delta between current cost and baseline; null when comparison is unassessed. */
+  /** Signed current-cost minus baseline difference; null when comparison is unassessed. */
   delta: number | null;
-  /** Percent change from baseline */
+  /** Signed percentage change for an assessed positive baseline; otherwise null. */
   percentChange: number | null;
   /** Whether the resource is new or previously idle */
   isNew: boolean;
