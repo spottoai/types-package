@@ -1,6 +1,6 @@
 # Perimeter Insights paths: shared contracts
 
-Status: gateway routing and WAF contract extension in progress
+Status: gateway routing and WAF contracts published; dependency adoption complete, producer implementation pending
 Last updated: 2026-10-19
 Owner: Platform
 Parent: [Perimeter Insights paths](../../../core/specs/security/perimeter-insights-paths.md)
@@ -64,6 +64,9 @@ Gateway/WAF verification on 2026-10-19:
 - Focused built runtime checks: existing network/service suite 102/102; new gateway/WAF suite 102/102, each across CJS and ESM. Includes WAF overrides, disabled/inline/absent/unknown states, empty pools, backend literals/FQDN/resources, redirects, unsafe URLs, sparse/oversized arrays and stale/partial evidence.
 - Independent review found one issue: gateway coverage issues accepted unknown nested fields. A regression reproduced it in both formats before the fix. Gateway-local exact-key validation now rejects it; the shared NSG validator retains its existing behavior. No other confirmed must-fix finding.
 - The build regenerates tracked package outputs and fills missing baseline-generated modules; retain a coherent `dist` tree. No package version, dependency lockfile, app source or UI changed. Existing unrelated staged account changes were preserved.
-- Broader package/application suites remain paused at Jay's request. Packed consumer and scoped lint results will be recorded after completion; no full release gate is claimed.
+- `npm run check:packed-exports`: passed Node 24 CommonJS/ESM root runtime exports and legacy/NodeNext consumer compilation, including the gateway contract fixture. Scoped ESLint and formatting passed; new DTO/validator/helper modules remain below 500 lines. `git diff --check HEAD` passed for the changed source, scripts, fixture and documentation.
+- Broader package/application suites remain paused at Jay's request; no full release gate is claimed. Package version remains 1.1.50 with no registry publication or dependency-lock changes.
 
-Outstanding: owner-controlled publication of the gateway extension, registry adoption and Application Gateway collection/evaluation in Azure, followed by tolerant API/Ask Spotto consumption and coordinated UI work. Endpoint-service and identity increments remain separate. No feature-level or live-scan readiness is claimed by this types-only increment.
+Subsequent publication/adoption on 2026-10-19: Jay published types-package 1.1.51, confirmed against the configured registry's latest tag. Updated direct dependency declarations and ran `npm install` at the roots of cloud-engine (including its Azure workspace), cloud-engine-aws, API, UI and platform-packages (both packages). All five installations succeeded. Baseline lock comparisons contain only types-package package metadata and the corresponding root/workspace dependency declarations. Each installed registry package passed CommonJS/ESM export, gateway/WAF guard and declaration-compilation probes, including the coverage-issue regression. Azure/AWS/API platform dependency guards and the platform delivery dependency check passed. UI's existing platform 0.5.10 dependencies retain their internal exact types 1.1.43 dependency; its direct types dependency is 1.1.51. No platform-version upgrade, application source change or broader test suite was included in this dependency adoption.
+
+Outstanding: Application Gateway collection/evaluation in Azure, followed by tolerant API/Ask Spotto consumption and coordinated UI work. Platform-packages' updated source dependency declarations require its normal release flow before those package changes reach consumers. Endpoint-service and identity increments remain separate. No feature-level or live-scan readiness is claimed by this types-only increment.

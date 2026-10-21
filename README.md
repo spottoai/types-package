@@ -116,6 +116,7 @@ Monthly history accepts aggregate usage only and rejects profile data, breakdown
 daily report rows and per-account prices. `npm run check:microsoft365-license-contracts`
 checks the CJS and ESM validators; `npm test` also compiles the packed consumer.
 See [the contract extension and consumer handoff](specs/licensing/microsoft-365-improvements-types.md).
+Optional capability `stepUps` carry aggregate upgrade comparisons (such as Microsoft 365 E3 → E5 → E7): capabilities gained, replaced products and list or agreed-price net differences per currency, never account identifiers. See [step-up contracts](specs/licensing/microsoft-365-license-step-ups-types.md).
 
 The root also exports `Microsoft365LicenseSummaryView` and
 `Microsoft365LicenseAccountsView` with their matching `is...` guards. The new

@@ -226,7 +226,112 @@ const splitAccounts = (length = 1) => ({
   })),
 });
 
+const stepUp = () => ({
+  id: 'sku-one:sku-target',
+  fromSkuId: 'sku-one',
+  fromProductName: 'Microsoft 365 E3',
+  toSkuId: 'sku-target',
+  toProductName: 'Microsoft 365 E5',
+  targetSource: 'publisher',
+  accountCount: 4,
+  inactiveAccountCount: 1,
+  accountsComplete: true,
+  addedCapabilityIds: ['defender-identity'],
+  lostCapabilityIds: [],
+  unverifiedPlanCount: 2,
+  capabilityGains: [{ capabilityId: 'defender-identity', gainingAccountCount: 3, alreadyEnabledAccountCount: 1 }],
+  replacedProducts: [
+    {
+      skuId: 'sku-addon',
+      skuPartNumber: 'IDENTITY_THREAT_PROTECTION',
+      productName: 'Microsoft Defender Suite',
+      accountCount: 1,
+      basis: 'rule',
+      unitPriceMonthlyByCurrency: { USD: 12, INR: null },
+    },
+  ],
+  priceListVersion: 'retail-v9',
+  monthlyByCurrency: {
+    USD: {
+      fromUnitPriceMonthly: 39,
+      toUnitPriceMonthly: 60,
+      toPriceConfidence: 'verified',
+      perAccountDifference: 21,
+      grossDifference: 84,
+      replacedMonthly: 12,
+      unpricedReplacedProductCount: 0,
+      netDifference: 72,
+    },
+    INR: {
+      fromUnitPriceMonthly: 3245,
+      toUnitPriceMonthly: null,
+      toPriceConfidence: null,
+      perAccountDifference: null,
+      grossDifference: null,
+      replacedMonthly: 0,
+      unpricedReplacedProductCount: 1,
+      netDifference: null,
+    },
+  },
+});
+const stepUpSummary = (mutate = () => {}) => {
+  const document = splitSummary();
+  document.licenses.push({ ...license(), skuId: 'sku-addon', skuPartNumber: 'IDENTITY_THREAT_PROTECTION' });
+  document.summary.productCount = 2;
+  const value = stepUp();
+  mutate(value, document);
+  document.capabilities = {
+    ...document.capabilities,
+    definitions: [{ id: 'defender-identity', name: 'Defender for Identity', group: 'Threat protection' }],
+    stepUps: [value],
+  };
+  return document;
+};
+
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: step-ups are aggregate, internally consistent and optional`, () => {
+    const document = stepUpSummary();
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
+    assert.equal(api.isMicrosoft365LicenseSummaryView(splitSummary()), true, 'Summaries without step-ups remain valid');
+    assert.equal(api.isMicrosoft365StepUpComparison(stepUp()), true);
+    assert.equal(
+      api.isMicrosoft365CapabilityProjection({ ...document.capabilities, notices: [], omittedNoticeCount: 0 }),
+      true,
+      'The full capability projection carries the same step-ups'
+    );
+    assert.equal(
+      api.isMicrosoft365LicenseSummaryView(stepUpSummary(value => (value.monthlyByCurrency.USD.priceBasis = 'agreed'))),
+      true,
+      'The API may re-value step-ups with agreed prices'
+    );
+    const invalid = [
+      ['account identifiers', value => (value.accountIds = ['account-0'])],
+      ['replaced account identifiers', value => (value.replacedProducts[0].accountIds = ['account-0'])],
+      ['money account identifiers', value => (value.monthlyByCurrency.USD.accountId = 'account-0')],
+      ['gains not summing to scope', value => (value.capabilityGains[0].gainingAccountCount = 4)],
+      ['gain for a capability not added', value => (value.capabilityGains[0].capabilityId = 'entra-p2')],
+      ['undefined capability', value => (value.addedCapabilityIds = ['undefined-capability'])],
+      ['inactive above scope', value => (value.inactiveAccountCount = 5)],
+      ['identity mismatch', value => (value.id = 'other:sku-target')],
+      ['source equal to target', value => Object.assign(value, { toSkuId: 'sku-one', id: 'sku-one:sku-one' })],
+      ['source not held', value => Object.assign(value, { fromSkuId: 'sku-missing', id: 'sku-missing:sku-target' })],
+      ['replaced product not held', value => (value.replacedProducts[0].skuId = 'sku-missing')],
+      ['replaced holders above scope', value => (value.replacedProducts[0].accountCount = 5)],
+      ['replaced basis', value => (value.replacedProducts[0].basis = 'guess')],
+      ['negative unit price', value => (value.replacedProducts[0].unitPriceMonthlyByCurrency.USD = -1)],
+      ['net known without gross', value => (value.monthlyByCurrency.INR.netDifference = 0)],
+      ['price basis', value => (value.monthlyByCurrency.USD.priceBasis = 'estimated')],
+      ['currency code', value => (value.monthlyByCurrency.usd = value.monthlyByCurrency.USD)],
+      ['target source', value => (value.targetSource = ['publisher'])],
+    ];
+    for (const [name, mutate] of invalid) assert.equal(api.isMicrosoft365LicenseSummaryView(stepUpSummary(mutate)), false, name);
+    const duplicated = stepUpSummary();
+    duplicated.capabilities.stepUps.push(stepUp());
+    assert.equal(api.isMicrosoft365LicenseSummaryView(duplicated), false, 'Step-up identities are unique');
+    const many = stepUpSummary();
+    many.capabilities.stepUps = Array.from({ length: 17 }, (_, index) => ({ ...stepUp(), toSkuId: `sku-${index}`, id: `sku-one:sku-${index}` }));
+    assert.equal(api.isMicrosoft365LicenseSummaryView(many), false, 'At most 16 step-ups');
+  });
   test(`${format}: customer pricing retains source evidence, zero and projection revisions`, () => {
     const document = splitSummary();
     document.pricingRevision = 'rates-a:2026-10-16';

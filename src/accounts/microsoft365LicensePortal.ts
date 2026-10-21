@@ -296,9 +296,52 @@ export function isMicrosoft365LicenseSummaryPricing(value: unknown): value is Mi
   );
 }
 
+const STEP_UP_KEYS = [
+  'id',
+  'fromSkuId',
+  'fromProductName',
+  'toSkuId',
+  'toProductName',
+  'targetSource',
+  'accountCount',
+  'inactiveAccountCount',
+  'accountsComplete',
+  'addedCapabilityIds',
+  'lostCapabilityIds',
+  'unverifiedPlanCount',
+  'capabilityGains',
+  'replacedProducts',
+  'priceListVersion',
+  'monthlyByCurrency',
+];
+const STEP_UP_MONEY_KEYS = [
+  'priceBasis',
+  'fromUnitPriceMonthly',
+  'toUnitPriceMonthly',
+  'toPriceConfidence',
+  'perAccountDifference',
+  'grossDifference',
+  'replacedMonthly',
+  'unpricedReplacedProductCount',
+  'netDifference',
+];
+/** Aggregate privacy boundary: step-ups carry counts and prices, never account identifiers. */
+function stepUpPrivacy(value: unknown): boolean {
+  return (
+    exact(value, STEP_UP_KEYS) &&
+    list(value.capabilityGains, 128, gain => exact(gain, ['capabilityId', 'gainingAccountCount', 'alreadyEnabledAccountCount'])) &&
+    list(value.replacedProducts, 32, product =>
+      exact(product, ['skuId', 'skuPartNumber', 'productName', 'accountCount', 'basis', 'unitPriceMonthlyByCurrency'])
+    ) &&
+    record(value.monthlyByCurrency) &&
+    Object.values(value.monthlyByCurrency).every(money => exact(money, STEP_UP_MONEY_KEYS))
+  );
+}
+
 function summaryCapabilities(value: unknown): value is Microsoft365LicenseSummaryCapabilities {
   return (
-    exact(value, ['catalogueVersion', 'definitions', 'accountsComplete', 'summary', 'observedNoticeCount']) &&
+    exact(value, ['catalogueVersion', 'definitions', 'accountsComplete', 'summary', 'observedNoticeCount', 'stepUps']) &&
+    optional(value.stepUps, stepUps => list(stepUps, 16, stepUpPrivacy)) &&
     list(value.definitions, 128, definition => exact(definition, ['id', 'name', 'group'])) &&
     list(value.summary, 128, row =>
       exact(row, ['capabilityId', 'includedProductCount', 'includedSkuIds', 'enabledAccountCount', 'observedEnabledAccountCount'])
@@ -456,6 +499,10 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
           (row.capabilities?.plans ?? []).every(plan => plan.capabilityId === null || definitions.has(plan.capabilityId)) &&
           (!row.capabilities?.comparison ||
             [...row.capabilities.comparison.addedCapabilityIds, ...row.capabilities.comparison.lostCapabilityIds].every(id => definitions.has(id)))
+      ) ||
+      // A step-up compares a held source product and replaces only held products; the target may come from the publisher catalogue.
+      !(capabilities.stepUps ?? []).every(
+        stepUp => skuIds.has(stepUp.fromSkuId) && stepUp.replacedProducts.every(product => skuIds.has(product.skuId))
       )
     )
       return false;
