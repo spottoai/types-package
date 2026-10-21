@@ -313,6 +313,7 @@ const STEP_UP_KEYS = [
   'replacedProducts',
   'priceListVersion',
   'monthlyByCurrency',
+  'segments',
 ];
 const STEP_UP_MONEY_KEYS = [
   'priceBasis',
@@ -334,7 +335,19 @@ function stepUpPrivacy(value: unknown): boolean {
       exact(product, ['skuId', 'skuPartNumber', 'productName', 'accountCount', 'basis', 'unitPriceMonthlyByCurrency'])
     ) &&
     record(value.monthlyByCurrency) &&
-    Object.values(value.monthlyByCurrency).every(money => exact(money, STEP_UP_MONEY_KEYS))
+    Object.values(value.monthlyByCurrency).every(money => exact(money, STEP_UP_MONEY_KEYS)) &&
+    optional(value.segments, groups =>
+      list(
+        groups,
+        32,
+        group =>
+          exact(group, ['replacedSkuIds', 'accountCount', 'inactiveAccountCount', 'monthlyByCurrency']) &&
+          record(group.monthlyByCurrency) &&
+          Object.values(group.monthlyByCurrency).every(money =>
+            exact(money, ['priceBasis', 'currentPerAccount', 'targetPerAccount', 'differencePerAccount', 'differenceTotal'])
+          )
+      )
+    )
   );
 }
 

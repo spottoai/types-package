@@ -69,6 +69,26 @@ export interface Microsoft365StepUpCapabilityGain {
   /** In-scope accounts that already have it enabled through another license, such as an add-on. */
   alreadyEnabledAccountCount: number;
 }
+/** One account in a step-up group, per currency: what it costs today and on the target. Null is unknown, never zero. */
+export interface Microsoft365StepUpSegmentMoney {
+  priceBasis?: Microsoft365StepUpPriceBasis;
+  /** Source product plus the group's included products, for one account. */
+  currentPerAccount: number | null;
+  targetPerAccount: number | null;
+  /** targetPerAccount − currentPerAccount; negative means the higher plan costs less. */
+  differencePerAccount: number | null;
+  /** differencePerAccount × accountCount. */
+  differenceTotal: number | null;
+}
+/** In-scope accounts that hold the same set of products the target already includes. Aggregate only. */
+export interface Microsoft365StepUpSegment {
+  /** Sorted; empty for accounts that hold none of them. Every ID is one of the step-up's replaced products. */
+  replacedSkuIds: string[];
+  accountCount: number;
+  /** Group accounts without a successful sign-in for 90+ days. */
+  inactiveAccountCount: number;
+  monthlyByCurrency: Record<string, Microsoft365StepUpSegmentMoney>;
+}
 /** Tenant-level upgrade scenario such as Microsoft 365 E3 → E5 → E7. Aggregate only: no account identifiers. */
 export interface Microsoft365StepUpComparison {
   /** `${fromSkuId}:${toSkuId}` */
@@ -92,6 +112,8 @@ export interface Microsoft365StepUpComparison {
   replacedProducts: Microsoft365StepUpReplacedProduct[];
   priceListVersion: string;
   monthlyByCurrency: Record<string, Microsoft365StepUpMoney>;
+  /** Accounts grouped by the included products they already pay for, so the cheapest moves can be shown first. Optional for older snapshots. */
+  segments?: Microsoft365StepUpSegment[];
 }
 export interface Microsoft365ProductCapabilities {
   state: Microsoft365CapabilityEvidenceState;
@@ -187,6 +209,49 @@ export function isMicrosoft365StepUpMoney(value: unknown): value is Microsoft365
   );
 }
 
+const priceBasis = (value: unknown): boolean => value === undefined || (typeof value === 'string' && ['list', 'agreed', 'mixed'].includes(value));
+
+/** Validates one group's money: the difference is unknown exactly when either price is, and the total follows the difference. */
+export function isMicrosoft365StepUpSegmentMoney(value: unknown): value is Microsoft365StepUpSegmentMoney {
+  return (
+    record(value) &&
+    priceBasis(value.priceBasis) &&
+    nullablePrice(value.currentPerAccount) &&
+    nullablePrice(value.targetPerAccount) &&
+    nullableAmount(value.differencePerAccount) &&
+    nullableAmount(value.differenceTotal) &&
+    (value.differencePerAccount === null) === (value.currentPerAccount === null || value.targetPerAccount === null) &&
+    (value.differenceTotal === null) === (value.differencePerAccount === null)
+  );
+}
+
+const segments = (value: unknown, accounts: number, replaced: ReadonlySet<unknown>): boolean => {
+  if (!Array.isArray(value) || value.length > 32) return false;
+  const keys = new Set<string>();
+  let total = 0;
+  for (const segment of value) {
+    if (
+      !record(segment) ||
+      !Array.isArray(segment.replacedSkuIds) ||
+      segment.replacedSkuIds.length > 32 ||
+      !segment.replacedSkuIds.every(id => text(id) && replaced.has(id)) ||
+      new Set(segment.replacedSkuIds).size !== segment.replacedSkuIds.length ||
+      [...segment.replacedSkuIds].sort().join('|') !== segment.replacedSkuIds.join('|') ||
+      !count(segment.accountCount) ||
+      segment.accountCount === 0 ||
+      !count(segment.inactiveAccountCount) ||
+      segment.inactiveAccountCount > segment.accountCount ||
+      !byCurrency(segment.monthlyByCurrency, isMicrosoft365StepUpSegmentMoney)
+    )
+      return false;
+    const key = segment.replacedSkuIds.join('|');
+    if (keys.has(key)) return false;
+    keys.add(key);
+    total += segment.accountCount;
+  }
+  return total <= accounts;
+};
+
 /** Validates one step-up and its internal arithmetic counts. Capability IDs are checked against definitions by the projection. */
 export function isMicrosoft365StepUpComparison(value: unknown): value is Microsoft365StepUpComparison {
   if (
@@ -242,6 +307,9 @@ export function isMicrosoft365StepUpComparison(value: unknown): value is Microso
         typeof product.basis === 'string' &&
         ['rule', 'service_plans'].includes(product.basis) &&
         byCurrency(product.unitPriceMonthlyByCurrency, nullablePrice)
+    ) &&
+    optional(value.segments, list =>
+      segments(list, accounts, new Set((value.replacedProducts as unknown[]).map(product => (record(product) ? product.skuId : null))))
     )
   );
 }

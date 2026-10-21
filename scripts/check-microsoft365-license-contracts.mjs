@@ -273,6 +273,26 @@ const stepUp = () => ({
       netDifference: null,
     },
   },
+  segments: [
+    {
+      replacedSkuIds: ['sku-addon'],
+      accountCount: 1,
+      inactiveAccountCount: 0,
+      monthlyByCurrency: {
+        USD: { currentPerAccount: 51, targetPerAccount: 60, differencePerAccount: 9, differenceTotal: 9 },
+        INR: { currentPerAccount: null, targetPerAccount: null, differencePerAccount: null, differenceTotal: null },
+      },
+    },
+    {
+      replacedSkuIds: [],
+      accountCount: 3,
+      inactiveAccountCount: 1,
+      monthlyByCurrency: {
+        USD: { priceBasis: 'mixed', currentPerAccount: 39, targetPerAccount: 60, differencePerAccount: 21, differenceTotal: 63 },
+        INR: { currentPerAccount: 3245, targetPerAccount: null, differencePerAccount: null, differenceTotal: null },
+      },
+    },
+  ],
 });
 const stepUpSummary = (mutate = () => {}) => {
   const document = splitSummary();
@@ -294,6 +314,12 @@ for (const [format, api] of Object.entries(formats)) {
     assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
     assert.equal(api.isMicrosoft365LicenseSummaryView(splitSummary()), true, 'Summaries without step-ups remain valid');
     assert.equal(api.isMicrosoft365StepUpComparison(stepUp()), true);
+    assert.equal(api.isMicrosoft365StepUpComparison({ ...stepUp(), segments: undefined }), true, 'Older step-ups have no segments');
+    assert.equal(
+      api.isMicrosoft365LicenseSummaryView(stepUpSummary(value => delete value.segments)),
+      true,
+      'Summaries from engines without segments remain valid'
+    );
     assert.equal(
       api.isMicrosoft365CapabilityProjection({ ...document.capabilities, notices: [], omittedNoticeCount: 0 }),
       true,
@@ -323,6 +349,23 @@ for (const [format, api] of Object.entries(formats)) {
       ['price basis', value => (value.monthlyByCurrency.USD.priceBasis = 'estimated')],
       ['currency code', value => (value.monthlyByCurrency.usd = value.monthlyByCurrency.USD)],
       ['target source', value => (value.targetSource = ['publisher'])],
+      ['segment account identifiers', value => (value.segments[0].accountIds = ['account-0'])],
+      ['segment money account identifiers', value => (value.segments[0].monthlyByCurrency.USD.accountId = 'account-0')],
+      ['segments above scope', value => (value.segments[1].accountCount = 4)],
+      ['segment product not replaced', value => (value.segments[0].replacedSkuIds = ['sku-other'])],
+      [
+        'unsorted segment products',
+        value => {
+          value.replacedProducts.push({ ...value.replacedProducts[0], skuId: 'sku-a', productName: 'A' });
+          value.segments[0].replacedSkuIds = ['sku-addon', 'sku-a'];
+        },
+      ],
+      ['duplicate segment', value => (value.segments[1].replacedSkuIds = ['sku-addon'])],
+      ['empty segment', value => (value.segments[0].accountCount = 0)],
+      ['segment inactive above group', value => (value.segments[0].inactiveAccountCount = 2)],
+      ['segment difference without a target price', value => (value.segments[1].monthlyByCurrency.INR.differencePerAccount = 1)],
+      ['segment total without a difference', value => (value.segments[0].monthlyByCurrency.INR.differenceTotal = 0)],
+      ['segment price basis', value => (value.segments[0].monthlyByCurrency.USD.priceBasis = 'estimated')],
     ];
     for (const [name, mutate] of invalid) assert.equal(api.isMicrosoft365LicenseSummaryView(stepUpSummary(mutate)), false, name);
     const duplicated = stepUpSummary();
