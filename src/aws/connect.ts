@@ -6,7 +6,18 @@
  */
 
 /** Known `connect/check` warning codes. Clients must tolerate codes they do not know. */
-export type AwsConnectWarning = 'organizations-access-denied' | 'exports-access-denied' | 'exports-truncated';
+export type AwsConnectWarning =
+  | 'organizations-access-denied'
+  | 'exports-access-denied'
+  | 'exports-truncated'
+  /** A read ran out of time; the response holds what was read before it. */
+  | 'discovery-timeout';
+
+/**
+ * Why an export can't be used as a cost source: `table` is not COST_AND_USAGE_REPORT (CUR 2.0),
+ * `format` is not Parquet, `unreadable` means its definition couldn't be read.
+ */
+export type AwsConnectExportUnsupportedReason = 'format' | 'table' | 'unreadable';
 
 export interface AwsConnectCheckRequest {
   /** 12-digit account that deployed the connect stack. Omit it to use the newest registration. */
@@ -45,6 +56,10 @@ export interface AwsConnectExport {
   exportName: string;
   status?: string;
   destination?: AwsConnectExportDestination;
+  /** True for a CUR 2.0 (COST_AND_USAGE_REPORT) export delivered as Parquet. */
+  supported: boolean;
+  /** Set when `supported` is false. */
+  unsupportedReason?: AwsConnectExportUnsupportedReason;
 }
 
 /**
@@ -93,11 +108,14 @@ export interface AwsConnectRegistration {
   billingBucketName?: string;
   /** Template version (`YYYY-MM-DD.N`) the stack was last created or updated with. */
   templateVersion?: string;
-  /** ISO 8601 time the registration (or its latest update) arrived. */
+  /** ISO 8601 time the latest accepted stack event (Create or Update) arrived. */
   receivedAt: string;
 }
 
-/** Registrations from the last 30 days, newest first, one per account; deleted stacks are left out. */
+/**
+ * Every registration that hasn't been deleted, newest first, one per account. It is the durable
+ * record of what each account has deployed; clients apply their own window when offering detections.
+ */
 export interface AwsConnectRegistrationsResponse {
   registrations: AwsConnectRegistration[];
   /** Latest published template version; a registration with another version has an update available. */
