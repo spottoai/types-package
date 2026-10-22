@@ -115,6 +115,14 @@ const scheduledComponentRefreshTick: AwsScheduledRefreshTickCommand = {
   requestedAt: '2026-09-21T04:30:00.000Z',
 };
 
+const hourlyScheduledFullRefreshTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  scheduledAt: '2026-10-23T13:00:00.000Z',
+  requestId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  correlationId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  requestedAt: '2026-10-23T13:00:00.000Z',
+};
+
 const commands: AwsCommand[] = [
   estateReconcile,
   estateDelete,
@@ -124,6 +132,7 @@ const commands: AwsCommand[] = [
   organizationCommitmentsRefresh,
   scheduledFullRefreshTick,
   scheduledComponentRefreshTick,
+  hourlyScheduledFullRefreshTick,
 ];
 
 const companyTrustSetup: AwsCompanyTrustSetupResponse = {
@@ -253,6 +262,10 @@ const invalidScheduledRefreshWithAccount: AwsScheduledRefreshTickCommand = {
   accountId: '123456789012',
 };
 
+const scheduledRefreshWithCallerSelectedSlot = { ...scheduledFullRefreshTick, scheduledScanSlot: 4 as const };
+// @ts-expect-error Engine-owned slot selection cannot enter a tick through a prebuilt object.
+const invalidScheduledRefreshWithSlot: AwsScheduledRefreshTickCommand = scheduledRefreshWithCallerSelectedSlot;
+
 const invalidScheduledRefreshWithCredentials: AwsScheduledRefreshTickCommand = {
   ...scheduledFullRefreshTick,
   // @ts-expect-error Scheduled ticks must never carry AWS credentials.
@@ -293,6 +306,7 @@ void invalidCommandWithoutRevision;
 void invalidScheduledRefreshKind;
 void invalidScheduledRefreshWithCompany;
 void invalidScheduledRefreshWithAccount;
+void invalidScheduledRefreshWithSlot;
 void invalidScheduledRefreshWithCredentials;
 void invalidScheduledRefreshWithRegions;
 void invalidScheduledRefreshWithProviderWindow;

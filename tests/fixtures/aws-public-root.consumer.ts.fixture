@@ -29,6 +29,7 @@ import {
   type AwsEstatesManifest,
   type AwsForbiddenCredentialField,
   type AwsScheduledRefreshTickCommand,
+  type ScheduledScanSlot,
   type CostDateBasis,
   type DailyMetrics,
   type DecompositionTree,
@@ -193,6 +194,31 @@ const scheduledRefreshTick: AwsScheduledRefreshTickCommand = {
 const scheduledRefreshTickFromAwsSubpath: AwsSubpathScheduledRefreshTickCommand = scheduledRefreshTick;
 const scheduledRefreshCommand: AwsCommand = scheduledRefreshTickFromAwsSubpath;
 
+const hourlyFullRefreshTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledRefreshTick,
+  scanKind: 'full',
+  scheduledAt: '2026-10-23T13:00:00.000Z',
+  requestId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  correlationId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  requestedAt: '2026-10-23T13:00:00.000Z',
+};
+const hourlyFullRefreshTickFromAwsSubpath: AwsSubpathScheduledRefreshTickCommand = hourlyFullRefreshTick;
+const scheduledScanSlots: readonly ScheduledScanSlot[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+// @ts-expect-error A negative hour is outside the shared twelve-hour cycle.
+const negativeScheduledScanSlot: ScheduledScanSlot = -1;
+// @ts-expect-error Slot twelve wraps to zero and cannot be persisted as a slot.
+const highScheduledScanSlot: ScheduledScanSlot = 12;
+// @ts-expect-error Scheduled scan slots are whole UTC hours.
+const fractionalScheduledScanSlot: ScheduledScanSlot = 0.5;
+// @ts-expect-error Persisted slots use numbers rather than numeric strings.
+const stringScheduledScanSlot: ScheduledScanSlot = '0';
+
+const callerSelectedSlotTick = { ...hourlyFullRefreshTick, scheduledScanSlot: 1 as const };
+// @ts-expect-error Root consumers cannot inject an engine-owned slot through a prebuilt tick.
+const rootTickWithCallerSelectedSlot: AwsScheduledRefreshTickCommand = callerSelectedSlotTick;
+// @ts-expect-error The AWS subpath enforces the same engine-owned slot boundary.
+const awsTickWithCallerSelectedSlot: AwsSubpathScheduledRefreshTickCommand = callerSelectedSlotTick;
+
 const publicAwsAccount: PublicCloudAccountDto = {
   companyId: 'company-123',
   id: 'cloud-account-123',
@@ -341,6 +367,14 @@ void [
   estateReconcileCommand,
   scheduledRefreshTick,
   scheduledRefreshCommand,
+  hourlyFullRefreshTickFromAwsSubpath,
+  scheduledScanSlots,
+  negativeScheduledScanSlot,
+  highScheduledScanSlot,
+  fractionalScheduledScanSlot,
+  stringScheduledScanSlot,
+  rootTickWithCallerSelectedSlot,
+  awsTickWithCallerSelectedSlot,
   publicAwsAccount,
   publicAwsAccountWithExternalId,
   publicAwsAccountWithResolvedCredentials,

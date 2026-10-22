@@ -10,7 +10,7 @@ export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'org
 /** Actions supported across AWS estate orchestration commands. */
 export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete', 'tick'] as const;
 
-/** Scheduled AWS scan cadences emitted by the enqueue-only API scheduler. */
+/** Scheduled AWS work kinds emitted by the enqueue-only API scheduler. */
 export const AWS_SCHEDULED_REFRESH_SCAN_KINDS = ['full', 'components'] as const;
 
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
@@ -119,7 +119,10 @@ export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase
 }
 
 /**
- * Wakes engine-owned AWS due selection for one exact scheduler slot.
+ * Wakes engine-owned AWS due selection for one exact cron event.
+ * Full ticks arrive hourly; the engine admits only accounts whose persisted
+ * scheduledScanSlot matches the scheduled UTC hour modulo twelve. Component
+ * ticks retain their independent cadence and account-selection policy.
  * Account enumeration, desired state, credentials, Regions, and provider
  * windows remain engine-owned and are intentionally absent.
  */
@@ -129,7 +132,7 @@ export interface AwsScheduledRefreshTickCommand extends AwsCommandForbiddenConfi
   entity: 'scheduler';
   action: 'tick';
   scanKind: AwsScheduledRefreshScanKind;
-  /** Exact ISO-8601 timestamp supplied by the triggering cron event. */
+  /** Exact ISO-8601 cron timestamp; full ticks use the scheduled UTC hour, never delivery time. */
   scheduledAt: string;
   requestId: string;
   correlationId: string;
@@ -139,6 +142,8 @@ export interface AwsScheduledRefreshTickCommand extends AwsCommandForbiddenConfi
   estateId?: never;
   accountId?: never;
   cloudAccountId?: never;
+  /** Sticky account slots belong to engine-owned state, never the global tick. */
+  scheduledScanSlot?: never;
   billingSourceId?: never;
   region?: never;
   regions?: never;

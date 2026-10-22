@@ -24,6 +24,7 @@ export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIss
 
 /** Azure compatibility alias for the provider-neutral environment classification. */
 export type SubscriptionType = EnvironmentType;
+/** Hour within a recurring twelve-hour UTC scan cycle; providers persist assignments in their own state. */
 export type ScheduledScanSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
