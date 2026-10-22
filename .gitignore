@@ -112,6 +112,7 @@ specs/licensing/*
 !specs/licensing/microsoft-365-custom-pricing-types.md
 !specs/cloud-accounts/
 specs/cloud-accounts/*
+!specs/cloud-accounts/aws-incremental-scan-cadence-types.md
 !specs/cloud-accounts/microsoft-365-default-permissions-types.md
 !specs/reporting/
 specs/reporting/*

@@ -2,6 +2,7 @@ export * from './estates';
 export * from './billingEstimation';
 export * from './commitmentsPlanningView';
 export * from './commitmentsPlanningValidation';
+export * from './connect';
 export * from './organizationCommitments';
 export * from './organizationCommitmentsApiValidation';
 export * from './organizationCommitmentsValidation';

@@ -155,8 +155,8 @@ const companyTrustSetup: AwsCompanyTrustSetupResponse = {
         warning: 'Broad preview access.',
       },
     ],
-    guardrailPolicyName: 'SpottoGuardrails',
-    guardrailPolicy: {
+    readAccessPolicyName: 'SpottoReadOnlyAccess',
+    readAccessPolicy: {
       Version: '2012-10-17',
       Statement: [{ Sid: 'DenySecretReads', Effect: 'Deny', Action: 'secretsmanager:GetSecretValue', Resource: '*' }],
     },

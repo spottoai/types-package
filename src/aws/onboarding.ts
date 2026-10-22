@@ -48,9 +48,9 @@ export interface AwsRoleOnboardingBundle extends AwsForbiddenCredentialFields {
   trustedPrincipalAccountId: string;
   trustPolicy: AwsIamPolicyDocument;
   managedPolicies: AwsIamManagedPolicyDescriptor[];
-  /** Stable inline policy name; later bundles replace rather than duplicate it. */
-  guardrailPolicyName: 'SpottoGuardrails';
-  guardrailPolicy: AwsIamPolicyDocument;
+  /** Stable inline read-only access policy name; later bundles replace rather than duplicate it. */
+  readAccessPolicyName: 'SpottoReadOnlyAccess';
+  readAccessPolicy: AwsIamPolicyDocument;
   /** Optional policy used for billing definition, storage, and KMS access. */
   billingAccessPolicyName?: 'SpottoBillingExportRead';
   billingAccessPolicy?: AwsIamPolicyDocument;
