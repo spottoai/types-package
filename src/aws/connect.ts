@@ -31,6 +31,13 @@ export interface AwsConnectAccount {
   name?: string;
 }
 
+/**
+ * Where the connected account sits: the organization's `management` account, a `member` account,
+ * `standalone` (AWS reports no organization) or `unknown` (the organization couldn't be read, see
+ * `warnings`). Never treat `unknown` as standalone.
+ */
+export type AwsConnectOrganizationState = 'management' | 'member' | 'standalone' | 'unknown';
+
 export interface AwsConnectOrganization {
   organizationId: string;
   managementAccountId: string;
@@ -76,6 +83,8 @@ export interface AwsConnectCheckConnectedResponse {
   accountId: string;
   roleArn: string;
   account: AwsConnectAccount;
+  organizationState: AwsConnectOrganizationState;
+  /** Present for `management` and `member`. */
   organization?: AwsConnectOrganization;
   /** Management account only, ACTIVE first, at most 1,000. */
   accounts: AwsConnectOrganizationAccount[];
