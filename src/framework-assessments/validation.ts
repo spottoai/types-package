@@ -1,5 +1,5 @@
 import { FRAMEWORK_ASSESSMENT_LIMITS as limits } from './contracts';
-import { parseAssessmentAccess, parseAssessmentAccessSummary } from './accessValidation';
+import { assessmentAccessScopeId, parseAssessmentAccess, parseAssessmentAccessSummary } from './accessValidation';
 import type {
   AssessmentNativeScope,
   AssessmentPageReference,
@@ -342,7 +342,7 @@ export const parseFrameworkAssessmentDocument = (value: unknown): FrameworkAsses
   if (
     result.access.provider !== result.scope.providerName ||
     result.access.scopeType !== result.scope.scopeType ||
-    (result.access.scopeType === 'tenant' ? result.access.tenantId : result.access.subscriptionId) !== result.scope.scopeId ||
+    assessmentAccessScopeId(result.access) !== result.scope.scopeId ||
     result.access.observedAt !== result.source.assessedAt ||
     result.frameworkId !== result.catalogue.frameworkId ||
     result.source.version !== result.catalogue.sourceVersion ||

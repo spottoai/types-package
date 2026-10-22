@@ -4,8 +4,12 @@ import { choice, decodedBytes, identifier, input, list, record, text, unique } f
 import { TerminalAssessmentError } from './failures';
 
 /** Only this check emits one row per credential for a single app identity. */
+/**
+ * Repeated results for one resource and check are summarised (FAIL over MANUAL over PASS) instead of failing the scan:
+ * per-credential app results in a tenant, and AWS account scans, where some checks report a resource once per region.
+ */
 export const isAggregatedScopeScanCheck = (scopeType: string, checkId: string): boolean =>
-  scopeType === 'tenant' && checkId === 'entra_app_registration_credential_not_expired';
+  scopeType === 'account' || (scopeType === 'tenant' && checkId === 'entra_app_registration_credential_not_expired');
 export const SCOPE_SCAN_FINDING_STATUS_PRIORITY = Object.freeze({ PASS: 0, MANUAL: 1, FAIL: 2 });
 
 /** Use the page envelope so single-item acceptance and eventual page parsing have identical depth limits. */
@@ -22,6 +26,35 @@ const object = (value: unknown): Record<string, unknown> | undefined => {
       .map(([key, descriptor]) => [key, descriptor.value])
   );
 };
+
+const AWS_PARTITIONS = new Set(['aws', 'aws-us-gov', 'aws-cn']);
+
+/**
+ * An AWS resource belongs to the scanned account when it is the account itself, or an ARN whose account segment is
+ * empty (global resources such as S3 buckets) or equal to the account. ARNs are case-sensitive and are not folded.
+ */
+export const isAwsResourceInAccount = (uid: string, accountId: string): boolean => {
+  if (uid === accountId) return true;
+  const parts = uid.split(':');
+  if (parts.length < 6 || parts[0] !== 'arn' || !AWS_PARTITIONS.has(parts[1] ?? '') || !parts[2]) return false;
+  return parts[4] === '' || parts[4] === accountId;
+};
+
+const isAzureResourceInScope = (uid: string, scope: AssessmentNativeScope, checkId: string | undefined): boolean => {
+  const folded = uid.toLowerCase().replace(/\/$/u, '');
+  const ancestor =
+    checkId === 'iam_role_user_access_admin_restricted' &&
+    /^\/providers\/(?:microsoft\.management\/managementgroups\/[^/]+\/providers\/)?microsoft\.authorization\/roleassignments\/[a-f0-9-]{36}$/u.test(
+      folded
+    );
+  return scope.scopeType === 'tenant'
+    ? !folded.startsWith('/')
+    : folded.startsWith(`/subscriptions/${scope.scopeId}/`) || folded === `/subscriptions/${scope.scopeId}` || ancestor;
+};
+
+/** AWS ids keep their case; Azure ids are folded to lower case without a trailing slash. */
+const normalizeResourceId = (uid: string, scope: AssessmentNativeScope): string =>
+  scope.providerName === 'aws' ? uid : uid.toLowerCase().replace(/\/$/u, '');
 
 /** Positive native-scope contradictions are terminal even when another field would quarantine the row. */
 export const parseScopeScanRawFinding = (
@@ -51,18 +84,9 @@ export const parseScopeScanRawFinding = (
     for (const value of row.resources) {
       const entry = object(value);
       if (typeof entry?.uid !== 'string') continue;
-      const uid = entry.uid.toLowerCase().replace(/\/$/u, '');
-      const ancestor =
-        knownCheck === 'iam_role_user_access_admin_restricted' &&
-        /^\/providers\/(?:microsoft\.management\/managementgroups\/[^/]+\/providers\/)?microsoft\.authorization\/roleassignments\/[a-f0-9-]{36}$/u.test(
-          uid
-        );
-      if (
-        scope.scopeType === 'tenant'
-          ? uid.startsWith('/')
-          : !uid.startsWith(`/subscriptions/${scope.scopeId}/`) && uid !== `/subscriptions/${scope.scopeId}` && !ancestor
-      )
-        throw new TerminalAssessmentError('raw-resource-outside-native-scope');
+      const inScope =
+        scope.providerName === 'aws' ? isAwsResourceInAccount(entry.uid, scope.scopeId) : isAzureResourceInScope(entry.uid, scope, knownCheck);
+      if (!inScope) throw new TerminalAssessmentError('raw-resource-outside-native-scope');
     }
   try {
     const safe = record(parseScopeScanRawItem(value), 'raw finding');
@@ -80,7 +104,7 @@ export const parseScopeScanRawFinding = (
     for (const [key, value] of Object.entries(mappings)) frameworkMappings[identifier(key)] = unique(list(value).map(value => identifier(value)));
     return {
       checkId: identifier(safeMetadata.event_code),
-      resourceId: identifier(resource.uid, 4096).toLowerCase().replace(/\/$/u, ''),
+      resourceId: normalizeResourceId(identifier(resource.uid, 4096), scope),
       status: choice(safe.status_code, ['PASS', 'FAIL', 'MANUAL']),
       severity: identifier(safe.severity, 128),
       message: text(safe.message, 65536, false),

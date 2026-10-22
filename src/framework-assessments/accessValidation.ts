@@ -1,4 +1,13 @@
 import type { AssessmentAccess, AssessmentAccessSummary, AssessmentCollectionIssue, EvidenceObservation, ScopeScanManifest } from './contracts';
+
+/** The native scope id the access evidence is bound to. */
+export const assessmentAccessScopeId = (access: AssessmentAccess): string =>
+  access.scopeType === 'tenant' ? access.tenantId : access.scopeType === 'account' ? access.accountId : access.subscriptionId;
+
+/** The capability that reports provider initialisation (credentials, region discovery) for each provider. */
+export const ASSESSMENT_PROVIDER_CAPABILITY = Object.freeze({ azure: 'azure-provider', aws: 'aws-provider' } as const);
+const PROVIDER_CAPABILITIES = new Set<string>(Object.values(ASSESSMENT_PROVIDER_CAPABILITY));
+const AWS_ACCOUNT_ID = /^\d{12}$/u;
 import { choice, identifier, input, invalid, list, number, shape, timestamp, unique } from './internal';
 
 export const parseAssessmentAccessSummary = (value: unknown): AssessmentAccessSummary => {
@@ -14,15 +23,18 @@ export const parseAssessmentAccess = (value: unknown): AssessmentAccess => {
   const row = shape(
     input(value),
     ['schemaVersion', 'provider', 'scopeType', 'observedAt', 'source', 'status', 'diagnosticsComplete', 'suppressedFindingCount', 'checks', 'issues'],
-    ['tenantId', 'subscriptionId', 'reason', 'inventory']
+    ['tenantId', 'subscriptionId', 'accountId', 'reason', 'inventory']
   );
-  if (row.schemaVersion !== 1 || row.provider !== 'azure' || typeof row.diagnosticsComplete !== 'boolean') return invalid('access identity');
-  const scopeType = choice(row.scopeType, ['subscription', 'tenant']);
-  const scopeId = identifier(scopeType === 'tenant' ? row.tenantId : row.subscriptionId);
+  if (row.schemaVersion !== 1 || typeof row.diagnosticsComplete !== 'boolean') return invalid('access identity');
+  const provider = choice(row.provider, ['azure', 'aws'] as const);
+  const scopeType = choice(row.scopeType, provider === 'aws' ? (['account'] as const) : (['subscription', 'tenant'] as const));
+  const idField = scopeType === 'tenant' ? 'tenantId' : scopeType === 'account' ? 'accountId' : 'subscriptionId';
+  const scopeId = identifier(row[idField]);
   if (
     !/^[a-zA-Z0-9][a-zA-Z0-9._-]*$/u.test(scopeId) ||
     scopeId.includes('..') ||
-    (scopeType === 'tenant' ? row.subscriptionId !== undefined : row.tenantId !== undefined)
+    (scopeType === 'account' && !AWS_ACCOUNT_ID.test(scopeId)) ||
+    (['tenantId', 'subscriptionId', 'accountId'] as const).some(field => field !== idField && row[field] !== undefined)
   )
     return invalid('access scope');
   const checks = list(row.checks).map(value => {
@@ -74,10 +86,15 @@ export const parseAssessmentAccess = (value: unknown): AssessmentAccess => {
     }
     return result;
   });
+  const scopeFields =
+    scopeType === 'account'
+      ? { provider: 'aws' as const, scopeType, accountId: scopeId }
+      : scopeType === 'tenant'
+        ? { provider: 'azure' as const, scopeType, tenantId: scopeId }
+        : { provider: 'azure' as const, scopeType, subscriptionId: scopeId };
   const result: AssessmentAccess = {
     schemaVersion: 1,
-    provider: 'azure',
-    ...(scopeType === 'tenant' ? { scopeType, tenantId: scopeId } : { scopeType, subscriptionId: scopeId }),
+    ...scopeFields,
     observedAt: timestamp(row.observedAt),
     source: choice(row.source, ['collector', 'unavailable', 'import']),
     status: choice(row.status, ['observations-available', 'partial', 'blocked', 'unknown']),
@@ -117,7 +134,7 @@ export const validateScopeScanAccess = (
   observations: readonly EvidenceObservation[]
 ): Pick<AssessmentAccess, 'diagnosticsComplete' | 'checks'> => {
   const access = parseAssessmentAccess(manifest.access);
-  const scopeId = access.scopeType === 'tenant' ? access.tenantId : access.subscriptionId;
+  const scopeId = assessmentAccessScopeId(access);
   if (
     manifest.scope.providerName !== access.provider ||
     manifest.scope.scopeType !== access.scopeType ||
@@ -137,7 +154,7 @@ export const validateScopeScanAccess = (
           issue =>
             issue.origin !== 'tenant-domain-lookup' &&
             (issue.checkId === row.checkId ||
-              (issue.capability !== 'azure-provider' && issue.origin === 'service-collection' && issue.affectedCheckIds.includes(row.checkId)))
+              (!PROVIDER_CAPABILITIES.has(issue.capability) && issue.origin === 'service-collection' && issue.affectedCheckIds.includes(row.checkId)))
         ))
     )
       return invalid('verified finding access');

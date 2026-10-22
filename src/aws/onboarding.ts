@@ -25,6 +25,18 @@ export interface AwsIamManagedPolicyDescriptor {
 }
 
 /**
+ * Customer-managed policy the customer creates in their account and attaches to the role. Used when grants do not fit
+ * the role's 10,240-character inline policy quota; each document is at most 6,144 characters. The policy name is stable,
+ * so later bundles update the policy (a new default version) rather than create another.
+ */
+export interface AwsIamCustomerManagedPolicy {
+  policyName: string;
+  /** Why the role needs it, for review before attaching. */
+  description: string;
+  policyDocument: AwsIamPolicyDocument;
+}
+
+/**
  * API-authored customer artifact for creating one purpose-scoped Spotto role.
  * External ID is returned separately by the authorized company setup response.
  */
@@ -45,6 +57,8 @@ export interface AwsRoleOnboardingBundle extends AwsForbiddenCredentialFields {
   /** Optional customer-managed policy for organization commitments evidence. */
   commitmentsAccessPolicyName?: 'SpottoCommitmentsPlanning';
   commitmentsAccessPolicy?: AwsIamPolicyDocument;
+  /** Customer-managed policies to create and attach, e.g. framework assessment read actions for resource discovery. */
+  customerManagedPolicies?: AwsIamCustomerManagedPolicy[];
   /** Complete customer-facing artifact suitable for direct copy or download. */
   instructionsMarkdown: string;
 }
