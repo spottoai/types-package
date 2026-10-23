@@ -158,6 +158,12 @@ const companyTrustSetup: AwsCompanyTrustSetupResponse = {
     },
     managedPolicies: [
       {
+        name: 'ViewOnlyAccess',
+        arn: 'arn:aws:iam::aws:policy/job-function/ViewOnlyAccess',
+        accessScope: 'aws-managed-read-only',
+        warning: 'AWS managed read-only access to resource metadata.',
+      },
+      {
         name: 'ReadOnlyAccess',
         arn: 'arn:aws:iam::aws:policy/ReadOnlyAccess',
         accessScope: 'broad-read-only-preview',

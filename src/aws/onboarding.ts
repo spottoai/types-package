@@ -19,8 +19,11 @@ export interface AwsIamPolicyDocument {
 export interface AwsIamManagedPolicyDescriptor {
   name: string;
   arn: string;
-  /** AWS-managed preview policies can be broader than the final least-privilege policy. */
-  accessScope: 'broad-read-only-preview';
+  /**
+   * `aws-managed-read-only`: an AWS managed read baseline (ViewOnlyAccess, SecurityAudit) attached to every role,
+   * narrowed by the inline read policy's data and secret deny. `broad-read-only-preview`: a broader preview policy.
+   */
+  accessScope: 'aws-managed-read-only' | 'broad-read-only-preview';
   warning: string;
 }
 
