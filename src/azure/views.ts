@@ -125,8 +125,13 @@ export interface AzureResourcePortalItem {
   type: string;
   /** e.g. "West US" */
   location: string;
-  /** Total spend over the last 30 days */
-  spend: number;
+  /**
+   * Billing-backed or explicitly blended spend over the declared resource
+   * window. Absent when amount or currency evidence is unavailable; a measured
+   * zero or signed credit remains a value. Check spendSource and composition
+   * before interpreting this non-additive resource amount.
+   */
+  spend?: number;
   /** Rolling resource spend partition used to include or exclude Marketplace charges. */
   financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
   /**
