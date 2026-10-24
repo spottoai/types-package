@@ -11,7 +11,7 @@ export const AWS_COMMAND_ENTITIES = ['estate', 'account', 'billing-source', 'org
 export const AWS_COMMAND_ACTIONS = ['reconcile', 'refresh', 'delete', 'tick'] as const;
 
 /** Scheduled AWS work kinds emitted by the enqueue-only API scheduler. */
-export const AWS_SCHEDULED_REFRESH_SCAN_KINDS = ['full', 'components'] as const;
+export const AWS_SCHEDULED_REFRESH_SCAN_KINDS = ['full', 'components', 'billing-reconciliation'] as const;
 
 /** Credential-shaped keys forbidden from shared AWS configuration and commands. */
 export const AWS_FORBIDDEN_CREDENTIAL_FIELDS = [
@@ -123,6 +123,8 @@ export interface AwsOrganizationCommitmentsRefreshCommand extends AwsCommandBase
  * Full ticks arrive hourly; the engine admits only accounts whose persisted
  * scheduledScanSlot matches the scheduled UTC hour modulo twelve. Component
  * ticks retain their independent cadence and account-selection policy.
+ * Billing-reconciliation ticks (Mon/Thu) fan out one billing-queue check per
+ * active account with a billing scope; they never run an account refresh.
  * Account enumeration, desired state, credentials, Regions, and provider
  * windows remain engine-owned and are intentionally absent.
  */

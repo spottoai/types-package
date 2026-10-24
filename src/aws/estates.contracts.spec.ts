@@ -40,6 +40,7 @@ const resourceAccount: AwsEstateAccountMembership<ExampleCompanyId, ExampleEstat
   roleArn: 'arn:aws:iam::123456789012:role/ExampleReadOnlyRole',
   purposes: ['resource-discovery'],
   enabled: true,
+  syncFeatureOptOuts: ['activityMonitoring', 'governance'],
 };
 
 const organizationBillingSource: AwsEstateBillingSource<ExampleCompanyId, ExampleEstateId, ExampleAccountId, '111122223333', '444455556666'> = {
@@ -153,6 +154,12 @@ const invalidManifestCompany: AwsEstatesManifest<ExampleCompanyId> = {
   companyId: 'company-other',
 };
 
+const invalidMembershipOptOut: AwsEstateAccountMembership<ExampleCompanyId, ExampleEstateId, '123456789012'> = {
+  ...resourceAccount,
+  // @ts-expect-error Billing is mandatory on AWS and cannot be opted out.
+  syncFeatureOptOuts: ['billing'],
+};
+
 const invalidMembershipEstate: AwsEstateAccountMembership<ExampleCompanyId, ExampleEstateId, '123456789012'> = {
   ...resourceAccount,
   // @ts-expect-error A membership cannot silently move to another estate.
@@ -244,3 +251,4 @@ void invalidOrganizationRoleDeployment;
 void invalidManifestExternalId;
 void invalidMembershipAccessKey;
 void invalidBillingConnectionString;
+void invalidMembershipOptOut;

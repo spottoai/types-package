@@ -15,9 +15,17 @@ export type AwsConnectWarning =
 
 /**
  * Why an export can't be used as a cost source: `table` is not COST_AND_USAGE_REPORT (CUR 2.0),
- * `format` is not Parquet, `unreadable` means its definition couldn't be read.
+ * `format` is not Parquet, `granularity` is MONTHLY (only DAILY or HOURLY are supported),
+ * `resources` means INCLUDE_RESOURCES isn't TRUE, `columns` means the query omits a required column,
+ * and `unreadable` means its definition couldn't be read.
  */
-export type AwsConnectExportUnsupportedReason = 'format' | 'table' | 'unreadable';
+export type AwsConnectExportUnsupportedReason = 'format' | 'table' | 'granularity' | 'resources' | 'columns' | 'unreadable';
+
+/** CUR 2.0 `TIME_GRANULARITY`. DAILY is preferred, HOURLY works, MONTHLY is not supported. */
+export type AwsConnectExportTimeGranularity = 'HOURLY' | 'DAILY' | 'MONTHLY';
+
+/** Supported but incomplete: `amortization-columns` means reservation or Savings Plans effective cost is missing. */
+export type AwsConnectExportWarning = 'amortization-columns';
 
 export interface AwsConnectCheckRequest {
   /** 12-digit account that deployed the connect stack. Omit it to use the newest registration. */
@@ -63,10 +71,19 @@ export interface AwsConnectExport {
   exportName: string;
   status?: string;
   destination?: AwsConnectExportDestination;
-  /** True for a CUR 2.0 (COST_AND_USAGE_REPORT) export delivered as Parquet. */
+  /**
+   * True for a CUR 2.0 (COST_AND_USAGE_REPORT) Parquet export with DAILY or HOURLY granularity,
+   * INCLUDE_RESOURCES=TRUE and every required column.
+   */
   supported: boolean;
   /** Set when `supported` is false. */
   unsupportedReason?: AwsConnectExportUnsupportedReason;
+  /** The export's TIME_GRANULARITY, when its definition was readable. */
+  timeGranularity?: AwsConnectExportTimeGranularity;
+  /** Whether the export's INCLUDE_RESOURCES is TRUE, when its definition was readable. */
+  includeResources?: boolean;
+  /** Present when supported but incomplete. */
+  warnings?: AwsConnectExportWarning[];
 }
 
 /**

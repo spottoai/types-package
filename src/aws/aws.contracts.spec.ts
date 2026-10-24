@@ -115,6 +115,15 @@ const scheduledComponentRefreshTick: AwsScheduledRefreshTickCommand = {
   requestedAt: '2026-09-21T04:30:00.000Z',
 };
 
+const scheduledBillingReconciliationTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  scanKind: 'billing-reconciliation',
+  scheduledAt: '2026-09-21T03:17:00.000Z',
+  requestId: 'aws-scheduled-refresh:billing-reconciliation:2026-09-21T03:17:00.000Z',
+  correlationId: 'aws-scheduled-refresh:billing-reconciliation:2026-09-21T03:17:00.000Z',
+  requestedAt: '2026-09-21T03:17:00.000Z',
+};
+
 const hourlyScheduledFullRefreshTick: AwsScheduledRefreshTickCommand = {
   ...scheduledFullRefreshTick,
   scheduledAt: '2026-10-23T13:00:00.000Z',
@@ -309,6 +318,7 @@ void invalidCommandWithExternalId;
 void invalidCommandWithBilling;
 void invalidCommandWithCredentials;
 void invalidCommandWithoutRevision;
+void scheduledBillingReconciliationTick;
 void invalidScheduledRefreshKind;
 void invalidScheduledRefreshWithCompany;
 void invalidScheduledRefreshWithAccount;
@@ -323,3 +333,35 @@ void commandEntities;
 void commandActions;
 void scheduledRefreshScanKinds;
 void forbiddenCredentialFields;
+
+// Billing is required: an export reports why it can't be used, its granularity and resource IDs, and warnings.
+const monthlyConnectExport: import('../index').AwsConnectExport = {
+  exportArn: 'arn:aws:bcm-data-exports:us-east-1:111122223333:export/monthly-cur2',
+  exportName: 'monthly-cur2',
+  supported: false,
+  unsupportedReason: 'granularity',
+  timeGranularity: 'MONTHLY',
+  includeResources: true,
+};
+const dailyConnectExport: import('../index').AwsConnectExport = {
+  exportArn: 'arn:aws:bcm-data-exports:us-east-1:111122223333:export/daily-cur2',
+  exportName: 'daily-cur2',
+  supported: true,
+  timeGranularity: 'DAILY',
+  includeResources: true,
+  warnings: ['amortization-columns'],
+};
+const connectExportReasons: import('../index').AwsConnectExportUnsupportedReason[] = [
+  'format',
+  'table',
+  'granularity',
+  'resources',
+  'columns',
+  'unreadable',
+];
+// @ts-expect-error warnings are a closed set.
+const invalidConnectExportWarning: import('../index').AwsConnectExportWarning = 'missing-history';
+void monthlyConnectExport;
+void dailyConnectExport;
+void connectExportReasons;
+void invalidConnectExportWarning;
