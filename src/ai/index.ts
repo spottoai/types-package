@@ -1,7 +1,9 @@
 /** Common AI interfaces shared between frontend and backend */
 
 import type { AIChatAnswerNextActionV1, AIChatDrillDownInvocationV1, AIChatFollowUpSuggestionV1 } from './followUps.js';
+import type { AIChatAnswerPresentationV1 } from './answerPresentation.js';
 import type { AIChatGroundingSummary, AIEnvironmentEvidenceMatch } from './grounding.js';
+import type { CompanyContextSource, CompanyContextUsage } from '../company/companyContext';
 import type {
   AIChatWorkspaceArtifact,
   AIChatWorkspaceArtifactDataMode,
@@ -14,6 +16,8 @@ export * from './grounding.js';
 export * from './followUps.js';
 export * from './conversationHistory.js';
 export * from './workspaceArtifacts.js';
+export * from './workspaceGraph.js';
+export * from './answerPresentation.js';
 
 export type AIResponseStatus = 'complete' | 'needsClarification' | 'needsMoreMetrics';
 
@@ -452,6 +456,7 @@ export interface AIChatCitation {
   snippet?: string;
   toolName?: string;
   retrievedAt: string;
+  companyContextSource?: CompanyContextSource;
 }
 
 export interface AIChatAssistantProfileSummary {
@@ -532,6 +537,7 @@ export interface AIChatEvidenceCoverage {
   citationCoverage: AIChatCitationCoverage;
   memoryMatches?: AIChatMemoryMatch[];
   environmentMatches?: AIEnvironmentEvidenceMatch[];
+  companyContext?: CompanyContextUsage;
 }
 
 export interface AIChatRuntimeEvalSignals {
@@ -959,6 +965,8 @@ export interface AIChatTurnSnapshot {
 }
 
 export interface AIChatFinalSnapshot {
+  /** Optional for historical/ordinary responses; authoritative only after finalization. */
+  answerPresentation?: AIChatAnswerPresentationV1;
   /**
    * Authoritative final turn state. Additional stage outputs are additive sidecars.
    */
@@ -986,6 +994,7 @@ export interface AIChatFinalSnapshot {
 }
 
 export interface AIChatAuditArtifact {
+  answerPresentation?: AIChatAnswerPresentationV1;
   conversationId: string;
   runId: string;
   turnId: string;
@@ -1173,6 +1182,7 @@ export interface AIChatUsage {
 }
 
 export interface AIChatTerminalSnapshot {
+  answerPresentation?: AIChatAnswerPresentationV1;
   conversationId: string;
   runId: string;
   run: AIChatRunState;
@@ -1513,6 +1523,7 @@ export interface AIChatRunCompletedEvent extends AIChatStreamEventBase {
  * AIChatRunCompletedEvent with its required terminalSnapshot.
  */
 export interface AIChatDoneEvent extends AIChatStreamEventBase {
+  answerPresentation?: AIChatAnswerPresentationV1;
   event: 'done';
   run: AIChatRunState;
   terminalSnapshot: AIChatTerminalSnapshot;

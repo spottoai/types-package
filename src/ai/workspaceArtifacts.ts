@@ -1,4 +1,5 @@
 import type { AICustomerDecisionBriefOutput, AIChatRetrievalSourceType } from './index.js';
+import type { AIChatWorkspaceGraphPayload } from './workspaceGraph.js';
 
 export type AIChatWorkspaceArtifactKind =
   | 'metricGroup'
@@ -9,7 +10,8 @@ export type AIChatWorkspaceArtifactKind =
   | 'decisionBrief'
   | 'kpi'
   | 'scenario'
-  | 'recommendations';
+  | 'recommendations'
+  | 'graph';
 
 export type AIChatWorkspaceArtifactDataMode = 'snapshot' | 'liveView' | 'snapshotWithLiveRefresh';
 
@@ -24,7 +26,8 @@ export type AIChatWorkspacePresentation =
   | 'kpi'
   | 'report'
   | 'scenario'
-  | 'recommendations';
+  | 'recommendations'
+  | 'graph';
 
 export type AIChatWorkspaceTimeRangePreset = 'P7D' | 'P30D' | 'P90D' | 'P180D' | 'P1Y' | 'currentBillingPeriod' | 'previousBillingPeriod';
 
@@ -172,6 +175,14 @@ export const AI_CHAT_WORKSPACE_CAPABILITIES = [
     presentations: ['kpi'],
     dataModes: ['snapshot'],
   },
+  /** A bounded, server-produced relationship snapshot; topology never comes from model intent. */
+  {
+    viewId: 'cloud.relationships.graph',
+    version: 1,
+    artifactKind: 'graph',
+    presentations: ['graph'],
+    dataModes: ['snapshot'],
+  },
   /** A server-priced what-if comparison (for example a VM's sizes and OS disk tiers); the client only selects and sums. */
   {
     viewId: 'genericScenario',
@@ -195,6 +206,7 @@ export const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = [
   'genericBarChart',
   'genericLineChart',
   'genericKpi',
+  'cloud.relationships.graph',
   'genericScenario',
   'genericRecommendations',
 ] as const;
@@ -700,7 +712,8 @@ type AIChatWorkspaceSnapshotContent =
   | { kind: 'decisionBrief'; snapshot: { payload: AIChatWorkspaceDecisionBriefPayload } }
   | { kind: 'kpi'; snapshot: { payload: AIChatWorkspaceKpiPayload } }
   | { kind: 'scenario'; snapshot: { payload: AIChatWorkspaceScenarioPayload } }
-  | { kind: 'recommendations'; snapshot: { payload: AIChatWorkspaceRecommendationCardsPayload } };
+  | { kind: 'recommendations'; snapshot: { payload: AIChatWorkspaceRecommendationCardsPayload } }
+  | { kind: 'graph'; snapshot: { payload: AIChatWorkspaceGraphPayload } };
 
 type AIChatWorkspaceChartRecipe = Extract<
   AIChatWorkspaceLiveViewRecipe,

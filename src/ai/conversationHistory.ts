@@ -1,4 +1,5 @@
 import type { AIChatAnswerNextActionV1, AIChatFollowUpSuggestionV1 } from './followUps.js';
+import type { AIChatAnswerPresentationV1 } from './answerPresentation.js';
 import type { AIChatGroundingSummary } from './grounding.js';
 import type { AIChatWorkspaceArtifact, AIChatWorkspaceArtifactSummary, AIChatWorkspaceArtifactViewIdentity } from './workspaceArtifacts.js';
 import type { AIChatCitation, AIChatEvidenceCoverage } from './index.js';
@@ -17,6 +18,7 @@ export type AIChatHistoryWorkspaceArtifactSummary = AIChatWorkspaceArtifactSumma
 
 /** Safe, bounded metadata for one persisted assistant response. */
 export interface AIChatHistoryResponseArtifact {
+  answerPresentation?: AIChatAnswerPresentationV1;
   turnId: string;
   responseId: string;
   citations: AIChatCitation[];
@@ -30,6 +32,7 @@ export interface AIChatHistoryResponseArtifact {
  * `responseArtifacts`. Unlike historical entries, it may contain complete inline artifacts.
  */
 export interface AIChatHistoryLatestResponseArtifact {
+  answerPresentation?: AIChatAnswerPresentationV1;
   turnId?: string;
   responseId: string;
   citations: AIChatCitation[];

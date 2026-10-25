@@ -20,6 +20,16 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 ## Features
 
+Company context, shared company memory, meeting-transcript summaries and immutable
+note revisions have additive root-exported DTOs. They distinguish proposed and
+reviewed memory, company-owned sources and private conversations, topics/areas/
+people/teams, partial coverage and revision-aware writes. Optional chat citation
+and evidence fields expose context actually used. API owns runtime validation,
+authorization and retrieval; these contracts do not implement those workflows.
+See [company context](specs/ai-chat/company-context/company-context-types-package.md),
+[company memory](specs/ai-chat/company-memory/company-memory-types-package.md) and
+[note revisions](specs/companies/company-notes/company-notes-types-package.md).
+
 Shared billing analysis business payloads validate recorded AWS ARN structure
 without a service catalogue. Region and account fields may be empty; any explicit
 account ID must match the billing account. The public root helper
@@ -534,3 +544,59 @@ contracts use the shape produced by `cloud-engine/apps/azure`, with no tax
 treatment fields or alternate tax modes. Basis, currency, coverage, period and
 source evidence remain independent requirements. See
 [Azure-compatible costs](specs/azure-compatible-costs-without-tax-metadata.md).
+## Chat relationship graph contract
+
+`cloud.relationships.graph@1` is a bounded, snapshot-only chat capability. `AIChatWorkspaceGraphPayload`
+and `isAIChatWorkspaceGraphPayload` define the shared wire boundary for API and Portal, including
+24-node/36-edge limits, directional reachability, plain-text labels, evidence classification and
+node-then-edge opaque follow-up references. Configuration relationships do not prove observed traffic.
+
+The API owns topology, authorization, safe navigation links and drill-down bindings. The renderer
+does not accept coordinates, styles, endpoints or topology from model intent. Run
+`npm run build` and `npm run check:workspace-graph-contracts` to verify both module outputs against
+the canonical fixture in `fixtures/ai-chat/workspace-graph.json`.
+
+Consumers require a new published types-package release containing these exports before deployment;
+the existing 1.1.66 release does not contain the graph contract. Local source-build adoption is only
+for integration verification and does not change consumer package pins.
+
+### Reuse contracts when adding chat widgets
+
+Keep page/domain selection in the API's reviewed recipes. Use the existing generic KPI,
+chart, table, recommendation and scenario payloads for new compatible projections; use
+the graph payload for bounded relationship snapshots. New widget titles, table columns,
+measures, scoped follow-ups and resource types do not require a page-specific shared type
+or view ID. Existing reports already cover Cost Tree, cost changes, governance and retirement.
+
+The [shared capability reuse catalogue](../core/specs/ai-chat/answers/workspace-capabilities/workspace-capabilities.md#shared-contract-reuse-and-expansion)
+maps M365 licensing, perimeter, governance, retirement, cost, resources and relationships
+to these families, with the remaining domain adapter boundaries. Shared contracts describe
+rendering support, not proof that a domain reader or page adapter is implemented.
+
+Batch new wire families, presentation enums, live bindings and action protocols before a
+release. Keep future capabilities out of the active manifest until their API and UI adapters
+exist; both registries require exact manifest parity. A monetary hierarchy, flow diagram,
+heatmap or new graph semantics still requires a specified, versioned contract. Do not hide
+arbitrary JSON, endpoints or component names inside existing payloads to avoid versioning.
+Extending closed enums such as external-link hosts, drill-down actions or scenario value
+formats also changes the wire contract. Recommendation cards retain their existing
+recommendation/prioritization workflow; generic license findings use table/KPI payloads
+unless that workflow is supported.
+
+### Adaptive answer metadata
+
+The same unpublished contract batch includes optional `answerPresentation` on terminal,
+final, audit and history response shapes. `AIChatAnswerPresentationV1` records
+`schemaVersion: 1`, `kind: visual | brief | full` and accepted `artifactIds`; the
+dependency-free validator bounds visual answers to one through three artifacts. It
+describes server-owned presentation, independently of the response mode or routing choice.
+Consumers ignore malformed or unsupported optional metadata while preserving the answer
+and previously admitted artifacts.
+
+The explicit `server-rendered-artifacts` grounding method binds verified snapshot IDs and
+verified figure/citation records to deterministic server-rendered answer text. It has no
+model claim declarations and cannot use `not-required`, partial or unverified figures.
+Existing grounding methods retain their validation and do not accept artifact bindings.
+These wire contracts do not themselves grant recipe eligibility or prove source coverage;
+the API sufficiency gate owns those checks. Run `npm run check:adaptive-answer-contracts`
+after the build to verify the CJS/ESM boundaries.

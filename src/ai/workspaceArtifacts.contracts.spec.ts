@@ -11,7 +11,7 @@ import {
   type AIChatWorkspaceViewId,
 } from '../index';
 
-const capabilityCount: 21 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
+const capabilityCount: 22 = AI_CHAT_WORKSPACE_CAPABILITIES.length;
 const viewId: AIChatWorkspaceViewId = 'azure.cost.subscriptionSpendTrend';
 
 const costRecipe: AIChatWorkspaceLiveViewRecipe = {

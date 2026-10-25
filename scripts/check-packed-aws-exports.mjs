@@ -444,6 +444,7 @@ try {
   await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
   await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/company-context.consumer.ts.fixture'), join(consumerRoot, 'company-context.consumer.ts'));
   await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-usage.consumer.ts')
@@ -501,6 +502,7 @@ try {
       'microsoft365-license-usage.consumer.ts',
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
+      'company-context.consumer.ts',
     ],
     consumerRoot
   );
@@ -775,6 +777,12 @@ try {
     const checks =
       "const spec = {schemaVersion:1,reportType:'sdm',scope:{cloudAccountIds:['ca-1'],subscriptionIds:['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f']},period:{kind:'previous-calendar-month'},configuration:{layout:'spotto-layout',cloudIqServiceProfile:{selectedServiceIds:[]}}}; const definition = {definitionType:'report-generation',name:'Report',timezone:'UTC',timing:{triggerType:'recurring',cadence:'monthly',dayOfMonth:'last',localTime:'09:00'},report:spec,initialMode:'active'}; if (!scheduler.isScheduleWriteRequest(definition) || !root.isReportGenerationScheduleWriteRequest(definition) || typeof jobs.validateReportJobUpdateV1 !== 'function' || typeof jobs.buildReportJobProjectionV1 !== 'function' || 'validateReportJobUpdateV1' in root) process.exit(1); jobs.buildReportJobAdmissionFingerprintV1({schemaVersion:1,report:spec}).then(hash => { if (!/^[0-9a-f]{64}$/.test(hash)) process.exit(1); });";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
+    const companyContextExports = `
+for (const name of ['COMPANY_CONTEXT_SCHEMA_VERSION', 'COMPANY_MEMORY_SCHEMA_VERSION', 'COMPANY_MEETING_SCHEMA_VERSION', 'COMPANY_MEMORY_FEATURE_KEY', 'COMPANY_MEMORY_PERMISSION_KEYS']) {
+  if (!Object.prototype.hasOwnProperty.call(root, name)) throw new Error('Packed company context export missing: ' + name);
+}
+`;
+    run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + companyContextExports], consumerRoot);
     const coverageChecks = `
 const coverage = {state:'complete',timeWindow:{start:'2026-10-01T00:00:00.000Z',end:'2026-10-17T23:59:59.999Z'},expectedRegions:['ap-southeast-2'],gaps:[],gapCount:0,gapsTruncated:false};
 if (typeof root.isActivityLogCollectionCoverage !== 'function') throw new Error('Packed public activity coverage validator export is missing');
@@ -859,6 +867,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
       '--moduleResolution',
       'node',
       'framework-assessments.consumer.ts',
+      'company-context.consumer.ts',
     ],
     consumerRoot
   );
@@ -879,7 +888,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
     consumerRoot
   );
   process.stdout.write(
-    'Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments consumer fixture verified.\n'
+    'Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments/company context consumer fixtures verified.\n'
   );
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

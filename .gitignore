@@ -95,6 +95,7 @@ jspm_packages/
 samples/
 
 specs/*
+!specs/README.md
 !Specs/monitor/
 Specs/monitor/*
 !Specs/monitor/perimeter-connectivity-types.md
@@ -131,6 +132,17 @@ specs/ai-chat/*
 !specs/ai-chat/aws-environment-memory/
 specs/ai-chat/aws-environment-memory/*
 !specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md
+!specs/ai-chat/company-context/
+specs/ai-chat/company-context/*
+!specs/ai-chat/company-context/company-context-types-package.md
+!specs/ai-chat/company-memory/
+specs/ai-chat/company-memory/*
+!specs/ai-chat/company-memory/company-memory-types-package.md
+!specs/companies/
+specs/companies/*
+!specs/companies/company-notes/
+specs/companies/company-notes/*
+!specs/companies/company-notes/company-notes-types-package.md
 !Specs/alerts/
 !Specs/alerts/*.md
 !Specs/data-quality/

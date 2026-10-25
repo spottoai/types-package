@@ -11,6 +11,8 @@
     "src/accounts/subscriptionWriteAccess.contracts.spec.ts",
     "src/ai/ai.contracts.spec.ts",
     "src/ai/conversationHistory.contracts.spec.ts",
+    "src/company/companyContext.contracts.spec.ts",
+    "src/company/companyNotes.contracts.spec.ts",
     "src/ai/workspaceArtifacts.contracts.spec.ts",
     "src/aws/aws.contracts.spec.ts",
     "src/aws/estates.contracts.spec.ts",
