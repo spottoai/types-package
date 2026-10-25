@@ -1,6 +1,6 @@
 import type { CompanyContextActor, CompanyContextCoverage, CompanyContextNoteSource, CompanyContextSourceLocator } from './companyContext';
-import type { CompanyMemoryAssignee, CompanyMemoryProposal } from './companyMemory';
-import type { CompanyNoteOrdinaryDocument } from './companyNotes';
+import type { CompanyMemoryAssignee, CompanyMemoryProposal, CompanyMemoryResponsibility } from './companyMemory';
+import type { CompanyNoteContextCategory, CompanyNoteOrdinaryDocument } from './companyNotes';
 
 export const COMPANY_MEETING_SCHEMA_VERSION = 1 as const;
 
@@ -67,6 +67,19 @@ export interface CompanyMeetingSummaryDraft {
   coverage: CompanyContextCoverage;
 }
 
+/** Review suggestions only: labels never establish canonical identities or a memory responsibility. */
+export interface CompanyMeetingResponsibilityCandidate {
+  statement: string;
+  relationship: CompanyMemoryResponsibility['relationship'];
+  personLabel?: string;
+  teamLabel?: string;
+  areaLabel?: string;
+  certainty: CompanyMeetingSummaryBullet['certainty'];
+  topics: CompanyNoteContextCategory[];
+  sourcePassages: [CompanyMeetingTranscriptPassage, ...CompanyMeetingTranscriptPassage[]];
+  uncertainty: string;
+}
+
 export type CompanyMeetingSummary = CompanyMeetingSummaryDraft & {
   summaryRevisionId: string;
   review: { state: 'draft' | 'needs-review' } | { state: 'reviewed'; reviewedAt: string; reviewedBy: CompanyContextActor };
@@ -87,6 +100,7 @@ export interface CompanyMeetingExtractionResponse {
   transcript: CompanyMeetingTranscriptReference;
   summary: CompanyMeetingSummaryDraft;
   memoryProposals: CompanyMemoryProposal[];
+  unresolvedResponsibilities?: CompanyMeetingResponsibilityCandidate[];
   coverage: CompanyContextCoverage;
 }
 

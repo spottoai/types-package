@@ -3,7 +3,7 @@
 Type: repo
 Status: draft
 Owner: Platform
-Last updated: 2026-10-25
+Last updated: 2026-10-26
 Core feature: [Company memory](../../../../core/specs/ai-chat/context/company-memory/company-memory.md)
 
 ## Entry and identity contracts
@@ -76,6 +76,13 @@ outcomes. Over-limit input, cancellation and partial processing are API concerns
 which must preserve the coverage and no-unrequested-write contract.
 
 ## Verification and adoption
+
+The [designed harvesting contracts](../context-harvesting/context-harvesting-types-package.md)
+add restricted source-derived drafts, comparison outcomes and exact reviewed
+memory/note change batches. They reuse these content, source and lifecycle
+contracts without making drafts eligible entries or exposing private chat IDs in
+shared sources. Background/chat orchestration requires additive package exports
+and consumer implementation; it is not provided by the current memory DTOs.
 
 The declaration and installed-package fixtures reject unreviewed entries, missing
 source vectors, unversioned note sources, unguarded writes and private-source leaks.

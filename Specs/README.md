@@ -8,4 +8,5 @@ not establish workflow implementation or deployment.
 | --- | --- |
 | Company context | [Sources, retrieval, coverage and chat metadata](ai-chat/company-context/company-context-types-package.md) |
 | Company memory | [Shared entries, organization, review, promotion and meeting extraction](ai-chat/company-memory/company-memory-types-package.md) |
+| Context harvesting | [Designed background runs, restricted drafts and reviewed change batches](ai-chat/context-harvesting/context-harvesting-types-package.md) |
 | Company Notes | [Immutable note revisions and concurrency](companies/company-notes/company-notes-types-package.md) |

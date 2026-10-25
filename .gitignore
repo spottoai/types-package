@@ -138,6 +138,9 @@ specs/ai-chat/company-context/*
 !specs/ai-chat/company-memory/
 specs/ai-chat/company-memory/*
 !specs/ai-chat/company-memory/company-memory-types-package.md
+!specs/ai-chat/context-harvesting/
+specs/ai-chat/context-harvesting/*
+!specs/ai-chat/context-harvesting/context-harvesting-types-package.md
 !specs/companies/
 specs/companies/*
 !specs/companies/company-notes/

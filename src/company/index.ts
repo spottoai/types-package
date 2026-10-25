@@ -8,3 +8,4 @@ export * from './companyContext';
 export * from './companyMemory';
 export * from './companyMeetings';
 export * from './companyNoteRevisions';
+export * from './companyContextHarvesting';
