@@ -316,6 +316,8 @@ for (const evidence of [
   { status: 'available', percentage: 0 },
   { status: 'unavailable' },
   { status: 'stale', percentage: 13 },
+  // AWS publishes partial evidence when only some collected Regions report a score.
+  { status: 'partial', percentage: 62, observedAt: '2026-10-03T00:00:00.000Z' },
 ]) {
   const scoreHistory = structuredClone(history);
   scoreHistory.periods[0].metrics.secureScoreEvidence = evidence;

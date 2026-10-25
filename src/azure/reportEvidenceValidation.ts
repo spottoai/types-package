@@ -47,7 +47,7 @@ import type { SecureScoreEvidence } from './secureScore';
 import { isReportingStories, isStoryFingerprintRows } from '../common/utilizationStoriesValidation';
 
 export const isReportSecureScoreEvidence = (value: unknown): value is SecureScoreEvidence => {
-  if (!isRecord(value) || !['available', 'unavailable', 'stale'].includes(value.status as string)) return false;
+  if (!isRecord(value) || !['available', 'unavailable', 'stale', 'partial'].includes(value.status as string)) return false;
   if (
     !hasOptionalNumbers(value, ['percentage', 'currentScore', 'maxScore', 'weight']) ||
     (value.percentage !== undefined && ((value.percentage as number) < 0 || (value.percentage as number) > 100)) ||
