@@ -3,7 +3,7 @@
 Type: repo
 Status: draft
 Owner: Platform
-Last updated: 2026-10-26
+Last updated: 2026-10-27
 Core feature: [Context harvesting](../../../../core/specs/ai-chat/context/context-harvesting/context-harvesting.md)
 
 ## Implementation state and ownership
@@ -46,7 +46,7 @@ content or hidden exclusion locators. Existing targets include their base revisi
 Unresolved area/person/team suggestions remain separate from canonical identity
 IDs and final valid `CompanyMemoryContent` responsibility relationships.
 
-Topic suggestions reuse the existing eight context categories. One statement can
+Topic suggestions reuse the shared context categories, including `licenses`. One statement can
 have multiple topics without multiple copies. Candidate content preserves the
 existing fact/objective/constraint/decision/responsibility kinds; a tentative
 idea is not implicitly an approved objective or an agreed decision.

@@ -3,7 +3,7 @@
 Type: repo
 Status: draft
 Owner: Platform
-Last updated: 2026-10-25
+Last updated: 2026-10-27
 Core feature: [Company context](../../../../core/specs/ai-chat/context/company-context/company-context.md)
 
 ## Scope and ownership
@@ -37,7 +37,7 @@ unavailable coverage require reason codes. Empty results differ from denied,
 unread, stale and omitted content. Source eligibility, array/count/byte bounds,
 complete-coverage reconciliation and locator ranges are enforced by API readers.
 
-The eight `CompanyNoteContextCategory` values are the starting topics. Areas,
+The `CompanyNoteContextCategory` values, including `licenses`, are the starting topics. Areas,
 people and teams use company-local identities. Context versions are opaque API
 continuity tokens; changing source content, permission or memory eligibility
 invalidates affected cached context regardless of the token a caller supplies.

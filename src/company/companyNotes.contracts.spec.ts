@@ -379,6 +379,21 @@ const contextTemplateKey: CompanyNoteContextTemplateKey = COMPANY_NOTE_CONTEXT_T
 const featureKey: CompanyNotesFeatureKey = COMPANY_NOTES_FEATURE_KEY;
 const permissionKey: CompanyNotesPermissionKey = COMPANY_NOTES_MANAGE_PERMISSION_KEY;
 
+const licensesCreateRequest = {
+  title: 'Licenses',
+  noteDate: '2026-10-27',
+  category: 'licenses',
+  templateKey: 'licenses-v1',
+  templateVersion: 1,
+  content: {
+    format: 'structured-context-v1',
+    responses: [],
+    plainText: '',
+  },
+} satisfies CreateCompanyNoteRequest;
+const licensesContextCategory: CompanyNoteContextCategory = licensesCreateRequest.category;
+const licensesContextTemplateKey: CompanyNoteContextTemplateKey = licensesCreateRequest.templateKey;
+
 void noteContent;
 void richTextAnswerValue;
 void structuredSecurityContent;
@@ -414,6 +429,9 @@ void contextTemplateKey;
 void COMPANY_NOTES_AI_MODES;
 void featureKey;
 void permissionKey;
+void licensesCreateRequest;
+void licensesContextCategory;
+void licensesContextTemplateKey;
 
 const invalidContentFormat: CompanyNoteContent = {
   // @ts-expect-error Company Notes content format must be one of the published formats.

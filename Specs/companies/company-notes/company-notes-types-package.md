@@ -1,12 +1,20 @@
-# Company note revision contracts
+# Company note contracts
 
 Type: repo
 Status: draft
 Owner: Platform
-Last updated: 2026-10-25
+Last updated: 2026-10-27
 Core feature: [Company Notes](../../../../core/specs/companies/company-notes/company-notes.md)
 
 ## Scope
+
+`src/company/companyNotes.ts` exports the Company Notes categories, template keys
+and structured note contracts. The fixed context registry includes `licenses`
+with template key `licenses-v1`, immediately after `finops`. It represents shared
+company licensing context for Microsoft 365 and Azure Hybrid Benefit alongside
+FinOps. Existing categories, template keys and note schema version remain unchanged.
+Question definitions, display labels, page shortcuts and evidence selection belong
+to API/UI consumers; these contracts do not register those behaviors.
 
 `src/company/companyNoteRevisions.ts` exports immutable note revision summaries,
 complete snapshots, history pages, comparison payloads and revision-aware mutation
