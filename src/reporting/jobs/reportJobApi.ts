@@ -9,6 +9,7 @@ import {
   utf8ByteLength,
 } from '../shared/reportingIds';
 import { isReportFileName } from '../shared/reportingPaths';
+import { isReportJobFileNameForType } from './reportPack';
 import { isReportJobId, parseReportJobId } from './reportJobIdentity';
 import {
   isReportJobNotificationDestinationCountsV1,
@@ -221,6 +222,7 @@ export const isReportJobProjectionV1 = (value: unknown): value is ReportJobProje
       !isReportJobStatus(value.status) ||
       !isCount(value.attemptCount) ||
       !isReportFileName(value.fileName) ||
+      !isReportJobFileNameForType(value.fileName, String(value.reportType)) ||
       !isReportJobNotificationStatus(value.notificationStatus) ||
       !isIsoUtcTimestamp(value.requestedAtUtc)
     )

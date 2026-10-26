@@ -13,7 +13,7 @@ export const REPORT_JOB_MAX_REVERSE_TIME = BigInt('9999999999999999999');
 /** Latest instant accepted (9999-12-31T23:59:59.999Z). */
 export const REPORT_JOB_MAX_INSTANT_MS = 253402300799999;
 
-export const REPORT_JOB_ID_PATTERN = /^(\d{19})-(sdm|architecture-assessment)-([0-9a-f]{16})$/;
+export const REPORT_JOB_ID_PATTERN = /^(\d{19})-(sdm|architecture-assessment|report-pack)-([0-9a-f]{16})$/;
 export const REPORT_JOB_SCOPE_HASH_PATTERN = /^[0-9a-f]{16}$/;
 
 /** Strings must be exact UTC ISO timestamps (`toISOString` form), so the result never depends on the host time zone. */

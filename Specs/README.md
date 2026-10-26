@@ -10,3 +10,4 @@ not establish workflow implementation or deployment.
 | Company memory | [Shared entries, organization, review, promotion and meeting extraction](ai-chat/company-memory/company-memory-types-package.md) |
 | Context harvesting | [Designed background runs, restricted drafts and reviewed change batches](ai-chat/context-harvesting/context-harvesting-types-package.md) |
 | Company Notes | [Immutable note revisions and concurrency](companies/company-notes/company-notes-types-package.md) |
+| Background report generation | [Jobs, scheduled Report Packs and filename contracts](reporting/background-report-generation/background-report-generation-types-package.md) |

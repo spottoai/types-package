@@ -3,6 +3,7 @@
  * reportworker (types-package/specs/reporting/reporting-scheduler-types.md, Part A).
  */
 export * from './reportJobSpec';
+export * from './reportPack';
 export * from './reportJobIdentity';
 export * from './reportJobMessages';
 export * from './reportJobStatus';

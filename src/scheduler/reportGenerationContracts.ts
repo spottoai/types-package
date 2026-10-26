@@ -1,7 +1,10 @@
-import type { CurrentStateReportJobSpecV1, ReportPeriodRuleV1, SdmReportJobSpecV1 } from '../reporting/jobs/reportJobSpec';
+import type { CurrentStateReportJobSpecV1, ReportPackJobSpecV1, ReportPeriodRuleV1, SdmReportJobSpecV1 } from '../reporting/jobs/reportJobSpec';
 
 /** Explicit periods belong to API requests; schedules resolve a rule in their persisted timezone. */
-export type ScheduledReportJobSpecV1 = CurrentStateReportJobSpecV1 | (Omit<SdmReportJobSpecV1, 'period'> & { period: ReportPeriodRuleV1 });
+export type ScheduledReportJobSpecV1 =
+  | CurrentStateReportJobSpecV1
+  | ReportPackJobSpecV1
+  | (Omit<SdmReportJobSpecV1, 'period'> & { period: ReportPeriodRuleV1 });
 export type ReportGenerationScheduleTiming =
   | { triggerType: 'once'; localDateTime: string }
   | { triggerType: 'recurring'; cadence: 'daily'; localTime: string }
