@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { checkRemediationPlanContracts } from './framework-remediation-plan-contract-cases.mjs';
 
 const require = createRequire(import.meta.url);
 const root = process.env.FRAMEWORK_CONTRACT_ROOT ? resolve(process.env.FRAMEWORK_CONTRACT_ROOT) : resolve(import.meta.dirname, '..');
@@ -122,6 +123,7 @@ for (const [label, api] of [
   ['cjs', require(resolve(root, 'dist/framework-assessments/index.js'))],
   ['esm', await import(pathToFileURL(resolve(root, 'dist/esm/framework-assessments/index.js')).href)],
 ]) {
+  checkRemediationPlanContracts(api, label);
   assert.equal(api.canonicalAssessmentJson({ z: { b: 2, a: 1 }, a: ['é', 1] }), '{"a":["é",1],"z":{"a":1,"b":2}}');
   assert.equal(api.assessmentContentSha256({ b: 2, a: 1 }), createHash('sha256').update('{"a":1,"b":2}').digest('hex'));
   assert.equal(
