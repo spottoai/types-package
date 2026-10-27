@@ -122,6 +122,7 @@ const companyTrustSetup: AwsCompanyTrustSetupResponse = {
   provider: 'AWS',
   externalId: 'spotto-generated-external-id',
   createdAt: '2026-07-15T00:00:00.000Z',
+  onboarding: { deployment: 'prod-us', region: 'us-east-1', registrationTopicArn: 'arn:aws:sns:us-east-1:111122223333:spotto-aws-connect-prod-us', roleName: 'SpottoReadOnlyRole-prod-us', exportName: 'spotto-cur2-prod-us' },
   onboardingBundle: {
     schemaVersion: 1,
     roleName: 'SpottoReadOnlyRole',

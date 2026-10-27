@@ -145,6 +145,13 @@ const commands: AwsCommand[] = [
 ];
 
 const companyTrustSetup: AwsCompanyTrustSetupResponse = {
+  onboarding: {
+    deployment: 'prod-us',
+    region: 'us-east-1',
+    registrationTopicArn: 'arn:aws:sns:us-east-1:111122223333:spotto-aws-connect-prod-us',
+    roleName: 'SpottoReadOnlyRole-prod-us',
+    exportName: 'spotto-cur2-prod-us',
+  },
   provider: 'AWS',
   externalId: 'example-server-issued-external-id',
   createdAt: '2026-07-31T00:00:00.000Z',
