@@ -20,6 +20,12 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 ## Features
 
+M365 licensing context has shared product strategy/notes/review-date and account-note
+contracts. Served history months optionally expose currency-independent
+`productQuantities` for Contain comparisons, even when selected pricing is unavailable.
+API derives these from existing stored currency blocks; engine snapshots stay
+unchanged. See the [context contract](specs/licensing/license-pricing/license-pricing-types-package.md).
+
 Company context, shared company memory, meeting-transcript summaries and immutable
 note revisions have additive root-exported DTOs. They distinguish proposed and
 reviewed memory, company-owned sources and private conversations, topics/areas/

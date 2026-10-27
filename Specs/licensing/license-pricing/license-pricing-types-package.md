@@ -60,6 +60,23 @@ checks only. API owns authorization, subject membership, normalization, actual
 payload limits and last-write-wins writes with internal product-blob ETag retries.
 Schema versions identify stored formats rather than client negotiation.
 
+## Currency-independent history quantities
+
+`Microsoft365LicenseHistoryMonth.productQuantities` optionally maps normalized
+SKU GUIDs to `Microsoft365LicenseProductQuantities` (`purchasedUnits: number | null`).
+The served-history guard accepts it independently of selected currency and nullable
+pricing, bounds it to 2,000 SKUs, and rejects extra dimensions or invalid counts.
+Older responses remain valid. The engine snapshot contract stays unchanged.
+Consumers adopt the updated history guard before API emission; omission during
+rollout remains unknown quantity coverage.
+
+API projection reads agreeing known quantities across any stored currency block
+before selecting money; conflicts/null-only observations remain unknown. The map
+enables Contain comparisons across recorded months without selected-price coverage.
+Free/excluded SKUs missing in all blocks remain unavailable; future engine quantity
+publication is a separate capability. This shared contract does not implement the
+API extraction or the portal comparison.
+
 ## Verification and handoff
 
 `npm run check:microsoft365-license-context-contracts` checks CJS/ESM parity,

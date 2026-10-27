@@ -11,6 +11,11 @@ const content = ${JSON.stringify(licensingContentFixture)};
 if (!root.isMicrosoft365LicensingContent(content) ||
     root.isMicrosoft365LicensingContent({...content, sources: {users: []}}))
   throw new Error('Packed Microsoft 365 licensing-content contract failed.');
+const securityCopilotContent = structuredClone(content);
+securityCopilotContent.relatedSpend.currencies[0].products[0].category = 'security-copilot';
+if (!root.isMicrosoft365LicensingContent(securityCopilotContent) ||
+    !root.isMicrosoft365RelatedSpendProduct(securityCopilotContent.relatedSpend.currencies[0].products[0]))
+  throw new Error('Packed Security Copilot licensing-content contract failed.');
 `;
 const awsFixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
 const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-optimization.consumer.ts.fixture');

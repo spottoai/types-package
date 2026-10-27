@@ -311,7 +311,14 @@ export function isMicrosoft365RelatedSpendMeter(value: unknown): value is Micros
 export function isMicrosoft365RelatedSpendProduct(value: unknown): value is Microsoft365RelatedSpendProduct {
   return (
     exact(value, ['category', 'billed', 'amortized', 'matchedRowCount', 'meters']) &&
-    oneOf(value.category, ['github-copilot-seats', 'github-copilot-consumption', 'github-other', 'copilot-studio', 'fabric-ai']) &&
+    oneOf(value.category, [
+      'github-copilot-seats',
+      'github-copilot-consumption',
+      'github-other',
+      'copilot-studio',
+      'security-copilot',
+      'fabric-ai',
+    ]) &&
     isMicrosoft365RelatedSpendAmount(value.billed) &&
     isMicrosoft365RelatedSpendAmount(value.amortized) &&
     count(value.matchedRowCount) &&

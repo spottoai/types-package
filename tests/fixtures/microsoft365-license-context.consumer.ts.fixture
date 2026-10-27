@@ -12,6 +12,8 @@ import {
   type Microsoft365AccountContextDocument,
   type Microsoft365ProductContextResponse,
   type Microsoft365ProductContextCollectionResponse,
+  type Microsoft365LicenseHistoryMonth,
+  type Microsoft365LicenseProductQuantities,
 } from '@spottoai/types-package';
 
 const strategy: Microsoft365LicenseStrategy = 'contain';
@@ -20,6 +22,15 @@ const accountInput: Microsoft365AccountContextInput = { notes: 'Temporary absenc
 const absent: Microsoft365ProductContextResponse = { tenantId: 'tenant-one', context: null };
 const collection: Microsoft365ProductContextCollectionResponse = { tenantId: 'tenant-one', products: [] };
 const noteLimit: 4000 = MICROSOFT365_LICENSE_CONTEXT_LIMITS.noteCharacters;
+const quantity: Microsoft365LicenseProductQuantities = { purchasedUnits: 40 };
+declare const month: Microsoft365LicenseHistoryMonth;
+const quantityMonth: Microsoft365LicenseHistoryMonth = {
+  ...month,
+  pricing: null,
+  productQuantities: { '00000000-0000-4000-8000-00000000a001': quantity },
+};
+// @ts-expect-error Quantity history has no price/currency dimensions.
+const pricedQuantity: Microsoft365LicenseProductQuantities = { purchasedUnits: 40, currency: 'NZD' };
 
 // @ts-expect-error Replacement is deferred and is not a strategy.
 const invalidStrategy: Microsoft365LicenseStrategy = 'replace';
@@ -52,4 +63,4 @@ if (isMicrosoft365ProductContextCollectionResponse(wire)) {
   const updater: string | undefined = response.products[0]?.updatedBy;
   void updater;
 }
-void [input, accountInput, absent, collection, noteLimit, invalidStrategy, indexedAccount, clientRevision, incomplete];
+void [input, accountInput, absent, collection, noteLimit, quantityMonth, pricedQuantity, invalidStrategy, indexedAccount, clientRevision, incomplete];

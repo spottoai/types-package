@@ -122,6 +122,8 @@ export type Microsoft365RelatedSpendCategory =
   | 'github-copilot-consumption'
   | 'github-other'
   | 'copilot-studio'
+  /** Provisioned Security Copilot capacity and overage retain their separate meter evidence. */
+  | 'security-copilot'
   | 'fabric-ai';
 
 export interface Microsoft365RelatedSpendAmount {

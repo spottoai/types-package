@@ -36,6 +36,46 @@ for (const [format, api] of Object.entries(formats)) {
     assert.equal(fixture.relatedSpend.currencies[0].products[0].billed.state, 'partial');
   });
 
+  test(`${format}: accepts Security Copilot capacity and overage alongside existing categories`, () => {
+    const value = changed(value => {
+      const product = structuredClone(value.relatedSpend.currencies[0].products[0]);
+      product.category = 'security-copilot';
+      product.billed = { amount: 125.5, state: 'partial', reasonCodes: ['incomplete_subscription_coverage'] };
+      product.amortized = { amount: null, state: 'unavailable', reasonCodes: ['missing_amortized_amount'] };
+      product.matchedRowCount = 2;
+      product.meters = ['Synthetic provisioned capacity', 'Synthetic overage'].map(meterName => ({
+        ...structuredClone(product.meters[0]),
+        meterName,
+        rowCount: 1,
+      }));
+      value.relatedSpend.currencies[0].products.push(product);
+      Object.assign(value.relatedSpend.subscriptions[0], { sourceRowCount: 3, retainedRowCount: 3, matchedRowCount: 3, inWindowRowCount: 3 });
+    });
+    const security = value.relatedSpend.currencies[0].products[1];
+    assert.equal(api.isMicrosoft365RelatedSpendProduct(security), true);
+    assert.equal(api.isMicrosoft365RelatedSpendView(value.relatedSpend), true);
+    assert.equal(api.isMicrosoft365LicensingContent(value), true);
+    assert.equal(security.billed.amount, 125.5);
+    assert.equal(security.amortized.amount, null);
+    assert.equal(security.meters.length, 2);
+    assert.equal(value.relatedSpend.currencies[0].products[0].category, fixture.relatedSpend.currencies[0].products[0].category);
+  });
+
+  test(`${format}: keeps Security Copilot zero charges and signed corrections distinct from unavailable money`, () => {
+    const value = changed(value => {
+      value.relatedSpend.currencies[0].products[0].category = 'security-copilot';
+    });
+    const product = value.relatedSpend.currencies[0].products[0];
+    product.billed.amount = 0;
+    assert.equal(api.isMicrosoft365LicensingContent(value), true);
+    product.billed.amount = -2.75;
+    assert.equal(api.isMicrosoft365LicensingContent(value), true);
+    product.amortized = { amount: null, state: 'unavailable', reasonCodes: ['missing_amortized_amount'] };
+    assert.equal(api.isMicrosoft365LicensingContent(value), true);
+    product.amortized.amount = 0;
+    assert.equal(api.isMicrosoft365LicensingContent(value), false);
+  });
+
   const invalid = [
     ['wrong schema', value => (value.schemaVersion = 'microsoft-365-license-summary/v1')],
     ['missing account lifecycle', value => delete value.accountLifecycle],
@@ -132,6 +172,11 @@ for (const [format, api] of Object.entries(formats)) {
     ['matched with nonzero difference', value => (value.oneDrive.reconciliation.state = 'matched')],
     ['nonsensical report day', value => (value.sharePoint.usage.latestReportDate = '2026-02-31')],
     ['unknown spend category', value => (value.relatedSpend.currencies[0].products[0].category = 'generic-openai')],
+    ['noncanonical Security Copilot category', value => (value.relatedSpend.currencies[0].products[0].category = 'Security Copilot')],
+    [
+      'invented Security Copilot capacity category',
+      value => (value.relatedSpend.currencies[0].products[0].category = 'security-copilot-provisioned'),
+    ],
   ];
   for (const [name, mutation] of invalid)
     test(`${format}: rejects ${name}`, () => assert.equal(api.isMicrosoft365LicensingContent(changed(mutation)), false));

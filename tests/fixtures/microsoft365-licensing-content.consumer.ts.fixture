@@ -15,7 +15,20 @@ import {
   type Microsoft365RelatedSpendSourceState,
   type Microsoft365StorageContribution,
   type Microsoft365AccountDisableEvidence,
+  type Microsoft365RelatedSpendCategory,
+  type Microsoft365RelatedSpendProduct,
 } from '@spottoai/types-package';
+
+export const securityCopilotCategory: Microsoft365RelatedSpendCategory = 'security-copilot';
+export const securityCopilotProduct: Microsoft365RelatedSpendProduct = {
+  category: securityCopilotCategory,
+  billed: { amount: 0, state: 'complete', reasonCodes: [] },
+  amortized: { amount: null, state: 'unavailable', reasonCodes: ['missing_amortized_amount'] },
+  matchedRowCount: 0,
+  meters: [],
+};
+// @ts-expect-error Provisioned capacity is meter evidence within Security Copilot, not a separate category.
+const wrongSecurityCopilotCategory: Microsoft365RelatedSpendCategory = 'security-copilot-provisioned';
 
 export function readLicensingContent(value: unknown) {
   if (!isMicrosoft365LicensingContent(value)) return null;

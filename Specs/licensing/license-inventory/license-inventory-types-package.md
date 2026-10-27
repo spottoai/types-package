@@ -39,6 +39,14 @@ null/state/reason fields; billing corrections can be negative. Meter quantities
 need units. Estimates do not become billing-backed money. Related spend references
 charges already present in Azure totals, not additional spend to add again.
 
+Supported related-spend categories are `github-copilot-seats`,
+`github-copilot-consumption`, `github-other`, `copilot-studio`, `security-copilot`
+and `fabric-ai`. Security Copilot represents its provisioned capacity and overage;
+their meter evidence stays separate within that category. The existing amount,
+currency, period and availability contracts apply unchanged, including explicit
+zero, signed credits and independently unavailable amortized amounts. This adds
+no new artifact or fields and does not infer offboarding or license-removal safety.
+
 Guards reject malformed nested fields, enum coercions, extra raw/person properties,
 unsafe storage counts, inconsistent scope counts, case-equivalent duplicate
 subscriptions/accounts and unsupported complete measurements. Bounds match the
@@ -58,3 +66,11 @@ publication. Publish the prepared package before changing production consumer
 dependency locks. Producer compatibility can be verified locally against built or
 packed exports; local tarballs, source aliases and links are not delivery
 dependencies. API/UI consumption and deployment remain separate changes.
+
+Security Copilot extends a closed category union. Older published validators
+reject the new value, including when nested in a complete licensing-content
+artifact. Release the package through the normal build server and update the API
+validator dependency before the engine emits this category. Engine classification
+and the API OpenAPI category enum require separate adoption; changing this package
+alone does not collect or expose Security Copilot billing. Existing artifacts
+without the category remain valid.

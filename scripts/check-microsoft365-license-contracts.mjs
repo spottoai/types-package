@@ -309,6 +309,35 @@ const stepUpSummary = (mutate = () => {}) => {
 };
 
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: served quantity history is independent of selected currency and prices`, () => {
+    const skuId = '00000000-0000-4000-8000-00000000a001';
+    const productQuantities = { [skuId]: { purchasedUnits: 40 } };
+    const month = { ...monthOf(snapshot()), pricing: null, productQuantities };
+    for (const currency of ['AUD', 'NZD', 'EUR', null]) assert.equal(api.isMicrosoft365LicenseHistory({ ...series(month), currency }), true);
+    assert.equal(api.isMicrosoft365LicenseHistory(series(monthOf(snapshot()))), true, 'Legacy served months remain valid');
+    for (const purchasedUnits of [0, null])
+      assert.equal(api.isMicrosoft365LicenseHistory(series({ ...month, productQuantities: { [skuId]: { purchasedUnits } } })), true);
+    assert.equal(api.isMicrosoft365LicenseHistorySnapshot({ ...snapshot(), productQuantities }), false, 'Engine snapshot schema stays unchanged');
+  });
+
+  test(`${format}: quantity history rejects malformed identities, counts and extra dimensions`, () => {
+    const skuId = '00000000-0000-4000-8000-00000000a001';
+    const month = { ...monthOf(snapshot()), pricing: null };
+    for (const productQuantities of [
+      null,
+      [],
+      { [skuId.toUpperCase()]: { purchasedUnits: 1 } },
+      { other: { purchasedUnits: 1 } },
+      ...[-1, 0.5, Number.MAX_SAFE_INTEGER + 1, '40', undefined].map(purchasedUnits => ({ [skuId]: { purchasedUnits } })),
+      { [skuId]: { purchasedUnits: 40, currency: 'AUD' } },
+      { [skuId]: { purchasedUnits: 40, accountId: 'private' } },
+      Object.fromEntries(
+        Array.from({ length: 2001 }, (_, index) => [`10000000-0000-4000-8000-${index.toString(16).padStart(12, '0')}`, { purchasedUnits: 1 }])
+      ),
+    ])
+      assert.equal(api.isMicrosoft365LicenseHistory(series({ ...month, productQuantities })), false);
+  });
+
   test(`${format}: step-ups are aggregate, internally consistent and optional`, () => {
     const document = stepUpSummary();
     assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
