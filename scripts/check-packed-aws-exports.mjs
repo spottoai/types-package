@@ -5,6 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
+const packedLicensingContentProbe = `
+const content = ${JSON.stringify(licensingContentFixture)};
+if (!root.isMicrosoft365LicensingContent(content) ||
+    root.isMicrosoft365LicensingContent({...content, sources: {users: []}}))
+  throw new Error('Packed Microsoft 365 licensing-content contract failed.');
+`;
 const awsFixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
 const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-optimization.consumer.ts.fixture');
 const recommendationTracksFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-tracks.consumer.ts.fixture');
@@ -422,7 +429,10 @@ try {
   await mkdir(consumerRoot, { recursive: true });
   await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true, type: 'module' }, null, 2));
   await copyFile(awsFixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
-  await copyFile(join(packageRoot, 'tests/fixtures/savings-unavailable-claims.consumer.ts.fixture'), join(consumerRoot, 'savings-unavailable-claims.consumer.ts'));
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/savings-unavailable-claims.consumer.ts.fixture'),
+    join(consumerRoot, 'savings-unavailable-claims.consumer.ts')
+  );
   await copyFile(join(packageRoot, 'tests/fixtures/resource-state.consumer.ts.fixture'), join(consumerRoot, 'resource-state.consumer.ts'));
   await copyFile(resourceOptimizationFixturePath, join(consumerRoot, 'resource-optimization.consumer.ts'));
   await copyFile(recommendationTracksFixturePath, join(consumerRoot, 'recommendation-tracks.consumer.ts'));
@@ -444,10 +454,18 @@ try {
   await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
   await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/microsoft365-license-context.consumer.ts.fixture'),
+    join(consumerRoot, 'microsoft365-license-context.consumer.ts')
+  );
   await copyFile(join(packageRoot, 'tests/fixtures/company-context.consumer.ts.fixture'), join(consumerRoot, 'company-context.consumer.ts'));
   await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-usage.consumer.ts')
+  );
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.consumer.ts.fixture'),
+    join(consumerRoot, 'microsoft365-licensing-content.consumer.ts')
   );
   await copyFile(
     join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'),
@@ -479,6 +497,7 @@ try {
       '--moduleResolution',
       'NodeNext',
       'aws-public-root.consumer.ts',
+      'microsoft365-license-context.consumer.ts',
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
       'resource-optimization.consumer.ts',
@@ -500,6 +519,7 @@ try {
       'public-ip-addresses.consumer.ts',
       'resource-health.consumer.ts',
       'microsoft365-license-usage.consumer.ts',
+      'microsoft365-licensing-content.consumer.ts',
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
       'company-context.consumer.ts',
@@ -516,6 +536,12 @@ try {
     consumerRoot
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
+  run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedLicensingContentProbe}`], consumerRoot);
+  run(
+    process.execPath,
+    ['--input-type=module', '-e', `import * as root from '@spottoai/types-package'; ${packedLicensingContentProbe}`],
+    consumerRoot
+  );
   run(process.execPath, ['aws-environment.check.mjs'], consumerRoot);
   run(process.execPath, ['environment-provider.check.mjs'], consumerRoot);
   // The narrow public governance contract must work in both module formats and legacy TS resolution.
@@ -533,6 +559,7 @@ try {
       'node',
       'cloud-governance.consumer.ts',
       'aws-environment.consumer.ts',
+      'microsoft365-license-context.consumer.ts',
     ],
     consumerRoot
   );
@@ -568,6 +595,27 @@ try {
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
     ],
+    consumerRoot
+  );
+  const licenseContextChecks = `
+    assert.equal(root.MICROSOFT365_LICENSE_CONTEXT_VERSION, undefined);
+    assert.equal(root.isMicrosoft365AccountContextInput({ notes: 'Context only' }), true);
+    assert.equal(root.isMicrosoft365ProductContextCollectionResponse({ tenantId: 'tenant-one', products: [] }), true);
+    assert.equal(root.isMicrosoft365ProductContextResponse({ tenantId: 'tenant-one', context: null }), true);
+    assert.equal(root.isMicrosoft365ProductContextSummary({ notes: 'Must not leak' }), false);
+  `;
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${licenseContextChecks}`,
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${licenseContextChecks}`],
     consumerRoot
   );
   const healthExportChecks =
@@ -836,6 +884,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
       '--moduleResolution',
       'node',
       'microsoft365-license-usage.consumer.ts',
+      'microsoft365-licensing-content.consumer.ts',
     ],
     consumerRoot
   );

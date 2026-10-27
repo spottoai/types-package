@@ -1,0 +1,41 @@
+import {
+  isMicrosoft365LicensingContent,
+  isMicrosoft365ContentAvailability,
+  isMicrosoft365SharePointStorage,
+  isMicrosoft365OneDriveStorage,
+  isMicrosoft365AccountLifecycle,
+  isMicrosoft365AccountDisableEvidence,
+  isMicrosoft365RelatedSpendView,
+  isMicrosoft365RelatedSpendAmount,
+  isMicrosoft365RelatedSpendMeter,
+  isMicrosoft365RelatedSpendProduct,
+  isMicrosoft365RelatedSpendCoverage,
+  type Microsoft365LicensingContent,
+  type Microsoft365ContentAvailability,
+  type Microsoft365RelatedSpendSourceState,
+  type Microsoft365StorageContribution,
+  type Microsoft365AccountDisableEvidence,
+} from '@spottoai/types-package';
+
+export function readLicensingContent(value: unknown) {
+  if (!isMicrosoft365LicensingContent(value)) return null;
+  const content: Microsoft365LicensingContent = value;
+  const availability: Microsoft365ContentAvailability = content.measures.inventory;
+  const contribution: Microsoft365StorageContribution | undefined = content.sharePoint.entitlement.contributions[0];
+  const person: Microsoft365AccountDisableEvidence | undefined = content.accountLifecycle.accounts[0];
+  const disabledAt: string | null = person?.disabledAt ?? null;
+  const billed: number | null = content.relatedSpend.currencies[0]?.products[0]?.billed.amount ?? null;
+  const sourceState: Microsoft365RelatedSpendSourceState | undefined = content.relatedSpend.subscriptions[0]?.state;
+  return { availability, contribution, disabledAt, billed, sourceState,
+    guards: [isMicrosoft365ContentAvailability, isMicrosoft365SharePointStorage, isMicrosoft365OneDriveStorage,
+      isMicrosoft365AccountLifecycle, isMicrosoft365AccountDisableEvidence, isMicrosoft365RelatedSpendView,
+      isMicrosoft365RelatedSpendAmount, isMicrosoft365RelatedSpendMeter, isMicrosoft365RelatedSpendProduct,
+      isMicrosoft365RelatedSpendCoverage] };
+}
+
+// @ts-expect-error Raw evidence is private to the collecting engine.
+import type { Microsoft365ContentEvidence } from '@spottoai/types-package';
+// @ts-expect-error This schema cannot be confused with the older license summary.
+const wrongSchema: Microsoft365LicensingContent['schemaVersion'] = 'microsoft-365-license-summary/v1';
+// @ts-expect-error Missing permissions are not an available measurement.
+const wrongState: Microsoft365ContentAvailability['state'] = 'permission_granted';

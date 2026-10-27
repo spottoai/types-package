@@ -1,0 +1,356 @@
+{
+  "schemaVersion": "microsoft-365-licensing-content/v1",
+  "tenantId": "fictional-tenant",
+  "tenantSyncRunId": "fictional-run",
+  "generatedAt": "2026-10-27T00:09:38.591Z",
+  "graphCollection": "attempted",
+  "licenseEvidence": {
+    "generatedAt": "2026-10-27T00:09:38.590Z",
+    "tenantSyncRunId": "fictional-run"
+  },
+  "measures": {
+    "inventory": {
+      "state": "available",
+      "reasonCodes": [],
+      "requiredPermissions": [],
+      "observedAt": "2026-10-27T00:09:38.590Z"
+    },
+    "accountDetails": {
+      "state": "available",
+      "reasonCodes": [],
+      "requiredPermissions": [],
+      "observedAt": "2026-10-27T00:09:38.590Z"
+    },
+    "signInActivity": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "officeUsageReport": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "copilotUsageReport": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "mailboxUsageReport": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "oneDriveUsageReport": {
+      "state": "available",
+      "reasonCodes": [],
+      "requiredPermissions": [],
+      "observedAt": "2026-10-27T00:09:38.590Z"
+    },
+    "commercialLifecycle": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "reportPrivacySettings": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "accountDisableHistory": {
+      "state": "available",
+      "reasonCodes": [],
+      "requiredPermissions": [
+        "AuditLog.Read.All"
+      ],
+      "observedAt": "2026-10-27T00:09:38.601Z"
+    },
+    "mailboxType": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "mailboxHolds": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    },
+    "licenseAssignmentHistory": {
+      "state": "unavailable",
+      "reasonCodes": [
+        "not_collected"
+      ],
+      "requiredPermissions": [],
+      "observedAt": null
+    }
+  },
+  "sharePoint": {
+    "usage": {
+      "availability": {
+        "state": "available",
+        "reasonCodes": [],
+        "requiredPermissions": [
+          "Reports.Read.All"
+        ],
+        "observedAt": "2026-10-27T00:09:38.600Z"
+      },
+      "reportRefreshDate": "2026-10-27",
+      "latestReportDate": "2026-10-27",
+      "totalUsedBytes": 100,
+      "trend": [
+        {
+          "date": "2026-10-27",
+          "usedBytes": 100
+        }
+      ],
+      "omittedTrendCount": 0
+    },
+    "sites": {
+      "availability": {
+        "state": "partial",
+        "reasonCodes": [
+          "site_identities_unavailable"
+        ],
+        "requiredPermissions": [
+          "Reports.Read.All"
+        ],
+        "observedAt": "2026-10-27T00:09:38.601Z"
+      },
+      "rows": [
+        {
+          "siteId": null,
+          "siteUrl": null,
+          "usedBytes": 100,
+          "allocatedBytes": 1000,
+          "isDeleted": false,
+          "lastActivityDate": null
+        }
+      ],
+      "observedSiteCount": 1,
+      "activeSiteCount": 1,
+      "deletedSiteCount": 0,
+      "unknownDeletedSiteCount": 0,
+      "activeUsedBytes": 100,
+      "omittedSiteCount": 0,
+      "identitiesVisible": false
+    },
+    "entitlement": {
+      "availability": {
+        "state": "available",
+        "reasonCodes": [],
+        "requiredPermissions": [],
+        "observedAt": "2026-10-27T00:09:38.590Z"
+      },
+      "ruleVersion": "sharepoint-commercial-2026-10-27",
+      "ruleSource": "https://learn.microsoft.com/en-us/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+      "baseBytes": 1099511627776,
+      "seatContributionBytes": 107374182400,
+      "additionalStorageBytes": 0,
+      "knownEntitlementBytes": 1206885810176,
+      "calculatedEntitlementBytes": 1206885810176,
+      "authoritativeQuotaBytes": null,
+      "unknownSkuPartNumbers": [],
+      "omittedUnknownSkuCount": 0,
+      "contributions": [
+        {
+          "skuPartNumber": "SPE_E3",
+          "purchasedUnits": 10,
+          "assignedUnits": 1,
+          "bytesPerUnit": 10737418240,
+          "contributionBytes": 107374182400,
+          "unassignedContributionBytes": 96636764160,
+          "unit": "seat"
+        }
+      ],
+      "omittedContributionCount": 0
+    }
+  },
+  "oneDrive": {
+    "aggregate": {
+      "availability": {
+        "state": "available",
+        "reasonCodes": [],
+        "requiredPermissions": [
+          "Reports.Read.All"
+        ],
+        "observedAt": "2026-10-27T00:09:38.599Z"
+      },
+      "reportRefreshDate": "2026-10-27",
+      "latestReportDate": "2026-10-27",
+      "series": "All",
+      "totalUsedBytes": 10,
+      "observedLatestUsedBytes": 10
+    },
+    "detail": {
+      "availability": {
+        "state": "available",
+        "reasonCodes": [],
+        "requiredPermissions": [],
+        "observedAt": "2026-10-27T00:09:38.590Z"
+      },
+      "reportRefreshDate": "2026-10-27",
+      "observedAccountCount": 1,
+      "activeAccountCount": 1,
+      "deletedAccountCount": 0,
+      "unknownDeletedAccountCount": 0,
+      "duplicateSiteIdCount": 0,
+      "invalidRowCount": 0,
+      "activeUsedBytes": 12,
+      "observedActiveUsedBytes": 12
+    },
+    "reconciliation": {
+      "state": "mismatch",
+      "reasonCodes": [
+        "storage_totals_differ"
+      ],
+      "deltaBytes": 2,
+      "availability": {
+        "state": "partial",
+        "reasonCodes": [
+          "storage_totals_differ"
+        ],
+        "requiredPermissions": [
+          "Reports.Read.All"
+        ],
+        "observedAt": "2026-10-27T00:09:38.599Z"
+      }
+    }
+  },
+  "accountLifecycle": {
+    "scope": "observed_directory_users",
+    "availability": {
+      "state": "available",
+      "reasonCodes": [],
+      "requiredPermissions": [],
+      "observedAt": "2026-10-27T00:09:38.590Z"
+    },
+    "auditHistory": {
+      "availability": {
+        "state": "available",
+        "reasonCodes": [],
+        "requiredPermissions": [
+          "AuditLog.Read.All"
+        ],
+        "observedAt": "2026-10-27T00:09:38.601Z"
+      },
+      "requestedFrom": "2026-09-27T00:09:38.591Z",
+      "requestedTo": "2026-10-27T00:09:38.591Z",
+      "retentionLimited": true
+    },
+    "accounts": [
+      {
+        "accountId": "fictional-user",
+        "accountEnabled": false,
+        "disabledAt": "2026-10-26T00:09:38.591Z",
+        "disabledAtStatus": "known",
+        "reasonCodes": [],
+        "evidence": {
+          "source": "entra_directory_audit",
+          "auditEventId": "fictional-event",
+          "observedAt": "2026-10-27T00:09:38.601Z"
+        }
+      }
+    ]
+  },
+  "relatedSpend": {
+    "generatedAt": "2026-10-27T00:09:38.591Z",
+    "window": {
+      "startDate": "2026-09-28",
+      "endDate": "2026-10-27"
+    },
+    "subscriptions": [
+      {
+        "subscriptionId": "fictional-subscription",
+        "state": "partial",
+        "recordsState": "loaded",
+        "observedAt": "2026-10-27T00:09:38.590Z",
+        "sourceRowCount": 1,
+        "retainedRowCount": 1,
+        "matchedRowCount": 1,
+        "inWindowRowCount": 1,
+        "invalidRowCount": 0,
+        "outsideWindowRowCount": 0,
+        "excludedEstimatedRowCount": 0,
+        "reasonCodes": [
+          "incomplete_coverage",
+          "billing_window_incomplete"
+        ],
+        "sourceEtag": "\"fictional-billing\"",
+        "sourceFile": "history/billing/cost-last-30-days.json"
+      }
+    ],
+    "availability": {
+      "state": "partial",
+      "reasonCodes": [
+        "incomplete_coverage",
+        "billing_window_incomplete"
+      ],
+      "requiredPermissions": [],
+      "observedAt": "2026-10-27T00:09:38.590Z"
+    },
+    "currencies": [
+      {
+        "currency": "NZD",
+        "products": [
+          {
+            "category": "github-copilot-consumption",
+            "billed": {
+              "amount": 10,
+              "state": "partial",
+              "reasonCodes": [
+                "incomplete_subscription_coverage"
+              ]
+            },
+            "amortized": {
+              "amount": 12,
+              "state": "partial",
+              "reasonCodes": [
+                "incomplete_subscription_coverage"
+              ]
+            },
+            "matchedRowCount": 1,
+            "meters": [
+              {
+                "meterId": null,
+                "meterName": "AI Credit GAC",
+                "unit": null,
+                "quantity": null,
+                "quantityState": "unavailable",
+                "firstDate": "2026-10-27",
+                "lastDate": "2026-10-27",
+                "rowCount": 1
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "expectedSubscriptionCount": 1,
+  "omittedSubscriptionCount": 0,
+  "billingScope": "scan_subscription_set"
+}

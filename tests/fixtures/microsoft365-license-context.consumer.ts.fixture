@@ -1,0 +1,55 @@
+import {
+  MICROSOFT365_LICENSE_CONTEXT_LIMITS,
+  isMicrosoft365ProductContextInput,
+  isMicrosoft365ProductContextDocument,
+  isMicrosoft365AccountContextDocument,
+  isMicrosoft365ProductContextResponse,
+  isMicrosoft365ProductContextCollectionResponse,
+  type Microsoft365LicenseStrategy,
+  type Microsoft365ProductContextInput,
+  type Microsoft365AccountContextInput,
+  type Microsoft365ProductContextDocument,
+  type Microsoft365AccountContextDocument,
+  type Microsoft365ProductContextResponse,
+  type Microsoft365ProductContextCollectionResponse,
+} from '@spottoai/types-package';
+
+const strategy: Microsoft365LicenseStrategy = 'contain';
+const input: Microsoft365ProductContextInput = { strategy, notes: 'Project rationale', reviewOn: null };
+const accountInput: Microsoft365AccountContextInput = { notes: 'Temporary absence' };
+const absent: Microsoft365ProductContextResponse = { tenantId: 'tenant-one', context: null };
+const collection: Microsoft365ProductContextCollectionResponse = { tenantId: 'tenant-one', products: [] };
+const noteLimit: 4000 = MICROSOFT365_LICENSE_CONTEXT_LIMITS.noteCharacters;
+
+// @ts-expect-error Replacement is deferred and is not a strategy.
+const invalidStrategy: Microsoft365LicenseStrategy = 'replace';
+// @ts-expect-error Account review dates require an index and are deferred.
+const indexedAccount: Microsoft365AccountContextInput = { notes: '', reviewOn: null };
+// @ts-expect-error Last-write-wins responses have no client concurrency revision.
+const clientRevision: Microsoft365ProductContextResponse = { tenantId: 'tenant-one', context: null, revision: 'etag' };
+// @ts-expect-error Every product payload supplies the optional review date explicitly.
+const incomplete: Microsoft365ProductContextInput = { strategy: null, notes: '' };
+
+declare const wire: unknown;
+if (isMicrosoft365ProductContextInput(wire)) {
+  const request: Microsoft365ProductContextInput = wire;
+  void request;
+}
+if (isMicrosoft365ProductContextDocument(wire, { companyId: 'company-one', tenantId: 'tenant-one' })) {
+  const stored: Microsoft365ProductContextDocument = wire;
+  void stored;
+}
+if (isMicrosoft365AccountContextDocument(wire, { companyId: 'company-one', tenantId: 'tenant-one', accountId: '00000000-0000-4000-8000-00000000a003' })) {
+  const stored: Microsoft365AccountContextDocument = wire;
+  void stored;
+}
+if (isMicrosoft365ProductContextResponse(wire)) {
+  const response: Microsoft365ProductContextResponse = wire;
+  void response;
+}
+if (isMicrosoft365ProductContextCollectionResponse(wire)) {
+  const response: Microsoft365ProductContextCollectionResponse = wire;
+  const updater: string | undefined = response.products[0]?.updatedBy;
+  void updater;
+}
+void [input, accountInput, absent, collection, noteLimit, invalidStrategy, indexedAccount, clientRevision, incomplete];

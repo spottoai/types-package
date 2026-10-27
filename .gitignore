@@ -111,6 +111,8 @@ specs/licensing/*
 !specs/licensing/microsoft-365-license-capability-insights-types.md
 !specs/licensing/microsoft-365-improvements-types.md
 !specs/licensing/microsoft-365-custom-pricing-types.md
+!specs/licensing/license-pricing/
+!specs/licensing/license-pricing/license-pricing-types-package.md
 !specs/cloud-accounts/
 specs/cloud-accounts/*
 !specs/cloud-accounts/aws-incremental-scan-cadence-types.md
@@ -164,3 +166,7 @@ specs/companies/company-notes/*
 # Claude Code: personal settings and local skill links (see ../core/scripts/link-agent-skills.mjs)
 .claude/settings.local.json
 .claude/skills/
+
+# Shared licensing-content contract specification.
+!specs/licensing/license-inventory/
+!specs/licensing/license-inventory/license-inventory-types-package.md
