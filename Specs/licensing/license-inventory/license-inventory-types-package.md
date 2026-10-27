@@ -16,8 +16,8 @@ summary/account guards accept omission for older artifacts and reject malformed
 new values. Ready counts partition returned rows exactly; coverage records
 observed/returned/omitted counts and complete/partial state. Unavailable counts
 are null. This is independent of full-population monetary reviews and introduces
-no new engine artifact. Publish and adopt the new reader validators before API
-rollout; the existing 1.1.74 release predates these fields. See the
+no new engine artifact. The published 1.1.75 baseline includes these review fields.
+Adopt compatible reader validators before API rollout. See the
 [API contract](../../../../api/specs/licensing/license-inventory/license-inventory-api.md).
 
 ## Additional Microsoft 365 licensing content
