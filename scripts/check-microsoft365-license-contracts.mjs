@@ -309,6 +309,33 @@ const stepUpSummary = (mutate = () => {}) => {
 };
 
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: main account review reasons and returned-population counts are optional and strict`, () => {
+    const summary = splitSummary();
+    const counts = Object.fromEntries(api.MICROSOFT_365_ACCOUNT_REVIEW_REASONS.map(reason => [reason, reason === 'disabled' ? 1 : 0]));
+    const review = { state: 'ready', scope: 'returned_license_accounts', coverage: { ...summary.accountDetails, state: 'complete' }, counts };
+    assert.equal(api.isMicrosoft365LicenseSummaryView({ ...summary, accountReview: review }), true);
+    assert.equal(api.isMicrosoft365LicenseSummaryView(summary), true);
+    const accounts = splitAccounts();
+    for (const reason of api.MICROSOFT_365_ACCOUNT_REVIEW_REASONS) {
+      assert.equal(api.isMicrosoft365LicenseAccountsView({ ...accounts, accounts: [{ ...accounts.accounts[0], mainReviewReason: reason }] }), true);
+    }
+    for (const mainReviewReason of ['', 'other', null, ['disabled'], 1])
+      assert.equal(api.isMicrosoft365LicenseAccountsView({ ...accounts, accounts: [{ ...accounts.accounts[0], mainReviewReason }] }), false);
+    const partial = { ...review, coverage: { ...review.coverage, state: 'partial', observedRowCount: 8001, omittedRowCount: 8000 } };
+    assert.equal(api.isMicrosoft365AccountReview(partial), true);
+    assert.equal(api.isMicrosoft365AccountReview({ ...partial, state: 'unavailable', counts: null, reason: 'accounts_unavailable' }), true);
+    for (const invalid of [
+      { ...review, scope: 'all_accounts' }, { ...review, accountIds: ['private'] },
+      { ...review, counts: { ...counts, disabled: 2 } }, { ...review, counts: { ...counts, disabled: -1 } },
+      { ...review, counts: { ...counts, disabled: 0, unknown: 1 } }, { ...review, counts: { ...counts, accountId: 0 } },
+      { ...partial, coverage: { ...partial.coverage, state: 'complete' } },
+      { ...review, coverage: { ...review.coverage, state: ['complete'] } },
+      { ...review, state: 'unavailable', counts: null, reason: 'accounts_unavailable' },
+      { ...partial, state: 'unavailable', counts: {}, reason: 'scan_mismatch' },
+    ]) assert.equal(api.isMicrosoft365AccountReview(invalid), false);
+    assert.equal(api.isMicrosoft365LicenseSummaryView({ ...summary, accountReview: partial }), false, 'Summary and review coverage must agree');
+  });
+
   test(`${format}: served quantity history is independent of selected currency and prices`, () => {
     const skuId = '00000000-0000-4000-8000-00000000a001';
     const productQuantities = { [skuId]: { purchasedUnits: 40 } };

@@ -4,6 +4,7 @@ import {
   isMicrosoft365PricingRevision,
   type Microsoft365PricingProjection,
 } from './microsoft365PricingOverrides';
+import { isMicrosoft365AccountReviewReason, type Microsoft365AccountReviewReason } from './microsoft365AccountReview';
 import { isMicrosoft365PricingFacts, type Microsoft365PricingFacts } from './microsoft365PricingFacts';
 import {
   isMicrosoft365AccountCapabilities,
@@ -117,6 +118,8 @@ export interface Microsoft365LicenseRenewal {
   nextLifecycleDateTime: string | null;
 }
 export interface Microsoft365LicensedAccountRow {
+  /** API's single primary review reason, after current license decisions; absent on stored/older rows. */
+  mainReviewReason?: Microsoft365AccountReviewReason;
   /** Assignment enablement; neither provisioning success nor measured deployment/usage. */
   capabilities?: Microsoft365AccountCapabilities;
   id: string;
@@ -568,6 +571,7 @@ export function isMicrosoft365LicenseInsights(value: unknown): value is Microsof
 export function isMicrosoft365LicensedAccountRow(row: unknown): row is Microsoft365LicensedAccountRow {
   return (
     isRecord(row) &&
+    optional(row.mainReviewReason, isMicrosoft365AccountReviewReason) &&
     text(row.id) &&
     !!row.id &&
     nullableText(row.displayName) &&

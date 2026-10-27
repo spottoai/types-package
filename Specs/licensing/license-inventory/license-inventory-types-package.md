@@ -7,6 +7,19 @@ Last updated: 2026-10-27
 Core feature: [License inventory](../../../../core/specs/licensing/license-inventory/license-inventory.md)
 Core solution: [Microsoft 365 inventory](../../../../core/specs/licensing/license-inventory/license-inventory-microsoft-365.md)
 
+## Main account review contracts
+
+Current summary responses may contain root-level `accountReview`, typed as
+`Microsoft365AccountReview`, and account rows may contain `mainReviewReason`, typed
+as `Microsoft365AccountReviewReason`. Their exported guards and existing strict
+summary/account guards accept omission for older artifacts and reject malformed
+new values. Ready counts partition returned rows exactly; coverage records
+observed/returned/omitted counts and complete/partial state. Unavailable counts
+are null. This is independent of full-population monetary reviews and introduces
+no new engine artifact. Publish and adopt the new reader validators before API
+rollout; the existing 1.1.74 release predates these fields. See the
+[API contract](../../../../api/specs/licensing/license-inventory/license-inventory-api.md).
+
 ## Additional Microsoft 365 licensing content
 
 The root exports `Microsoft365LicensingContent` and its component types and

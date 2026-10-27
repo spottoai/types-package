@@ -8,6 +8,7 @@ export * from './accounts/microsoft365LicenseHistory';
 export * from './accounts/microsoft365Usage';
 export * from './accounts/microsoft365Capabilities';
 export * from './accounts/microsoft365LicensePortal';
+export * from './accounts/microsoft365AccountReview';
 export * from './accounts/microsoft365LicenseContext';
 export * from './accounts/microsoft365LicenseContextValidation';
 export * from './accounts/microsoft365LicensingContent';

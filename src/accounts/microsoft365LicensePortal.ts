@@ -1,4 +1,5 @@
 import { isMicrosoft365PricingFacts } from './microsoft365PricingFacts';
+import { isMicrosoft365AccountReview, type Microsoft365AccountReview } from './microsoft365AccountReview';
 import { isMicrosoft365PricingRevision, isMicrosoft365PricingProjection, type Microsoft365PricingProjection } from './microsoft365PricingOverrides';
 import {
   MICROSOFT_365_LICENSE_SOURCES,
@@ -80,6 +81,8 @@ export interface Microsoft365LicenseSummaryView
   /** Both summary and accounts must carry exactly the same scan ID and generatedAt. */
   tenantSyncRunId: string;
   accountDetails: Microsoft365LicenseAccountDetails;
+  /** API projection after Keep decisions and non-saving downgrade suppression; absent on older responses. */
+  accountReview?: Microsoft365AccountReview;
   pricingByCurrency?: Record<string, Microsoft365LicenseSummaryPricing>;
   pricing?: Microsoft365LicenseSummaryPricing;
   insights?: Microsoft365LicenseSummaryInsights;
@@ -437,12 +440,20 @@ export function isMicrosoft365LicenseSummaryView(value: unknown): value is Micro
       'capabilities',
       'usage',
       'accountDetails',
+      'accountReview',
       'pricingFacts',
       'pricingRevision',
     ]) ||
     value.schemaVersion !== 'microsoft-365-license-summary/v1' ||
     !identity(value) ||
     !accountDetails(value.accountDetails) ||
+    !optional(value.accountReview, isMicrosoft365AccountReview) ||
+    (value.accountReview !== undefined &&
+      ['observedRowCount', 'returnedRowCount', 'omittedRowCount'].some(
+        key =>
+          (value.accountReview as Microsoft365AccountReview).coverage[key as keyof Microsoft365LicenseAccountDetails] !==
+          (value.accountDetails as Microsoft365LicenseAccountDetails)[key as keyof Microsoft365LicenseAccountDetails]
+      )) ||
     !exact(value.reportIdentity, ['concealment', 'correlation']) ||
     !exact(value.summary, SUMMARY_KEYS) ||
     !exact(value.coverage, MICROSOFT_365_LICENSE_SOURCES) ||

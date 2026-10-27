@@ -8,6 +8,16 @@ Core feature: [License pricing and policy](../../../../core/specs/licensing/lice
 
 ## Responsibility and state
 
+The related [inventory contract](../../../../api/specs/licensing/license-inventory/license-inventory-api.md)
+adds optional summary `accountReview` and account `mainReviewReason`, backed by
+`Microsoft365AccountReview`, `Microsoft365AccountReviewReason` and their shared
+guards. Counts partition the returned license-account population, preserve
+unknown/unavailable states and do not replace full-population financial reviews.
+The build server must publish these additive fields and API/UI must adopt their
+updated strict validators before the producer API emits them. Version 1.1.74
+contains context/history contracts but predates these new reason fields; no
+manual version bump or publication is part of this change.
+
 Local package source implements dependency-free licensing context DTOs, constants
 and guards. The [core specification](../../../../core/specs/licensing/license-pricing/license-pricing-microsoft-365-context.md)
 owns product behavior; the [API contract](../../../../api/specs/licensing/license-pricing/license-pricing-api-context.md)
