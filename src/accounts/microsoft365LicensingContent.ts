@@ -1,3 +1,5 @@
+import type { Microsoft365StorageCostView } from './microsoft365StorageCosts';
+
 /** Additional tenant licensing evidence. Separate from license summary/people/history; v1 preserves null and per-measure coverage. */
 export type Microsoft365RelatedSpendSourceState = 'complete' | 'partial' | 'unavailable' | 'failed';
 
@@ -117,14 +119,22 @@ export interface Microsoft365AccountLifecycle {
   accounts: Microsoft365AccountDisableEvidence[];
 }
 
-export type Microsoft365RelatedSpendCategory =
-  | 'github-copilot-seats'
-  | 'github-copilot-consumption'
-  | 'github-other'
-  | 'copilot-studio'
+export const MICROSOFT_365_RELATED_SPEND_CATEGORIES = [
+  'github-copilot-seats',
+  'github-copilot-consumption',
+  'github-other',
+  'copilot-studio',
   /** Provisioned Security Copilot capacity and overage retain their separate meter evidence. */
-  | 'security-copilot'
-  | 'fabric-ai';
+  'security-copilot',
+  'fabric-ai',
+  'sharepoint-storage-payg',
+  'sharepoint-archive',
+  'onedrive-archive',
+  'dataverse-database',
+  'dataverse-file',
+  'dataverse-log',
+] as const;
+export type Microsoft365RelatedSpendCategory = (typeof MICROSOFT_365_RELATED_SPEND_CATEGORIES)[number];
 
 export interface Microsoft365RelatedSpendAmount {
   amount: number | null;
@@ -190,6 +200,8 @@ export interface Microsoft365LicensingContent {
   oneDrive: Microsoft365OneDriveStorage;
   accountLifecycle: Microsoft365AccountLifecycle;
   relatedSpend: Microsoft365RelatedSpendView;
+  /** Optional for older artifacts; reference/agreed capacity values, separate from Azure billing. */
+  storageCosts?: Microsoft365StorageCostView;
   expectedSubscriptionCount: number;
   omittedSubscriptionCount: number;
   billingScope: 'scan_subscription_set';

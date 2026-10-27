@@ -13,6 +13,8 @@ export * from './accounts/microsoft365LicenseContext';
 export * from './accounts/microsoft365LicenseContextValidation';
 export * from './accounts/microsoft365LicensingContent';
 export * from './accounts/microsoft365LicensingContentValidation';
+export * from './accounts/microsoft365StorageCosts';
+export * from './accounts/microsoft365StorageCostsValidation';
 export * from './azure/common';
 export * from './azure/costComposition';
 export * from './azure/financialChargePolicy';

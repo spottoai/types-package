@@ -12,6 +12,8 @@ import type {
   Microsoft365SharePointStorage,
 } from './microsoft365LicensingContent';
 import { isMicrosoft365UsageDate } from './microsoft365Usage';
+import { MICROSOFT_365_RELATED_SPEND_CATEGORIES } from './microsoft365LicensingContent';
+import { isMicrosoft365StorageCostView } from './microsoft365StorageCostsValidation';
 
 type Row = Record<string, unknown>;
 type Check = (value: unknown) => boolean;
@@ -311,14 +313,7 @@ export function isMicrosoft365RelatedSpendMeter(value: unknown): value is Micros
 export function isMicrosoft365RelatedSpendProduct(value: unknown): value is Microsoft365RelatedSpendProduct {
   return (
     exact(value, ['category', 'billed', 'amortized', 'matchedRowCount', 'meters']) &&
-    oneOf(value.category, [
-      'github-copilot-seats',
-      'github-copilot-consumption',
-      'github-other',
-      'copilot-studio',
-      'security-copilot',
-      'fabric-ai',
-    ]) &&
+    oneOf(value.category, MICROSOFT_365_RELATED_SPEND_CATEGORIES) &&
     isMicrosoft365RelatedSpendAmount(value.billed) &&
     isMicrosoft365RelatedSpendAmount(value.amortized) &&
     count(value.matchedRowCount) &&
@@ -407,7 +402,7 @@ export function isMicrosoft365RelatedSpendView(value: unknown): value is Microso
       typeof group.currency !== 'string' ||
       !/^[A-Z]{3}$/.test(group.currency) ||
       currencies.has(group.currency) ||
-      !list(group.products, 5, isMicrosoft365RelatedSpendProduct) ||
+      !list(group.products, MICROSOFT_365_RELATED_SPEND_CATEGORIES.length, isMicrosoft365RelatedSpendProduct) ||
       !unique(group.products.map(product => (product as Row).category))
     )
       return false;
@@ -442,6 +437,7 @@ export function isMicrosoft365LicensingContent(value: unknown): value is Microso
       'oneDrive',
       'accountLifecycle',
       'relatedSpend',
+      'storageCosts',
       'expectedSubscriptionCount',
       'omittedSubscriptionCount',
       'billingScope',
@@ -465,6 +461,8 @@ export function isMicrosoft365LicensingContent(value: unknown): value is Microso
     !isMicrosoft365AccountLifecycle(value.accountLifecycle) ||
     !isMicrosoft365RelatedSpendView(value.relatedSpend) ||
     value.relatedSpend.generatedAt !== value.generatedAt ||
+    (value.storageCosts !== undefined &&
+      (!isMicrosoft365StorageCostView(value.storageCosts) || value.storageCosts.generatedAt !== value.generatedAt)) ||
     !count(value.expectedSubscriptionCount) ||
     !count(value.omittedSubscriptionCount) ||
     value.expectedSubscriptionCount !== value.relatedSpend.subscriptions.length + value.omittedSubscriptionCount ||

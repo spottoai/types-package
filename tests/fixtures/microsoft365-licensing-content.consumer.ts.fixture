@@ -10,6 +10,11 @@ import {
   isMicrosoft365RelatedSpendMeter,
   isMicrosoft365RelatedSpendProduct,
   isMicrosoft365RelatedSpendCoverage,
+  isMicrosoft365StorageCostView,
+  isMicrosoft365StorageRate,
+  isMicrosoft365StorageCostEstimate,
+  MICROSOFT_365_RELATED_SPEND_CATEGORIES,
+  MICROSOFT_365_STORAGE_PRODUCTS,
   type Microsoft365LicensingContent,
   type Microsoft365ContentAvailability,
   type Microsoft365RelatedSpendSourceState,
@@ -17,9 +22,19 @@ import {
   type Microsoft365AccountDisableEvidence,
   type Microsoft365RelatedSpendCategory,
   type Microsoft365RelatedSpendProduct,
+  type Microsoft365StorageCostView,
+  type Microsoft365StorageRate,
+  type Microsoft365StorageCostEstimate,
+  type Microsoft365StorageProduct,
 } from '@spottoai/types-package';
 
 export const securityCopilotCategory: Microsoft365RelatedSpendCategory = 'security-copilot';
+export const storageCategory: Microsoft365RelatedSpendCategory = 'dataverse-file';
+export const storageProduct: Microsoft365StorageProduct = 'sharepoint-extra-file-storage';
+// @ts-expect-error Storage rates are GB-based, never user-seat prices.
+const wrongStorageUnit: Microsoft365StorageRate['unit'] = 'seat';
+// @ts-expect-error A reference capacity comparison is not billed spend.
+const wrongStorageBasis: Microsoft365StorageCostEstimate['basis'] = 'billed';
 export const securityCopilotProduct: Microsoft365RelatedSpendProduct = {
   category: securityCopilotCategory,
   billed: { amount: 0, state: 'complete', reasonCodes: [] },
@@ -39,11 +54,36 @@ export function readLicensingContent(value: unknown) {
   const disabledAt: string | null = person?.disabledAt ?? null;
   const billed: number | null = content.relatedSpend.currencies[0]?.products[0]?.billed.amount ?? null;
   const sourceState: Microsoft365RelatedSpendSourceState | undefined = content.relatedSpend.subscriptions[0]?.state;
-  return { availability, contribution, disabledAt, billed, sourceState,
-    guards: [isMicrosoft365ContentAvailability, isMicrosoft365SharePointStorage, isMicrosoft365OneDriveStorage,
-      isMicrosoft365AccountLifecycle, isMicrosoft365AccountDisableEvidence, isMicrosoft365RelatedSpendView,
-      isMicrosoft365RelatedSpendAmount, isMicrosoft365RelatedSpendMeter, isMicrosoft365RelatedSpendProduct,
-      isMicrosoft365RelatedSpendCoverage] };
+  const storageCosts: Microsoft365StorageCostView | undefined = content.storageCosts;
+  const storageRate: Microsoft365StorageRate | undefined = storageCosts?.currencies[0]?.rates[0];
+  const storageEstimate: Microsoft365StorageCostEstimate | undefined = storageCosts?.currencies[0]?.estimates[0];
+  return {
+    availability,
+    contribution,
+    disabledAt,
+    billed,
+    sourceState,
+    storageCosts,
+    storageRate,
+    storageEstimate,
+    categories: MICROSOFT_365_RELATED_SPEND_CATEGORIES,
+    storageProducts: MICROSOFT_365_STORAGE_PRODUCTS,
+    guards: [
+      isMicrosoft365ContentAvailability,
+      isMicrosoft365SharePointStorage,
+      isMicrosoft365OneDriveStorage,
+      isMicrosoft365AccountLifecycle,
+      isMicrosoft365AccountDisableEvidence,
+      isMicrosoft365RelatedSpendView,
+      isMicrosoft365RelatedSpendAmount,
+      isMicrosoft365RelatedSpendMeter,
+      isMicrosoft365RelatedSpendProduct,
+      isMicrosoft365RelatedSpendCoverage,
+      isMicrosoft365StorageCostView,
+      isMicrosoft365StorageRate,
+      isMicrosoft365StorageCostEstimate,
+    ],
+  };
 }
 
 // @ts-expect-error Raw evidence is private to the collecting engine.

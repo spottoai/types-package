@@ -6,6 +6,7 @@ import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
+const storageCostFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-storage-costs.json'), 'utf8'));
 const packedLicensingContentProbe = `
 const content = ${JSON.stringify(licensingContentFixture)};
 if (!root.isMicrosoft365LicensingContent(content) ||
@@ -16,6 +17,17 @@ securityCopilotContent.relatedSpend.currencies[0].products[0].category = 'securi
 if (!root.isMicrosoft365LicensingContent(securityCopilotContent) ||
     !root.isMicrosoft365RelatedSpendProduct(securityCopilotContent.relatedSpend.currencies[0].products[0]))
   throw new Error('Packed Security Copilot licensing-content contract failed.');
+const storageCosts = ${JSON.stringify(storageCostFixture)};
+storageCosts.generatedAt = content.generatedAt;
+if (!root.isMicrosoft365StorageCostView(storageCosts) ||
+    !root.isMicrosoft365LicensingContent({...content, storageCosts}) ||
+    !root.isMicrosoft365StorageRate(storageCosts.currencies[0].rates[0]) ||
+    !root.isMicrosoft365StorageCostEstimate(storageCosts.currencies[0].estimates[0]))
+  throw new Error('Packed storage cost contract failed.');
+for (const category of ['sharepoint-storage-payg', 'sharepoint-archive', 'onedrive-archive', 'dataverse-database', 'dataverse-file', 'dataverse-log']) {
+  if (!root.isMicrosoft365RelatedSpendProduct({...content.relatedSpend.currencies[0].products[0], category}))
+    throw new Error('Packed storage billing category failed.');
+}
 `;
 const awsFixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
 const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-optimization.consumer.ts.fixture');
