@@ -1,3 +1,5 @@
+import { isEnvironmentCapabilityDocumentSetV1 } from './optionalDocuments.js';
+import type { EnvironmentCapabilityDocumentV1 } from './optionalDocuments.js';
 import type {
   EnvironmentBoundedListV1,
   EnvironmentCoverageStateV1,
@@ -141,6 +143,8 @@ export type EnvironmentTenantDocumentDescriptorV1 =
     };
 
 export interface EnvironmentTenantCompiledGenerationPointerV1 {
+  /** Individually hashed supplemental files; excluded from core fileCount/treeDigestSha256. */
+  optionalDocuments?: EnvironmentCapabilityDocumentV1[];
   schemaVersion: 1;
   status: 'completed';
   environmentRunId: string;
@@ -341,7 +345,11 @@ export const buildEnvironmentTenantTreeDigestPreimageV1 = (descriptors: readonly
 export const isEnvironmentTenantCompiledGenerationPointerV1 = (value: unknown): value is EnvironmentTenantCompiledGenerationPointerV1 =>
   hasSafeContainerShape(value) &&
   isRecord(value) &&
-  hasExactKeys(value, ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt']) &&
+  hasExactKeys(
+    value,
+    ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt'],
+    ['optionalDocuments']
+  ) &&
   value.schemaVersion === 1 &&
   value.status === 'completed' &&
   typeof value.environmentRunId === 'string' &&
@@ -356,6 +364,7 @@ export const isEnvironmentTenantCompiledGenerationPointerV1 = (value: unknown): 
   typeof value.treeDigestSha256 === 'string' &&
   SHA256_PATTERN.test(value.treeDigestSha256) &&
   value.fileCount === ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1.length &&
+  (value.optionalDocuments === undefined || isEnvironmentCapabilityDocumentSetV1(value.optionalDocuments, value.scope)) &&
   isCanonicalUtcTimestamp(value.generatedAt) &&
   Date.parse(value.generatedAt) >= Date.parse(value.sourceBinding.completedAt) &&
   utf8ByteLength(JSON.stringify(value)) <= ENVIRONMENT_CONTRACT_LIMITS_V1.completedPointerBytes;

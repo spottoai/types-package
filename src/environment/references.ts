@@ -1,3 +1,4 @@
+import { parseEnvironmentCapabilityEvidenceSubjectV1 } from './capabilityIdentifiers.js';
 import {
   ENVIRONMENT_ARTIFACT_KINDS_V1,
   ENVIRONMENT_CONTRACT_LIMITS_V1,
@@ -55,7 +56,11 @@ export const buildEnvironmentLogicalArtifactReferenceV1 = (
 
   // Bound untrusted input before JSON parsing. Encoding also validates Unicode and bytes.
   const encodedSubject = encodeEnvironmentReferencePayload(canonicalScopeQualifiedSubject);
-  if (!isCanonicalScopeQualifiedSubject(canonicalScopeQualifiedSubject)) {
+  if (
+    !(artifactKind === 'environment-capability-evidence'
+      ? parseEnvironmentCapabilityEvidenceSubjectV1(canonicalScopeQualifiedSubject)
+      : isCanonicalScopeQualifiedSubject(canonicalScopeQualifiedSubject))
+  ) {
     throw new TypeError('Artifact subject is not a canonical V1 scope-qualified subject.');
   }
   return `${ARTIFACT_PREFIX}${artifactKind}/${encodedSubject}`;
@@ -70,7 +75,12 @@ export const parseEnvironmentLogicalArtifactReferenceV1 = (value: unknown): Pars
   const artifactKind = remainder.slice(0, separator);
   if (!ARTIFACT_KINDS.has(artifactKind)) return null;
   const subject = decodePayload(remainder.slice(separator + 1));
-  if (subject === null || !isCanonicalScopeQualifiedSubject(subject)) {
+  if (
+    subject === null ||
+    !(artifactKind === 'environment-capability-evidence'
+      ? parseEnvironmentCapabilityEvidenceSubjectV1(subject)
+      : isCanonicalScopeQualifiedSubject(subject))
+  ) {
     return null;
   }
   return { kind: 'artifact', artifactKind: artifactKind as EnvironmentArtifactKindV1, subject };

@@ -1,0 +1,82 @@
+import type {
+  PortalCompanyFeatureOverrideUpsertRequest,
+  PortalCompanyFeatureOverrideWriteRequest,
+  PortalFeatureAuditEvent,
+  PortalFeatureAuditPage,
+  PortalFeatureSetAuditEvent,
+  PortalFeatureSetAuditPage,
+  PortalFeaturePromotionResponse,
+  PortalPromotionTemplateCreateRequest,
+  PortalPromotionTemplateDetailResponse,
+  PortalRestrictionSource,
+} from '@spottoai/types-package';
+
+const create: PortalPromotionTemplateCreateRequest = {
+  name: 'Silver benefits',
+  title: 'Get more with Silver',
+  body: {
+    format: 'tiptap-json',
+    doc: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Services included in Silver.' }] }] },
+  },
+};
+const detail: PortalPromotionTemplateDetailResponse = {
+  ...create,
+  schemaVersion: 1,
+  ownerCompanyId: 'msp',
+  templateId: 'template-1',
+  status: 'active',
+  createdAt: '',
+  createdBy: 'author',
+  updatedAt: '',
+  updatedBy: 'author',
+  revision: 'etag-1',
+  localUsageCount: 2,
+};
+const write: PortalCompanyFeatureOverrideWriteRequest = {
+  decision: 'restrict',
+  presentationMode: 'promo',
+  promotionTemplateRef: { ownerCompanyId: 'msp', templateId: detail.templateId },
+};
+const rollingWrite: PortalCompanyFeatureOverrideUpsertRequest = write;
+const message: PortalFeaturePromotionResponse = {
+  companyId: 'company',
+  featureKey: 'ai_chat',
+  action: 'use',
+  title: create.title,
+  body: create.body,
+};
+const source: PortalRestrictionSource = 'catalog';
+const legacy: PortalFeatureSetAuditEvent = {
+  eventId: 'event-1',
+  companyId: 'company',
+  featureSetKey: 'ai_assistant',
+  action: 'override_updated',
+  actorId: 'author',
+  occurredAt: '',
+};
+const oldPage: PortalFeatureSetAuditPage = { events: [legacy] };
+const mixedPage: PortalFeatureAuditPage = {
+  events: [
+    ...oldPage.events,
+    {
+      eventId: 'event-2',
+      companyId: 'msp',
+      templateId: detail.templateId,
+      targetType: 'promotion_template',
+      action: 'template_created',
+      actorId: 'author',
+      occurredAt: '',
+      after: { revision: 'etag-1', status: 'active' },
+    },
+  ],
+};
+
+function target(event: PortalFeatureAuditEvent): string {
+  return event.targetType === 'promotion_template' ? event.templateId : event.featureSetKey;
+}
+
+// @ts-expect-error New authored writes reject denied Normal presentation.
+const invalidWrite: PortalCompanyFeatureOverrideWriteRequest = { decision: 'deny', presentationMode: 'normal' };
+// @ts-expect-error Public message responses do not expose internal storage ownership.
+const invalidMessage: PortalFeaturePromotionResponse = { ...message, ownerCompanyId: 'msp' };
+void [rollingWrite, message, source, mixedPage, target, invalidWrite, invalidMessage];
