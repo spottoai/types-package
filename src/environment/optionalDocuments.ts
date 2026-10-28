@@ -6,8 +6,14 @@ import type {
   EnvironmentCoverageStateV1,
   EnvironmentBoundedListV1,
   EnvironmentMoneyValueV1,
+  EnvironmentLogicalEvidenceReferenceV1,
 } from './contracts.js';
 import type { EnvironmentTenantScopeV1, EnvironmentTenantSourceBindingV1 } from './tenant.js';
+import type { EnvironmentAwsAccountScopeV1, EnvironmentAwsAccountSourceBindingV1, EnvironmentAwsLogicalEvidenceReferenceV1 } from './awsContracts.js';
+import { environmentAwsScopesEqual, isEnvironmentAwsAccountScopeV1 } from './awsIdentity.js';
+import { isEnvironmentAwsAccountSourceBindingV1 } from './awsValidation.js';
+import { parseEnvironmentAwsLogicalArtifactReferenceV1, parseEnvironmentAwsLogicalResourceReferenceV1 } from './awsReferences.js';
+import { parseEnvironmentCapabilityEvidenceSubjectV1 } from './capabilityIdentifiers.js';
 import { ENVIRONMENT_DOCUMENT_NAMES_V1 } from './contracts.js';
 import { ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1, isEnvironmentTenantScopeV1, isEnvironmentTenantSourceBindingV1 } from './tenant.js';
 import {
@@ -23,10 +29,11 @@ import {
 } from './internal.js';
 import { isEnvironmentScopeV1, isEnvironmentSourceBindingV1, isEnvironmentCoverageStateV1 } from './validation.js';
 import { isEnvironmentMoneyValueWithProvenanceV1 } from './moneyValidation.js';
-import { isEnvironmentLogicalEvidenceReferenceV1 } from './references.js';
+import { isEnvironmentLogicalEvidenceReferenceV1, parseEnvironmentLogicalArtifactReferenceV1 } from './references.js';
 
-export type EnvironmentCapabilityScopeV1 = EnvironmentScopeV1 | EnvironmentTenantScopeV1;
-export type EnvironmentCapabilitySourceBindingV1 = EnvironmentSourceBindingV1 | EnvironmentTenantSourceBindingV1;
+export type EnvironmentCapabilityScopeV1 = EnvironmentScopeV1 | EnvironmentTenantScopeV1 | EnvironmentAwsAccountScopeV1;
+export type EnvironmentCapabilitySourceBindingV1 =
+  EnvironmentSourceBindingV1 | EnvironmentTenantSourceBindingV1 | EnvironmentAwsAccountSourceBindingV1;
 export interface EnvironmentContentIntegrityV1 {
   mediaType: 'text/markdown; charset=utf-8' | 'application/json';
   byteCount: number;
@@ -82,7 +89,13 @@ export interface EnvironmentCapabilityFactsV1 {
   sourceBinding: EnvironmentCapabilitySourceBindingV1;
   observedAt: string;
   coverage: EnvironmentCoverageStateV1;
-  sections: readonly { sectionId: string; title: string; facts: EnvironmentBoundedListV1<EnvironmentCapabilityFactV1> }[];
+  sections: readonly {
+    sectionId: string;
+    title: string;
+    facts: Omit<EnvironmentBoundedListV1<EnvironmentCapabilityFactV1>, 'continuationReference'> & {
+      continuationReference?: EnvironmentLogicalEvidenceReferenceV1 | EnvironmentAwsLogicalEvidenceReferenceV1;
+    };
+  }[];
 }
 
 const RESERVED_IDS = new Set([
@@ -108,8 +121,9 @@ export const isEnvironmentCapabilityFileNameV1 = (value: unknown, mediaType: Env
   ![...ENVIRONMENT_DOCUMENT_NAMES_V1, ...ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1].some(name => name === value) &&
   (mediaType === 'application/json' ? /^[a-z][a-z0-9]*(?:[-_.][a-z0-9]+)*\.json$/u : /^[a-z][a-z0-9]*(?:[-_.][a-z0-9]+)*\.md$/u).test(value);
 export const isEnvironmentCapabilityScopeV1 = (value: unknown): value is EnvironmentCapabilityScopeV1 =>
-  isEnvironmentScopeV1(value) || isEnvironmentTenantScopeV1(value);
+  isEnvironmentScopeV1(value) || isEnvironmentTenantScopeV1(value) || isEnvironmentAwsAccountScopeV1(value);
 export function environmentCapabilityScopesEqualV1(left: EnvironmentCapabilityScopeV1, right: EnvironmentCapabilityScopeV1): boolean {
+  if (left.kind === 'aws-account' || right.kind === 'aws-account') return environmentAwsScopesEqual(left, right);
   return (
     left.kind === right.kind &&
     left.tenantId === right.tenantId &&
@@ -117,6 +131,8 @@ export function environmentCapabilityScopesEqualV1(left: EnvironmentCapabilitySc
       (right.kind === 'azure-subscription' && left.companyId === right.companyId && left.subscriptionId === right.subscriptionId))
   );
 }
+export const isEnvironmentCapabilitySourceBindingV1 = (value: unknown): value is EnvironmentCapabilitySourceBindingV1 =>
+  isEnvironmentSourceBindingV1(value) || isEnvironmentTenantSourceBindingV1(value) || isEnvironmentAwsAccountSourceBindingV1(value);
 const features = (value: unknown, allowEmpty: boolean): value is string[] =>
   Array.isArray(value) &&
   hasSafeContainerShape(value, 0, new Set<object>(), true) &&
@@ -281,7 +297,7 @@ export const isEnvironmentCapabilityFactsV1 = (value: unknown): value is Environ
     RESERVED_IDS.has(value.documentId) ||
     !isEnvironmentCapabilityIdentifierV1(value.evidenceId) ||
     !isEnvironmentCapabilityScopeV1(value.scope) ||
-    !(isEnvironmentSourceBindingV1(value.sourceBinding) || isEnvironmentTenantSourceBindingV1(value.sourceBinding)) ||
+    !isEnvironmentCapabilitySourceBindingV1(value.sourceBinding) ||
     !environmentCapabilityScopesEqualV1(value.scope, value.sourceBinding.scope) ||
     !isCanonicalUtcTimestamp(value.observedAt) ||
     !isEnvironmentCoverageStateV1(value.coverage) ||
@@ -311,7 +327,7 @@ export const isEnvironmentCapabilityFactsV1 = (value: unknown): value is Environ
       list.includedCount !== list.items.length ||
       list.totalCount < list.items.length ||
       list.truncated !== list.totalCount > list.items.length ||
-      (list.continuationReference !== undefined && !isEnvironmentLogicalEvidenceReferenceV1(list.continuationReference)) ||
+      (list.continuationReference !== undefined && !isCapabilityContinuationReference(list.continuationReference, value.scope)) ||
       (list.truncated && list.continuationReference === undefined) ||
       new Set(list.items.map(item => item.factId)).size !== list.items.length
     )
@@ -320,6 +336,14 @@ export const isEnvironmentCapabilityFactsV1 = (value: unknown): value is Environ
     if (factCount > 50) return false;
   }
   return utf8ByteLength(JSON.stringify(value)) <= 32 * 1024;
+};
+const isCapabilityContinuationReference = (value: unknown, scope: EnvironmentCapabilityScopeV1): boolean => {
+  const artifact = parseEnvironmentLogicalArtifactReferenceV1(value);
+  const capability = artifact?.artifactKind === 'environment-capability-evidence' && parseEnvironmentCapabilityEvidenceSubjectV1(artifact.subject);
+  if (capability) return environmentCapabilityScopesEqualV1(scope, capability.scope);
+  if (scope.kind !== 'aws-account') return isEnvironmentLogicalEvidenceReferenceV1(value);
+  const aws = parseEnvironmentAwsLogicalArtifactReferenceV1(value) ?? parseEnvironmentAwsLogicalResourceReferenceV1(value);
+  return Boolean(aws && environmentAwsScopesEqual(scope, aws.scope));
 };
 export const isEnvironmentImmutableCapabilityFactsV1 = (value: unknown): value is EnvironmentCapabilityFactsV1 =>
   isEnvironmentCapabilityFactsV1(value) &&

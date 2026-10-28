@@ -1,6 +1,7 @@
 import type { EnvironmentCapabilityScopeV1 } from './optionalDocuments.js';
 import { isBoundedString } from './internal.js';
 import { ENVIRONMENT_CONTRACT_LIMITS_V1 } from './contracts.js';
+import { isEnvironmentAwsAccountScopeV1 } from './awsIdentity.js';
 /** Bounded identifiers are policy-neutral: API owns registered-feature authorization. */
 export const isEnvironmentCapabilityIdentifierV1 = (value: unknown): value is string =>
   typeof value === 'string' &&
@@ -19,7 +20,14 @@ export function parseEnvironmentCapabilityEvidenceSubjectV1(value: string): Pars
   try {
     const tuple: unknown = JSON.parse(value);
     if (!Array.isArray(tuple) || tuple[0] !== 'capability' || JSON.stringify(tuple) !== value) return null;
-    const offset = tuple.length === 8 && tuple[1] === 'azure-subscription' ? 5 : tuple.length === 6 && tuple[1] === 'azure-tenant' ? 3 : 0;
+    const offset =
+      tuple.length === 8 && tuple[1] === 'azure-subscription'
+        ? 5
+        : tuple.length === 6 && tuple[1] === 'azure-tenant'
+          ? 3
+          : tuple.length === 7 && tuple[1] === 'aws-account'
+            ? 4
+            : 0;
     if (
       !offset ||
       !tuple
@@ -31,7 +39,10 @@ export function parseEnvironmentCapabilityEvidenceSubjectV1(value: string): Pars
     const scope: EnvironmentCapabilityScopeV1 =
       offset === 5
         ? { kind: 'azure-subscription', tenantId: tuple[2], companyId: tuple[3], subscriptionId: tuple[4] }
-        : { kind: 'azure-tenant', tenantId: tuple[2] };
+        : offset === 4
+          ? { kind: 'aws-account', companyId: tuple[2], accountId: tuple[3] }
+          : { kind: 'azure-tenant', tenantId: tuple[2] };
+    if (offset === 4 && !isEnvironmentAwsAccountScopeV1(scope)) return null;
     return { scope, capabilityId: tuple[offset], documentId: tuple[offset + 1], evidenceId: tuple[offset + 2] };
   } catch {
     return null;
