@@ -1,4 +1,5 @@
 import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
+import type { ProviderScopeContext } from '../common/provider.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
@@ -55,7 +56,7 @@ export type CompanySubscriptionResponse = Omit<CompanySubscription, 'ready'> & {
   ready: boolean;
 };
 
-export interface SubscriptionScope {
+export interface SubscriptionScope extends ProviderScopeContext {
   companyId: string;
   id: string;
   name: string;
