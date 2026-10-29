@@ -22,7 +22,8 @@ for (const [build, api] of builds.filter(([name]) => name.startsWith('root'))) {
     citationIds: ['environment-call-1'],
   };
   for (const artifactKind of [...api.ENVIRONMENT_ARTIFACT_KINDS_V1, ...api.ENVIRONMENT_AWS_ARTIFACT_KINDS_V1]) {
-    assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, artifactKind }), true, `${build}: citation kind ${artifactKind}`);
+    const sourceIdentity = artifactKind === 'environment-capability-evidence' ? { sourceKey: 'a'.repeat(64) } : {};
+    assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, artifactKind, ...sourceIdentity }), true, `${build}: citation kind ${artifactKind}`);
   }
   for (const artifactKind of ['aws-account-secrets', 'gcp-account-summary', 'AWS-account-summary', 'aws-account-summary/', '', null]) {
     assert.equal(api.isAIEnvironmentEvidenceMatch({ ...evidenceMatch, artifactKind }), false, `${build}: unsupported citation kind ${artifactKind}`);

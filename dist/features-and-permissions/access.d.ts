@@ -1,3 +1,4 @@
+import type { PortalPromotionTemplateRef } from './promotionTemplates';
 export type PortalPrincipalType = 'user' | 'api_key';
 export interface PortalPrincipal {
     principalType: PortalPrincipalType;
@@ -12,6 +13,8 @@ export type PortalSystemAvailability = 'available_by_default' | 'unavailable_by_
 export type PortalFeatureSetOverrideDecision = 'allow' | 'deny' | 'restrict';
 export type PortalFeatureSetOverrideAppliesTo = 'all_users' | 'local_company_users' | 'delegated_admins';
 export type PortalEntitlementState = 'enabled' | 'not_available' | 'disabled' | 'blocked_by_parent';
+/** Catalog restrictions stay hidden; override restrictions may carry explicit presentation. */
+export type PortalRestrictionSource = 'catalog' | 'override';
 export type PortalVisibilityState = 'hidden' | 'visible' | 'teaser' | 'promo';
 export type PortalActionabilityState = 'actionable' | 'locked';
 export type PortalAccessReasonCode = 'allowed' | 'missing_view_permission' | 'missing_use_permission' | 'missing_manage_permission' | 'missing_assign_permission' | 'feature_not_entitled' | 'feature_disabled' | 'blocked_by_parent' | 'presentation_hidden' | 'unknown_feature';
@@ -64,6 +67,7 @@ export interface PortalCompanyFeatureOverride {
     decision: PortalFeatureSetOverrideDecision;
     appliesTo?: PortalFeatureSetOverrideAppliesTo;
     presentationMode?: PortalPresentationMode;
+    promotionTemplateRef?: PortalPromotionTemplateRef;
     reason?: string;
     createdBy: string;
     createdAt: string;
@@ -73,6 +77,8 @@ export interface PortalCompanyFeatureOverrideUpsertRequest {
     decision: PortalFeatureSetOverrideDecision;
     appliesTo?: PortalFeatureSetOverrideAppliesTo;
     presentationMode?: PortalPresentationMode;
+    /** New authors should use PortalCompanyFeatureOverrideWriteRequest; API validation enforces its matrix. */
+    promotionTemplateRef?: PortalPromotionTemplateRef;
     reason?: string;
 }
 export type PortalFeatureSetAuditAction = 'override_created' | 'override_updated' | 'override_deleted' | 'locked' | 'unlocked';
@@ -80,6 +86,7 @@ export interface PortalFeatureSetAuditSnapshot {
     decision?: PortalFeatureSetOverrideDecision;
     appliesTo?: PortalFeatureSetOverrideAppliesTo;
     presentationMode?: PortalPresentationMode;
+    promotionTemplateRef?: PortalPromotionTemplateRef;
     reason?: string;
     locked?: boolean;
 }
@@ -88,6 +95,9 @@ export interface PortalFeatureSetAuditEvent {
     eventId: string;
     companyId: string;
     featureSetKey: string;
+    /** Absent on legacy rows. Mixed-stream readers use PortalFeatureAuditEvent. */
+    targetType?: 'feature_set';
+    templateId?: never;
     action: PortalFeatureSetAuditAction;
     actorId: string;
     actorDisplayName?: string;
@@ -202,6 +212,10 @@ export interface PortalEffectiveAccessResponse {
     actionabilityState: PortalActionabilityState;
     reasonCode: PortalAccessReasonCode;
     sources: PortalEffectiveAccessSource[];
+    /** Optional while older API deployments remain in rotation. */
+    restrictionSource?: PortalRestrictionSource;
+    /** Candidate metadata only; does not prove a template exists or grant feature access. */
+    promotionAvailable?: boolean;
 }
 export type PortalDataScopeMode = 'unrestricted' | 'restricted' | 'none' | 'unavailable';
 export interface PortalAccessScopeSummaryItem {
@@ -230,6 +244,9 @@ export interface PortalFeatureAccessSummary {
     entitlementState: PortalEntitlementState;
     visibilityState: PortalVisibilityState;
     actions: Partial<Record<PortalAccessAction, PortalFeatureActionAccess>>;
+    restrictionSource?: PortalRestrictionSource;
+    /** Optional for older responses; resolved message content is fetched separately. */
+    promotionAvailable?: boolean;
 }
 export interface PortalFeatureSetAccessSummary {
     featureSetKey: string;
@@ -237,11 +254,15 @@ export interface PortalFeatureSetAccessSummary {
     visibilityState: PortalVisibilityState;
     reasonCode: PortalAccessReasonCode;
     sourceCompanyId?: string;
+    /** Optional for old responses; new restricted results identify their enforcing source. */
+    restrictionSource?: PortalRestrictionSource;
     presentationMode: PortalPresentationMode;
     sources: PortalEffectiveAccessSource[];
 }
 export interface PortalFeatureSetConfigurationSummary extends PortalFeatureSetAccessSummary {
     appliesTo: PortalFeatureSetOverrideAppliesTo;
+    /** Administrative configuration only; ordinary bootstrap omits the template identity. */
+    promotionTemplateRef?: PortalPromotionTemplateRef;
 }
 export interface PortalFeatureSetConfigurationResponse {
     customerId: string;

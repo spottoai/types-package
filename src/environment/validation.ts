@@ -1,3 +1,4 @@
+import { isEnvironmentCapabilityDocumentSetV1 } from './optionalDocuments.js';
 import {
   ENVIRONMENT_ARTIFACT_KINDS_V1,
   ENVIRONMENT_CONTRACT_LIMITS_V1,
@@ -276,7 +277,11 @@ export const isEnvironmentDocumentDescriptorSetV1 = (value: unknown): value is E
 export const isEnvironmentCompiledGenerationPointerV1 = (value: unknown): value is EnvironmentCompiledGenerationPointerV1 => {
   if (!hasSafeContainerShape(value) || !isRecord(value)) return false;
   if (
-    !hasExactKeys(value, ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt']) ||
+    !hasExactKeys(
+      value,
+      ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt'],
+      ['optionalDocuments']
+    ) ||
     value.schemaVersion !== 1 ||
     value.status !== 'completed' ||
     !isEnvironmentRunIdV1(value.environmentRunId) ||
@@ -286,6 +291,7 @@ export const isEnvironmentCompiledGenerationPointerV1 = (value: unknown): value 
     typeof value.treeDigestSha256 !== 'string' ||
     !SHA256_PATTERN.test(value.treeDigestSha256) ||
     value.fileCount !== ENVIRONMENT_DOCUMENT_NAMES_V1.length ||
+    (value.optionalDocuments !== undefined && !isEnvironmentCapabilityDocumentSetV1(value.optionalDocuments, value.scope)) ||
     !isCanonicalUtcTimestamp(value.generatedAt) ||
     Date.parse(value.generatedAt) < Date.parse(value.sourceBinding.completedAt)
   ) {

@@ -1,7 +1,7 @@
 # AWS account environment memory contracts
 
 Status: original contracts published; AWS Chat citation extension verified, publication pending
-Last updated: 2026-10-19
+Last updated: 2026-10-29
 Owner: Platform
 Approved: Yes — Jay requested the spec and types-package reviewer revisions on 2026-10-19
 Parent: [AWS environment memory](../../../../core/specs/ai-chat/aws-environment-memory/aws-environment-memory.md)
@@ -39,6 +39,41 @@ implementation or consumer dependency change is included.
   mapping catalog belongs in this slice.
 
 ## Verification and handoff
+
+### Optional capability documents
+
+The generic optional-document contracts admit `EnvironmentAwsAccountScopeV1` and
+`EnvironmentAwsAccountSourceBindingV1` directly through their existing scope and
+source-binding unions. `isEnvironmentCapabilitySourceBindingV1` validates that
+union. Scope equality compares provider kind, company and exact account identity;
+Azure subscription and tenant guards retain their own scopes.
+
+Capability evidence uses the canonical tuple
+`["capability","aws-account",companyId,accountId,capabilityId,documentId,evidenceId]`.
+Builders, parsers and provider dispatch agree on that identity. Leading zeros in
+account IDs remain significant. No AWS account is represented as an Azure scope.
+
+The AWS completion pointer accepts `optionalDocuments` with the shared
+descriptors, exact account scope, unique identities/files, permission requirements
+and content bounds. The fixed eight core files and tree digest remain unchanged.
+Limits remain 16 optional documents, 8 KiB per Markdown file, 32 KiB per immutable
+facts JSON and 16 KiB for the complete pointer. Runtime projector IDs are syntactic
+identifiers only; the API must implement and register the selected projector.
+
+Immutable facts validate the completed AWS source binding, retain coverage and
+truncation, and accept exact-account AWS or capability continuation references.
+Foreign-account/company/provider continuation references are rejected. Capability
+continuations also retain exact scope for Azure facts. Money retains currency,
+period, basis, provenance, meaning and additivity; immutable facts reject
+`current-company` valuation. Engines write optional artifacts before pointer
+promotion, compare their exact source binding with that pointer, and contain
+optional failures. These are consumer obligations; an isolated facts guard cannot
+prove that another artifact belongs to the same publication.
+
+This source extension is additive to 1.1.78 and is not published by this change.
+Consumer deployment requires the new registry release. AWS/Azure contract checks
+exercise both runtime module formats; the packed AWS consumer additionally checks
+the widened source/scope/facts contracts and AWS pointer acceptance.
 
 ### AWS Chat citation follow-up
 

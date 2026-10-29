@@ -476,6 +476,8 @@ try {
     join(consumerRoot, 'microsoft365-license-context.consumer.ts')
   );
   await copyFile(join(packageRoot, 'tests/fixtures/company-context.consumer.ts.fixture'), join(consumerRoot, 'company-context.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/promotion-templates.consumer.ts.fixture'), join(consumerRoot, 'promotion-templates.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/promotion-templates.consumer.ts.fixture'), join(consumerRoot, 'promotion-templates.consumer.cts'));
   await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-usage.consumer.ts')
@@ -540,6 +542,8 @@ try {
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
       'company-context.consumer.ts',
+      'promotion-templates.consumer.ts',
+      'promotion-templates.consumer.cts',
     ],
     consumerRoot
   );

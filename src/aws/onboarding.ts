@@ -66,11 +66,24 @@ export interface AwsRoleOnboardingBundle extends AwsForbiddenCredentialFields {
   instructionsMarkdown: string;
 }
 
+/** One configured deployment boundary; geography and environment are independent of an AWS account's resources. */
+export type AwsOnboardingDeployment = 'dev-au' | 'prod-au' | 'prod-us' | 'prod-eu';
+
+/** API-owned binding used unchanged by Portal, scripts and Terraform. Contains no credentials. */
+export interface AwsOnboardingConfiguration {
+  deployment: AwsOnboardingDeployment;
+  region: 'ap-southeast-2' | 'us-east-1' | 'eu-north-1';
+  registrationTopicArn: string;
+  roleName: string;
+  exportName: string;
+}
+
 /** Authorized company-scoped response used before customer role deployment. */
 export interface AwsCompanyTrustSetupResponse extends AwsForbiddenCredentialFields {
   provider: 'AWS';
   externalId: string;
   /** ISO-8601 timestamp for the original immutable server-side issuance. */
   createdAt: string;
+  onboarding: AwsOnboardingConfiguration;
   onboardingBundle: AwsRoleOnboardingBundle;
 }

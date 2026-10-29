@@ -1,3 +1,4 @@
+import type { AwsOnboardingConfiguration } from './onboarding';
 /*
  * AWS Connect (Launch Stack onboarding) contracts. The connect stack registers the deploying account
  * automatically, so the portal polls `connect/check` (normally without an account ID) while the
@@ -97,6 +98,7 @@ export interface AwsConnectCheckWaitingResponse {
 
 export interface AwsConnectCheckConnectedResponse {
   status: 'connected';
+  onboarding: AwsOnboardingConfiguration;
   accountId: string;
   roleArn: string;
   account: AwsConnectAccount;

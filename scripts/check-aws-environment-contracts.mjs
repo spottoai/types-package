@@ -427,6 +427,68 @@ for (const [build, api] of builds) {
     generatedAt: projection.generatedAt,
   };
   assert.equal(isPointer(pointer), true, `${build}: same eight-document tree`);
+  const content = (mediaType, byteCount = 100) => ({ mediaType, byteCount, contentSha256: 'a'.repeat(64), approximateTokenCount: Math.ceil(byteCount / 4) });
+  const optionalDocument = {
+    documentId: 'account-context', fileName: 'account-context.md', capabilityId: 'resources', title: 'Account context', scope,
+    requiredFeatures: ['resources'], content: content('text/markdown; charset=utf-8'),
+    evidence: [{ evidenceId: 'summary', mode: 'immutable', title: 'Observed facts', requiredFeatures: [],
+      fileName: 'account-context.evidence.json', content: content('application/json') }],
+  };
+  const capabilityReference = api.buildEnvironmentCapabilityEvidenceReferenceV1(scope, 'resources', 'account-context', 'summary');
+  assert.deepEqual(api.parseEnvironmentCapabilityEvidenceReferenceV1(capabilityReference), {
+    scope, capabilityId: 'resources', documentId: 'account-context', evidenceId: 'summary',
+  });
+  assert.equal(api.parseEnvironmentAnyLogicalEvidenceReferenceV1(capabilityReference).provider, 'aws');
+  assert.equal(api.environmentCapabilityScopesEqualV1(scope, { ...scope }), true);
+  assert.equal(api.environmentCapabilityScopesEqualV1(scope, foreignScope), false);
+  assert.equal(api.environmentCapabilityScopesEqualV1(scope, { ...scope, companyId: 'other-company' }), false);
+  const optionalPointer = { ...pointer, optionalDocuments: [optionalDocument] };
+  assert.equal(isPointer(optionalPointer), true, `${build}: optional documents preserve core tree`);
+  assert.deepEqual(api.getEnvironmentOptionalDocumentDescriptorsV1(optionalPointer), [optionalDocument]);
+  for (const optionalDocuments of [
+    [{ ...optionalDocument, scope: foreignScope }],
+    [{ ...optionalDocument, scope: { ...scope, companyId: 'other-company' } }],
+    [{ ...optionalDocument, scope: { kind: 'azure-tenant', tenantId: 'tenant-1' } }],
+    [optionalDocument, optionalDocument],
+    [{ ...optionalDocument, content: content('text/markdown; charset=utf-8', 8193) }],
+    Array.from({ length: 17 }, (_, index) => ({ ...optionalDocument, documentId: `doc-${index}`, fileName: `doc-${index}.md`, evidence: [] })),
+  ]) assert.equal(isPointer({ ...pointer, optionalDocuments }), false, `${build}: reject invalid optional documents`);
+  const facts = {
+    schemaVersion: 1, capabilityId: 'resources', documentId: 'account-context', evidenceId: 'summary', scope, sourceBinding,
+    observedAt: pointer.generatedAt, coverage: complete,
+    sections: [{ sectionId: 'observed', title: 'Observed facts', facts: list([{ factId: 'present', label: 'Present', value: { kind: 'boolean', value: true } }]) }],
+  };
+  assert.equal(api.isEnvironmentImmutableCapabilityFactsV1(facts), true, `${build}: AWS exact-publication facts`);
+  assert.equal(api.isEnvironmentCapabilitySourceBindingV1(sourceBinding), true);
+  assert.equal(api.isEnvironmentCapabilitySourceBindingV1({ ...sourceBinding, kind: 'azure-tenant-sync' }), false);
+  for (const foreign of [foreignScope, { ...scope, companyId: 'other-company' }]) {
+    assert.equal(api.isEnvironmentImmutableCapabilityFactsV1({ ...facts, scope: foreign }), false);
+    assert.equal(api.isEnvironmentImmutableCapabilityFactsV1({ ...facts, sourceBinding: { ...sourceBinding, scope: foreign } }), false);
+  }
+  assert.equal(api.isEnvironmentImmutableCapabilityFactsV1({ ...facts, sourceBinding: { ...sourceBinding, artifacts: [] } }), false);
+  assert.equal(api.isEnvironmentImmutableCapabilityFactsV1({ ...facts, sourceBinding: { ...sourceBinding, portalRunId: '' } }), false);
+  const continuationFacts = reference => ({ ...facts, sections: [{ ...facts.sections[0], facts: {
+    ...facts.sections[0].facts, totalCount: 2, truncated: true, continuationReference: reference,
+  } }] });
+  assert.equal(api.isEnvironmentCapabilityFactsV1(continuationFacts(capabilityReference)), true);
+  assert.equal(api.isEnvironmentCapabilityFactsV1(continuationFacts(resource(scope, resourceType, arn))), true);
+  assert.equal(api.isEnvironmentCapabilityFactsV1(continuationFacts(artifact('aws-account-summary', foreignScope))), false);
+  assert.equal(api.isEnvironmentCapabilityFactsV1(continuationFacts(api.buildEnvironmentCapabilityEvidenceReferenceV1(foreignScope, 'resources', 'account-context', 'summary'))), false);
+  const azureScope = { kind: 'azure-tenant', tenantId: 'tenant-1' };
+  const azureReference = api.buildEnvironmentCapabilityEvidenceReferenceV1(azureScope, 'resources', 'account-context', 'summary');
+  assert.equal(api.isEnvironmentCapabilityFactsV1(continuationFacts(azureReference)), false);
+  assert.equal(api.environmentCapabilityScopesEqualV1(scope, azureScope), false);
+  assert.equal(api.environmentCapabilityScopesEqualV1(azureScope, scope), false);
+  const largeDocuments = Array.from({ length: 16 }, (_, index) => ({
+    ...optionalDocument, documentId: `large-doc-${index}`, fileName: `large-doc-${index}.md`, title: 'A'.repeat(512),
+    evidence: [{ ...optionalDocument.evidence[0], fileName: `large-doc-${index}.json`, title: 'B'.repeat(512) }],
+  }));
+  assert.equal(api.isEnvironmentCapabilityDocumentSetV1(largeDocuments, scope), true);
+  assert.equal(isPointer({ ...pointer, optionalDocuments: largeDocuments }), false, `${build}: completion pointer stays within 16 KiB`);
+  const rawCapability = tuple => `spotto://artifact/v1/environment-capability-evidence/${encoded(JSON.stringify(tuple))}`;
+  for (const accountId of [123456789, '123456789', '000123456789 ', '000123456789\n'])
+    assert.equal(api.parseEnvironmentCapabilityEvidenceReferenceV1(rawCapability(['capability', 'aws-account', scope.companyId, accountId, 'resources', 'account-context', 'summary'])), null);
+  assert.throws(() => api.buildEnvironmentCapabilityEvidenceReferenceV1({ ...scope, accountId: 123456789 }, 'resources', 'account-context', 'summary'));
   for (const patch of [
     { fileCount: 7 },
     { schemaVersion: 2 },

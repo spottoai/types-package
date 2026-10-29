@@ -2,7 +2,7 @@ import type { EnvironmentArtifactKindV1, EnvironmentCoverageStateV1 } from '../e
 import { AI_CHAT_ANSWER_PRESENTATION_LIMITS_V1 } from './answerPresentation.js';
 import type { EnvironmentAwsArtifactKindV1 } from '../environment/awsContracts.js';
 import { isEnvironmentAwsArtifactKindV1 } from '../environment/awsReferences.js';
-import { hasExactKeys, isBoundedString, isCanonicalUtcTimestamp, isNonNegativeInteger, isRecord } from '../environment/internal.js';
+import { SHA256_PATTERN, hasExactKeys, isBoundedString, isCanonicalUtcTimestamp, isNonNegativeInteger, isRecord } from '../environment/internal.js';
 import { isEnvironmentArtifactKindV1, isEnvironmentPortalRouteV1, isEnvironmentSafeLabelV1 } from '../environment/validation.js';
 
 export const AI_CHAT_GROUNDING_LIMITS_V1 = Object.freeze({
@@ -56,6 +56,8 @@ export interface AIEnvironmentEvidenceMatch {
   safeLabel: string;
   portalRoute: string;
   artifactKind: EnvironmentArtifactKindV1 | EnvironmentAwsArtifactKindV1;
+  /** Stable non-callable source identity hash; required for generic capability evidence. */
+  sourceKey?: string;
   sourceCompletedAt: string;
   coverageStatus: AIEnvironmentEvidenceCoverageStatusV1;
   truncated: boolean;
@@ -121,10 +123,12 @@ const isCitationIds = (value: unknown, requireOne: boolean): value is string[] =
 /** Strictly validates client-safe environment evidence metadata. */
 export const isAIEnvironmentEvidenceMatch = (value: unknown): value is AIEnvironmentEvidenceMatch =>
   isRecord(value) &&
-  hasExactKeys(value, ['safeLabel', 'portalRoute', 'artifactKind', 'sourceCompletedAt', 'coverageStatus', 'truncated', 'citationIds']) &&
+  hasExactKeys(value, ['safeLabel', 'portalRoute', 'artifactKind', 'sourceCompletedAt', 'coverageStatus', 'truncated', 'citationIds'], ['sourceKey']) &&
   isEnvironmentSafeLabelV1(value.safeLabel) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
   (isEnvironmentArtifactKindV1(value.artifactKind) || isEnvironmentAwsArtifactKindV1(value.artifactKind)) &&
+  (value.sourceKey === undefined || (typeof value.sourceKey === 'string' && SHA256_PATTERN.test(value.sourceKey))) &&
+  (value.artifactKind !== 'environment-capability-evidence' || value.sourceKey !== undefined) &&
   isCanonicalUtcTimestamp(value.sourceCompletedAt) &&
   typeof value.coverageStatus === 'string' &&
   COVERAGE_STATUSES.has(value.coverageStatus) &&

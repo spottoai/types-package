@@ -143,6 +143,9 @@ specs/ai-chat/company-memory/*
 !specs/ai-chat/context-harvesting/
 specs/ai-chat/context-harvesting/*
 !specs/ai-chat/context-harvesting/context-harvesting-types-package.md
+!specs/ai-chat/environment-memory/
+specs/ai-chat/environment-memory/*
+!specs/ai-chat/environment-memory/environment-memory-types-package.md
 !specs/companies/
 specs/companies/*
 !specs/companies/company-notes/
@@ -170,3 +173,9 @@ specs/companies/company-notes/*
 # Shared licensing-content contract specification.
 !specs/licensing/license-inventory/
 !specs/licensing/license-inventory/license-inventory-types-package.md
+
+# Shared feature/promotion contract specification.
+!specs/access/
+specs/access/*
+!specs/access/features-and-permissions/
+!specs/access/features-and-permissions/features-and-permissions-types-package.md

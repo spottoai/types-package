@@ -3,7 +3,7 @@ import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
-import type { EnvironmentType, ProviderScopeDisplayMetadata } from '../common/provider';
+import type { EnvironmentType, ProviderScopeContext, ProviderScopeDisplayMetadata } from '../common/provider';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 import type {
   AzureSpSetupErrorCode,
@@ -781,7 +781,7 @@ export interface SubscriptionSyncProgress {
   steps: SubscriptionSyncProgressStep[];
 }
 
-export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields {
+export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields, ProviderScopeContext {
   name: string;
   friendlyName?: string;
   cloudAccountId: string;

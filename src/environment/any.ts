@@ -18,12 +18,14 @@ import { buildEnvironmentScopeQualifiedSubjectV1 } from './canonicalization.js';
 import { parseEnvironmentLogicalEvidenceReferenceV1 } from './references.js';
 import { isEnvironmentScopeV1 } from './validation.js';
 import { isBoundedString, utf8ByteLength } from './internal.js';
+import { parseEnvironmentCapabilityEvidenceSubjectV1 } from './capabilityIdentifiers.js';
 
 export type EnvironmentAnyScopeV1 = EnvironmentScopeV1 | EnvironmentTenantScopeV1 | EnvironmentAwsAccountScopeV1;
 export type EnvironmentAnyLogicalEvidenceReferenceV1 = EnvironmentLogicalEvidenceReferenceV1 | EnvironmentAwsLogicalEvidenceReferenceV1;
 export type ParsedEnvironmentAnyLogicalEvidenceReferenceV1 =
   | ({ provider: 'azure' } & ParsedEnvironmentLogicalEvidenceReferenceV1)
-  | ({ provider: 'aws' } & (ParsedEnvironmentAwsLogicalArtifactReferenceV1 | ParsedEnvironmentAwsLogicalResourceReferenceV1));
+  | ({ provider: 'aws' } & (ParsedEnvironmentAwsLogicalArtifactReferenceV1 | ParsedEnvironmentAwsLogicalResourceReferenceV1))
+  | { provider: 'aws'; kind: 'artifact'; artifactKind: 'environment-capability-evidence'; scope: EnvironmentAwsAccountScopeV1; subject: string };
 
 /** Provider dispatch does not widen the established Azure-specific guards. */
 export const isEnvironmentAnyScopeV1 = (value: unknown): value is EnvironmentAnyScopeV1 =>
@@ -70,6 +72,11 @@ export const parseEnvironmentAnyLogicalEvidenceReferenceV1 = (value: unknown): P
   const aws = parseEnvironmentAwsLogicalArtifactReferenceV1(value) ?? parseEnvironmentAwsLogicalResourceReferenceV1(value);
   if (aws) return { provider: 'aws', ...aws };
   const azure = parseEnvironmentLogicalEvidenceReferenceV1(value);
+  if (azure?.kind === 'artifact' && azure.artifactKind === 'environment-capability-evidence') {
+    const capability = parseEnvironmentCapabilityEvidenceSubjectV1(azure.subject);
+    if (capability?.scope.kind === 'aws-account')
+      return { provider: 'aws', ...azure, artifactKind: 'environment-capability-evidence', scope: capability.scope };
+  }
   return azure ? { provider: 'azure', ...azure } : null;
 };
 

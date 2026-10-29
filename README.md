@@ -61,6 +61,14 @@ and evidence helpers select Azure/AWS without widening the existing Azure guards
 These source additions require a new package release and consumer adoption; runtime AWS memory remains planned. See the
 [types contract and handoff](specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md).
 
+Optional environment capability documents and immutable facts also support exact
+AWS account scopes and completed Portal publication bindings. Capability evidence
+references preserve the company and twelve-digit account identity; AWS completion
+pointer validation admits the optional descriptors without changing core file
+counts or digests. The shared `/environment` contracts remain the only wire
+definitions. This additive source extension requires package publication and
+coordinated consumer adoption before AWS producers emit optional documents.
+
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
 - **Private Registry**: Published to GitHub Packages (not public npm)
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support

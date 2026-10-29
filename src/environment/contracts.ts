@@ -1,3 +1,4 @@
+import type { EnvironmentCapabilityDocumentV1 } from './optionalDocuments.js';
 /** Single pre-release multi-pillar environment contract shared by producers and consumers. */
 export const ENVIRONMENT_CONTRACT_LIMITS_V1 = Object.freeze({
   completedPointerBytes: 16 * 1024,
@@ -34,6 +35,7 @@ export const ENVIRONMENT_DOCUMENT_NAMES_V1 = [
 ] as const;
 
 export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
+  'environment-capability-evidence',
   'subscription-summary',
   'subscription-resources',
   'subscription-recommendations',
@@ -573,6 +575,8 @@ export type EnvironmentDocumentDescriptorV1 =
     };
 
 export interface EnvironmentCompiledGenerationPointerV1 {
+  /** Individually hashed supplemental files; excluded from core fileCount/treeDigestSha256. */
+  optionalDocuments?: EnvironmentCapabilityDocumentV1[];
   schemaVersion: 1;
   status: 'completed';
   environmentRunId: string;
