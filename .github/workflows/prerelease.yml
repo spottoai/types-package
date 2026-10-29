@@ -4,11 +4,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      approved_aws_scope_candidate:
-        description: 'Publish the approved DEV-1252 candidate only; does not update latest'
-        type: boolean
-        default: false
 
 concurrency:
   group: prerelease-main
@@ -27,7 +22,7 @@ jobs:
     # A merged PR already emits a push to main; one trigger avoids duplicate releases.
     if: |
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && inputs.approved_aws_scope_candidate != true)
+      github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
@@ -101,50 +96,3 @@ jobs:
       - name: Summary
         run: |
           echo "Published @spottoai/types-package ${{ steps.version-bump.outputs.new_version }} to GitHub Packages"
-
-  approved-aws-scope-candidate:
-    if: github.event_name == 'workflow_dispatch' && inputs.approved_aws_scope_candidate == true && github.ref == 'refs/heads/dev-1252-aws-scopes'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: read
-      packages: write
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      APPROVED_COMMIT: da125a2f8481304cbd841adac9be061830748661
-      APPROVED_VERSION: 1.1.80-aws-scopes.0
-    steps:
-      - name: Checkout approved candidate
-        uses: actions/checkout@v4
-        with:
-          ref: da125a2f8481304cbd841adac9be061830748661
-          persist-credentials: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@spottoai'
-
-      - name: Validate approved source and version
-        run: |
-          test "$(git rev-parse HEAD)" = "$APPROVED_COMMIT"
-          test "$(node -p "require('./package.json').version")" = "$APPROVED_VERSION"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build and verify contracts
-        run: npm test
-
-      - name: Publish approved candidate without moving latest
-        run: |
-          PACKAGE="@spottoai/types-package@$APPROVED_VERSION"
-          if npm view "$PACKAGE" version >/dev/null 2>&1; then
-            test "$(npm view "$PACKAGE" gitHead)" = "$APPROVED_COMMIT"
-            npm dist-tag add "$PACKAGE" aws-scopes
-          else
-            npm publish --tag aws-scopes --ignore-scripts
-          fi
-          test "$(npm view @spottoai/types-package dist-tags.aws-scopes)" = "$APPROVED_VERSION"
