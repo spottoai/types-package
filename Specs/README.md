@@ -14,3 +14,5 @@ not establish workflow implementation or deployment.
 | Company Notes | [Immutable note revisions and concurrency](companies/company-notes/company-notes-types-package.md) |
 | Background report generation | [Jobs, scheduled Report Packs and filename contracts](reporting/background-report-generation/background-report-generation-types-package.md) |
 | License inventory | [Microsoft 365 evidence, storage, lifecycle and related Azure spend](licensing/license-inventory/license-inventory-types-package.md) |
+
+- [Reporting access](reporting/reporting-access/reporting-access-types-package.md)

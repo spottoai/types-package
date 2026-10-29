@@ -1,4 +1,5 @@
 import { sha256Hex } from '../shared/reportingDigest';
+import { isReportJobProgressV1, REPORT_PROGRESS_STATUSES, type ReportJobProgressV1, type ReportProgressStatus } from './reportJobSaga';
 import {
   hasExactlyKeys,
   isBoundedPlainText,
@@ -121,6 +122,7 @@ export const isReportJobCreateResponseV1 = (value: unknown): value is ReportJobC
 };
 
 export interface ReportJobListQueryV1 {
+  progressStatus?: ReportProgressStatus;
   pageSize?: number;
   cursor?: string;
   status?: ReportJobStatus;
@@ -131,7 +133,8 @@ export interface ReportJobListQueryV1 {
 
 export const isReportJobListQueryV1 = (value: unknown): value is ReportJobListQueryV1 =>
   isPlainRecord(value) &&
-  hasExactlyKeys(value, [], ['pageSize', 'cursor', 'status', 'trigger', 'scheduleId', 'reportType']) &&
+  hasExactlyKeys(value, [], ['pageSize', 'cursor', 'status', 'trigger', 'scheduleId', 'reportType', 'progressStatus']) &&
+  (value.progressStatus === undefined || REPORT_PROGRESS_STATUSES.includes(value.progressStatus as ReportProgressStatus)) &&
   (value.pageSize === undefined ||
     (typeof value.pageSize === 'number' &&
       Number.isInteger(value.pageSize) &&
@@ -145,6 +148,7 @@ export const isReportJobListQueryV1 = (value: unknown): value is ReportJobListQu
 
 /** Deliberate whitelist: no request JSON, configuration, worker lease, paths or recipient details. */
 export interface ReportJobProjectionV1 {
+  progress?: ReportJobProgressV1;
   schemaVersion: 1;
   companyId: string;
   jobId: string;
@@ -190,6 +194,7 @@ const projectionRequired = [
   'notificationStatus',
 ];
 const projectionOptional = [
+  'progress',
   'scheduleId',
   'definitionRevision',
   'scheduledForUtc',
@@ -264,6 +269,7 @@ export const isReportJobProjectionV1 = (value: unknown): value is ReportJobProje
       return false;
     for (const key of ['startedAtUtc', 'sourceObservedAtUtc', 'generatedAtUtc', 'completedAtUtc', 'notificationCompletedAtUtc'])
       if (value[key] !== undefined && !isIsoUtcTimestamp(value[key])) return false;
+    if (value.progress !== undefined && !isReportJobProgressV1(value.progress)) return false;
     if (value.status === 'failed') {
       if (!isReportJobFailureCode(value.failureCode) || !isReportJobFailureStage(value.failureStage)) return false;
       const stage = REPORT_JOB_FAILURE_STAGE_BY_CODE[value.failureCode];
@@ -311,7 +317,7 @@ export const buildReportJobProjectionV1 = async (entity: unknown): Promise<Repor
     notificationStatus: row.notificationStatus,
   };
   for (const key of projectionOptional) {
-    if (key === 'period' || key === 'downloadUrl' || key === 'notificationDestinationCounts') continue;
+    if (key === 'period' || key === 'downloadUrl' || key === 'notificationDestinationCounts' || key === 'progress') continue;
     const value = row[key];
     if (value !== undefined) Object.assign(projection, { [key]: value });
   }

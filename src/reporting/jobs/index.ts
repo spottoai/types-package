@@ -13,6 +13,7 @@ export * from './reportJobApi';
 export * from './reportJobPrerequisites';
 export * from './reportJobLifecycle';
 export * from './reportJobRecovery';
+export * from './reportJobSaga';
 export { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
 export {
   isIanaTimeZone,

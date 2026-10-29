@@ -171,6 +171,42 @@ for (const [label, jobs, scheduler] of variants) {
   const notifier = { ...common, writer: 'notifier', verifiedArtifactContentSha256: generated.artifactContentSha256 };
   const update = async (before, after, context, expected, description) =>
     eq((await jobs.validateReportJobUpdateV1(before, after, context)).ok, expected, description);
+  const blocker = {
+    ...common,
+    writer: 'notification-blocker',
+    blockedArtifactContentSha256: generated.artifactContentSha256,
+    notificationAttemptCount: 0,
+  };
+  const blocked = {
+    ...pending,
+    status: 'completed-with-notification-errors',
+    notificationStatus: 'failed',
+    notificationAttemptCount: 0,
+    notificationCompletedAtUtc: nowUtc,
+    completedAtUtc: nowUtc,
+  };
+  await update(pending, blocked, blocker, true, 'integrity block settles delivery without a provider attempt or verified-byte assertion');
+  for (const [next, context] of [
+    [blocked, { ...blocker, blockedArtifactContentSha256: 'c'.repeat(64) }],
+    [blocked, { ...blocker, notificationAttemptCount: 1 }],
+    [{ ...pending, notificationAttemptCount: 0 }, blocker],
+    [{ ...blocked, artifactBytes: 100 }, blocker],
+    [{ ...blocked, sourceSnapshotSha256: 'c'.repeat(64) }, blocker],
+    [{ ...completed, notificationAttemptCount: 0 }, blocker],
+  ])
+    await update(pending, next, context, false, 'integrity block preserves generation, counts and artifact identity');
+  await update(
+    pending,
+    {
+      ...completed,
+      status: 'completed-with-notification-errors',
+      notificationStatus: 'attachment-too-large',
+      notificationDestinationCounts: JSON.stringify({ email: { total: 2, delivered: 2, failed: 0 }, teams: { total: 1, delivered: 0, failed: 1 } }),
+    },
+    notifier,
+    false,
+    'link-only email cannot hide a failed destination'
+  );
   for (const [before, after] of [
     [accepted, running],
     [running, sourceReady],
@@ -399,6 +435,25 @@ for (const [label, jobs, scheduler] of variants) {
     lastJobId: generated.jobId,
   };
   eq(scheduler.isScheduleProjection(scheduleProjection), true, 'accepted dispatch projection');
+  eq(scheduler.isScheduleProjection({ ...scheduleProjection, lastOccurrenceSettledAtUtc: nowUtc }), true, 'negotiated occurrence settlement clock');
+  eq(
+    scheduler.isScheduleProjection({ ...scheduleProjection, status: 'paused', pauseReason: 'owner-access-unavailable' }),
+    true,
+    'owner access pause reason'
+  );
+  for (const bad of [
+    { ...scheduleProjection, pauseReason: 'owner-access-unavailable' },
+    { ...scheduleProjection, status: 'paused', pauseReason: 'unknown' },
+    { ...scheduleProjection, lastOccurrenceSettledAtUtc: 'invalid' },
+    {
+      ...scheduleProjection,
+      lastOccurrenceAtUtc: undefined,
+      lastOccurrenceOutcome: undefined,
+      lastJobId: undefined,
+      lastOccurrenceSettledAtUtc: nowUtc,
+    },
+  ])
+    eq(scheduler.isScheduleProjection(bad), false, 'invalid occurrence lifecycle details');
   eq(scheduler.isScheduleListResponse({ results: [scheduleProjection] }), true, 'generic report list');
   for (const bad of [
     { ...scheduleProjection, lastJobId: undefined },
