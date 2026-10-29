@@ -23,3 +23,14 @@ API, scheduler and reportworker adopt published registry versions through their 
 ## Verification
 
 Canonical `npm test` builds CommonJS/ESM outputs and runs the reporting-job, Report Pack and packed-export checks. The pack checks cover canonical selection, invalid/duplicate/path-like IDs, unknown fields, schedule acceptance, job identity and ZIP/DOCX filename boundaries. Consumer builds and runtime checks belong to their owning repositories.
+
+
+## Saga and lifecycle contracts
+
+`reporting-jobs` exports bounded private `ReportSagaV1`, step and whitelisted `ReportJobProgressV1` contracts/validators. The job Table schema and queue message are unchanged. Public projections permit optional negotiated progress and public lifecycle filters; older strict clients keep their response shape. Runtime projection belongs to portable platform, while host applications own persistence and cleanup.
+
+## Negotiated report progress
+
+Portal sends `X-Spotto-Report-Lifecycle: 1` for job/history/download-list reads. Other clients retain the legacy response shape. Lifecycle enrichment has a shared five-second request budget and two-second read deadlines, with safe reason-coded diagnostics and validated Table fallback. The API binds execution progress to the current row and availability to the immutable artifact receipt. Ready, Sent, Partially Sent, Not Delivered and Expired remain distinct; a missing/expired generation lease displays Waiting to Retry instead of indefinitely claiming active generation or inventing failure.
+
+The negotiated `progressStatus` filter uses the same status as badges and preserves sparse-page continuation. Expired rows have no download action and stop detail polling even if an older raw row remains generated/pending. Report details show the bounded stage summary and availability deadline. Deploy API negotiation/CORS support before Portal requests the new response. Shared contracts and portable lifecycle exports require their own package publication/consumer adoption before registry-based deployment; local prototype validation is separate.

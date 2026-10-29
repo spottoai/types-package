@@ -29,9 +29,13 @@ export interface ReportGenerationScheduleProjection {
   controlGeneration: number;
   etag: string;
   status: 'active' | 'paused' | 'completed';
+  /** Set by the manager only after a proven owner-access refusal, never a policy-store outage. */
+  pauseReason?: 'owner-access-unavailable';
   definition: ReportGenerationScheduleWriteRequest;
   nextOccurrenceAtUtc?: string;
   lastOccurrenceAtUtc?: string;
+  /** Negotiated lifecycle detail; actual settlement, which may be later than the due instant. */
+  lastOccurrenceSettledAtUtc?: string;
   /** Accepted means dispatch accepted, not generation or delivery succeeded. */
   lastOccurrenceOutcome?: 'accepted' | 'failed' | 'skipped';
   lastJobId?: string;

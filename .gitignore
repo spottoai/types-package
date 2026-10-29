@@ -121,6 +121,8 @@ specs/cloud-accounts/*
 specs/reporting/*
 !specs/reporting/reporting-scheduler-types.md
 !specs/reporting/report-resource-type-spend-types.md
+!Specs/reporting/reporting-access/
+!Specs/reporting/reporting-access/*.md
 !specs/security/
 specs/security/*
 !specs/security/container-image-usage-types.md
