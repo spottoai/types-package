@@ -163,8 +163,8 @@ export type PortalAccessResourceFilter = { mode: 'none' } | { mode: 'tag_collect
 export type PortalAccessTagPredicate =
   | { all: PortalAccessTagPredicate[] }
   | { any: PortalAccessTagPredicate[] }
-  | { source: 'azure' | 'spotto'; key: string; operator: 'equals'; value: string }
-  | { source: 'azure' | 'spotto'; key: string; operator: 'in'; values: string[] };
+  | { source: 'azure' | 'aws' | 'spotto'; key: string; operator: 'equals'; value: string }
+  | { source: 'azure' | 'aws' | 'spotto'; key: string; operator: 'in'; values: string[] };
 
 export interface PortalAccessTagCollection {
   id: string;
@@ -176,7 +176,8 @@ export interface PortalAccessScopeDefinition {
   id: string;
   name: string;
   enabled: boolean;
-  providerName: 'azure';
+  /** Immutable after creation. AWS uses account IDs in the subscriptions selector. */
+  providerName: 'azure' | 'aws';
   cloudAccounts: PortalAccessIdSelector;
   subscriptionGroups: PortalAccessGroupSelector;
   subscriptions: PortalAccessIdSelector;
@@ -247,6 +248,10 @@ export interface PortalAccessScopeSummary {
   /** Opaque cache identity for the caller's effective scope. It is not an authorization token. */
   fingerprint: string;
   eligibleSubscriptionCount: number;
+  /** True when an effective scoped grant filters resources by tags; no predicates are exposed. */
+  hasTagFilter?: boolean;
+  /** Providers represented by eligible boundaries; absent on older Azure-only responses. */
+  providerNames?: Array<'azure' | 'aws'>;
   scopes: PortalAccessScopeSummaryItem[];
 }
 

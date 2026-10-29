@@ -78,12 +78,16 @@ export interface AwsOnboardingConfiguration {
   exportName: string;
 }
 
-/** Authorized company-scoped response used before customer role deployment. */
-export interface AwsCompanyTrustSetupResponse extends AwsForbiddenCredentialFields {
+/** Existing company setup response containing the trust binding and deployable role bundle. */
+export interface AwsCompanyRoleBundleSetupResponse extends AwsForbiddenCredentialFields {
   provider: 'AWS';
   externalId: string;
   /** ISO-8601 timestamp for the original immutable server-side issuance. */
   createdAt: string;
-  onboarding: AwsOnboardingConfiguration;
   onboardingBundle: AwsRoleOnboardingBundle;
+}
+
+/** Regional Connect setup also requires the API-owned deployment configuration. */
+export interface AwsCompanyTrustSetupResponse extends AwsCompanyRoleBundleSetupResponse {
+  onboarding: AwsOnboardingConfiguration;
 }
