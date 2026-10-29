@@ -104,7 +104,7 @@ export const isReportGenerationScheduleProjection = (value: unknown): value is R
           'updatedAtUtc',
           'updatedBy',
         ],
-        ['nextOccurrenceAtUtc', 'lastOccurrenceAtUtc', 'lastOccurrenceOutcome', 'lastJobId']
+        ['nextOccurrenceAtUtc', 'lastOccurrenceAtUtc', 'lastOccurrenceOutcome', 'lastJobId', 'pauseReason', 'lastOccurrenceSettledAtUtc']
       ) ||
       !isReportEntityId(value.scheduleId) ||
       !positive(value.definitionRevision) ||
@@ -118,6 +118,9 @@ export const isReportGenerationScheduleProjection = (value: unknown): value is R
       !isBoundedPlainText(value.createdBy, 500) ||
       !isBoundedPlainText(value.updatedBy, 500)
     )
+      return false;
+    if (value.pauseReason !== undefined && (value.status !== 'paused' || value.pauseReason !== 'owner-access-unavailable')) return false;
+    if (value.lastOccurrenceSettledAtUtc !== undefined && (!value.lastOccurrenceAtUtc || !isIsoUtcTimestamp(value.lastOccurrenceSettledAtUtc)))
       return false;
     if (value.nextOccurrenceAtUtc !== undefined && !isIsoUtcTimestamp(value.nextOccurrenceAtUtc)) return false;
     if (
