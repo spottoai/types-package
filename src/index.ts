@@ -1,4 +1,5 @@
 export * from './common/knownResourceGroupSpend';
+export * from './common/recordedSpendAnalysis';
 export * from './aws/billingEstimation';
 export * from './accounts/microsoft365PricingOverrides';
 export * from './accounts/microsoft365PricingFacts';

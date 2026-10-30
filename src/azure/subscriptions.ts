@@ -13,6 +13,7 @@ import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
 import type { CostComposition } from './costComposition.js';
+import type { RecordedSpendAnalysis } from '../common/recordedSpendAnalysis.js';
 import type { RetailCostAvailability } from './retailCost.js';
 import {
   isAzureProviderScopeFinancialChargeSpendBreakdownV1,
@@ -228,6 +229,8 @@ export const isAzureNativeSubscriptionFinancialStatsV1 = (value: unknown): value
 };
 
 export interface SubscriptionStats {
+  /** Separate dated recorded-charge analysis; primary spend30Days keeps its recorded display window. */
+  recordedSpendAnalysis?: RecordedSpendAnalysis;
   /** Coverage qualification independent of imported arithmetic; absence never proves complete billing. */
   spend30DaysCoverage?: BillingSpendWindowCoverage;
   /** Total unique customer-visible resources for resourcesTotalBasis. */

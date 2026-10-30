@@ -1,5 +1,25 @@
 # Types Package
 
+## Dated recorded-charge analysis
+
+`SubscriptionStats.recordedSpendAnalysis` optionally publishes four separately
+dated UTC windows: current/prior 30 days and current/prior 7 days. Every period
+declares currency (`null` when unresolved), billed and amortized availability,
+billing provenance, source-bound calendar closure and unknown invoice finality.
+`isRecordedSpendAnalysis` checks the wire evidence and adjacent windows; it does
+not prove provider usage completeness. Zero and signed charges are values.
+Unavailable amounts have reasons and never default to another basis/currency.
+
+The existing primary `spend30Days` and display dates retain their meaning. These
+analysis windows cannot be subtracted from display-window money. Consumers may
+combine distinct scopes only when all selected scopes supply the same exact
+windows, currency, basis and billing provenance. The version-one example in
+`examples/recorded-spend-analysis-v1.json` is mirrored byte for byte in the UI's
+conformance fixture. Build and run `npm run check:recorded-spend-analysis-contracts`
+to verify both CJS/ESM guards. Publication/adoption of this optional contract is a
+separate package release; consumers must not import this source tree or a local
+development tarball as a delivery dependency.
+
 ## Feature flag policy
 
 Do not add feature flags, feature enablement settings, or rollout allowlists unless the user explicitly requests them. Implement requested features through the normal application workflows. Approval of a feature, specification, or implementation plan does not authorize adding feature flags.
