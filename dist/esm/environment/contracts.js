@@ -31,6 +31,7 @@ export const ENVIRONMENT_DOCUMENT_NAMES_V1 = [
     'pillars/operations.md',
 ];
 export const ENVIRONMENT_ARTIFACT_KINDS_V1 = [
+    'environment-capability-evidence',
     'subscription-summary',
     'subscription-resources',
     'subscription-recommendations',

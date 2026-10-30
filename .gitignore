@@ -105,6 +105,9 @@ specs/billing/*
 !specs/billing/azure-billing-optional-classification.md
 !specs/billing/azure-native-discount-eligibility.md
 !specs/billing/aws-billing-driver-resource-identities.md
+!specs/billing/commitments/
+specs/billing/commitments/*
+!specs/billing/commitments/commitments-types-package.md
 !specs/licensing/
 specs/licensing/*
 !specs/licensing/microsoft-365-license-view-types.md

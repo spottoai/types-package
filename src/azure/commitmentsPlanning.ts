@@ -165,6 +165,7 @@ export interface CommitmentsPlanningViewBase<
  * ProviderScopedCommitmentsPlanningView instead.
  */
 export interface CommitmentsPlanningView extends CommitmentsPlanningViewBase {
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   providerScope?: CommitmentsPlanningProviderScope;
   subscription?: SubscriptionSummaryLite;
 }
@@ -776,6 +777,9 @@ export type CommitmentsObsoleteCandidateType = 'underutilized' | 'coverage-drift
 export type CommitmentsSuggestedAction = 'renew' | 'let-expire' | 'exchange' | 'resize' | 'review';
 
 export interface CommitmentsObsoleteCandidate {
+  benefitAssessmentAdmission?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentAdmissionV1;
+  /** Separate nonadditive exposure evidence; impactEstimate retains its legacy meaning. */
+  unusedCommitmentValue?: import('./commitmentUnusedValue').CommitmentUnusedValueEvidence;
   id: string;
   candidateType: CommitmentsObsoleteCandidateType;
   reasonCodes: string[];

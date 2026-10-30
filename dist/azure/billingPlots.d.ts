@@ -1,10 +1,19 @@
 /**
- * Billing cost analysis types for Azure cost visualization.
+ * Shared billing cost analysis types for Azure and AWS cost visualization.
  */
 import { type ArtifactOwnershipBinding, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
 import { type BillingCompletedArtifactPublicationDecision, type BillingPartialArtifactPublicationDecision } from './billingArtifactEvidence.js';
 import { type AzureFinancialChargeCoverageV1 } from './financialChargePolicy.js';
 export type { BillingArtifactPublicationDecision, BillingCompletedArtifactPublicationDecision, BillingPartialArtifactPublicationDecision, } from './billingArtifactEvidence.js';
+/** A forecast withheld because consumption-day coverage has not been proved. */
+export interface BillingForecastUnavailable {
+    status: 'unavailable';
+    reasonCode: 'billing-usage-coverage-unavailable';
+    basis: 'billed';
+    currency?: string;
+    observedThroughDate?: string;
+    asOfDate?: string;
+}
 /** Named cost chart windows emitted by the Azure billing analyzer. */
 export type BillingChartViewKey = '7_days' | '30_days' | '90_days' | '12_months' | 'forecast_90_days' | (string & {});
 /** Supported billing chart aggregation categories. */
@@ -136,6 +145,18 @@ export interface BillingChartViews {
 }
 /** Interactive chart data for cost analysis. */
 export interface BillingChartData {
+    /** Monetary basis of chart values; absence does not authorize a basis fallback. */
+    costBasis?: 'billed' | 'amortized';
+    /** Customer-facing assessment state, without private publication or source identities. */
+    analysisAvailability?: {
+        status: 'available' | 'unavailable';
+        reason?: string;
+        assessmentScope?: 'recorded-consumption' | 'recorded-charges';
+        /** Projection may be withheld independently of a completed anomaly assessment. */
+        projectionUnavailableReason?: string;
+    };
+    /** Absent forecasts do not imply a zero forecast. */
+    forecastAvailability?: BillingForecastUnavailable;
     schemaVersion: number;
     source: 'aggregated' | (string & {});
     dataWindow: BillingChartDataWindow;
@@ -173,17 +194,21 @@ export interface BillingAnomalyDriverResource {
     name: string;
     /** Scope/category used by the analyzer for the resource row */
     resourceScope?: string;
-    /** Full cloud resource ID when the anomaly can be tied to a resource */
+    /** Recorded cloud/native ID, including accountless AWS ARNs; not proof of discovery ownership. */
     resourceId?: string;
     /** Whether the driver row represents subscription-level spend */
     isSubscriptionLevel?: boolean;
-    /** Total cost attributed to the resource */
+    /**
+     * Cost attributed to the anomaly window, on the containing driver's basis
+     * and currency. A baseline-only resource may carry zero only when recorded
+     * input and source coverage establish it; missing evidence is not zero.
+     */
     cost: number;
     /** Baseline cost for the resource */
     baseline: number | null;
-    /** Delta between current cost and baseline */
-    delta: number;
-    /** Percent change from baseline */
+    /** Signed current-cost minus baseline difference; null when comparison is unassessed. */
+    delta: number | null;
+    /** Signed percentage change for an assessed positive baseline; otherwise null. */
     percentChange: number | null;
     /** Whether the resource is new or previously idle */
     isNew: boolean;
@@ -231,7 +256,7 @@ export interface BillingAnomaly {
     notes: string[];
 }
 export interface BillingCostAnalysisMetadata {
-    /** Azure subscription ID */
+    /** Provider scope identifier: Azure subscription ID or AWS account ID. */
     subscriptionId: string;
     /** Opaque billing generation that produced this analysis. */
     billingGenerationId: string;
@@ -304,6 +329,7 @@ export type BillingCostAnalysisVerifiedReadResponse = BillingCostAnalysisMetadat
 };
 /** Successful billing cost-analysis endpoint response. */
 export type BillingCostAnalysisReadResponse = BillingCostAnalysisVerifiedReadResponse | BillingCostAnalysisLegacyFallbackResponse;
+export declare function isBillingForecastUnavailable(value: unknown): value is BillingForecastUnavailable;
 /** Exact dependency-free validator for the customer-facing billing success contract. */
 export declare const isBillingCostAnalysisPublicResponse: (value: unknown) => value is BillingCostAnalysisPublicResponse;
 /** Dependency-free validator for the complete legacy V1 business payload. */

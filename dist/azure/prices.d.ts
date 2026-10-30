@@ -3,8 +3,13 @@ import { DailyMetrics, DisplayMetric } from './metrics.js';
 import type { SpendDataSource } from './subscriptions.js';
 import type { CostComposition } from './costComposition.js';
 import type { AzureFinancialChargeClassificationV1 } from './financialChargePolicy.js';
+import type { AzureNativeDiscountEligibleCostV1 } from './nativeDiscountEligibility.js';
 export type ResourceCostSource = SpendDataSource;
 export type CostSourceConfidence = 'high' | 'unknown';
+/** Resource lifecycle observation, independent of whether a billing row is current. */
+export type ResourceOperationalState = 'active' | 'inactive' | 'deleted' | 'unknown';
+/** Billing-row lifecycle, independent of the resource's operational state. */
+export type BillingItemState = 'current' | 'historical' | 'superseded';
 /** Calendar used to interpret a financial date-only value. */
 export type CostDateBasis = 'utc' | 'company-local' | 'billing-calendar';
 export interface CostDateRangeMetadata {
@@ -164,8 +169,19 @@ export interface ResourceCostSummary {
     specs: SpecItem[];
     /** name of the reservation if it's a reserved instance */
     reservation?: string;
-    /** e.g. true means the resource is active, false means the resource was active (old SKU) */
+    /** Whether this cost row is active (false can describe an old SKU); not resource operational state. */
     active: boolean;
+    /** Omitted when resource lifecycle evidence is absent; never infer active from omission. */
+    resourceOperationalState?: ResourceOperationalState;
+    /** Omitted when billing-row lifecycle evidence is absent. */
+    billingItemState?: BillingItemState;
+    billingItemStateReason?: 'replacement' | 'ended_window' | 'deleted_resource' | 'inactive_resource';
+    /** UTC date as yyyymmdd when this billing row was replaced, not an epoch timestamp. */
+    supersededOn?: number;
+    /** Producer-defined billing component family used to match replacement rows. */
+    replacementFamilyKey?: string;
+    /** Producer-defined identity of the replacement billing row. */
+    replacementItemKey?: string;
     /** e.g. true means the resource is an addon such as Defender for Cloud, Backups, Disks, IP address, ASR */
     addon: boolean;
     /** e.g. 66.09 (rounded to 2 decimal places) - the amount of money spent on the resource based on the date range */
@@ -363,7 +379,7 @@ export interface TargetCostSummary {
     /** Optional provenance for schedule estimates derived from configured or fallback business hours. */
     businessHoursEstimate?: BusinessHoursEstimateMetadata;
 }
-export interface ResourceSpend {
+export interface ResourceSpend extends AzureNativeDiscountEligibleCostV1 {
     /** the actual cost spent on the resource.  We can't rename this to spend because it comes from the cost API */
     cost: number;
     /** the amount spent on the resource based on the amortized cost (this takes reserved instances and savings plans into account) */
@@ -387,6 +403,10 @@ export interface ResourceSpend {
     serviceName: string;
     /** Azure Cost Management publisher classification, for example Marketplace. */
     publisherType?: string;
+    /** Azure pricing model as supplied by billing evidence; absent when unavailable. */
+    pricingModel?: string;
+    /** Azure charge type as supplied by billing evidence; absent when unavailable. */
+    chargeType?: string;
     /** Publisher display name retained from billing evidence when supplied. */
     publisherName?: string;
     /** Product or offer name retained from billing evidence when supplied. */

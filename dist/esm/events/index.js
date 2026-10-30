@@ -5,4 +5,5 @@ export * from './costAnomalies.js';
 export * from './baseAlert.js';
 export * from './alertDefinitionRun.js';
 export * from './quickAlerts.js';
+export * from './earlySpend.js';
 export * from './actionGroups.js';

@@ -203,7 +203,7 @@ interface SystemTracksViewBase extends AzurePortalVersionedArtifact {
     artifactGeneration: AzurePortalArtifactGeneration;
     generationId: string;
     generatedAt: string;
-    providerName: ProviderName.Azure;
+    providerName: ProviderName;
     providerScopeId: string;
     subscriptionId: string;
     catalog: SystemTrackCatalog;

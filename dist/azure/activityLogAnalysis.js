@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ACTIVITY_LOG_TAG_IDS = exports.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1 = exports.CONFORMED_ACTIVITY_ANALYSIS_LIMITS_V1 = exports.PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION = exports.CONFORMED_ACTIVITY_ANALYSIS_SCHEMA_VERSION = exports.ACTIVITY_LOG_ANALYSIS_VERSION = exports.ACTIVITY_LOG_TAXONOMY_VERSION = void 0;
+exports.buildActivityLogAnalysisScopeKey = exports.ACTIVITY_LOG_EXECUTION_ORIGINS = exports.ACTIVITY_LOG_TAG_IDS = exports.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1 = exports.CONFORMED_ACTIVITY_ANALYSIS_LIMITS_V1 = exports.PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION = exports.CONFORMED_ACTIVITY_ANALYSIS_SCHEMA_VERSION = exports.ACTIVITY_LOG_ANALYSIS_VERSION = exports.ACTIVITY_LOG_TAXONOMY_VERSION = void 0;
 exports.buildConformedActivityAnalysisLogicalName = buildConformedActivityAnalysisLogicalName;
 exports.parseConformedActivityAnalysisLogicalName = parseConformedActivityAnalysisLogicalName;
 exports.ACTIVITY_LOG_TAXONOMY_VERSION = 'v1';
@@ -42,6 +42,7 @@ exports.ACTIVITY_LOG_TAG_IDS = [
     'actor.manual',
     'actor.workload-automation',
     'actor.azure-platform',
+    'actor.platform',
     'actor.unknown',
     'change.material',
     'intent.credential-access',
@@ -56,6 +57,18 @@ exports.ACTIVITY_LOG_TAG_IDS = [
     'security.destructive-action',
     'scheduler.power-operation',
 ];
+exports.ACTIVITY_LOG_EXECUTION_ORIGINS = ['manual', 'workloadAutomation', 'azurePlatform', 'platform', 'unknown'];
+/** Stable identity and ranking key; retains legacy Azure resource-ID ordering. */
+const buildActivityLogAnalysisScopeKey = (scope) => scope.providerName === 'aws'
+    ? JSON.stringify([
+        scope.providerScopeId ?? scope.subscriptionId,
+        scope.region ?? '',
+        scope.provider ?? '',
+        scope.resourceType ?? '',
+        scope.resourceId ?? '',
+    ])
+    : (scope.resourceId ?? '');
+exports.buildActivityLogAnalysisScopeKey = buildActivityLogAnalysisScopeKey;
 const CANONICAL_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const CONFORMED_ACTIVITY_ANALYSIS_NAME = /^activity-logs\/activity_analysis-(\d{4}-(?:0[1-9]|1[0-2]))\.json$/;
 function buildConformedActivityAnalysisLogicalName(month) {

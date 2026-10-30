@@ -1,7 +1,11 @@
 import type { PaginationParams } from '../common/pagination.js';
 export type AlertSeverity = 'info' | 'warning' | 'critical';
 export type AlertStatus = 'open' | 'acknowledged' | 'resolved';
-export type AlertLifecycleEvent = 'open' | 'acknowledged' | 'resolved';
+/**
+ * Notification events. `escalated` is sent when an open alert materially worsens (for example, estimated daily cost grows);
+ * it does not change `AlertStatus`. Consumers switching on this type must handle unknown values safely.
+ */
+export type AlertLifecycleEvent = 'open' | 'acknowledged' | 'resolved' | 'escalated';
 export type AlertCategory = 'cost' | 'performance' | 'other';
 export type TagMatchMode = 'any' | 'all';
 export interface BaseAlertTag {

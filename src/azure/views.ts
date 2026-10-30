@@ -1,4 +1,5 @@
 import { ActivityLog, DailySummary, MonthSummary } from './common.js';
+import { isAzureBenefitAssessmentDependenciesV1 } from './benefitAssessmentAdmission.js';
 import { DisplayMetric, MetricPlot, MetricsDefinition } from './metrics.js';
 import { CostSummaryDetails } from './prices.js';
 import type { BenefitCostBasis, BenefitType, IBenefitCoverageBreakdownEntry } from './benefits.js';
@@ -999,6 +1000,7 @@ export type CompletedViewArtifactGeneration = AzurePortalArtifactGeneration;
 
 /** Legacy manifest shape retained for backward-compatible readers and writers. */
 export interface CompletedViewManifest {
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   status: 'in_progress' | 'completed';
   runId: string;
   subscriptionId: string;
@@ -1032,6 +1034,7 @@ export interface CompletedViewGenerationDependencies {
 }
 
 export interface CompletedViewManifestV2Base extends CompletedViewManifestV2RequestedCounts {
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   schemaVersion: 2;
   runId: string;
   subscriptionId: string;
@@ -1135,6 +1138,7 @@ type EpochFreeViewRevision = ArtifactRevisionVector & { ownershipEpochRevision?:
 
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   schemaVersion: 3;
   status: 'completed';
   runId: string;
@@ -1153,6 +1157,7 @@ export interface CompletedViewManifestV3 extends CompletedViewManifestV2Requeste
 
 /** Claim-projected portal or plugin generation that can retain authoritative partial coverage. */
 export interface PublishedViewManifestV4 extends CompletedViewManifestV2RequestedCounts {
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   schemaVersion: 4;
   status: 'published';
   coverage: PublishedViewCoverage;
@@ -1315,10 +1320,24 @@ const isSha256 = (value: unknown): value is string => typeof value === 'string' 
 const allowedViewArtifactPaths = (artifacts: unknown): AllowedArtifactReferenceField[] =>
   Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedArtifactReferenceField(artifact, 'path')) : [];
 
-const containsForbiddenViewArtifactControlData = (value: unknown, allowedReferenceFields: AllowedArtifactReferenceField[] = []): boolean =>
-  containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+const containsForbiddenViewArtifactControlData = (
+  value: unknown,
+  allowedReferenceFields: AllowedArtifactReferenceField[] = [],
+  options: { allowBenefitAssessmentDependencies?: boolean } = {}
+): boolean => {
+  // Native benefit IDs are validated by the exact bounded contract rather than interpreted as physical storage references.
+  // Only this top-level schema edge is admitted; an alias under an unknown edge is still scanned and rejected.
+  if (options.allowBenefitAssessmentDependencies && isRecord(value) && value.benefitAssessmentDependencies !== undefined) {
+    if (!isAzureBenefitAssessmentDependenciesV1(value.benefitAssessmentDependencies)) return true;
+    const { benefitAssessmentDependencies: _dependencies, ...rest } = value;
+    return containsForbiddenArtifactControlData(rest, allowedReferenceFields.map(field => field.object === value ? { ...field, object: rest } : field), {
+      requireAllowedFieldTraversalContext: true,
+    });
+  }
+  return containsForbiddenArtifactControlData(value, allowedReferenceFields, {
     requireAllowedFieldTraversalContext: true,
   });
+};
 
 const allowedPublicationDecisionIdentityFields = (decision: unknown): AllowedArtifactReferenceField[] => {
   if (!isRecord(decision)) return [];
@@ -1530,7 +1549,7 @@ export const isCompletedViewManifestV3 = (value: unknown): value is CompletedVie
     containsForbiddenViewArtifactControlData(value, [
       ...allowedArtifactTraversalField(value, 'artifacts'),
       ...allowedViewArtifactPaths(value.artifacts),
-    ])
+    ], { allowBenefitAssessmentDependencies: true })
   )
     return false;
   if (value.schemaVersion !== 3 || value.status !== 'completed') return false;
@@ -1618,7 +1637,7 @@ export const isPublishedViewManifestV4 = (value: unknown): value is PublishedVie
         ...allowedPublishedCostSavingsIdentityFields(value),
       ]
     : [];
-  if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) {
+  if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences, { allowBenefitAssessmentDependencies: true })) {
     return false;
   }
   if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage)) return false;

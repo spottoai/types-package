@@ -1,7 +1,8 @@
 import type { ArtifactGeneration } from '../common/artifactGeneration.js';
 import type { ProviderName } from '../common/provider.js';
-import type { AwsCommitmentShape, AwsCommitmentsSourceMetadata, CommitmentRecommendationAction, CommitmentsCommitmentFamily, CommitmentsConfidenceLevel, CommitmentsExpirySummary, CommitmentsFreshnessStatus, CommitmentsFreshnessSummary, CommitmentsInventoryStatus, CommitmentsMoneyAmount, CommitmentsPricingContext, CommitmentsRiskLevel, CommitmentsSourceMetadata, CommitmentsUtilizationSummary } from '../azure/commitmentsPlanning.js';
+import type { CommitmentRecommendationAction, CommitmentsCommitmentFamily, CommitmentsConfidenceLevel, CommitmentsExpirySummary, CommitmentsFreshnessStatus, CommitmentsFreshnessSummary, CommitmentsInventoryStatus, CommitmentsMoneyAmount, CommitmentsPricingContext, CommitmentsRiskLevel, CommitmentsSourceMetadata, CommitmentsUtilizationSummary } from '../azure/commitmentsPlanning.js';
 import type { BenefitScope, BenefitType, IBenefitUtilization } from '../azure/benefits.js';
+import type { AwsCommitmentShape, AwsCommitmentsSourceMetadata } from './commitmentsPlanningView.js';
 import type { AwsForbiddenCredentialFields } from './requests.js';
 export declare const AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION: 1;
 export declare const AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGES: readonly ["account-inventory", "payer-analytics", "payer-recommendations", "materialization", "publication"];
@@ -157,6 +158,8 @@ export interface AwsOrganizationCommitmentsInventoryItem<AccountId extends strin
     term?: string;
     termMonths?: number;
     billingPlan?: string;
+    /** Annual contractual cost of this whole row (per-instance annual amount times quantity). Omit when quantity, term or price evidence is missing. */
+    annualCommittedCost?: CommitmentsMoneyAmount;
     utilization?: IBenefitUtilization;
 }
 export interface AwsOrganizationCommitmentsPayerAggregate<AccountId extends string = string> {

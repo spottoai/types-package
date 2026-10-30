@@ -1,3 +1,5 @@
+import type { AIChatAnswerNextActionV1, AIChatFollowUpSuggestionV1 } from './followUps.js';
+import type { AIChatAnswerPresentationV1 } from './answerPresentation.js';
 import type { AIChatGroundingSummary } from './grounding.js';
 import type { AIChatWorkspaceArtifact, AIChatWorkspaceArtifactSummary, AIChatWorkspaceArtifactViewIdentity } from './workspaceArtifacts.js';
 import type { AIChatCitation, AIChatEvidenceCoverage } from './index.js';
@@ -13,6 +15,7 @@ export type AIChatHistoryWorkspaceArtifactSummary = AIChatWorkspaceArtifactSumma
 };
 /** Safe, bounded metadata for one persisted assistant response. */
 export interface AIChatHistoryResponseArtifact {
+    answerPresentation?: AIChatAnswerPresentationV1;
     turnId: string;
     responseId: string;
     citations: AIChatCitation[];
@@ -25,6 +28,7 @@ export interface AIChatHistoryResponseArtifact {
  * `responseArtifacts`. Unlike historical entries, it may contain complete inline artifacts.
  */
 export interface AIChatHistoryLatestResponseArtifact {
+    answerPresentation?: AIChatAnswerPresentationV1;
     turnId?: string;
     responseId: string;
     citations: AIChatCitation[];
@@ -32,8 +36,19 @@ export interface AIChatHistoryLatestResponseArtifact {
     grounding?: AIChatGroundingSummary;
     workspaceArtifacts?: AIChatWorkspaceArtifact[];
 }
+/**
+ * The latest answer's follow-up questions and navigation buttons, re-validated on read so a reloaded conversation
+ * offers the same choices the live answer did (1.1.24).
+ */
+export interface AIChatHistoryLatestAnswerInteractions {
+    turnId?: string;
+    responseId: string;
+    followUpSuggestions: AIChatFollowUpSuggestionV1[];
+    nextActions: AIChatAnswerNextActionV1[];
+}
 /** Additive artifact fields carried by the conversation-history response. */
 export interface AIChatConversationHistoryArtifactProjection {
+    latestAnswerInteractions?: AIChatHistoryLatestAnswerInteractions;
     /** @deprecated Use `responseArtifacts`; retained during the API/Portal migration. */
     latestResponseArtifact?: AIChatHistoryLatestResponseArtifact;
     /**

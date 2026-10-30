@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isEnvironmentTenantLogicalReferenceV1 = exports.isEnvironmentTenantCompiledGenerationPointerV1 = exports.buildEnvironmentTenantTreeDigestPreimageV1 = exports.isEnvironmentTenantDocumentDescriptorSetV1 = exports.isEnvironmentTenantDocumentDescriptorV1 = exports.isEnvironmentTenantProjectionV1 = exports.isEnvironmentTenantSourceBindingV1 = exports.isEnvironmentTenantScopeV1 = exports.buildEnvironmentTenantScopeQualifiedSubjectV1 = exports.ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1 = void 0;
+const optionalDocuments_js_1 = require("./optionalDocuments.js");
 const contracts_js_1 = require("./contracts.js");
 const internal_js_1 = require("./internal.js");
 const references_js_1 = require("./references.js");
@@ -178,7 +179,7 @@ exports.buildEnvironmentTenantTreeDigestPreimageV1 = buildEnvironmentTenantTreeD
 /** Validates the atomically visible tenant environment completion pointer. */
 const isEnvironmentTenantCompiledGenerationPointerV1 = (value) => (0, internal_js_1.hasSafeContainerShape)(value) &&
     (0, internal_js_1.isRecord)(value) &&
-    (0, internal_js_1.hasExactKeys)(value, ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt']) &&
+    (0, internal_js_1.hasExactKeys)(value, ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt'], ['optionalDocuments']) &&
     value.schemaVersion === 1 &&
     value.status === 'completed' &&
     typeof value.environmentRunId === 'string' &&
@@ -193,6 +194,7 @@ const isEnvironmentTenantCompiledGenerationPointerV1 = (value) => (0, internal_j
     typeof value.treeDigestSha256 === 'string' &&
     internal_js_1.SHA256_PATTERN.test(value.treeDigestSha256) &&
     value.fileCount === exports.ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1.length &&
+    (value.optionalDocuments === undefined || (0, optionalDocuments_js_1.isEnvironmentCapabilityDocumentSetV1)(value.optionalDocuments, value.scope)) &&
     (0, internal_js_1.isCanonicalUtcTimestamp)(value.generatedAt) &&
     Date.parse(value.generatedAt) >= Date.parse(value.sourceBinding.completedAt) &&
     (0, internal_js_1.utf8ByteLength)(JSON.stringify(value)) <= contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.completedPointerBytes;

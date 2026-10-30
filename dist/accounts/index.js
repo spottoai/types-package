@@ -19,5 +19,6 @@ __exportStar(require("./azureManualOnboarding"), exports);
 __exportStar(require("./azureSpSetup"), exports);
 __exportStar(require("./azureSpSetupDurable"), exports);
 __exportStar(require("./writePermissions"), exports);
+__exportStar(require("./subscriptionWriteAccess"), exports);
 __exportStar(require("./readPermissions"), exports);
 //# sourceMappingURL=index.js.map

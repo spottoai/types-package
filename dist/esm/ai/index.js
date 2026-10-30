@@ -1,7 +1,10 @@
 /** Common AI interfaces shared between frontend and backend */
 export * from './grounding.js';
+export * from './followUps.js';
 export * from './conversationHistory.js';
 export * from './workspaceArtifacts.js';
+export * from './workspaceGraph.js';
+export * from './answerPresentation.js';
 /** Maximum length of the optional free-text comment attached to per-turn feedback. */
 export const AI_CHAT_TURN_FEEDBACK_COMMENT_MAX_LENGTH = 1000;
 /**

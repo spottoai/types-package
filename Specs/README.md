@@ -6,6 +6,7 @@ not establish workflow implementation or deployment.
 
 | Capability | Contract specification |
 | --- | --- |
+| Commitments | [Nonadditive unused value and current assessment authority](../specs/billing/commitments/commitments-types-package.md) |
 | Features and permissions | [Promotion templates, access metadata and mixed audit contracts](access/features-and-permissions/features-and-permissions-types-package.md) |
 | Company context | [Sources, retrieval, coverage and chat metadata](ai-chat/company-context/company-context-types-package.md) |
 | Company memory | [Shared entries, organization, review, promotion and meeting extraction](ai-chat/company-memory/company-memory-types-package.md) |

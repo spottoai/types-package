@@ -3,13 +3,14 @@ import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
-import type { EnvironmentType, ProviderScopeDisplayMetadata } from '../common/provider';
+import type { EnvironmentType, ProviderScopeContext, ProviderScopeDisplayMetadata } from '../common/provider';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 import type { AzureSpSetupErrorCode, AzureSpSetupPhase, AzureSpSetupProvisioningStatus, AzureSpSetupReaderReadiness, AzureSpSetupReaderReadinessSource, AzureSpSetupResult } from './azureSpSetup';
 import type { AzureBillingExportConfigurationInput, AzureBillingExportConfigurationStatus, AzureBillingExportDatasetType, AzureBillingExportScopeType } from './azureManualOnboarding';
 export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIssueScope, SyncProgressIssueType } from '../common/syncProgress';
 /** Azure compatibility alias for the provider-neutral environment classification. */
 export type SubscriptionType = EnvironmentType;
+/** Hour within a recurring twelve-hour UTC scan cycle; providers persist assignments in their own state. */
 export type ScheduledScanSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
@@ -431,8 +432,14 @@ export interface CloudAccount extends AzureGuestAccessCloudAccountFields, AzureS
     tenantId?: string;
     secret?: string;
     secretExpiresAt?: Date;
+    /** Server-authored creation time; preserved through edits and credential rotation. */
     createdAt: Date;
     updatedAt: Date;
+    /**
+     * Server-authored creator email, retained independently of the user directory.
+     * API-key callers use their authenticated synthetic email alias. Legacy rows
+     * may contain an empty value or an opaque user ID. Immutable after creation.
+     */
     createdBy: string;
     status: string;
     objectives?: SurveyResponse[];
@@ -570,7 +577,7 @@ export interface SubscriptionSyncProgress {
     lastUpdated: string;
     steps: SubscriptionSyncProgressStep[];
 }
-export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields {
+export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields, ProviderScopeContext {
     name: string;
     friendlyName?: string;
     cloudAccountId: string;
@@ -581,6 +588,16 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
     icon?: string;
     /** Optional subscription type (Production, Non-Production, Mixed) */
     subscriptionType?: SubscriptionType;
+    /**
+     * Company-configured percentage applied on demand to the cloud provider's own
+     * (native) charges wherever spend and savings are shown, including historical
+     * periods. Marketplace charges are excluded. For Azure, native means the
+     * 'azure-native' financial charge source.
+     * Absent means no configured discount; zero is an explicit 0% setting.
+     * API writes must validate a value from 0 to 100 with at most two decimals.
+     * This is not an Azure-billed price or a cloud-engine scan input.
+     */
+    nativeDiscountPercent?: number;
     status?: string;
     statusLabel?: string;
     error?: string;
@@ -635,6 +652,19 @@ export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessF
     scheduledScanSlot?: ScheduledScanSlot;
     eventId?: string;
     readBitmask?: number;
+    /**
+     * WritePermission bits that Azure currently grants the cloud account's identity on this subscription,
+     * fully or only at narrower scopes. Written by cloud-engine on every scan from Azure's effective
+     * permissions and role assignments, never from user input. Absent means not yet checked.
+     * A capability is usable only when the customer has also consented to it on the cloud account.
+     * Freshness follows `lastSuccessfulSyncAt`; mask with `KNOWN_WRITE_PERMISSION_MASK` before use.
+     */
+    effectiveWriteBitmask?: number;
+    /**
+     * Subset of `effectiveWriteBitmask` granted only at resource-group or resource scope rather than
+     * across the whole subscription. Always a subset of `effectiveWriteBitmask`.
+     */
+    partialWriteBitmask?: number;
     syncProgress?: SubscriptionSyncProgress | string | null;
     /** Azure sync features disabled for this subscription in addition to cloud-account opt-outs. */
     syncFeatureOptOuts?: AzureSyncFeatureId[];

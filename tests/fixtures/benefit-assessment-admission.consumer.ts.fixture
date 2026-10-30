@@ -1,0 +1,83 @@
+import {
+  deriveAzureBenefitAssessmentAuthorityIdV1,
+  deriveAzureBenefitAssessmentRegistrationAuthorityIdV1,
+  evaluateAzureBenefitAssessmentDependencyV1,
+  createAzureBenefitAssessmentDependenciesV1,
+  type AzureBenefitAssessmentAuthorityV2,
+  type AzureBenefitAssessmentDependencyV1,
+  type AzureBenefitAssessmentDependenciesV1,
+  type AzureBenefitAssessmentCoverageV1,
+  type ScopedAzureBenefitAssessmentDependenciesV1,
+  type Recommendation,
+  type RecommendationsView,
+  type CommitmentsObsoleteCandidate,
+  type CommitmentsPlanningView,
+  type CompletedViewManifest,
+  type CompletedViewManifestV2,
+  type CompletedViewManifestV3,
+  type PublishedViewManifestV4,
+  type SubscriptionReportEvidencePack,
+  type PortfolioInsightsCompanyContribution,
+} from '@spottoai/types-package';
+import { isAzureBenefitAssessmentAdmissionV1, type AzureBenefitAssessmentAdmissionV1 } from '@spottoai/types-package/azure/recommendations';
+
+const benefitId = '/providers/microsoft.capacity/reservationorders/order-1/reservations/item-1';
+const owner = { companyId: 'Company-A', tenantId: 'tenant-1', subscriptionId: 'sub-1' };
+const authorityId = deriveAzureBenefitAssessmentAuthorityIdV1('https://authority.blob.core.windows.net', 'azure-portal');
+const ownerRegistrationAuthorityId = deriveAzureBenefitAssessmentRegistrationAuthorityIdV1('https://accounts.table.core.windows.net');
+const admission: AzureBenefitAssessmentAdmissionV1 = { benefitId, authorityId, revision: 1 };
+const dependency: AzureBenefitAssessmentDependencyV1 = { kind: 'admitted', ...admission };
+const complete: AzureBenefitAssessmentDependenciesV1 = createAzureBenefitAssessmentDependenciesV1([dependency]);
+const scoped: ScopedAzureBenefitAssessmentDependenciesV1 = { schemaVersion: 1, subjects: [{ ...dependency, owner }] };
+const active: AzureBenefitAssessmentAuthorityV2 = { schemaVersion: 2, state: 'active', ...admission, owner, ownerRegistrationAuthorityId };
+if (
+  !isAzureBenefitAssessmentAdmissionV1(admission) ||
+  evaluateAzureBenefitAssessmentDependencyV1(
+    dependency,
+    { owner, authorityId, ownerRegistrationAuthorityId },
+    { status: 'present', benefitId, authorityId, claim: active }
+  ) !== 'admitted'
+)
+  throw new Error('Packed admission predicate failed.');
+
+const recommendation: Pick<Recommendation, 'benefitAssessmentAdmission'> = { benefitAssessmentAdmission: admission };
+const candidate: Pick<CommitmentsObsoleteCandidate, 'benefitAssessmentAdmission'> = { benefitAssessmentAdmission: admission };
+const recommendations: Pick<RecommendationsView, 'benefitAssessmentDependencies'> = { benefitAssessmentDependencies: complete };
+const planning: Pick<CommitmentsPlanningView, 'benefitAssessmentDependencies'> = { benefitAssessmentDependencies: complete };
+const report: Pick<SubscriptionReportEvidencePack, 'benefitAssessmentDependencies'> = { benefitAssessmentDependencies: complete };
+const manifests: [
+  Pick<CompletedViewManifest, 'benefitAssessmentDependencies'>,
+  Pick<CompletedViewManifestV2, 'benefitAssessmentDependencies'>,
+  Pick<CompletedViewManifestV3, 'benefitAssessmentDependencies'>,
+  Pick<PublishedViewManifestV4, 'benefitAssessmentDependencies'>,
+] = [recommendations, recommendations, recommendations, recommendations];
+const contribution: Pick<PortfolioInsightsCompanyContribution, 'benefitAssessmentDependencies'> = { benefitAssessmentDependencies: scoped };
+const legacy: Pick<Recommendation, 'benefitAssessmentAdmission'> = {};
+const legacyCoverage: Pick<RecommendationsView, 'benefitAssessmentCoverage'> = {};
+const pendingCoverage: Pick<RecommendationsView, 'benefitAssessmentCoverage'> = {
+  benefitAssessmentCoverage: { status: 'pending', reason: 'admission-unverified' },
+};
+// @ts-expect-error Verified cannot have a pending reason.
+const invalidVerified: AzureBenefitAssessmentCoverageV1 = { status: 'verified', reason: 'authority-unavailable' };
+// @ts-expect-error Pending must provide a safe specific reason.
+const invalidPending: AzureBenefitAssessmentCoverageV1 = { status: 'pending' };
+void [legacyCoverage, pendingCoverage, invalidVerified, invalidPending];
+void [recommendation, candidate, recommendations, planning, report, manifests, contribution, legacy];
+
+// @ts-expect-error Unclaimed observations cannot carry revisions.
+const invalidSingle: AzureBenefitAssessmentDependencyV1 = { kind: 'unclaimed-single', benefitId, authorityId, revision: 1 };
+// @ts-expect-error Active and retired owner fields cannot mix.
+const invalidActive: AzureBenefitAssessmentAuthorityV2 = { ...active, lastOwner: owner };
+// @ts-expect-error A retired body must retain the retirement reference.
+const invalidRetired: AzureBenefitAssessmentAuthorityV2 = {
+  schemaVersion: 2,
+  state: 'retired',
+  ...admission,
+  lastOwner: owner,
+  ownerRegistrationAuthorityId,
+};
+// @ts-expect-error Cross-subscription complete subjects need an owner.
+const invalidScoped: ScopedAzureBenefitAssessmentDependenciesV1 = { schemaVersion: 1, subjects: [dependency] };
+// @ts-expect-error The superseded admissions-only shape cannot certify completeness.
+const invalidEnvelope: AzureBenefitAssessmentDependenciesV1 = { schemaVersion: 1, admissions: [admission] };
+void [invalidSingle, invalidActive, invalidRetired, invalidScoped, invalidEnvelope];

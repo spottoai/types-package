@@ -1,9 +1,22 @@
+import type { SecureScoreEvidence } from '../azure/secureScore';
 export declare enum ProviderName {
     Azure = "azure",
     Aws = "aws"
 }
 /** Provider-neutral user classification for a connected cloud environment. */
 export type EnvironmentType = 'Production' | 'Non-Production' | 'Mixed';
+/** Company intent for investment in a subscription or connected account; independent of sync status. */
+export type ProviderScopeStrategy = 'encourage' | 'contain' | 'exit';
+export interface ProviderScopeContext {
+    strategy?: ProviderScopeStrategy;
+    /** Plain-text customer context, at most 2,000 UTF-16 code units. */
+    notes?: string;
+}
+/** Omitted fields stay unchanged; null or blank clears the saved value. */
+export interface ProviderScopeContextUpdate {
+    strategy?: ProviderScopeStrategy | null;
+    notes?: string | null;
+}
 /** Lifecycle states returned by AWS Account Management. */
 export type AwsAccountState = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 /** Provider-owned resource boundary kind used by indexed scope records. */
@@ -17,7 +30,7 @@ export interface ProviderScope {
     providerScopeId: string;
 }
 /** User-owned display metadata shared by provider scopes and cloud accounts. */
-export interface ProviderScopeDisplayMetadata {
+export interface ProviderScopeDisplayMetadata extends ProviderScopeContext {
     /** Raw user override. This is distinct from provider and configured names. */
     friendlyName?: string;
     groupName?: string;
@@ -42,6 +55,8 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
     providerAccountState?: AwsAccountState;
     cloudAccountId: string;
     cloudAccountName: string;
+    /** Opaque Spotto AWS estate association. Present only for linked AWS account scopes. */
+    awsEstateId?: string;
     /** Azure compatibility field; new provider-neutral consumers use environmentType. */
     subscriptionType?: EnvironmentType;
     status?: string;
@@ -50,10 +65,15 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
     currencySymbol?: string;
     ready: boolean;
     secureScore?: number;
+    secureScoreEvidence?: SecureScoreEvidence;
     spend30Days?: number;
+    /** Rolling 30-day count of aggregated expense rows, as in Azure subscription billingItems; absent when unknown. */
+    billingItems?: number;
+    /** Rolling 30-day count of collected activity events, as in Azure subscription activityItems; absent when unknown. */
+    activityItems?: number;
 }
 /** Partial provider-scope display update; omitted fields stay unchanged and null clears an override. */
-export interface ProviderScopeDisplayMetadataUpdateRequest {
+export interface ProviderScopeDisplayMetadataUpdateRequest extends ProviderScopeContextUpdate {
     friendlyName?: string | null;
     groupName?: string | null;
     icon?: string | null;

@@ -1,3 +1,3 @@
-export * from '../aws/portalRelationshipPublicArtifactValidation.js';
-import * as namespace from '../aws/portalRelationshipPublicArtifactValidation.js';
+export * from '../aws/relationships.js';
+import * as namespace from '../aws/relationships.js';
 export default namespace;

@@ -3,4 +3,5 @@ export * from './azureManualOnboarding.js';
 export * from './azureSpSetup.js';
 export * from './azureSpSetupDurable.js';
 export * from './writePermissions.js';
+export * from './subscriptionWriteAccess.js';
 export * from './readPermissions.js';

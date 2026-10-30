@@ -8,6 +8,8 @@ import type { ResourceOptimizationProfile, ResourceSimpleOptimizationProfile } f
 import { Tags } from '../tags/tags.js';
 import type { AdvisorScoreSummary } from './advisorScore.js';
 import type { AzurePortalArtifactGeneration, AzurePortalVersionedArtifact } from './portalArtifacts.js';
+import type { UtilizationProfile, UtilizationSignal } from '../common/utilizationStories.js';
+import type { ResourceSizeOptions } from '../common/resourceSizeOptions.js';
 import type { AzurePortalHealthEventsSummary, AzureResourceHealthAvailabilityStatusSummary } from './resourceHealth.js';
 import type { CostComposition, EstimateLens } from './costComposition.js';
 import { type ArtifactOwnershipBinding, type ArtifactPublicationDecision, type ArtifactRevisionVector } from '../common/artifactEvidence.js';
@@ -74,6 +76,12 @@ export interface AzureResourcePortalItem {
     label3?: string;
     /** e.g. "F1" or "P1" */
     sku?: string;
+    /**
+     * Allowlisted display properties supplied by the owning provider projection.
+     * Keys and values are human-readable strings, shared with resource details;
+     * executable provider configuration, credentials and arbitrary raw inventory are excluded.
+     */
+    properties?: Record<string, string>;
     /** e.g. "App Service" or "Function App" */
     serviceName?: string;
     /** e.g. "appservice" or "functionapp" */
@@ -86,12 +94,22 @@ export interface AzureResourcePortalItem {
     type: string;
     /** e.g. "West US" */
     location: string;
-    /** Total spend over the last 30 days */
-    spend: number;
+    /**
+     * Billing-backed or explicitly blended spend over the declared resource
+     * window. Absent when amount or currency evidence is unavailable; a measured
+     * zero or signed credit remains a value. Check spendSource and composition
+     * before interpreting this non-additive resource amount.
+     */
+    spend?: number;
     /** Rolling resource spend partition used to include or exclude Marketplace charges. */
     financialChargeSpend?: AzureResourceFinancialChargeSpendBreakdownV1;
-    /** Total spend over the last 30 days, taking into account reserved instances and savings plans */
-    spendAmortized: number;
+    /**
+     * Total spend over the last 30 days, taking into account reserved instances
+     * and savings plans. Absent when the producer has no amortized evidence for
+     * every contributing billing row: a missing basis stays missing rather than
+     * repeating the actual cost.
+     */
+    spendAmortized?: number;
     /** Billing-backed portion of spend over the last 30 days */
     spendActual?: number;
     /** Billing-backed portion of amortized spend over the last 30 days */
@@ -141,6 +159,10 @@ export interface AzureResourcePortalItem {
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Current Azure Resource Health availability status for this resource, when available. */
     resourceHealth?: AzureResourceHealthAvailabilityStatusSummary;
+    /** Compact utilization verdict + sparklines (engine-produced; absent until the resource has been scanned by the new producer). */
+    utilizationSignal?: UtilizationSignal;
+    /** Provider-neutral same-Region menu of list-priced resize options (AWS EC2, RDS, ElastiCache). */
+    sizeOptions?: ResourceSizeOptions;
 }
 export interface SavingsOpportunity {
     /** Stable identifier for the customer-facing savings opportunity. */
@@ -178,7 +200,8 @@ export type CostSavingsAggregationPolicy = 'owner-component' | 'resource';
 export interface BenefitCoverageSummary {
     windowStart: string;
     windowEnd: string;
-    coveredQuantity: number;
+    /** Covered usage quantity. Absent when the source billing carries no usage quantity (AWS); read `coveredCost` then. */
+    coveredQuantity?: number;
     benefitIds: string[];
     benefitNames: string[];
     /** Explicit benefit classifications represented by this coverage window. */
@@ -236,6 +259,10 @@ export interface AzureResourcePluginItem {
     optimizationProfile?: ResourceOptimizationProfile;
     /** VM-specific same-region price/performance lookup data. */
     vmPricePerformance?: VmPricePerformanceInsights;
+    /** Provider-neutral same-Region menu of list-priced resize options (AWS EC2, RDS, ElastiCache). */
+    sizeOptions?: ResourceSizeOptions;
+    /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
+    utilizationProfile?: UtilizationProfile;
 }
 export interface AzureResourcePluginItemDetailed {
     currency: string;
@@ -288,6 +315,12 @@ export interface AzureResourcePluginItemDetailed {
     vmPricePerformance?: VmPricePerformanceInsights;
     /** Generic compute hosting model alternatives, including cross-platform options. */
     computeAlternatives?: ComputeAlternativesInsights;
+    /** Full utilization profile (engine-produced; absent until scanned by the new producer). */
+    utilizationProfile?: UtilizationProfile;
+    /** Compact utilization verdict shared with the portal row, including the canonical better-SKU summary. */
+    utilizationSignal?: UtilizationSignal;
+    /** Provider-neutral same-Region menu of list-priced resize options, shared with the portal row. */
+    sizeOptions?: ResourceSizeOptions;
 }
 export type VmPricePerformanceOsType = 'linux' | 'windows';
 /** Operating system installed on the VM or VM scale set. */
@@ -301,6 +334,17 @@ export type VmPricePerformanceComparisonEligibility = 'default' | 'excluded-tier
 export type VmPricePerformanceComparisonBasis = 'payg-retail' | 'spot-estimate' | 'reservation-coverage';
 /** Basis for monetary VM price and savings fields, independent of applied-benefit evaluation. */
 export type VmPricePerformancePricingBasis = 'payg-retail' | 'spot-estimate';
+/** A monthly estimate obtained by applying the current VM's observed billed-to-retail ratio to PAYG SKU prices. */
+export interface VmEffectiveRateProjection {
+    basis: 'billed';
+    provenance: 'observed-current-vm-compute-rate';
+    currencyCode: string;
+    observedHours: number;
+    observedBilledCost: number;
+    currentRetailHourlyPrice: number;
+    billedToRetailFactor: number;
+    projectionHours: 730;
+}
 export type VmReservationCompatibility = 'full' | 'partial' | 'none' | 'unknown';
 export type VmReservationEvaluationStatus = 'complete' | 'incomplete' | 'unavailable';
 export type VmReservationCompatibilityReason = 'same-flexibility-group-within-covered-units' | 'same-flexibility-group-exceeds-covered-units' | 'different-flexibility-group' | 'instance-flexibility-disabled' | 'missing-instance-flexibility-setting' | 'missing-flexibility-evidence' | string;
@@ -373,6 +417,7 @@ export interface VmPricePerformanceCapabilityImpact {
     message?: string;
 }
 export interface VmPricePerformanceSku {
+    /** Historical field name for the provider SKU identifier: an Azure ARM SKU or an AWS EC2 instance type. */
     armSkuName: string;
     region: string;
     currencyCode: 'USD';
@@ -387,7 +432,7 @@ export interface VmPricePerformanceSku {
     purchaseOption: VmPricePerformancePurchaseOption;
     hourlyPriceUsd?: number;
     monthlyPriceUsd?: number;
-    /** Subscription-currency retail price. Prefer this over USD fields for UI display. */
+    /** Display-currency retail price. Prefer this over USD fields for UI display; never a billed spend figure. */
     localCurrencyCode?: string;
     localCurrencySymbol?: string;
     localHourlyPrice?: number;
@@ -478,6 +523,33 @@ export interface VmBurstableFitEvidence {
     observedHours: number;
     observed: VmBurstableCreditScenarioEvidence;
     growthStress: VmBurstableCreditScenarioEvidence;
+    /** Hour-by-hour credit bank simulation behind this verdict, for charting. */
+    creditTrace?: VmBurstableCreditTrace;
+}
+/**
+ * Hourly credit bank trace from the same simulation that produced the burstable verdict.
+ * Arrays are aligned: index i covers the hour starting at `startMs + i * stepMs`.
+ * Hours with no CPU data are `null` (the bank is carried forward unchanged).
+ */
+export interface VmBurstableCreditTrace {
+    startMs: number;
+    stepMs: number;
+    maxBankedCredits: number;
+    initialCredits: number;
+    /** Hours a full bank lasts with the VM at 100% CPU. */
+    burstRunwayHours?: number;
+    /** Hours excluded from the steady-state minimums because the bank starts at its initial credits after a resize. */
+    warmUpHours: number;
+    /** Lowest bank level after the warm-up, as % of a full bank. */
+    steadyStateMinimumPercent: number;
+    /** Lowest bank level after the warm-up under growth stress, as % of a full bank. */
+    growthSteadyStateMinimumPercent: number;
+    /** Projected CPU % on the candidate size, whole percent. */
+    cpuPercent: Array<number | null>;
+    /** Bank level at the end of each hour, whole % of a full bank. */
+    bankPercent: Array<number | null>;
+    /** Bank level at the end of each hour under growth stress, whole % of a full bank. */
+    growthBankPercent: Array<number | null>;
 }
 export interface VmPricePerformanceTradeOffAlternative extends VmPricePerformanceAlternative {
     /** Capabilities that are present on the current SKU but are absent or lower on this alternative. */
@@ -490,6 +562,8 @@ export interface VmPricePerformanceInsights {
     comparisonBasis?: VmPricePerformanceComparisonBasis;
     /** Basis for displayed monetary values; reservation coverage remains an independent evaluation. */
     pricingBasis?: VmPricePerformancePricingBasis;
+    /** Optional estimate. Existing local price fields retain their retail meaning. */
+    effectiveRateProjection?: VmEffectiveRateProjection;
     /** Subscription/display currency used for user-facing price fields when available. */
     displayCurrencyCode?: string;
     displayCurrencySymbol?: string;
@@ -778,6 +852,7 @@ export interface CompletedViewCostSavingsManifest {
 export type CompletedViewArtifactGeneration = AzurePortalArtifactGeneration;
 /** Legacy manifest shape retained for backward-compatible readers and writers. */
 export interface CompletedViewManifest {
+    benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
     status: 'in_progress' | 'completed';
     runId: string;
     subscriptionId: string;
@@ -805,6 +880,7 @@ export interface CompletedViewGenerationDependencies {
     [dependency: string]: unknown;
 }
 export interface CompletedViewManifestV2Base extends CompletedViewManifestV2RequestedCounts {
+    benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
     schemaVersion: 2;
     runId: string;
     subscriptionId: string;
@@ -893,6 +969,7 @@ type EpochFreeViewRevision = ArtifactRevisionVector & {
 };
 /** Completed, evidence-aware portal or plugin generation for reader-first enforcement. */
 export interface CompletedViewManifestV3 extends CompletedViewManifestV2RequestedCounts {
+    benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
     schemaVersion: 3;
     status: 'completed';
     runId: string;
@@ -910,6 +987,7 @@ export interface CompletedViewManifestV3 extends CompletedViewManifestV2Requeste
 }
 /** Claim-projected portal or plugin generation that can retain authoritative partial coverage. */
 export interface PublishedViewManifestV4 extends CompletedViewManifestV2RequestedCounts {
+    benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
     schemaVersion: 4;
     status: 'published';
     coverage: PublishedViewCoverage;

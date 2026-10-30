@@ -106,6 +106,10 @@ Each consuming repo has an `.npmrc` that routes the `@spottoai` scope to GitHub 
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
+This repository also pins the scope registry in its `.npmrc` so release version
+lookups use GitHub Packages even when user-level npm configuration selects a
+different registry. Authentication remains supplied by the existing environment.
+
 ```json
 {
   "dependencies": {
@@ -118,7 +122,7 @@ Each consuming repo has an `.npmrc` that routes the `@spottoai` scope to GitHub 
 
 - **GitHub Actions**: set `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` and give the job
   `packages: read`. The consuming repo must also be listed under the package's
-  *Manage Actions access* settings.
+  _Manage Actions access_ settings.
 - **Docker builds**: pass the token as a BuildKit secret (`npm_token`), never as a build `ARG`.
 - **Local development**: use a token with `read:packages`, for example
   `gh auth refresh -s read:packages` then `export NODE_AUTH_TOKEN=$(gh auth token)`.
@@ -414,6 +418,13 @@ branch, while the AWS branch requires a minimal account identity, `aws-native`
 source evidence, linked-account scope metadata, and provider-specific inventory
 shapes without introducing an AWS-only planning DTO.
 
+The root and `/azure/recommendations` export `CommitmentUnusedValueEvidence` and
+`isCommitmentUnusedValueEvidence`. The guard checks native/approximation wire
+consistency and unavailable evidence without treating missing value as zero.
+Report-pack validators use it for optional evidence in recommendation bodies and
+commitments rows. It does not establish billing authenticity or current ownership;
+consumer upgrades remain separate. See the [commitments contract](specs/billing/commitments/commitments-types-package.md).
+
 The root and `/aws` entry points also own the immutable AWS Commitments Planning
 Portal envelope, `commitments-planning.json.gz` logical name, artifact registry
 relationship, and dependency-free allowlist validator. The validator binds the
@@ -578,6 +589,7 @@ contracts use the shape produced by `cloud-engine/apps/azure`, with no tax
 treatment fields or alternate tax modes. Basis, currency, coverage, period and
 source evidence remain independent requirements. See
 [Azure-compatible costs](specs/azure-compatible-costs-without-tax-metadata.md).
+
 ## Chat relationship graph contract
 
 `cloud.relationships.graph@1` is a bounded, snapshot-only chat capability. `AIChatWorkspaceGraphPayload`

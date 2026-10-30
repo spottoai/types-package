@@ -1,3 +1,4 @@
+export * from './commitmentsPlanningView.js';
 export { validateAwsCommitmentsPlanningViewIdentity } from './commitmentsPlanningValidation.js';
 export * from './organizationCommitments.js';
 export * from './organizationCommitmentsApiValidation.js';

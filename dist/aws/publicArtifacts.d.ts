@@ -1,10 +1,11 @@
 import type { ArtifactAccountBinding, ArtifactGeneration } from '../common/artifactGeneration';
-import type { Recommendation } from '../azure/recommendations';
 import type { ServiceRetirementPortalResource } from '../azure/serviceRetirement';
-import type { AzureDashboardView, AzureResourcePluginItemDetailed, AzureResourcePortalItem, AzureResourcesView } from '../azure/views';
 import type { AwsForbiddenCredentialFields } from './requests';
+import type { SecurityPostureArtifact } from '../common/securityPosture';
 export declare const AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION: 1;
-export declare const AWS_PUBLIC_ARTIFACT_TYPES: readonly ["resource-collection", "resource-collection-history", "account-summary", "account-summary-history", "account-summary-ai-cost-summary", "commitments-planning", "relationships", "lifecycle", "plugin-subscription", "plugin-resource"];
+/** Portal envelope version shared by the AWS Portal artifacts. */
+export declare const AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION: 1;
+export declare const AWS_PUBLIC_ARTIFACT_TYPES: readonly ["resource-collection", "resource-collection-history", "account-summary", "account-summary-history", "account-summary-ai-cost-summary", "commitments-planning", "relationships", "lifecycle", "security-posture", "plugin-subscription", "plugin-resource"];
 export type AwsPublicArtifactSchemaVersion = typeof AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION;
 export type AwsPublicArtifactType = (typeof AWS_PUBLIC_ARTIFACT_TYPES)[number];
 /** Public artifacts must not expose setup values or credential-store locators. */
@@ -19,24 +20,6 @@ export type AwsPublicArtifactEnvelope<ArtifactType extends AwsPublicArtifactType
     artifactType: ArtifactType;
     artifactGeneration: ArtifactGeneration<RunId>;
 };
-export type AwsPublicAccountReference<AccountId extends string = string> = ArtifactAccountBinding<'aws', AccountId> & AwsPublicArtifactForbiddenCredentialFields & {
-    companyId?: string;
-    displayName: string;
-};
-export type AwsPortalAccountSummaryBody<AccountId extends string = string> = Pick<AzureDashboardView, 'timestamp' | 'costStartDate' | 'costEndDate' | 'calendarSummary' | 'billingPeriodSummary' | 'summary' | 'dailySummary' | 'costSavingsSummary'> & {
-    account: AwsPublicAccountReference<AccountId>;
-};
-export type AwsPortalAccountSummaryArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'account-summary', AccountId, RunId> & AwsPortalAccountSummaryBody<AccountId>;
-export type AwsPortalResourceItem<AccountId extends string = string> = Omit<AzureResourcePortalItem, 'location' | 'resourceHealth' | 'vmPricePerformance'> & ArtifactAccountBinding<'aws', AccountId> & AwsPublicArtifactForbiddenCredentialFields & {
-    arn?: string;
-    region: string;
-    location: string;
-};
-export type AwsPortalResourceCollectionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'resource-collection', AccountId, RunId> & Omit<AzureResourcesView, 'schemaVersion' | 'artifactGeneration' | 'subscription' | 'resources'> & {
-    account: AwsPublicAccountReference<AccountId>;
-    resources: AwsPortalResourceItem<AccountId>[];
-};
-export type { AwsPortalRelationshipArtifact, AwsPortalRelationshipArtifactV1, AwsPortalRelationshipEdge, AwsPortalRelationshipEdgeEvidence, AwsPortalRelationshipEdgeKind, AwsPortalRelationshipNode, AwsPortalRelationshipNodeData, AwsPortalRelationshipNodeKind, AwsPortalRelationshipArtifactV2, AwsPortalRelationshipLegacyArtifact, AwsPortalRelationshipLegacyNode, AwsPortalRelationshipLegacyNodeData, } from './portalRelationshipPublicArtifacts';
 export type AwsPortalLifecycleResource<AccountId extends string = string> = ServiceRetirementPortalResource & ArtifactAccountBinding<'aws', AccountId> & AwsPublicArtifactForbiddenCredentialFields & {
     arn?: string;
     region?: string;
@@ -56,21 +39,9 @@ export type AwsPortalLifecycleArtifact<AccountId extends string = string, RunId 
     generatedAt: string;
     entries: AwsPortalLifecycleEntry<AccountId>[];
 };
-export type AwsPublicRecommendation = Pick<Recommendation, 'id' | 'name' | 'category' | 'subCategory' | 'aggregateDescription' | 'type' | 'description' | 'remediation' | 'impact' | 'impactReason' | 'links' | 'considerations' | 'currency' | 'potentialBenefits' | 'potentialMonthlySavings' | 'effort' | 'effortReason' | 'effortHours' | 'effortEstimates' | 'risk' | 'riskReason' | 'severity' | 'costImpact' | 'costImpactUnit' | 'costImpactReason' | 'performanceImpact' | 'performanceImpactReason' | 'confidencePercentage' | 'confidenceReason' | 'resourceIds' | 'resourcesCount' | 'resolved' | 'solution' | 'source' | 'service' | 'createdTime' | 'lastUpdatedTime' | 'title' | 'headline' | 'bottomLine' | 'plainSummary' | 'quickSteps' | 'businessOwner' | 'keyConstraint' | 'validationEvidence' | 'read' | 'technicalPlaybook' | 'baseScores' | 'overallBaseScore' | 'overallBaseReason' | 'priorityTier' | 'adjustedScore' | 'objectiveMultiplier' | 'finalScore' | 'normalizedScore'> & AwsPublicArtifactForbiddenCredentialFields & {
-    resources?: never;
-    securityImpactDetails?: never;
-    linkingIds?: never;
-    renderData?: never;
-    action?: never;
-};
-/** @deprecated Use AwsPluginSubscriptionDetailArtifact for lossless plugin publication. */
-export type AwsPluginSubscriptionArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'plugin-subscription', AccountId, RunId> & AwsPortalAccountSummaryBody<AccountId>;
-/** @deprecated Use AwsPluginResourceDetailArtifact for lossless plugin publication. */
-export type AwsPluginResourceArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'plugin-resource', AccountId, RunId> & Omit<AzureResourcePluginItemDetailed, 'subscription' | 'resourceGroup' | 'properties' | 'recommendations' | 'vmPricePerformance' | 'computeAlternatives'> & {
-    arn?: string;
-    region: string;
-    resourceGroup?: never;
-    properties?: never;
-    recommendations?: AwsPublicRecommendation[];
+/** AWS account Security page publication, with the established public run/account binding. */
+export type AwsSecurityPostureArtifact<AccountId extends string = string, RunId extends string = string> = AwsPublicArtifactEnvelope<'security-posture', AccountId, RunId> & SecurityPostureArtifact & {
+    providerName: 'aws';
+    providerScopeId: AccountId;
 };
 //# sourceMappingURL=publicArtifacts.d.ts.map

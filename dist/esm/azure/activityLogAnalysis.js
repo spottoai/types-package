@@ -37,6 +37,7 @@ export const ACTIVITY_LOG_TAG_IDS = [
     'actor.manual',
     'actor.workload-automation',
     'actor.azure-platform',
+    'actor.platform',
     'actor.unknown',
     'change.material',
     'intent.credential-access',
@@ -51,6 +52,17 @@ export const ACTIVITY_LOG_TAG_IDS = [
     'security.destructive-action',
     'scheduler.power-operation',
 ];
+export const ACTIVITY_LOG_EXECUTION_ORIGINS = ['manual', 'workloadAutomation', 'azurePlatform', 'platform', 'unknown'];
+/** Stable identity and ranking key; retains legacy Azure resource-ID ordering. */
+export const buildActivityLogAnalysisScopeKey = (scope) => scope.providerName === 'aws'
+    ? JSON.stringify([
+        scope.providerScopeId ?? scope.subscriptionId,
+        scope.region ?? '',
+        scope.provider ?? '',
+        scope.resourceType ?? '',
+        scope.resourceId ?? '',
+    ])
+    : (scope.resourceId ?? '');
 const CANONICAL_MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const CONFORMED_ACTIVITY_ANALYSIS_NAME = /^activity-logs\/activity_analysis-(\d{4}-(?:0[1-9]|1[0-2]))\.json$/;
 export function buildConformedActivityAnalysisLogicalName(month) {

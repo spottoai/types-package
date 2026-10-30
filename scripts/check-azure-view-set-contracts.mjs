@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   PUBLISHED_VIEW_OBJECT_LIMITS_V1,
+  deriveAzureBenefitAssessmentAuthorityIdV1,
   encodeArtifactRunReferenceV1,
   isCompletedAzureViewSetV1,
   isCompletedAzureViewSetV2,
@@ -298,6 +299,18 @@ const publishedCompleteViewManifest = {
 
 const publishedViewSetPublicationDecision = { ...viewSetPublicationDecision, evidence: 'partial' };
 
+const assessmentSubjects = {
+  schemaVersion: 1,
+  subjects: [{ kind: 'unclaimed-single', benefitId: '/providers/microsoft.capacity/reservationorders/order-1/reservations/item-1', authorityId: deriveAzureBenefitAssessmentAuthorityIdV1('https://authority.blob.core.windows.net', 'azure-portal') }],
+};
+for (const [manifest, guard] of [[completedViewManifest, isCompletedViewManifestV3], [publishedCompleteViewManifest, isPublishedViewManifestV4]]) {
+  assert.equal(guard({...manifest, benefitAssessmentDependencies:assessmentSubjects}),true,'validated native subjects are accepted at the exact manifest field');
+  assert.equal(guard({...manifest, benefitAssessmentDependencies:{schemaVersion:1,subjects:[]}}),true,'complete empty remains valid');
+  assert.equal(guard({...manifest, benefitAssessmentDependencies:{schemaVersion:1,admissions:[]}}),false,'superseded admissions-only extension is rejected');
+  assert.equal(guard({...manifest, benefitAssessmentDependencies:assessmentSubjects, future:assessmentSubjects}),false,'native subject alias under an unknown field cannot bypass control scanning');
+  assert.equal(guard({...manifest, benefitAssessmentDependencies:{...assessmentSubjects,subjects:[{...assessmentSubjects.subjects[0],decisionPath:'_engine/private.json'}]}}),false,'private claim/audit fields are rejected');
+}
+
 const publishedPartialViewSet = {
   schemaVersion: 3,
   status: 'published',
@@ -332,6 +345,26 @@ const publishedPartialViewSet = {
 };
 
 const publishedViewManifestWithSharedArtifactAlias = structuredClone(publishedPartialViewManifest);
+
+const pointerAssessmentCases = [
+  [completedViewSet, isCompletedAzureViewSetV2],
+  [publishedPartialViewSet, isPublishedAzureViewSetV3],
+];
+assert.deepEqual(
+  pointerAssessmentCases.map(([pointer, guard]) => guard({ ...pointer, benefitAssessmentDependencies: assessmentSubjects })),
+  [false, false],
+  'native-subject exemptions belong to manifests, never coordinated view-set pointers'
+);
+for (const [pointer, guard] of pointerAssessmentCases) {
+  assert.equal(guard({ ...pointer, benefitAssessmentDependencies: { schemaVersion: 1, subjects: [] } }), true,
+    'empty undeclared pointer metadata retains its original generic control-data policy');
+  assert.equal(guard({ ...pointer, benefitAssessmentDependencies: { schemaVersion: 99, subjects: [] } }), true,
+    'pointer metadata is scanned generically rather than silently adopting the manifest subject schema');
+  assert.equal(guard({ ...pointer, future: assessmentSubjects }), false,
+    'unknown pointer metadata still rejects native paths');
+  assert.equal(guard({ ...pointer, benefitAssessmentDependencies: { schemaVersion: 1, subjects: [] }, future: assessmentSubjects }), false,
+    'empty pointer metadata cannot exempt native paths under another edge');
+}
 publishedViewManifestWithSharedArtifactAlias.future = publishedViewManifestWithSharedArtifactAlias.artifacts[0];
 
 const publishedViewSetWithSharedSurfaceAlias = structuredClone(publishedPartialViewSet);

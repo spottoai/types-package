@@ -13,6 +13,7 @@ exports.COMPANY_NOTE_CONTEXT_CATEGORIES = [
     'architecture',
     'operations',
     'finops',
+    'licenses',
     'performance',
     'reliability',
     'roadmap',
@@ -26,17 +27,12 @@ exports.COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS = [
     'architecture-v1',
     'operations-v1',
     'finops-v1',
+    'licenses-v1',
     'performance-v1',
     'reliability-v1',
     'roadmap-v1',
 ];
 exports.COMPANY_NOTE_TEMPLATE_KEYS = [exports.COMPANY_NOTE_MEETING_TEMPLATE_KEY, ...exports.COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS];
-exports.COMPANY_NOTES_AI_MODES = [
-    'general-note',
-    'template-draft',
-    'section-draft',
-    'coach-selection',
-    'company-research',
-];
+exports.COMPANY_NOTES_AI_MODES = ['general-note', 'template-draft', 'section-draft', 'coach-selection', 'company-research'];
 exports.COMPANY_NOTES_AI_SOURCE_MODES = ['spotto-only', 'public-research'];
 //# sourceMappingURL=companyNotes.js.map

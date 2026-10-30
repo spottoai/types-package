@@ -1,5 +1,9 @@
 import type { Comment, CommentScope, RecommendationHistory } from './recommendationState';
 import type { ProviderScope } from '../common/provider';
+export * from './benefitAssessmentAdmission';
+export * from './reportAssessmentBindings';
+export type { CommitmentUnusedValueEvidence, CommitmentUnusedValueContext } from './commitmentUnusedValue';
+export { isCommitmentUnusedValueEvidence } from './commitmentUnusedValue';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import type { CostSavingsAggregationPolicy, CostSavingsSpendBasis, CostSavingsSummary, CurrencySavingsGroup, SavingsPotential, VmPricePerformanceInsights } from './views';
@@ -13,7 +17,8 @@ import type { RecommendationSystemTrackClassification } from './recommendationTr
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
-import type { PortfolioSavingsContributionV2, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type { PortfolioSavingsContributionV2, RecommendationSavingsUnavailableReason, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type { MetricAggregationType } from './metrics.js';
 export declare enum RecommendationCategory {
     Cost = "Cost",
     Performance = "Performance",
@@ -252,6 +257,10 @@ export interface RecommendationDecisionContext {
     costComposition?: CostComposition;
 }
 export interface Recommendation {
+    /** Exact current claim binding; absence alone never authorizes an enrolled native benefit. */
+    benefitAssessmentAdmission?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentAdmissionV1;
+    /** Separate nonadditive exposure evidence; never include in savings totals. */
+    unusedCommitmentValue?: import('./commitmentUnusedValue').CommitmentUnusedValueEvidence;
     /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
     id: string;
     name: string;
@@ -304,6 +313,13 @@ export interface Recommendation {
     /** whether the recommendation has been resolved or not, eg, Security Assessment is "Healthy" should be true */
     resolved?: boolean;
     securityAssessmentStatuses?: SecurityAssessmentStatus[];
+    /** Complete assessment counts retained by compact report evidence. */
+    securityAssessmentSummary?: {
+        unhealthyCount: number;
+        totalCount: number;
+    };
+    /** Reporting projection clipped editorial context; use the source finding instead of an inferred theme. */
+    reportingTextTruncated?: boolean;
     /** Deprecated fields, kept for compatibility */
     solution?: string;
     source?: string;
@@ -369,6 +385,13 @@ export interface RecommendationSummary {
     low: number;
 }
 export interface RecommendationWithResources {
+    /** Effective provider-scope state after an authorized owner-bound read; dates are ISO UTC wire strings. */
+    recommendationState?: {
+        status: 'Active' | 'Dismissed';
+        /** Future dismissal end denotes Snoozed; expired dismissal reads Active without an effective end. */
+        statusEndAt?: string;
+        updatedAt?: string;
+    };
     recommendation: Recommendation;
     /** Total affected resources when the resources array is trimmed or sampled. */
     resourcesCount?: number;
@@ -379,6 +402,8 @@ export interface RecommendationWithResources {
     scenarioSavings?: ScenarioSavingsPotentialV2;
     /** Canonical producer-attributed contribution. This value is portfolio-additive. */
     portfolioContribution?: PortfolioSavingsContributionV2;
+    /** Missing savings are a state, not zero. Omit when a canonical contribution is available. */
+    savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
     /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
     savingsByCurrency?: CurrencySavingsGroup[];
     /** Canonical resource ID that owns this recommendation savings amount for aggregation */
@@ -425,9 +450,62 @@ export interface ResourceRecommendationSavingsDetails {
         windowEnd?: string;
     };
 }
+export type RecommendationMetricEvidencePurpose = 'eligibility' | 'sizing' | 'validation' | 'risk' | 'cost-driver';
+export type RecommendationMetricEvidenceStatistic = 'average' | 'p95' | 'p99' | 'maximum' | 'minimum';
+export type RecommendationMetricEvidenceThresholdRole = 'target' | 'gate' | 'limit';
+export type RecommendationMetricEvidenceDisplayMode = 'inline-chart' | 'stat-strip';
+export interface RecommendationMetricEvidenceWindow {
+    /** ISO-8601 timestamp when the producer requires a fixed evidence window. */
+    start?: string;
+    /** ISO-8601 timestamp when the producer requires a fixed evidence window. */
+    end?: string;
+    /** ISO-8601 duration, such as P30D, when a relative window is sufficient. */
+    duration?: string;
+}
+export interface RecommendationMetricEvidenceThreshold {
+    value: number;
+    unit?: string;
+    label: string;
+    role: RecommendationMetricEvidenceThresholdRole;
+}
+export interface RecommendationMetricEvidenceDisplay {
+    mode: RecommendationMetricEvidenceDisplayMode;
+    title?: string;
+    description?: string;
+}
+/**
+ * Logical reference to metric evidence already available for one resource.
+ * It intentionally contains no time-series samples, storage URLs or authorization data.
+ */
+export interface RecommendationMetricEvidenceHint {
+    schemaVersion: 1;
+    kind: 'metric';
+    /** Stable identity for this hint within the recommendation. */
+    id: string;
+    /** Canonical Azure resource ID used to prevent cross-resource resolution. */
+    resourceId: string;
+    /** Preferred exact match for an existing MetricPlot.name when one is stable. */
+    plotName?: string;
+    /** Semantic metric identity used by the resolver and displayed to the user. */
+    metricName: string;
+    /** Collected metric group used to disambiguate repeated Azure metric names. */
+    sourceCollection?: string;
+    /** Azure Monitor metric namespace when available. */
+    metricNamespace?: string;
+    aggregation: MetricAggregationType;
+    purpose: RecommendationMetricEvidencePurpose;
+    preferredWindow?: RecommendationMetricEvidenceWindow;
+    statistics?: RecommendationMetricEvidenceStatistic[];
+    thresholds?: RecommendationMetricEvidenceThreshold[];
+    display?: RecommendationMetricEvidenceDisplay;
+}
+/** Versioned evidence-reference union; additional evidence kinds can be added without changing metric hints. */
+export type RecommendationEvidenceHint = RecommendationMetricEvidenceHint;
 /** A recommendation carrying a financial scenario scoped to one detailed resource artifact. */
 export interface ResourceScopedRecommendation extends Recommendation {
     savingsDetails?: ResourceRecommendationSavingsDetails;
+    /** Optional logical references to evidence already present in this resource's detail artifacts. */
+    evidenceHints?: RecommendationEvidenceHint[];
 }
 export interface RecommendationResource {
     id: string;
@@ -447,8 +525,10 @@ export interface RecommendationResource {
         product: string;
         aliases?: string[];
     };
-    spend: number;
-    spendAmortized: number;
+    /** Billed spend when proved by the producer; unresolved resource evidence omits it rather than fabricating zero. */
+    spend?: number;
+    /** Absent when the producer has no amortized evidence for every contributing billing row. */
+    spendAmortized?: number;
     /** Rolling 30-day source partition used to present proved Azure-native resource spend. */
     financialChargeSpend?: import('./financialChargePolicy.js').AzureResourceFinancialChargeSpendBreakdownV1;
     /** Spend basis used to calculate this recommendation resource's savings. */
@@ -475,11 +555,19 @@ export interface RecommendationResource {
     associations?: RecommendationResourceAssociation[];
 }
 export interface RecommendationsView extends AzurePortalVersionedArtifact {
+    /** Missing means legacy/unverified. Pending covers withheld assessment findings/counts, including nonfinancial expiry. */
+    benefitAssessmentCoverage?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentCoverageV1;
+    /** Complete native assessment subjects collected before projection or row limits. */
+    benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
+    /** Current Azure scope state is awaiting matching publication; comment-only changes do not set this flag. */
+    recommendationStatePendingPublication?: boolean;
     recommendations: RecommendationWithResources[];
     securityImpactDetails?: SecurityImpact[];
     subscriptionSecurityStatus?: SubscriptionSecurityStatus;
     /** Homogeneous-currency savings only. Omit for mixed-currency projections. */
     savings?: SavingsPotential;
+    /** Scope savings are unavailable rather than zero when claims cannot be qualified. */
+    savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
     /** Canonical monetary values when present; `savings` must not contain mixed-currency amounts. */
     savingsByCurrency?: CurrencySavingsGroup[];
     subscription: SubscriptionSummaryLite;

@@ -1,0 +1,37 @@
+import type { CommitmentUnusedValueEvidence, Recommendation, CommitmentsObsoleteCandidate } from '@spottoai/types-package';
+import type { CommitmentUnusedValueEvidence as SubpathEvidence } from '@spottoai/types-package/azure/recommendations';
+import { isCommitmentUnusedValueEvidence } from '@spottoai/types-package';
+import { isCommitmentUnusedValueEvidence as subpathGuard } from '@spottoai/types-package/azure/recommendations';
+import { isAzureReportCommitmentAssessmentBindingsV1, type AzureReportCommitmentAssessmentBindingsV1 } from '@spottoai/types-package';
+import { isAzureReportCommitmentAssessmentBindingsV1 as subpathBindingsGuard } from '@spottoai/types-package/azure/recommendations';
+
+const evidence: SubpathEvidence = {
+  status: 'available', benefitId: 'synthetic-benefit', additive: false, coverage: 'partial',
+  assumptions: ['monthly-charge-proxy'], limitations: ['charge-service-period-unavailable'], sources: [],
+  amount: 4341.28, currency: 'AUD', method: 'recurring-charge-utilization-approximation',
+  basis: 'billed', provenance: 'billing-backed-approximation', sourceCharge: { amount: 5474.5, dates: ['2026-10-05'], cadence: 'monthly' },
+  utilizationWindow: { start: '2026-09-30', end: '2026-10-29', percentage: 20.7, observedDays: 30, finality: 'provider-reported-hours-unverified' },
+};
+const unavailable: CommitmentUnusedValueEvidence = { status: 'unavailable', benefitId: 'synthetic-benefit', additive: false,
+  coverage: 'partial', sources: [], assumptions: [], limitations: [], reason: 'currency-unavailable' };
+const recommendation: Pick<Recommendation, 'unusedCommitmentValue'> = { unusedCommitmentValue: evidence };
+const candidate: Pick<CommitmentsObsoleteCandidate, 'unusedCommitmentValue'> = { unusedCommitmentValue: evidence };
+if (recommendation.unusedCommitmentValue?.status !== 'available' || recommendation.unusedCommitmentValue.amount !== 4341.28 ||
+  candidate.unusedCommitmentValue !== evidence || unavailable.status !== 'unavailable') throw new Error('Packed financial DTO failed');
+// @ts-expect-error Native amortization cannot be paired with billed basis.
+const invalid: CommitmentUnusedValueEvidence = { ...evidence, method: 'native-unused-amortized', basis: 'billed', provenance: 'billing-backed-native' };
+void invalid;
+const { utilizationWindow: omittedWindow, ...periodless } = evidence;
+// @ts-expect-error A recurring proxy cannot be available without its utilization period.
+const periodlessProxy: CommitmentUnusedValueEvidence = periodless;
+void [omittedWindow, periodlessProxy];
+const wire: unknown = JSON.parse(JSON.stringify(evidence));
+if (!isCommitmentUnusedValueEvidence(wire) || !subpathGuard(wire)) throw new Error('Packed runtime narrowing failed');
+const narrowed: CommitmentUnusedValueEvidence = wire;
+const subpathNarrowed: SubpathEvidence = wire;
+if (narrowed.status !== 'available' || subpathNarrowed.amount !== 4341.28) throw new Error('Packed narrowed amount failed');
+if (isCommitmentUnusedValueEvidence(JSON.parse(JSON.stringify({ ...unavailable, amount: 0 })))) throw new Error('Packed unavailable evidence accepted money');
+const bindingWire: unknown = JSON.parse('{"schemaVersion":1,"planningSubjectIndices":[],"legacySingleSources":[],"obsoleteCandidates":[],"reallocationOpportunities":[],"renewals":[],"inventory":[]}');
+if (!isAzureReportCommitmentAssessmentBindingsV1(bindingWire) || !subpathBindingsGuard(bindingWire)) throw new Error('Packed binding narrowing failed');
+const bindings: AzureReportCommitmentAssessmentBindingsV1 = bindingWire;
+if (bindings.inventory.length !== 0) throw new Error('Packed binding payload failed');

@@ -16,4 +16,6 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./resourceStrategyContracts"), exports);
 __exportStar(require("./resourceStrategyValidation"), exports);
+__exportStar(require("./resourceScheduleProviderContracts"), exports);
+__exportStar(require("./resourceScheduleProviderValidation"), exports);
 //# sourceMappingURL=resourceStrategy.js.map

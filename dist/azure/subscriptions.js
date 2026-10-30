@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isAzureNativeSubscriptionFinancialStatsV1 = void 0;
+const nativeDiscountEligibility_js_1 = require("./nativeDiscountEligibility.js");
 const financialChargePolicy_js_1 = require("./financialChargePolicy.js");
 const AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS = [
     'spend30Days',
@@ -17,12 +18,22 @@ const AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS = [
     'spend30DaysAmortizedEstimated',
 ];
 const isFinancialStatsRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+/** These holders are native-only; all-eligible covered fields must equal their native base. */
+const hasValidNativeStatsEligibility = (value) => (0, nativeDiscountEligibility_js_1.hasValidAzureNativeDiscountEligibleSpendProjectionV1)(value) &&
+    (value.azureNativeDiscountEligibility !== 'all-eligible' ||
+        Object.entries(value.azureNativeDiscountEligible).every(([key, amount]) => amount === value[key]));
 /** Exact top-level validator for the dashboard Azure-native display projection. */
 const isAzureNativeSubscriptionFinancialStatsV1 = (value) => {
     if (!isFinancialStatsRecord(value))
         return false;
     const required = ['contractVersion', 'policyRef', 'status', 'resourcesByLocation', 'resourcesByType'];
-    const allowed = new Set([...required, 'financialChargeSpend', ...AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS]);
+    const allowed = new Set([
+        ...required,
+        'financialChargeSpend',
+        'azureNativeDiscountEligible',
+        'azureNativeDiscountEligibility',
+        ...AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS,
+    ]);
     if (!required.every(field => Object.prototype.hasOwnProperty.call(value, field)) || !Object.keys(value).every(field => allowed.has(field))) {
         return false;
     }
@@ -32,6 +43,10 @@ const isAzureNativeSubscriptionFinancialStatsV1 = (value) => {
         (value.financialChargeSpend === undefined || (0, financialChargePolicy_js_1.isAzureProviderScopeFinancialChargeSpendBreakdownV1)(value.financialChargeSpend)) &&
         Array.isArray(value.resourcesByLocation) &&
         Array.isArray(value.resourcesByType) &&
+        hasValidNativeStatsEligibility(value) &&
+        [...value.resourcesByLocation, ...value.resourcesByType].every(group => !isFinancialStatsRecord(group) ||
+            (group.azureNativeDiscountEligible === undefined && group.azureNativeDiscountEligibility === undefined) ||
+            hasValidNativeStatsEligibility(group)) &&
         AZURE_NATIVE_STATS_OPTIONAL_MONEY_FIELDS.every(field => value[field] === undefined || (typeof value[field] === 'number' && Number.isFinite(value[field]))));
 };
 exports.isAzureNativeSubscriptionFinancialStatsV1 = isAzureNativeSubscriptionFinancialStatsV1;

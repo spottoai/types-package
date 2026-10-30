@@ -20,4 +20,9 @@ __exportStar(require("./notification"), exports);
 __exportStar(require("./survey"), exports);
 __exportStar(require("./billingAccount"), exports);
 __exportStar(require("./companyNotes"), exports);
+__exportStar(require("./companyContext"), exports);
+__exportStar(require("./companyMemory"), exports);
+__exportStar(require("./companyMeetings"), exports);
+__exportStar(require("./companyNoteRevisions"), exports);
+__exportStar(require("./companyContextHarvesting"), exports);
 //# sourceMappingURL=index.js.map

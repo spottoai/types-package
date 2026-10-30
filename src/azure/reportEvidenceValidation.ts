@@ -1,4 +1,7 @@
 import { isCompactRecommendation, isInventoryCatalogueResource } from './reportEvidenceCatalogueValidation';
+import { isCommitmentUnusedValueEvidence } from './commitmentUnusedValue';
+import { isAzureBenefitAssessmentDependenciesV1 } from './benefitAssessmentAdmission';
+import { areAzureReportCommitmentAssessmentBindingsConsistentV1 } from './reportAssessmentBindings';
 import { isReportDailySpend } from './reportDailySpendValidation';
 import { isRegulatoryComplianceScoreboardSubscription, isRegulatoryReportComparisonIdentities } from './regulatoryComplianceScoreboardValidation';
 import { isReportSavingsBasis, isReportSpendProjection } from './reportSpendValidation';
@@ -286,12 +289,17 @@ const isCommitments = (value: unknown): boolean => {
   ) {
     return false;
   }
-  if (value.resourceCoverage !== undefined && !isProjectionRows(value.resourceCoverage)) return false;
+  if (value.resourceCoverage !== undefined && !isCommitmentsProjectionRows(value.resourceCoverage)) return false;
   if (value.freshness !== undefined && !isReportCommitmentsFreshness(value.freshness)) return false;
   return ['coverage', 'obsoleteCandidates', 'reallocationOpportunities', 'purchaseRecommendations', 'renewals'].every(key =>
-    isProjectionRows(value[key])
+    isCommitmentsProjectionRows(value[key])
   );
 };
+
+const hasValidUnusedCommitmentValue = (value: JsonRecord): boolean =>
+  value.unusedCommitmentValue === undefined || isCommitmentUnusedValueEvidence(value.unusedCommitmentValue);
+const isCommitmentsProjectionRows = (value: unknown): boolean =>
+  isBoundedRows(value, REPORT_EVIDENCE_LIMITS.detailRows, (row): row is JsonRecord => isRecord(row) && hasValidUnusedCommitmentValue(row));
 
 /** Status and generatedAt appear together; without them the projection carries no entries. Older packs omit entries. */
 const isReportCommitmentsFreshness = (value: unknown): boolean =>
@@ -347,6 +355,7 @@ const isCommitmentUtilization = (value: unknown): boolean =>
 function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
   return (
     isRecord(value) &&
+    hasValidUnusedCommitmentValue(value) &&
     hasOptionalStrings(value, [
       'id',
       'benefitType',
@@ -553,6 +562,14 @@ export const isSubscriptionReportEvidencePack = (value: unknown): value is Subsc
     return false;
   }
   if (
+    isRecord(value.reporting) &&
+    isRecord(value.reporting.commitmentsPlanning) &&
+    Object.prototype.hasOwnProperty.call(value.reporting.commitmentsPlanning, 'assessmentSourceBindings') &&
+    !areAzureReportCommitmentAssessmentBindingsConsistentV1(value.benefitAssessmentDependencies, value.scope, value.reporting.commitmentsPlanning)
+  )
+    return false;
+  if (
+    (value.benefitAssessmentDependencies !== undefined && !isAzureBenefitAssessmentDependenciesV1(value.benefitAssessmentDependencies)) ||
     !isRecord(value.generation) ||
     !isRecord(value.scope) ||
     !isString(value.scope.subscriptionId) ||
@@ -642,8 +659,10 @@ const isHistoryComparisonIdentities = (value: unknown): boolean =>
   isRegulatoryReportComparisonIdentities(value) &&
   (value.costRecommendationIds === undefined || isUniqueIdentityRows(value.costRecommendationIds)) &&
   (value.undersizedResourceIds === undefined || isUniqueIdentityRows(value.undersizedResourceIds)) &&
-  (value.regulatoryAssessmentKeys === undefined || isUniqueIdentityRows(value.regulatoryAssessmentKeys, (item): item is string => isString(item) && /^[a-f0-9]{64}$/u.test(item))) &&
-  (value.regulatoryFailingControlKeys !== undefined || (value.costRecommendationIds !== undefined && value.undersizedResourceIds !== undefined && value.regulatoryAssessmentKeys !== undefined));
+  (value.regulatoryAssessmentKeys === undefined ||
+    isUniqueIdentityRows(value.regulatoryAssessmentKeys, (item): item is string => isString(item) && /^[a-f0-9]{64}$/u.test(item))) &&
+  (value.regulatoryFailingControlKeys !== undefined ||
+    (value.costRecommendationIds !== undefined && value.undersizedResourceIds !== undefined && value.regulatoryAssessmentKeys !== undefined));
 
 export const isSubscriptionReportHistory = (value: unknown): value is SubscriptionReportHistory => {
   if (

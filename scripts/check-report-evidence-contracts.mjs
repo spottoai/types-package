@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 
 import {
   REPORT_EVIDENCE_LIMITS,
+  deriveAzureBenefitAssessmentAuthorityIdV1,
   REPORT_PRINCIPAL_TYPES,
   isSubscriptionReportEvidencePack,
   isSubscriptionReportHistory,
@@ -235,6 +236,11 @@ const tenantPack = {
 };
 
 assert.equal(isSubscriptionReportEvidencePack(subscriptionPack), true);
+const malformedBindingPack = structuredClone(subscriptionPack);
+malformedBindingPack.reporting.commitmentsPlanning.assessmentSourceBindings = { schemaVersion: 2 };
+assert.equal(isSubscriptionReportEvidencePack(malformedBindingPack), false, 'Present malformed assessment bindings cannot use legacy decoding');
+malformedBindingPack.reporting.commitmentsPlanning.assessmentSourceBindings = undefined;
+assert.equal(isSubscriptionReportEvidencePack(malformedBindingPack), false, 'Present undefined binding is not certified empty');
 const monthlyBudgetPack = structuredClone(subscriptionPack);
 monthlyBudgetPack.cost.budget = {
   name: 'd365-sub-budget',
@@ -248,7 +254,12 @@ monthlyBudgetPack.cost.budget = {
   filter: {},
 };
 assert.equal(isSubscriptionReportEvidencePack(monthlyBudgetPack), true, 'typed monthly budget evidence');
-for (const [field, invalidValue] of [['timeGrain', 30], ['amount', '9000'], ['filter', []], ['currencyCode', 123]]) {
+for (const [field, invalidValue] of [
+  ['timeGrain', 30],
+  ['amount', '9000'],
+  ['filter', []],
+  ['currencyCode', 123],
+]) {
   const invalidBudget = structuredClone(monthlyBudgetPack);
   invalidBudget.cost.budget[field] = invalidValue;
   assert.equal(isSubscriptionReportEvidencePack(invalidBudget), false, `reject malformed budget ${field}`);
@@ -259,16 +270,18 @@ credentialActivityPack.reporting.credentialDeadlines = {
   overdueCount: 162,
   upcomingSixMonthsCount: 85,
 };
-credentialActivityPack.reporting.activity.dailySummary = rows([{
-  date: '2026-08-17',
-  visibleEvents: 100,
-  materialChanges: 90,
-  securitySensitive: 5,
-  healthEvents: 5,
-  failedEvents: 0,
-  highFindingCount: 0,
-  automatedSnapshotEvents: 80,
-}]);
+credentialActivityPack.reporting.activity.dailySummary = rows([
+  {
+    date: '2026-08-17',
+    visibleEvents: 100,
+    materialChanges: 90,
+    securitySensitive: 5,
+    healthEvents: 5,
+    failedEvents: 0,
+    highFindingCount: 0,
+    automatedSnapshotEvents: 80,
+  },
+]);
 assert.equal(isSubscriptionReportEvidencePack(credentialActivityPack), true, 'complete credential and activity counts');
 const invalidCredentialCount = structuredClone(credentialActivityPack);
 invalidCredentialCount.reporting.credentialDeadlines.overdueCount = -1;
@@ -370,6 +383,54 @@ const activityDay = {
 };
 populationPack.reporting.activity.dailySummary = { totalCount: 1, omittedCount: 0, rows: [activityDay] };
 assert.equal(isSubscriptionReportEvidencePack(populationPack), true);
+// Existing legal evidence locations must reject contradictory JSON, while legacy omission remains valid.
+const unusedValue = {
+  benefitId: 'reservation-1',
+  additive: false,
+  coverage: 'partial',
+  assumptions: [],
+  limitations: [],
+  sources: [],
+  status: 'available',
+  amount: 0,
+  currency: 'NZD',
+  method: 'native-unused-amortized',
+  basis: 'amortized',
+  provenance: 'billing-backed-native',
+  sourceCharge: { amount: 0, dates: ['2026-08-31'] },
+};
+const unusedValuePack = (location, evidence) => {
+  const pack = structuredClone(populationPack);
+  if (location === 'recommendations' || location === 'recommendationCatalogue') {
+    pack.reporting[location].rows[0].recommendation.unusedCommitmentValue = evidence;
+  } else {
+    pack.reporting.commitmentsPlanning[location] = rows([{ id: 'reservation-1', unusedCommitmentValue: evidence }]);
+    if (location === 'inventory') pack.reporting.commitmentsPlanning.inventorySummary = { totalCount: 1, statusCounts: { active: 1 } };
+  }
+  return JSON.parse(JSON.stringify(pack));
+};
+for (const location of [
+  'recommendations',
+  'recommendationCatalogue',
+  'obsoleteCandidates',
+  'reallocationOpportunities',
+  'renewals',
+  'inventory',
+  'coverage',
+  'purchaseRecommendations',
+  'resourceCoverage',
+]) {
+  assert.equal(isSubscriptionReportEvidencePack(unusedValuePack(location, unusedValue)), true, `${location}: valid zero evidence`);
+  assert.equal(isSubscriptionReportEvidencePack(unusedValuePack(location, undefined)), true, `${location}: legacy evidence omission`);
+  for (const evidence of [
+    { ...unusedValue, basis: 'billed' },
+    { ...unusedValue, method: 'recurring-charge-utilization-approximation', basis: 'billed', provenance: 'billing-backed-approximation' },
+    { ...unusedValue, status: 'unavailable', reason: 'charge-unavailable' },
+    null,
+  ])
+    assert.equal(isSubscriptionReportEvidencePack(unusedValuePack(location, evidence)), false, `${location}: contradictory unused-value evidence`);
+}
+
 const cataloguePack = structuredClone(populationPack);
 cataloguePack.reporting.recommendationCatalogue.rows[0].resourceCatalogue = emptyRows();
 cataloguePack.reporting.inventory.resourceCatalogue = emptyRows();
@@ -969,6 +1030,42 @@ const verifiedOnlyPack = structuredClone(subscriptionPack);
 verifiedOnlyPack.reporting.activity.verifiedMonths = ['2026-08', '2026-09'];
 assert.equal(isSubscriptionReportEvidencePack(verifiedOnlyPack), true, 'accepts verified months emitted without coverage');
 const emptyVerifiedPack = structuredClone(subscriptionPack);
+const benefitAssessmentDependencies = {
+  schemaVersion: 1,
+  subjects: [
+    {
+      kind: 'unclaimed-single',
+      benefitId: '/providers/microsoft.capacity/reservationorders/order-1/reservations/item-1',
+      authorityId: deriveAzureBenefitAssessmentAuthorityIdV1('https://authority.blob.core.windows.net', 'azure-portal'),
+    },
+  ],
+};
+assert.equal(
+  isSubscriptionReportEvidencePack({ ...subscriptionPack, benefitAssessmentDependencies }),
+  true,
+  'accepts complete bounded native assessment subjects'
+);
+assert.equal(
+  isSubscriptionReportEvidencePack({ ...subscriptionPack, benefitAssessmentDependencies: { schemaVersion: 1, subjects: [] } }),
+  true,
+  'accepts certified empty native population'
+);
+assert.equal(
+  isSubscriptionReportEvidencePack({ ...subscriptionPack, benefitAssessmentDependencies: { schemaVersion: 1, admissions: [] } }),
+  false,
+  'rejects admissions-only incomplete subject evidence'
+);
+assert.equal(
+  isSubscriptionReportEvidencePack({
+    ...subscriptionPack,
+    benefitAssessmentDependencies: {
+      ...benefitAssessmentDependencies,
+      subjects: [...benefitAssessmentDependencies.subjects, ...benefitAssessmentDependencies.subjects],
+    },
+  }),
+  false,
+  'rejects duplicated native subjects'
+);
 emptyVerifiedPack.reporting.activity.verifiedMonths = [];
 assert.equal(isSubscriptionReportEvidencePack(emptyVerifiedPack), true, 'accepts no verified months');
 const truncatedCoveragePack = structuredClone(activityCoveragePack);

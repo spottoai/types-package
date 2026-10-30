@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX = exports.AWS_ORGANIZATION_COMMITMENTS_ISSUE_CODES = exports.AWS_ORGANIZATION_COMMITMENTS_ATTRIBUTION_UNAVAILABLE_REASONS = exports.AWS_ORGANIZATION_COMMITMENTS_SCOPE_UNAVAILABLE_REASONS = exports.AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGE_STATUSES = exports.AWS_ORGANIZATION_COMMITMENTS_REFRESH_STATES = exports.AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGES = exports.AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION = void 0;
 exports.buildAwsOrganizationCommitmentsSessionId = buildAwsOrganizationCommitmentsSessionId;
-const pluginPublicArtifacts_js_1 = require("./pluginPublicArtifacts.js");
+const sha256_js_1 = require("../common/sha256.js");
 exports.AWS_ORGANIZATION_COMMITMENTS_SCHEMA_VERSION = 1;
 exports.AWS_ORGANIZATION_COMMITMENTS_REFRESH_STAGES = [
     'account-inventory',
@@ -42,7 +42,7 @@ exports.AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX = 'aws-org-commitments:';
 function buildAwsOrganizationCommitmentsSessionId(companyId, estateId) {
     const company = requiredSessionIdentity(companyId, 'companyId');
     const estate = requiredSessionIdentity(estateId, 'estateId');
-    return `${exports.AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${(0, pluginPublicArtifacts_js_1.sha256AwsPluginIdentity)(JSON.stringify(['aws-organization-commitments', company, estate]))}`;
+    return `${exports.AWS_ORGANIZATION_COMMITMENTS_SESSION_ID_PREFIX}${(0, sha256_js_1.sha256Hex)(JSON.stringify(['aws-organization-commitments', company, estate]))}`;
 }
 function requiredSessionIdentity(value, field) {
     if (typeof value !== 'string' || value.trim() !== value || value.length === 0) {

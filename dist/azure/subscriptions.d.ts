@@ -1,15 +1,36 @@
 import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
+import type { ProviderScopeContext } from '../common/provider.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
+import type { RecommendationSavingsUnavailableReason } from './savings.js';
 import { ResourceByLocation, ResourcesByType } from './resources.js';
+import { type AzureNativeDiscountEligibleSpendProjectionV1 } from './nativeDiscountEligibility.js';
 import { SavingsPotential } from './views.js';
 import type { AdvisorScorePillarScores } from './advisorScore.js';
 import type { SecureScoreEvidence } from './secureScore.js';
 import type { CostComposition } from './costComposition.js';
+import type { RecordedSpendAnalysis } from '../common/recordedSpendAnalysis.js';
+import type { RetailCostAvailability } from './retailCost.js';
 import { type AzureProviderScopeFinancialChargeSpendBreakdownV1 } from './financialChargePolicy.js';
 export type { SecureScoreEvidence, SecureScoreEvidenceStatus } from './secureScore.js';
 export type SpendDataSource = 'billing' | 'estimated_metrics_pricing' | 'estimated_sku_pricing' | 'blended' | 'none';
+/** Recorded billing days are observations; even a day containing charges is not proof of finalized consumption. */
+export interface BillingSpendWindowCoverage {
+    status: 'partial' | 'unproven';
+    reasonCode: 'billing-days-not-observed' | 'billing-usage-coverage-unavailable';
+    basis: 'billed';
+    window: {
+        startDate: string;
+        endDate: string;
+        dayCount: number;
+    };
+    recordedDayCount: number;
+    unobservedDayCount: number;
+    trailingUnobservedDayCount: number;
+    lastRecordedDate?: string;
+    finality: 'unknown';
+}
 export interface SubscriptionSummaryLite {
     companyId: string;
     tenantId: string;
@@ -27,7 +48,7 @@ export interface CompanySubscription extends SubscriptionInfoBase {
 export type CompanySubscriptionResponse = Omit<CompanySubscription, 'ready'> & {
     ready: boolean;
 };
-export interface SubscriptionScope {
+export interface SubscriptionScope extends ProviderScopeContext {
     companyId: string;
     id: string;
     name: string;
@@ -37,6 +58,8 @@ export interface SubscriptionScope {
     groupName?: string;
     icon?: string;
     subscriptionType?: SubscriptionType;
+    /** Company-configured discount on native (non-Marketplace) charges; see SubscriptionInfoBase. */
+    nativeDiscountPercent?: SubscriptionInfoBase['nativeDiscountPercent'];
     status?: string;
     statusLabel?: string;
     currency?: string;
@@ -46,6 +69,10 @@ export interface SubscriptionScope {
     secureScore?: number;
     secureScoreEvidence?: SecureScoreEvidence;
     totalCost?: number;
+    /** Observed rolling 30-day aggregated billing row count; absent when unavailable. */
+    billingItems?: number;
+    /** Observed rolling 30-day collected activity event count; absent when unavailable. */
+    activityItems?: number;
 }
 /** Public subscription-scope response with authoritative readiness. */
 export type SubscriptionScopeResponse = Omit<SubscriptionScope, 'ready'> & {
@@ -58,8 +85,12 @@ export interface SubscriptionSummary {
     displayName: string;
     properties?: SubscriptionProperties;
     recommendationSummary: RecommendationSummary[];
-    savings: SavingsPotential;
-    totalRetailCost: number;
+    /** Additive published savings; absent when the producer cannot qualify money. */
+    savings?: SavingsPotential;
+    savingsUnavailableReason?: RecommendationSavingsUnavailableReason;
+    /** List-price monthly valuation, never billed/amortized spend. Missing is not zero. */
+    totalRetailCost?: number;
+    retailCostAvailability?: RetailCostAvailability;
     spendingLimit: boolean;
     budgets: Budget[];
     recommendations: Recommendation[];
@@ -102,7 +133,7 @@ export interface ResourceInventoryStats {
  * group arrays inherit period/currency from the containing subscription view.
  * Billing and formal reports must use `financialChargeSpend` when present.
  */
-export interface AzureNativeSubscriptionFinancialStatsV1 {
+export interface AzureNativeSubscriptionFinancialStatsV1 extends AzureNativeDiscountEligibleSpendProjectionV1 {
     contractVersion: 'azure-native-subscription-financial-stats/v1';
     policyRef: 'azure-cloud-services-excluding-marketplace/v1';
     /** Partial means material rows with unknown publisher provenance were excluded. */
@@ -126,6 +157,10 @@ export interface AzureNativeSubscriptionFinancialStatsV1 {
 /** Exact top-level validator for the dashboard Azure-native display projection. */
 export declare const isAzureNativeSubscriptionFinancialStatsV1: (value: unknown) => value is AzureNativeSubscriptionFinancialStatsV1;
 export interface SubscriptionStats {
+    /** Separate dated recorded-charge analysis; primary spend30Days keeps its recorded display window. */
+    recordedSpendAnalysis?: RecordedSpendAnalysis;
+    /** Coverage qualification independent of imported arithmetic; absence never proves complete billing. */
+    spend30DaysCoverage?: BillingSpendWindowCoverage;
     /** Total unique customer-visible resources for resourcesTotalBasis. */
     resourcesTotal: number;
     /** Versioned counting contract for resourcesTotal. Missing on legacy payloads. */
@@ -184,7 +219,7 @@ export interface SubscriptionHistory {
 export interface SubscriptionHistoryItem {
     /** 20250520 */
     date: number;
-    /** Omitted when Defender for Cloud did not return an observed score. */
+    /** Omitted when the provider did not supply complete, current score evidence. */
     secureScore?: number;
     secureScoreEvidence?: SecureScoreEvidence;
     advisorScore?: number;

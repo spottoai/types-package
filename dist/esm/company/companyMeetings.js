@@ -1,0 +1,1 @@
+export const COMPANY_MEETING_SCHEMA_VERSION = 1;

@@ -1,8 +1,8 @@
+import type { PortalHealthEventsSummary, PortalHealthLatestEventSummary, ResourceHealthAvailabilityState, ResourceHealthAvailabilityStatusPortalCollection, ResourceHealthAvailabilityStatusSummary, ResourceHealthEventLevel, ResourceHealthEventPortalCollection, ResourceHealthEventStatus, ResourceHealthEventSummary, ResourceHealthEventType, ResourceHealthImpactedResourceSummary, ResourceHealthPostIncidentReview, ResourceHealthRecentlyResolved, ResourceHealthServiceImpactingEvent } from '../common/resourceHealth';
+export { RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME, RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME } from '../common/resourceHealth';
 export declare const RESOURCE_HEALTH_EVENTS_FILE_NAME: "microsoft.resourcehealth-events.json";
 export declare const RESOURCE_HEALTH_EVENTS_IMPACTED_RESOURCES_FILE_NAME: "microsoft.resourcehealth-events-impactedresources.json";
 export declare const RESOURCE_HEALTH_AVAILABILITY_STATUSES_FILE_NAME: "microsoft.resourcehealth-availabilitystatuses.json";
-export declare const RESOURCE_HEALTH_EVENTS_PORTAL_FILE_NAME: "health-events.json";
-export declare const RESOURCE_HEALTH_AVAILABILITY_STATUSES_PORTAL_FILE_NAME: "health-availability-statuses.json";
 export declare const RESOURCE_HEALTH_INDEX_FILE_NAME: "history/resource-health/index.json";
 export declare const AZURE_RESOURCE_HEALTH_EVENTS_SOURCE: "Microsoft.ResourceHealth/events";
 export declare const AZURE_RESOURCE_HEALTH_IMPACTED_RESOURCES_SOURCE: "Microsoft.ResourceHealth/events/impactedResources";
@@ -10,11 +10,11 @@ export declare const AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE: "Micros
 export declare const RESOURCE_HEALTH_EVENTS_SOURCE: "Microsoft.ResourceHealth/events";
 export declare const RESOURCE_HEALTH_EVENTS_IMPACTED_RESOURCES_SOURCE: "Microsoft.ResourceHealth/events/impactedResources";
 export declare const RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE: "Microsoft.ResourceHealth/availabilityStatuses";
-export type AzureResourceHealthEventType = 'ServiceIssue' | 'PlannedMaintenance' | 'HealthAdvisory' | 'SecurityAdvisory' | 'RCA' | 'EmergingIssues' | 'Billing' | (string & {});
-export type AzureResourceHealthEventStatus = 'Active' | 'Resolved' | (string & {});
-export type AzureResourceHealthEventLevel = 'Critical' | 'Error' | 'Warning' | 'Informational' | (string & {});
+export type AzureResourceHealthEventType = ResourceHealthEventType;
+export type AzureResourceHealthEventStatus = ResourceHealthEventStatus;
+export type AzureResourceHealthEventLevel = ResourceHealthEventLevel;
 export type AzureResourceHealthEventSource = 'ResourceHealth' | 'ServiceHealth' | (string & {});
-export type AzureResourceHealthAvailabilityState = 'Available' | 'Unavailable' | 'Degraded' | 'Unknown' | (string & {});
+export type AzureResourceHealthAvailabilityState = ResourceHealthAvailabilityState;
 export interface AzureResourceHealthEvent {
     id: string;
     name: string;
@@ -114,106 +114,23 @@ export interface AzureResourceHealthAvailabilityStatusProperties {
     recommendedActions?: AzureResourceHealthRecommendedActions;
     serviceImpactingEvents?: AzureResourceHealthServiceImpactingEvent[];
 }
-export interface AzureServiceHealthEventSummary {
-    id: string;
-    trackingId: string;
-    subscriptionId: string;
-    eventType: AzureResourceHealthEventType;
-    status: AzureResourceHealthEventStatus;
-    level?: AzureResourceHealthEventLevel;
-    title?: string;
-    summary?: string;
-    impactStartTime?: string;
-    impactMitigationTime?: string;
-    lastUpdateTime?: string;
-    durationSeconds?: number;
-    priority?: number;
-    impactedServices: string[];
-    impactedRegions: string[];
-    impactedResourceCount?: number;
+export interface AzureServiceHealthEventSummary extends ResourceHealthEventSummary<typeof AZURE_RESOURCE_HEALTH_EVENTS_SOURCE> {
     impactedResources?: AzureServiceHealthImpactedResourceSummary[];
     postIncidentReview?: AzureServiceHealthPostIncidentReview;
-    recommendedActions?: string[];
-    source: typeof AZURE_RESOURCE_HEALTH_EVENTS_SOURCE;
 }
-export interface AzureServiceHealthImpactedResourceSummary {
-    resourceId?: string;
-    resourceType?: string;
-    region?: string;
-}
-export interface AzureServiceHealthPostIncidentReview {
-    hasPreliminaryPir?: boolean;
-    hasFinalPir?: boolean;
-    whatHappened?: string;
-    whatWentWrongAndWhy?: string;
-    howDidMicrosoftRespond?: string;
-    howMicrosoftIsReducingRecurrence?: string;
-    howCustomersCanReduceImpact?: string;
-}
-export interface AzurePortalHealthEventsSummary {
-    totalEvents: number;
-    activeEvents: number;
-    resolvedEvents: number;
-    finalPirEvents: number;
-    preliminaryPirEvents: number;
+export type AzureServiceHealthImpactedResourceSummary = ResourceHealthImpactedResourceSummary;
+export type AzureServiceHealthPostIncidentReview = ResourceHealthPostIncidentReview;
+export interface AzurePortalHealthEventsSummary extends PortalHealthEventsSummary {
     latestEvent?: AzurePortalHealthLatestEventSummary;
 }
-export interface AzurePortalHealthLatestEventSummary {
-    id: string;
-    trackingId: string;
-    eventType: AzureResourceHealthEventType;
-    status: AzureResourceHealthEventStatus;
-    level?: AzureResourceHealthEventLevel;
-    title?: string;
-    lastUpdateTime?: string;
-    impactStartTime?: string;
-    impactMitigationTime?: string;
-}
-export interface AzureResourceHealthEventPortalCollection {
-    schemaVersion: 1;
-    generatedAt: string;
-    subscriptionId: string;
-    source: typeof AZURE_RESOURCE_HEALTH_EVENTS_SOURCE;
-    highWatermark?: string;
+export type AzurePortalHealthLatestEventSummary = PortalHealthLatestEventSummary;
+export interface AzureResourceHealthEventPortalCollection extends ResourceHealthEventPortalCollection<typeof AZURE_RESOURCE_HEALTH_EVENTS_SOURCE> {
     events: AzureServiceHealthEventSummary[];
 }
-export interface AzureResourceHealthAvailabilityStatusSummary {
-    id: string;
-    resourceId: string;
-    availabilityState: AzureResourceHealthAvailabilityState;
-    title?: string;
-    summary?: string;
-    detailedStatus?: string;
-    reasonType?: string;
-    reasonChronicity?: string;
-    occurredTime?: string;
-    reportedTime?: string;
-    recentlyResolved?: AzureResourceHealthRecentlyResolved;
-    recommendedActions?: string[];
-    serviceImpactingEvents?: AzureResourceHealthServiceImpactingEvent[];
-    source: typeof AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE;
-}
-export interface AzureResourceHealthRecentlyResolved {
-    unavailableOccurredTime?: string;
-    resolvedTime?: string;
-    unavailabilitySummary?: string;
-}
-export interface AzureResourceHealthServiceImpactingEvent {
-    eventStartTime?: string;
-    eventStatus?: AzureResourceHealthEventStatus;
-    eventTrackingId?: string;
-    eventType?: AzureResourceHealthEventType;
-    impactedService?: string;
-    impactedRegion?: string;
-    title?: string;
-}
-export interface AzureResourceHealthAvailabilityStatusPortalCollection {
-    schemaVersion: 1;
-    generatedAt: string;
-    subscriptionId: string;
-    source: typeof AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE;
-    statuses: AzureResourceHealthAvailabilityStatusSummary[];
-}
+export type AzureResourceHealthAvailabilityStatusSummary = ResourceHealthAvailabilityStatusSummary<typeof AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE>;
+export type AzureResourceHealthRecentlyResolved = ResourceHealthRecentlyResolved;
+export type AzureResourceHealthServiceImpactingEvent = ResourceHealthServiceImpactingEvent;
+export type AzureResourceHealthAvailabilityStatusPortalCollection = ResourceHealthAvailabilityStatusPortalCollection<typeof AZURE_RESOURCE_HEALTH_AVAILABILITY_STATUSES_SOURCE>;
 export interface AzureResourceHealthEventCollection {
     schemaVersion: 1;
     generatedAt: string;

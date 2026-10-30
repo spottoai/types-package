@@ -1,3 +1,4 @@
+import type { Provider } from '../common/utilizationStories';
 /** Exact monthly monetary range represented in a producer-defined minor-unit scale. */
 export interface CanonicalMoneyRangeV2 {
     /** ISO 4217 currency code. */
@@ -8,6 +9,7 @@ export interface CanonicalMoneyRangeV2 {
     minSavingsMinorUnits: number;
     maxSavingsMinorUnits: number;
 }
+export type SavingsEstimateAuthorityV2 = 'billed-resource-spend' | 'provider-estimate';
 export type SavingsCombinationPolicyV2 = 'additive' | 'exclusive' | 'conditional';
 /** A recommendation evaluated in isolation. This value is not portfolio-additive. */
 export interface ScenarioSavingsPotentialV2 {
@@ -19,14 +21,43 @@ export interface ScenarioSavingsPotentialV2 {
 /** Savings attributed by the producer from canonical allocations. This value is portfolio-additive. */
 export interface PortfolioSavingsContributionV2 {
     semantics: 'portfolio-contribution';
+    /** Origin of the additive estimate; absent on legacy billing-backed producers. */
+    estimateAuthority?: SavingsEstimateAuthorityV2 | 'mixed';
     allocationIds: string[];
     range: CanonicalMoneyRangeV2;
 }
+/** Producer evidence explaining why a recommendation has no portfolio savings amount. */
+export type RecommendationSavingsUnavailableReason = 'not-estimated' | 'not-applicable' | 'missing-currency' | 'mixed-currencies' | 'restated-savings' | 'overlapping-savings' | 'missing-billing-attribution' | 'partial-billing-coverage' | 'billing-generation-mismatch' | 'incompatible-cost-basis' | 'below-minimum-spend'
+/** Current commitments prevent a qualified immediate billed saving; other bases remain independent. */
+ | 'commitment-covered' | 'missing-pricing-reference' | 'unsupported-pricing';
 export type SavingsScopeKindV2 = 'subscription-full' | 'recommendation-query' | 'resource-query';
+/** Captured explanation for one unavailable economic claim, independent of card/resource counts. */
+export interface SavingsUnavailableClaimDetail {
+    /** Stable producer claim identity within the provider scope, not a recommendation card ID. */
+    claimId: string;
+    recommendationId: string;
+    /** Exact captured resource identity, or null when the claim has no identified resource. */
+    resourceId: string | null;
+    source: string;
+    reason: RecommendationSavingsUnavailableReason;
+}
+/** Per-card detail evidence. The canonical aggregate remains the monetary and coverage authority. */
+export interface SavingsUnavailableClaimEnvelope {
+    providerName: string;
+    providerScopeId: string;
+    /** Must match the selected canonical scope, including its filter fingerprint. */
+    scopeKey: string;
+    generationId: string;
+    /** Currency of the aggregate whose coverage this evidence explains. */
+    currency: string;
+    /** Full membership count. Clipped, duplicated or malformed lists cannot certify this count. */
+    claimCount: number;
+    claims: SavingsUnavailableClaimDetail[];
+}
 /** Identifies the complete result scope represented by a savings aggregate. */
 export interface SavingsScopeV2 {
     kind: SavingsScopeKindV2;
-    providerName: 'azure';
+    providerName: Provider;
     providerScopeId: string;
     /** Opaque producer/API fingerprint. It must not expose raw tenant filter values. */
     filterFingerprint: string;
@@ -35,9 +66,17 @@ export interface SavingsScopeV2 {
 export interface SavingsAggregateV2 {
     contractVersion: 'savings/v2';
     generationId: string;
+    /** `${providerName}:${providerScopeId}:${kind}:${filterFingerprint}`, e.g. `azure:<subscriptionId>:subscription-full:all`. */
     scopeKey: string;
     scope: SavingsScopeV2;
     allocationCount: number;
+    /** Partial totals are an estimated subtotal over recommendations that have an estimate; legacy scalars (`savings`, `costSavingsSummary`, `savingsByCurrency`) are complete-only. */
+    coverage?: {
+        status: 'complete' | 'partial';
+        unavailableClaimCount: number;
+    };
+    /** Origin of this additive total; absent on legacy billing-backed producers. */
+    estimateAuthority?: SavingsEstimateAuthorityV2 | 'mixed';
     totals: CanonicalMoneyRangeV2;
 }
 /** Currency-separated aggregate collection used when a client combines distinct provider scopes. */
@@ -51,6 +90,18 @@ export interface CanonicalSavingsAllocationProvenanceV2 {
     source: string;
     evidenceIds?: string[];
     stableSavingsBasis: boolean;
+    /** AWS always supplies this; omission means billed-resource-spend for legacy producers. */
+    estimateAuthority?: SavingsEstimateAuthorityV2;
+    /** Billing basis of the captured owner spending cap; the source estimate may have its own authority. */
+    spendBasis?: 'billed' | 'amortized';
+    /** Exact accepted billing generations checked against the captured owner spending evidence. */
+    billingGenerationIds?: string[];
+    /** Exact inclusive billing window captured for the owner spending cap. */
+    usageWindow?: {
+        startDateInclusive: string;
+        endDateInclusive: string;
+        dayCount: number;
+    };
 }
 /** One exact canonical owner/component allocation attributed to exactly one recommendation. */
 export interface CanonicalSavingsAllocationV2 {
@@ -68,7 +119,7 @@ export interface CanonicalSavingsLedgerV2 {
     contractVersion: 'savings/v2';
     generationId: string;
     generatedAt: string;
-    providerName: 'azure';
+    providerName: Provider;
     providerScopeId: string;
     allocations: CanonicalSavingsAllocationV2[];
     aggregate: SavingsAggregateV2;

@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isPublishedAzureViewSetV3 = exports.isCompletedAzureViewSetV2 = exports.isPublishedViewManifestV4 = exports.isCompletedViewManifestV3 = exports.isCompletedAzureViewSetV1 = exports.PUBLISHED_VIEW_OBJECT_LIMITS_V1 = void 0;
+const benefitAssessmentAdmission_js_1 = require("./benefitAssessmentAdmission.js");
 const artifactControlData_js_1 = require("../common/artifactControlData.js");
 const artifactEvidence_js_1 = require("../common/artifactEvidence.js");
 const artifactEvidenceValidation_js_1 = require("../common/artifactEvidenceValidation.js");
@@ -54,9 +55,21 @@ const isPositiveSafeInteger = (value) => Number.isSafeInteger(value) && Number(v
 const isNonNegativeSafeInteger = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
 const allowedViewArtifactPaths = (artifacts) => Array.isArray(artifacts) ? artifacts.flatMap(artifact => (0, artifactControlData_js_1.allowedArtifactReferenceField)(artifact, 'path')) : [];
-const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = []) => (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
-    requireAllowedFieldTraversalContext: true,
-});
+const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = [], options = {}) => {
+    // Native benefit IDs are validated by the exact bounded contract rather than interpreted as physical storage references.
+    // Only this top-level schema edge is admitted; an alias under an unknown edge is still scanned and rejected.
+    if (options.allowBenefitAssessmentDependencies && isRecord(value) && value.benefitAssessmentDependencies !== undefined) {
+        if (!(0, benefitAssessmentAdmission_js_1.isAzureBenefitAssessmentDependenciesV1)(value.benefitAssessmentDependencies))
+            return true;
+        const { benefitAssessmentDependencies: _dependencies, ...rest } = value;
+        return (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(rest, allowedReferenceFields.map(field => field.object === value ? { ...field, object: rest } : field), {
+            requireAllowedFieldTraversalContext: true,
+        });
+    }
+    return (0, artifactControlData_js_1.containsForbiddenArtifactControlData)(value, allowedReferenceFields, {
+        requireAllowedFieldTraversalContext: true,
+    });
+};
 const allowedPublicationDecisionIdentityFields = (decision) => {
     if (!isRecord(decision))
         return [];
@@ -254,7 +267,7 @@ const isCompletedViewManifestV3 = (value) => {
         containsForbiddenViewArtifactControlData(value, [
             ...(0, artifactControlData_js_1.allowedArtifactTraversalField)(value, 'artifacts'),
             ...allowedViewArtifactPaths(value.artifacts),
-        ]))
+        ], { allowBenefitAssessmentDependencies: true }))
         return false;
     if (value.schemaVersion !== 3 || value.status !== 'completed')
         return false;
@@ -340,7 +353,7 @@ const isPublishedViewManifestV4 = (value) => {
             ...allowedPublishedCostSavingsIdentityFields(value),
         ]
         : [];
-    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) {
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences, { allowBenefitAssessmentDependencies: true })) {
         return false;
     }
     if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage))

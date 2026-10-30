@@ -17,5 +17,5 @@ export declare const isSourceIdentity: (value: unknown) => value is string;
 export declare const isNonNegativeInteger: (value: unknown) => value is number;
 export declare const isCanonicalUtcTimestamp: (value: unknown) => value is string;
 export declare const utf8ByteLength: (value: string) => number;
-export declare const hasSafeContainerShape: (value: unknown, depth?: number, seen?: Set<object>) => boolean;
+export declare const hasSafeContainerShape: (value: unknown, depth?: number, seen?: Set<object>, requireJsonArrays?: boolean) => boolean;
 //# sourceMappingURL=internal.d.ts.map
