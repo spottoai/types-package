@@ -80,3 +80,6 @@ const invalidWrite: PortalCompanyFeatureOverrideWriteRequest = { decision: 'deny
 // @ts-expect-error Public message responses do not expose internal storage ownership.
 const invalidMessage: PortalFeaturePromotionResponse = { ...message, ownerCompanyId: 'msp' };
 void [rollingWrite, message, source, mixedPage, target, invalidWrite, invalidMessage];
+
+const deletedEvent: PortalFeatureAuditEvent = {eventId:'deleted',companyId:'msp',targetType:'promotion_template',templateId:'silver',action:'template_deleted',actorId:'author',occurredAt:'2026-10-31T00:00:00Z',before:{revision:'etag',status:'active',name:'Silver Benefits'}};
+void deletedEvent;

@@ -43,6 +43,7 @@ type AuditActions = Assert<
     | 'template_updated'
     | 'template_archived'
     | 'template_restored'
+    | 'template_deleted'
   >
 >;
 type BodyMatchesAnswer = Assert<Exact<PortalPromotionTemplateBody, Pick<CompanyNoteRichTextAnswerValue, 'format' | 'doc'>>>;
@@ -211,3 +212,19 @@ void [
   ownerCreate,
 ];
 export type { RestrictionSources, AuditActions, BodyMatchesAnswer, OrdinaryNotesStillUseDocument, PublicMessageHasOnlyDisplayFields };
+
+const deletedTemplate: PortalPromotionTemplateAuditEvent = {
+  eventId: 'delete',
+  companyId: 'msp',
+  targetType: 'promotion_template',
+  templateId: 'silver',
+  action: 'template_deleted',
+  actorId: 'author',
+  occurredAt: '2026-10-31T00:00:00Z',
+  before: { revision: 'etag', status: 'active', name: 'Silver Benefits' },
+};
+const deletedPage: PortalFeatureAuditPage = { events: [deletedTemplate] };
+void deletedPage;
+// @ts-expect-error Deleted templates have no current after snapshot.
+const invalidDeletedTemplate: PortalPromotionTemplateAuditEvent = { ...deletedTemplate, after: { revision: 'etag', status: 'active' } };
+void invalidDeletedTemplate;

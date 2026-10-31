@@ -103,10 +103,17 @@ export interface PortalFeaturePromotionResponse {
   contactAction?: PortalPromotionContactAction;
 }
 
-export type PortalPromotionTemplateAuditAction = 'template_created' | 'template_updated' | 'template_archived' | 'template_restored';
+export type PortalPromotionTemplateAuditAction =
+  | 'template_created'
+  | 'template_updated'
+  | 'template_archived'
+  | 'template_restored'
+  | 'template_deleted';
 
 /** Audit snapshots intentionally exclude template bodies and contact details. */
 export interface PortalPromotionTemplateAuditSnapshot {
+  /** Name at the time of the change; absent on legacy events. */
+  name?: string;
   revision: string;
   status: PortalPromotionTemplateStatus;
 }
@@ -132,6 +139,7 @@ export type PortalPromotionTemplateAuditEvent = TemplateAuditIdentity &
   (
     | { action: 'template_created'; before?: never; after: PortalPromotionTemplateAuditSnapshot & { status: 'active' } }
     | TemplateUpdatedAuditEvent
+    | { action: 'template_deleted'; before: PortalPromotionTemplateAuditSnapshot; after?: never }
     | {
         action: 'template_archived';
         before: PortalPromotionTemplateAuditSnapshot & { status: 'active' };
