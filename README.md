@@ -1,5 +1,16 @@
 # Types Package
 
+## Compact Azure billing facts
+
+The additive `/azure/billing-facts` subpath and root exports define immutable
+current/previous 30-day spend and complete cost-driver contracts, generation/source
+receipts and dependency-free guards. Overview and driver JSON are bounded to
+64 KiB and 256 KiB. Independent financial bases/provenance, native eligibility,
+weighted source-row presence, unknown material and partial coverage stay explicit.
+Run `npm run check:billing-facts-contracts` after building. See the
+[contract and consumer handoff](specs/billing/azure-billing-facts.md). These changes
+are unpublished; producer/reader adoption is a separate delivery checkpoint.
+
 ## Dated recorded-charge analysis
 
 `SubscriptionStats.recordedSpendAnalysis` optionally publishes four separately

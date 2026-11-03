@@ -104,6 +104,7 @@ Specs/monitor/*
 specs/billing/*
 !specs/billing/azure-billing-optional-classification.md
 !specs/billing/azure-native-discount-eligibility.md
+!specs/billing/azure-billing-facts.md
 !specs/billing/aws-billing-driver-resource-identities.md
 !specs/billing/commitments/
 specs/billing/commitments/*

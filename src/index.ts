@@ -146,3 +146,4 @@ export * from './identity';
 export * from './features-and-permissions';
 export * from './tags';
 export * from './portfolio';
+export * from './azure/billingFacts';

@@ -20,6 +20,7 @@
     "src/aws/publicArtifacts.contracts.spec.ts",
     "src/aws/portalOrganizationCommitmentsPlanningPublicArtifacts.contracts.spec.ts",
     "src/azure/billingGeneration.contracts.spec.ts",
+    "src/azure/billingFacts.contracts.spec.ts",
     "src/azure/billingArtifactGeneration.contracts.spec.ts",
     "src/azure/dev1135LatestContracts.contracts.spec.ts",
     "src/azure/costComposition.contracts.spec.ts",
