@@ -279,14 +279,51 @@ const isDaily = (
   );
 };
 
-/** Validation only: sum already-produced canonical integers, never round or project money. */
-const reconcilesBasis = (total: AzureFinancialChargeSpendBasisTotalsV1, rows: AzureFinancialChargeSpendBasisTotalsV1[]): boolean => {
+/**
+ * Validation only. Each of width independently rounded coordinates contributes
+ * at most half a minor unit at the parent and each child. BigInt subtraction
+ * preserves an exact comparison even for opposite signed safe-integer totals.
+ */
+const reconcilesInteger = (total: number, children: number[], width = 0): boolean => {
+  const childTotal = sum(children);
+  if (childTotal === undefined) return false;
+  const difference = BigInt(total) - BigInt(childTotal);
+  const bound = BigInt(children.length === 0 ? 0 : Math.floor(((children.length + 1) * width) / 2));
+  return difference >= -bound && difference <= bound;
+};
+
+/** Sum already-produced canonical integers; never round, redistribute or project money. */
+const reconcilesBasis = (
+  total: AzureFinancialChargeSpendBasisTotalsV1,
+  rows: AzureFinancialChargeSpendBasisTotalsV1[],
+  independentRounding = false,
+  allCharge = false
+): boolean => {
   if (total.status === 'unavailable') return rows.length === 0 || rows.some(row => row.status === 'unavailable');
   if (rows.some(row => row.status !== 'available')) return false;
-  return amounts.every(key => sum(rows.map(row => (row.status === 'available' ? row[key] : 0))) === total[key]);
+  return amounts.every(key =>
+    reconcilesInteger(
+      total[key],
+      rows.map(row => (row.status === 'available' ? row[key] : 0)),
+      independentRounding ? (key === 'totalMinorUnits' ? (allCharge ? 6 : 2) : allCharge ? 3 : 1) : 0
+    )
+  );
 };
-const reconcilesMaterial = (total: AzureFinancialChargeUnknownMaterialV1, rows: AzureFinancialChargeUnknownMaterialV1[]): boolean =>
-  materialKeys.every(key => sum(rows.map(row => row[key])) === total[key]);
+const reconcilesMaterial = (
+  total: AzureFinancialChargeUnknownMaterialV1,
+  rows: AzureFinancialChargeUnknownMaterialV1[],
+  independentRounding = false
+): boolean =>
+  materialKeys.every(key => {
+    const values = rows.map(row => row[key]);
+    if (independentRounding && key === 'nonZeroRowCount') {
+      // Materiality is thresholded at each scope. A child gross amount can round
+      // to zero while contributing rows remain material at the parent scope.
+      const childCount = sum(values);
+      return childCount !== undefined && childCount <= total[key];
+    }
+    return reconcilesInteger(total[key], values, independentRounding ? 1 : 0);
+  });
 
 const isWindow = (
   v: unknown,
@@ -296,9 +333,11 @@ const isWindow = (
   daily: boolean
 ): boolean => {
   const receipt = source[key];
+  const hasRoundingMode = isRecord(v) && Object.prototype.hasOwnProperty.call(v, 'roundingMode');
   if (
     !isRecord(v) ||
-    !fields(v, ['period', 'spend', ...(daily ? ['coverage', 'daily'] : [])]) ||
+    !fields(v, ['period', 'spend', ...(daily ? ['coverage', 'daily'] : []), ...(hasRoundingMode ? ['roundingMode'] : [])]) ||
+    (hasRoundingMode && (!daily || v.roundingMode !== 'independent-minor-units')) ||
     !isPeriod(v.period) ||
     !samePeriod(v.period, receipt.period) ||
     !isSpend(v.spend, source, receipt.period, currency, receipt.status === 'available')
@@ -330,6 +369,8 @@ const isWindow = (
     return false;
   if (window.coverage.status === 'complete' && window.daily.length !== limits.maxDaysPerWindow) return false;
   const known = window.daily.filter((point): point is Exclude<AzureBillingDailyFactsV1, { status: 'unknown' }> => point.status !== 'unknown');
+  const independentRounding =
+    window.roundingMode === 'independent-minor-units' && window.coverage.rowsWithoutDate === 0 && known.length === limits.maxDaysPerWindow;
   const knownRowCount = sum(known.map(point => sum(rowCountKeys.map(key => point[key])) as number));
   if (knownRowCount === undefined || knownRowCount > window.coverage.rowCount - window.coverage.rowsWithoutDate) return false;
   if (
@@ -344,7 +385,15 @@ const isWindow = (
     window.spend.status !== 'unavailable' &&
     materialKeys.some(key => {
       const observedMaterial = sum(known.map(point => point.unknownMaterial[key]));
-      return observedMaterial === undefined || observedMaterial > (window.spend.status !== 'unavailable' ? window.spend.unknownMaterial[key] : 0);
+      if (observedMaterial === undefined) return true;
+      const parentMaterial = window.spend.status !== 'unavailable' ? window.spend.unknownMaterial[key] : 0;
+      if (window.roundingMode === 'independent-minor-units' && key !== 'nonZeroRowCount') {
+        // Gross raw subset <= gross raw parent. Nearest rounding can make k
+        // separately rounded known days exceed that parent by floor((k+1)/2).
+        const bound = BigInt(Math.floor((known.length + 1) / 2));
+        return BigInt(observedMaterial) - BigInt(parentMaterial) > bound;
+      }
+      return observedMaterial > parentMaterial;
     })
   )
     return false;
@@ -354,7 +403,9 @@ const isWindow = (
         !bases.every(basis =>
           reconcilesBasis(
             window.spend.status !== 'unavailable' ? window.spend[partition][basis] : { status: 'unavailable', reasonCode: 'not-produced' },
-            known.map(point => point[partition][basis])
+            known.map(point => point[partition][basis]),
+            independentRounding,
+            partition === 'allCharge'
           )
         )
       )
@@ -363,7 +414,8 @@ const isWindow = (
     if (
       !reconcilesMaterial(
         window.spend.unknownMaterial,
-        known.map(point => point.unknownMaterial)
+        known.map(point => point.unknownMaterial),
+        independentRounding
       )
     )
       return false;
@@ -373,7 +425,11 @@ const isWindow = (
   return true;
 };
 
-const reconcilesSpends = (total: AzureBillingFactsSpendAvailabilityV1, rows: AzureBillingFactsSpendAvailabilityV1[]): boolean => {
+const reconcilesSpends = (
+  total: AzureBillingFactsSpendAvailabilityV1,
+  rows: AzureBillingFactsSpendAvailabilityV1[],
+  independentRounding = false
+): boolean => {
   if (total.status === 'unavailable') return rows.every(row => row.status === 'unavailable');
   if (rows.some(row => row.status === 'unavailable')) return false;
   const present = rows as AzureBillingFactsSpendV1[];
@@ -383,13 +439,16 @@ const reconcilesSpends = (total: AzureBillingFactsSpendAvailabilityV1, rows: Azu
       bases.every(basis =>
         reconcilesBasis(
           total[partition][basis],
-          present.map(row => row[partition][basis])
+          present.map(row => row[partition][basis]),
+          independentRounding,
+          partition === 'allCharge'
         )
       )
     ) ||
     !reconcilesMaterial(
       total.unknownMaterial,
-      present.map(row => row.unknownMaterial)
+      present.map(row => row.unknownMaterial),
+      independentRounding
     )
   )
     return false;
@@ -406,9 +465,11 @@ const isGrouping = (
   previous: AzureBillingWindowTotalsV1
 ): v is AzureBillingDriverGroupingV1 => {
   if (unavailable(v, driverReasons)) return true;
+  const hasRoundingMode = isRecord(v) && Object.prototype.hasOwnProperty.call(v, 'roundingMode');
   if (
     !isRecord(v) ||
-    !fields(v, ['status', 'rows']) ||
+    !fields(v, ['status', 'rows', ...(hasRoundingMode ? ['roundingMode'] : [])]) ||
+    (hasRoundingMode && v.roundingMode !== 'independent-minor-units') ||
     v.status !== 'complete' ||
     !Array.isArray(v.rows) ||
     v.rows.length > limits.maxDriverRowsPerGrouping
@@ -436,11 +497,13 @@ const isGrouping = (
   return (
     reconcilesSpends(
       current.spend,
-      grouping.rows.map(row => row.current)
+      grouping.rows.map(row => row.current),
+      grouping.roundingMode === 'independent-minor-units'
     ) &&
     reconcilesSpends(
       previous.spend,
-      grouping.rows.map(row => row.previous)
+      grouping.rows.map(row => row.previous),
+      grouping.roundingMode === 'independent-minor-units'
     )
   );
 };

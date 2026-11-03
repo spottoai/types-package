@@ -26,6 +26,22 @@ const noCurrency: AzureBillingFactsCurrencyV1 = { status: 'unavailable', reasonC
 const unavailable: AzureBillingFactsSpendAvailabilityV1 = { status: 'unavailable', reasonCode: 'reconciliation-failed' };
 const unknownDay: AzureBillingDailyFactsV1 = { date: '2026-11-01', status: 'unknown', reasonCode: 'coverage-unproven' };
 const overflow: AzureBillingDriverGroupingV1 = { status: 'unavailable', reasonCode: 'byte-budget-exceeded' };
+const independentlyRoundedWindow: AzureBillingOverviewV1['current'] = { ...overview.current, roundingMode: 'independent-minor-units' };
+const independentlyRoundedGroups: AzureBillingDriverGroupingV1 = { status: 'complete', roundingMode: 'independent-minor-units', rows: [] };
+const arbitraryRounding: AzureBillingDriverGroupingV1 = {
+  status: 'complete',
+  // @ts-expect-error Rounding is an explicit closed marker, never a caller-chosen tolerance.
+  roundingMode: 'tolerant',
+  rows: [],
+};
+const unavailableRounding: AzureBillingDriverGroupingV1 = {
+  status: 'unavailable',
+  reasonCode: 'source-unavailable',
+  // @ts-expect-error Unavailable groupings do not claim independently rounded children.
+  roundingMode: 'independent-minor-units',
+};
+// @ts-expect-error The marker describes daily series, not a standalone window total.
+const totalsRounding: AzureBillingDriversV1['current'] = { ...drivers.current, roundingMode: 'independent-minor-units' };
 // @ts-expect-error Billed evidence cannot silently stand in for required amortized availability.
 const missingBasis: AzureBillingFactsSpendV1['allCharge'] = { billed: spend.allCharge.billed };
 // @ts-expect-error Both current and previous input identities are mandatory.
@@ -78,4 +94,5 @@ void [
   fabricatedZero,
 ];
 void [wrongSourcePath, absentPresence];
+void [independentlyRoundedWindow, independentlyRoundedGroups, arbitraryRounding, unavailableRounding, totalsRounding];
 void [isAzureBillingOverviewV1(overview), isAzureBillingDriversV1(drivers), AZURE_BILLING_FACTS_LIMITS_V1];

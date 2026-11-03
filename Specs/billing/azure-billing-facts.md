@@ -1,6 +1,6 @@
 # Azure billing facts V1
 
-Status: implemented shared contract, unpublished and not adopted by consumers.
+Status: shared contract delivered in package 1.1.87; producer and reader adoption is independently validated by each owning repository.
 Owner: Azure billing / shared contracts.
 
 This additive contract supports small immutable spend and measured cost movement
@@ -65,8 +65,11 @@ one. `coverage.rowCount`, `coverage.rowsWithoutDate`, spend/daily
 counts use that same weighting. They are not the length of the serialized input
 array, and weighting must not be guessed after aggregation. Produced window
 provenance counts sum to coverage count. Complete groups and fully produced
-30-day daily series reconcile counts and amounts; partial daily counts/material
-remain subsets, excluding undated contributions.
+30-day daily series reconcile provenance populations exactly. Unmarked series
+also reconcile all amounts/material counts exactly; the explicit independent
+rounding mode below permits only mathematically bounded monetary differences.
+Partial daily counts remain subsets, excluding undated contributions. Marked
+gross absolute money has the bounded rounding exception described below.
 
 Counts preserve provenance **presence** separately from net amounts. Estimated-only
 money with `billingBackedRowCount: 0` does not establish billing-backed zero for a
@@ -84,11 +87,75 @@ dated source rows inside the observed date range. Undated records remain explici
 Exact all-charge and provenance totals must match the canonical tool accumulator
 on the **same selected generation**. DecompositionTree source fields round source
 parts first and can differ by one cent; never copy that sum into exact billing
-facts as a substitute. Use the canonical producer's rounding reconciliation or
-withhold the unreconciled spend/grouping. Likewise, do not silently modify exact
-window totals to make separately rounded groups or days add up. The shared guards
+facts as a substitute. Use the canonical producer's existing integer coordinates
+and the explicit independently rounded child mode where applicable, or withhold
+the unreconciled spend/grouping. Do not modify exact window totals or allocate
+residuals to make separately rounded groups or days add up. The shared guards
 only validate already-produced integers and reconciliation; they do not aggregate
 raw rows, round money, repair totals or apply discounts.
+
+## Explicit independent minor-unit rounding
+
+The optional `roundingMode: 'independent-minor-units'` field is additive on
+`AzureBillingWindowFactsV1` (its daily series) and the `status: 'complete'` branch
+of `AzureBillingDriverGroupingV1`. The absent marker retains strict existing
+behavior. It is not accepted on unavailable groupings, individual spend records,
+or driver window totals. The delivered base contract is package 1.1.87; this
+extension is unpublished until separately released and adopted.
+
+TypeScript producers must omit the unused marker key. An own property whose
+value is `undefined` is not valid wire data and is rejected before serialization;
+JSON serialization drops that property and restores the unmarked wire shape.
+
+New guards accept unmarked base-contract bodies with their existing strict
+behavior. The old package guards reject marked bodies as unknown fields; update
+consumer validators before producers publish marked artifacts.
+
+Marked collections contain the complete same source population with each child
+rounded independently. Parent spend remains authoritative. Consumers must not sum
+these children to reconstruct parent totals, change a parent amount, distribute
+residual cents or claim a truncated grouping is complete. Source/provenance
+partitions remain exact **within each spend**, including parent and every child.
+Weighted billing-backed and estimated child row counts sum exactly to the parent.
+Availability, verified currency, source/generation/window identity, date proof,
+ordering, unknown evidence and byte/row bounds retain their existing checks.
+
+For `n` children and `width` independently rounded primitive components, validation
+permits an absolute parent-minus-child-sum difference of at most
+`floor((n + 1) * width / 2)` minor units. This follows from at most one half-unit
+rounding error at each child and the independently rounded parent, per primitive
+coordinate. Sums and differences are checked safely; no arbitrary tolerance is
+accepted, and an empty population gains no rounding allowance.
+Producers must use round-to-nearest for every primitive coordinate, including
+the canonical tie rule. Truncation is outside this marker's rounding model.
+
+| Monetary coordinate | Width |
+| --- | --- |
+| Native/Marketplace/unknown or eligible, one provenance | 1 |
+| Native/Marketplace/unknown or eligible, combined provenance total | 2 |
+| All-charge, one provenance across three source partitions | 3 |
+| All-charge total across three sources and two provenances | 6 |
+| Gross unknown absolute money for one financial basis | 1 |
+
+Canonical unknown materiality is thresholded at the aggregation scope: a group's
+gross absolute amount can round to zero even though its weighted rows contribute
+to material unknown money at the parent. Marked complete collections therefore
+allow child `unknownMaterial.nonZeroRowCount` sums **below** the parent, never
+above it or their weighted provenance populations. For example, parent 77 and
+child sum 76 are legitimate when the missing material classification is a tiny
+group that rounds to zero. Gross absolute amounts still use the width 1 bound.
+
+Full daily monetary reconciliation applies at the existing boundary: all 30 dates
+are known and there are no undated contributions. For a marked partial daily
+series, including unknown dates or undated contributions, known gross unknown
+absolute money is instead bounded on one side:
+`sum(known daily gross absolute) <= parent gross absolute + floor((k + 1) / 2)`,
+where `k` is the known-day count. The raw gross subset cannot exceed its raw
+parent, but independently rounding each known day can make its integer sum
+larger. This bound applies independently to billed and amortized gross absolute
+money; material/provenance counts still cannot exceed their parent or weighted
+population. The unmarked path retains its exact old subset inequality. A marker
+does not turn unknown/omitted dates into zero or infer complete source coverage.
 
 ## Reader and producer handoff
 
@@ -97,7 +164,7 @@ enum paths, source/window identity, currency availability, source/provenance sum
 daily coverage and complete grouping reconciliation. They reject controls,
 traversal references, duplicate/out-of-period days and rows, contradictory
 presence/coverage evidence and oversized serialized UTF-8 JSON. Unknown fields
-are rejected; a future schema change requires a new version.
+are rejected; the reviewed optional rounding marker is the sole added wire field.
 
 Readers must enforce the **actual decoded byte limit before parsing**, including
 whitespace and transport encoding; object guards can measure only serialized
@@ -124,7 +191,10 @@ checks through CJS and ESM root/subpath imports. It covers credits, unknown-sour
 cancellation, unavailable amortized/previous/currency, empty vs zero vs estimated
 provenance, weighted rows, explicit source coverage, daily/group reconciliation,
 60-day overview size and otherwise reconciled driver populations above/below the
-byte limit. The command is included in `npm test`.
+byte limit. Independent-rounding checks cover strict unmarked rejection, bounded
+positive/negative daily/group differences, coordinate widths, exact weighted
+populations, unavailable bases, internal partition failures, unknown threshold
+counts and gross-absolute overages. The command is included in `npm test`.
 
 The existing packed-export gate verifies packed consumers during `npm test`.
 Release-like billing-subpath consumer verification and actual engine/API/MCP

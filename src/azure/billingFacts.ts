@@ -54,7 +54,8 @@ export type AzureBillingFactsDiscountEligibilityV1 =
   | { status: 'unavailable'; reasonCode: MoneyUnavailableReason };
 
 /**
- * Canonical provider amounts, additive only on matching source/period/currency/basis.
+ * Canonical provider amounts on matching source/period/currency/basis. Independently
+ * rounded child collections must not be summed to derive authoritative parent spend.
  * Header scopes the existing spend partition; eligibility is a subset, never an
  * additional source. Fixed commitment purchases/refunds remain excluded under
  * the native eligibility contract. Signed eligible amounts may exceed native net.
@@ -119,6 +120,15 @@ export interface AzureBillingWindowTotalsV1 {
 }
 
 export interface AzureBillingWindowFactsV1 extends AzureBillingWindowTotalsV1 {
+  /**
+   * Daily amounts were independently rounded in minor units. Parent spend remains
+   * authoritative; a complete daily series need not add exactly to it. Absent
+   * means strict equality. Complete weighted provenance populations reconcile
+   * exactly; partial daily populations remain subsets. Within-record partitions
+   * stay exact; scope-thresholded material counts may undercount.
+   * Omit this key when unused; own-property undefined is not valid wire data.
+   */
+  roundingMode?: 'independent-minor-units';
   coverage: AzureBillingFactsCoverageV1;
   /** Ordered unique dates, at most30. Omitted dates never imply zero. */
   daily: AzureBillingDailyFactsV1[];
@@ -158,7 +168,16 @@ export interface AzureBillingDriverRowV1 {
 
 /** No truncated top-N. Unavailable groupings cannot answer exact ranking/filter questions. */
 export type AzureBillingDriverGroupingV1 =
-  | { status: 'complete'; rows: AzureBillingDriverRowV1[] }
+  | {
+      status: 'complete';
+      /**
+       * Independent child rounding with bounded differences; parent spend is
+       * authoritative. Weighted provenance counts remain exact, while material
+       * counts may undercount. Omit this key when unused; never emit undefined.
+       */
+      roundingMode?: 'independent-minor-units';
+      rows: AzureBillingDriverRowV1[];
+    }
   | { status: 'unavailable'; reasonCode: AzureBillingDriversUnavailableReasonV1 };
 
 /** Service and resource-type marginals are independent; never add or intersect them as a cube. */

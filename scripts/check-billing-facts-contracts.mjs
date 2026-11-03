@@ -115,6 +115,43 @@ const zeroDrivers = () => {
 };
 const dates = p => Array.from({ length: 30 }, (_, i) => new Date(Date.parse(`${p.startDate}T00:00:00Z`) + i * 86400000).toISOString().slice(0, 10));
 
+// These fixtures contain already-produced integers. They do not replace the producer's rounding rules.
+const roundingSpend = (parts, billingBackedRowCount = 3, estimatedRowCount = 3, eligible = parts.slice(0, 2)) => {
+  const value = zeroSpend();
+  value.billingBackedRowCount = billingBackedRowCount;
+  value.estimatedRowCount = estimatedRowCount;
+  value.discountEligibility.value = 'mixed';
+  for (const [index, key] of ['azureNative', 'marketplace', 'unknown'].entries()) value[key] = totals(basis(parts[index * 2], parts[index * 2 + 1]));
+  value.allCharge = totals(basis(parts[0] + parts[2] + parts[4], parts[1] + parts[3] + parts[5]));
+  value.azureNativeDiscountEligible = totals(basis(...eligible));
+  if (value.unknown.billed.totalMinorUnits !== 0) {
+    value.status = 'partial';
+    value.unknownMaterial = {
+      nonZeroRowCount: 2,
+      billedAbsoluteMinorUnits: Math.abs(value.unknown.billed.totalMinorUnits),
+      amortizedAbsoluteMinorUnits: 0,
+    };
+  }
+  return value;
+};
+const roundingDrivers = (total, children) => {
+  const value = zeroDrivers();
+  for (const key of ['current', 'previous']) value[key].spend = structuredClone(total);
+  for (const key of ['service', 'resourceType'])
+    value[key].rows = children.map((child, i) => ({
+      id: `group-${i}`,
+      label: `Group ${i}`,
+      current: structuredClone(child),
+      previous: structuredClone(child),
+    }));
+  return value;
+};
+const markGroupings = value => {
+  value.service.roundingMode = 'independent-minor-units';
+  value.resourceType.roundingMode = 'independent-minor-units';
+  return value;
+};
+
 for (const api of implementations) {
   const { isAzureBillingOverviewV1: isOverview, isAzureBillingDriversV1: isDrivers, AZURE_BILLING_FACTS_LIMITS_V1: limits } = api;
   assert.equal(limits.overviewMaxDecodedBytes, 64 * 1024);
@@ -242,6 +279,153 @@ for (const api of implementations) {
   }
   assert.ok(Buffer.byteLength(JSON.stringify(allDays)) <= limits.overviewMaxDecodedBytes, '60 daily points fit64KiB');
   assert.equal(isOverview(allDays), true, 'complete daily totals reconcile');
+  const previousOnly = structuredClone(allDays);
+  previousOnly.previous.roundingMode = 'independent-minor-units';
+  previousOnly.previous.daily[0].azureNativeDiscountEligible.billed = basis(126, 10);
+  assert.equal(isOverview(previousOnly), true, 'previous-only daily marker does not require current marker');
+  reject(
+    v => (v.current.daily[0].azureNativeDiscountEligible.billed = basis(126, 10)),
+    'previous marker cannot relax unmarked current series',
+    () => previousOnly
+  );
+  const undefinedWindowMarker = overview();
+  undefinedWindowMarker.current.roundingMode = undefined;
+  assert.equal(isOverview(undefinedWindowMarker), false, 'own-property undefined window marker is not valid wire data');
+  assert.equal(isOverview(JSON.parse(JSON.stringify(undefinedWindowMarker))), true, 'JSON serialization omits undefined window marker');
+  for (const delta of [-3, -2, -1, 1, 2, 3]) {
+    const roundedDays = structuredClone(allDays);
+    for (const key of ['allCharge', 'azureNativeDiscountEligible']) {
+      const amount = roundedDays.current.daily[0][key].billed;
+      roundedDays.current.daily[0][key].billed = basis(amount.billingBackedMinorUnits + delta, amount.estimatedMinorUnits);
+    }
+    assert.equal(isOverview(roundedDays), false, `unmarked daily ${delta}cent difference remains strict`);
+    roundedDays.current.roundingMode = 'independent-minor-units';
+    assert.equal(isOverview(roundedDays), true, `marked daily ${delta}cent independent rounding`);
+    reject(
+      v => (v.current.roundingMode = 'arbitrary-tolerance'),
+      'rounding mode is closed',
+      () => roundedDays
+    );
+    reject(
+      v => v.current.daily[0].allCharge.billed.totalMinorUnits++,
+      'marker cannot weaken daily provenance partitions',
+      () => roundedDays
+    );
+    reject(
+      v => v.current.daily[0].billingBackedRowCount--,
+      'marker cannot relax exact full daily population',
+      () => roundedDays
+    );
+    reject(
+      v => (v.current.daily[0].allCharge.billed = missing('not-produced')),
+      'marker cannot relax available parent/unavailable child',
+      () => roundedDays
+    );
+    reject(
+      v => (v.current.daily[0].unknownMaterial = { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 1, amortizedAbsoluteMinorUnits: 0 }),
+      'marked child material count cannot exceed parent',
+      () => roundedDays
+    );
+  }
+  const dailyBound = structuredClone(allDays);
+  dailyBound.current.roundingMode = 'independent-minor-units';
+  const eligibleDay = dailyBound.current.daily[0].azureNativeDiscountEligible.billed;
+  dailyBound.current.daily[0].azureNativeDiscountEligible.billed = basis(eligibleDay.billingBackedMinorUnits + 15, eligibleDay.estimatedMinorUnits);
+  assert.equal(isOverview(dailyBound), true, 'daily single eligible provenance bound floor31/2=15');
+  dailyBound.current.daily[0].azureNativeDiscountEligible.billed = basis(eligibleDay.billingBackedMinorUnits + 16, eligibleDay.estimatedMinorUnits);
+  assert.equal(isOverview(dailyBound), false, 'daily single eligible provenance outside bound');
+  const dailySixParts = structuredClone(allDays);
+  dailySixParts.current.roundingMode = 'independent-minor-units';
+  dailySixParts.current.daily[0].allCharge.billed = basis(70 + 46, 10 + 46);
+  assert.equal(isOverview(dailySixParts), true, 'daily all-charge width3 provenance and width6 total');
+  dailySixParts.current.daily[0].allCharge.billed = basis(70 + 47, 10 + 46);
+  assert.equal(isOverview(dailySixParts), false, 'daily all-charge provenance rejects width3 overflow');
+  const dailyMaterial = structuredClone(allDays);
+  dailyMaterial.current.roundingMode = 'independent-minor-units';
+  dailyMaterial.current.spend.status = 'partial';
+  dailyMaterial.current.spend.unknownMaterial = { nonZeroRowCount: 30, billedAbsoluteMinorUnits: 30, amortizedAbsoluteMinorUnits: 0 };
+  for (const point of dailyMaterial.current.daily)
+    point.unknownMaterial = { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 1, amortizedAbsoluteMinorUnits: 0 };
+  dailyMaterial.current.daily[0].unknownMaterial.billedAbsoluteMinorUnits = 16;
+  assert.equal(isOverview(dailyMaterial), true, 'complete marked daily gross absolute child sum may exceed parent within width1 bound15');
+  dailyMaterial.current.daily[0].unknownMaterial.billedAbsoluteMinorUnits = 17;
+  assert.equal(isOverview(dailyMaterial), false, 'complete marked daily gross absolute outside width1 bound15');
+  dailyMaterial.current.daily[0].unknownMaterial.billedAbsoluteMinorUnits = 1;
+  dailyMaterial.current.spend.unknownMaterial.nonZeroRowCount = 31;
+  assert.equal(isOverview(dailyMaterial), true, 'full daily scope-thresholded material count permits child undercount');
+  delete dailyMaterial.current.roundingMode;
+  assert.equal(isOverview(dailyMaterial), false, 'unmarked full daily material count remains exact');
+  const partialRounded = overview();
+  partialRounded.current.roundingMode = 'independent-minor-units';
+  assert.equal(isOverview(partialRounded), true, 'marker leaves partial daily series available without manufacturing completeness');
+  // Round-to-nearest fixture: each known gross0.005 rounds to1cent. The parent
+  // includes an additional0.0001 charge on the unknown day or an undated row.
+  // Use exact micro-unit arithmetic here so ties are not a floating-point artefact.
+  for (const undated of [false, true]) {
+    const knownDays = undated ? 30 : 29;
+    const parentRows = knownDays + 1;
+    const parentMinor = Math.floor((knownDays * 5000 + 100 + 5000) / 10000);
+    const partialMaterial = overview();
+    const w = partialMaterial.current;
+    w.roundingMode = 'independent-minor-units';
+    w.spend = roundingSpend([0, 0, 0, 0, parentMinor, 0], parentRows, 0, [0, 0]);
+    w.spend.unknownMaterial.nonZeroRowCount = parentRows;
+    w.spend.discountEligibility.value = 'all-eligible';
+    w.spend.unknownMaterial.amortizedAbsoluteMinorUnits = parentMinor;
+    for (const partition of ['allCharge', 'azureNative', 'marketplace', 'unknown', 'azureNativeDiscountEligible'])
+      w.spend[partition].amortized = structuredClone(w.spend[partition].billed);
+    w.coverage = {
+      status: 'partial',
+      rowCount: parentRows,
+      rowsWithoutDate: undated ? 1 : 0,
+      provenDates: [],
+      observedDateRange: { startDate: w.period.startDate, endDateInclusive: dates(w.period)[29] },
+    };
+    w.daily = dates(w.period).map((date, i) =>
+      i >= knownDays
+        ? { date, status: 'unknown', reasonCode: 'not-produced' }
+        : {
+            date,
+            status: 'observed',
+            billingBackedRowCount: 1,
+            estimatedRowCount: 0,
+            allCharge: totals(basis(1), basis(1)),
+            azureNativeDiscountEligible: totals(basis(0), basis(0)),
+            unknownMaterial: { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 1, amortizedAbsoluteMinorUnits: 1 },
+          }
+    );
+    const caseLabel = undated ? '30known+undated' : '29known+unknown';
+    const unmarked = structuredClone(partialMaterial);
+    delete unmarked.current.roundingMode;
+    assert.equal(isOverview(unmarked), false, `${caseLabel}: strict unmarked gross subset unchanged`);
+    assert.equal(isOverview(partialMaterial), true, `${caseLabel}: marked legitimate independently rounded gross subset`);
+    for (const key of ['billedAbsoluteMinorUnits', 'amortizedAbsoluteMinorUnits'])
+      reject(
+        v => (v.current.daily[0].unknownMaterial[key] += undated ? 1 : 2),
+        `${caseLabel}: ${key} subset overshoot outside one-sided bound`,
+        () => partialMaterial
+      );
+    reject(
+      v => (v.current.spend.unknownMaterial.nonZeroRowCount = knownDays - 1),
+      `${caseLabel}: material child counts still cannot exceed parent`,
+      () => partialMaterial
+    );
+    reject(
+      v => (v.current.daily[0].billingBackedRowCount += 2),
+      `${caseLabel}: daily weighted populations cannot exceed dated rows`,
+      () => partialMaterial
+    );
+    reject(
+      v => (v.current.daily[0].unknownMaterial.nonZeroRowCount = 2),
+      `${caseLabel}: material count cannot exceed own weighted population`,
+      () => partialMaterial
+    );
+  }
+  reject(
+    v => (v.current.daily[0].unknownMaterial = { nonZeroRowCount: 1, billedAbsoluteMinorUnits: 1, amortizedAbsoluteMinorUnits: 0 }),
+    'partial daily material subset checks unchanged',
+    () => partialRounded
+  );
   reject(
     v => (v.current.daily[0].allCharge.billed = basis(999)),
     'daily reconciliation',
@@ -319,6 +503,152 @@ for (const api of implementations) {
       { id: 'commitment', label: 'Commitment only', current: structuredClone(commitment), previous: structuredClone(commitment) },
     ];
   assert.equal(isDrivers(emptyNative), true, 'empty native group labels cannot infer gross aggregate membership');
+  const child = roundingSpend([100, 0, 0, 0, 0, 0], 1, 0);
+  const oneGroupingOnly = roundingDrivers(
+    roundingSpend([603, 0, 0, 0, 0, 0], 6, 0),
+    Array.from({ length: 6 }, () => child)
+  );
+  oneGroupingOnly.service.roundingMode = 'independent-minor-units';
+  oneGroupingOnly.resourceType.rows = [
+    {
+      id: 'one',
+      label: 'One complete group',
+      current: structuredClone(oneGroupingOnly.current.spend),
+      previous: structuredClone(oneGroupingOnly.previous.spend),
+    },
+  ];
+  assert.equal(isDrivers(oneGroupingOnly), true, 'one grouping marker leaves exact sibling grouping unmarked');
+  reject(
+    v => (v.resourceType.rows[0].current = roundingSpend([604, 0, 0, 0, 0, 0], 6, 0)),
+    'marked service cannot relax unmarked resource-type grouping',
+    () => oneGroupingOnly,
+    isDrivers
+  );
+  const undefinedGroupMarker = drivers();
+  undefinedGroupMarker.service.roundingMode = undefined;
+  assert.equal(isDrivers(undefinedGroupMarker), false, 'own-property undefined grouping marker is not valid wire data');
+  assert.equal(isDrivers(JSON.parse(JSON.stringify(undefinedGroupMarker))), true, 'JSON serialization omits undefined grouping marker');
+  const largeGrouping = roundingDrivers(
+    roundingSpend([8040, 0, 0, 0, 0, 0], 80, 0),
+    Array.from({ length: 80 }, () => child)
+  );
+  largeGrouping.service.roundingMode = 'independent-minor-units';
+  largeGrouping.resourceType.rows = [
+    {
+      id: 'one',
+      label: 'One complete group',
+      current: structuredClone(largeGrouping.current.spend),
+      previous: structuredClone(largeGrouping.previous.spend),
+    },
+  ];
+  assert.ok(Buffer.byteLength(JSON.stringify(largeGrouping)) <= limits.driversMaxDecodedBytes, 'large-n control stays inside byte budget');
+  assert.equal(isDrivers(largeGrouping), true, '80-child single-provenance boundary floor81/2=40');
+  largeGrouping.service.rows[0].current = roundingSpend([99, 0, 0, 0, 0, 0], 1, 0);
+  assert.equal(isDrivers(largeGrouping), false, '80-child single-provenance overshoot41 rejected');
+  const eligibleBoundary = markGroupings(
+    roundingDrivers(
+      roundingSpend([300, 300, 0, 0, 0, 0], 3, 3, [302, 302]),
+      Array.from({ length: 3 }, () => roundingSpend([100, 100, 0, 0, 0, 0], 1, 1))
+    )
+  );
+  assert.equal(isDrivers(eligibleBoundary), true, 'eligible combined width2 boundary floor4*2/2=4');
+  eligibleBoundary.current.spend.azureNativeDiscountEligible.billed = basis(303, 302);
+  assert.equal(isDrivers(eligibleBoundary), false, 'eligible difference rejects joint width1/width2 bounds (leaf3>2, combined5>4)');
+  for (const delta of [-3, -2, -1, 1, 2, 3]) {
+    const roundedGroups = roundingDrivers(
+      roundingSpend([600 + delta, 0, 0, 0, 0, 0], 6, 0),
+      Array.from({ length: 6 }, () => child)
+    );
+    assert.equal(isDrivers(roundedGroups), false, `unmarked groups ${delta}cent difference remains strict`);
+    markGroupings(roundedGroups);
+    assert.equal(isDrivers(roundedGroups), true, `marked six-group ${delta}cent difference within single-part bound3`);
+  }
+  const roundedGroups = markGroupings(
+    roundingDrivers(
+      roundingSpend([402, 402, 402, 402, 402, 398], 12, 12),
+      Array.from({ length: 4 }, () => roundingSpend([100, 100, 100, 100, 100, 100]))
+    )
+  );
+  roundedGroups.current.spend.unknownMaterial.nonZeroRowCount = 8;
+  roundedGroups.previous.spend.unknownMaterial.nonZeroRowCount = 8;
+  assert.equal(isDrivers(roundedGroups), true, 'source width1/2 and all-charge width3/6 bounds use distinct coordinates');
+  reject(
+    v => v.current.spend.azureNative.billed.totalMinorUnits++,
+    'marker cannot weaken within-spend source/provenance partitions',
+    () => roundedGroups,
+    isDrivers
+  );
+  reject(
+    v => v.service.rows[0].current.billingBackedRowCount++,
+    'marker cannot weaken exact weighted provenance populations',
+    () => roundedGroups,
+    isDrivers
+  );
+  reject(
+    v => v.service.rows.pop(),
+    'marker cannot admit missing children',
+    () => roundedGroups,
+    isDrivers
+  );
+  reject(
+    v => (v.service.rows[0].current.azureNative.billed = missing('not-produced')),
+    'marker cannot weaken partition availability',
+    () => roundedGroups,
+    isDrivers
+  );
+  reject(
+    v => (v.service.roundingMode = 'arbitrary-tolerance'),
+    'unknown grouping rounding mode',
+    () => roundedGroups,
+    isDrivers
+  );
+  reject(
+    v => (v.current.roundingMode = 'independent-minor-units'),
+    'marker cannot attach to plain window totals',
+    () => roundedGroups,
+    isDrivers
+  );
+  const outsideGroupBound = markGroupings(
+    roundingDrivers(
+      roundingSpend([603, 0, 0, 0, 0, 0], 6, 0),
+      Array.from({ length: 6 }, () => child)
+    )
+  );
+  outsideGroupBound.current.spend = roundingSpend([604, 0, 0, 0, 0, 0], 6, 0);
+  assert.equal(isDrivers(outsideGroupBound), false, 'single-source provenance outside exact six-child bound3');
+  const materialParent = roundingSpend([0, 0, 0, 0, 1, 0], 77, 0, [0, 0]);
+  materialParent.unknownMaterial.nonZeroRowCount = 77;
+  const materialChild = roundingSpend([0, 0, 0, 0, 1, 0], 76, 0, [0, 0]);
+  materialChild.unknownMaterial.nonZeroRowCount = 76;
+  const thresholded = roundingDrivers(materialParent, [materialChild, roundingSpend([0, 0, 0, 0, 0, 0], 1, 0)]);
+  assert.equal(isDrivers(thresholded), false, 'unmarked scope-thresholded77vs76 material count stays strict');
+  markGroupings(thresholded);
+  assert.equal(isDrivers(thresholded), true, 'marked scope-thresholded77vs76 material count with exact weighted population');
+  reject(
+    v => (v.service.rows[0].current.unknownMaterial.nonZeroRowCount = 77),
+    'material count cannot exceed child weighted population',
+    () => thresholded,
+    isDrivers
+  );
+  reject(
+    v => {
+      v.service.rows[0].current.unknownMaterial.nonZeroRowCount = 76;
+      v.service.rows[1].current = roundingSpend([0, 0, 0, 0, 1, 0], 1, 0, [0, 0]);
+      v.service.rows[1].current.unknownMaterial.nonZeroRowCount = 1;
+      v.current.spend.unknownMaterial.nonZeroRowCount = 76;
+    },
+    'marked unknown material child sum cannot exceed parent',
+    () => thresholded,
+    isDrivers
+  );
+  const absoluteBound = markGroupings(roundingDrivers(materialParent, [materialChild, roundingSpend([0, 0, 0, 0, 0, 0], 1, 0)]));
+  absoluteBound.current.spend.unknownMaterial.billedAbsoluteMinorUnits = 2;
+  assert.equal(isDrivers(absoluteBound), true, 'unknown absolute uses single-part two-child bound1');
+  absoluteBound.current.spend.unknownMaterial.billedAbsoluteMinorUnits = 3;
+  assert.equal(isDrivers(absoluteBound), false, 'unknown absolute outside single-part bound1');
+  const unavailableMarked = zeroDrivers();
+  unavailableMarked.service = { ...missing('source-unavailable'), roundingMode: 'independent-minor-units' };
+  assert.equal(isDrivers(unavailableMarked), false, 'unavailable group cannot carry independent-rounding marker');
   assert.equal(isDrivers(zeroDrivers()), true, 'zero grouping population positive control');
   const large = zeroDrivers();
   large.service.rows = Array.from({ length: 1025 }, (_, i) => ({ ...large.service.rows[0], id: String(i) }));

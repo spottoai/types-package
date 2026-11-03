@@ -8,8 +8,13 @@ receipts and dependency-free guards. Overview and driver JSON are bounded to
 64 KiB and 256 KiB. Independent financial bases/provenance, native eligibility,
 weighted source-row presence, unknown material and partial coverage stay explicit.
 Run `npm run check:billing-facts-contracts` after building. See the
-[contract and consumer handoff](specs/billing/azure-billing-facts.md). These changes
-are unpublished; producer/reader adoption is a separate delivery checkpoint.
+[contract and consumer handoff](Specs/billing/azure-billing-facts.md). These changes
+have a delivered base in package 1.1.87. An additive, currently unpublished
+`roundingMode: 'independent-minor-units'` marker permits bounded rounding differences
+for complete drivers, full daily series and gross-material subsets of partial
+daily series. Parent totals stay
+authoritative; provenance populations and within-record partitions remain exact.
+Producer/reader adoption is a separate delivery checkpoint.
 
 ## Dated recorded-charge analysis
 
