@@ -3,7 +3,7 @@
 Type: repo
 Status: living
 Owner: Platform
-Last updated: 2026-11-03
+Last updated: 2026-11-04
 Core feature: [License inventory](../../../../core/specs/licensing/license-inventory/license-inventory.md)
 Core solution: [Microsoft 365 inventory](../../../../core/specs/licensing/license-inventory/license-inventory-microsoft-365.md)
 
@@ -199,3 +199,58 @@ from source verification.
 Verification: `node --test scripts/check-microsoft365-activity-history-contracts.mjs`
 checks public guards, invalid dates/counts, privacy exclusions, empty windows
 and the unavailable realised-saving amount in both module formats.
+
+## Application directory
+
+The root exports `MICROSOFT365_APPLICATIONS_SCHEMA_VERSION` with literal value
+`microsoft-365-applications/v1`, `Microsoft365ApplicationDirectory`,
+`Microsoft365ApplicationEntry`, `Microsoft365ApplicationWindow`, and
+`isMicrosoft365ApplicationDirectory` from `src/accounts/microsoft365Applications.ts`.
+This separate tenant artifact adds no fields to existing activity-history envelopes.
+The dependency-free guard reuses the strict activity-history UTC date helper.
+
+The engine owns collection, joining service principals to retained sign-ins,
+first-party classification, name precedence, sorting and all distinct-account
+calculations. API and UI readers validate the shared artifact. Package source
+alone does not implement the engine builder, API route or UI adoption. The
+directory contains application identity and metadata, inclusive coverage dates,
+gap dates and aggregate counts; exact object allowlists exclude personal fields
+at every level. Names and their source are both null when unknown; otherwise the
+source is `servicePrincipal` or `signIn`. `publisher` and `ssoMode` are nullable
+text; SSO modes remain an open provider vocabulary. Tenant, run, application and
+metadata strings are nonblank and bounded to 512 characters. IDs follow the
+existing activity-history text contract, without imposing GUID syntax.
+
+Every count is a nonnegative safe integer. Coverage `from` and `through` are
+inclusive, ordered real UTC dates. `unobservedDates` must be unique and inside
+that range; observed days plus gap count equals the inclusive date span. Each
+window ends at `coverage.through`, starts 29 or 89 days earlier, and is clamped
+to `coverage.from`. Its observed count must equal the number of dates remaining
+after excluding the applicable gaps. Positive active-account counts require
+observed dates, and the 90-day count cannot be smaller than the 30-day count.
+First/last seen dates are ordered and inside coverage. Activity dates before a
+window cannot establish active accounts inside it: an app last
+seen before a window starts must have zero active accounts in that window.
+Retained monthly active dates may extend coverage beyond the daily 93-day retention; the guard bounds
+the gap array by its date span without adding a retention policy limit.
+
+Application IDs are unique after trimming and case folding. There are at most
+5000 entries. Optional `omittedCount` is a nonnegative safe integer; the engine
+owns top-5000 selection and ordering by 30-day active accounts descending, then
+name. The guard does not impose a locale-dependent name sort. The required
+`tenantSyncRunId` binds the projection to its producing scan. `generatedAt` is a
+real UTC timestamp with optional one-to-three-digit fractional seconds.
+
+`tests/fixtures/microsoft365-applications.json` is fictional Contoso data with
+real SaaS names, an unknown name and an app outside the 30-day window. Its
+August 4–November 3 coverage spans 92 dates; a September 12 gap gives 91 total
+observed days, 30 observed days in the final 30-day window and 89 in the final
+90-day window. This fixture is a contract example rather than engine demo output.
+
+`npm run check:microsoft365-application-contracts` tests both built module
+formats, invalid/missing/additional fields, date/window consistency, nulls,
+privacy, identity collisions, sparse arrays, bounds and retained monthly history.
+`npm run check:packed-exports` verifies installed-tarball CJS/ESM runtime imports
+and TypeScript consumers using NodeNext (ESM and CJS) and legacy Node resolution.
+Both commands run in `npm test`. Source changes remain unpublished until the
+normal GitHub Actions release; consumer adoption is separate.

@@ -1,0 +1,46 @@
+import {
+  MICROSOFT365_APPLICATIONS_SCHEMA_VERSION,
+  isMicrosoft365ApplicationDirectory,
+  type Microsoft365ApplicationDirectory,
+  type Microsoft365ApplicationEntry,
+  type Microsoft365ApplicationWindow,
+} from '@spottoai/types-package';
+
+export const window: Microsoft365ApplicationWindow = { activeAccounts: 0, observedDays: 1 };
+export const app: Microsoft365ApplicationEntry = {
+  appId: 'fictional-app',
+  name: null,
+  nameSource: null,
+  publisher: null,
+  firstParty: false,
+  ssoMode: 'future-provider-mode',
+  firstSeen: '2026-11-03',
+  lastSeen: '2026-11-03',
+  last30Days: window,
+  last90Days: window,
+};
+export const directory: Microsoft365ApplicationDirectory = {
+  schemaVersion: MICROSOFT365_APPLICATIONS_SCHEMA_VERSION,
+  tenantId: 'fictional-tenant',
+  generatedAt: '2026-11-04T00:00:00.000Z',
+  tenantSyncRunId: 'fictional-run',
+  coverage: { from: '2026-11-03', through: '2026-11-03', observedDays: 1, unobservedDates: [] },
+  applications: [app],
+};
+
+export function readApplications(value: unknown): Microsoft365ApplicationDirectory | null {
+  if (!isMicrosoft365ApplicationDirectory(value)) return null;
+  const narrowed: Microsoft365ApplicationDirectory = value;
+  const accounts: number | undefined = narrowed.applications[0]?.last30Days.activeAccounts;
+  const source: 'servicePrincipal' | 'signIn' | null | undefined = narrowed.applications[0]?.nameSource;
+  void accounts;
+  void source;
+  return narrowed;
+}
+
+// @ts-expect-error Personal identities are absent from this anonymous aggregate.
+app.accountId = 'private';
+// @ts-expect-error Source evidence is a closed nullable vocabulary.
+app.nameSource = 'guessed';
+// @ts-expect-error The schema discriminator is literal and versioned.
+directory.schemaVersion = 'microsoft-365-applications/v2';

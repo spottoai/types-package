@@ -185,6 +185,13 @@ workload, person and license-quantity observations with strict privacy guards.
 Rolling report snapshots remain distinct from native daily counts and quantity
 changes always have `confirmedSaving: null`. See the
 [activity history contract](Specs/licensing/license-inventory/license-inventory-types-package.md#activity-history).
+`Microsoft365ApplicationDirectory`, `Microsoft365ApplicationEntry` and
+`Microsoft365ApplicationWindow` describe the anonymous tenant application directory.
+The root exports `MICROSOFT365_APPLICATIONS_SCHEMA_VERSION` and the strict
+`isMicrosoft365ApplicationDirectory` guard for API/UI readers. Run
+`npm run check:microsoft365-application-contracts` for CJS/ESM coverage; packed
+runtime and TypeScript consumers are included in `npm test`. See the
+[application directory contract](specs/licensing/license-inventory/license-inventory-types-package.md#application-directory).
 Optional capability `stepUps` carry aggregate upgrade comparisons (such as Microsoft 365 E3 → E5 → E7): capabilities gained, replaced products, list or agreed-price net differences per currency and account groups by the add-ons they already pay for, never account identifiers. See [step-up contracts](specs/licensing/microsoft-365-license-step-ups-types.md).
 
 The root also exports `Microsoft365LicenseSummaryView` and

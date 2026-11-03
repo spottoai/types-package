@@ -7,6 +7,7 @@ export * from './accounts/microsoft365PricingFacts';
 export * from './accounts/microsoft365Licenses';
 export * from './accounts/microsoft365LicenseHistory';
 export * from './accounts/microsoft365ActivityHistory';
+export * from './accounts/microsoft365Applications';
 export * from './accounts/microsoft365Usage';
 export * from './accounts/microsoft365Capabilities';
 export * from './accounts/microsoft365LicensePortal';

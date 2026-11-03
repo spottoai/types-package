@@ -7,6 +7,15 @@ import { spawnSync } from 'node:child_process';
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
 const storageCostFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-storage-costs.json'), 'utf8'));
+const applicationDirectoryFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-applications.json'), 'utf8'));
+const packedApplicationDirectoryProbe = `
+const applications = ${JSON.stringify(applicationDirectoryFixture)};
+if (root.MICROSOFT365_APPLICATIONS_SCHEMA_VERSION !== 'microsoft-365-applications/v1' ||
+    !root.isMicrosoft365ApplicationDirectory(applications) ||
+    root.isMicrosoft365ApplicationDirectory({...applications, accountIds: ['private']}) ||
+    root.isMicrosoft365ApplicationDirectory({...applications, applications: [...applications.applications, applications.applications[0]]}))
+  throw new Error('Packed Microsoft 365 application-directory contract failed.');
+`;
 const packedLicensingContentProbe = `
 const content = ${JSON.stringify(licensingContentFixture)};
 if (!root.isMicrosoft365LicensingContent(content) ||
@@ -486,6 +495,11 @@ try {
     join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-licensing-content.consumer.ts')
   );
+  for (const extension of ['ts', 'cts'])
+    await copyFile(
+      join(packageRoot, 'tests/fixtures/microsoft365-applications.consumer.ts.fixture'),
+      join(consumerRoot, `microsoft365-applications.consumer.${extension}`)
+    );
   await copyFile(
     join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'),
     join(consumerRoot, 'resource-artifact-usage.consumer.ts')
@@ -539,6 +553,8 @@ try {
       'resource-health.consumer.ts',
       'microsoft365-license-usage.consumer.ts',
       'microsoft365-licensing-content.consumer.ts',
+      'microsoft365-applications.consumer.ts',
+      'microsoft365-applications.consumer.cts',
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
       'company-context.consumer.ts',
@@ -558,6 +574,10 @@ try {
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
   run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedLicensingContentProbe}`], consumerRoot);
+  for (const mode of ['commonjs', 'esm']) {
+    const imports = mode === 'esm' ? "import * as root from '@spottoai/types-package';" : "const root = require('@spottoai/types-package');";
+    run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', imports + packedApplicationDirectoryProbe], consumerRoot);
+  }
   run(
     process.execPath,
     ['--input-type=module', '-e', `import * as root from '@spottoai/types-package'; ${packedLicensingContentProbe}`],
@@ -906,6 +926,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
       'node',
       'microsoft365-license-usage.consumer.ts',
       'microsoft365-licensing-content.consumer.ts',
+      'microsoft365-applications.consumer.ts',
     ],
     consumerRoot
   );

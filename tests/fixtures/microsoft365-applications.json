@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "microsoft-365-applications/v1",
+  "tenantId": "contoso-tenant",
+  "generatedAt": "2026-11-04T00:00:00.000Z",
+  "tenantSyncRunId": "contoso-run",
+  "coverage": {
+    "from": "2026-08-04",
+    "through": "2026-11-03",
+    "observedDays": 91,
+    "unobservedDates": ["2026-09-12"]
+  },
+  "applications": [
+    {
+      "appId": "contoso-zoom",
+      "name": "Zoom",
+      "nameSource": "servicePrincipal",
+      "publisher": "Zoom Video Communications, Inc",
+      "firstParty": false,
+      "ssoMode": "saml",
+      "firstSeen": "2026-08-04",
+      "lastSeen": "2026-11-03",
+      "last30Days": { "activeAccounts": 120, "observedDays": 30 },
+      "last90Days": { "activeAccounts": 180, "observedDays": 89 }
+    },
+    {
+      "appId": "contoso-outlook",
+      "name": "Outlook",
+      "nameSource": "servicePrincipal",
+      "publisher": "Microsoft Corporation",
+      "firstParty": true,
+      "ssoMode": null,
+      "firstSeen": "2026-08-04",
+      "lastSeen": "2026-11-03",
+      "last30Days": { "activeAccounts": 100, "observedDays": 30 },
+      "last90Days": { "activeAccounts": 160, "observedDays": 89 }
+    },
+    {
+      "appId": "contoso-slack",
+      "name": "Slack",
+      "nameSource": "signIn",
+      "publisher": null,
+      "firstParty": false,
+      "ssoMode": null,
+      "firstSeen": "2026-08-20",
+      "lastSeen": "2026-09-15",
+      "last30Days": { "activeAccounts": 0, "observedDays": 30 },
+      "last90Days": { "activeAccounts": 12, "observedDays": 89 }
+    },
+    {
+      "appId": "contoso-unknown",
+      "name": null,
+      "nameSource": null,
+      "publisher": null,
+      "firstParty": false,
+      "ssoMode": null,
+      "firstSeen": "2026-08-04",
+      "lastSeen": "2026-08-05",
+      "last30Days": { "activeAccounts": 0, "observedDays": 30 },
+      "last90Days": { "activeAccounts": 0, "observedDays": 89 }
+    }
+  ]
+}
