@@ -3,9 +3,12 @@
 Type: repo
 Status: living
 Owner: Platform
-Last updated: 2026-10-27
+Last updated: 2026-11-03
 Core feature: [License inventory](../../../../core/specs/licensing/license-inventory/license-inventory.md)
 Core solution: [Microsoft 365 inventory](../../../../core/specs/licensing/license-inventory/license-inventory-microsoft-365.md)
+
+The additive activity history contracts below
+define four independent daily streams without changing existing monthly history.
 
 ## Main account review contracts
 
@@ -155,3 +158,44 @@ emits these fields/categories. Engine projection, API authorization/projection
 and frontend presentation remain downstream implementation work. Existing strict
 older readers reject the new field/category even though new readers accept old
 artifacts. No manual version bump or publication is part of this change.
+
+
+## Activity history
+
+`src/accounts/microsoft365ActivityHistory.ts` exports guarded, dependency-free
+daily envelopes for sign-in aggregates, workload reports, person observations
+and license quantities. Existing license artifacts and monthly history retain
+their contracts. Both CommonJS and ESM exports are tested against built output.
+
+Sign-in rows contain immutable account/application IDs, count and UTC first/last
+times only. Coverage records exclusive window end, source/observation times,
+failure state, rejected-event count and provisional status. Empty complete
+windows and unavailable windows retain distinct states. Exact field allowlists
+reject raw events, IP addresses, profile fields and other security payloads.
+
+Workload rows distinguish native dated daily counts from rolling D30/D28
+snapshots and preserve report refresh date, period and source coverage. These
+rows must not be summed across overlapping rolling windows. Person rows retain
+observed workload/Office dates, platform evidence and optional Copilot D28
+adoption. Person streams stay behind the existing person-detail boundary and
+are excluded from anonymous monthly history and AI summary inputs. Repeated
+last-activity observations do not establish intervening active dates.
+
+License quantities retain independent retail reference-price context, explicit
+currency, monthly annual-commitment basis and excluded tax. Engine comparison
+is limited to consecutive compatible complete observations. Commercial totals
+remain unknown when subscription coverage, trial classification or enabled
+status is uncertain. Deterministic source/target snapshot IDs identify derived
+changes; `confirmedSaving` is required and always null. Assignment removals,
+enabled capacity and purchased quantities have separate change kinds.
+
+Engine storage uses bounded immutable revisions before conditional day/month
+manifests. Personal streams use raw tenant storage; anonymous workload and
+quantity streams use Portal storage. Shared contracts do not implement I/O,
+retention policy, Graph collection or financial confirmation. Initial durable
+history is retained until tenant deletion. Publishing/adoption remain separate
+from source verification.
+
+Verification: `node --test scripts/check-microsoft365-activity-history-contracts.mjs`
+checks public guards, invalid dates/counts, privacy exclusions, empty windows
+and the unavailable realised-saving amount in both module formats.

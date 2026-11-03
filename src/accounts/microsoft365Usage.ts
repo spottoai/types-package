@@ -31,6 +31,21 @@ export interface Microsoft365WorkloadLicense {
   assignedOn: string | null;
 }
 
+/** Copilot v2 D28 observations; missing columns are partial evidence, never zero use. */
+export interface Microsoft365CopilotAdoption {
+  windowDays: 28;
+  reportRefreshDate: string | null;
+  evidence: 'complete' | 'partial';
+  prompts: { all: number | null; chatWork: number | null; chatWeb: number | null; other: number | null };
+  activeDays: number | null;
+  appLastActivityDates: Record<
+    'chatWork' | 'chatWeb' | 'teams' | 'word' | 'excel' | 'powerPoint' | 'outlook' | 'oneNote' | 'loop' | 'microsoft365' | 'edge' | 'agent',
+    string | null
+  >;
+  /** True only for complete, consistent, positive web-only use and no paid app/agent activity. */
+  webOnly: boolean | null;
+}
+
 export interface Microsoft365AccountUsage {
   status: Microsoft365UsageStatus;
   /** Latest workload date, yyyy-mm-dd; null when none or unknown. */
@@ -53,6 +68,8 @@ export interface Microsoft365AccountUsage {
   mailbox: { usedBytes: number | null; quotaBytes: number | null; hasArchive: boolean | null } | null;
   oneDrive: { usedBytes: number | null; allocatedBytes: number | null } | null;
   copilotLastActivityDate: string | null;
+  officeDesktopAppsUsed?: boolean | null;
+  copilotAdoption?: Microsoft365CopilotAdoption | null;
 }
 
 /** Counts of assigned, enabled accounts holding one SKU, over the full population before detail trimming. */
@@ -150,24 +167,29 @@ export function isMicrosoft365AccountProfile(value: unknown): value is Microsoft
 }
 
 export function isMicrosoft365WorkloadLicense(value: unknown): value is Microsoft365WorkloadLicense {
-  return (
-    isRecord(value) &&
-    onlyKeys(value, ['licensed', 'assignedOn']) &&
-    nullableBoolean(value.licensed) &&
-    nullableDate(value.assignedOn)
-  );
+  return isRecord(value) && onlyKeys(value, ['licensed', 'assignedOn']) && nullableBoolean(value.licensed) && nullableDate(value.assignedOn);
 }
 
 export function isMicrosoft365AccountUsage(value: unknown): value is Microsoft365AccountUsage {
   return (
     isRecord(value) &&
-    onlyKeys(value, ['status', 'lastActivityDate', 'workloads', 'workloadLicenses', 'platforms', 'mailbox', 'oneDrive', 'copilotLastActivityDate']) &&
+    onlyKeys(value, [
+      'status',
+      'lastActivityDate',
+      'workloads',
+      'workloadLicenses',
+      'platforms',
+      'mailbox',
+      'oneDrive',
+      'copilotLastActivityDate',
+      'officeDesktopAppsUsed',
+      'copilotAdoption',
+    ]) &&
     typeof value.status === 'string' &&
     ['active', 'inactive', 'no_recorded_activity', 'unknown'].includes(value.status) &&
     nullableDate(value.lastActivityDate) &&
     (value.workloads === undefined || nullableBlock(value.workloads, ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'], nullableDate)) &&
-    (value.workloadLicenses === undefined ||
-      nullableBlock(value.workloadLicenses, MICROSOFT365_USAGE_WORKLOADS, isMicrosoft365WorkloadLicense)) &&
+    (value.workloadLicenses === undefined || nullableBlock(value.workloadLicenses, MICROSOFT365_USAGE_WORKLOADS, isMicrosoft365WorkloadLicense)) &&
     nullableBlock(value.platforms, ['windows', 'mac', 'web', 'mobile'], nullableBoolean) &&
     (value.mailbox === null ||
       (isRecord(value.mailbox) &&
@@ -176,7 +198,50 @@ export function isMicrosoft365AccountUsage(value: unknown): value is Microsoft36
         nullableCount(value.mailbox.quotaBytes) &&
         nullableBoolean(value.mailbox.hasArchive))) &&
     nullableBlock(value.oneDrive, ['usedBytes', 'allocatedBytes'], nullableCount) &&
-    nullableDate(value.copilotLastActivityDate)
+    nullableDate(value.copilotLastActivityDate) &&
+    (value.officeDesktopAppsUsed === undefined || nullableBoolean(value.officeDesktopAppsUsed)) &&
+    (value.copilotAdoption === undefined || value.copilotAdoption === null || isMicrosoft365CopilotAdoption(value.copilotAdoption))
+  );
+}
+
+export function isMicrosoft365CopilotAdoption(value: unknown): value is Microsoft365CopilotAdoption {
+  return (
+    isRecord(value) &&
+    onlyKeys(value, ['windowDays', 'reportRefreshDate', 'evidence', 'prompts', 'activeDays', 'appLastActivityDates', 'webOnly']) &&
+    value.windowDays === 28 &&
+    nullableDate(value.reportRefreshDate) &&
+    (value.evidence === 'complete' || value.evidence === 'partial') &&
+    block(value.prompts, ['all', 'chatWork', 'chatWeb', 'other'], nullableCount) &&
+    nullableCount(value.activeDays) &&
+    (value.activeDays === null || (value.activeDays as number) <= 28) &&
+    block(
+      value.appLastActivityDates,
+      ['chatWork', 'chatWeb', 'teams', 'word', 'excel', 'powerPoint', 'outlook', 'oneNote', 'loop', 'microsoft365', 'edge', 'agent'],
+      nullableDate
+    ) &&
+    nullableBoolean(value.webOnly) &&
+    consistentCopilotAdoption(value as unknown as Microsoft365CopilotAdoption)
+  );
+}
+
+function consistentCopilotAdoption(value: Microsoft365CopilotAdoption): boolean {
+  if (value.evidence === 'partial') return value.webOnly === null;
+  const { all, chatWork, chatWeb, other } = value.prompts;
+  if (!value.reportRefreshDate || value.activeDays === null || [all, chatWork, chatWeb, other].some(count => count === null)) return false;
+  if (all !== chatWork! + chatWeb! + other!) return false;
+  if (Object.values(value.appLastActivityDates).some(date => date !== null && date > value.reportRefreshDate!)) return false;
+  if (value.webOnly !== true) return value.webOnly === false;
+  const within = (date: string | null): boolean => date !== null && Date.parse(value.reportRefreshDate!) - Date.parse(date) <= 27 * 86400000;
+  return (
+    all! > 0 &&
+    chatWeb === all &&
+    chatWork === 0 &&
+    other === 0 &&
+    value.activeDays > 0 &&
+    within(value.appLastActivityDates.chatWeb) &&
+    ['chatWork', 'teams', 'word', 'excel', 'powerPoint', 'outlook', 'oneNote', 'loop', 'agent'].every(
+      app => !within(value.appLastActivityDates[app as keyof typeof value.appLastActivityDates])
+    )
   );
 }
 

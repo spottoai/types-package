@@ -191,7 +191,7 @@ export interface Microsoft365Organization {
 }
 /**
  * overlap: the product's capabilities are already included in another product on the same enabled, recently active account.
- * downgrade: the account used no Windows or Mac desktop app in the 30-day Microsoft 365 Apps report.
+ * downgrade: a usage or premium-feature scenario; qualification distinguishes selected eligible edges from conditional reviews.
  */
 export type Microsoft365LicenseInsightKind = 'overlap' | 'downgrade';
 /** available: report rows matched by exact user principal name. Otherwise downgrade counts are unknown. */
@@ -209,6 +209,8 @@ export interface Microsoft365LicenseInsight {
   targetProductName?: string | null;
   /** True when the assignment comes only from group-based licensing, so the change belongs on the group. */
   assignedByGroup?: boolean;
+  /** Only the selected eligible scenario contributes financial estimates; absent means legacy eligibility. */
+  qualification?: 'eligible' | 'conditional' | 'alternative';
   /** Facts supporting the downgrade review, independent of whether a target storage limit blocked it. */
   evidence?: {
     windows: boolean | null;
@@ -220,9 +222,18 @@ export interface Microsoft365LicenseInsight {
     oneDriveUsedBytes: number | null;
     /** True only when every applicable target storage limit was checked. */
     storageChecked: boolean;
+    noOfficeDesktopApps?: boolean | null;
+    /** Entitlements alone do not prove premium features unused. */
+    premiumRequirementsVerified?: boolean;
   };
   /** Informational downgrade finding, excluded from candidate counts and savings. */
-  blockedBy?: ('mailbox_over_target_limit' | 'onedrive_over_target_limit')[];
+  blockedBy?: (
+    | 'mailbox_over_target_limit'
+    | 'onedrive_over_target_limit'
+    | 'storage_unknown'
+    | 'archive_requires_review'
+    | 'premium_requirements_unverified'
+  )[];
 }
 export interface Microsoft365LicenseInsights {
   rulesVersion: string;
@@ -231,7 +242,7 @@ export interface Microsoft365LicenseInsights {
   overlapAccountCount: number | null;
   /** Accounts with at least one downgrade suggestion. */
   downgradeCandidateCount: number | null;
-  /** Accounts blocked by a target storage limit; excluded from downgradeCandidateCount. */
+  /** Accounts with blocked scenarios and no eligible target; excluded from downgradeCandidateCount. */
   downgradeBlockedCount?: number | null;
   downgradeEvidence: Microsoft365DowngradeEvidence;
   /** Findings for the listed account and product rows only. */
@@ -530,6 +541,7 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
     optional(row.targetSkuPartNumber, nullableText) &&
     optional(row.targetProductName, nullableText) &&
     optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
+    optional(row.qualification, value => value === 'eligible' || value === 'conditional' || value === 'alternative') &&
     optional(
       row.evidence,
       evidence =>
@@ -537,7 +549,9 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
         ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
         nullableCount(evidence.mailboxUsedBytes) &&
         nullableCount(evidence.oneDriveUsedBytes) &&
-        typeof evidence.storageChecked === 'boolean'
+        typeof evidence.storageChecked === 'boolean' &&
+        optional(evidence.noOfficeDesktopApps, nullableBoolean) &&
+        optional(evidence.premiumRequirementsVerified, flag => typeof flag === 'boolean')
     ) &&
     optional(
       row.blockedBy,
@@ -545,9 +559,17 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
         row.kind === 'downgrade' &&
         Array.isArray(reasons) &&
         reasons.length > 0 &&
-        reasons.length <= 2 &&
+        reasons.length <= 5 &&
         new Set(reasons).size === reasons.length &&
-        reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')
+        reasons.every(reason =>
+          [
+            'mailbox_over_target_limit',
+            'onedrive_over_target_limit',
+            'storage_unknown',
+            'archive_requires_review',
+            'premium_requirements_unverified',
+          ].includes(reason)
+        )
     )
   );
 }

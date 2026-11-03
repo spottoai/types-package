@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
+import './check-microsoft365-adoption-contracts.mjs';
 
 const require = createRequire(import.meta.url);
 const formats = {
