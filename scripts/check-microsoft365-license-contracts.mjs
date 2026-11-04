@@ -457,6 +457,22 @@ for (const [format, api] of Object.entries(formats)) {
     assert(api.isMicrosoft365LicenseSummaryView(document));
     assert(api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'NZD' }), 'Tenant market currency is safe aggregate evidence');
     assert(!api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'nzd' }), 'Market currency is an ISO currency code');
+    const agreementTerms = {
+      channel: 'enterprise_agreement_subscription',
+      reductionDate: '2027-01-01',
+      reductionRepeatsAnnually: true,
+      agreementEndDate: '2027-12-31',
+      additionsAreTrueUps: true,
+      excludedSkuIds: [],
+    };
+    assert(
+      api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, agreementTerms } }),
+      'Saved agreement terms reach every viewer through the summary pricing'
+    );
+    assert(
+      !api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, agreementTerms: { ...agreementTerms, channel: 'volume' } } }),
+      'Summary agreement terms use the shared guard'
+    );
     for (const patch of [
       { basis: ['customer_price_estimate'] },
       { term: ['customer_agreement'] },

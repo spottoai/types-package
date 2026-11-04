@@ -1,7 +1,9 @@
 import {
   isMicrosoft365PricingOverride,
+  isMicrosoft365AgreementTerms,
   isMicrosoft365PricingProjection,
   isMicrosoft365PricingRevision,
+  type Microsoft365AgreementTerms,
   type Microsoft365PricingProjection,
 } from './microsoft365PricingOverrides';
 import { isMicrosoft365AccountReviewReason, type Microsoft365AccountReviewReason } from './microsoft365AccountReview';
@@ -321,6 +323,8 @@ export interface Microsoft365LicensePricing {
   };
   basis: 'list_price_estimate' | 'customer_price_estimate' | 'mixed_price_estimate';
   projection?: Microsoft365PricingProjection;
+  /** The tenant's saved agreement terms, passed through by the API so every viewer sees the same action timing. */
+  agreementTerms?: Microsoft365AgreementTerms;
   breakdownsUnavailableReason?: 'pricing_facts_unavailable' | 'group_limit_exceeded' | 'contribution_limit_exceeded';
   /** Price list identifier, for example `microsoft-2026-07`. */
   priceListVersion: string;
@@ -481,7 +485,12 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       }))
   )
     return false;
-  if (!optional(value.projection, isMicrosoft365PricingProjection) || !optional(value.breakdownsUnavailableReason, text)) return false;
+  if (
+    !optional(value.projection, isMicrosoft365PricingProjection) ||
+    !optional(value.agreementTerms, isMicrosoft365AgreementTerms) ||
+    !optional(value.breakdownsUnavailableReason, text)
+  )
+    return false;
   if (
     value.nonSavingDowngradeEdges !== undefined &&
     (!Array.isArray(value.nonSavingDowngradeEdges) ||

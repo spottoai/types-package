@@ -184,6 +184,7 @@ const LICENSE_KEYS = [
 const PRICING_KEYS = [
   'nonSavingDowngradeEdges',
   'projection',
+  'agreementTerms',
   'breakdownsUnavailableReason',
   'breakdowns',
   'basis',
