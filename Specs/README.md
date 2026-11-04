@@ -6,6 +6,7 @@ not establish workflow implementation or deployment.
 
 | Capability | Contract specification |
 | --- | --- |
+| Currency conversion | [Display-conversion metadata, discovery and validators](billing/currency-conversion/currency-conversion-types-package.md) |
 | Commitments | [Nonadditive unused value and current assessment authority](../specs/billing/commitments/commitments-types-package.md) |
 | Features and permissions | [Promotion templates, access metadata and mixed audit contracts](access/features-and-permissions/features-and-permissions-types-package.md) |
 | Company context | [Sources, retrieval, coverage and chat metadata](ai-chat/company-context/company-context-types-package.md) |

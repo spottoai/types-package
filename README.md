@@ -1,5 +1,18 @@
 # Types Package
 
+## Currency conversion contracts
+
+The package root and `@spottoai/types-package/currency-conversion` export versioned
+document/batch conversion evidence, supported-currency discovery DTOs and strict
+dependency-free guards. They preserve exact source/target quote strings and
+distinguish converted, identity and money-free responses. The guards validate
+wire evidence; API/platform still own rate authenticity/freshness, ISO membership,
+arithmetic, projection and access. No cookie or conversion behavior is enabled by
+these additions. See the [shared contract](specs/billing/currency-conversion/currency-conversion-types-package.md).
+Build and run `npm run check:currency-conversion-contracts`; packed checks verify
+root/narrow CJS/ESM runtime and TypeScript consumers. Publication and consumer
+adoption are separate from these source changes.
+
 ## Compact Azure billing facts
 
 The additive `/azure/billing-facts` subpath and root exports define immutable

@@ -1,3 +1,4 @@
+export * from './common/currencyConversion';
 export * from './common/knownResourceGroupSpend';
 export * from './common/recordedSpendAnalysis';
 export * from './aws/billingEstimation';

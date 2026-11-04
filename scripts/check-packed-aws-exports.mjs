@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const currencyConversionFixture = JSON.parse(await readFile(join(packageRoot, 'fixtures/currency-conversion.json'), 'utf8'));
 const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
 const storageCostFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-storage-costs.json'), 'utf8'));
 const applicationDirectoryFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-applications.json'), 'utf8'));
@@ -468,6 +469,11 @@ try {
   await copyFile(azureSpSetupCloudEngineFixturePath, join(consumerRoot, 'azure-sp-setup-cloud-engine.consumer.ts'));
   await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
+  for (const extension of ['ts', 'cts'])
+    await copyFile(
+      join(packageRoot, 'tests/fixtures/currency-conversion.consumer.ts.fixture'),
+      join(consumerRoot, `currency-conversion.consumer.${extension}`)
+    );
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
   await copyFile(join(packageRoot, 'tests/fixtures/aws-environment.consumer.ts.fixture'), join(consumerRoot, 'aws-environment.consumer.ts'));
@@ -541,6 +547,8 @@ try {
       'azure-sp-setup-cloud-engine.consumer.ts',
       'azure-sp-setup-ui.consumer.ts',
       'commitments-planning.consumer.ts',
+      'currency-conversion.consumer.ts',
+      'currency-conversion.consumer.cts',
       'artifact-evidence.consumer.ts',
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
@@ -575,6 +583,26 @@ try {
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
   run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedLicensingContentProbe}`], consumerRoot);
   for (const mode of ['commonjs', 'esm']) {
+    const currencyImports =
+      mode === 'esm'
+        ? "import * as root from '@spottoai/types-package'; import * as currency from '@spottoai/types-package/currency-conversion';"
+        : "const root = require('@spottoai/types-package'); const currency = require('@spottoai/types-package/currency-conversion');";
+    const currencyChecks = `
+      const fixture = ${JSON.stringify(currencyConversionFixture)};
+      for (const contracts of [root, currency]) {
+        if (contracts.CURRENCY_CONVERSION_CONTRACT_VERSION !== 1 ||
+            contracts.CURRENCY_CONVERSION_HEADER !== 'X-Spotto-Currency-Conversion' ||
+            !contracts.isCurrencyConversionContextV1(fixture.context) ||
+            !contracts.isCurrencyConversionRateV1(fixture.converted.rates[0]) ||
+            !contracts.isCurrencyConversionV1(fixture.converted) ||
+            !contracts.isCurrencyConversionV1(fixture.mixed) ||
+            !contracts.isCurrencyConversionDiscoveryV1(fixture.discovery) ||
+            contracts.isCurrencyConversionV1({...fixture.converted, status: 'unchanged'}) ||
+            contracts.isCurrencyConversionV1({...fixture.converted, companyId: 'private'}))
+          throw new Error('Packed currency conversion contracts failed.');
+      }
+    `;
+    run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', currencyImports + currencyChecks], consumerRoot);
     const imports = mode === 'esm' ? "import * as root from '@spottoai/types-package';" : "const root = require('@spottoai/types-package');";
     run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', imports + packedApplicationDirectoryProbe], consumerRoot);
   }
@@ -600,6 +628,7 @@ try {
       'node',
       'cloud-governance.consumer.ts',
       'aws-environment.consumer.ts',
+      'currency-conversion.consumer.ts',
       'microsoft365-license-context.consumer.ts',
     ],
     consumerRoot

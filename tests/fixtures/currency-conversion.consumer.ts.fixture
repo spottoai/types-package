@@ -1,0 +1,44 @@
+import type { CurrencyConversionContextV1, CurrencyConversionRateV1, CurrencyConversionV1 } from '@spottoai/types-package';
+import {
+  CURRENCY_CONVERSION_CONTRACT_VERSION,
+  CURRENCY_CONVERSION_HEADER,
+  CURRENCY_CONVERSION_RATE_SOURCE,
+  isCurrencyConversionContextV1,
+  isCurrencyConversionDiscoveryV1,
+  isCurrencyConversionRateV1,
+  isCurrencyConversionV1,
+  type CurrencyConversionCurrencyV1,
+  type CurrencyConversionDiscoveryV1,
+  type CurrencyConversionMinorUnitScaleV1,
+  type CurrencyConversionV1 as NarrowDocument,
+} from '@spottoai/types-package/currency-conversion';
+
+export const context: CurrencyConversionContextV1 = {
+  contractVersion: CURRENCY_CONVERSION_CONTRACT_VERSION,
+  targetCurrency: 'USD',
+  rateDate: '2026-11-04',
+  rateSnapshotId: 'a'.repeat(64),
+  rateSource: CURRENCY_CONVERSION_RATE_SOURCE,
+};
+export const quote: CurrencyConversionRateV1 = { sourceCurrency: 'NZD', sourceRate: '1.8', targetRate: '1.08', rate: '0.6' };
+export const document: CurrencyConversionV1 = { ...context, status: 'converted', rates: [quote] };
+export const narrow: NarrowDocument = document;
+export const scale: CurrencyConversionMinorUnitScaleV1 = 0;
+export const currency: CurrencyConversionCurrencyV1 = { code: 'JPY', minorUnitScale: scale };
+export const discovery: CurrencyConversionDiscoveryV1 = {
+  contractVersion: context.contractVersion,
+  rateDate: context.rateDate,
+  rateSnapshotId: context.rateSnapshotId,
+  rateSource: context.rateSource,
+  currencies: [{ code: 'EUR', minorUnitScale: 2 }, currency],
+};
+export const header: 'X-Spotto-Currency-Conversion' = CURRENCY_CONVERSION_HEADER;
+export const checkUnknown = (input: unknown): CurrencyConversionV1 | undefined => (isCurrencyConversionV1(input) ? input : undefined);
+export const guards: boolean[] = [isCurrencyConversionContextV1(context), isCurrencyConversionRateV1(quote), isCurrencyConversionDiscoveryV1(discovery)];
+
+// @ts-expect-error Disclosure and exact quotes stay decimal strings.
+export const invalidQuote: CurrencyConversionRateV1 = { ...quote, sourceRate: 1.8 };
+// @ts-expect-error Failed conversion never becomes successful document evidence.
+export const invalidStatus: CurrencyConversionV1 = { ...document, status: 'unavailable' };
+// @ts-expect-error The discovery contract supports scales zero through four only.
+export const invalidScale: CurrencyConversionCurrencyV1 = { code: 'USD', minorUnitScale: 5 };
