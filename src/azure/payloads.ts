@@ -14,10 +14,8 @@ import type {
   SubscriptionType,
 } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
-
-export interface WorkflowTracingOptions {
-  enabled: boolean;
-}
+import type { WorkflowTracingOptions } from '../common/workflowTracing.js';
+export type { WorkflowTracingOptions } from '../common/workflowTracing.js';
 
 export interface SubscriptionSyncRequest {
   tracing?: WorkflowTracingOptions;

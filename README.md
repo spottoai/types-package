@@ -481,6 +481,14 @@ contracts. The API-owned desired-state document is stored as
 revision instead of copying role, billing-export, External ID, or credential
 configuration. Engine saga and persistence records remain engine-owned.
 
+`AwsAccountRefreshCommand` alone has optional `tracing?: WorkflowTracingOptions`.
+The provider-neutral control is declared in `src/common/workflowTracing.ts`;
+the existing Azure payload and root exports retain the same public type.
+Tracing is diagnostic metadata, not command identity or execution scope. It is
+absent from delete, estate, billing-source and scheduler contracts. The API
+emits only literal `enabled: true`; the AWS engine validates its control shape.
+Deploy compatible engine readers before producers emit the optional field.
+
 The root and `/aws` entry points also export the lossless AWS plugin
 subscription/resource body contracts, deterministic logical-name builders, one
 complete active-set manifest, and dependency-free runtime validators. These

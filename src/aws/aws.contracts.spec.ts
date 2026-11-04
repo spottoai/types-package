@@ -15,6 +15,12 @@ import {
   type AwsOrganizationCommitmentsRefreshCommand,
   type AwsScheduledRefreshTickCommand,
 } from '../index';
+import type { WorkflowTracingOptions as AzurePayloadTracingOptions } from '../azure/payloads';
+import type { WorkflowTracingOptions } from '../common/workflowTracing';
+
+const providerNeutralTracing: WorkflowTracingOptions = { enabled: true };
+const retainedAzureTracingExport: AzurePayloadTracingOptions = providerNeutralTracing;
+void retainedAzureTracingExport;
 
 // @ts-expect-error The abandoned single-account setup request is not exported.
 import type { AwsCloudAccountSetupRequest } from '../index';
@@ -67,6 +73,31 @@ const accountDelete: AwsAccountDeleteCommand = {
   requestId: 'request-account-delete',
 };
 
+const tracedAccountRefresh: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  tracing: { enabled: true },
+};
+const disabledAccountTracing: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  tracing: { enabled: false },
+};
+const invalidAccountTracing: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  // @ts-expect-error Tracing requires a boolean control.
+  tracing: { enabled: 'true' },
+};
+const invalidDeleteTracing: AwsAccountDeleteCommand = {
+  ...accountDelete,
+  // @ts-expect-error Account deletion has no tracing control.
+  tracing: { enabled: true },
+};
+const invalidEstateTracing: AwsEstateReconcileCommand = {
+  ...estateReconcile,
+  // @ts-expect-error Estate reconciliation has no tracing control.
+  tracing: { enabled: true },
+};
+void [tracedAccountRefresh, disabledAccountTracing, invalidAccountTracing, invalidDeleteTracing, invalidEstateTracing];
+
 const billingSourceRefresh: AwsBillingSourceRefreshCommand = {
   schemaVersion: 1,
   provider: 'aws',
@@ -114,6 +145,18 @@ const scheduledComponentRefreshTick: AwsScheduledRefreshTickCommand = {
   correlationId: 'aws-scheduled-refresh:components:2026-09-21T04:30:00.000Z',
   requestedAt: '2026-09-21T04:30:00.000Z',
 };
+
+const invalidScheduledTracing: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Global scheduler ticks have no tracing control.
+  tracing: { enabled: true },
+};
+const invalidBillingTracing: AwsBillingSourceRefreshCommand = {
+  ...billingSourceRefresh,
+  // @ts-expect-error Billing source commands have no tracing control.
+  tracing: { enabled: true },
+};
+void [invalidScheduledTracing, invalidBillingTracing];
 
 const scheduledBillingReconciliationTick: AwsScheduledRefreshTickCommand = {
   ...scheduledFullRefreshTick,

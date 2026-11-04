@@ -23,6 +23,8 @@ import {
   type PortalViewHistoryArtifactDocument,
   type ArtifactGenerationManifest,
   type AwsCommand,
+  type AwsAccountRefreshCommand,
+  type WorkflowTracingOptions,
   type AwsCommandAction,
   type AwsCommandEntity,
   type AwsCompanyTrustSetupResponse,
@@ -54,9 +56,15 @@ import {
   type AwsPortalLifecycleArtifact,
   type AwsResourceGraphArtifact,
   type AwsEstatesManifest as AwsSubpathEstatesManifest,
+  type AwsAccountRefreshCommand as AwsSubpathAccountRefreshCommand,
   type AwsScheduledRefreshTickCommand as AwsSubpathScheduledRefreshTickCommand,
   type AwsSecurityPostureArtifact as AwsSubpathSecurityPostureArtifact,
 } from '@spottoai/types-package/aws';
+
+const workflowTracing: WorkflowTracingOptions = { enabled: true };
+const accountRefreshTracing: AwsAccountRefreshCommand['tracing'] = workflowTracing;
+const subpathRefreshTracing: AwsSubpathAccountRefreshCommand['tracing'] = accountRefreshTracing;
+void subpathRefreshTracing;
 
 const historyCadences: readonly PortalViewHistoryCadence[] = PORTAL_VIEW_HISTORY_CADENCES;
 const historyArtifacts: readonly PortalViewHistoryArtifact[] = PORTAL_VIEW_HISTORY_ARTIFACTS;
