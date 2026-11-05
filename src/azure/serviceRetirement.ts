@@ -35,7 +35,12 @@ export interface ServiceRetirementPortalResource {
 export type KeyVaultObjectType = 'secret' | 'key' | 'certificate';
 
 export type ServiceRetirementKnownRenderKind =
-  'hdd-os-disk' | 'benefit-expiry' | 'application-credential' | 'key-vault-object' | 'aws-certificate' | 'credential-lifecycle';
+  | 'hdd-os-disk'
+  | 'benefit-expiry'
+  | 'application-credential'
+  | 'key-vault-object'
+  | 'aws-certificate'
+  | 'credential-lifecycle';
 
 export interface HddOsDiskRetirementRenderData {
   kind: 'hdd-os-disk';
@@ -51,6 +56,9 @@ export interface BenefitExpiryRetirementRenderData {
 
 export interface ApplicationCredentialRetirementRenderData {
   kind: 'application-credential';
+  tenantId?: string;
+  credentialSource?: 'service-principal';
+  servicePrincipalObjectId?: string;
   applicationId?: string;
   applicationObjectId?: string;
   credentialId?: string;

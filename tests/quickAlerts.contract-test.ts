@@ -163,3 +163,16 @@ void [
   invalidBackupRule,
   invalidBenefitRule,
 ];
+
+// Resolution context is additive: old summaries remain valid and new subtypes are constrained.
+const resolvedCredentialSummary = {
+  resolution: {
+    version: 1,
+    provider: 'azure',
+    kind: 'application-credential',
+    applicationId: 'client-id',
+    tenantId: 'home-tenant',
+    credentialType: 'certificate',
+  },
+} satisfies QuickAlertSummary;
+void resolvedCredentialSummary;
