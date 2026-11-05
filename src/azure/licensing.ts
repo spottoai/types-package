@@ -292,6 +292,8 @@ export interface LicensingPurchaseScenario {
   scenarioType: LicensingScenarioType;
   offer: LicensingAdvertisedOffer;
   conversion?: LicensingCurrencyConversion;
+  /** Optional read-time display price. The original offer conversion remains immutable source evidence. */
+  displayUnitPrice?: LicensingMoneyAmount;
   calculation: LicensingPurchaseScenarioCalculation;
   economics: LicensingPurchaseScenarioEconomics;
   confidence: LicensingConfidence;

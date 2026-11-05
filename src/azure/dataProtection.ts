@@ -78,6 +78,8 @@ export interface DataProtectionCostEstimationAssumption {
 }
 
 export interface DataProtectionBillingMeterEvidence {
+  /** Original billed currency; retained independently when the owning display cost is converted. */
+  currencyCode?: string;
   resourceId?: string;
   meterCategory?: string;
   meterSubCategory?: string;

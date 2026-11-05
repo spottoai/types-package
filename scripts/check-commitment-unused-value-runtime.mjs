@@ -75,6 +75,7 @@ const invalid = [
   ['bad date', { ...native, sourceCharge: { amount: 0, dates: ['2026-02-30'] } }],
   ['negative charge', { ...native, sourceCharge: { amount: -1, dates: ['2026-10-05'] } }],
   ['bad cadence', { ...native, sourceCharge: { ...native.sourceCharge, cadence: 'annual' } }],
+  ...['aud', '', null, 42].map(currency => ['bad source currency', { ...native, sourceCharge: { ...native.sourceCharge, currency } }]),
   ['reverse service period', { ...native, sourceCharge: { ...native.sourceCharge, periodStart: '2026-10-06' } }],
   ['missing window', { ...approximation, utilizationWindow: undefined }],
   ['null window', { ...approximation, utilizationWindow: null }],
@@ -111,6 +112,7 @@ for (const subpath of ['.', './azure/recommendations']) {
     assert.equal(typeof guard, 'function', `${subpath} ${mode} exports the evidence guard`);
     for (const value of [
       native,
+      { ...native, currency: 'USD', sourceCharge: { ...native.sourceCharge, currency: 'AUD' } },
       approximation,
       unavailable,
       { ...native, coverage: 'complete', sourceCharge: { amount: 0, dates: ['2026-10-05'], periodStart: '2026-10-01' } },
