@@ -1,7 +1,10 @@
-import type { CurrentStateReportJobSpecV1, ReportPeriodRuleV1, SdmReportJobSpecV1 } from '../reporting/jobs/reportJobSpec';
+import type { CurrentStateReportJobSpecV1, ReportPackJobSpecV1, ReportPeriodRuleV1, SdmReportJobSpecV1 } from '../reporting/jobs/reportJobSpec';
 
 /** Explicit periods belong to API requests; schedules resolve a rule in their persisted timezone. */
-export type ScheduledReportJobSpecV1 = CurrentStateReportJobSpecV1 | (Omit<SdmReportJobSpecV1, 'period'> & { period: ReportPeriodRuleV1 });
+export type ScheduledReportJobSpecV1 =
+  | CurrentStateReportJobSpecV1
+  | ReportPackJobSpecV1
+  | (Omit<SdmReportJobSpecV1, 'period'> & { period: ReportPeriodRuleV1 });
 export type ReportGenerationScheduleTiming =
   | { triggerType: 'once'; localDateTime: string }
   | { triggerType: 'recurring'; cadence: 'daily'; localTime: string }
@@ -26,9 +29,13 @@ export interface ReportGenerationScheduleProjection {
   controlGeneration: number;
   etag: string;
   status: 'active' | 'paused' | 'completed';
+  /** Set by the manager only after a proven owner-access refusal, never a policy-store outage. */
+  pauseReason?: 'owner-access-unavailable';
   definition: ReportGenerationScheduleWriteRequest;
   nextOccurrenceAtUtc?: string;
   lastOccurrenceAtUtc?: string;
+  /** Negotiated lifecycle detail; actual settlement, which may be later than the due instant. */
+  lastOccurrenceSettledAtUtc?: string;
   /** Accepted means dispatch accepted, not generation or delivery succeeded. */
   lastOccurrenceOutcome?: 'accepted' | 'failed' | 'skipped';
   lastJobId?: string;

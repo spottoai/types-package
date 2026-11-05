@@ -268,6 +268,9 @@ const readinessStates = new Set<ResourceSchedulingReadinessState>([
   'conflicting-automation',
   'unsupported-resource-state',
 ]);
+export function isResourceSchedulingReadinessState(value: unknown): value is ResourceSchedulingReadinessState {
+  return typeof value === 'string' && readinessStates.has(value as ResourceSchedulingReadinessState);
+}
 export function isResourceSchedulingReadinessProjection(value: unknown): value is ResourceSchedulingReadinessProjection {
   return (
     isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&

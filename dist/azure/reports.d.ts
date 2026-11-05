@@ -1,7 +1,7 @@
 import { Tags } from '../tags';
 import type { CostDateBasis } from './prices';
 import type { CostComposition } from './costComposition.js';
-import type { AzureFinancialChargeCoverageV1, AzureFinancialChargePolicyRefV1 } from './financialChargePolicy.js';
+import type { AzureFinancialChargeCoverageV1, AzureFinancialChargePolicyRefV1, AzureFinancialChargeSourceV1, DecompositionTreeFinancialChargeSourceCostsV1, DecompositionTreeNodeFinancialChargeSourceCostsV1 } from './financialChargePolicy.js';
 export type BillingChargeSource = 'marketplace' | 'azure' | 'mixed' | 'unknown';
 export type BillingCadence = 'daily' | 'monthly' | 'unknown';
 /** Billing-source facts attached by the backend. This is not lifecycle evidence. */
@@ -63,6 +63,12 @@ export interface DecompositionTreeNode {
     chargeContext?: BillingChargeContext;
     resourceLifecycle?: ResourceLifecycleContext;
     composition?: CostComposition;
+    /**
+     * Unadjusted Azure-native/Marketplace/unknown split of this node's current and
+     * comparison amounts (tree version 2.1+). Read the contract header from
+     * `DecompositionTree.financialChargeSourceCosts`.
+     */
+    financialChargeSourceCosts?: DecompositionTreeNodeFinancialChargeSourceCostsV1;
 }
 export interface MeterDetail {
     /** "P1 v3 App" */
@@ -75,10 +81,15 @@ export interface MeterDetail {
     quantity: number;
     /** 12.721536 */
     cost: number;
-    /** 12.721536 */
-    costAmortized: number;
+    /** 12.721536; absent when the meter has no amortized evidence */
+    costAmortized?: number;
     /** cost / quantity = rate per unit */
     unitCost?: number;
+    /**
+     * Publisher source of this meter's billing rows ('unknown' when rows disagree or
+     * lack publisher evidence). Lets the API project meter amounts on mixed leaves.
+     */
+    financialChargeSource?: AzureFinancialChargeSourceV1;
 }
 export interface DecompositionTree {
     root: DecompositionTreeNode;
@@ -103,6 +114,12 @@ export interface DecompositionTree {
      * ordinary root remains the all-charge Azure reconciliation view.
      */
     formalFinancialProjection?: DecompositionTreeFinancialProjectionV1;
+    /**
+     * Contract header and unadjusted source split for `totalSpend*` (tree version
+     * 2.1+). Absent on older trees; the API must then treat a discounted total as
+     * unavailable unless it can prove the split from other same-window evidence.
+     */
+    financialChargeSourceCosts?: DecompositionTreeFinancialChargeSourceCostsV1;
 }
 export interface DecompositionTreeFinancialProjectionV1 {
     contractVersion: 'financial-charge-policy/v1';

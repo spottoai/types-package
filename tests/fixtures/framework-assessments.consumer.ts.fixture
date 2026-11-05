@@ -1,5 +1,7 @@
 import {
   parseAssessmentNativeScope,
+  parseFrameworkRemediationPlanDocument,
+  type FrameworkRemediationPlanDocument,
   parseFrameworkAssessmentDocument,
   parseFrameworkCatalogueDocument,
   parseFrameworkCatalogueIndexDocument,
@@ -29,6 +31,12 @@ import {
 declare const external: unknown;
 const scope: AssessmentNativeScope = parseAssessmentNativeScope(external);
 const assessment: FrameworkAssessmentDocument = parseFrameworkAssessmentDocument(external);
+const remediation: FrameworkRemediationPlanDocument = parseFrameworkRemediationPlanDocument(external);
+const estimatedMinutes: number | null = remediation.totals.totalMinutes;
+// @ts-expect-error first delivery does not include monetary pricing.
+remediation.pricing;
+// @ts-expect-error native scope never carries company authorization identity.
+remediation.scope.companyId;
 const generationSha256: string = assessment.generationSha256;
 const catalogue: FrameworkCatalogueDocument = parseFrameworkCatalogueDocument(external);
 const index: FrameworkCatalogueIndexDocument = parseFrameworkCatalogueIndexDocument(external);
@@ -53,6 +61,8 @@ completion.rawContainer;
 // @ts-expect-error collection certainty is mandatory on public findings.
 const incompleteFinding: FrameworkFindingPageDocument['items'][number] = { id: 'id' };
 void [
+  remediation,
+  estimatedMinutes,
   confidence,
   findingCount,
   failure,

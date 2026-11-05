@@ -14,9 +14,10 @@ import {
   isReportGuid,
   utf8ByteLength,
 } from '../shared/reportingIds';
+import { REPORT_PACK_REPORT_IDS, isReportPackReportId, type ReportPackConfigurationV1 } from './reportPack';
 
 export const REPORT_JOB_SPEC_SCHEMA_VERSION = 1;
-export const REPORT_JOB_REPORT_TYPES = ['sdm', 'architecture-assessment'] as const;
+export const REPORT_JOB_REPORT_TYPES = ['sdm', 'architecture-assessment', 'report-pack'] as const;
 export type ReportJobReportType = (typeof REPORT_JOB_REPORT_TYPES)[number];
 
 export const REPORT_JOB_MAX_SUBSCRIPTIONS = 200;
@@ -90,7 +91,14 @@ export interface CurrentStateReportJobSpecV1 {
   configuration: CurrentStateBackgroundConfigV1;
 }
 
-export type ReportJobSpecV1 = SdmReportJobSpecV1 | CurrentStateReportJobSpecV1;
+export interface ReportPackJobSpecV1 {
+  schemaVersion: 1;
+  reportType: 'report-pack';
+  scope: ReportJobScopeV1;
+  configuration: ReportPackConfigurationV1;
+}
+
+export type ReportJobSpecV1 = SdmReportJobSpecV1 | CurrentStateReportJobSpecV1 | ReportPackJobSpecV1;
 
 export type ReportJobSpecParseResult = { ok: true; value: ReportJobSpecV1 } | { ok: false; errors: string[] };
 
@@ -313,7 +321,32 @@ const parseSpecUnsafe = (input: unknown): ReportJobSpecParseResult => {
     if (!scope || !configuration || errors.length > 0) return { ok: false, errors };
     return { ok: true, value: { schemaVersion: 1, reportType: 'architecture-assessment', scope, configuration } };
   }
-  return { ok: false, errors: ['reportType: must be sdm or architecture-assessment'] };
+  if (input.reportType === 'report-pack') {
+    if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration']))
+      return { ok: false, errors: ['spec: Report Pack needs exactly schemaVersion, reportType, scope and configuration'] };
+    const scope = parseScope(input.scope, errors);
+    const config = input.configuration;
+    if (
+      !isPlainRecord(config) ||
+      !hasExactlyKeys(config, ['reportIds', 'scopeCurrencyCode']) ||
+      !Array.isArray(config.reportIds) ||
+      config.reportIds.length < 1 ||
+      config.reportIds.length > REPORT_PACK_REPORT_IDS.length ||
+      !config.reportIds.every(isReportPackReportId) ||
+      new Set(config.reportIds).size !== config.reportIds.length ||
+      typeof config.scopeCurrencyCode !== 'string' ||
+      !CURRENCY_PATTERN.test(config.scopeCurrencyCode)
+    )
+      return { ok: false, errors: ['configuration: choose unique supported reports and a three-letter currency'] };
+    if (!scope || errors.length) return { ok: false, errors };
+    const selectedIds = config.reportIds;
+    const reportIds = REPORT_PACK_REPORT_IDS.filter(id => selectedIds.includes(id));
+    return {
+      ok: true,
+      value: { schemaVersion: 1, reportType: 'report-pack', scope, configuration: { reportIds, scopeCurrencyCode: config.scopeCurrencyCode } },
+    };
+  }
+  return { ok: false, errors: ['reportType: must be sdm, architecture-assessment or report-pack'] };
 };
 
 /** Strict, normalising parser. Never throws (hostile getters are reported as an invalid spec). */
@@ -327,6 +360,13 @@ export const parseReportJobSpecV1 = (input: unknown): ReportJobSpecParseResult =
 
 const canonicalSpecObject = (spec: ReportJobSpecV1): unknown => {
   const scope = { cloudAccountIds: spec.scope.cloudAccountIds, subscriptionIds: spec.scope.subscriptionIds };
+  if (spec.reportType === 'report-pack')
+    return {
+      schemaVersion: 1,
+      reportType: 'report-pack',
+      scope,
+      configuration: { reportIds: spec.configuration.reportIds, scopeCurrencyCode: spec.configuration.scopeCurrencyCode },
+    };
   if (spec.reportType === 'sdm') {
     const period =
       spec.period.kind === 'explicit'

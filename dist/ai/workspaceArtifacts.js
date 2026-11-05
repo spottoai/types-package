@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AI_CHAT_REPORT_STRATEGY_IDS = exports.AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = exports.AI_CHAT_WORKSPACE_CAPABILITIES = void 0;
+exports.AI_CHAT_WORKSPACE_SPARKLINE_LIMITS_V1 = exports.AI_CHAT_WORKSPACE_COMPOSITION_LIMITS_V1 = exports.AI_CHAT_WORKSPACE_DRILL_DOWN_LIMITS_V1 = exports.AI_CHAT_WORKSPACE_DRILL_DOWN_IDS = exports.AI_CHAT_REPORT_STRATEGY_IDS = exports.AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = exports.AI_CHAT_WORKSPACE_CAPABILITIES = void 0;
 exports.AI_CHAT_WORKSPACE_CAPABILITIES = [
     {
         viewId: 'azure.security.secureScoreTrend',
@@ -145,8 +145,40 @@ exports.AI_CHAT_WORKSPACE_CAPABILITIES = [
         presentations: ['kpi'],
         dataModes: ['snapshot'],
     },
+    /** A bounded, server-produced relationship snapshot; topology never comes from model intent. */
+    {
+        viewId: 'cloud.relationships.graph',
+        version: 1,
+        artifactKind: 'graph',
+        presentations: ['graph'],
+        dataModes: ['snapshot'],
+    },
+    /** A server-priced what-if comparison (for example a VM's sizes and OS disk tiers); the client only selects and sums. */
+    {
+        viewId: 'genericScenario',
+        version: 1,
+        artifactKind: 'scenario',
+        presentations: ['scenario'],
+        dataModes: ['snapshot'],
+    },
+    /** Up to five recommendation cards a reader can open, ask about or prioritise. */
+    {
+        viewId: 'genericRecommendations',
+        version: 1,
+        artifactKind: 'recommendations',
+        presentations: ['recommendations'],
+        dataModes: ['snapshot'],
+    },
 ];
-exports.AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = ['genericTable', 'genericBarChart', 'genericLineChart', 'genericKpi'];
+exports.AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS = [
+    'genericTable',
+    'genericBarChart',
+    'genericLineChart',
+    'genericKpi',
+    'cloud.relationships.graph',
+    'genericScenario',
+    'genericRecommendations',
+];
 exports.AI_CHAT_REPORT_STRATEGY_IDS = [
     'security.landscape@1',
     'cost.changeWaterfall@1',
@@ -159,4 +191,13 @@ exports.AI_CHAT_REPORT_STRATEGY_IDS = [
     'backups.posture@1',
     'retirement.tracker@1',
 ];
+exports.AI_CHAT_WORKSPACE_DRILL_DOWN_IDS = ['subject.explain@1', 'dimension.breakdown@1', 'period.explain@1', 'option.explain@1'];
+exports.AI_CHAT_WORKSPACE_DRILL_DOWN_LIMITS_V1 = Object.freeze({
+    elementsPerArtifact: 60,
+    elementKeyChars: 16,
+    promptChars: 200,
+});
+/** Composition-chart and sparkline bounds (Milestone 3). */
+exports.AI_CHAT_WORKSPACE_COMPOSITION_LIMITS_V1 = Object.freeze({ slices: 8 });
+exports.AI_CHAT_WORKSPACE_SPARKLINE_LIMITS_V1 = Object.freeze({ points: 31 });
 //# sourceMappingURL=workspaceArtifacts.js.map

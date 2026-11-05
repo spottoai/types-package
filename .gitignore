@@ -95,6 +95,7 @@ jspm_packages/
 samples/
 
 specs/*
+!specs/README.md
 !Specs/monitor/
 Specs/monitor/*
 !Specs/monitor/perimeter-connectivity-types.md
@@ -103,20 +104,29 @@ Specs/monitor/*
 specs/billing/*
 !specs/billing/azure-billing-optional-classification.md
 !specs/billing/azure-native-discount-eligibility.md
+!specs/billing/azure-billing-facts.md
 !specs/billing/aws-billing-driver-resource-identities.md
+!specs/billing/commitments/
+specs/billing/commitments/*
+!specs/billing/commitments/commitments-types-package.md
 !specs/licensing/
 specs/licensing/*
 !specs/licensing/microsoft-365-license-view-types.md
 !specs/licensing/microsoft-365-license-capability-insights-types.md
 !specs/licensing/microsoft-365-improvements-types.md
 !specs/licensing/microsoft-365-custom-pricing-types.md
+!specs/licensing/license-pricing/
+!specs/licensing/license-pricing/license-pricing-types-package.md
 !specs/cloud-accounts/
 specs/cloud-accounts/*
+!specs/cloud-accounts/aws-incremental-scan-cadence-types.md
 !specs/cloud-accounts/microsoft-365-default-permissions-types.md
 !specs/reporting/
 specs/reporting/*
 !specs/reporting/reporting-scheduler-types.md
 !specs/reporting/report-resource-type-spend-types.md
+!Specs/reporting/reporting-access/
+!Specs/reporting/reporting-access/*.md
 !specs/security/
 specs/security/*
 !specs/security/container-image-usage-types.md
@@ -130,6 +140,23 @@ specs/ai-chat/*
 !specs/ai-chat/aws-environment-memory/
 specs/ai-chat/aws-environment-memory/*
 !specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md
+!specs/ai-chat/company-context/
+specs/ai-chat/company-context/*
+!specs/ai-chat/company-context/company-context-types-package.md
+!specs/ai-chat/company-memory/
+specs/ai-chat/company-memory/*
+!specs/ai-chat/company-memory/company-memory-types-package.md
+!specs/ai-chat/context-harvesting/
+specs/ai-chat/context-harvesting/*
+!specs/ai-chat/context-harvesting/context-harvesting-types-package.md
+!specs/ai-chat/environment-memory/
+specs/ai-chat/environment-memory/*
+!specs/ai-chat/environment-memory/environment-memory-types-package.md
+!specs/companies/
+specs/companies/*
+!specs/companies/company-notes/
+specs/companies/company-notes/*
+!specs/companies/company-notes/company-notes-types-package.md
 !Specs/alerts/
 !Specs/alerts/*.md
 !Specs/data-quality/
@@ -148,3 +175,13 @@ specs/ai-chat/aws-environment-memory/*
 # Claude Code: personal settings and local skill links (see ../core/scripts/link-agent-skills.mjs)
 .claude/settings.local.json
 .claude/skills/
+
+# Shared licensing-content contract specification.
+!specs/licensing/license-inventory/
+!specs/licensing/license-inventory/license-inventory-types-package.md
+
+# Shared feature/promotion contract specification.
+!specs/access/
+specs/access/*
+!specs/access/features-and-permissions/
+!specs/access/features-and-permissions/features-and-permissions-types-package.md

@@ -6,7 +6,7 @@ import type { DailyMetrics } from './metrics';
 import { RecommendationCategory, type Recommendation, type RecommendationWithResources } from './recommendations';
 import type { DecompositionTree } from './reports';
 import type { SecureScoreEvidence, SubscriptionProperties } from './subscriptions';
-import type { CompletedViewManifestV2, CurrencySavingsGroup, SavingsPotential } from './views';
+import type { AzureResourcePortalItem, CompletedViewManifestV2, CurrencySavingsGroup, SavingsPotential } from './views';
 
 const generation: AzurePortalArtifactGeneration = {
   runId: 'sub-1:run-1',
@@ -274,3 +274,16 @@ void invalidManifest;
 void invalidRecommendationImpact;
 void invalidCurrencySavings;
 void invalidCurrencyUtilization;
+
+
+// Resource money absence is a state; measured zero and credits remain values.
+type ResourceFinancialEvidence = Pick<AzureResourcePortalItem, 'spend' | 'spendActual' | 'spendAmortized' | 'spendSource' | 'spendSourceDetail'>;
+const resourceWithoutMoney = { spendSource: 'none', spendSourceDetail: 'billing-unavailable;estimates-not-produced' } satisfies ResourceFinancialEvidence;
+const resourceMeasuredZero = { spend: 0, spendActual: 0, spendAmortized: 0, spendSource: 'billing' } satisfies ResourceFinancialEvidence;
+const resourceCredit = { spend: -5, spendActual: -5, spendAmortized: -3, spendSource: 'billing' } satisfies ResourceFinancialEvidence;
+// @ts-expect-error monetary absence is not represented by a nonnumeric placeholder.
+const invalidResourceMoney: ResourceFinancialEvidence = { spend: 'unavailable' };
+void resourceWithoutMoney;
+void resourceMeasuredZero;
+void resourceCredit;
+void invalidResourceMoney;

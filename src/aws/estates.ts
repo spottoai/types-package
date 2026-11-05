@@ -1,3 +1,4 @@
+import type { AzureSyncFeatureId } from '../accounts/accounts';
 import { AWS_FORBIDDEN_CREDENTIAL_FIELDS, type AwsForbiddenCredentialFields } from './requests';
 
 /** Schema version for the API-owned AWS company estate manifest. */
@@ -69,7 +70,26 @@ export interface AwsEstateAccountMembership<TCompanyId extends string = string, 
   enabled: boolean;
   /** Existing Spotto cloud-account identity once this membership is connected. */
   cloudAccountId?: string;
+  /**
+   * Optional sync features this account opts out of. Sorted in shared feature
+   * order, de-duplicated, and omitted when empty. Each organization member has
+   * its own list; a management account's list never applies to members.
+   */
+  syncFeatureOptOuts?: AwsSyncFeatureId[];
 }
+
+/**
+ * Optional sync features an AWS account can opt out of, in the shared sync
+ * feature order. An ID is listed only once the AWS engine both skips its
+ * collection and suppresses its Portal output; `billing` is mandatory on AWS.
+ */
+export const AWS_SYNC_FEATURE_IDS = ['activityMonitoring', 'governance', 'perimeterInsights'] as const satisfies readonly AzureSyncFeatureId[];
+
+export type AwsSyncFeatureId = (typeof AWS_SYNC_FEATURE_IDS)[number];
+
+const AWS_SYNC_FEATURE_ID_SET = new Set<string>(AWS_SYNC_FEATURE_IDS);
+
+export const isAwsSyncFeatureId = (value: string): value is AwsSyncFeatureId => AWS_SYNC_FEATURE_ID_SET.has(value);
 
 /** One intentionally excluded account in a manually maintained organization estate. */
 export interface AwsEstateExcludedAccount<TCompanyId extends string = string, TEstateId extends string = string>

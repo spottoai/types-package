@@ -369,6 +369,8 @@ export interface ReportCommitmentInventoryRow {
 export type ReportCommitmentsFreshness = Partial<CommitmentsFreshnessSummary>;
 
 export interface ReportCommitmentsProjection extends ReportProjectionRecord {
+  /** Complete pre-limit source relationships; absent on legacy packs, never current permission. */
+  assessmentSourceBindings?: import('./reportAssessmentBindings').AzureReportCommitmentAssessmentBindingsV1;
   freshness?: ReportCommitmentsFreshness;
   resourceCoverage?: ReportBoundedRows<ReportProjectionRecord>;
   inventorySummary: ReportCommitmentInventorySummary;
@@ -579,6 +581,8 @@ export interface ReportBudgetProjection extends ReportProjectionRecord {
 }
 
 export interface SubscriptionReportEvidencePack {
+  /** Complete source population before compacting any recommendation/candidate catalogue. */
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   generatedAt: string;
   generation: { sourceRunId?: string; sourceGeneratedAt?: string };
   scope: {

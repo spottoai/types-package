@@ -63,8 +63,15 @@ export interface Microsoft365LicenseHistorySnapshot {
   /** The view's stored estimates: per-account values are empty and account id lists are omitted. */
   pricingByCurrency: Record<string, Microsoft365LicensePricing>;
 }
+/** API-derived quantities from stored pricing blocks; no price/currency or account data. */
+export interface Microsoft365LicenseProductQuantities {
+  purchasedUnits: number | null;
+}
+
 /** One month served by the API in the requested estimate currency, oldest month first. */
 export interface Microsoft365LicenseHistoryMonth {
+  /** Currency-independent SKU quantities. Omission is unknown coverage, not zero or absent stock. */
+  productQuantities?: Record<string, Microsoft365LicenseProductQuantities>;
   pricingFacts?: Microsoft365PricingFacts;
   usage?: Microsoft365LicenseHistoryUsage;
   productUsage?: Record<string, Microsoft365LicenseProductUsage>;
@@ -137,6 +144,17 @@ const hasValidUsage = (value: Record<string, unknown>): boolean =>
   optional(value.productUsage, isProductUsage) &&
   optional(value.pricingFacts, facts => isMicrosoft365PricingFacts(facts) && facts.groups === undefined);
 
+const isProductQuantities = (value: unknown): boolean =>
+  isRecord(value) &&
+  Object.keys(value).length <= 2000 &&
+  Object.entries(value).every(
+    ([skuId, quantities]) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(skuId) &&
+      isRecord(quantities) &&
+      onlyKeys(quantities, ['purchasedUnits']) &&
+      nullableCount(quantities.purchasedUnits)
+  );
+
 /** Validates one stored tenant month at storage and API boundaries. */
 export function isMicrosoft365LicenseHistorySnapshot(value: unknown): value is Microsoft365LicenseHistorySnapshot {
   if (
@@ -191,7 +209,18 @@ export function isMicrosoft365LicenseHistory(value: unknown): value is Microsoft
   return value.months.every(month => {
     const valid =
       isRecord(month) &&
-      onlyKeys(month, ['month', 'generatedAt', 'coverage', 'summary', 'insights', 'pricing', 'usage', 'productUsage', 'pricingFacts']) &&
+      onlyKeys(month, [
+        'month',
+        'generatedAt',
+        'coverage',
+        'summary',
+        'insights',
+        'pricing',
+        'usage',
+        'productUsage',
+        'pricingFacts',
+        'productQuantities',
+      ]) &&
       isMicrosoft365LicenseHistoryMonthKey(month.month) &&
       month.month > previous &&
       date(month.generatedAt) &&
@@ -199,6 +228,7 @@ export function isMicrosoft365LicenseHistory(value: unknown): value is Microsoft
       isViewSummary(month.summary) &&
       optional(month.insights, isHistoryInsights) &&
       hasValidUsage(month) &&
+      optional(month.productQuantities, isProductQuantities) &&
       (month.pricing === null || (typeof currency === 'string' && isStoredHistoryPricing(currency, month.pricing)));
     if (valid) previous = month.month as string;
     return valid;

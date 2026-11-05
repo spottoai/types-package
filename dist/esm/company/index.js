@@ -4,3 +4,8 @@ export * from './notification.js';
 export * from './survey.js';
 export * from './billingAccount.js';
 export * from './companyNotes.js';
+export * from './companyContext.js';
+export * from './companyMemory.js';
+export * from './companyMeetings.js';
+export * from './companyNoteRevisions.js';
+export * from './companyContextHarvesting.js';

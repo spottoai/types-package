@@ -27,9 +27,34 @@ import {
   isEnvironmentAwsResourceTypeV1,
   isEnvironmentAwsArtifactKindV1,
   environmentAwsScopesEqual,
+  type EnvironmentCapabilityScopeV1,
+  type EnvironmentCapabilitySourceBindingV1,
+  type EnvironmentCapabilityDocumentV1,
+  type EnvironmentCapabilityFactsV1,
+  buildEnvironmentCapabilityEvidenceReferenceV1,
+  isEnvironmentCapabilitySourceBindingV1,
 } from '@spottoai/types-package/environment';
 
 const scope: EnvironmentAwsAccountScopeV1 = { kind: 'aws-account', companyId: 'company-1', accountId: '000123456789' };
+const capabilityScope: EnvironmentCapabilityScopeV1 = scope;
+declare const accountSource: EnvironmentAwsAccountSourceBindingV1;
+const capabilitySource: EnvironmentCapabilitySourceBindingV1 = accountSource;
+declare const optionalDocument: EnvironmentCapabilityDocumentV1;
+declare const facts: EnvironmentCapabilityFactsV1;
+const factsWithAwsContinuation: EnvironmentCapabilityFactsV1 = {
+  ...facts,
+  scope,
+  sourceBinding: accountSource,
+  sections: [{ sectionId: 'summary', title: 'Summary', facts: {
+    items: [], totalCount: 1, includedCount: 0, truncated: true,
+    continuationReference: buildEnvironmentAwsLogicalArtifactReferenceV1('aws-account-resources', scope),
+  } }],
+};
+declare const accountPointer: EnvironmentAwsAccountCompiledGenerationPointerV1;
+const optionalPointer: EnvironmentAwsAccountCompiledGenerationPointerV1 = { ...accountPointer, optionalDocuments: [optionalDocument] };
+void [capabilityScope, capabilitySource, factsWithAwsContinuation, optionalPointer,
+  buildEnvironmentCapabilityEvidenceReferenceV1(scope, 'resources', 'account-context', 'summary'),
+  isEnvironmentCapabilitySourceBindingV1(accountSource)];
 const citation: AIEnvironmentEvidenceMatch = {
   safeLabel: 'AWS account security posture',
   portalRoute: '/company/company-1/dashboard',

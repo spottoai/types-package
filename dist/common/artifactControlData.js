@@ -98,21 +98,29 @@ const indexAllowedArtifactFields = (allowedReferenceFields) => {
             allowDigestLike: existing?.allowDigestLike || field.allowDigestLike,
             allowControlField: existing?.allowControlField || field.allowControlField,
             allowChildArtifactFields: existing?.allowChildArtifactFields || field.allowChildArtifactFields,
+            allowValidatedResourceId: existing?.allowValidatedResourceId || field.allowValidatedResourceId,
         });
     }
     return index;
 };
 const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFields, options) => {
-    const pending = [{ kind: 'visit', value, allowIndexedFields: true }];
+    const pending = [
+        { kind: 'visit', value, allowIndexedFields: true, resourceIdPathDepth: options.validatedResourceIdPath ? 0 : undefined },
+    ];
     const activeContainers = new WeakSet();
     const completedScanPolicies = new WeakMap();
     let visitedNodeCount = 0;
-    const hasCompletedStricterScan = (container, scanPolicy) => completedScanPolicies.get(container)?.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy) ?? false;
+    const isStricterScanPolicy = (completed, incoming) => (completed & ~7) === (incoming & ~7) && (completed & 7 & (incoming & 7)) === (completed & 7);
+    const resourceContextPolicy = (depth) => (depth === undefined ? 0 : (depth + 2) * 8);
+    const hasCompletedStricterScan = (container, scanPolicy) => completedScanPolicies.get(container)?.some(completedPolicy => isStricterScanPolicy(completedPolicy, scanPolicy)) ?? false;
     const completeScan = (container, scanPolicy) => {
         const completedPolicies = completedScanPolicies.get(container) ?? [];
-        if (completedPolicies.some(completedPolicy => (completedPolicy & scanPolicy) === completedPolicy))
+        if (completedPolicies.some(completedPolicy => isStricterScanPolicy(completedPolicy, scanPolicy)))
             return;
-        completedScanPolicies.set(container, [...completedPolicies.filter(completedPolicy => (scanPolicy & completedPolicy) !== scanPolicy), scanPolicy]);
+        completedScanPolicies.set(container, [
+            ...completedPolicies.filter(completedPolicy => !isStricterScanPolicy(scanPolicy, completedPolicy)),
+            scanPolicy,
+        ]);
     };
     while (pending.length > 0) {
         const candidate = pending.pop();
@@ -134,7 +142,8 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                 return true;
             const scanPolicy = (candidate.allowIndexedFields ? 1 : 0) |
                 (candidate.allowedStringArrayField ? 2 : 0) |
-                (candidate.allowedStringArrayField?.allowDigestLike ? 4 : 0);
+                (candidate.allowedStringArrayField?.allowDigestLike ? 4 : 0) |
+                resourceContextPolicy(candidate.resourceIdPathDepth);
             if (hasCompletedStricterScan(candidate.value, scanPolicy))
                 continue;
             activeContainers.add(candidate.value);
@@ -147,7 +156,12 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                     }
                 }
                 else {
-                    pending.push({ kind: 'visit', value: child, allowIndexedFields: candidate.allowIndexedFields });
+                    pending.push({
+                        kind: 'visit',
+                        value: child,
+                        allowIndexedFields: candidate.allowIndexedFields,
+                        resourceIdPathDepth: candidate.resourceIdPathDepth,
+                    });
                 }
             }
             continue;
@@ -159,7 +173,7 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
             return true;
         if (activeContainers.has(candidate.value))
             return true;
-        const scanPolicy = candidate.allowIndexedFields ? 1 : 0;
+        const scanPolicy = (candidate.allowIndexedFields ? 1 : 0) | resourceContextPolicy(candidate.resourceIdPathDepth);
         if (hasCompletedStricterScan(candidate.value, scanPolicy))
             continue;
         activeContainers.add(candidate.value);
@@ -176,7 +190,12 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
             if (options.forbiddenControlFields?.has(normalizedKey) && !allowedField?.allowControlField)
                 return true;
             if (options.requireSafeAzureResourceIds && normalizedKey === 'resourceid') {
-                if (!isSafeAzureResourceId(key, child))
+                if (!isSafeAzureResourceId(key, child) &&
+                    (!allowedField?.allowValidatedResourceId ||
+                        !options.validatedResourceIdPath ||
+                        candidate.resourceIdPathDepth !== options.validatedResourceIdPath.length ||
+                        typeof child !== 'string' ||
+                        isForbiddenReferenceValue(child, allowedField.allowUriScheme, false, options.rejectDigestLikeValues)))
                     return true;
                 continue;
             }
@@ -197,6 +216,13 @@ const containsForbiddenArtifactControlDataWithIndex = (value, allowedReferenceFi
                 kind: 'visit',
                 value: child,
                 allowIndexedFields: !options.requireAllowedFieldTraversalContext || Boolean(candidate.allowIndexedFields && allowedField?.allowChildArtifactFields),
+                resourceIdPathDepth: options.validatedResourceIdPath
+                    ? candidate.resourceIdPathDepth !== undefined &&
+                        candidate.resourceIdPathDepth >= 0 &&
+                        options.validatedResourceIdPath[candidate.resourceIdPathDepth] === key
+                        ? candidate.resourceIdPathDepth + 1
+                        : -1
+                    : undefined,
             });
         }
     }

@@ -15,12 +15,12 @@ export const REPORTING_DOCX_EXTENSION = '.docx';
 export const REPORT_FILE_NAME_MAX_LENGTH = 120;
 
 /**
- * A generated-report file name as the API accepts it: unchanged by the sanitiser, ends with `.docx`,
+ * A generated-report file name as the API accepts it: unchanged by the sanitiser, ends with `.docx` or `.zip`,
  * at most 120 characters, and not just the extension.
  */
 export const isReportFileName = (value: unknown): value is string =>
   typeof value === 'string' &&
-  value.length > REPORTING_DOCX_EXTENSION.length &&
+  value.length > (value.endsWith('.zip') ? '.zip'.length : REPORTING_DOCX_EXTENSION.length) &&
   value.length <= REPORT_FILE_NAME_MAX_LENGTH &&
-  value.endsWith(REPORTING_DOCX_EXTENSION) &&
+  (value.endsWith(REPORTING_DOCX_EXTENSION) || value.endsWith('.zip')) &&
   sanitizeReportingPathSegment(value, '') === value;

@@ -1,8 +1,17 @@
 export * from './artifactGeneration';
 export * from './capabilityPassport';
 export * from './pagination';
+export * from './portalViewHistory';
 export * from './provider';
 export * from './providerSyncProgress';
 export * from './relationships';
+export * from './resourceGraph';
+export * from './resourceGraphValidation';
+export * from './resourceIdentity';
+export * from './resourceHealth';
 export * from './syncProgress';
+export * from './securityPosture';
+export * from './cloudGovernance';
+export * from './serviceRetirement';
+export * from './resourceArtifactUsage';
 //# sourceMappingURL=index.d.ts.map

@@ -12,6 +12,7 @@ export type ReportJobUpdateContextV1 = {
   | { writer: 'producer'; publicationOutcome?: 'definitively-rejected' }
   | { writer: 'worker'; workerId: string }
   | { writer: 'notifier'; verifiedArtifactContentSha256: string }
+  | { writer: 'notification-blocker'; blockedArtifactContentSha256: string; notificationAttemptCount: number }
   | { writer: 'maintenance'; minimumAgeMs: number; recoveryAttempts: number; maximumRecoveryAttempts: number }
 );
 
@@ -65,7 +66,8 @@ export const validateReportJobUpdateV1 = async (
     const liveLease = before.leaseExpiresAtUtc !== undefined && Date.parse(before.leaseExpiresAtUtc) > now;
     let allowed: readonly string[];
     if (context.writer === 'worker') allowed = [...REPORT_JOB_WORKER_FIELDS, 'notificationStatus'];
-    else if (context.writer === 'notifier') allowed = [...REPORT_JOB_NOTIFICATION_FIELDS, 'status', 'completedAtUtc'];
+    else if (context.writer === 'notifier' || context.writer === 'notification-blocker')
+      allowed = [...REPORT_JOB_NOTIFICATION_FIELDS, 'status', 'completedAtUtc'];
     else if (context.writer === 'maintenance') allowed = [...failureFields, 'leaseOwner', 'leaseExpiresAtUtc'];
     else if (context.writer === 'producer') allowed = failureFields;
     else return reject('update: unknown writer');
@@ -152,18 +154,25 @@ export const validateReportJobUpdateV1 = async (
       )
         return reject('worker: notifier-only outcome');
     } else {
+      const blocked = context.writer === 'notification-blocker';
       if (
         before.status !== 'generated' ||
         before.notificationStatus !== 'pending' ||
         before.notificationPolicyId === undefined ||
-        context.verifiedArtifactContentSha256 !== before.artifactContentSha256
+        (blocked ? context.blockedArtifactContentSha256 : context.verifiedArtifactContentSha256) !== before.artifactContentSha256
       )
         return reject('notifier: generation/artifact fence');
       if (after.notificationStatus === 'none') return reject('notifier: notification regression');
+      if (blocked && context.notificationAttemptCount === 0 && after.notificationStatus !== 'failed')
+        return reject('notifier: no delivery evidence before first attempt');
       if (
         after.notificationAttemptCount === undefined ||
-        after.notificationAttemptCount < 1 ||
-        after.notificationAttemptCount > (before.notificationAttemptCount ?? 0) + 1
+        (blocked
+          ? !Number.isSafeInteger(context.notificationAttemptCount) ||
+            context.notificationAttemptCount < 0 ||
+            context.notificationAttemptCount > 3 ||
+            after.notificationAttemptCount !== context.notificationAttemptCount
+          : after.notificationAttemptCount < 1 || after.notificationAttemptCount > (before.notificationAttemptCount ?? 0) + 1)
       )
         return reject('notifier: invalid attempt count');
       const counts =
@@ -179,6 +188,7 @@ export const validateReportJobUpdateV1 = async (
             return reject('notifier: destination regression');
         }
       if (after.notificationStatus === 'pending') {
+        if (blocked) return reject('notifier: integrity block must settle delivery');
         if (after.status !== 'generated' || after.notificationCompletedAtUtc !== undefined || after.completedAtUtc !== undefined)
           return reject('notifier: pending completion');
       } else {
@@ -193,7 +203,7 @@ export const validateReportJobUpdateV1 = async (
           return reject('notifier: unfinished destinations');
         if (
           (after.notificationStatus === 'delivered' && totals.failed !== 0) ||
-          (after.notificationStatus === 'attachment-too-large' && (!counts?.email || counts.email.delivered === 0)) ||
+          (after.notificationStatus === 'attachment-too-large' && (!counts?.email || counts.email.delivered === 0 || totals.failed !== 0)) ||
           (after.notificationStatus === 'partially-delivered' && (totals.delivered === 0 || totals.failed === 0)) ||
           (after.notificationStatus === 'failed' && counts && (totals.delivered !== 0 || totals.failed !== totals.total))
         )

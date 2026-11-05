@@ -3,6 +3,7 @@
  * reportworker (types-package/specs/reporting/reporting-scheduler-types.md, Part A).
  */
 export * from './reportJobSpec';
+export * from './reportPack';
 export * from './reportJobIdentity';
 export * from './reportJobMessages';
 export * from './reportJobStatus';
@@ -12,6 +13,7 @@ export * from './reportJobApi';
 export * from './reportJobPrerequisites';
 export * from './reportJobLifecycle';
 export * from './reportJobRecovery';
+export * from './reportJobSaga';
 export { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
 export {
   isIanaTimeZone,

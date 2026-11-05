@@ -1,5 +1,6 @@
 import { ProviderName } from '../common/provider.js';
-import { asRecord, assertAccount, assertExactKeys, assertValue, requiredEnum, requiredString } from './pluginPublicArtifactValidationHelpers.js';
+import { asRecord, assertExactKeys, assertValue, requiredEnum, requiredString } from '../common/validationHelpers.js';
+import { assertAccount } from './validationHelpers.js';
 const ORGANIZATION_ID = /^o-[a-z0-9]{10,32}$/u;
 const FORBIDDEN_ORGANIZATION_COMMITMENTS_KEYS = new Set([
     'billingScopeId',

@@ -1,3 +1,4 @@
+import { isAzureBenefitAssessmentDependenciesV1 } from './benefitAssessmentAdmission.js';
 import { allowedArtifactIdentityField, allowedArtifactReferenceField, allowedArtifactTraversalField, containsForbiddenArtifactControlData, } from '../common/artifactControlData.js';
 import { isArtifactOwnershipBinding, isArtifactPublicationDecision, isEnforceableArtifactOwnershipBinding, } from '../common/artifactEvidence.js';
 import { isArtifactRevisionVector, isStrictLogicalArtifactReference } from '../common/artifactEvidenceValidation.js';
@@ -50,9 +51,21 @@ const isPositiveSafeInteger = (value) => Number.isSafeInteger(value) && Number(v
 const isNonNegativeSafeInteger = (value) => Number.isSafeInteger(value) && Number(value) >= 0;
 const isSha256 = (value) => typeof value === 'string' && SHA256_PATTERN.test(value);
 const allowedViewArtifactPaths = (artifacts) => Array.isArray(artifacts) ? artifacts.flatMap(artifact => allowedArtifactReferenceField(artifact, 'path')) : [];
-const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = []) => containsForbiddenArtifactControlData(value, allowedReferenceFields, {
-    requireAllowedFieldTraversalContext: true,
-});
+const containsForbiddenViewArtifactControlData = (value, allowedReferenceFields = [], options = {}) => {
+    // Native benefit IDs are validated by the exact bounded contract rather than interpreted as physical storage references.
+    // Only this top-level schema edge is admitted; an alias under an unknown edge is still scanned and rejected.
+    if (options.allowBenefitAssessmentDependencies && isRecord(value) && value.benefitAssessmentDependencies !== undefined) {
+        if (!isAzureBenefitAssessmentDependenciesV1(value.benefitAssessmentDependencies))
+            return true;
+        const { benefitAssessmentDependencies: _dependencies, ...rest } = value;
+        return containsForbiddenArtifactControlData(rest, allowedReferenceFields.map(field => field.object === value ? { ...field, object: rest } : field), {
+            requireAllowedFieldTraversalContext: true,
+        });
+    }
+    return containsForbiddenArtifactControlData(value, allowedReferenceFields, {
+        requireAllowedFieldTraversalContext: true,
+    });
+};
 const allowedPublicationDecisionIdentityFields = (decision) => {
     if (!isRecord(decision))
         return [];
@@ -250,7 +263,7 @@ export const isCompletedViewManifestV3 = (value) => {
         containsForbiddenViewArtifactControlData(value, [
             ...allowedArtifactTraversalField(value, 'artifacts'),
             ...allowedViewArtifactPaths(value.artifacts),
-        ]))
+        ], { allowBenefitAssessmentDependencies: true }))
         return false;
     if (value.schemaVersion !== 3 || value.status !== 'completed')
         return false;
@@ -335,7 +348,7 @@ export const isPublishedViewManifestV4 = (value) => {
             ...allowedPublishedCostSavingsIdentityFields(value),
         ]
         : [];
-    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences)) {
+    if (!isRecord(value) || containsForbiddenViewArtifactControlData(value, allowedReferences, { allowBenefitAssessmentDependencies: true })) {
         return false;
     }
     if (value.schemaVersion !== 4 || value.status !== 'published' || !isPublishedViewCoverage(value.coverage))

@@ -229,6 +229,9 @@ const readinessStates = new Set([
     'conflicting-automation',
     'unsupported-resource-state',
 ]);
+export function isResourceSchedulingReadinessState(value) {
+    return typeof value === 'string' && readinessStates.has(value);
+}
 export function isResourceSchedulingReadinessProjection(value) {
     return (isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&
         isRecord(value) &&

@@ -90,7 +90,7 @@ const utf8ByteLength = (value) => {
     return bytes;
 };
 exports.utf8ByteLength = utf8ByteLength;
-const hasSafeContainerShape = (value, depth = 0, seen = new Set()) => {
+const hasSafeContainerShape = (value, depth = 0, seen = new Set(), requireJsonArrays = false) => {
     if (depth > contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.validatedContainerDepth)
         return false;
     if (typeof value !== 'object' || value === null)
@@ -99,13 +99,19 @@ const hasSafeContainerShape = (value, depth = 0, seen = new Set()) => {
         return false;
     seen.add(value);
     if (Array.isArray(value)) {
-        const valid = value.length <= contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems && value.every(item => (0, exports.hasSafeContainerShape)(item, depth + 1, seen));
+        // Sparse/custom arrays change shape during JSON serialization. AWS envelopes
+        // require a stable round-trip; existing Azure callers retain their policy.
+        const keys = requireJsonArrays ? Object.keys(value) : [];
+        const valid = value.length <= contracts_js_1.ENVIRONMENT_CONTRACT_LIMITS_V1.boundedListItems &&
+            (!requireJsonArrays ||
+                (Object.getPrototypeOf(value) === Array.prototype && keys.length === value.length && keys.every((key, index) => key === String(index)))) &&
+            value.every(item => (0, exports.hasSafeContainerShape)(item, depth + 1, seen, requireJsonArrays));
         seen.delete(value);
         return valid;
     }
     if (!(0, exports.isRecord)(value))
         return false;
-    const valid = Object.keys(value).every(key => !exports.PROTOTYPE_KEYS.has(key) && (0, exports.hasSafeContainerShape)(value[key], depth + 1, seen));
+    const valid = Object.keys(value).every(key => !exports.PROTOTYPE_KEYS.has(key) && (0, exports.hasSafeContainerShape)(value[key], depth + 1, seen, requireJsonArrays));
     seen.delete(value);
     return valid;
 };

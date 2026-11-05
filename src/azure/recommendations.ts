@@ -1,5 +1,9 @@
 import type { Comment, CommentScope, RecommendationHistory } from './recommendationState';
 import type { ProviderScope } from '../common/provider';
+export * from './benefitAssessmentAdmission';
+export * from './reportAssessmentBindings';
+export type { CommitmentUnusedValueEvidence, CommitmentUnusedValueContext } from './commitmentUnusedValue';
+export { isCommitmentUnusedValueEvidence } from './commitmentUnusedValue';
 import { SecurityAssessmentStatus, SecurityImpact, SubscriptionSecurityStatus } from './security';
 import { SubscriptionSummaryLite } from './subscriptions';
 import type {
@@ -20,7 +24,12 @@ import type { RecommendationSystemTrackClassification } from './recommendationTr
 import type { LicensingRecommendationRenderData } from './licensing';
 import type { ResourceSimpleOptimizationProfile } from './resourceOptimization';
 import type { CostComposition, EstimateLens } from './costComposition.js';
-import type { PortfolioSavingsContributionV2, RecommendationSavingsUnavailableReason, SavingsAggregateV2, ScenarioSavingsPotentialV2 } from './savings.js';
+import type {
+  PortfolioSavingsContributionV2,
+  RecommendationSavingsUnavailableReason,
+  SavingsAggregateV2,
+  ScenarioSavingsPotentialV2,
+} from './savings.js';
 import type { MetricAggregationType } from './metrics.js';
 export enum RecommendationCategory {
   Cost = 'Cost',
@@ -301,6 +310,10 @@ export interface RecommendationDecisionContext {
 }
 
 export interface Recommendation {
+  /** Exact current claim binding; absence alone never authorizes an enrolled native benefit. */
+  benefitAssessmentAdmission?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentAdmissionV1;
+  /** Separate nonadditive exposure evidence; never include in savings totals. */
+  unusedCommitmentValue?: import('./commitmentUnusedValue').CommitmentUnusedValueEvidence;
   /** Business identity of a recommendation record (routing/state/sharing/dedupe). */
   id: string;
   name: string;
@@ -614,6 +627,10 @@ export interface RecommendationResource {
 }
 
 export interface RecommendationsView extends AzurePortalVersionedArtifact {
+  /** Missing means legacy/unverified. Pending covers withheld assessment findings/counts, including nonfinancial expiry. */
+  benefitAssessmentCoverage?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentCoverageV1;
+  /** Complete native assessment subjects collected before projection or row limits. */
+  benefitAssessmentDependencies?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentDependenciesV1;
   /** Current Azure scope state is awaiting matching publication; comment-only changes do not set this flag. */
   recommendationStatePendingPublication?: boolean;
   recommendations: RecommendationWithResources[];

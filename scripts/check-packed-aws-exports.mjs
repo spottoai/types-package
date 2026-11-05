@@ -5,6 +5,40 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const currencyConversionFixture = JSON.parse(await readFile(join(packageRoot, 'fixtures/currency-conversion.json'), 'utf8'));
+const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
+const storageCostFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-storage-costs.json'), 'utf8'));
+const applicationDirectoryFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-applications.json'), 'utf8'));
+const packedApplicationDirectoryProbe = `
+const applications = ${JSON.stringify(applicationDirectoryFixture)};
+if (root.MICROSOFT365_APPLICATIONS_SCHEMA_VERSION !== 'microsoft-365-applications/v1' ||
+    !root.isMicrosoft365ApplicationDirectory(applications) ||
+    root.isMicrosoft365ApplicationDirectory({...applications, accountIds: ['private']}) ||
+    root.isMicrosoft365ApplicationDirectory({...applications, applications: [...applications.applications, applications.applications[0]]}))
+  throw new Error('Packed Microsoft 365 application-directory contract failed.');
+`;
+const packedLicensingContentProbe = `
+const content = ${JSON.stringify(licensingContentFixture)};
+if (!root.isMicrosoft365LicensingContent(content) ||
+    root.isMicrosoft365LicensingContent({...content, sources: {users: []}}))
+  throw new Error('Packed Microsoft 365 licensing-content contract failed.');
+const securityCopilotContent = structuredClone(content);
+securityCopilotContent.relatedSpend.currencies[0].products[0].category = 'security-copilot';
+if (!root.isMicrosoft365LicensingContent(securityCopilotContent) ||
+    !root.isMicrosoft365RelatedSpendProduct(securityCopilotContent.relatedSpend.currencies[0].products[0]))
+  throw new Error('Packed Security Copilot licensing-content contract failed.');
+const storageCosts = ${JSON.stringify(storageCostFixture)};
+storageCosts.generatedAt = content.generatedAt;
+if (!root.isMicrosoft365StorageCostView(storageCosts) ||
+    !root.isMicrosoft365LicensingContent({...content, storageCosts}) ||
+    !root.isMicrosoft365StorageRate(storageCosts.currencies[0].rates[0]) ||
+    !root.isMicrosoft365StorageCostEstimate(storageCosts.currencies[0].estimates[0]))
+  throw new Error('Packed storage cost contract failed.');
+for (const category of ['sharepoint-storage-payg', 'sharepoint-archive', 'onedrive-archive', 'dataverse-database', 'dataverse-file', 'dataverse-log']) {
+  if (!root.isMicrosoft365RelatedSpendProduct({...content.relatedSpend.currencies[0].products[0], category}))
+    throw new Error('Packed storage billing category failed.');
+}
+`;
 const awsFixturePath = join(packageRoot, 'tests', 'fixtures', 'aws-public-root.consumer.ts.fixture');
 const resourceOptimizationFixturePath = join(packageRoot, 'tests', 'fixtures', 'resource-optimization.consumer.ts.fixture');
 const recommendationTracksFixturePath = join(packageRoot, 'tests', 'fixtures', 'recommendation-tracks.consumer.ts.fixture');
@@ -422,7 +456,10 @@ try {
   await mkdir(consumerRoot, { recursive: true });
   await writeFile(join(consumerRoot, 'package.json'), JSON.stringify({ private: true, type: 'module' }, null, 2));
   await copyFile(awsFixturePath, join(consumerRoot, 'aws-public-root.consumer.ts'));
-  await copyFile(join(packageRoot, 'tests/fixtures/savings-unavailable-claims.consumer.ts.fixture'), join(consumerRoot, 'savings-unavailable-claims.consumer.ts'));
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/savings-unavailable-claims.consumer.ts.fixture'),
+    join(consumerRoot, 'savings-unavailable-claims.consumer.ts')
+  );
   await copyFile(join(packageRoot, 'tests/fixtures/resource-state.consumer.ts.fixture'), join(consumerRoot, 'resource-state.consumer.ts'));
   await copyFile(resourceOptimizationFixturePath, join(consumerRoot, 'resource-optimization.consumer.ts'));
   await copyFile(recommendationTracksFixturePath, join(consumerRoot, 'recommendation-tracks.consumer.ts'));
@@ -432,6 +469,11 @@ try {
   await copyFile(azureSpSetupCloudEngineFixturePath, join(consumerRoot, 'azure-sp-setup-cloud-engine.consumer.ts'));
   await copyFile(azureSpSetupUiFixturePath, join(consumerRoot, 'azure-sp-setup-ui.consumer.ts'));
   await copyFile(commitmentsPlanningFixturePath, join(consumerRoot, 'commitments-planning.consumer.ts'));
+  for (const extension of ['ts', 'cts'])
+    await copyFile(
+      join(packageRoot, 'tests/fixtures/currency-conversion.consumer.ts.fixture'),
+      join(consumerRoot, `currency-conversion.consumer.${extension}`)
+    );
   await writeFile(join(consumerRoot, 'artifact-evidence.consumer.ts'), artifactEvidenceConsumerSource);
   await copyFile(narrowAwsRuntimeFixturePath, join(consumerRoot, 'narrow-aws-runtime.consumer.ts'));
   await copyFile(join(packageRoot, 'tests/fixtures/aws-environment.consumer.ts.fixture'), join(consumerRoot, 'aws-environment.consumer.ts'));
@@ -445,9 +487,25 @@ try {
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
   await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
   await copyFile(
+    join(packageRoot, 'tests/fixtures/microsoft365-license-context.consumer.ts.fixture'),
+    join(consumerRoot, 'microsoft365-license-context.consumer.ts')
+  );
+  await copyFile(join(packageRoot, 'tests/fixtures/company-context.consumer.ts.fixture'), join(consumerRoot, 'company-context.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/promotion-templates.consumer.ts.fixture'), join(consumerRoot, 'promotion-templates.consumer.ts'));
+  await copyFile(join(packageRoot, 'tests/fixtures/promotion-templates.consumer.ts.fixture'), join(consumerRoot, 'promotion-templates.consumer.cts'));
+  await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-usage.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-usage.consumer.ts')
   );
+  await copyFile(
+    join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.consumer.ts.fixture'),
+    join(consumerRoot, 'microsoft365-licensing-content.consumer.ts')
+  );
+  for (const extension of ['ts', 'cts'])
+    await copyFile(
+      join(packageRoot, 'tests/fixtures/microsoft365-applications.consumer.ts.fixture'),
+      join(consumerRoot, `microsoft365-applications.consumer.${extension}`)
+    );
   await copyFile(
     join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'),
     join(consumerRoot, 'resource-artifact-usage.consumer.ts')
@@ -478,6 +536,7 @@ try {
       '--moduleResolution',
       'NodeNext',
       'aws-public-root.consumer.ts',
+      'microsoft365-license-context.consumer.ts',
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
       'resource-optimization.consumer.ts',
@@ -488,6 +547,8 @@ try {
       'azure-sp-setup-cloud-engine.consumer.ts',
       'azure-sp-setup-ui.consumer.ts',
       'commitments-planning.consumer.ts',
+      'currency-conversion.consumer.ts',
+      'currency-conversion.consumer.cts',
       'artifact-evidence.consumer.ts',
       'narrow-aws-runtime.consumer.ts',
       'portfolio.consumer.ts',
@@ -499,8 +560,14 @@ try {
       'public-ip-addresses.consumer.ts',
       'resource-health.consumer.ts',
       'microsoft365-license-usage.consumer.ts',
+      'microsoft365-licensing-content.consumer.ts',
+      'microsoft365-applications.consumer.ts',
+      'microsoft365-applications.consumer.cts',
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
+      'company-context.consumer.ts',
+      'promotion-templates.consumer.ts',
+      'promotion-templates.consumer.cts',
     ],
     consumerRoot
   );
@@ -514,6 +581,36 @@ try {
     consumerRoot
   );
   run(process.execPath, ['--input-type=module', '-e', `import root from '@spottoai/types-package'; ${packedBillingV7ProbeSource}`], consumerRoot);
+  run(process.execPath, ['-e', `const root = require('@spottoai/types-package'); ${packedLicensingContentProbe}`], consumerRoot);
+  for (const mode of ['commonjs', 'esm']) {
+    const currencyImports =
+      mode === 'esm'
+        ? "import * as root from '@spottoai/types-package'; import * as currency from '@spottoai/types-package/currency-conversion';"
+        : "const root = require('@spottoai/types-package'); const currency = require('@spottoai/types-package/currency-conversion');";
+    const currencyChecks = `
+      const fixture = ${JSON.stringify(currencyConversionFixture)};
+      for (const contracts of [root, currency]) {
+        if (contracts.CURRENCY_CONVERSION_CONTRACT_VERSION !== 1 ||
+            contracts.CURRENCY_CONVERSION_HEADER !== 'X-Spotto-Currency-Conversion' ||
+            !contracts.isCurrencyConversionContextV1(fixture.context) ||
+            !contracts.isCurrencyConversionRateV1(fixture.converted.rates[0]) ||
+            !contracts.isCurrencyConversionV1(fixture.converted) ||
+            !contracts.isCurrencyConversionV1(fixture.mixed) ||
+            !contracts.isCurrencyConversionDiscoveryV1(fixture.discovery) ||
+            contracts.isCurrencyConversionV1({...fixture.converted, status: 'unchanged'}) ||
+            contracts.isCurrencyConversionV1({...fixture.converted, companyId: 'private'}))
+          throw new Error('Packed currency conversion contracts failed.');
+      }
+    `;
+    run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', currencyImports + currencyChecks], consumerRoot);
+    const imports = mode === 'esm' ? "import * as root from '@spottoai/types-package';" : "const root = require('@spottoai/types-package');";
+    run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', imports + packedApplicationDirectoryProbe], consumerRoot);
+  }
+  run(
+    process.execPath,
+    ['--input-type=module', '-e', `import * as root from '@spottoai/types-package'; ${packedLicensingContentProbe}`],
+    consumerRoot
+  );
   run(process.execPath, ['aws-environment.check.mjs'], consumerRoot);
   run(process.execPath, ['environment-provider.check.mjs'], consumerRoot);
   // The narrow public governance contract must work in both module formats and legacy TS resolution.
@@ -531,6 +628,8 @@ try {
       'node',
       'cloud-governance.consumer.ts',
       'aws-environment.consumer.ts',
+      'currency-conversion.consumer.ts',
+      'microsoft365-license-context.consumer.ts',
     ],
     consumerRoot
   );
@@ -566,6 +665,27 @@ try {
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
     ],
+    consumerRoot
+  );
+  const licenseContextChecks = `
+    assert.equal(root.MICROSOFT365_LICENSE_CONTEXT_VERSION, undefined);
+    assert.equal(root.isMicrosoft365AccountContextInput({ notes: 'Context only' }), true);
+    assert.equal(root.isMicrosoft365ProductContextCollectionResponse({ tenantId: 'tenant-one', products: [] }), true);
+    assert.equal(root.isMicrosoft365ProductContextResponse({ tenantId: 'tenant-one', context: null }), true);
+    assert.equal(root.isMicrosoft365ProductContextSummary({ notes: 'Must not leak' }), false);
+  `;
+  run(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import assert from 'node:assert/strict'; import * as root from '@spottoai/types-package'; ${licenseContextChecks}`,
+    ],
+    consumerRoot
+  );
+  run(
+    process.execPath,
+    ['-e', `const assert = require('node:assert/strict'); const root = require('@spottoai/types-package'); ${licenseContextChecks}`],
     consumerRoot
   );
   const healthExportChecks =
@@ -684,7 +804,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      `import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; const documents = ${digestRepairRuntimeDocuments}; const manifestBinding = root.projectBillingOutputBindingV1FromManifest(documents.outputManifest); const metadataBinding = root.projectBillingOutputBindingV1FromMetadata(documents.metadata); const bindingCanonical = root.canonicalizeBillingOutputBindingV1(manifestBinding); const metadataBindingCanonical = root.canonicalizeBillingOutputBindingV1(metadataBinding); const inputPreimage = root.canonicalizeBillingAnalyzerInputManifestV2ForDigest(documents.inputManifest); const outputPreimage = root.canonicalizeBillingAnalyzerOutputManifestV2ForDigest(documents.outputManifest); if (JSON.stringify(manifestBinding) !== JSON.stringify(metadataBinding) || bindingCanonical !== metadataBindingCanonical || !bindingCanonical.includes('"kind":"billing-analysis-output"') || inputPreimage.includes('"manifestDigest"') || outputPreimage.includes('"manifestDigest"') || !outputPreimage.includes('"outputBindingDigest"') || root.PUBLISHED_VIEW_OBJECT_LIMITS_V1?.maxArtifacts !== 512 || root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !root.AWS_COMMAND_ACTIONS.includes('tick') || !root.AWS_COMMAND_ENTITIES.includes('scheduler') || JSON.stringify(root.AWS_SCHEDULED_REFRESH_SCAN_KINDS) !== '["full","components"]' || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_SCHEDULED_REFRESH_SCAN_KINDS !== root.AWS_SCHEDULED_REFRESH_SCAN_KINDS || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || root.RESOURCE_GRAPH_SCHEMA_VERSION !== 1 || root.RESOURCE_GRAPH_LOGICAL_NAME !== 'relationships.json.gz' || typeof root.validateResourceGraphArtifact !== 'function' || typeof aws.validateAwsResourceGraphArtifact !== 'function' || 'validateAwsPortalRelationshipArtifact' in aws || 'validateAwsPluginGenerationManifest' in aws || 'AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME' in aws || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
+      `import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; const dev1036RuntimeExportNames = ${JSON.stringify(dev1036RuntimeExportNames)}; const documents = ${digestRepairRuntimeDocuments}; const manifestBinding = root.projectBillingOutputBindingV1FromManifest(documents.outputManifest); const metadataBinding = root.projectBillingOutputBindingV1FromMetadata(documents.metadata); const bindingCanonical = root.canonicalizeBillingOutputBindingV1(manifestBinding); const metadataBindingCanonical = root.canonicalizeBillingOutputBindingV1(metadataBinding); const inputPreimage = root.canonicalizeBillingAnalyzerInputManifestV2ForDigest(documents.inputManifest); const outputPreimage = root.canonicalizeBillingAnalyzerOutputManifestV2ForDigest(documents.outputManifest); if (JSON.stringify(manifestBinding) !== JSON.stringify(metadataBinding) || bindingCanonical !== metadataBindingCanonical || !bindingCanonical.includes('"kind":"billing-analysis-output"') || inputPreimage.includes('"manifestDigest"') || outputPreimage.includes('"manifestDigest"') || !outputPreimage.includes('"outputBindingDigest"') || root.PUBLISHED_VIEW_OBJECT_LIMITS_V1?.maxArtifacts !== 512 || root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !root.AWS_COMMAND_ACTIONS.includes('tick') || !root.AWS_COMMAND_ENTITIES.includes('scheduler') || JSON.stringify(root.AWS_SCHEDULED_REFRESH_SCAN_KINDS) !== '["full","components","billing-reconciliation"]' || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_SCHEDULED_REFRESH_SCAN_KINDS !== root.AWS_SCHEDULED_REFRESH_SCAN_KINDS || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || root.RESOURCE_GRAPH_SCHEMA_VERSION !== 1 || root.RESOURCE_GRAPH_LOGICAL_NAME !== 'relationships.json.gz' || typeof root.validateResourceGraphArtifact !== 'function' || typeof aws.validateAwsResourceGraphArtifact !== 'function' || 'validateAwsPortalRelationshipArtifact' in aws || 'validateAwsPluginGenerationManifest' in aws || 'AWS_PORTAL_RESOURCE_COLLECTION_LOGICAL_NAME' in aws || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || !dev1036RuntimeExportNames.every(name => typeof root[name] === 'function') || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);`,
     ],
     consumerRoot
   );
@@ -693,7 +813,7 @@ try {
     [
       '--input-type=module',
       '-e',
-      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import relationships from '@spottoai/types-package/aws/relationships'; import commitments from '@spottoai/types-package/aws/commitments-planning'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !root.AWS_COMMAND_ACTIONS.includes('tick') || !root.AWS_COMMAND_ENTITIES.includes('scheduler') || JSON.stringify(root.AWS_SCHEDULED_REFRESH_SCAN_KINDS) !== '[\"full\",\"components\"]' || !root.AWS_COMMAND_ENTITIES.includes('organization-commitments') || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_SCHEDULED_REFRESH_SCAN_KINDS !== root.AWS_SCHEDULED_REFRESH_SCAN_KINDS || root.AWS_ORGANIZATION_COMMITMENTS_PLANNING_LOGICAL_NAME !== 'organization-commitments-planning.json.gz' || 'validateAwsPortalCommitmentsPlanningArtifact' in root || typeof root.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof root.validateAwsOrganizationCommitmentsRefreshStatusResponse !== 'function' || typeof root.validateAwsOrganizationCommitmentsScopeListResponse !== 'function' || typeof root.validateAwsOrganizationCommitmentsRefreshAcceptedResponse !== 'function' || typeof root.buildAwsOrganizationCommitmentsSessionId !== 'function' || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('commitments-planning') || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof aws.validateAwsResourceGraphArtifact !== 'function' || typeof aws.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof relationships.validateAwsResourceGraphArtifact !== 'function' || relationships.RESOURCE_GRAPH_LOGICAL_NAME !== 'relationships.json.gz' || relationships.RESOURCE_GRAPH_SCHEMA_VERSION !== 1 || !relationships.AWS_RESOURCE_TYPE_PATTERN.test('AWS::Bedrock::Agent') || typeof commitments.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof commitments.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof commitments.validateAwsOrganizationCommitmentsRefreshStatusResponse !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
+      "import root from '@spottoai/types-package'; import aws from '@spottoai/types-package/aws'; import relationships from '@spottoai/types-package/aws/relationships'; import commitments from '@spottoai/types-package/aws/commitments-planning'; import recommendations from '@spottoai/types-package/azure/recommendations'; import provider from '@spottoai/types-package/common/provider'; if (root.AWS_COMMAND_PROVIDER !== 'aws' || root.AWS_COMMAND_SCHEMA_VERSION !== 1 || root.ARTIFACT_GENERATION_SCHEMA_VERSION !== 1 || root.SystemTrackIds.resourceHygiene !== 'resource-hygiene' || root.RecommendationFocusModes.finops !== 'finops' || !root.AWS_COMMAND_ACTIONS.includes('tick') || !root.AWS_COMMAND_ENTITIES.includes('scheduler') || JSON.stringify(root.AWS_SCHEDULED_REFRESH_SCAN_KINDS) !== '[\"full\",\"components\",\"billing-reconciliation\"]' || !root.AWS_COMMAND_ENTITIES.includes('organization-commitments') || !Array.isArray(root.AWS_FORBIDDEN_CREDENTIAL_FIELDS) || aws.AWS_SCHEDULED_REFRESH_SCAN_KINDS !== root.AWS_SCHEDULED_REFRESH_SCAN_KINDS || root.AWS_ORGANIZATION_COMMITMENTS_PLANNING_LOGICAL_NAME !== 'organization-commitments-planning.json.gz' || 'validateAwsPortalCommitmentsPlanningArtifact' in root || typeof root.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof root.validateAwsOrganizationCommitmentsRefreshStatusResponse !== 'function' || typeof root.validateAwsOrganizationCommitmentsScopeListResponse !== 'function' || typeof root.validateAwsOrganizationCommitmentsRefreshAcceptedResponse !== 'function' || typeof root.buildAwsOrganizationCommitmentsSessionId !== 'function' || aws.AWS_ESTATES_MANIFEST_SCHEMA_VERSION !== 1 || aws.AWS_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || aws.AWS_PORTAL_PUBLIC_ARTIFACT_SCHEMA_VERSION !== 1 || !aws.AWS_PUBLIC_ARTIFACT_TYPES.includes('commitments-planning') || typeof aws.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof aws.validateAwsResourceGraphArtifact !== 'function' || typeof aws.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof relationships.validateAwsResourceGraphArtifact !== 'function' || relationships.RESOURCE_GRAPH_LOGICAL_NAME !== 'relationships.json.gz' || relationships.RESOURCE_GRAPH_SCHEMA_VERSION !== 1 || !relationships.AWS_RESOURCE_TYPE_PATTERN.test('AWS::Bedrock::Agent') || typeof commitments.validateAwsCommitmentsPlanningViewIdentity !== 'function' || typeof commitments.validateAwsPortalOrganizationCommitmentsPlanningArtifact !== 'function' || typeof commitments.validateAwsOrganizationCommitmentsRefreshStatusResponse !== 'function' || recommendations.RecommendationCategory.Cost !== 'Cost' || provider.ProviderName.Azure !== 'azure') process.exit(1);",
     ],
     consumerRoot
   );
@@ -775,6 +895,12 @@ try {
     const checks =
       "const spec = {schemaVersion:1,reportType:'sdm',scope:{cloudAccountIds:['ca-1'],subscriptionIds:['6b1c1f0e-3f2a-4e5b-9c8d-0a1b2c3d4e5f']},period:{kind:'previous-calendar-month'},configuration:{layout:'spotto-layout',cloudIqServiceProfile:{selectedServiceIds:[]}}}; const definition = {definitionType:'report-generation',name:'Report',timezone:'UTC',timing:{triggerType:'recurring',cadence:'monthly',dayOfMonth:'last',localTime:'09:00'},report:spec,initialMode:'active'}; if (!scheduler.isScheduleWriteRequest(definition) || !root.isReportGenerationScheduleWriteRequest(definition) || typeof jobs.validateReportJobUpdateV1 !== 'function' || typeof jobs.buildReportJobProjectionV1 !== 'function' || 'validateReportJobUpdateV1' in root) process.exit(1); jobs.buildReportJobAdmissionFingerprintV1({schemaVersion:1,report:spec}).then(hash => { if (!/^[0-9a-f]{64}$/.test(hash)) process.exit(1); });";
     run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + checks], consumerRoot);
+    const companyContextExports = `
+for (const name of ['COMPANY_CONTEXT_SCHEMA_VERSION', 'COMPANY_MEMORY_SCHEMA_VERSION', 'COMPANY_MEETING_SCHEMA_VERSION', 'COMPANY_MEMORY_FEATURE_KEY', 'COMPANY_MEMORY_PERMISSION_KEYS']) {
+  if (!Object.prototype.hasOwnProperty.call(root, name)) throw new Error('Packed company context export missing: ' + name);
+}
+`;
+    run(process.execPath, [...(moduleMode === 'esm' ? ['--input-type=module'] : []), '-e', imports + companyContextExports], consumerRoot);
     const coverageChecks = `
 const coverage = {state:'complete',timeWindow:{start:'2026-10-01T00:00:00.000Z',end:'2026-10-17T23:59:59.999Z'},expectedRegions:['ap-southeast-2'],gaps:[],gapCount:0,gapsTruncated:false};
 if (typeof root.isActivityLogCollectionCoverage !== 'function') throw new Error('Packed public activity coverage validator export is missing');
@@ -828,6 +954,8 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
       '--moduleResolution',
       'node',
       'microsoft365-license-usage.consumer.ts',
+      'microsoft365-licensing-content.consumer.ts',
+      'microsoft365-applications.consumer.ts',
     ],
     consumerRoot
   );
@@ -859,6 +987,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
       '--moduleResolution',
       'node',
       'framework-assessments.consumer.ts',
+      'company-context.consumer.ts',
     ],
     consumerRoot
   );
@@ -879,7 +1008,7 @@ if (!root.isActivityLogCollectionCoverage(coverage) || root.isActivityLogCollect
     consumerRoot
   );
   process.stdout.write(
-    'Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments consumer fixture verified.\n'
+    'Packed Node 24 ESM/CommonJS root/AWS/Portfolio/narrow scheduler/reporting jobs/framework assessments/company context consumer fixtures verified.\n'
   );
 } finally {
   await rm(tempRoot, { recursive: true, force: true });

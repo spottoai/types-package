@@ -38,6 +38,7 @@ import {
 } from './projectionValidation.js';
 import { isEnvironmentCoverageStateV1, isEnvironmentRunIdV1 } from './validation.js';
 import { isEnvironmentMoneyValueWithProvenanceV1 } from './moneyValidation.js';
+import { isEnvironmentCapabilityDocumentSetV1 } from './optionalDocuments.js';
 
 const MONEY_PROVENANCE = new Set<EnvironmentAwsMoneyProvenanceV1>([
   'account-summary',
@@ -228,7 +229,11 @@ export const isEnvironmentAwsAccountProjectionV1 = (value: unknown): value is En
 export const isEnvironmentAwsAccountCompiledGenerationPointerV1 = (value: unknown): value is EnvironmentAwsAccountCompiledGenerationPointerV1 => {
   if (!hasSafeContainerShape(value, 0, new Set(), true) || !isRecord(value)) return false;
   return (
-    hasExactKeys(value, ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt']) &&
+    hasExactKeys(
+      value,
+      ['schemaVersion', 'status', 'environmentRunId', 'scope', 'sourceBinding', 'treeDigestSha256', 'fileCount', 'generatedAt'],
+      ['optionalDocuments']
+    ) &&
     value.schemaVersion === 1 &&
     value.status === 'completed' &&
     isEnvironmentRunIdV1(value.environmentRunId) &&
@@ -240,6 +245,7 @@ export const isEnvironmentAwsAccountCompiledGenerationPointerV1 = (value: unknow
     typeof value.treeDigestSha256 === 'string' &&
     SHA256_PATTERN.test(value.treeDigestSha256) &&
     value.fileCount === ENVIRONMENT_DOCUMENT_NAMES_V1.length &&
+    (value.optionalDocuments === undefined || isEnvironmentCapabilityDocumentSetV1(value.optionalDocuments, value.scope)) &&
     isCanonicalUtcTimestamp(value.generatedAt) &&
     Date.parse(value.generatedAt) >= Date.parse(value.sourceBinding.completedAt) &&
     utf8ByteLength(JSON.stringify(value)) <= ENVIRONMENT_CONTRACT_LIMITS_V1.completedPointerBytes

@@ -1,11 +1,13 @@
+import type { AwsEstimatedBillingAuthorityBlock } from '../aws/billingEstimation.js';
 import type { CostComposition } from './costComposition.js';
 import { type AzureProviderScopeFinancialChargeSpendBreakdownV1 } from './financialChargePolicy.js';
+import { type AzureNativeDiscountEligibleCostV1 } from './nativeDiscountEligibility.js';
 /**
  * Non-authoritative daily/month display projection. It inherits period and
  * currency from the containing summary entry. Formal reports and billing must
  * use `financialChargeSpend` when present, never these major-unit fields.
  */
-export interface AzureNativeFinancialSummaryV1 {
+export interface AzureNativeFinancialSummaryV1 extends AzureNativeDiscountEligibleCostV1 {
     contractVersion: 'azure-native-financial-summary/v1';
     policyRef: 'azure-cloud-services-excluding-marketplace/v1';
     status: 'complete' | 'partial';
@@ -14,6 +16,8 @@ export interface AzureNativeFinancialSummaryV1 {
     financialChargeSpend?: AzureProviderScopeFinancialChargeSpendBreakdownV1;
     resourceTypes: ResourceCostType[];
 }
+/** Exact validator for one display-summary service row, including optional eligibility evidence. */
+export declare const isResourceCostType: (value: unknown) => value is ResourceCostType;
 /** Exact validator for one Azure-native daily/month display projection. */
 export declare const isAzureNativeFinancialSummaryV1: (value: unknown) => value is AzureNativeFinancialSummaryV1;
 export interface AzureLocation {
@@ -23,6 +27,8 @@ export interface AzureLocation {
     displayName: string;
 }
 export interface MonthSummaryEntry {
+    /** Conditional estimate with explicit source, confidence and billing-window coverage. */
+    estimatedBillingAuthority?: AwsEstimatedBillingAuthorityBlock;
     /** YYYY-MM format */
     month: string;
     /** sum of actual cost for the month */
@@ -39,7 +45,7 @@ export interface MonthSummaryEntry {
     azureNativeFinancialSummary?: AzureNativeFinancialSummaryV1;
     composition?: CostComposition;
 }
-export interface ResourceCostType {
+export interface ResourceCostType extends AzureNativeDiscountEligibleCostV1 {
     /** e.g. "Virtual Machines" */
     name: string;
     /** Actual cost, when available (e.g. 100). */

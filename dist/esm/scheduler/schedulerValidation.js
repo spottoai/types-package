@@ -1,4 +1,5 @@
 import { RESOURCE_STRATEGY_CONTRACT_LIMITS } from './resourceStrategyContracts.js';
+import { isReportGenerationScheduleWriteRequest, isReportGenerationScheduleProjection, isScheduledReportGenerationV1, } from './reportGenerationValidation.js';
 import { isResourceStrategyScheduleCommand, isResourceStrategyWeeklyScheduleProjection, isResourceStrategyWeeklyScheduleWriteRequest, } from './resourceStrategyScheduleValidation.js';
 import { isResourceSchedulePermissionManifestConsent } from './resourceStrategyPermissionValidation.js';
 import { isResourceSchedulingCapabilityProjection, isResourceSchedulingReadinessProjection } from './resourceStrategyCapabilityValidation.js';
@@ -75,13 +76,16 @@ export function isRecommendationActionScheduleWriteRequest(value) {
     }
 }
 export function isScheduleWriteRequest(value) {
-    return isResourceStrategyWeeklyScheduleWriteRequest(value) || isRecommendationActionScheduleWriteRequest(value);
+    return (isResourceStrategyWeeklyScheduleWriteRequest(value) ||
+        isRecommendationActionScheduleWriteRequest(value) ||
+        isReportGenerationScheduleWriteRequest(value));
 }
 export function isScheduleMutationRequest(value) {
     return (isRecord(value) &&
         hasOnlyKeys(value, ['definition', 'permissionConsent']) &&
         isScheduleWriteRequest(value.definition) &&
-        (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)));
+        (value.permissionConsent === undefined ||
+            (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent))));
 }
 export function isRecommendationActionScheduleCommand(value) {
     return (isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&
@@ -132,7 +136,9 @@ export function isRecommendationActionScheduleProjection(value) {
     }
 }
 export function isScheduleProjection(value) {
-    return isResourceStrategyWeeklyScheduleProjection(value) || isRecommendationActionScheduleProjection(value);
+    return (isResourceStrategyWeeklyScheduleProjection(value) ||
+        isRecommendationActionScheduleProjection(value) ||
+        isReportGenerationScheduleProjection(value));
 }
 export function isScheduleListResponse(value) {
     return (isWithinJsonByteLimit(value, RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&
@@ -188,7 +194,7 @@ export function isScheduledRecommendationActionV1(value) {
     }
 }
 export function isScheduledOccurrenceV1(value) {
-    return isScheduledResourceTransitionV1(value) || isScheduledRecommendationActionV1(value);
+    return isScheduledResourceTransitionV1(value) || isScheduledRecommendationActionV1(value) || isScheduledReportGenerationV1(value);
 }
 const schedulerOperationTypes = new Set([
     'refresh-capabilities',
@@ -212,13 +218,15 @@ function isSchedulerControlCommandV1(value) {
         case 'create-schedule':
             return (hasOnlyKeys(value, ['commandType', 'definition', 'permissionConsent', 'idempotencyKey']) &&
                 isScheduleWriteRequest(value.definition) &&
-                (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
+                (value.permissionConsent === undefined ||
+                    (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent))) &&
                 isBoundedString(value.idempotencyKey, 200));
         case 'update-schedule':
             return (hasOnlyKeys(value, ['commandType', 'scheduleId', 'definition', 'permissionConsent', 'expectedEtag', 'idempotencyKey']) &&
                 isBoundedString(value.scheduleId, 500) &&
                 isScheduleWriteRequest(value.definition) &&
-                (value.permissionConsent === undefined || isResourceSchedulePermissionManifestConsent(value.permissionConsent)) &&
+                (value.permissionConsent === undefined ||
+                    (value.definition.definitionType !== 'report-generation' && isResourceSchedulePermissionManifestConsent(value.permissionConsent))) &&
                 isBoundedString(value.expectedEtag, 2000) &&
                 isBoundedString(value.idempotencyKey, 200));
         case 'delete-schedule':

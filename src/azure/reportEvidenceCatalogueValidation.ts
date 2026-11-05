@@ -1,5 +1,6 @@
 import { REPORT_EVIDENCE_LIMITS, type ReportCompactRecommendation } from './reportEvidence';
 import { isReportSavingsBasis } from './reportSpendValidation';
+import { isCommitmentUnusedValueEvidence } from './commitmentUnusedValue';
 import { hasValidReportSavingsMetadata } from './reportSavingsContributionValidation';
 import {
   isRecord,
@@ -30,6 +31,7 @@ export const isCompactRecommendation = (value: unknown): value is ReportCompactR
   if (!hasValidReportSavingsMetadata(value)) return false;
   if (value.savingsBasis !== undefined && !isReportSavingsBasis(value.savingsBasis)) return false;
   const recommendation = value.recommendation;
+  if (recommendation.unusedCommitmentValue !== undefined && !isCommitmentUnusedValueEvidence(recommendation.unusedCommitmentValue)) return false;
   const assessment = recommendation.securityAssessmentSummary;
   if (
     assessment !== undefined &&

@@ -122,5 +122,47 @@ for (const api of [esm, cjs]) {
     }),
     'Overlapping intervals are invalid'
   );
+
+  // Optional agreement terms: absent on older documents, strictly shaped when present.
+  const terms = {
+    channel: 'enterprise_agreement_subscription',
+    reductionDate: '2027-01-01',
+    reductionRepeatsAnnually: true,
+    agreementEndDate: '2027-12-31',
+    additionsAreTrueUps: true,
+    excludedSkuIds: ['sku-audio-conferencing', 'sku-agent'],
+  };
+  assert(api.isMicrosoft365AgreementTerms(terms));
+  assert(api.isMicrosoft365PricingOverridesConfiguration(config), 'Documents without agreement terms stay valid');
+  assert(api.isMicrosoft365PricingOverridesConfiguration({ ...config, agreementTerms: terms }), 'Agreement terms are accepted');
+  assert(
+    api.isMicrosoft365AgreementTerms({
+      channel: null,
+      reductionDate: null,
+      reductionRepeatsAnnually: false,
+      agreementEndDate: null,
+      additionsAreTrueUps: null,
+      excludedSkuIds: [],
+    }),
+    'Unknown terms fall back to Microsoft lifecycle dates'
+  );
+  assert.deepEqual(api.MICROSOFT365_AGREEMENT_CHANNELS, ['enterprise_agreement', 'enterprise_agreement_subscription', 'csp', 'mca', 'other']);
+  for (const [invalid, message] of [
+    [{ ...terms, channel: 'volume' }, 'Unknown channel'],
+    [{ ...terms, reductionDate: '2027-02-30' }, 'Impossible reduction date'],
+    [{ ...terms, reductionDate: '2027-01-01T00:00:00Z' }, 'Timestamp instead of a date'],
+    [{ ...terms, agreementEndDate: '2026-12-31' }, 'Agreement ends before the reduction date'],
+    [{ ...terms, reductionRepeatsAnnually: null }, 'Repeat flag must be boolean'],
+    [{ ...terms, additionsAreTrueUps: 'yes' }, 'True-up flag must be boolean or null'],
+    [{ ...terms, excludedSkuIds: ['SKU-A', 'sku-a'] }, 'Excluded products are unique, case-insensitive'],
+    [{ ...terms, excludedSkuIds: [''] }, 'Excluded product IDs are non-empty'],
+    [{ ...terms, excludedSkuIds: Array.from({ length: 201 }, (_, index) => `sku-${index}`) }, 'Excluded products are bounded'],
+    [{ ...terms, notes: 'free text' }, 'Unknown fields are rejected'],
+    [(({ excludedSkuIds: _omit, ...rest }) => rest)(terms), 'Excluded products are always present'],
+  ]) {
+    assert(!api.isMicrosoft365AgreementTerms(invalid), message);
+    assert(!api.isMicrosoft365PricingOverridesConfiguration({ ...config, agreementTerms: invalid }), `${message} (in configuration)`);
+  }
+  assert(!api.isMicrosoft365PricingOverridesConfiguration({ ...config, agreementTerms: null }), 'Absent, not null, means no terms');
 }
 console.log('M365 pricing override CJS/ESM contracts passed.');

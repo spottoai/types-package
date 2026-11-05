@@ -1,4 +1,4 @@
-import type { AwsCommitmentsPlanningView } from '../azure/commitmentsPlanning.js';
+import type { AwsCommitmentsPlanningView } from './commitmentsPlanningView.js';
 /**
  * Validates the security-sensitive AWS identity boundary of a commitments view.
  * A full public-artifact validator should call this before publication or response.

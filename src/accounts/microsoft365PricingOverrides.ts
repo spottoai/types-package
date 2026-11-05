@@ -10,6 +10,36 @@ export interface Microsoft365PricingOverride {
   source: string;
 }
 
+/** How the tenant buys Microsoft 365; wording only, never a price calculation. */
+export type Microsoft365AgreementChannel = 'enterprise_agreement' | 'enterprise_agreement_subscription' | 'csp' | 'mca' | 'other';
+export const MICROSOFT365_AGREEMENT_CHANNELS: readonly Microsoft365AgreementChannel[] = [
+  'enterprise_agreement',
+  'enterprise_agreement_subscription',
+  'csp',
+  'mca',
+  'other',
+];
+/** Products a customer may mark as bought outside the agreement. */
+export const MICROSOFT365_AGREEMENT_EXCLUDED_SKU_LIMIT = 200;
+
+/**
+ * Customer-stated commercial terms for one tenant. They change when an action can take effect (timing and wording),
+ * never an estimated amount. Absent means Microsoft's subscription lifecycle dates are the only timing evidence.
+ */
+export interface Microsoft365AgreementTerms {
+  channel: Microsoft365AgreementChannel | null;
+  /** Next date a seat reduction can take effect (yyyy-mm-dd); null uses Microsoft's next lifecycle date. */
+  reductionDate: string | null;
+  /** Reductions are also allowed on each anniversary of reductionDate, up to agreementEndDate. */
+  reductionRepeatsAnnually: boolean;
+  /** Agreement end (yyyy-mm-dd) when it differs from the next reduction date; on or after reductionDate. */
+  agreementEndDate: string | null;
+  /** Added seats are ordered as true-ups rather than billed straight away; null when not stated. */
+  additionsAreTrueUps: boolean | null;
+  /** Products bought outside this agreement keep Microsoft's own lifecycle dates. Unique, case-insensitive. */
+  excludedSkuIds: string[];
+}
+
 export interface Microsoft365PricingOverridesConfiguration {
   schemaVersion: 'microsoft-365-pricing-overrides/v1';
   tenantId: string;
@@ -18,6 +48,8 @@ export interface Microsoft365PricingOverridesConfiguration {
   overrides: Microsoft365PricingOverride[];
   updatedAt: string | null;
   updatedBy?: string | null;
+  /** Optional agreement terms saved with the agreed prices; absent on documents written before the field existed. */
+  agreementTerms?: Microsoft365AgreementTerms;
 }
 
 export interface Microsoft365PricingConfigurationResponse {
@@ -98,11 +130,31 @@ export function isMicrosoft365PricingOverride(value: unknown): value is Microsof
   );
 }
 
+/** Shape and date-order validation only. Whether excluded products belong to the tenant remains API policy. */
+export function isMicrosoft365AgreementTerms(value: unknown): value is Microsoft365AgreementTerms {
+  if (
+    !record(value) ||
+    !only(value, ['channel', 'reductionDate', 'reductionRepeatsAnnually', 'agreementEndDate', 'additionsAreTrueUps', 'excludedSkuIds']) ||
+    !(value.channel === null || (typeof value.channel === 'string' && (MICROSOFT365_AGREEMENT_CHANNELS as readonly string[]).includes(value.channel))) ||
+    !(value.reductionDate === null || isMicrosoft365PricingDate(value.reductionDate)) ||
+    typeof value.reductionRepeatsAnnually !== 'boolean' ||
+    !(value.agreementEndDate === null || isMicrosoft365PricingDate(value.agreementEndDate)) ||
+    (typeof value.reductionDate === 'string' && typeof value.agreementEndDate === 'string' && value.agreementEndDate < value.reductionDate) ||
+    !(value.additionsAreTrueUps === null || typeof value.additionsAreTrueUps === 'boolean') ||
+    !Array.isArray(value.excludedSkuIds) ||
+    value.excludedSkuIds.length > MICROSOFT365_AGREEMENT_EXCLUDED_SKU_LIMIT ||
+    !value.excludedSkuIds.every(skuId => text(skuId, 128))
+  )
+    return false;
+  return new Set((value.excludedSkuIds as string[]).map(skuId => skuId.toLowerCase())).size === value.excludedSkuIds.length;
+}
+
 /** Shape and interval validation only. Company authorization and inventory matching remain API policy. */
 export function isMicrosoft365PricingOverridesConfiguration(value: unknown): value is Microsoft365PricingOverridesConfiguration {
   if (
     !record(value) ||
-    !only(value, ['schemaVersion', 'tenantId', 'revision', 'overrides', 'updatedAt', 'updatedBy']) ||
+    !only(value, ['schemaVersion', 'tenantId', 'revision', 'overrides', 'updatedAt', 'updatedBy', 'agreementTerms']) ||
+    !(value.agreementTerms === undefined || isMicrosoft365AgreementTerms(value.agreementTerms)) ||
     value.schemaVersion !== 'microsoft-365-pricing-overrides/v1' ||
     !text(value.tenantId, 128) ||
     !isMicrosoft365PricingRevision(value.revision) ||

@@ -1,7 +1,8 @@
 import type { EnvironmentArtifactKindV1, EnvironmentCoverageStateV1 } from '../environment/contracts.js';
+import { AI_CHAT_ANSWER_PRESENTATION_LIMITS_V1 } from './answerPresentation.js';
 import type { EnvironmentAwsArtifactKindV1 } from '../environment/awsContracts.js';
 import { isEnvironmentAwsArtifactKindV1 } from '../environment/awsReferences.js';
-import { hasExactKeys, isBoundedString, isCanonicalUtcTimestamp, isNonNegativeInteger, isRecord } from '../environment/internal.js';
+import { SHA256_PATTERN, hasExactKeys, isBoundedString, isCanonicalUtcTimestamp, isNonNegativeInteger, isRecord } from '../environment/internal.js';
 import { isEnvironmentArtifactKindV1, isEnvironmentPortalRouteV1, isEnvironmentSafeLabelV1 } from '../environment/validation.js';
 
 export const AI_CHAT_GROUNDING_LIMITS_V1 = Object.freeze({
@@ -35,8 +36,11 @@ export type AIEnvironmentEvidenceCoverageStatusV1 = EnvironmentCoverageStateV1['
  * `deterministic-citation-and-value`: the model restated each value and declared claims that the server compared.
  * `server-rendered-figures`: the model wrote figure references and the server rendered every verified figure from
  * bound evidence, so `claims` is empty and `figures` carries the per-figure result.
+ * `server-rendered-artifacts`: a deterministic recipe validated the accepted snapshot artifacts and
+ * rendered the answer from the same evidence. `artifactIds` binds that result to the snapshots;
+ * every numeric figure is server-rendered and verified. It makes no model claim declarations.
  */
-export type AIChatGroundingMethodV1 = 'deterministic-citation-and-value' | 'server-rendered-figures';
+export type AIChatGroundingMethodV1 = 'deterministic-citation-and-value' | 'server-rendered-figures' | 'server-rendered-artifacts';
 
 export type AIChatGroundedFigureKindV1 = 'money' | 'percentage' | 'quantity' | 'date';
 export type AIChatGroundedFigureStatusV1 = 'verified' | 'unverified';
@@ -52,6 +56,8 @@ export interface AIEnvironmentEvidenceMatch {
   safeLabel: string;
   portalRoute: string;
   artifactKind: EnvironmentArtifactKindV1 | EnvironmentAwsArtifactKindV1;
+  /** Stable non-callable source identity hash; required for generic capability evidence. */
+  sourceKey?: string;
   sourceCompletedAt: string;
   coverageStatus: AIEnvironmentEvidenceCoverageStatusV1;
   truncated: boolean;
@@ -90,8 +96,10 @@ export interface AIChatGroundingSummary {
   totalClaimCount: number;
   verifiedClaimCount: number;
   claims: AIChatClaimVerificationV1[];
-  /** Present only, and always, with the `server-rendered-figures` method. */
+  /** Present with server-rendered figure or artifact methods. */
   figures?: AIChatGroundedFigureV1[];
+  /** Accepted snapshot identities, present only with `server-rendered-artifacts`. */
+  artifactIds?: string[];
   reasonCode?: AIChatGroundingReasonCodeV1;
 }
 
@@ -115,10 +123,12 @@ const isCitationIds = (value: unknown, requireOne: boolean): value is string[] =
 /** Strictly validates client-safe environment evidence metadata. */
 export const isAIEnvironmentEvidenceMatch = (value: unknown): value is AIEnvironmentEvidenceMatch =>
   isRecord(value) &&
-  hasExactKeys(value, ['safeLabel', 'portalRoute', 'artifactKind', 'sourceCompletedAt', 'coverageStatus', 'truncated', 'citationIds']) &&
+  hasExactKeys(value, ['safeLabel', 'portalRoute', 'artifactKind', 'sourceCompletedAt', 'coverageStatus', 'truncated', 'citationIds'], ['sourceKey']) &&
   isEnvironmentSafeLabelV1(value.safeLabel) &&
   isEnvironmentPortalRouteV1(value.portalRoute) &&
   (isEnvironmentArtifactKindV1(value.artifactKind) || isEnvironmentAwsArtifactKindV1(value.artifactKind)) &&
+  (value.sourceKey === undefined || (typeof value.sourceKey === 'string' && SHA256_PATTERN.test(value.sourceKey))) &&
+  (value.artifactKind !== 'environment-capability-evidence' || value.sourceKey !== undefined) &&
   isCanonicalUtcTimestamp(value.sourceCompletedAt) &&
   typeof value.coverageStatus === 'string' &&
   COVERAGE_STATUSES.has(value.coverageStatus) &&
@@ -225,15 +235,34 @@ const isFigureSummary = (value: Record<string, unknown>): boolean => {
   }
 };
 
+const isArtifactSummary = (value: Record<string, unknown>): boolean =>
+  value.status === 'verified' &&
+  value.reasonCode === undefined &&
+  value.totalClaimCount === 0 &&
+  value.verifiedClaimCount === 0 &&
+  Array.isArray(value.claims) &&
+  value.claims.length === 0 &&
+  Array.isArray(value.artifactIds) &&
+  value.artifactIds.length > 0 &&
+  value.artifactIds.length <= AI_CHAT_ANSWER_PRESENTATION_LIMITS_V1.visualArtifacts &&
+  value.artifactIds.every(isIdentifier) &&
+  new Set(value.artifactIds).size === value.artifactIds.length &&
+  Array.isArray(value.figures) &&
+  value.figures.length <= AI_CHAT_GROUNDING_LIMITS_V1.figures &&
+  value.figures.every(figure => isAIChatGroundedFigureV1(figure) && figure.status === 'verified') &&
+  new Set(value.figures.map(figure => figure.figureId)).size === value.figures.length;
+
 /** Strictly validates deterministic summary, claim-level and figure-level citation invariants. */
 export const isAIChatGroundingSummary = (value: unknown): value is AIChatGroundingSummary => {
   if (
     !isRecord(value) ||
-    !hasExactKeys(value, ['status', 'method', 'totalClaimCount', 'verifiedClaimCount', 'claims'], ['reasonCode', 'figures']) ||
+    !hasExactKeys(value, ['status', 'method', 'totalClaimCount', 'verifiedClaimCount', 'claims'], ['reasonCode', 'figures', 'artifactIds']) ||
     (value.reasonCode !== undefined && (typeof value.reasonCode !== 'string' || !GROUNDING_REASON_CODES.has(value.reasonCode)))
   ) {
     return false;
   }
+  if (value.method === 'server-rendered-artifacts') return isArtifactSummary(value);
+  if (value.artifactIds !== undefined) return false;
   if (value.method === 'deterministic-citation-and-value') return isClaimSummary(value);
   if (value.method === 'server-rendered-figures') return isFigureSummary(value);
   return false;

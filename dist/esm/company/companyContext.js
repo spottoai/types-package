@@ -1,0 +1,1 @@
+export const COMPANY_CONTEXT_SCHEMA_VERSION = 1;

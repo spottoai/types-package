@@ -10,6 +10,7 @@ export const COMPANY_NOTE_CONTEXT_CATEGORIES = [
   'architecture',
   'operations',
   'finops',
+  'licenses',
   'performance',
   'reliability',
   'roadmap',
@@ -23,18 +24,13 @@ export const COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS = [
   'architecture-v1',
   'operations-v1',
   'finops-v1',
+  'licenses-v1',
   'performance-v1',
   'reliability-v1',
   'roadmap-v1',
 ] as const;
 export const COMPANY_NOTE_TEMPLATE_KEYS = [COMPANY_NOTE_MEETING_TEMPLATE_KEY, ...COMPANY_NOTE_CONTEXT_TEMPLATE_KEYS] as const;
-export const COMPANY_NOTES_AI_MODES = [
-  'general-note',
-  'template-draft',
-  'section-draft',
-  'coach-selection',
-  'company-research',
-] as const;
+export const COMPANY_NOTES_AI_MODES = ['general-note', 'template-draft', 'section-draft', 'coach-selection', 'company-research'] as const;
 export const COMPANY_NOTES_AI_SOURCE_MODES = ['spotto-only', 'public-research'] as const;
 
 export type CompanyNoteSchemaVersion = typeof COMPANY_NOTE_SCHEMA_VERSION;

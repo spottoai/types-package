@@ -1,5 +1,54 @@
 # Types Package
 
+## Currency conversion contracts
+
+The package root and `@spottoai/types-package/currency-conversion` export versioned
+document/batch conversion evidence, supported-currency discovery DTOs and strict
+dependency-free guards. They preserve exact source/target quote strings and
+distinguish converted, identity and money-free responses. The guards validate
+wire evidence; API/platform still own rate authenticity/freshness, ISO membership,
+arithmetic, projection and access. No cookie or conversion behavior is enabled by
+these additions. See the [shared contract](specs/billing/currency-conversion/currency-conversion-types-package.md).
+Build and run `npm run check:currency-conversion-contracts`; packed checks verify
+root/narrow CJS/ESM runtime and TypeScript consumers. Publication and consumer
+adoption are separate from these source changes.
+
+## Compact Azure billing facts
+
+The additive `/azure/billing-facts` subpath and root exports define immutable
+current/previous 30-day spend and complete cost-driver contracts, generation/source
+receipts and dependency-free guards. Overview and driver JSON are bounded to
+64 KiB and 256 KiB. Independent financial bases/provenance, native eligibility,
+weighted source-row presence, unknown material and partial coverage stay explicit.
+Run `npm run check:billing-facts-contracts` after building. See the
+[contract and consumer handoff](Specs/billing/azure-billing-facts.md). These changes
+have a delivered base in package 1.1.87. An additive, currently unpublished
+`roundingMode: 'independent-minor-units'` marker permits bounded rounding differences
+for complete drivers, full daily series and gross-material subsets of partial
+daily series. Parent totals stay
+authoritative; provenance populations and within-record partitions remain exact.
+Producer/reader adoption is a separate delivery checkpoint.
+
+## Dated recorded-charge analysis
+
+`SubscriptionStats.recordedSpendAnalysis` optionally publishes four separately
+dated UTC windows: current/prior 30 days and current/prior 7 days. Every period
+declares currency (`null` when unresolved), billed and amortized availability,
+billing provenance, source-bound calendar closure and unknown invoice finality.
+`isRecordedSpendAnalysis` checks the wire evidence and adjacent windows; it does
+not prove provider usage completeness. Zero and signed charges are values.
+Unavailable amounts have reasons and never default to another basis/currency.
+
+The existing primary `spend30Days` and display dates retain their meaning. These
+analysis windows cannot be subtracted from display-window money. Consumers may
+combine distinct scopes only when all selected scopes supply the same exact
+windows, currency, basis and billing provenance. The version-one example in
+`examples/recorded-spend-analysis-v1.json` is mirrored byte for byte in the UI's
+conformance fixture. Build and run `npm run check:recorded-spend-analysis-contracts`
+to verify both CJS/ESM guards. Publication/adoption of this optional contract is a
+separate package release; consumers must not import this source tree or a local
+development tarball as a delivery dependency.
+
 ## Feature flag policy
 
 Do not add feature flags, feature enablement settings, or rollout allowlists unless the user explicitly requests them. Implement requested features through the normal application workflows. Approval of a feature, specification, or implementation plan does not authorize adding feature flags.
@@ -19,6 +68,22 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 `npm run check:packed-exports` verifies the published subpath and declarations.
 
 ## Features
+
+M365 licensing context has shared product strategy/notes/review-date and account-note
+contracts. Served history months optionally expose currency-independent
+`productQuantities` for Contain comparisons, even when selected pricing is unavailable.
+API derives these from existing stored currency blocks; engine snapshots stay
+unchanged. See the [context contract](specs/licensing/license-pricing/license-pricing-types-package.md).
+
+Company context, shared company memory, meeting-transcript summaries and immutable
+note revisions have additive root-exported DTOs. They distinguish proposed and
+reviewed memory, company-owned sources and private conversations, topics/areas/
+people/teams, partial coverage and revision-aware writes. Optional chat citation
+and evidence fields expose context actually used. API owns runtime validation,
+authorization and retrieval; these contracts do not implement those workflows.
+See [company context](specs/ai-chat/company-context/company-context-types-package.md),
+[company memory](specs/ai-chat/company-memory/company-memory-types-package.md) and
+[note revisions](specs/companies/company-notes/company-notes-types-package.md).
 
 Shared billing analysis business payloads validate recorded AWS ARN structure
 without a service catalogue. Region and account fields may be empty; any explicit
@@ -45,6 +110,14 @@ and evidence helpers select Azure/AWS without widening the existing Azure guards
 These source additions require a new package release and consumer adoption; runtime AWS memory remains planned. See the
 [types contract and handoff](specs/ai-chat/aws-environment-memory/aws-environment-memory-types.md).
 
+Optional environment capability documents and immutable facts also support exact
+AWS account scopes and completed Portal publication bindings. Capability evidence
+references preserve the company and twelve-digit account identity; AWS completion
+pointer validation admits the optional descriptors without changing core file
+counts or digests. The shared `/environment` contracts remain the only wire
+definitions. This additive source extension requires package publication and
+coordinated consumer adoption before AWS producers emit optional documents.
+
 - **Shared Interfaces**: Common TypeScript interfaces for API requests/responses, database models, frontend components, and backend services
 - **Private Registry**: Published to GitHub Packages (not public npm)
 - **TypeScript Declaration Files**: Built with declaration files for better IDE support
@@ -62,6 +135,10 @@ Each consuming repo has an `.npmrc` that routes the `@spottoai` scope to GitHub 
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
+This repository also pins the scope registry in its `.npmrc` so release version
+lookups use GitHub Packages even when user-level npm configuration selects a
+different registry. Authentication remains supplied by the existing environment.
+
 ```json
 {
   "dependencies": {
@@ -74,7 +151,7 @@ Each consuming repo has an `.npmrc` that routes the `@spottoai` scope to GitHub 
 
 - **GitHub Actions**: set `NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}` and give the job
   `packages: read`. The consuming repo must also be listed under the package's
-  *Manage Actions access* settings.
+  _Manage Actions access_ settings.
 - **Docker builds**: pass the token as a BuildKit secret (`npm_token`), never as a build `ARG`.
 - **Local development**: use a token with `read:packages`, for example
   `gh auth refresh -s read:packages` then `export NODE_AUTH_TOKEN=$(gh auth token)`.
@@ -116,7 +193,19 @@ Monthly history accepts aggregate usage only and rejects profile data, breakdown
 daily report rows and per-account prices. `npm run check:microsoft365-license-contracts`
 checks the CJS and ESM validators; `npm test` also compiles the packed consumer.
 See [the contract extension and consumer handoff](specs/licensing/microsoft-365-improvements-types.md).
-Optional capability `stepUps` carry aggregate upgrade comparisons (such as Microsoft 365 E3 → E5 → E7): capabilities gained, replaced products and list or agreed-price net differences per currency, never account identifiers. See [step-up contracts](specs/licensing/microsoft-365-license-step-ups-types.md).
+Separate `Microsoft365ActivityHistoryDay` contracts retain compact daily sign-in,
+workload, person and license-quantity observations with strict privacy guards.
+Rolling report snapshots remain distinct from native daily counts and quantity
+changes always have `confirmedSaving: null`. See the
+[activity history contract](Specs/licensing/license-inventory/license-inventory-types-package.md#activity-history).
+`Microsoft365ApplicationDirectory`, `Microsoft365ApplicationEntry` and
+`Microsoft365ApplicationWindow` describe the anonymous tenant application directory.
+The root exports `MICROSOFT365_APPLICATIONS_SCHEMA_VERSION` and the strict
+`isMicrosoft365ApplicationDirectory` guard for API/UI readers. Run
+`npm run check:microsoft365-application-contracts` for CJS/ESM coverage; packed
+runtime and TypeScript consumers are included in `npm test`. See the
+[application directory contract](specs/licensing/license-inventory/license-inventory-types-package.md#application-directory).
+Optional capability `stepUps` carry aggregate upgrade comparisons (such as Microsoft 365 E3 → E5 → E7): capabilities gained, replaced products, list or agreed-price net differences per currency and account groups by the add-ons they already pay for, never account identifiers. See [step-up contracts](specs/licensing/microsoft-365-license-step-ups-types.md).
 
 The root also exports `Microsoft365LicenseSummaryView` and
 `Microsoft365LicenseAccountsView` with their matching `is...` guards. The new
@@ -370,6 +459,13 @@ branch, while the AWS branch requires a minimal account identity, `aws-native`
 source evidence, linked-account scope metadata, and provider-specific inventory
 shapes without introducing an AWS-only planning DTO.
 
+The root and `/azure/recommendations` export `CommitmentUnusedValueEvidence` and
+`isCommitmentUnusedValueEvidence`. The guard checks native/approximation wire
+consistency and unavailable evidence without treating missing value as zero.
+Report-pack validators use it for optional evidence in recommendation bodies and
+commitments rows. It does not establish billing authenticity or current ownership;
+consumer upgrades remain separate. See the [commitments contract](specs/billing/commitments/commitments-types-package.md).
+
 The root and `/aws` entry points also own the immutable AWS Commitments Planning
 Portal envelope, `commitments-planning.json.gz` logical name, artifact registry
 relationship, and dependency-free allowlist validator. The validator binds the
@@ -397,6 +493,14 @@ contracts. The API-owned desired-state document is stored as
 `companies/{companyId}/aws/aws-estates.json`; commands reference its opaque
 revision instead of copying role, billing-export, External ID, or credential
 configuration. Engine saga and persistence records remain engine-owned.
+
+`AwsAccountRefreshCommand` alone has optional `tracing?: WorkflowTracingOptions`.
+The provider-neutral control is declared in `src/common/workflowTracing.ts`;
+the existing Azure payload and root exports retain the same public type.
+Tracing is diagnostic metadata, not command identity or execution scope. It is
+absent from delete, estate, billing-source and scheduler contracts. The API
+emits only literal `enabled: true`; the AWS engine validates its control shape.
+Deploy compatible engine readers before producers emit the optional field.
 
 The root and `/aws` entry points also export the lossless AWS plugin
 subscription/resource body contracts, deterministic logical-name builders, one
@@ -534,3 +638,60 @@ contracts use the shape produced by `cloud-engine/apps/azure`, with no tax
 treatment fields or alternate tax modes. Basis, currency, coverage, period and
 source evidence remain independent requirements. See
 [Azure-compatible costs](specs/azure-compatible-costs-without-tax-metadata.md).
+
+## Chat relationship graph contract
+
+`cloud.relationships.graph@1` is a bounded, snapshot-only chat capability. `AIChatWorkspaceGraphPayload`
+and `isAIChatWorkspaceGraphPayload` define the shared wire boundary for API and Portal, including
+24-node/36-edge limits, directional reachability, plain-text labels, evidence classification and
+node-then-edge opaque follow-up references. Configuration relationships do not prove observed traffic.
+
+The API owns topology, authorization, safe navigation links and drill-down bindings. The renderer
+does not accept coordinates, styles, endpoints or topology from model intent. Run
+`npm run build` and `npm run check:workspace-graph-contracts` to verify both module outputs against
+the canonical fixture in `fixtures/ai-chat/workspace-graph.json`.
+
+Consumers require a new published types-package release containing these exports before deployment;
+the existing 1.1.66 release does not contain the graph contract. Local source-build adoption is only
+for integration verification and does not change consumer package pins.
+
+### Reuse contracts when adding chat widgets
+
+Keep page/domain selection in the API's reviewed recipes. Use the existing generic KPI,
+chart, table, recommendation and scenario payloads for new compatible projections; use
+the graph payload for bounded relationship snapshots. New widget titles, table columns,
+measures, scoped follow-ups and resource types do not require a page-specific shared type
+or view ID. Existing reports already cover Cost Tree, cost changes, governance and retirement.
+
+The [shared capability reuse catalogue](../core/specs/ai-chat/answers/workspace-capabilities/workspace-capabilities.md#shared-contract-reuse-and-expansion)
+maps M365 licensing, perimeter, governance, retirement, cost, resources and relationships
+to these families, with the remaining domain adapter boundaries. Shared contracts describe
+rendering support, not proof that a domain reader or page adapter is implemented.
+
+Batch new wire families, presentation enums, live bindings and action protocols before a
+release. Keep future capabilities out of the active manifest until their API and UI adapters
+exist; both registries require exact manifest parity. A monetary hierarchy, flow diagram,
+heatmap or new graph semantics still requires a specified, versioned contract. Do not hide
+arbitrary JSON, endpoints or component names inside existing payloads to avoid versioning.
+Extending closed enums such as external-link hosts, drill-down actions or scenario value
+formats also changes the wire contract. Recommendation cards retain their existing
+recommendation/prioritization workflow; generic license findings use table/KPI payloads
+unless that workflow is supported.
+
+### Adaptive answer metadata
+
+The same unpublished contract batch includes optional `answerPresentation` on terminal,
+final, audit and history response shapes. `AIChatAnswerPresentationV1` records
+`schemaVersion: 1`, `kind: visual | brief | full` and accepted `artifactIds`; the
+dependency-free validator bounds visual answers to one through three artifacts. It
+describes server-owned presentation, independently of the response mode or routing choice.
+Consumers ignore malformed or unsupported optional metadata while preserving the answer
+and previously admitted artifacts.
+
+The explicit `server-rendered-artifacts` grounding method binds verified snapshot IDs and
+verified figure/citation records to deterministic server-rendered answer text. It has no
+model claim declarations and cannot use `not-required`, partial or unverified figures.
+Existing grounding methods retain their validation and do not accept artifact bindings.
+These wire contracts do not themselves grant recipe eligibility or prove source coverage;
+the API sufficiency gate owns those checks. Run `npm run check:adaptive-answer-contracts`
+after the build to verify the CJS/ESM boundaries.

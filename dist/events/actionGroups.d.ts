@@ -54,6 +54,8 @@ export interface ActionGroupSummary {
     usageCount: number;
     alertUsageCount: number;
     notificationUsageCount: number;
+    /** Report schedules/jobs referencing this group; absent on older API versions. */
+    reportUsageCount?: number;
     createdAt: string;
     createdByUserId: string;
     updatedAt: string;

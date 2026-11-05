@@ -1,0 +1,83 @@
+import {
+  COMPANY_CONTEXT_HARVEST_SCHEMA_VERSION,
+  type CompanyContextHarvestRequest,
+  type CompanyContextHarvestRun,
+  type CompanyContextPrivateConversationSource,
+  type CompanyContextSharedChangeBatch,
+  type CompanyContextChangeItem,
+  type CompanyContextNoteChange,
+  type CompanyContextChangeReviewRequest,
+  type CompanyContextChangeReviewResponse,
+  type CompanyContextChangeEditRequest,
+  type CompanyMemoryEntry,
+  type CompanyMeetingResponsibilityCandidate,
+} from '@spottoai/types-package';
+
+const admission: CompanyContextHarvestRequest = {
+  companyId: 'company-1', idempotencyKey: 'run-1',
+  source: { kind: 'conversation', conversationId: 'owner-chat' },
+};
+const privateSource: CompanyContextPrivateConversationSource = {
+  kind: 'conversation', conversationId: 'owner-chat',
+  version: { kind: 'content-hash', contentHash: 'server-snapshot-hash' },
+  locator: { kind: 'passage', passageId: 'message-1' }, messageIds: ['message-1'],
+};
+const item: CompanyContextChangeItem = {
+  kind: 'memory', operation: 'add', itemId: 'item-1', revisionId: 'item-rev-1',
+  changeHash: 'exact-content-source-target-hash', status: 'proposed', sources: [privateSource],
+  content: { kind: 'decision', statement: 'Retain the recovery region.', facets: { topics: ['reliability'], areaIds: [], personIds: [], teamIds: [] } },
+};
+const review: CompanyContextChangeReviewRequest = {
+  companyId: 'company-1', batchId: 'batch-1', baseRevisionId: 'batch-rev-1',
+  idempotencyKey: 'review-1', confirmedCompanyVisibility: true,
+  items: [{ itemId: item.itemId, baseRevisionId: item.revisionId, reviewedChangeHash: item.changeHash, decision: 'approve' }],
+};
+const receipt: CompanyContextChangeReviewResponse = {
+  companyId: 'company-1', batchId: 'batch-1', revisionId: 'batch-rev-2',
+  results: [
+    { itemId: 'item-1', status: 'committed', revisionId: 'memory-rev-1', memory: { memoryId: 'memory-1', revisionId: 'memory-rev-1' } },
+    { itemId: 'item-2', status: 'conflict', currentRevisionId: 'note-rev-2', reasonCode: 'note.stale_revision' },
+    { itemId: 'item-3', status: 'failed', reasonCode: 'source.unavailable', retryable: true },
+  ],
+};
+const note: CompanyContextNoteChange = {
+  kind: 'context-note', itemId: 'item-2', revisionId: 'item-rev-2', changeHash: 'note-change', status: 'proposed',
+  target: { category: 'security', noteId: 'security-note', questionId: 'controls', baseRevisionId: 'note-rev-1' },
+  currentValue: null, proposedValue: ['mfa', 'access-review'], sources: [privateSource],
+};
+const unsaved: CompanyContextNoteChange = { ...note, target: { category: 'security', questionId: 'controls' } };
+const edit: CompanyContextChangeEditRequest = {
+  companyId: 'company-1', batchId: 'batch-1', baseRevisionId: 'batch-rev-1',
+  itemId: note.itemId, baseItemRevisionId: note.revisionId, idempotencyKey: 'edit-1',
+  proposedValue: { format: 'tiptap-json', doc: { type: 'doc', content: [] } },
+};
+declare const shared: CompanyContextSharedChangeBatch;
+declare const run: CompanyContextHarvestRun;
+declare const candidate: CompanyMeetingResponsibilityCandidate;
+
+// @ts-expect-error admission cannot supply its own source revision or snapshot.
+const callerVersion: CompanyContextHarvestRequest = { ...admission, source: { ...admission.source, sourceVersion: 'chosen-by-client' } };
+// @ts-expect-error shared review items cannot contain private conversation identifiers.
+const leakedSource: CompanyContextSharedChangeBatch = { ...shared, items: [item] };
+// @ts-expect-error a private input reference cannot serve as a shared batch source.
+const leakedBatch: CompanyContextSharedChangeBatch = { ...shared, source: privateSource };
+// @ts-expect-error drafts do not become active memory by assignment.
+const unreviewedEntry: CompanyMemoryEntry = item;
+// @ts-expect-error existing note targets always require an immutable base revision.
+const unversionedTarget: CompanyContextNoteChange = { ...note, target: { category: 'security', noteId: 'security-note', questionId: 'controls' } };
+// @ts-expect-error exact review cannot omit the reviewed complete-change hash.
+const unboundReview: CompanyContextChangeReviewRequest = { ...review, items: [{ itemId: 'item-1', baseRevisionId: 'item-rev-1', decision: 'approve' }] };
+// @ts-expect-error review requires at least one selected item.
+const emptyReview: CompanyContextChangeReviewRequest = { ...review, items: [] };
+// @ts-expect-error correction cannot silently omit the existing memory target.
+const untargetedCorrection: CompanyContextChangeItem = { ...item, operation: 'correct' };
+// @ts-expect-error proposal edits cannot replace immutable evidence sources.
+const editedSources: CompanyContextChangeEditRequest = { ...edit, sources: [privateSource] };
+// @ts-expect-error source-backed drafts require at least one exact reference.
+const sourcelessDraft: CompanyContextChangeItem = { ...item, sources: [] };
+// @ts-expect-error labels are review suggestions and cannot be substituted for canonical responsibility content.
+const unresolvedResponsibility: CompanyContextChangeItem = { ...item, content: { ...item.content, kind: 'responsibility', responsibility: candidate } };
+
+void [COMPANY_CONTEXT_HARVEST_SCHEMA_VERSION, admission, review, receipt, unsaved, edit, run];
+void [callerVersion, leakedSource, leakedBatch, unreviewedEntry, unversionedTarget, unboundReview, emptyReview];
+void [untargetedCorrection, editedSources, sourcelessDraft, unresolvedResponsibility];

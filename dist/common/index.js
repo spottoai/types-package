@@ -17,8 +17,17 @@ Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./artifactGeneration"), exports);
 __exportStar(require("./capabilityPassport"), exports);
 __exportStar(require("./pagination"), exports);
+__exportStar(require("./portalViewHistory"), exports);
 __exportStar(require("./provider"), exports);
 __exportStar(require("./providerSyncProgress"), exports);
 __exportStar(require("./relationships"), exports);
+__exportStar(require("./resourceGraph"), exports);
+__exportStar(require("./resourceGraphValidation"), exports);
+__exportStar(require("./resourceIdentity"), exports);
+__exportStar(require("./resourceHealth"), exports);
 __exportStar(require("./syncProgress"), exports);
+__exportStar(require("./securityPosture"), exports);
+__exportStar(require("./cloudGovernance"), exports);
+__exportStar(require("./serviceRetirement"), exports);
+__exportStar(require("./resourceArtifactUsage"), exports);
 //# sourceMappingURL=index.js.map

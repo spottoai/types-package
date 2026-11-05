@@ -1,4 +1,4 @@
-export type { AwsCommitmentsPlanningView } from '../azure/commitmentsPlanning';
+export * from './commitmentsPlanningView';
 export { validateAwsCommitmentsPlanningViewIdentity } from './commitmentsPlanningValidation';
 export * from './organizationCommitments';
 export * from './organizationCommitmentsApiValidation';

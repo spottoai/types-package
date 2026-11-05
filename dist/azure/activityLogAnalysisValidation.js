@@ -1,16 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.isPortalActivityLogClassification = exports.isPortalActivityEvidenceId = exports.isPortalActivityAnalysisResponse = exports.isPortalActivityAnalysisGroupId = exports.assertPortalActivityAnalysisResponse = void 0;
+exports.isPortalActivityLogClassification = exports.isPortalActivityEvidenceId = exports.isPortalActivityAnalysisResponse = exports.isPortalActivityAnalysisGroupId = exports.assertPortalActivityAnalysisResponse = exports.isPortalActivityLogAnalysisScope = void 0;
 exports.isConformedActivityAnalysisArtifact = isConformedActivityAnalysisArtifact;
 exports.assertConformedActivityAnalysisArtifact = assertConformedActivityAnalysisArtifact;
+const activityLogCollectionCoverageValidation_1 = require("./activityLogCollectionCoverageValidation");
 const activityLogAnalysis_1 = require("./activityLogAnalysis");
+const activityLogAnalysisScopeValidation_1 = require("./activityLogAnalysisScopeValidation");
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const DATE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const TAG_IDS = new Set(activityLogAnalysis_1.ACTIVITY_LOG_TAG_IDS);
-const ORIGINS = new Set(['manual', 'workloadAutomation', 'azurePlatform', 'unknown']);
+const ORIGINS = new Set(activityLogAnalysis_1.ACTIVITY_LOG_EXECUTION_ORIGINS);
 const EFFECTS = new Set(['write', 'delete', 'action', 'read', 'other']);
 const CONFIDENCES = new Set(['high', 'medium', 'low']);
-const SCOPE_LEVELS = new Set(['subscription', 'resourceGroup', 'resource', 'unknown']);
 const RESERVED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 function isRecord(value) {
     if (!value || typeof value !== 'object' || Array.isArray(value))
@@ -44,26 +45,7 @@ function isSortedUniqueTextArray(value, maximum, predicate) {
     return isUniqueTextArray(value, maximum, predicate) && value.every((item, index) => index === 0 || value[index - 1].localeCompare(item) < 0);
 }
 function isScope(value) {
-    if (!hasExactKeys(value, ['subscriptionId', 'level'], ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName']) ||
-        !isText(value.subscriptionId) ||
-        typeof value.level !== 'string' ||
-        !SCOPE_LEVELS.has(value.level)) {
-        return false;
-    }
-    for (const key of ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName']) {
-        if (value[key] !== undefined && !isText(value[key]))
-            return false;
-    }
-    if (value.level === 'resource' && !isText(value.resourceId))
-        return false;
-    if (value.level === 'resource') {
-        const scopedSubscriptionId = /^\/subscriptions\/([^/]+)\//i.exec(value.resourceId)?.[1];
-        if (!scopedSubscriptionId || scopedSubscriptionId.toLowerCase() !== value.subscriptionId.toLowerCase())
-            return false;
-    }
-    if (value.level === 'subscription' && value.resourceId !== undefined)
-        return false;
-    return true;
+    return (0, activityLogAnalysisScopeValidation_1.isPortalActivityLogAnalysisScope)(value, 'conformed');
 }
 function isCountRows(value, allowed) {
     if (!Array.isArray(value) || value.length > 100000)
@@ -323,7 +305,8 @@ function isConformedActivityAnalysisArtifact(value) {
         'activitySeries',
         'resources',
         'groups',
-    ]))
+    ], ['providerName', 'providerScopeId']) ||
+        !(0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderIdentity)(value, 'conformed'))
         return false;
     if (value.schemaVersion !== activityLogAnalysis_1.CONFORMED_ACTIVITY_ANALYSIS_SCHEMA_VERSION ||
         value.analysisVersion !== activityLogAnalysis_1.ACTIVITY_LOG_ANALYSIS_VERSION ||
@@ -336,13 +319,15 @@ function isConformedActivityAnalysisArtifact(value) {
         return false;
     const subscriptionId = value.subscriptionId;
     const month = value.month;
+    const providerName = (0, activityLogAnalysisScopeValidation_1.activityLogProviderName)(value);
     if (!hasExactKeys(value.source, [
         'portalProjectionSchemaVersion',
         'retainedEventCount',
         'classifiedRetainedEventCount',
         'unclassifiedRetainedEventCount',
         'classificationState',
-    ], ['sourceHighWatermark', 'sourceShardFingerprint']) ||
+    ], ['sourceHighWatermark', 'sourceShardFingerprint', 'collectionCoverage']) ||
+        (value.source.collectionCoverage !== undefined && (!(0, activityLogCollectionCoverageValidation_1.isActivityLogCollectionCoverage)(value.source.collectionCoverage) || value.source.collectionCoverage.timeWindow.start.slice(0, 7) !== month || value.source.collectionCoverage.timeWindow.end.slice(0, 7) !== month)) ||
         !isCount(value.source.portalProjectionSchemaVersion) ||
         !isCount(value.source.retainedEventCount) ||
         !isCount(value.source.classifiedRetainedEventCount) ||
@@ -354,15 +339,19 @@ function isConformedActivityAnalysisArtifact(value) {
             !isText(value.source.sourceShardFingerprint, activityLogAnalysis_1.CONFORMED_ACTIVITY_ANALYSIS_LIMITS_V1.sourceShardFingerprintCodeUnits)))
         return false;
     if (!isFacets(value.facets, value.source.retainedEventCount) ||
+        !(0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderFacets)(value.facets, providerName) ||
         !Array.isArray(value.activitySeries) ||
         !Array.isArray(value.resources) ||
         !Array.isArray(value.groups))
         return false;
-    if (!value.activitySeries.every(item => isSeries(item, subscriptionId, month)) ||
+    if (!value.activitySeries.every(item => isSeries(item, subscriptionId, month) && (0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderEvidence)(item, providerName, 'conformed')) ||
         value.activitySeries.reduce((sum, item) => sum + item.eventCount, 0) !== value.source.classifiedRetainedEventCount)
         return false;
-    return value.resources.every(item => isResource(item, subscriptionId)) && value.groups.every(item => isGroup(item, subscriptionId, month));
+    return (value.resources.every(item => isResource(item, subscriptionId) && (0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderEvidence)(item, providerName, 'conformed')) &&
+        value.groups.every(item => isGroup(item, subscriptionId, month) && (0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderEvidence)(item, providerName, 'conformed')));
 }
+var activityLogAnalysisScopeValidation_2 = require("./activityLogAnalysisScopeValidation");
+Object.defineProperty(exports, "isPortalActivityLogAnalysisScope", { enumerable: true, get: function () { return activityLogAnalysisScopeValidation_2.isPortalActivityLogAnalysisScope; } });
 function assertConformedActivityAnalysisArtifact(value) {
     if (!isConformedActivityAnalysisArtifact(value))
         throw new Error('Invalid conformed Activity Analysis artifact.');

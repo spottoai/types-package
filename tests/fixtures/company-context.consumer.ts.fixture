@@ -1,0 +1,72 @@
+import {
+  COMPANY_CONTEXT_SCHEMA_VERSION,
+  COMPANY_MEMORY_SCHEMA_VERSION,
+  COMPANY_MEETING_SCHEMA_VERSION,
+  COMPANY_MEMORY_PERMISSION_KEYS,
+  type AIChatEvidenceCoverage,
+  type AIChatMemoryMatch,
+  type CompanyContextNoteSource,
+  type CompanyContextSource,
+  type CompanyContextReadResponse,
+  type CompanyMeetingExtractionResponse,
+  type CompanyMeetingSummaryBullet,
+  type CompanyMemoryEntry,
+  type CompanyMemoryProposal,
+  type CompanyMemoryMutationRequest,
+  type CompanyMemoryPromotionCommitRequest,
+  type CompanyNoteRevisionUpdateRequest,
+  type UpdateCompanyNoteRequest,
+} from '@spottoai/types-package';
+
+const contextVersion: 1 = COMPANY_CONTEXT_SCHEMA_VERSION;
+const memoryVersion: 1 = COMPANY_MEMORY_SCHEMA_VERSION;
+const meetingVersion: 1 = COMPANY_MEETING_SCHEMA_VERSION;
+const managePermission: 'company_memory.manage' = COMPANY_MEMORY_PERMISSION_KEYS[1];
+const source: CompanyContextNoteSource = {
+  companyId: 'company-1', kind: 'company-note', sourceId: 'meeting-1',
+  version: { kind: 'revision', revisionId: 'revision-1' },
+  locator: { kind: 'passage', passageId: 'transcript:paragraph-4' },
+};
+
+declare const proposal: CompanyMemoryProposal;
+declare const extraction: CompanyMeetingExtractionResponse;
+const approve: CompanyMemoryMutationRequest = {
+  operation: 'approve', companyId: proposal.companyId, memoryId: proposal.memoryId,
+  baseRevisionId: proposal.revisionId, idempotencyKey: 'approval-1',
+  reviewedContentHash: proposal.contentHash, reviewedSources: proposal.sources,
+};
+const evidence: AIChatEvidenceCoverage = {
+  sourceTypes: [], evidenceGroups: [],
+  citationCoverage: { required: true, satisfied: false, citationCount: 0 },
+  companyContext: {
+    companyId: extraction.companyId, contextVersion: 'context-1',
+    matches: [{ source, title: 'Recovery planning', text: extraction.summary.bullets[0].text }],
+    coverage: extraction.coverage,
+  },
+};
+const legacy: AIChatMemoryMatch = { memoryId: 'memory-1', source: { conversationId: 'owned-chat' }, score: 1, summary: 'Owned history' };
+declare const legacyNote: UpdateCompanyNoteRequest;
+
+// @ts-expect-error company note sources cannot point to a mutable or absent revision.
+const missingRevision: CompanyContextSource = { ...source, version: { kind: 'revision' } };
+// @ts-expect-error company-visible sources cannot expose private chat identities.
+const privateSource: CompanyContextSource = { ...source, kind: 'conversation' };
+// @ts-expect-error extraction proposals cannot be consumed as approved memory.
+const unreviewed: CompanyMemoryEntry = extraction.memoryProposals[0];
+// @ts-expect-error review binds at least one exact source.
+const unbound: CompanyMemoryMutationRequest = { ...approve, reviewedSources: [] };
+// @ts-expect-error new revision writes cannot silently use the legacy unguarded request.
+const unguarded: CompanyNoteRevisionUpdateRequest = legacyNote;
+// @ts-expect-error a denied read cannot disclose the protected excerpt.
+const deniedLeak: CompanyContextReadResponse = { companyId: 'company-1', contextVersion: 'v1', status: 'denied', reasonCode: 'denied', excerpt: evidence.companyContext!.matches[0] };
+// @ts-expect-error shared promotion must bind the preview revision and content.
+const unboundPromotion: CompanyMemoryPromotionCommitRequest = { companyId: 'company-1', previewId: 'preview-1', idempotencyKey: 'share-1' };
+declare const summaryBullet: CompanyMeetingSummaryBullet;
+// @ts-expect-error transcript bullets require passage provenance, not a document reference.
+const documentBullet: CompanyMeetingSummaryBullet = { ...summaryBullet, sourcePassages: [{ ...source, transcriptId: 'transcript-1', locator: { kind: 'document' } }] };
+// @ts-expect-error passage provenance must name the original transcript.
+const noTranscript: CompanyMeetingSummaryBullet = { ...summaryBullet, sourcePassages: [{ ...source, locator: { kind: 'passage', passageId: 'p-1' } }] };
+
+void [contextVersion, memoryVersion, meetingVersion, managePermission, approve, evidence, legacy];
+void [missingRevision, privateSource, unreviewed, unbound, unguarded, deniedLeak, unboundPromotion];
+void [documentBullet, noTranscript];

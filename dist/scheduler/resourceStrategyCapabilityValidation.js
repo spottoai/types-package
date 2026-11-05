@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isResourceSchedulingCapabilityProjection = isResourceSchedulingCapabilityProjection;
+exports.isResourceSchedulingReadinessState = isResourceSchedulingReadinessState;
 exports.isResourceSchedulingReadinessProjection = isResourceSchedulingReadinessProjection;
 const resourceStrategyContracts_1 = require("./resourceStrategyContracts");
 const resourceStrategyValidationShared_1 = require("./resourceStrategyValidationShared");
@@ -233,6 +234,9 @@ const readinessStates = new Set([
     'conflicting-automation',
     'unsupported-resource-state',
 ]);
+function isResourceSchedulingReadinessState(value) {
+    return typeof value === 'string' && readinessStates.has(value);
+}
 function isResourceSchedulingReadinessProjection(value) {
     return ((0, resourceStrategyValidationShared_1.isWithinJsonByteLimit)(value, resourceStrategyContracts_1.RESOURCE_STRATEGY_CONTRACT_LIMITS.publicDtoBytes) &&
         (0, resourceStrategyValidationShared_1.isRecord)(value) &&

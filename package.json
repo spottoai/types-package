@@ -1,6 +1,6 @@
 {
   "name": "@spottoai/types-package",
-  "version": "1.1.58",
+  "version": "1.1.92",
   "description": "Shared TypeScript interfaces for SpottoAI",
   "repository": {
     "type": "git",
@@ -14,6 +14,9 @@
   "sideEffects": false,
   "typesVersions": {
     "*": {
+      "currency-conversion": [
+        "dist/common/currencyConversion.d.ts"
+      ],
       "framework-assessments": [
         "dist/framework-assessments/index.d.ts"
       ],
@@ -46,10 +49,18 @@
       ],
       "reporting-jobs": [
         "dist/reporting/jobs/index.d.ts"
+      ],
+      "azure/billing-facts": [
+        "dist/azure/billingFacts.d.ts"
       ]
     }
   },
   "exports": {
+    "./currency-conversion": {
+      "types": "./dist/common/currencyConversion.d.ts",
+      "import": "./dist/esm/common/currencyConversion.js",
+      "require": "./dist/common/currencyConversion.js"
+    },
     "./framework-assessments": {
       "types": "./dist/framework-assessments/index.d.ts",
       "import": "./dist/esm/framework-assessments/index.js",
@@ -109,6 +120,11 @@
       "types": "./dist/reporting/jobs/index.d.ts",
       "import": "./dist/esm/reporting/jobs/index.js",
       "require": "./dist/reporting/jobs/index.js"
+    },
+    "./azure/billing-facts": {
+      "types": "./dist/azure/billingFacts.d.ts",
+      "import": "./dist/esm/azure/billingFacts.js",
+      "require": "./dist/azure/billingFacts.js"
     }
   },
   "files": [
@@ -138,6 +154,7 @@
     "check:environment-contracts": "node scripts/check-environment-contracts.mjs",
     "check:financial-charge-policy-contracts": "node scripts/check-financial-charge-policy-contracts.mjs",
     "check:native-discount-contracts": "node scripts/check-native-discount-contracts.mjs",
+    "check:currency-conversion-contracts": "node --test scripts/check-currency-conversion-contracts.mjs",
     "check:capability-passport-contracts": "node scripts/check-capability-passport-contracts.mjs",
     "check:commitments-planning": "node scripts/check-commitments-planning.mjs",
     "check:organization-commitments-planning": "node scripts/check-organization-commitments-planning.mjs",
@@ -145,10 +162,14 @@
     "check:scheduler-contracts": "node scripts/check-scheduler-contracts.mjs",
     "check:scheduler-tick-contracts": "node scripts/check-scheduler-tick-contracts.mjs",
     "check:reporting-job-contracts": "node scripts/check-reporting-job-contracts.mjs",
+    "check:reporting-scheduler-contracts": "node scripts/check-reporting-scheduler-contracts.mjs",
+    "check:report-pack-contracts": "node scripts/check-report-pack-contracts.mjs",
     "check:framework-assessment-contracts": "node scripts/check-framework-assessment-contracts.mjs",
-    "check:microsoft365-license-contracts": "node --test scripts/check-microsoft365-license-contracts.mjs",
+    "check:microsoft365-license-contracts": "node --test scripts/check-microsoft365-license-contracts.mjs scripts/check-microsoft365-licensing-content-contracts.mjs scripts/check-microsoft365-storage-cost-contracts.mjs scripts/check-microsoft365-activity-history-contracts.mjs",
+    "check:microsoft365-licensing-content-contracts": "node --test scripts/check-microsoft365-licensing-content-contracts.mjs scripts/check-microsoft365-storage-cost-contracts.mjs",
+    "check:microsoft365-application-contracts": "node --test scripts/check-microsoft365-application-contracts.mjs",
     "prepublishOnly": "npm run clean && npm run build && npm test",
-    "test": "npm run build && npm run check:microsoft365-license-contracts && node scripts/check-microsoft365-pricing-overrides-contracts.mjs && npm run check:alert-contracts && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:resource-size-options-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:billing-aws-resource-drivers && npm run check:cost-shape-contracts && npm run check:known-resource-group-spend-contracts && npm run check:aws-examples && npm run check:resource-graph-contracts && npm run check:resource-artifact-usage-contracts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:environment-contracts && npm run check:aws-environment-contracts && npm run check:environment-provider-contracts && npm run check:financial-charge-policy-contracts && npm run check:native-discount-contracts && npm run check:capability-passport-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:reporting-job-contracts && npm run check:packed-exports && npm run check:regulatory-scoreboard-contracts && npm run check:framework-assessment-contracts && npm run check:public-ip-addresses-contracts && npm run check:public-ip-gateway-contracts",
+    "test": "npm run build && npm run check:currency-conversion-contracts && npm run check:workspace-graph-contracts && npm run check:adaptive-answer-contracts && npm run check:microsoft365-license-contracts && npm run check:microsoft365-application-contracts && node scripts/check-microsoft365-pricing-overrides-contracts.mjs && npm run check:alert-contracts && npm run check:activity-log-analysis-contracts && npm run check:report-evidence-contracts && npm run check:utilization-stories-contracts && npm run check:resource-size-options-contracts && npm run check:artifact-evidence-contracts && npm run check:billing-artifact-object-boundaries && npm run check:billing-cost-analysis-read-responses && npm run check:billing-aws-resource-drivers && npm run check:cost-shape-contracts && npm run check:known-resource-group-spend-contracts && npm run check:aws-examples && npm run check:resource-graph-contracts && npm run check:resource-artifact-usage-contracts && npm run check:azure-view-set-contracts && npm run check:dev-1135-latest-contracts && npm run check:environment-contracts && npm run check:aws-environment-contracts && npm run check:environment-provider-contracts && npm run check:financial-charge-policy-contracts && npm run check:native-discount-contracts && npm run check:capability-passport-contracts && npm run check:commitment-unused-value-runtime && npm run check:benefit-assessment-admission-contracts && npm run check:report-assessment-bindings && npm run check:commitment-unused-value-contracts && npm run check:commitments-planning && npm run check:organization-commitments-planning && npm run check:resource-strategy-schedule-contracts && npm run check:scheduler-contracts && npm run check:scheduler-tick-contracts && npm run check:resource-schedule-provider-contracts && npm run check:aws-sync-feature-contracts && npm run check:reporting-job-contracts && npm run check:reporting-scheduler-contracts && npm run check:report-pack-contracts && npm run check:packed-exports && npm run check:regulatory-scoreboard-contracts && npm run check:framework-assessment-contracts && npm run check:public-ip-addresses-contracts && npm run check:public-ip-gateway-contracts && npm run check:context-harvesting-contracts && npm run check:billing-facts-contracts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
@@ -160,7 +181,17 @@
     "check:aws-environment-contracts": "node scripts/check-aws-environment-contracts.mjs",
     "check:environment-provider-contracts": "node scripts/check-environment-provider-contracts.mjs",
     "check:public-ip-addresses-contracts": "node scripts/check-public-ip-addresses-contracts.mjs",
-    "check:public-ip-gateway-contracts": "node scripts/check-public-ip-gateway-contracts.mjs"
+    "check:public-ip-gateway-contracts": "node scripts/check-public-ip-gateway-contracts.mjs",
+    "check:resource-schedule-provider-contracts": "node scripts/check-resource-schedule-provider-contracts.mjs",
+    "check:aws-sync-feature-contracts": "node scripts/check-aws-sync-feature-contracts.mjs",
+    "check:workspace-graph-contracts": "node --test scripts/check-workspace-graph-contracts.mjs",
+    "check:adaptive-answer-contracts": "node --test scripts/check-adaptive-answer-contracts.mjs",
+    "check:context-harvesting-contracts": "node scripts/check-context-harvesting-contracts.mjs",
+    "check:commitment-unused-value-contracts": "node scripts/check-commitment-unused-value-contracts.mjs",
+    "check:commitment-unused-value-runtime": "node scripts/check-commitment-unused-value-runtime.mjs",
+    "check:benefit-assessment-admission-contracts": "node scripts/check-benefit-assessment-admission-contracts.mjs",
+    "check:report-assessment-bindings": "node scripts/check-report-assessment-bindings.mjs",
+    "check:billing-facts-contracts": "node scripts/check-billing-facts-contracts.mjs"
   },
   "keywords": [
     "typescript",

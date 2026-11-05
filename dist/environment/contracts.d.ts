@@ -1,3 +1,4 @@
+import type { EnvironmentCapabilityDocumentV1 } from './optionalDocuments.js';
 /** Single pre-release multi-pillar environment contract shared by producers and consumers. */
 export declare const ENVIRONMENT_CONTRACT_LIMITS_V1: Readonly<{
     readonly completedPointerBytes: number;
@@ -21,7 +22,7 @@ export declare const ENVIRONMENT_CONTRACT_LIMITS_V1: Readonly<{
 }>;
 export declare const ENVIRONMENT_PILLARS_V1: readonly ["cost", "security", "governance", "reliability", "performance", "operations"];
 export declare const ENVIRONMENT_DOCUMENT_NAMES_V1: readonly ["projection.json", "environment-index.md", "pillars/cost.md", "pillars/security.md", "pillars/governance.md", "pillars/reliability.md", "pillars/performance.md", "pillars/operations.md"];
-export declare const ENVIRONMENT_ARTIFACT_KINDS_V1: readonly ["subscription-summary", "subscription-resources", "subscription-recommendations", "subscription-service-retirements", "subscription-monitor-alerts", "subscription-data-protection", "subscription-system-tracks", "subscription-metrics", "subscription-projection", "tenant-governance", "tenant-governance-access", "tenant-reservations", "tenant-savings-plans", "tenant-applications", "tenant-service-principals"];
+export declare const ENVIRONMENT_ARTIFACT_KINDS_V1: readonly ["environment-capability-evidence", "subscription-summary", "subscription-resources", "subscription-recommendations", "subscription-service-retirements", "subscription-monitor-alerts", "subscription-data-protection", "subscription-system-tracks", "subscription-metrics", "subscription-projection", "tenant-governance", "tenant-governance-access", "tenant-reservations", "tenant-savings-plans", "tenant-applications", "tenant-service-principals"];
 export declare const ENVIRONMENT_FINDING_KINDS_V1: readonly ["recommendation", "security-posture", "public-exposure", "governance", "compliance", "service-retirement", "data-protection", "health", "performance", "scaling", "operations", "monitoring", "topology"];
 export declare const ENVIRONMENT_SEVERITIES_V1: readonly ["critical", "high", "medium", "low", "informational", "unknown"];
 export declare const ENVIRONMENT_IMPACTS_V1: readonly ["high", "medium", "low", "unknown"];
@@ -93,12 +94,12 @@ export interface EnvironmentSavingsBasisV1 {
     stableWindow?: string;
     containsLegacySavings?: boolean;
 }
-export interface EnvironmentMoneyValueV1 {
+export interface EnvironmentMoneyValueV1<Provenance extends string = EnvironmentMoneyProvenanceV1> {
     amount: string;
     currencyCode: string;
     basis: EnvironmentMoneyBasisV1;
     period: string;
-    provenance: EnvironmentMoneyProvenanceV1;
+    provenance: Provenance;
     savingsAdditivity?: EnvironmentSavingsAdditivityV1;
     /** Observed money only: how the producer sourced the amount. */
     spendSource?: EnvironmentSpendSourceV1;
@@ -411,13 +412,16 @@ export interface EnvironmentSecureScoreSectionV1 {
     assessedResourceCount?: number;
     sourceReferences: EnvironmentLogicalEvidenceReferenceV1[];
 }
-export interface EnvironmentSubscriptionProjectionV1 {
+export interface EnvironmentSubscriptionProjectionV1 extends EnvironmentProjectionContentV1 {
     schemaVersion: 1;
     scope: EnvironmentScopeV1;
     sourceBinding: EnvironmentSourceBindingV1;
     generatedAt: string;
     subscription: EnvironmentSubscriptionSummaryV1;
     sourceCoverage: EnvironmentSourceCoverageV1;
+}
+/** Bounded content shared by provider-specific environment envelopes. */
+export interface EnvironmentProjectionContentV1 {
     estateSummary: EnvironmentEstateSummaryV1;
     costSummary: EnvironmentCostSummaryV1;
     serviceFamilyRollups: EnvironmentBoundedListV1<EnvironmentCostRollupV1>;
@@ -459,6 +463,8 @@ export type EnvironmentDocumentDescriptorV1 = {
     approximateTokenCount: number;
 };
 export interface EnvironmentCompiledGenerationPointerV1 {
+    /** Individually hashed supplemental files; excluded from core fileCount/treeDigestSha256. */
+    optionalDocuments?: EnvironmentCapabilityDocumentV1[];
     schemaVersion: 1;
     status: 'completed';
     environmentRunId: string;

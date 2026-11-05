@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
+import './check-microsoft365-adoption-contracts.mjs';
 
 const require = createRequire(import.meta.url);
 const formats = {
@@ -309,6 +310,62 @@ const stepUpSummary = (mutate = () => {}) => {
 };
 
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: main account review reasons and returned-population counts are optional and strict`, () => {
+    const summary = splitSummary();
+    const counts = Object.fromEntries(api.MICROSOFT_365_ACCOUNT_REVIEW_REASONS.map(reason => [reason, reason === 'disabled' ? 1 : 0]));
+    const review = { state: 'ready', scope: 'returned_license_accounts', coverage: { ...summary.accountDetails, state: 'complete' }, counts };
+    assert.equal(api.isMicrosoft365LicenseSummaryView({ ...summary, accountReview: review }), true);
+    assert.equal(api.isMicrosoft365LicenseSummaryView(summary), true);
+    const accounts = splitAccounts();
+    for (const reason of api.MICROSOFT_365_ACCOUNT_REVIEW_REASONS) {
+      assert.equal(api.isMicrosoft365LicenseAccountsView({ ...accounts, accounts: [{ ...accounts.accounts[0], mainReviewReason: reason }] }), true);
+    }
+    for (const mainReviewReason of ['', 'other', null, ['disabled'], 1])
+      assert.equal(api.isMicrosoft365LicenseAccountsView({ ...accounts, accounts: [{ ...accounts.accounts[0], mainReviewReason }] }), false);
+    const partial = { ...review, coverage: { ...review.coverage, state: 'partial', observedRowCount: 8001, omittedRowCount: 8000 } };
+    assert.equal(api.isMicrosoft365AccountReview(partial), true);
+    assert.equal(api.isMicrosoft365AccountReview({ ...partial, state: 'unavailable', counts: null, reason: 'accounts_unavailable' }), true);
+    for (const invalid of [
+      { ...review, scope: 'all_accounts' }, { ...review, accountIds: ['private'] },
+      { ...review, counts: { ...counts, disabled: 2 } }, { ...review, counts: { ...counts, disabled: -1 } },
+      { ...review, counts: { ...counts, disabled: 0, unknown: 1 } }, { ...review, counts: { ...counts, accountId: 0 } },
+      { ...partial, coverage: { ...partial.coverage, state: 'complete' } },
+      { ...review, coverage: { ...review.coverage, state: ['complete'] } },
+      { ...review, state: 'unavailable', counts: null, reason: 'accounts_unavailable' },
+      { ...partial, state: 'unavailable', counts: {}, reason: 'scan_mismatch' },
+    ]) assert.equal(api.isMicrosoft365AccountReview(invalid), false);
+    assert.equal(api.isMicrosoft365LicenseSummaryView({ ...summary, accountReview: partial }), false, 'Summary and review coverage must agree');
+  });
+
+  test(`${format}: served quantity history is independent of selected currency and prices`, () => {
+    const skuId = '00000000-0000-4000-8000-00000000a001';
+    const productQuantities = { [skuId]: { purchasedUnits: 40 } };
+    const month = { ...monthOf(snapshot()), pricing: null, productQuantities };
+    for (const currency of ['AUD', 'NZD', 'EUR', null]) assert.equal(api.isMicrosoft365LicenseHistory({ ...series(month), currency }), true);
+    assert.equal(api.isMicrosoft365LicenseHistory(series(monthOf(snapshot()))), true, 'Legacy served months remain valid');
+    for (const purchasedUnits of [0, null])
+      assert.equal(api.isMicrosoft365LicenseHistory(series({ ...month, productQuantities: { [skuId]: { purchasedUnits } } })), true);
+    assert.equal(api.isMicrosoft365LicenseHistorySnapshot({ ...snapshot(), productQuantities }), false, 'Engine snapshot schema stays unchanged');
+  });
+
+  test(`${format}: quantity history rejects malformed identities, counts and extra dimensions`, () => {
+    const skuId = '00000000-0000-4000-8000-00000000a001';
+    const month = { ...monthOf(snapshot()), pricing: null };
+    for (const productQuantities of [
+      null,
+      [],
+      { [skuId.toUpperCase()]: { purchasedUnits: 1 } },
+      { other: { purchasedUnits: 1 } },
+      ...[-1, 0.5, Number.MAX_SAFE_INTEGER + 1, '40', undefined].map(purchasedUnits => ({ [skuId]: { purchasedUnits } })),
+      { [skuId]: { purchasedUnits: 40, currency: 'AUD' } },
+      { [skuId]: { purchasedUnits: 40, accountId: 'private' } },
+      Object.fromEntries(
+        Array.from({ length: 2001 }, (_, index) => [`10000000-0000-4000-8000-${index.toString(16).padStart(12, '0')}`, { purchasedUnits: 1 }])
+      ),
+    ])
+      assert.equal(api.isMicrosoft365LicenseHistory(series({ ...month, productQuantities })), false);
+  });
+
   test(`${format}: step-ups are aggregate, internally consistent and optional`, () => {
     const document = stepUpSummary();
     assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
@@ -400,6 +457,22 @@ for (const [format, api] of Object.entries(formats)) {
     assert(api.isMicrosoft365LicenseSummaryView(document));
     assert(api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'NZD' }), 'Tenant market currency is safe aggregate evidence');
     assert(!api.isMicrosoft365LicenseSummaryView({ ...document, marketCurrency: 'nzd' }), 'Market currency is an ISO currency code');
+    const agreementTerms = {
+      channel: 'enterprise_agreement_subscription',
+      reductionDate: '2027-01-01',
+      reductionRepeatsAnnually: true,
+      agreementEndDate: '2027-12-31',
+      additionsAreTrueUps: true,
+      excludedSkuIds: [],
+    };
+    assert(
+      api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, agreementTerms } }),
+      'Saved agreement terms reach every viewer through the summary pricing'
+    );
+    assert(
+      !api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, agreementTerms: { ...agreementTerms, channel: 'volume' } } }),
+      'Summary agreement terms use the shared guard'
+    );
     for (const patch of [
       { basis: ['customer_price_estimate'] },
       { term: ['customer_agreement'] },

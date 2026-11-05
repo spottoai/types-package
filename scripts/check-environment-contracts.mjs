@@ -1,8 +1,10 @@
+import './check-environment-optional-document-contracts.mjs';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 
 import {
   ENVIRONMENT_ARTIFACT_KINDS_V1,
+  buildEnvironmentCapabilityEvidenceReferenceV1,
   ENVIRONMENT_CONTRACT_LIMITS_V1,
   ENVIRONMENT_DOCUMENT_NAMES_V1,
   ENVIRONMENT_PILLARS_V1,
@@ -109,11 +111,23 @@ for (const invalidRunId of ['.', '..', '../run', 'portal:run/1', 'C:\\run', 'htt
 const subject = buildEnvironmentScopeQualifiedSubjectV1(scope);
 assert.equal(subject, '["azure-subscription","tenant-1","company-1","subscription-1"]');
 const artifactReferences = Object.fromEntries(
-  ENVIRONMENT_ARTIFACT_KINDS_V1.map(artifactKind => [artifactKind, buildEnvironmentLogicalArtifactReferenceV1(artifactKind, subject)])
+  ENVIRONMENT_ARTIFACT_KINDS_V1.map(artifactKind => [
+    artifactKind,
+    artifactKind === 'environment-capability-evidence'
+      ? buildEnvironmentCapabilityEvidenceReferenceV1(scope, 'future_feature', 'future-context', 'summary')
+      : buildEnvironmentLogicalArtifactReferenceV1(artifactKind, subject),
+  ])
 );
 for (const artifactKind of ENVIRONMENT_ARTIFACT_KINDS_V1) {
   const reference = artifactReferences[artifactKind];
-  assert.deepEqual(parseEnvironmentLogicalArtifactReferenceV1(reference), { kind: 'artifact', artifactKind, subject });
+  assert.deepEqual(parseEnvironmentLogicalArtifactReferenceV1(reference), {
+    kind: 'artifact',
+    artifactKind,
+    subject:
+      artifactKind === 'environment-capability-evidence'
+        ? '["capability","azure-subscription","tenant-1","company-1","subscription-1","future_feature","future-context","summary"]'
+        : subject,
+  });
   assert.equal(isEnvironmentLogicalArtifactReferenceV1(reference), true);
 }
 const artifactReference = artifactReferences['subscription-summary'];

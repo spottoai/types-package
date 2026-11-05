@@ -75,6 +75,8 @@ export interface CostAlertDefinition extends BaseAlertDefinition<CostAlertCriter
 }
 export type ListCostAlertDefinitionsParams = ListAlertDefinitionsParams;
 export type ListCostAlertsParams = ListAlertsParams<CostAlertType>;
+/** Default minimum daily increase (subscription currency) above the 7-day average for cost anomaly definitions without `minDelta` or `minCost`. */
+export declare const DEFAULT_COST_ANOMALY_MIN_DELTA = 10;
 export interface CostAlertCriteria {
     confidence?: Array<'High' | 'Medium' | 'Low'>;
     minDelta?: number;
@@ -84,10 +86,9 @@ export interface CostAlertCriteria {
         minScopeSharePercent?: number;
     };
     /**
-     * Data source selection:
-     * - auto: use actual billing if available, else estimated
-     * - actual: billing artifacts only
-     * - estimated: metrics/pricing estimation only
+     * Data source selection.
+     * Cost anomaly: always evaluated on billed data; `auto` and `estimated` behave as `actual` (deprecated for anomaly).
+     * Pre-bill detection uses the `earlySpend` alert type instead.
      */
     dataSource?: 'auto' | 'actual' | 'estimated';
     period?: 'monthly' | 'last_30_days';
@@ -368,4 +369,8 @@ export interface CostAlertInstance extends BaseAlertInstance<CostAlertSummary, C
     breakdown?: CostAlertBreakdownSummary;
     definitionSnapshot?: string;
 }
+/** How much of an alert's figure comes from Azure billing. Shown on every cost alert notification. */
+export type AlertDataBasis = 'billed' | 'blended' | 'estimated';
+/** Maps `CostAlertSummary.dataSource` to the data basis shown to users. */
+export declare const toAlertDataBasis: (dataSource: CostAlertSummary["dataSource"]) => AlertDataBasis | undefined;
 //# sourceMappingURL=cost.d.ts.map

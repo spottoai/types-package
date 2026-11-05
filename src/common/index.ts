@@ -10,6 +10,7 @@ export * from './resourceGraphValidation';
 export * from './resourceIdentity';
 export * from './resourceHealth';
 export * from './syncProgress';
+export * from './workflowTracing';
 export * from './securityPosture';
 export * from './cloudGovernance';
 export * from './serviceRetirement';

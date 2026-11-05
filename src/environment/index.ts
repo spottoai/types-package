@@ -13,3 +13,5 @@ export {
 export * from './awsReferences.js';
 export * from './awsValidation.js';
 export * from './any.js';
+export * from './optionalDocuments.js';
+export * from './capabilityReferences.js';

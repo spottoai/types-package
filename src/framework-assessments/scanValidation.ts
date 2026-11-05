@@ -105,6 +105,8 @@ export const parseScopeScanManifest = (value: unknown): ScopeScanManifest => {
     observationPages: list(row.observationPages, limits.pages).map(parseAssessmentPageReference),
   };
   if (audit.bootstrapSubscriptionId !== undefined) {
+    // Bootstrap subscriptions authenticate Azure tenant scans only.
+    if (result.scope.providerName !== 'azure') return invalid('audit bootstrap');
     const bootstrap = identifier(audit.bootstrapSubscriptionId);
     parseAssessmentNativeScope({ providerName: 'azure', scopeType: 'subscription', scopeId: bootstrap });
     result.audit.bootstrapSubscriptionId = bootstrap;

@@ -1,3 +1,4 @@
+import type { EnvironmentCapabilityDocumentV1 } from './optionalDocuments.js';
 import type { EnvironmentBoundedListV1, EnvironmentCoverageStateV1, EnvironmentLogicalEvidenceReferenceV1, EnvironmentProjectionWarningV1, EnvironmentSeverityV1 } from './contracts.js';
 export declare const ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1: readonly ["projection.json", "environment-index.md", "identity.md", "governance.md", "commitments.md"];
 export type EnvironmentTenantDocumentNameV1 = (typeof ENVIRONMENT_TENANT_DOCUMENT_NAMES_V1)[number];
@@ -98,6 +99,8 @@ export type EnvironmentTenantDocumentDescriptorV1 = {
     approximateTokenCount: number;
 };
 export interface EnvironmentTenantCompiledGenerationPointerV1 {
+    /** Individually hashed supplemental files; excluded from core fileCount/treeDigestSha256. */
+    optionalDocuments?: EnvironmentCapabilityDocumentV1[];
     schemaVersion: 1;
     status: 'completed';
     environmentRunId: string;

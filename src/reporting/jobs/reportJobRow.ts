@@ -8,6 +8,7 @@
  */
 import { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest';
 import { isReportFileName } from '../shared/reportingPaths';
+import { isReportJobFileNameForType } from './reportPack';
 import {
   hasExactlyKeys,
   isBoundedPlainText,
@@ -213,7 +214,7 @@ const validateShape = (row: Record<string, unknown>, errors: string[]): void => 
   check('requestedAtUtc', isIsoUtcTimestamp(row.requestedAtUtc));
   check('requestJson', typeof row.requestJson === 'string' && utf8ByteLength(row.requestJson) <= REPORT_JOB_SPEC_MAX_BYTES);
   check('requestSha256', isSha(row.requestSha256));
-  check('fileName', isReportFileName(row.fileName));
+  check('fileName', isReportFileName(row.fileName) && isReportJobFileNameForType(row.fileName as string, row.reportType as string));
   // Requesters are identified by user ID, never by e-mail address.
   check(
     'requestedByUserId',

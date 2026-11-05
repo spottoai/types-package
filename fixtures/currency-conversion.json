@@ -1,0 +1,51 @@
+{
+  "context": {
+    "contractVersion": 1,
+    "targetCurrency": "USD",
+    "rateDate": "2026-11-04",
+    "rateSnapshotId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rateSource": "European Central Bank euro foreign exchange reference rates"
+  },
+  "converted": {
+    "contractVersion": 1,
+    "targetCurrency": "USD",
+    "rateDate": "2026-11-04",
+    "rateSnapshotId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rateSource": "European Central Bank euro foreign exchange reference rates",
+    "status": "converted",
+    "rates": [{ "sourceCurrency": "NZD", "sourceRate": "1.8", "targetRate": "1.08", "rate": "0.6" }]
+  },
+  "mixed": {
+    "contractVersion": 1,
+    "targetCurrency": "USD",
+    "rateDate": "2026-11-04",
+    "rateSnapshotId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rateSource": "European Central Bank euro foreign exchange reference rates",
+    "status": "converted",
+    "rates": [
+      { "sourceCurrency": "AUD", "sourceRate": "1.5", "targetRate": "1.08", "rate": "0.72" },
+      { "sourceCurrency": "NZD", "sourceRate": "1.8", "targetRate": "1.08", "rate": "0.6" },
+      { "sourceCurrency": "USD", "sourceRate": "1.08", "targetRate": "1.08", "rate": "1" }
+    ]
+  },
+  "unchanged": {
+    "contractVersion": 1,
+    "targetCurrency": "USD",
+    "rateDate": "2026-11-04",
+    "rateSnapshotId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rateSource": "European Central Bank euro foreign exchange reference rates",
+    "status": "unchanged",
+    "rates": [{ "sourceCurrency": "USD", "sourceRate": "1.08", "targetRate": "1.08", "rate": "1" }]
+  },
+  "discovery": {
+    "contractVersion": 1,
+    "rateDate": "2026-11-04",
+    "rateSnapshotId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "rateSource": "European Central Bank euro foreign exchange reference rates",
+    "currencies": [
+      { "code": "EUR", "minorUnitScale": 2 },
+      { "code": "JPY", "minorUnitScale": 0 },
+      { "code": "USD", "minorUnitScale": 2 }
+    ]
+  }
+}

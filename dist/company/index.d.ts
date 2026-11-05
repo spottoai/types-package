@@ -4,4 +4,9 @@ export * from './notification';
 export * from './survey';
 export * from './billingAccount';
 export * from './companyNotes';
+export * from './companyContext';
+export * from './companyMemory';
+export * from './companyMeetings';
+export * from './companyNoteRevisions';
+export * from './companyContextHarvesting';
 //# sourceMappingURL=index.d.ts.map

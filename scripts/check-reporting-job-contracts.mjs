@@ -61,6 +61,16 @@ const hostile = () => {
 };
 
 const checkJobs = async (jobs, label) => {
+  const deliveryProgress = {
+    status: 'not-delivered',
+    phase: 'complete',
+    updatedAtUtc: '2026-10-29T00:00:00.000Z',
+    steps: [],
+    deliveryFailureCode: 'data-exports-disabled',
+  };
+  assert.equal(jobs.isReportJobProgressV1(deliveryProgress), true, `${label} bounded delivery reason rejected`);
+  assert.equal(jobs.isReportJobProgressV1({ ...deliveryProgress, deliveryFailureCode: 'raw-provider-error' }), false);
+  assert.equal(jobs.isReportJobProgressV1({ ...deliveryProgress, recipient: 'private@example.test' }), false);
   // Identity vectors (computed independently with node:crypto).
   for (const vector of vectors) {
     const { expected } = vector;
@@ -399,6 +409,26 @@ const checkJobs = async (jobs, label) => {
   assert.equal((await jobs.parseReportJobRowV1(completedRow)).ok, true, `${label} completed row`);
   const failedRow = { ...apiRow, status: 'failed', attemptCount: 10, failureCode: 'retries-exhausted', failureStage: 'source-load' };
   assert.equal((await jobs.parseReportJobRowV1(failedRow)).ok, true, `${label} retries-exhausted with the attempt's stage`);
+  for (const failureCode of [
+    'entitlement-missing',
+    'requester-unresolved',
+    'reporting-disabled',
+    'data-exports-disabled',
+    'source-feature-disabled',
+    'recommendation-category-disabled',
+    'action-permission-missing',
+    'demo-company',
+    'delivery-policy-invalid',
+    ...Object.values(jobs.REPORT_JOB_FAILURE_CODE_BY_FEATURE),
+  ]) {
+    assert.equal(jobs.isReportJobFailureCode(failureCode), true, `${label} bounded authorization code ${failureCode}`);
+    assert.equal(jobs.resolveReportJobFailureStage(failureCode), 'authorization-or-entitlement');
+    assert.equal(
+      (await jobs.parseReportJobRowV1({ ...failedRow, failureCode, failureStage: 'authorization-or-entitlement' })).ok,
+      true,
+      `${label} failed row accepts ${failureCode}`
+    );
+  }
   const inconsistent = {
     'failed without code': { ...apiRow, status: 'failed', attemptCount: 1 },
     'failed with mismatched stage': { ...apiRow, status: 'failed', attemptCount: 1, failureCode: 'render-error', failureStage: 'request' },

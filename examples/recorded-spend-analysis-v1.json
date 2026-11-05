@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-29T13:39:34.768Z",
+  "current30Days": {
+    "window": {
+      "startDateInclusive": "2026-09-28",
+      "endDateExclusive": "2026-10-28",
+      "dayCount": 30,
+      "dateBasis": "utc"
+    },
+    "currency": "USD",
+    "source": "billing",
+    "finality": "unknown",
+    "closure": {
+      "status": "closed",
+      "method": "accepted-source-usage-bounds"
+    },
+    "billed": {
+      "status": "available",
+      "amount": 100
+    },
+    "amortized": {
+      "status": "available",
+      "amount": 90
+    }
+  },
+  "previous30Days": {
+    "window": {
+      "startDateInclusive": "2026-08-29",
+      "endDateExclusive": "2026-09-28",
+      "dayCount": 30,
+      "dateBasis": "utc"
+    },
+    "currency": "USD",
+    "source": "billing",
+    "finality": "unknown",
+    "closure": {
+      "status": "closed",
+      "method": "accepted-source-usage-bounds"
+    },
+    "billed": {
+      "status": "available",
+      "amount": 80
+    },
+    "amortized": {
+      "status": "available",
+      "amount": 70
+    }
+  },
+  "current7Days": {
+    "window": {
+      "startDateInclusive": "2026-10-21",
+      "endDateExclusive": "2026-10-28",
+      "dayCount": 7,
+      "dateBasis": "utc"
+    },
+    "currency": "USD",
+    "source": "billing",
+    "finality": "unknown",
+    "closure": {
+      "status": "closed",
+      "method": "accepted-source-usage-bounds"
+    },
+    "billed": {
+      "status": "available",
+      "amount": 25
+    },
+    "amortized": {
+      "status": "available",
+      "amount": 20
+    }
+  },
+  "previous7Days": {
+    "window": {
+      "startDateInclusive": "2026-10-14",
+      "endDateExclusive": "2026-10-21",
+      "dayCount": 7,
+      "dateBasis": "utc"
+    },
+    "currency": "USD",
+    "source": "billing",
+    "finality": "unknown",
+    "closure": {
+      "status": "closed",
+      "method": "accepted-source-usage-bounds"
+    },
+    "billed": {
+      "status": "available",
+      "amount": 20
+    },
+    "amortized": {
+      "status": "available",
+      "amount": 15
+    }
+  }
+}

@@ -58,7 +58,7 @@ export interface SaveGeneratedReportRequest {
 export interface GeneratedReportMetadata {
     id: string;
     companyId: string;
-    reportType: ReportingTemplateReportType;
+    reportType: ReportingTemplateReportType | 'report-pack';
     fileName: string;
     createdAt: string;
     templateId?: string;

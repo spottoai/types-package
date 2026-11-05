@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.isPortalActivityAnalysisResponse = exports.isPortalActivityLogClassification = exports.isPortalActivityEvidenceId = exports.isPortalActivityAnalysisGroupId = void 0;
 exports.assertPortalActivityAnalysisResponse = assertPortalActivityAnalysisResponse;
 const activityLogAnalysis_1 = require("./activityLogAnalysis");
+const activityLogAnalysisScopeValidation_1 = require("./activityLogAnalysisScopeValidation");
 const activityLogAnalysisPublicValidationHelpers_1 = require("./activityLogAnalysisPublicValidationHelpers");
 Object.defineProperty(exports, "isPortalActivityAnalysisGroupId", { enumerable: true, get: function () { return activityLogAnalysisPublicValidationHelpers_1.isPortalActivityAnalysisGroupId; } });
 Object.defineProperty(exports, "isPortalActivityEvidenceId", { enumerable: true, get: function () { return activityLogAnalysisPublicValidationHelpers_1.isPortalActivityEvidenceId; } });
@@ -275,7 +276,9 @@ const isPortalActivityAnalysisResponse = (value) => {
         'securitySensitive',
         'powerPatterns',
         'limitations',
-    ], ['resourceId']) ||
+    ], ['resourceId', 'providerName', 'providerScopeId']) ||
+        !(0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderIdentity)(value) ||
+        !(0, activityLogAnalysisScopeValidation_1.isActivityLogAnalysisResourceFilter)(value) ||
         value.schemaVersion !== activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION ||
         !(0, activityLogAnalysisPublicValidationHelpers_1.isTimestamp)(value.generatedAt) ||
         !(0, activityLogAnalysisPublicValidationHelpers_1.isText)(value.subscriptionId, 2048) ||
@@ -308,14 +311,20 @@ const isPortalActivityAnalysisResponse = (value) => {
         return false;
     const subscriptionId = value.subscriptionId;
     const resourceId = value.resourceId;
+    const providerName = (0, activityLogAnalysisScopeValidation_1.activityLogProviderName)(value);
+    if (!(0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderFacets)(value.facets, providerName))
+        return false;
     if (!isCollection(value.activitySeries, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.activitySeries, (item) => isSeries(item, subscriptionId, resourceId, available)) ||
         !isCollection(value.resources, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceSummaries, (item) => isResource(item, subscriptionId, resourceId)) ||
         !isCollection(value.operationSummaries, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.operationSummaries, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'operationSummary') ||
         !isCollection(value.securitySensitive, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.securitySensitive, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'securitySensitiveActivity') ||
         !isCollection(value.powerPatterns, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.powerPatterns, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'powerPatternEvidence'))
         return false;
+    if (![value.activitySeries, value.resources, value.operationSummaries, value.securitySensitive, value.powerPatterns].every(collection => collection.items.every(item => (0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderEvidence)(item, providerName))))
+        return false;
     if (!isRanked(value.activitySeries.items, item => item.seriesId) ||
-        !isRanked(value.resources.items, item => item.scope.resourceId) ||
+        !isRanked(value.resources.items, item => (0, activityLogAnalysis_1.buildActivityLogAnalysisScopeKey)(item.scope)) ||
+        new Set(value.resources.items.map(item => (0, activityLogAnalysis_1.buildActivityLogAnalysisScopeKey)(item.scope))).size !== value.resources.items.length ||
         !isRanked(value.operationSummaries.items, item => item.groupId) ||
         !isRanked(value.securitySensitive.items, item => item.groupId) ||
         !isRanked(value.powerPatterns.items, item => item.patternId))

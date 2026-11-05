@@ -1,7 +1,8 @@
 import type { AICustomerDecisionBriefOutput, AIChatRetrievalSourceType } from './index.js';
-export type AIChatWorkspaceArtifactKind = 'metricGroup' | 'chart' | 'table' | 'document' | 'resourceList' | 'decisionBrief' | 'kpi';
+import type { AIChatWorkspaceGraphPayload } from './workspaceGraph.js';
+export type AIChatWorkspaceArtifactKind = 'metricGroup' | 'chart' | 'table' | 'document' | 'resourceList' | 'decisionBrief' | 'kpi' | 'scenario' | 'recommendations' | 'graph';
 export type AIChatWorkspaceArtifactDataMode = 'snapshot' | 'liveView' | 'snapshotWithLiveRefresh';
-export type AIChatWorkspacePresentation = 'metricGroup' | 'bar' | 'line' | 'area' | 'table' | 'resourceList' | 'decisionBrief' | 'kpi' | 'report';
+export type AIChatWorkspacePresentation = 'metricGroup' | 'bar' | 'line' | 'area' | 'table' | 'resourceList' | 'decisionBrief' | 'kpi' | 'report' | 'scenario' | 'recommendations' | 'graph';
 export type AIChatWorkspaceTimeRangePreset = 'P7D' | 'P30D' | 'P90D' | 'P180D' | 'P1Y' | 'currentBillingPeriod' | 'previousBillingPeriod';
 export declare const AI_CHAT_WORKSPACE_CAPABILITIES: readonly [{
     readonly viewId: "azure.security.secureScoreTrend";
@@ -117,8 +118,26 @@ export declare const AI_CHAT_WORKSPACE_CAPABILITIES: readonly [{
     readonly artifactKind: "kpi";
     readonly presentations: readonly ["kpi"];
     readonly dataModes: readonly ["snapshot"];
+}, {
+    readonly viewId: "cloud.relationships.graph";
+    readonly version: 1;
+    readonly artifactKind: "graph";
+    readonly presentations: readonly ["graph"];
+    readonly dataModes: readonly ["snapshot"];
+}, {
+    readonly viewId: "genericScenario";
+    readonly version: 1;
+    readonly artifactKind: "scenario";
+    readonly presentations: readonly ["scenario"];
+    readonly dataModes: readonly ["snapshot"];
+}, {
+    readonly viewId: "genericRecommendations";
+    readonly version: 1;
+    readonly artifactKind: "recommendations";
+    readonly presentations: readonly ["recommendations"];
+    readonly dataModes: readonly ["snapshot"];
 }];
-export declare const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS: readonly ["genericTable", "genericBarChart", "genericLineChart", "genericKpi"];
+export declare const AI_CHAT_WORKSPACE_GENERIC_VIEW_IDS: readonly ["genericTable", "genericBarChart", "genericLineChart", "genericKpi", "cloud.relationships.graph", "genericScenario", "genericRecommendations"];
 export declare const AI_CHAT_REPORT_STRATEGY_IDS: readonly ["security.landscape@1", "cost.changeWaterfall@1", "changes.recent@1", "cost.analysis@1", "cost.tree@1", "commitments.planning@1", "licensing.hybridBenefit@1", "governance.posture@1", "backups.posture@1", "retirement.tracker@1"];
 export type AIChatWorkspaceCapability = (typeof AI_CHAT_WORKSPACE_CAPABILITIES)[number];
 export type AIChatWorkspaceViewId = AIChatWorkspaceCapability['viewId'];
@@ -241,9 +260,55 @@ export interface AIChatWorkspaceArtifactProvenance {
     coverage: AIChatWorkspaceCoverage;
     reasonCode?: AIChatWorkspaceProvenanceReasonCode;
 }
+/**
+ * Where a visual sits inside the answer (interactive answers, 1.1.24). `afterSection` places it right after the bold
+ * section label it illustrates; without an anchor (or when the label is not found) it follows the whole answer.
+ */
+export type AIChatWorkspaceArtifactAnchor = {
+    kind: 'afterLead';
+} | {
+    kind: 'afterSection';
+    sectionLabel: string;
+};
 export interface AIChatWorkspaceArtifactPlacement {
     region: 'afterAnswer';
     order: number;
+    anchor?: AIChatWorkspaceArtifactAnchor;
+    /** Visuals sharing a pair id may render side by side on wide screens. */
+    pairId?: string;
+}
+export declare const AI_CHAT_WORKSPACE_DRILL_DOWN_IDS: readonly ["subject.explain@1", "dimension.breakdown@1", "period.explain@1", "option.explain@1"];
+export type AIChatWorkspaceDrillDownId = (typeof AI_CHAT_WORKSPACE_DRILL_DOWN_IDS)[number];
+/**
+ * Clickable elements of a chart (category points) or table (rows). `elementKeys` and `prompts` are parallel to the
+ * elements; an empty key means that element is not drillable. A click sends only the opaque key back
+ * (`AIChatDrillDownInvocationV1`); the server re-reads its own binding and rebuilds the question.
+ */
+export interface AIChatWorkspaceDrillDownV1 {
+    drillDownId: AIChatWorkspaceDrillDownId;
+    elementKeys: string[];
+    /** The exact question a click sends, written by the server. */
+    prompts: string[];
+}
+export declare const AI_CHAT_WORKSPACE_DRILL_DOWN_LIMITS_V1: Readonly<{
+    readonly elementsPerArtifact: 60;
+    readonly elementKeyChars: 16;
+    readonly promptChars: 200;
+}>;
+/** Composition-chart and sparkline bounds (Milestone 3). */
+export declare const AI_CHAT_WORKSPACE_COMPOSITION_LIMITS_V1: Readonly<{
+    readonly slices: 8;
+}>;
+export declare const AI_CHAT_WORKSPACE_SPARKLINE_LIMITS_V1: Readonly<{
+    readonly points: 31;
+}>;
+/**
+ * A per-row trend drawn inside a numeric table column (for example a utilisation p95 with its daily p95 behind it).
+ * `values` is parallel to the table rows; a null row or a null point is a gap, never zero.
+ */
+export interface AIChatWorkspaceTableSparkline {
+    values: Array<Array<number | null> | null>;
+    axisMax?: number;
 }
 export interface AIChatWorkspaceArtifactTruncation {
     rowsOmitted: number;
@@ -315,7 +380,11 @@ export type AIChatWorkspaceChartAnnotation = {
     label: string;
 };
 export interface AIChatWorkspaceChartPayload {
-    chartType: 'bar' | 'line' | 'area';
+    /**
+     * `composition` shows a reconciled mix: one series of 2..8 non-negative parts of a positive whole over category slices
+     * (an "Other" remainder included), never percentages and never annotations.
+     */
+    chartType: 'bar' | 'line' | 'area' | 'composition';
     /** 1..8 series; more than one series is a multi-series chart (grouped, or stacked when `stacked`). */
     series: AIChatWorkspaceChartSeries[];
     xAxis: AIChatWorkspaceChartAxis;
@@ -330,6 +399,7 @@ export interface AIChatWorkspaceChartPayload {
     basis?: AIChatWorkspaceMoneyBasis;
     xAxisLabel?: string;
     yAxisLabel?: string;
+    drillDown?: AIChatWorkspaceDrillDownV1;
 }
 /** WP-G KPI row: 1..6 tiles of server-computed values with optional server-decided deltas. */
 export type AIChatWorkspaceKpiValue = {
@@ -403,6 +473,83 @@ export interface AIChatWorkspaceTablePayload {
      * Keys that are absent from `links` are ignored by the renderer.
      */
     rowLinks?: string[][];
+    drillDown?: AIChatWorkspaceDrillDownV1;
+    /** Keyed by a numeric column's key. */
+    sparklines?: Record<string, AIChatWorkspaceTableSparkline>;
+}
+/**
+ * What-if comparison (1.1.24): up to three independent choices for one subject (a VM's size, its OS disk tier), each a
+ * list of server-priced options. The client adds the chosen options' server prices and never prices anything itself.
+ * `drillDown` is parallel to the first choice's options. Travels without a `view` until a view id is registered.
+ */
+export interface AIChatWorkspaceScenarioOption {
+    optionId: string;
+    label: string;
+    group: 'current' | 'recommended' | 'burstable' | 'tradeOff' | 'alternative';
+    monthlyCost: number;
+    /** Keyed by `metrics[].key`. */
+    values?: Record<string, number | string | boolean | null>;
+    notes?: string[];
+    warnings?: string[];
+    /** Capability tokens this option brings (`premiumDisk`) and needs from the other chosen options. */
+    provides?: string[];
+    requires?: string[];
+}
+/** One choice of a what-if comparison (a VM's size, its OS disk tier). */
+export interface AIChatWorkspaceScenarioDimension {
+    key: string;
+    label: string;
+    currentOptionId: string;
+    /**
+     * The option the comparison opens on (1.1.31), when the question is about one option ("What would change if vm-app-01
+     * moved to Standard_D4as_v4?"). Must be one of `options`. Without it the client opens on the first recommended option.
+     */
+    selectedOptionId?: string;
+    options: AIChatWorkspaceScenarioOption[];
+}
+export interface AIChatWorkspaceScenarioPayload {
+    subjectLabel: string;
+    currencyCode: string;
+    costBasis: 'list' | 'billed' | 'estimated';
+    costNote?: string;
+    /** 1..3 choices of 2..12 options each. */
+    dimensions: AIChatWorkspaceScenarioDimension[];
+    metrics: Array<{
+        key: string;
+        label: string;
+        format: 'number' | 'percent' | 'gb' | 'score' | 'text';
+        better?: 'higher' | 'lower';
+        /** Values above this are flagged (projected utilisation over a safe limit). */
+        warnAbove?: number;
+    }>;
+    drillDown?: AIChatWorkspaceDrillDownV1;
+}
+/** Recommendation cards (1.1.24): 1..5 recommendations a reader can open, ask about or prioritise. */
+export interface AIChatWorkspaceRecommendationCard {
+    recommendationId: string;
+    subscriptionId: string;
+    title: string;
+    category?: string;
+    impact?: string;
+    effort?: string;
+    resourceCount?: number;
+    scopeLabel?: string;
+    savings?: {
+        monthly: number;
+        minimum?: number;
+        currencyCode: string;
+    };
+    summary?: string;
+    /** At most four quick steps. */
+    steps?: string[];
+    /** Affected resources, for actions taken from the card (at most 50). */
+    resourceIds?: string[];
+    /** Key into the artifact's `links` (an internal link to the recommendation). */
+    linkKey: string;
+}
+export interface AIChatWorkspaceRecommendationCardsPayload {
+    items: AIChatWorkspaceRecommendationCard[];
+    drillDown?: AIChatWorkspaceDrillDownV1;
 }
 export type AIChatWorkspaceDocumentBlock = {
     kind: 'heading';
@@ -514,6 +661,21 @@ type AIChatWorkspaceSnapshotContent = {
     snapshot: {
         payload: AIChatWorkspaceKpiPayload;
     };
+} | {
+    kind: 'scenario';
+    snapshot: {
+        payload: AIChatWorkspaceScenarioPayload;
+    };
+} | {
+    kind: 'recommendations';
+    snapshot: {
+        payload: AIChatWorkspaceRecommendationCardsPayload;
+    };
+} | {
+    kind: 'graph';
+    snapshot: {
+        payload: AIChatWorkspaceGraphPayload;
+    };
 };
 type AIChatWorkspaceChartRecipe = Extract<AIChatWorkspaceLiveViewRecipe, {
     viewId: 'azure.security.secureScoreTrend' | 'azure.cost.subscriptionSpendTrend' | 'azure.resource.metrics';
@@ -581,6 +743,11 @@ export interface AIChatWorkspaceArtifactSummary {
     coverage: AIChatWorkspaceCoverage;
     truncated?: AIChatWorkspaceArtifactTruncation;
     supportedActions: Array<'expand' | 'refresh' | 'downloadCsv' | 'downloadPng' | 'downloadDocx'>;
+    /**
+     * Where the artifact sat in its answer (1.1.28), so a reloaded answer keeps visuals after their sections and can
+     * still be presented as slides before each visual is lazily loaded. Optional: older summaries have none.
+     */
+    placement?: AIChatWorkspaceArtifactPlacement;
 }
 export type AIChatWorkspaceArtifactFailureReason = 'validationFailed' | 'budgetExceeded' | 'unavailable' | 'unsupported';
 export {};

@@ -1,4 +1,5 @@
-import { PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1, PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION, } from './activityLogAnalysis.js';
+import { PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1, PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION, buildActivityLogAnalysisScopeKey, } from './activityLogAnalysis.js';
+import { activityLogProviderName, hasActivityLogProviderEvidence, hasActivityLogProviderFacets, hasActivityLogProviderIdentity, isActivityLogAnalysisResourceFilter, } from './activityLogAnalysisScopeValidation.js';
 import { CONFIDENCES, EFFECTS, LIMITATIONS, MONTH, ORIGINS, POWER_SUFFICIENCY, TAG_IDS, countRowsTotal, hasExactKeys, hasValidTimes, isChronologicalCountRows, isCount, isCountRows, isDate, isEvidenceIds, isGroupIds, isPortalActivityAnalysisGroupId, isPortalActivityEvidenceId, isPortalActivityLogClassification, isPositiveCount, isReasons, isRecord, isScope, isSortedUniqueStrings, isText, isTimestamp, isTags, utf8ByteLength, } from './activityLogAnalysisPublicValidationHelpers.js';
 export { isPortalActivityAnalysisGroupId, isPortalActivityEvidenceId, isPortalActivityLogClassification };
 const isSeries = (value, subscriptionId, resourceId, requestedMonths) => {
@@ -269,7 +270,9 @@ export const isPortalActivityAnalysisResponse = (value) => {
         'securitySensitive',
         'powerPatterns',
         'limitations',
-    ], ['resourceId']) ||
+    ], ['resourceId', 'providerName', 'providerScopeId']) ||
+        !hasActivityLogProviderIdentity(value) ||
+        !isActivityLogAnalysisResourceFilter(value) ||
         value.schemaVersion !== PORTAL_ACTIVITY_ANALYSIS_RESPONSE_SCHEMA_VERSION ||
         !isTimestamp(value.generatedAt) ||
         !isText(value.subscriptionId, 2048) ||
@@ -302,14 +305,20 @@ export const isPortalActivityAnalysisResponse = (value) => {
         return false;
     const subscriptionId = value.subscriptionId;
     const resourceId = value.resourceId;
+    const providerName = activityLogProviderName(value);
+    if (!hasActivityLogProviderFacets(value.facets, providerName))
+        return false;
     if (!isCollection(value.activitySeries, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.activitySeries, (item) => isSeries(item, subscriptionId, resourceId, available)) ||
         !isCollection(value.resources, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceSummaries, (item) => isResource(item, subscriptionId, resourceId)) ||
         !isCollection(value.operationSummaries, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.operationSummaries, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'operationSummary') ||
         !isCollection(value.securitySensitive, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.securitySensitive, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'securitySensitiveActivity') ||
         !isCollection(value.powerPatterns, PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.powerPatterns, (item) => isDerived(item, subscriptionId, resourceId) && item.derivedType === 'powerPatternEvidence'))
         return false;
+    if (![value.activitySeries, value.resources, value.operationSummaries, value.securitySensitive, value.powerPatterns].every(collection => collection.items.every(item => hasActivityLogProviderEvidence(item, providerName))))
+        return false;
     if (!isRanked(value.activitySeries.items, item => item.seriesId) ||
-        !isRanked(value.resources.items, item => item.scope.resourceId) ||
+        !isRanked(value.resources.items, item => buildActivityLogAnalysisScopeKey(item.scope)) ||
+        new Set(value.resources.items.map(item => buildActivityLogAnalysisScopeKey(item.scope))).size !== value.resources.items.length ||
         !isRanked(value.operationSummaries.items, item => item.groupId) ||
         !isRanked(value.securitySensitive.items, item => item.groupId) ||
         !isRanked(value.powerPatterns.items, item => item.patternId))

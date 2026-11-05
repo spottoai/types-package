@@ -1,10 +1,13 @@
 import { BaseAlertDefinition, BaseAlertDestinations, BaseAlertInstance, BaseAlertScope, CreateAlertDefinitionInput, UpdateAlertDefinitionInput } from './baseAlert.js';
 import type { CostAlertDefinition, CostAlertInstance } from './cost.js';
-export declare const QUICK_ALERT_TYPES: readonly ["credentialExpiry", "benefitExpiry", "serviceRetirement", "backupFailure"];
+import type { EarlySpendAlertCriteria, EarlySpendAlertSummary } from './earlySpend.js';
+export declare const QUICK_ALERT_TYPES: readonly ["credentialExpiry", "benefitExpiry", "serviceRetirement", "backupFailure", "earlySpend"];
 export type QuickAlertType = (typeof QUICK_ALERT_TYPES)[number];
-export type QuickAlertCategory = 'other';
-export type QuickAlertTemplateId = 'credential-expiry-30d' | 'cloud-account-credential-expiry-30d' | 'benefit-expiry-30d' | 'benefit-expiry-7d' | 'service-retirement-30d' | 'backup-failure';
-export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection';
+/** Early spend alerts run on the quick-alert lifecycle but are cost alerts. */
+export type QuickAlertCategoryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? 'cost' : 'other';
+export type QuickAlertCategory = QuickAlertCategoryFor<QuickAlertType>;
+export type QuickAlertTemplateId = 'credential-expiry-30d' | 'cloud-account-credential-expiry-30d' | 'benefit-expiry-30d' | 'benefit-expiry-7d' | 'service-retirement-30d' | 'backup-failure' | 'early-spend-default';
+export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals';
 export type QuickAlertBenefitType = 'reservation' | 'savingsPlan';
 interface QuickAlertCriteriaBase<TKind extends QuickAlertType, TSource extends QuickAlertSource, TTemplateId extends QuickAlertTemplateId> {
     kind: TKind;
@@ -29,7 +32,7 @@ export interface BackupFailureAlertCriteria extends QuickAlertCriteriaBase<'back
     minimumConsecutiveFailures: number;
     workloadTypes?: string[];
 }
-export type QuickAlertCriteria = CredentialExpiryAlertCriteria | CloudAccountCredentialExpiryAlertCriteria | BenefitExpiryAlertCriteria | ServiceRetirementAlertCriteria | BackupFailureAlertCriteria;
+export type QuickAlertCriteria = CredentialExpiryAlertCriteria | CloudAccountCredentialExpiryAlertCriteria | BenefitExpiryAlertCriteria | ServiceRetirementAlertCriteria | BackupFailureAlertCriteria | EarlySpendAlertCriteria;
 export type QuickAlertCriteriaFor<TType extends QuickAlertType> = Extract<QuickAlertCriteria, {
     kind: TType;
 }>;
@@ -49,8 +52,9 @@ export interface QuickAlertSummary {
     expiresAt?: string;
     workloadType?: string;
 }
+export type QuickAlertSummaryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? EarlySpendAlertSummary : QuickAlertSummary;
 export type QuickAlertDefinitionFor<TType extends QuickAlertType> = BaseAlertDefinition<QuickAlertCriteriaFor<TType>, BaseAlertDestinations, BaseAlertScope, TType> & {
-    category: QuickAlertCategory;
+    category: QuickAlertCategoryFor<TType>;
     type: TType;
 };
 export type QuickAlertDefinition = {
@@ -60,8 +64,8 @@ type EditableQuickAlertCriteria<TType extends QuickAlertType> = QuickAlertCriter
 export type QuickAlertDefinitionUpdateInput = {
     [TType in QuickAlertType]: UpdateAlertDefinitionInput<QuickAlertDefinitionFor<TType>, EditableQuickAlertCriteria<TType>>;
 }[QuickAlertType];
-export type QuickAlertInstanceFor<TType extends QuickAlertType> = BaseAlertInstance<QuickAlertSummary, BaseAlertScope, TType> & {
-    category: QuickAlertCategory;
+export type QuickAlertInstanceFor<TType extends QuickAlertType> = BaseAlertInstance<QuickAlertSummaryFor<TType>, BaseAlertScope, TType> & {
+    category: QuickAlertCategoryFor<TType>;
     type: TType;
 };
 export type QuickAlertInstance = {

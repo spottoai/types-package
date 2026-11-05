@@ -3,7 +3,7 @@ import type { EffortEstimateProfileName } from '../azure/recommendations';
 import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
-import type { EnvironmentType, ProviderScopeDisplayMetadata } from '../common/provider';
+import type { EnvironmentType, ProviderScopeContext, ProviderScopeDisplayMetadata } from '../common/provider';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 import type {
   AzureSpSetupErrorCode,
@@ -24,6 +24,7 @@ export type { SyncProgressIssue, SyncProgressIssueMetadataValue, SyncProgressIss
 
 /** Azure compatibility alias for the provider-neutral environment classification. */
 export type SubscriptionType = EnvironmentType;
+/** Hour within a recurring twelve-hour UTC scan cycle; providers persist assignments in their own state. */
 export type ScheduledScanSlot = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11;
 export type CloudAccountAuthMode = 'servicePrincipal' | 'delegatedUser' | 'gdap' | 'crossAccountRole';
 export type CloudAccountTenantSyncSource = 'manual' | 'scheduled' | 'onboarding';
@@ -780,7 +781,7 @@ export interface SubscriptionSyncProgress {
   steps: SubscriptionSyncProgressStep[];
 }
 
-export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields {
+export interface SubscriptionInfoBase extends AzureSpSetupSubscriptionReadinessFields, ProviderScopeContext {
   name: string;
   friendlyName?: string;
   cloudAccountId: string;

@@ -1,3 +1,4 @@
+import type { PortalPromotionTemplateRef } from './promotionTemplates';
 export type PortalPrincipalType = 'user' | 'api_key';
 export interface PortalPrincipal {
     principalType: PortalPrincipalType;
@@ -12,6 +13,8 @@ export type PortalSystemAvailability = 'available_by_default' | 'unavailable_by_
 export type PortalFeatureSetOverrideDecision = 'allow' | 'deny' | 'restrict';
 export type PortalFeatureSetOverrideAppliesTo = 'all_users' | 'local_company_users' | 'delegated_admins';
 export type PortalEntitlementState = 'enabled' | 'not_available' | 'disabled' | 'blocked_by_parent';
+/** Catalog restrictions stay hidden; override restrictions may carry explicit presentation. */
+export type PortalRestrictionSource = 'catalog' | 'override';
 export type PortalVisibilityState = 'hidden' | 'visible' | 'teaser' | 'promo';
 export type PortalActionabilityState = 'actionable' | 'locked';
 export type PortalAccessReasonCode = 'allowed' | 'missing_view_permission' | 'missing_use_permission' | 'missing_manage_permission' | 'missing_assign_permission' | 'feature_not_entitled' | 'feature_disabled' | 'blocked_by_parent' | 'presentation_hidden' | 'unknown_feature';
@@ -64,6 +67,7 @@ export interface PortalCompanyFeatureOverride {
     decision: PortalFeatureSetOverrideDecision;
     appliesTo?: PortalFeatureSetOverrideAppliesTo;
     presentationMode?: PortalPresentationMode;
+    promotionTemplateRef?: PortalPromotionTemplateRef;
     reason?: string;
     createdBy: string;
     createdAt: string;
@@ -73,15 +77,115 @@ export interface PortalCompanyFeatureOverrideUpsertRequest {
     decision: PortalFeatureSetOverrideDecision;
     appliesTo?: PortalFeatureSetOverrideAppliesTo;
     presentationMode?: PortalPresentationMode;
+    /** New authors should use PortalCompanyFeatureOverrideWriteRequest; API validation enforces its matrix. */
+    promotionTemplateRef?: PortalPromotionTemplateRef;
     reason?: string;
 }
+export type PortalFeatureSetAuditAction = 'override_created' | 'override_updated' | 'override_deleted' | 'locked' | 'unlocked';
+export interface PortalFeatureSetAuditSnapshot {
+    decision?: PortalFeatureSetOverrideDecision;
+    appliesTo?: PortalFeatureSetOverrideAppliesTo;
+    presentationMode?: PortalPresentationMode;
+    promotionTemplateRef?: PortalPromotionTemplateRef;
+    reason?: string;
+    locked?: boolean;
+}
+/** Append-only control-plane event. Events have no public update or delete contract. */
+export interface PortalFeatureSetAuditEvent {
+    eventId: string;
+    companyId: string;
+    featureSetKey: string;
+    /** Absent on legacy rows. Mixed-stream readers use PortalFeatureAuditEvent. */
+    targetType?: 'feature_set';
+    templateId?: never;
+    action: PortalFeatureSetAuditAction;
+    actorId: string;
+    actorDisplayName?: string;
+    actorEmail?: string;
+    occurredAt: string;
+    before?: PortalFeatureSetAuditSnapshot;
+    after?: PortalFeatureSetAuditSnapshot;
+}
+export interface PortalFeatureSetAuditContinuation {
+    NextPartitionKey?: string;
+    NextRowKey?: string;
+}
+export interface PortalFeatureSetAuditPage {
+    events: PortalFeatureSetAuditEvent[];
+    continuation?: PortalFeatureSetAuditContinuation;
+}
 export type PortalRoleAssignmentSource = 'legacy_migration' | 'admin_assignment' | 'seed';
+export type PortalAssignmentDataScope = {
+    mode: 'unrestricted';
+} | {
+    mode: 'scoped';
+    scopeIds: string[];
+};
+export type PortalAccessIdSelector = {
+    mode: 'all';
+} | {
+    mode: 'selected';
+    ids: string[];
+};
+export type PortalAccessGroupSelector = {
+    mode: 'all';
+} | {
+    mode: 'selected';
+    names: string[];
+};
+export type PortalAccessResourceFilter = {
+    mode: 'none';
+} | {
+    mode: 'tag_collection';
+    tagCollectionId: string;
+};
+export type PortalAccessTagPredicate = {
+    all: PortalAccessTagPredicate[];
+} | {
+    any: PortalAccessTagPredicate[];
+} | {
+    source: 'azure' | 'aws' | 'spotto';
+    key: string;
+    operator: 'equals';
+    value: string;
+} | {
+    source: 'azure' | 'aws' | 'spotto';
+    key: string;
+    operator: 'in';
+    values: string[];
+};
+export interface PortalAccessTagCollection {
+    id: string;
+    name: string;
+    predicate: PortalAccessTagPredicate;
+}
+export interface PortalAccessScopeDefinition {
+    id: string;
+    name: string;
+    enabled: boolean;
+    /** Immutable after creation. AWS uses account IDs in the subscriptions selector. */
+    providerName: 'azure' | 'aws';
+    cloudAccounts: PortalAccessIdSelector;
+    subscriptionGroups: PortalAccessGroupSelector;
+    subscriptions: PortalAccessIdSelector;
+    resourceFilter: PortalAccessResourceFilter;
+}
+export interface PortalAccessScopeDocument {
+    version: '1.0';
+    revision: number;
+    updatedAt: string;
+    updatedBy: string;
+    tagCollections: PortalAccessTagCollection[];
+    scopes: PortalAccessScopeDefinition[];
+}
 export interface PortalPrincipalRoleAssignment {
     companyId: string;
     principalType: PortalPrincipalType;
     principalId: string;
     roleKey: string;
     delegationScope: PortalDelegationScope;
+    /** Absent only on legacy rows; a present invalid value must never grant unrestricted access. */
+    dataScope?: PortalAssignmentDataScope;
     assignmentSource: PortalRoleAssignmentSource;
     assignedBy?: string;
     createdAt: string;
@@ -89,6 +193,7 @@ export interface PortalPrincipalRoleAssignment {
 }
 export interface PortalPrincipalRoleAssignmentUpsertRequest {
     delegationScope?: PortalDelegationScope;
+    dataScope?: PortalAssignmentDataScope;
 }
 export type PortalEffectiveAccessSourceType = 'feature_set' | 'role' | 'permission' | 'delegation_scope' | 'parent_restriction' | 'presentation';
 export interface PortalEffectiveAccessSource {
@@ -107,17 +212,41 @@ export interface PortalEffectiveAccessResponse {
     actionabilityState: PortalActionabilityState;
     reasonCode: PortalAccessReasonCode;
     sources: PortalEffectiveAccessSource[];
+    /** Optional while older API deployments remain in rotation. */
+    restrictionSource?: PortalRestrictionSource;
+    /** Candidate metadata only; does not prove a template exists or grant feature access. */
+    promotionAvailable?: boolean;
+}
+export type PortalDataScopeMode = 'unrestricted' | 'restricted' | 'none' | 'unavailable';
+export interface PortalAccessScopeSummaryItem {
+    id: string;
+    name: string;
+}
+export interface PortalAccessScopeSummary {
+    /** Opaque cache identity for the caller's effective scope. It is not an authorization token. */
+    fingerprint: string;
+    eligibleSubscriptionCount: number;
+    /** True when an effective scoped grant filters resources by tags; no predicates are exposed. */
+    hasTagFilter?: boolean;
+    /** Providers represented by eligible boundaries; absent on older Azure-only responses. */
+    providerNames?: Array<'azure' | 'aws'>;
+    scopes: PortalAccessScopeSummaryItem[];
 }
 export interface PortalFeatureActionAccess {
     action: PortalAccessAction;
     actionabilityState: PortalActionabilityState;
     reasonCode: PortalAccessReasonCode;
+    /** Present on scope-aware bootstrap responses; optional while older API deployments remain in rotation. */
+    dataScopeMode?: PortalDataScopeMode;
 }
 export interface PortalFeatureAccessSummary {
     featureKey: string;
     entitlementState: PortalEntitlementState;
     visibilityState: PortalVisibilityState;
     actions: Partial<Record<PortalAccessAction, PortalFeatureActionAccess>>;
+    restrictionSource?: PortalRestrictionSource;
+    /** Optional for older responses; resolved message content is fetched separately. */
+    promotionAvailable?: boolean;
 }
 export interface PortalFeatureSetAccessSummary {
     featureSetKey: string;
@@ -125,14 +254,26 @@ export interface PortalFeatureSetAccessSummary {
     visibilityState: PortalVisibilityState;
     reasonCode: PortalAccessReasonCode;
     sourceCompanyId?: string;
+    /** Optional for old responses; new restricted results identify their enforcing source. */
+    restrictionSource?: PortalRestrictionSource;
     presentationMode: PortalPresentationMode;
     sources: PortalEffectiveAccessSource[];
+}
+export interface PortalFeatureSetConfigurationSummary extends PortalFeatureSetAccessSummary {
+    appliesTo: PortalFeatureSetOverrideAppliesTo;
+    /** Administrative configuration only; ordinary bootstrap omits the template identity. */
+    promotionTemplateRef?: PortalPromotionTemplateRef;
+}
+export interface PortalFeatureSetConfigurationResponse {
+    customerId: string;
+    featureSets: PortalFeatureSetConfigurationSummary[];
 }
 export interface PortalAccessBootstrapResponse {
     customerId: string;
     principalType: PortalPrincipalType;
     principalId: string;
     catalogVersion: string;
+    scopeSummary?: PortalAccessScopeSummary;
     featureSets: PortalFeatureSetAccessSummary[];
     features: PortalFeatureAccessSummary[];
 }

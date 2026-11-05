@@ -1,0 +1,1 @@
+{"version":3,"file":"failures.d.ts","sourceRoot":"","sources":["../../src/framework-assessments/failures.ts"],"names":[],"mappings":"AAAA,kHAAkH;AAClH,qBAAa,uBAAwB,SAAQ,KAAK;IAEpC,QAAQ,CAAC,MAAM,EAAE,MAAM;IADnC,QAAQ,CAAC,SAAS,SAAS;gBACN,MAAM,EAAE,MAAM;CAIpC;AACD,qBAAa,wBAAyB,SAAQ,KAAK;IAErC,QAAQ,CAAC,MAAM,EAAE,MAAM;IADnC,QAAQ,CAAC,SAAS,QAAQ;gBACL,MAAM,EAAE,MAAM;CAIpC"}

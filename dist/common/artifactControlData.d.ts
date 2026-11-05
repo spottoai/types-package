@@ -7,12 +7,16 @@ export interface AllowedArtifactReferenceField {
     allowDigestLike?: boolean;
     allowControlField?: boolean;
     allowChildArtifactFields?: boolean;
+    /** The owning schema has validated this exact provider-scoped resource field. */
+    allowValidatedResourceId?: boolean;
 }
 interface IArtifactControlDataScanOptions {
     rejectDigestLikeValues?: boolean;
     requireSafeAzureResourceIds?: boolean;
     forbiddenControlFields?: ReadonlySet<string>;
     requireAllowedFieldTraversalContext?: boolean;
+    /** Exact schema edge sequence; array elements do not add an edge. */
+    validatedResourceIdPath?: readonly string[];
 }
 /** Marks a structurally validated schema field whose logical reference name is allowed. */
 export declare const allowedArtifactReferenceField: (object: unknown, key: string) => AllowedArtifactReferenceField[];

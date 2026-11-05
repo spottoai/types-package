@@ -14,8 +14,8 @@ export type DataProtectionCostAllocationMethod = 'direct' | 'protectedDataSizeWe
 export type DataProtectionBackupCostScope = 'protectedResource' | 'parentResource' | 'vault' | 'allocatedFromVault' | 'platformNativeMeter';
 export type DataProtectionBackupCostEstimateStatus = 'available' | 'partial' | 'unavailable';
 export type DataProtectionBackupCostEstimatePricingSource = 'billingObservedAverage' | 'retail' | 'unavailable';
-export type DataProtectionWorkloadPricingModel = 'vm' | 'azureFiles' | 'blobVaulted' | 'disk' | 'aks' | 'sqlDatabase' | 'sqlManagedInstance' | 'mysqlFlexibleServer' | 'postgresqlFlexibleServer' | 'unknown';
-export type DataProtectionFinding = 'not_protected' | 'protection_unknown' | 'latest_backup_failed' | 'latest_backup_warning' | 'recovery_point_stale' | 'no_recovery_points' | 'protection_paused' | 'protection_stopped' | 'protection_error' | 'policy_inconsistent' | 'native_backup_retention_gap' | 'backup_job_alerts_disabled' | 'backup_cost_unavailable' | 'backup_cost_allocated' | 'backup_estimate_unavailable' | 'source_resource_unresolved' | 'collection_partial';
+export type DataProtectionWorkloadPricingModel = 'vm' | 'azureFiles' | 'blobVaulted' | 'disk' | 'fileSystem' | 'relationalDatabase' | 'cache' | 'aks' | 'sqlDatabase' | 'sqlManagedInstance' | 'mysqlFlexibleServer' | 'postgresqlFlexibleServer' | 'unknown';
+export type DataProtectionFinding = 'not_protected' | 'protection_unknown' | 'latest_backup_failed' | 'latest_backup_warning' | 'recovery_point_stale' | 'no_recovery_points' | 'protection_paused' | 'protection_stopped' | 'protection_error' | 'policy_inconsistent' | 'native_backup_retention_gap' | 'backup_job_alerts_disabled' | 'backup_cost_unavailable' | 'backup_cost_allocated' | 'backup_estimate_unavailable' | 'source_resource_unresolved' | 'collection_partial' | 'inventory_stale';
 export interface DataProtectionCostAllocationRule {
     method: DataProtectionCostAllocationMethod;
     sourceVaultId?: string;
@@ -50,6 +50,8 @@ export interface DataProtectionCostAmount {
     unavailableReason?: string;
 }
 export interface DataProtectionBackupCostEstimate {
+    /** Currency evidenced by estimate pricing, independently of billed cost currency. */
+    currencyCode?: string;
     monthlyAmount?: number;
     monthlyLow?: number;
     monthlyHigh?: number;
@@ -71,6 +73,10 @@ export interface DataProtectionRetailMeterEvidence {
     retailPrice?: number;
     currencyCode?: string;
     armRegionName?: string;
+    regionName?: string;
+    skuId?: string;
+    rateId?: string;
+    effectiveDate?: string;
 }
 export interface DataProtectionBackupCost {
     currencyCode?: string;
@@ -92,6 +98,8 @@ export interface DataProtectionVaultCostSummary {
     confidence: DataProtectionCostConfidence;
 }
 export interface DataProtectionCostSummary {
+    /** Currency of the unprotected-resource estimate total; legacy producers use currencyCode. */
+    estimatedCurrencyCode?: string;
     currencyCode?: string;
     currencySymbol?: string;
     billingWindow?: {
@@ -168,6 +176,44 @@ export interface DataProtectionPostureItem {
     cost?: DataProtectionBackupCost;
     findings: DataProtectionFinding[];
     source: DataProtectionSourceProvenance;
+    /** Site Recovery replication posture (VM items only); absent when replication was not collected for this scan. */
+    replication?: DataProtectionReplication;
+}
+export type DataProtectionReplicationState = 'replicated' | 'not_replicated' | 'unknown';
+export type DataProtectionReplicationSource = 'arg' | 'arm';
+/**
+ * Azure Site Recovery replication facts for one VM. `state` is `unknown` only when the replication collection could not
+ * run (query and vault reads failed); a collection that ran and found no item for the VM yields `not_replicated`.
+ */
+export interface DataProtectionReplication {
+    state: DataProtectionReplicationState;
+    /** Provider protection state description, e.g. "Protected", "Enabling protection", "Disabled". */
+    protectionState?: string;
+    /** Replication health: Normal | Warning | Critical. */
+    health?: string;
+    sourceRegion?: string;
+    targetRegion?: string;
+    rpoSeconds?: number;
+    rpoCalculatedAt?: string;
+    lastTestFailoverAt?: string;
+    lastFailoverAt?: string;
+    policyName?: string;
+    vaultId?: string;
+    vaultName?: string;
+    instanceType?: string;
+    observedAt: string;
+    source?: DataProtectionReplicationSource;
+}
+export interface DataProtectionReplicationSummary {
+    /** False when neither the Resource Graph query nor the vault reads succeeded; item states are then `unknown`. */
+    collected: boolean;
+    evaluatedCount: number;
+    replicatedCount: number;
+    notReplicatedCount: number;
+    unknownCount: number;
+    /** Replicated items whose health is not Normal. */
+    unhealthyCount: number;
+    observedAt?: string;
 }
 export interface DataProtectionCollectionIssue {
     severity: DataProtectionIssueSeverity;
@@ -210,6 +256,8 @@ export interface DataProtectionPostureProjection {
     items: DataProtectionPostureItem[];
     issues: DataProtectionCollectionIssue[];
     sourceArtifacts: string[];
+    /** Present once the engine collects Site Recovery replication (additive). */
+    replicationSummary?: DataProtectionReplicationSummary;
 }
 export interface DataProtectionBackupCostDiagnostics {
     schemaVersion: 1;

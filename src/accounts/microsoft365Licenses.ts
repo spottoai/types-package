@@ -1,9 +1,12 @@
 import {
   isMicrosoft365PricingOverride,
+  isMicrosoft365AgreementTerms,
   isMicrosoft365PricingProjection,
   isMicrosoft365PricingRevision,
+  type Microsoft365AgreementTerms,
   type Microsoft365PricingProjection,
 } from './microsoft365PricingOverrides';
+import { isMicrosoft365AccountReviewReason, type Microsoft365AccountReviewReason } from './microsoft365AccountReview';
 import { isMicrosoft365PricingFacts, type Microsoft365PricingFacts } from './microsoft365PricingFacts';
 import {
   isMicrosoft365AccountCapabilities,
@@ -117,6 +120,8 @@ export interface Microsoft365LicenseRenewal {
   nextLifecycleDateTime: string | null;
 }
 export interface Microsoft365LicensedAccountRow {
+  /** API's single primary review reason, after current license decisions; absent on stored/older rows. */
+  mainReviewReason?: Microsoft365AccountReviewReason;
   /** Assignment enablement; neither provisioning success nor measured deployment/usage. */
   capabilities?: Microsoft365AccountCapabilities;
   id: string;
@@ -188,7 +193,7 @@ export interface Microsoft365Organization {
 }
 /**
  * overlap: the product's capabilities are already included in another product on the same enabled, recently active account.
- * downgrade: the account used no Windows or Mac desktop app in the 30-day Microsoft 365 Apps report.
+ * downgrade: a usage or premium-feature scenario; qualification distinguishes selected eligible edges from conditional reviews.
  */
 export type Microsoft365LicenseInsightKind = 'overlap' | 'downgrade';
 /** available: report rows matched by exact user principal name. Otherwise downgrade counts are unknown. */
@@ -206,6 +211,8 @@ export interface Microsoft365LicenseInsight {
   targetProductName?: string | null;
   /** True when the assignment comes only from group-based licensing, so the change belongs on the group. */
   assignedByGroup?: boolean;
+  /** Only the selected eligible scenario contributes financial estimates; absent means legacy eligibility. */
+  qualification?: 'eligible' | 'conditional' | 'alternative';
   /** Facts supporting the downgrade review, independent of whether a target storage limit blocked it. */
   evidence?: {
     windows: boolean | null;
@@ -217,9 +224,18 @@ export interface Microsoft365LicenseInsight {
     oneDriveUsedBytes: number | null;
     /** True only when every applicable target storage limit was checked. */
     storageChecked: boolean;
+    noOfficeDesktopApps?: boolean | null;
+    /** Entitlements alone do not prove premium features unused. */
+    premiumRequirementsVerified?: boolean;
   };
   /** Informational downgrade finding, excluded from candidate counts and savings. */
-  blockedBy?: ('mailbox_over_target_limit' | 'onedrive_over_target_limit')[];
+  blockedBy?: (
+    | 'mailbox_over_target_limit'
+    | 'onedrive_over_target_limit'
+    | 'storage_unknown'
+    | 'archive_requires_review'
+    | 'premium_requirements_unverified'
+  )[];
 }
 export interface Microsoft365LicenseInsights {
   rulesVersion: string;
@@ -228,7 +244,7 @@ export interface Microsoft365LicenseInsights {
   overlapAccountCount: number | null;
   /** Accounts with at least one downgrade suggestion. */
   downgradeCandidateCount: number | null;
-  /** Accounts blocked by a target storage limit; excluded from downgradeCandidateCount. */
+  /** Accounts with blocked scenarios and no eligible target; excluded from downgradeCandidateCount. */
   downgradeBlockedCount?: number | null;
   downgradeEvidence: Microsoft365DowngradeEvidence;
   /** Findings for the listed account and product rows only. */
@@ -307,6 +323,8 @@ export interface Microsoft365LicensePricing {
   };
   basis: 'list_price_estimate' | 'customer_price_estimate' | 'mixed_price_estimate';
   projection?: Microsoft365PricingProjection;
+  /** The tenant's saved agreement terms, passed through by the API so every viewer sees the same action timing. */
+  agreementTerms?: Microsoft365AgreementTerms;
   breakdownsUnavailableReason?: 'pricing_facts_unavailable' | 'group_limit_exceeded' | 'contribution_limit_exceeded';
   /** Price list identifier, for example `microsoft-2026-07`. */
   priceListVersion: string;
@@ -467,7 +485,12 @@ export function isMicrosoft365LicensePricing(value: unknown): value is Microsoft
       }))
   )
     return false;
-  if (!optional(value.projection, isMicrosoft365PricingProjection) || !optional(value.breakdownsUnavailableReason, text)) return false;
+  if (
+    !optional(value.projection, isMicrosoft365PricingProjection) ||
+    !optional(value.agreementTerms, isMicrosoft365AgreementTerms) ||
+    !optional(value.breakdownsUnavailableReason, text)
+  )
+    return false;
   if (
     value.nonSavingDowngradeEdges !== undefined &&
     (!Array.isArray(value.nonSavingDowngradeEdges) ||
@@ -527,6 +550,7 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
     optional(row.targetSkuPartNumber, nullableText) &&
     optional(row.targetProductName, nullableText) &&
     optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
+    optional(row.qualification, value => value === 'eligible' || value === 'conditional' || value === 'alternative') &&
     optional(
       row.evidence,
       evidence =>
@@ -534,7 +558,9 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
         ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
         nullableCount(evidence.mailboxUsedBytes) &&
         nullableCount(evidence.oneDriveUsedBytes) &&
-        typeof evidence.storageChecked === 'boolean'
+        typeof evidence.storageChecked === 'boolean' &&
+        optional(evidence.noOfficeDesktopApps, nullableBoolean) &&
+        optional(evidence.premiumRequirementsVerified, flag => typeof flag === 'boolean')
     ) &&
     optional(
       row.blockedBy,
@@ -542,9 +568,17 @@ export function isMicrosoft365LicenseInsight(row: unknown): row is Microsoft365L
         row.kind === 'downgrade' &&
         Array.isArray(reasons) &&
         reasons.length > 0 &&
-        reasons.length <= 2 &&
+        reasons.length <= 5 &&
         new Set(reasons).size === reasons.length &&
-        reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')
+        reasons.every(reason =>
+          [
+            'mailbox_over_target_limit',
+            'onedrive_over_target_limit',
+            'storage_unknown',
+            'archive_requires_review',
+            'premium_requirements_unverified',
+          ].includes(reason)
+        )
     )
   );
 }
@@ -568,6 +602,7 @@ export function isMicrosoft365LicenseInsights(value: unknown): value is Microsof
 export function isMicrosoft365LicensedAccountRow(row: unknown): row is Microsoft365LicensedAccountRow {
   return (
     isRecord(row) &&
+    optional(row.mainReviewReason, isMicrosoft365AccountReviewReason) &&
     text(row.id) &&
     !!row.id &&
     nullableText(row.displayName) &&

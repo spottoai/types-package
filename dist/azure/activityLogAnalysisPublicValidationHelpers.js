@@ -2,12 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.utf8ByteLength = exports.hasValidTimes = exports.isReasons = exports.isTags = exports.isGroupIds = exports.isEvidenceIds = exports.isPortalActivityAnalysisGroupId = exports.isPortalActivityEvidenceId = exports.isPortalActivityLogClassification = exports.isScope = exports.isChronologicalCountRows = exports.isCountRows = exports.countRowsTotal = exports.isSortedUniqueStrings = exports.isDate = exports.isTimestamp = exports.isPositiveCount = exports.isCount = exports.isText = exports.hasExactKeys = exports.isRecord = exports.LIMITATIONS = exports.POWER_SUFFICIENCY = exports.CONFIDENCES = exports.EFFECTS = exports.ORIGINS = exports.TAG_IDS = exports.MONTH = void 0;
 const activityLogAnalysis_1 = require("./activityLogAnalysis");
+const activityLogAnalysisScopeValidation_1 = require("./activityLogAnalysisScopeValidation");
 exports.MONTH = /^\d{4}-(0[1-9]|1[0-2])$/;
 const TIMESTAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const EVIDENCE_ID = /^aev1_[a-f0-9]{64}$/;
 const GROUP_ID = /^aag1_[a-f0-9]{64}$/;
 exports.TAG_IDS = new Set(activityLogAnalysis_1.ACTIVITY_LOG_TAG_IDS);
-exports.ORIGINS = new Set(['manual', 'workloadAutomation', 'azurePlatform', 'unknown']);
+exports.ORIGINS = new Set(activityLogAnalysis_1.ACTIVITY_LOG_EXECUTION_ORIGINS);
 exports.EFFECTS = new Set(['write', 'delete', 'action', 'read', 'other']);
 exports.CONFIDENCES = new Set(['high', 'medium', 'low']);
 exports.POWER_SUFFICIENCY = new Set(['oneSided', 'oneOff', 'sameDayRepeat', 'repeated']);
@@ -29,7 +30,6 @@ exports.LIMITATIONS = new Set([
     'mixed-taxonomy-versions',
     'response-truncated',
 ]);
-const SCOPE_LEVELS = new Set(['subscription', 'resourceGroup', 'resource', 'unknown']);
 const RESERVED_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
 const isRecord = (value) => {
     if (value === null || typeof value !== 'object' || Array.isArray(value))
@@ -103,33 +103,9 @@ const isChronologicalCountRows = (value, predicate) => Array.isArray(value) &&
         (index === 0 || value[index - 1].value < row.value));
 exports.isChronologicalCountRows = isChronologicalCountRows;
 const isScope = (value, subscriptionId, resourceId) => {
-    if (!(0, exports.hasExactKeys)(value, ['subscriptionId', 'level'], ['resourceId', 'resourceGroup', 'provider', 'resourceType', 'resourceName']) ||
-        value.subscriptionId !== subscriptionId ||
-        typeof value.level !== 'string' ||
-        !SCOPE_LEVELS.has(value.level))
-        return false;
-    if (value.resourceId !== undefined && !(0, exports.isText)(value.resourceId, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceIdCodeUnits))
-        return false;
-    if (value.resourceGroup !== undefined && !(0, exports.isText)(value.resourceGroup, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceNameCodeUnits))
-        return false;
-    if (value.provider !== undefined && !(0, exports.isText)(value.provider, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.providerCodeUnits))
-        return false;
-    if (value.resourceType !== undefined && !(0, exports.isText)(value.resourceType, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceTypeCodeUnits))
-        return false;
-    if (value.resourceName !== undefined && !(0, exports.isText)(value.resourceName, activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.resourceNameCodeUnits))
-        return false;
-    if (value.level === 'resource' && typeof value.resourceId !== 'string')
-        return false;
-    if (value.level === 'resource') {
-        const scopedSubscriptionId = /^\/subscriptions\/([^/]+)\//i.exec(value.resourceId)?.[1];
-        if (!scopedSubscriptionId || scopedSubscriptionId.toLowerCase() !== subscriptionId.toLowerCase())
-            return false;
-    }
-    if (value.level === 'resourceGroup' && typeof value.resourceGroup !== 'string')
-        return false;
-    if (value.level === 'subscription' && (value.resourceId !== undefined || value.resourceGroup !== undefined))
-        return false;
-    return resourceId === undefined || value.resourceId === resourceId;
+    return ((0, activityLogAnalysisScopeValidation_1.isPortalActivityLogAnalysisScope)(value) &&
+        value.subscriptionId === subscriptionId &&
+        (resourceId === undefined || value.resourceId === resourceId));
 };
 exports.isScope = isScope;
 /** Validates the exact additive classification carried by one Portal Activity Log entry. */
@@ -143,6 +119,7 @@ const isPortalActivityLogClassification = (value) => {
         !(0, exports.isRecord)(value.scope) ||
         typeof value.scope.subscriptionId !== 'string' ||
         !(0, exports.isScope)(value.scope, value.scope.subscriptionId) ||
+        !(0, activityLogAnalysisScopeValidation_1.hasActivityLogProviderEvidence)(value, (0, activityLogAnalysisScopeValidation_1.activityLogProviderName)(value.scope)) ||
         !Array.isArray(value.tags) ||
         value.tags.length > activityLogAnalysis_1.PORTAL_ACTIVITY_ANALYSIS_LIMITS_V1.tagAssignmentsPerEvent)
         return false;

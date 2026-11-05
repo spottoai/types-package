@@ -1,0 +1,43 @@
+{
+  "generatedAt": "2026-10-20T00:00:00.000Z",
+  "availability": {
+    "state": "partial",
+    "reasonCodes": ["customer_invoice_unavailable"],
+    "requiredPermissions": [],
+    "observedAt": "2026-10-20T00:00:00.000Z"
+  },
+  "currencies": [
+    {
+      "currency": "NZD",
+      "rates": [
+        {
+          "id": "extra-file-storage-annual",
+          "product": "sharepoint-extra-file-storage",
+          "unit": "gb_month",
+          "bytesPerGb": 1073741824,
+          "amount": 0.5,
+          "term": "annual_commitment",
+          "taxTreatment": "unspecified",
+          "source": { "kind": "reseller", "url": "https://example.invalid/storage", "checkedAt": "2026-10-20" },
+          "quote": { "amount": 6, "period": "year", "normalizationDivisor": 12 },
+          "availability": { "state": "available", "reasonCodes": [], "requiredPermissions": [], "observedAt": "2026-10-20T00:00:00.000Z" }
+        }
+      ],
+      "estimates": [
+        {
+          "id": "unused-e5-capacity",
+          "product": "sharepoint-extra-file-storage",
+          "purpose": "unassigned_license_capacity_replacement",
+          "skuPartNumber": "SPE_E5",
+          "rateId": "extra-file-storage-annual",
+          "quantityGb": 100,
+          "period": { "kind": "month" },
+          "chargeableDays": null,
+          "amount": 50,
+          "basis": "reference_price_estimate",
+          "availability": { "state": "available", "reasonCodes": [], "requiredPermissions": [], "observedAt": "2026-10-20T00:00:00.000Z" }
+        }
+      ]
+    }
+  ]
+}

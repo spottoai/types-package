@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { checkRemediationPlanContracts } from './framework-remediation-plan-contract-cases.mjs';
 
 const require = createRequire(import.meta.url);
 const root = process.env.FRAMEWORK_CONTRACT_ROOT ? resolve(process.env.FRAMEWORK_CONTRACT_ROOT) : resolve(import.meta.dirname, '..');
@@ -122,6 +123,7 @@ for (const [label, api] of [
   ['cjs', require(resolve(root, 'dist/framework-assessments/index.js'))],
   ['esm', await import(pathToFileURL(resolve(root, 'dist/esm/framework-assessments/index.js')).href)],
 ]) {
+  checkRemediationPlanContracts(api, label);
   assert.equal(api.canonicalAssessmentJson({ z: { b: 2, a: 1 }, a: ['é', 1] }), '{"a":["é",1],"z":{"a":1,"b":2}}');
   assert.equal(api.assessmentContentSha256({ b: 2, a: 1 }), createHash('sha256').update('{"a":1,"b":2}').digest('hex'));
   assert.equal(
@@ -517,6 +519,56 @@ for (const [label, api] of [
   assert.doesNotThrow(() => api.validateScopeScanAccess({ ...manifest, access: unknownAccess }, [observation]));
   assert.throws(
     () => api.validateScopeScanAccess({ ...manifest, access: { ...unknownAccess, diagnosticsComplete: false } }, [observation]),
+    api.TerminalAssessmentError
+  );
+  // AWS accounts: access binds to the 12-digit account; ARNs keep their case and must belong to the account.
+  const awsScope = { providerName: 'aws', scopeType: 'account', scopeId: '012345678901' };
+  const { subscriptionId: _azureSubscription, tenantId: _azureTenant, ...accessBase } = access;
+  const awsAccess = { ...accessBase, provider: 'aws', scopeType: 'account', accountId: '012345678901' };
+  assert.equal(api.parseAssessmentAccess(awsAccess).accountId, '012345678901');
+  assert.equal(api.assessmentAccessScopeId(api.parseAssessmentAccess(awsAccess)), '012345678901');
+  assert.throws(() => api.parseAssessmentAccess({ ...awsAccess, accountId: '12345' }), api.TerminalAssessmentError);
+  assert.throws(() => api.parseAssessmentAccess({ ...awsAccess, scopeType: 'subscription' }), api.TerminalAssessmentError);
+  assert.throws(() => api.parseAssessmentAccess({ ...awsAccess, subscriptionId: '012345678901' }), api.TerminalAssessmentError);
+  assert.throws(
+    () => api.parseAssessmentAccess({ ...accessBase, provider: 'azure', scopeType: 'account', accountId: '012345678901' }),
+    api.TerminalAssessmentError
+  );
+  const awsExpected = { scope: awsScope, sourceVersion: '5.45.0', selectedCheckIds: ['iam_user_mfa_enabled'] };
+  const awsRaw = {
+    ...raw,
+    cloud: { provider: 'aws', account: { uid: '012345678901' } },
+    metadata: { event_code: 'iam_user_mfa_enabled', product: { version: '5.45.0' } },
+    resources: [{ uid: 'arn:aws:iam::012345678901:user/Alice.Admin' }],
+  };
+  assert.equal(api.parseScopeScanRawFinding(awsRaw, awsExpected)?.resourceId, 'arn:aws:iam::012345678901:user/Alice.Admin');
+  assert.equal(
+    api.parseScopeScanRawFinding({ ...awsRaw, resources: [{ uid: 'arn:aws:s3:::Contoso-Logs' }] }, awsExpected)?.resourceId,
+    'arn:aws:s3:::Contoso-Logs'
+  );
+  assert.equal(api.parseScopeScanRawFinding({ ...awsRaw, resources: [{ uid: '012345678901' }] }, awsExpected)?.resourceId, '012345678901');
+  assert.throws(
+    () => api.parseScopeScanRawFinding({ ...awsRaw, resources: [{ uid: 'arn:aws:iam::999999999999:user/Mallory' }] }, awsExpected),
+    api.TerminalAssessmentError
+  );
+  assert.throws(
+    () => api.parseScopeScanRawFinding({ ...awsRaw, resources: [{ uid: '/subscriptions/x/resourcegroups/y' }] }, awsExpected),
+    api.TerminalAssessmentError
+  );
+  assert.throws(
+    () => api.parseScopeScanRawFinding({ ...awsRaw, cloud: { provider: 'aws', account: { uid: '999999999999' } } }, awsExpected),
+    api.TerminalAssessmentError
+  );
+  assert.equal(api.isAwsResourceInAccount('arn:aws-us-gov:ec2:us-gov-west-1:012345678901:instance/i-1', '012345678901'), true);
+  assert.equal(api.isAwsResourceInAccount('arn:other:ec2:us-east-1:012345678901:instance/i-1', '012345678901'), false);
+  assert.throws(
+    () =>
+      api.parseScopeScanManifest({
+        ...manifest,
+        scope: awsScope,
+        access: { ...awsAccess, observedAt: manifest.generatedAt },
+        audit: { companyId: 'comp', bootstrapSubscriptionId: '00000000-0000-0000-0000-000000000000' },
+      }),
     api.TerminalAssessmentError
   );
   const completion = {

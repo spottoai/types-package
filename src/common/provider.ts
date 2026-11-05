@@ -8,6 +8,21 @@ export enum ProviderName {
 /** Provider-neutral user classification for a connected cloud environment. */
 export type EnvironmentType = 'Production' | 'Non-Production' | 'Mixed';
 
+/** Company intent for investment in a subscription or connected account; independent of sync status. */
+export type ProviderScopeStrategy = 'encourage' | 'contain' | 'exit';
+
+export interface ProviderScopeContext {
+  strategy?: ProviderScopeStrategy;
+  /** Plain-text customer context, at most 2,000 UTF-16 code units. */
+  notes?: string;
+}
+
+/** Omitted fields stay unchanged; null or blank clears the saved value. */
+export interface ProviderScopeContextUpdate {
+  strategy?: ProviderScopeStrategy | null;
+  notes?: string | null;
+}
+
 /** Lifecycle states returned by AWS Account Management. */
 export type AwsAccountState = 'PENDING_ACTIVATION' | 'ACTIVE' | 'SUSPENDED' | 'CLOSED';
 
@@ -24,7 +39,7 @@ export interface ProviderScope {
 }
 
 /** User-owned display metadata shared by provider scopes and cloud accounts. */
-export interface ProviderScopeDisplayMetadata {
+export interface ProviderScopeDisplayMetadata extends ProviderScopeContext {
   /** Raw user override. This is distinct from provider and configured names. */
   friendlyName?: string;
   groupName?: string;
@@ -69,7 +84,7 @@ export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata
 }
 
 /** Partial provider-scope display update; omitted fields stay unchanged and null clears an override. */
-export interface ProviderScopeDisplayMetadataUpdateRequest {
+export interface ProviderScopeDisplayMetadataUpdateRequest extends ProviderScopeContextUpdate {
   friendlyName?: string | null;
   groupName?: string | null;
   icon?: string | null;

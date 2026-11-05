@@ -254,7 +254,7 @@ export interface AssessmentAccessCheck {
 }
 export interface AssessmentAccessDetails extends AssessmentAccessSummary {
   schemaVersion: 1;
-  provider: 'azure';
+  provider: AssessmentProvider;
   observedAt: string;
   source: 'collector' | 'unavailable' | 'import';
   diagnosticsComplete: boolean;
@@ -273,8 +273,13 @@ export interface AssessmentAccessDetails extends AssessmentAccessSummary {
     reason?: string;
   };
 }
+/** Azure evidence is per subscription or tenant; AWS evidence is per account. Provider and scope type always pair. */
 export type AssessmentAccess = AssessmentAccessDetails &
-  ({ scopeType: 'tenant'; tenantId: string } | { scopeType: 'subscription'; subscriptionId: string });
+  (
+    | { provider: 'azure'; scopeType: 'tenant'; tenantId: string }
+    | { provider: 'azure'; scopeType: 'subscription'; subscriptionId: string }
+    | { provider: 'aws'; scopeType: 'account'; accountId: string }
+  );
 export interface ParsedScopeScanRawFinding {
   checkId: string;
   resourceId: string;

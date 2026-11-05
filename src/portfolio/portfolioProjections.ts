@@ -271,6 +271,8 @@ export interface PortfolioOperationalPostureSummary {
 }
 
 export interface PortfolioInsightsCompanyContribution {
+  /** Scoped source subjects for all retained assessment prose/counts/value. */
+  benefitAssessmentDependencies?: import('../azure/benefitAssessmentAdmission').ScopedAzureBenefitAssessmentDependenciesV1;
   companyId: string;
   companyName: string;
   status: PortfolioOperationalStatus;

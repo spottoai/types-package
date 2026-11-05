@@ -15,6 +15,12 @@ import {
   type AwsOrganizationCommitmentsRefreshCommand,
   type AwsScheduledRefreshTickCommand,
 } from '../index';
+import type { WorkflowTracingOptions as AzurePayloadTracingOptions } from '../azure/payloads';
+import type { WorkflowTracingOptions } from '../common/workflowTracing';
+
+const providerNeutralTracing: WorkflowTracingOptions = { enabled: true };
+const retainedAzureTracingExport: AzurePayloadTracingOptions = providerNeutralTracing;
+void retainedAzureTracingExport;
 
 // @ts-expect-error The abandoned single-account setup request is not exported.
 import type { AwsCloudAccountSetupRequest } from '../index';
@@ -67,6 +73,31 @@ const accountDelete: AwsAccountDeleteCommand = {
   requestId: 'request-account-delete',
 };
 
+const tracedAccountRefresh: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  tracing: { enabled: true },
+};
+const disabledAccountTracing: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  tracing: { enabled: false },
+};
+const invalidAccountTracing: AwsAccountRefreshCommand = {
+  ...accountRefresh,
+  // @ts-expect-error Tracing requires a boolean control.
+  tracing: { enabled: 'true' },
+};
+const invalidDeleteTracing: AwsAccountDeleteCommand = {
+  ...accountDelete,
+  // @ts-expect-error Account deletion has no tracing control.
+  tracing: { enabled: true },
+};
+const invalidEstateTracing: AwsEstateReconcileCommand = {
+  ...estateReconcile,
+  // @ts-expect-error Estate reconciliation has no tracing control.
+  tracing: { enabled: true },
+};
+void [tracedAccountRefresh, disabledAccountTracing, invalidAccountTracing, invalidDeleteTracing, invalidEstateTracing];
+
 const billingSourceRefresh: AwsBillingSourceRefreshCommand = {
   schemaVersion: 1,
   provider: 'aws',
@@ -115,6 +146,35 @@ const scheduledComponentRefreshTick: AwsScheduledRefreshTickCommand = {
   requestedAt: '2026-09-21T04:30:00.000Z',
 };
 
+const invalidScheduledTracing: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  // @ts-expect-error Global scheduler ticks have no tracing control.
+  tracing: { enabled: true },
+};
+const invalidBillingTracing: AwsBillingSourceRefreshCommand = {
+  ...billingSourceRefresh,
+  // @ts-expect-error Billing source commands have no tracing control.
+  tracing: { enabled: true },
+};
+void [invalidScheduledTracing, invalidBillingTracing];
+
+const scheduledBillingReconciliationTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  scanKind: 'billing-reconciliation',
+  scheduledAt: '2026-09-21T03:17:00.000Z',
+  requestId: 'aws-scheduled-refresh:billing-reconciliation:2026-09-21T03:17:00.000Z',
+  correlationId: 'aws-scheduled-refresh:billing-reconciliation:2026-09-21T03:17:00.000Z',
+  requestedAt: '2026-09-21T03:17:00.000Z',
+};
+
+const hourlyScheduledFullRefreshTick: AwsScheduledRefreshTickCommand = {
+  ...scheduledFullRefreshTick,
+  scheduledAt: '2026-10-23T13:00:00.000Z',
+  requestId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  correlationId: 'aws:scheduler:tick:api-au.spotto.ai:full:2026-10-23T13:00:00.000Z',
+  requestedAt: '2026-10-23T13:00:00.000Z',
+};
+
 const commands: AwsCommand[] = [
   estateReconcile,
   estateDelete,
@@ -124,9 +184,17 @@ const commands: AwsCommand[] = [
   organizationCommitmentsRefresh,
   scheduledFullRefreshTick,
   scheduledComponentRefreshTick,
+  hourlyScheduledFullRefreshTick,
 ];
 
 const companyTrustSetup: AwsCompanyTrustSetupResponse = {
+  onboarding: {
+    deployment: 'prod-us',
+    region: 'us-east-1',
+    registrationTopicArn: 'arn:aws:sns:us-east-1:111122223333:spotto-aws-connect-prod-us',
+    roleName: 'SpottoReadOnlyRole-prod-us',
+    exportName: 'spotto-cur2-prod-us',
+  },
   provider: 'AWS',
   externalId: 'example-server-issued-external-id',
   createdAt: '2026-07-31T00:00:00.000Z',
@@ -149,14 +217,20 @@ const companyTrustSetup: AwsCompanyTrustSetupResponse = {
     },
     managedPolicies: [
       {
+        name: 'ViewOnlyAccess',
+        arn: 'arn:aws:iam::aws:policy/job-function/ViewOnlyAccess',
+        accessScope: 'aws-managed-read-only',
+        warning: 'AWS managed read-only access to resource metadata.',
+      },
+      {
         name: 'ReadOnlyAccess',
         arn: 'arn:aws:iam::aws:policy/ReadOnlyAccess',
         accessScope: 'broad-read-only-preview',
         warning: 'Broad preview access.',
       },
     ],
-    guardrailPolicyName: 'SpottoGuardrails',
-    guardrailPolicy: {
+    readAccessPolicyName: 'SpottoReadOnlyAccess',
+    readAccessPolicy: {
       Version: '2012-10-17',
       Statement: [{ Sid: 'DenySecretReads', Effect: 'Deny', Action: 'secretsmanager:GetSecretValue', Resource: '*' }],
     },
@@ -253,6 +327,10 @@ const invalidScheduledRefreshWithAccount: AwsScheduledRefreshTickCommand = {
   accountId: '123456789012',
 };
 
+const scheduledRefreshWithCallerSelectedSlot = { ...scheduledFullRefreshTick, scheduledScanSlot: 4 as const };
+// @ts-expect-error Engine-owned slot selection cannot enter a tick through a prebuilt object.
+const invalidScheduledRefreshWithSlot: AwsScheduledRefreshTickCommand = scheduledRefreshWithCallerSelectedSlot;
+
 const invalidScheduledRefreshWithCredentials: AwsScheduledRefreshTickCommand = {
   ...scheduledFullRefreshTick,
   // @ts-expect-error Scheduled ticks must never carry AWS credentials.
@@ -290,9 +368,11 @@ void invalidCommandWithExternalId;
 void invalidCommandWithBilling;
 void invalidCommandWithCredentials;
 void invalidCommandWithoutRevision;
+void scheduledBillingReconciliationTick;
 void invalidScheduledRefreshKind;
 void invalidScheduledRefreshWithCompany;
 void invalidScheduledRefreshWithAccount;
+void invalidScheduledRefreshWithSlot;
 void invalidScheduledRefreshWithCredentials;
 void invalidScheduledRefreshWithRegions;
 void invalidScheduledRefreshWithProviderWindow;
@@ -303,3 +383,35 @@ void commandEntities;
 void commandActions;
 void scheduledRefreshScanKinds;
 void forbiddenCredentialFields;
+
+// Billing is required: an export reports why it can't be used, its granularity and resource IDs, and warnings.
+const monthlyConnectExport: import('../index').AwsConnectExport = {
+  exportArn: 'arn:aws:bcm-data-exports:us-east-1:111122223333:export/monthly-cur2',
+  exportName: 'monthly-cur2',
+  supported: false,
+  unsupportedReason: 'granularity',
+  timeGranularity: 'MONTHLY',
+  includeResources: true,
+};
+const dailyConnectExport: import('../index').AwsConnectExport = {
+  exportArn: 'arn:aws:bcm-data-exports:us-east-1:111122223333:export/daily-cur2',
+  exportName: 'daily-cur2',
+  supported: true,
+  timeGranularity: 'DAILY',
+  includeResources: true,
+  warnings: ['amortization-columns'],
+};
+const connectExportReasons: import('../index').AwsConnectExportUnsupportedReason[] = [
+  'format',
+  'table',
+  'granularity',
+  'resources',
+  'columns',
+  'unreadable',
+];
+// @ts-expect-error warnings are a closed set.
+const invalidConnectExportWarning: import('../index').AwsConnectExportWarning = 'missing-history';
+void monthlyConnectExport;
+void dailyConnectExport;
+void connectExportReasons;
+void invalidConnectExportWarning;
