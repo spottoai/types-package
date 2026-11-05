@@ -70,6 +70,41 @@ export type QuickAlertCriteria =
 
 export type QuickAlertCriteriaFor<TType extends QuickAlertType> = Extract<QuickAlertCriteria, { kind: TType }>;
 
+/** Safe source identity for remediation; never contains credential values or private keys. */
+export interface AlertResolutionContext {
+  version: 1;
+  provider: 'azure';
+  kind:
+    | 'application-credential'
+    | 'service-principal-credential'
+    | 'key-vault-object'
+    | 'cloud-account-credential'
+    | 'benefit-expiry'
+    | 'backup-failure'
+    | 'service-retirement';
+  /** Directory containing this object. For app registrations this is the home tenant. */
+  tenantId?: string;
+  sourceEntryId?: string;
+  observedAt?: string;
+  applicationId?: string;
+  applicationObjectId?: string;
+  servicePrincipalObjectId?: string;
+  credentialType?: 'secret' | 'certificate';
+  credentialId?: string;
+  credentialName?: string;
+  vaultResourceId?: string;
+  objectType?: 'secret' | 'key' | 'certificate';
+  objectName?: string;
+  benefitType?: 'reservation' | 'savings-plan';
+  /** Full ARM identity, never an opaque inventory/retirement ID. */
+  benefitResourceId?: string;
+  resources?: Array<{ id: string; name?: string }>;
+  /** Full source count when the summary contains only a bounded resource sample. */
+  resourceCount?: number;
+  /** Official notice only; consumers must validate HTTPS and Microsoft host. */
+  documentationUrl?: string;
+}
+
 export interface QuickAlertSummary {
   summaryText?: string;
   matchedItemCount?: number;
@@ -85,6 +120,7 @@ export interface QuickAlertSummary {
   expiryBasis?: 'cloudAccountMetadata';
   expiresAt?: string;
   workloadType?: string;
+  resolution?: AlertResolutionContext;
 }
 
 export type QuickAlertSummaryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? EarlySpendAlertSummary : QuickAlertSummary;
@@ -103,12 +139,11 @@ export type QuickAlertDefinition = {
   [TType in QuickAlertType]: QuickAlertDefinitionFor<TType>;
 }[QuickAlertType];
 
-type EditableQuickAlertCriteria<TType extends QuickAlertType> =
-  QuickAlertCriteriaFor<TType> extends infer TCriteria
-    ? TCriteria extends QuickAlertCriteria
-      ? Omit<TCriteria, 'kind' | 'source' | 'templateId'>
-      : never
-    : never;
+type EditableQuickAlertCriteria<TType extends QuickAlertType> = QuickAlertCriteriaFor<TType> extends infer TCriteria
+  ? TCriteria extends QuickAlertCriteria
+    ? Omit<TCriteria, 'kind' | 'source' | 'templateId'>
+    : never
+  : never;
 
 export type QuickAlertDefinitionUpdateInput = {
   [TType in QuickAlertType]: UpdateAlertDefinitionInput<QuickAlertDefinitionFor<TType>, EditableQuickAlertCriteria<TType>>;
