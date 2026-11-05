@@ -1,0 +1,145 @@
+import {
+  MICROSOFT365_OPTIMIZATION_MANAGEMENT_LIMITS,
+  isMicrosoft365OptimizationConfigurationInput,
+  isMicrosoft365OptimizationCatalogue,
+  isMicrosoft365OptimizationProjectionBinding,
+  isMicrosoft365OptimizationAccountReadRequest,
+  isMicrosoft365OptimizationAccountListRequest,
+  isMicrosoft365CommercialSubscription,
+  isMicrosoft365PricingConfigurationDocument,
+  isMicrosoft365OptimizationConfigurationWriteRequest,
+  isMicrosoft365OptimizationManagementResponse,
+  isMicrosoft365OptimizationConfigurationPreview,
+  isMicrosoft365OptimizationHistorySnapshot,
+  isMicrosoft365OptimizationSummaryResponse,
+  isMicrosoft365OptimizationAccountResponse,
+  isMicrosoft365OptimizationAccountListResponse,
+  isMicrosoft365OptimizationAccountDetail,
+  isMicrosoft365OptimizationEvidence,
+  isMicrosoft365OptimizationCohortEvidence,
+  isMicrosoft365OptimizationSummary,
+  type Microsoft365AddProtectionFinding,
+  type Microsoft365OptimizationSummary,
+} from '@spottoai/types-package';
+
+declare const input: unknown;
+const byteLimit: number = MICROSOFT365_OPTIMIZATION_MANAGEMENT_LIMITS.accountListBytes;
+void byteLimit;
+if (isMicrosoft365OptimizationConfigurationInput(input)) void input.subscriptionTerms;
+if (isMicrosoft365OptimizationCatalogue(input)) void input.referenceOffers[0]?.channel;
+if (isMicrosoft365OptimizationProjectionBinding(input)) void input.catalogueVersion;
+if (isMicrosoft365OptimizationAccountReadRequest(input)) void input.expected.contextRevision;
+if (isMicrosoft365OptimizationAccountListRequest(input)) void input.findingId;
+if (isMicrosoft365PricingConfigurationDocument(input)) {
+  if (input.schemaVersion === 'microsoft-365-pricing-overrides/v2') {
+    const subscriptionTerms = input.optimization.subscriptionTerms;
+    const quotes = input.optimization.termPrices;
+    const coverage = input.optimization.protectionCoverage;
+    void [subscriptionTerms, quotes, coverage];
+  } else {
+    // @ts-expect-error Legacy storage must be narrowed before accessing the new context.
+    void input.optimization;
+  }
+}
+if (isMicrosoft365OptimizationConfigurationWriteRequest(input)) {
+  // @ts-expect-error The authenticated server owns attribution, not the write body.
+  void input.updatedBy;
+  for (const coverage of input.optimization.protectionCoverage) {
+    const basis: 'customer_confirmed' = coverage.basis;
+    void basis;
+  }
+}
+if (isMicrosoft365OptimizationManagementResponse(input)) {
+  const providers = input.catalogue.providers;
+  const revision: string = input.configuration.revision;
+  void [providers, revision];
+}
+if (isMicrosoft365OptimizationConfigurationPreview(input)) {
+  const normalized = input.normalized;
+  const errors = input.errors;
+  void [normalized, errors];
+}
+if (isMicrosoft365OptimizationHistorySnapshot(input)) {
+  const rules: string = input.ruleVersion;
+  void rules;
+  const quantity: number | null | undefined = input.quantities[0]?.assignedSeats;
+  void quantity;
+  // @ts-expect-error Persisted optimization history cannot contain people.
+  void input.accounts;
+}
+if (isMicrosoft365OptimizationSummaryResponse(input)) {
+  if (input.state === 'ready') {
+    const products = input.catalogue.products;
+    void products;
+  } else {
+    const current = input.current;
+    void current;
+    // @ts-expect-error Stale/unavailable responses cannot carry financial/person payloads.
+    void input.summary;
+  }
+}
+if (isMicrosoft365OptimizationAccountResponse(input) && input.state === 'ready') {
+  const accountId: string = input.account.accountId;
+  void accountId;
+}
+if (isMicrosoft365OptimizationAccountListResponse(input) && input.state === 'ready') {
+  const rows = input.page.accounts;
+  void rows;
+}
+if (isMicrosoft365OptimizationCohortEvidence(input)) {
+  const count: number = input.observedAccountCount;
+  void count;
+  for (const cohort of input.cohorts) {
+    const weight: number = cohort.accountCount;
+    void weight;
+    // @ts-expect-error Anonymous cohort facts cannot carry a person identifier.
+    void cohort.accountId;
+  }
+}
+if (isMicrosoft365OptimizationEvidence(input)) {
+  const accountId: string | undefined = input.accounts[0]?.accountId;
+  void accountId;
+  for (const subscription of input.subscriptions) {
+    // @ts-expect-error Company-recorded timing cannot be written to tenant-shared evidence.
+    subscription.reductionTiming.source = 'recorded';
+    for (const conflict of subscription.conflicts) {
+      // @ts-expect-error Nested company conflicts cannot enter tenant-shared evidence.
+      conflict.source = 'recorded';
+    }
+  }
+}
+if (isMicrosoft365OptimizationSummary(input)) {
+  const summary: Microsoft365OptimizationSummary = input;
+  const companyId: string = summary.companyId;
+  void companyId;
+  for (const finding of summary.groups) {
+    if (finding.kind === 'add_protection') {
+      const protection: Microsoft365AddProtectionFinding = finding;
+      const investment: number | null = protection.monthlyInvestment;
+      void investment;
+      // @ts-expect-error Protection investment is not a portfolio saving.
+      void finding.portfolioMonthlySaving;
+    } else {
+      const contribution: number | null = finding.portfolioMonthlySaving;
+      void contribution;
+    }
+  }
+}
+if (isMicrosoft365OptimizationAccountDetail(input)) {
+  const revision: string = input.contextRevision;
+  void revision;
+  for (const finding of input.findings) {
+    if (finding.kind === 'add_protection') {
+      const investment: number | null = finding.monthlyInvestment;
+      void investment;
+      // @ts-expect-error Detail protection findings cannot acquire a savings field.
+      void finding.portfolioMonthlySaving;
+    }
+  }
+  // @ts-expect-error Flat mixed-kind options would lose their financial meaning.
+  void input.options;
+}
+if (isMicrosoft365CommercialSubscription(input)) {
+  const subscriptionId: string = input.subscriptionId;
+  void subscriptionId;
+}

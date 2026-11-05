@@ -9,6 +9,47 @@ const currencyConversionFixture = JSON.parse(await readFile(join(packageRoot, 'f
 const licensingContentFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-licensing-content.json'), 'utf8'));
 const storageCostFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-storage-costs.json'), 'utf8'));
 const applicationDirectoryFixture = JSON.parse(await readFile(join(packageRoot, 'tests/fixtures/microsoft365-applications.json'), 'utf8'));
+const packedOptimizationProbe = `
+const optimization = {
+  schemaVersion: 'microsoft-365-optimization-summary/v1', companyId: 'company-1',
+  tenantId: '55555555-5555-4555-8555-555555555555', generatedAt: '2026-11-05T00:00:00.000Z', tenantSyncRunId: 'run-1',
+  pricingRevision: 'price-1', contextRevision: 'context-1', catalogueVersion: 'catalogue-1', projectedAt: '2026-11-05T00:00:00.000Z', currency: 'NZD',
+  coverage: {state:'complete',reasonCodes:[]}, groups: [], omittedGroupCount: 0,
+  coverageByKind: {combineLicenses:{state:'complete',reasonCodes:[]},addProtection:{state:'complete',reasonCodes:[]},changeTerm:{state:'complete',reasonCodes:[]}},
+  portfolioMonthlySaving: 0, protectionMonthlyInvestment: 0
+};
+if (!root.isMicrosoft365OptimizationSummary(optimization) ||
+    root.isMicrosoft365OptimizationSummary({...optimization,accountIds:['private']}) ||
+    typeof root.isMicrosoft365OptimizationEvidence !== 'function' ||
+    typeof root.isMicrosoft365OptimizationCohortEvidence !== 'function' ||
+    typeof root.isMicrosoft365OptimizationAccountDetail !== 'function' ||
+    typeof root.isMicrosoft365CommercialSubscription !== 'function')
+  throw new Error('Packed Microsoft 365 optimization contracts failed.');
+const optimizationInput = {subscriptionTerms:[],termPrices:[],protectionCoverage:[]};
+const pricingV2 = {schemaVersion:'microsoft-365-pricing-overrides/v2',companyId:'company-1',tenantId:optimization.tenantId,revision:'revision-1',overrides:[],updatedAt:null,optimization:optimizationInput};
+const catalogue = {schemaVersion:'microsoft-365-optimization-catalogue/v1',catalogueVersion:'catalogue-1',coverage:{state:'complete',reasonCodes:[]},products:[],capabilities:[],servicePlans:[],providers:[],referenceOffers:[],omittedProductCount:0,omittedOfferCount:0};
+if (!root.isMicrosoft365PricingConfigurationDocument(pricingV2) ||
+    root.isMicrosoft365PricingOverridesConfiguration(pricingV2) ||
+    !root.isMicrosoft365OptimizationConfigurationWriteRequest({schemaVersion:'microsoft-365-pricing-write/v2',overrides:[],optimization:optimizationInput}) ||
+    !root.isMicrosoft365OptimizationSummaryResponse({schemaVersion:'microsoft-365-optimization-summary-response/v1',state:'ready',summary:optimization,catalogue}) ||
+    !root.isMicrosoft365OptimizationHistorySnapshot({schemaVersion:'microsoft-365-optimization-history/v1',tenantId:optimization.tenantId,generatedAt:optimization.generatedAt,tenantSyncRunId:optimization.tenantSyncRunId,month:'2026-11',catalogueVersion:'catalogue-1',ruleVersion:'qualification-1',coverage:{state:'complete',reasonCodes:[]},subscriptions:[],omittedSubscriptionCount:0,quantities:[],omittedProductCount:0}))
+  throw new Error('Packed Microsoft 365 complete consumer contracts failed.');
+const expected = Object.fromEntries(['companyId','tenantId','generatedAt','tenantSyncRunId','currency','pricingRevision','contextRevision','catalogueVersion'].map(key => [key,optimization[key]]));
+const write = {schemaVersion:'microsoft-365-pricing-write/v2',overrides:[],optimization:optimizationInput};
+const accountId = '44444444-4444-4444-8444-444444444444';
+const account = {...expected,schemaVersion:'microsoft-365-optimization-account/v1',projectedAt:optimization.projectedAt,coverage:optimization.coverage,accountId,reviewDisposition:'retained',privilege:'unknown',mfaRegistration:'unknown',findings:[]};
+const page = {...expected,schemaVersion:'microsoft-365-optimization-account-list/v1',coverage:optimization.coverage,pageIndex:0,pageCount:1,pageAccountCounts:[0],observedAccountCount:0,exactAccountCount:0,findingId:null,accounts:[]};
+if (!root.isMicrosoft365OptimizationConfigurationInput(optimizationInput) || !root.isMicrosoft365OptimizationCatalogue(catalogue) ||
+    !root.isMicrosoft365OptimizationProjectionBinding(expected) ||
+    !root.isMicrosoft365OptimizationManagementResponse({schemaVersion:'microsoft-365-optimization-management/v1',companyId:optimization.companyId,tenantId:optimization.tenantId,configuration:pricingV2,catalogue,subscriptions:[],coverage:optimization.coverage,omittedSubscriptionCount:0}) ||
+    !root.isMicrosoft365OptimizationConfigurationPreview({schemaVersion:'microsoft-365-optimization-preview/v1',companyId:optimization.companyId,tenantId:optimization.tenantId,revision:'revision-1',canSave:true,normalized:write,errors:[],warnings:[],summary:optimization}) ||
+    !root.isMicrosoft365OptimizationAccountReadRequest({accountId,expected}) ||
+    !root.isMicrosoft365OptimizationAccountListRequest({findingId:null,pageIndex:0,expected}) ||
+    !root.isMicrosoft365OptimizationAccountResponse({schemaVersion:'microsoft-365-optimization-account-response/v1',state:'ready',account}) ||
+    !root.isMicrosoft365OptimizationAccountListResponse({schemaVersion:'microsoft-365-optimization-account-list-response/v1',state:'ready',page}) ||
+    !Number.isSafeInteger(root.MICROSOFT365_OPTIMIZATION_MANAGEMENT_LIMITS.historyBytes))
+  throw new Error('Packed Microsoft 365 management/read boundaries failed.');
+`;
 const packedApplicationDirectoryProbe = `
 const applications = ${JSON.stringify(applicationDirectoryFixture)};
 if (root.MICROSOFT365_APPLICATIONS_SCHEMA_VERSION !== 'microsoft-365-applications/v1' ||
@@ -506,6 +547,11 @@ try {
       join(packageRoot, 'tests/fixtures/microsoft365-applications.consumer.ts.fixture'),
       join(consumerRoot, `microsoft365-applications.consumer.${extension}`)
     );
+  for (const extension of ['ts', 'cts'])
+    await copyFile(
+      join(packageRoot, 'tests/fixtures/microsoft365-optimization.consumer.ts.fixture'),
+      join(consumerRoot, `microsoft365-optimization.consumer.${extension}`)
+    );
   await copyFile(
     join(packageRoot, 'tests/fixtures/resource-artifact-usage.consumer.ts.fixture'),
     join(consumerRoot, 'resource-artifact-usage.consumer.ts')
@@ -563,6 +609,8 @@ try {
       'microsoft365-licensing-content.consumer.ts',
       'microsoft365-applications.consumer.ts',
       'microsoft365-applications.consumer.cts',
+      'microsoft365-optimization.consumer.ts',
+      'microsoft365-optimization.consumer.cts',
       'resource-artifact-usage.consumer.ts',
       'activity-analysis.consumer.ts',
       'company-context.consumer.ts',
@@ -605,6 +653,7 @@ try {
     run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', currencyImports + currencyChecks], consumerRoot);
     const imports = mode === 'esm' ? "import * as root from '@spottoai/types-package';" : "const root = require('@spottoai/types-package');";
     run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', imports + packedApplicationDirectoryProbe], consumerRoot);
+    run(process.execPath, [...(mode === 'esm' ? ['--input-type=module'] : []), '-e', imports + packedOptimizationProbe], consumerRoot);
   }
   run(
     process.execPath,

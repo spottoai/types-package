@@ -69,6 +69,19 @@ errors keep producers and readers aligned. `npm run check:framework-assessment-c
 
 ## Features
 
+M365 optimization has additive private-candidate, commercial-subscription,
+anonymous-summary and authorized-account-detail contracts with strict CJS/ESM
+boundary guards. They preserve conditional rights, six-month demand evidence,
+unknown prices and separate protection investment. These source additions are
+unpublished and do not enable runtime recommendations. See the
+[contract and adoption boundary](specs/licensing/license-optimization/license-optimization-types-package.md).
+Run `npm run check:microsoft365-optimization-contracts` after building.
+The same release includes pricing-v2 atomic configuration/preview inputs, scoped
+protection confirmations, term-specific quotes, catalogue metadata, monthly source
+history and version-bound ready/stale/account-list reads. Both pricing storage
+versions are readable; adopt the new reader before writing v2. Full configuration
+is manager-only, while ordinary readers consume authorized projections.
+
 M365 licensing context has shared product strategy/notes/review-date and account-note
 contracts. Served history months optionally expose currency-independent
 `productQuantities` for Contain comparisons, even when selected pricing is unavailable.

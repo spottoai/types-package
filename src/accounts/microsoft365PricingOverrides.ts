@@ -135,7 +135,10 @@ export function isMicrosoft365AgreementTerms(value: unknown): value is Microsoft
   if (
     !record(value) ||
     !only(value, ['channel', 'reductionDate', 'reductionRepeatsAnnually', 'agreementEndDate', 'additionsAreTrueUps', 'excludedSkuIds']) ||
-    !(value.channel === null || (typeof value.channel === 'string' && (MICROSOFT365_AGREEMENT_CHANNELS as readonly string[]).includes(value.channel))) ||
+    !(
+      value.channel === null ||
+      (typeof value.channel === 'string' && (MICROSOFT365_AGREEMENT_CHANNELS as readonly string[]).includes(value.channel))
+    ) ||
     !(value.reductionDate === null || isMicrosoft365PricingDate(value.reductionDate)) ||
     typeof value.reductionRepeatsAnnually !== 'boolean' ||
     !(value.agreementEndDate === null || isMicrosoft365PricingDate(value.agreementEndDate)) ||
@@ -165,8 +168,14 @@ export function isMicrosoft365PricingOverridesConfiguration(value: unknown): val
     !(value.updatedBy === undefined || value.updatedBy === null || text(value.updatedBy, 512))
   )
     return false;
+  return isMicrosoft365PricingOverrides(value.overrides);
+}
+
+export function isMicrosoft365PricingOverrides(value: unknown): value is Microsoft365PricingOverride[] {
+  if (!Array.isArray(value) || value.length > 1000 || !Array.from(value).every(isMicrosoft365PricingOverride)) return false;
+  const overrides = value as Microsoft365PricingOverride[];
   const intervals = new Map<string, Microsoft365PricingOverride[]>();
-  for (const entry of value.overrides) {
+  for (const entry of overrides) {
     const key = `${entry.skuId.toLowerCase()}|${entry.currency}`;
     const group = intervals.get(key) ?? [];
     group.push(entry);

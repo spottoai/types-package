@@ -179,6 +179,8 @@ specs/companies/company-notes/*
 # Shared licensing-content contract specification.
 !specs/licensing/license-inventory/
 !specs/licensing/license-inventory/license-inventory-types-package.md
+!specs/licensing/license-optimization/
+!specs/licensing/license-optimization/license-optimization-types-package.md
 
 # Shared feature/promotion contract specification.
 !specs/access/
