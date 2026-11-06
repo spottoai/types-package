@@ -74,6 +74,11 @@ export interface AzureSpSetupStartRequest {
     redirectAfter?: string;
     mode?: AzureSpSetupMode;
     targetCloudAccountId?: string;
+    /**
+     * Verified Azure tenant domain or tenant ID to sign in to.
+     * If supplied for Update Access, must resolve to the target cloud account's tenant.
+     */
+    tenant?: string;
 }
 export interface AzureSpSetupStartResponse {
     setupId: string;

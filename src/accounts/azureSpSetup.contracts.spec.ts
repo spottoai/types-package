@@ -92,6 +92,24 @@ const permissionUpdateStartRequest: AzureSpSetupStartRequest = {
   targetCloudAccountId: 'client-id-123',
 };
 
+const tenantDomainStartRequest: AzureSpSetupStartRequest = {
+  ...createModeStartRequest,
+  tenant: 'contoso.com',
+};
+
+const tenantIdStartRequest: AzureSpSetupStartRequest = {
+  ...createModeStartRequest,
+  tenant: '12345678-1234-1234-1234-123456789abc',
+};
+
+const tenantPermissionUpdateStartRequest: AzureSpSetupStartRequest = {
+  ...permissionUpdateStartRequest,
+  tenant: 'contoso.com',
+};
+
+// @ts-expect-error tenant must be a domain or tenant ID string.
+const invalidTenantStartRequest: AzureSpSetupStartRequest = { tenant: 42 };
+
 const setupMode: AzureSpSetupMode = 'grantAdditionalPermissions';
 
 // @ts-expect-error setup mode must use the assisted-setup mode union.
@@ -899,6 +917,10 @@ void summaryHasNoProtectedDurableKeys;
 void blobOnlyFieldsUseSharedContract;
 void blobOnlyFieldsAreExcludedFromTableProjection;
 void permissionUpdateStartRequest;
+void tenantDomainStartRequest;
+void tenantIdStartRequest;
+void tenantPermissionUpdateStartRequest;
+void invalidTenantStartRequest;
 void setupMode;
 void invalidSetupMode;
 void subscriptionReaderManifestItem;
