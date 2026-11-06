@@ -831,6 +831,29 @@ const fullWindow = {
 assert.equal(isReportDailySpend(fullWindow), true, '92-day boundary and absent amortized evidence');
 assert.equal(isReportDailySpend({ ...fullWindow, endDate: '2026-10-01' }), false, '93-day window');
 assert.equal(isReportDailySpend({ ...fullWindow, entries: [...fullWindow.entries, fullWindow.entries[0]] }), false, '93 rows');
+const dayWith = split => ({
+  ...dailySpend,
+  startDate: '2026-08-01',
+  endDate: '2026-08-01',
+  coverage: { billed: { status: 'complete', coveredDayCount: 1 }, amortized: { status: 'unavailable', coveredDayCount: 0 } },
+  entries: [{ date: '2026-08-01', cost: 100.1, ...split }],
+});
+for (const [label, split, valid] of [
+  ['no split', {}, true],
+  ['a split that rebuilds cost', { usageCost: 70.07, nonUsageCost: 30.03 }, true],
+  ['credits below zero', { usageCost: 110.1, nonUsageCost: -10 }, true],
+  ['usage without non-usage', { usageCost: 100.1 }, false],
+  ['non-usage without usage', { nonUsageCost: 100.1 }, false],
+  ['a split a cent off', { usageCost: 70.07, nonUsageCost: 30.02 }, false],
+  ['a non-numeric part', { usageCost: '70.07', nonUsageCost: 30.03 }, false],
+]) {
+  assert.equal(isReportDailySpend(dayWith(split)), valid, label);
+}
+const splitWithoutCost = dayWith({ usageCost: 1, nonUsageCost: 2 });
+delete splitWithoutCost.entries[0].cost;
+splitWithoutCost.entries[0].costAmortized = 3;
+splitWithoutCost.coverage = { billed: { status: 'unavailable', coveredDayCount: 0 }, amortized: { status: 'complete', coveredDayCount: 1 } };
+assert.equal(isReportDailySpend(splitWithoutCost), false, 'a split needs its billed total');
 const leapDay = {
   ...dailySpend,
   startDate: '2024-02-29',
