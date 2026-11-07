@@ -1,0 +1,193 @@
+{
+  "summary": {
+    "schema": "ci-build-summary/v1",
+    "companyId": "contoso-demo",
+    "month": "2026-11",
+    "generatedAt": "2026-11-07T11:45:00.000Z",
+    "runId": "ci-build-run-1",
+    "currency": "USD",
+    "totals": {
+      "netAmount": 0.85,
+      "grossAmount": 300.8,
+      "discountAmount": 299.95,
+      "billedMinutes": 50134,
+      "attributedMinutes": 49820,
+      "runs": 520,
+      "failedRuns": 61,
+      "cancelledMinutes": {
+        "afterFailure": 15200,
+        "superseded": 3100,
+        "other": 1240
+      },
+      "rerunMinutes": 2100,
+      "allowanceExhaustedOn": "2026-11-06",
+      "projectedNetAmount": 1210.4,
+      "failedMinutes": 9000
+    },
+    "monthly": [
+      {
+        "month": "2026-10",
+        "netAmount": 147.91,
+        "grossAmount": 960.2,
+        "billedMinutes": 160000,
+        "status": "final"
+      },
+      {
+        "month": "2026-11",
+        "netAmount": 0.85,
+        "grossAmount": 300.8,
+        "billedMinutes": 50134,
+        "status": "provisional"
+      }
+    ],
+    "byRepository": [
+      {
+        "repository": "contoso/web-portal",
+        "organization": "contoso",
+        "netAmount": 0.75,
+        "grossAmount": 266.47,
+        "billedMinutes": 44412,
+        "attributedMinutes": 44100,
+        "runs": 457,
+        "failedMinutes": 9000,
+        "cancelledMinutes": {
+          "afterFailure": 14000,
+          "superseded": 3000,
+          "other": 1200
+        },
+        "rerunMinutes": 1900,
+        "fullSuiteShare": 0.97
+      }
+    ],
+    "byWorkflow": [
+      {
+        "repository": "contoso/web-portal",
+        "workflowId": "1234",
+        "workflowName": "Pages Build Check",
+        "path": ".github/workflows/build-check.yml",
+        "attributedMinutes": 36060,
+        "estimatedAmount": 216.36,
+        "runs": 200,
+        "failedRuns": 40,
+        "minutesByEvent": {
+          "pull_request": 34755,
+          "schedule": 1068,
+          "workflow_dispatch": 237
+        }
+      }
+    ],
+    "byTrigger": [
+      {
+        "event": "pull_request",
+        "attributedMinutes": 35374,
+        "estimatedAmount": 212.24,
+        "runs": 369
+      }
+    ],
+    "byRunner": [
+      {
+        "sku": "actions_linux",
+        "netAmount": 0.85,
+        "grossAmount": 300.8,
+        "billedMinutes": 50134,
+        "pricePerMinute": 0.006
+      }
+    ],
+    "topPullRequests": [
+      {
+        "repository": "contoso/web-portal",
+        "number": 615,
+        "attributedMinutes": 6501,
+        "estimatedAmount": 39.01,
+        "runs": 66,
+        "updates": 21,
+        "cancelledMinutes": {
+          "afterFailure": 2900,
+          "superseded": 617,
+          "other": 0
+        }
+      }
+    ],
+    "storage": [
+      {
+        "sku": "actions_storage",
+        "netAmount": 0,
+        "grossAmount": 1.2,
+        "quantity": 4.8,
+        "unitType": "GigabyteMonths"
+      }
+    ],
+    "daily": [
+      {
+        "day": "2026-11-03",
+        "netAmount": 0,
+        "grossAmount": 78.7,
+        "billedMinutes": 13116
+      }
+    ],
+    "insights": [
+      {
+        "kind": "full_suite_on_updates",
+        "severity": "action",
+        "rank": 1,
+        "amount": 208.53,
+        "ratio": 0.97,
+        "subject": {
+          "type": "repository",
+          "key": "contoso/web-portal",
+          "label": "contoso/web-portal"
+        },
+        "facts": {
+          "fullSuiteRuns": 184,
+          "pullRequestRuns": 189,
+          "minutes": 34755
+        }
+      },
+      {
+        "kind": "allowance_exhausted_no_budget",
+        "severity": "review",
+        "rank": 2,
+        "amount": 1210.4,
+        "ratio": null,
+        "subject": {
+          "type": "company",
+          "key": "contoso-demo",
+          "label": "Company"
+        },
+        "facts": {
+          "exhaustedDay": 6
+        }
+      }
+    ],
+    "freshness": [
+      {
+        "connectionId": "8f6c2b1e-1111-4a2b-9c3d-000000000003",
+        "displayName": "GitHub contoso",
+        "dataThrough": "2026-11-06",
+        "pulledAt": "2026-11-07T11:40:00.000Z",
+        "status": "provisional",
+        "reasonCodes": []
+      }
+    ]
+  },
+  "latest": {
+    "schema": "ci-build-latest/v1",
+    "companyId": "contoso-demo",
+    "month": "2026-11",
+    "runId": "ci-build-run-1",
+    "generatedAt": "2026-11-07T11:45:00.000Z",
+    "months": [
+      "2026-11",
+      "2026-10"
+    ]
+  },
+  "request": {
+    "entity": "ci-build",
+    "action": "collect",
+    "companyId": "contoso-demo",
+    "connectionId": "8f6c2b1e-1111-4a2b-9c3d-000000000003",
+    "mode": "daily",
+    "requestedAt": "2026-11-07T11:20:00.000Z",
+    "requestId": "ci-req-1"
+  }
+}

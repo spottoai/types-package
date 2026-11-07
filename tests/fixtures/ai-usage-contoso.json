@@ -1,0 +1,549 @@
+{
+  "summary": {
+    "schema": "ai-usage-summary/v1",
+    "companyId": "contoso-demo",
+    "month": "2026-10",
+    "generatedAt": "2026-11-02T14:25:11.000Z",
+    "runId": "ai-usage-run-contoso-1",
+    "currency": "USD",
+    "totals": {
+      "amount": 4210.55,
+      "listAmount": 4392.1,
+      "peopleAmount": 3120.4,
+      "applicationsAmount": 890.15,
+      "unmappedAmount": 200,
+      "activePeople": 42,
+      "costPerActivePerson": 74.3,
+      "tokens": {
+        "input": 812000000,
+        "cacheRead": 240000000,
+        "cacheWrite": 12000000,
+        "output": 96000000
+      },
+      "requests": 182400,
+      "cacheHitRatio": 0.228,
+      "costPerMillionTokens": 3.89
+    },
+    "monthly": [
+      {
+        "month": "2026-09",
+        "provider": "openai",
+        "amount": 1500.2,
+        "listAmount": 1500.2,
+        "status": "final"
+      },
+      {
+        "month": "2026-09",
+        "provider": "anthropic",
+        "amount": 1980.4,
+        "listAmount": 2050,
+        "status": "final"
+      },
+      {
+        "month": "2026-10",
+        "provider": "openai",
+        "amount": 1710.15,
+        "listAmount": 1710.15,
+        "status": "provisional"
+      },
+      {
+        "month": "2026-10",
+        "provider": "anthropic",
+        "amount": 2500.4,
+        "listAmount": 2681.95,
+        "status": "provisional"
+      }
+    ],
+    "byProvider": [
+      {
+        "key": "anthropic",
+        "label": "Anthropic",
+        "amount": 2500.4,
+        "listAmount": 2681.95,
+        "tokens": {
+          "input": 500000000,
+          "cacheRead": 200000000,
+          "cacheWrite": 12000000,
+          "output": 60000000
+        },
+        "requests": 90000,
+        "people": 30,
+        "costPerMillionTokens": 3.2389,
+        "cacheHitRatio": 0.2857,
+        "provider": "anthropic",
+        "previousAmount": 2125.34
+      },
+      {
+        "key": "openai",
+        "label": "OpenAI",
+        "amount": 1710.15,
+        "listAmount": 1710.15,
+        "tokens": {
+          "input": 312000000,
+          "cacheRead": 40000000,
+          "cacheWrite": null,
+          "output": 36000000
+        },
+        "requests": 92400,
+        "people": 25,
+        "costPerMillionTokens": 4.4076,
+        "cacheHitRatio": 0.1136,
+        "provider": "openai",
+        "previousAmount": 1453.63
+      }
+    ],
+    "byModel": [
+      {
+        "key": "anthropic:claude-model-a",
+        "label": "claude-model-a",
+        "amount": 1800,
+        "listAmount": 1900,
+        "tokens": {
+          "input": 300000000,
+          "cacheRead": 150000000,
+          "cacheWrite": 10000000,
+          "output": 40000000
+        },
+        "requests": 50000,
+        "people": 22,
+        "costPerMillionTokens": 3.6,
+        "cacheHitRatio": 0.33,
+        "provider": "anthropic",
+        "previousAmount": 1530.0
+      }
+    ],
+    "byDepartment": [
+      {
+        "key": "engineering",
+        "label": "Engineering",
+        "amount": 2400,
+        "listAmount": 2500,
+        "tokens": {
+          "input": 500000000,
+          "cacheRead": 200000000,
+          "cacheWrite": 10000000,
+          "output": 60000000
+        },
+        "requests": 120000,
+        "people": 28,
+        "costPerMillionTokens": 3.1169,
+        "cacheHitRatio": 0.2857,
+        "provider": null,
+        "previousAmount": 2040.0
+      },
+      {
+        "key": "not-set",
+        "label": "Not Set",
+        "amount": 720.4,
+        "listAmount": 750,
+        "tokens": {
+          "input": 100000000,
+          "cacheRead": 10000000,
+          "cacheWrite": 0,
+          "output": 10000000
+        },
+        "requests": 20000,
+        "people": 14,
+        "costPerMillionTokens": 6.0033,
+        "cacheHitRatio": 0.0909,
+        "provider": null,
+        "previousAmount": 612.34
+      }
+    ],
+    "freshness": [
+      {
+        "provider": "openai",
+        "connectionId": "8f6c2b1e-1111-4a2b-9c3d-000000000001",
+        "displayName": "OpenAI",
+        "dataThrough": "2026-11-01",
+        "providerRefreshedAt": null,
+        "pulledAt": "2026-11-02T14:21:00.000Z",
+        "status": "provisional",
+        "reasonCodes": []
+      },
+      {
+        "provider": "anthropic",
+        "connectionId": "8f6c2b1e-1111-4a2b-9c3d-000000000002",
+        "displayName": "Anthropic",
+        "dataThrough": "2026-11-01",
+        "providerRefreshedAt": "2026-11-02T10:00:00.000Z",
+        "pulledAt": "2026-11-02T14:22:00.000Z",
+        "status": "provisional",
+        "reasonCodes": []
+      }
+    ],
+    "daily": [
+      {
+        "day": "2026-10-01",
+        "amount": 131.2,
+        "listAmount": 138,
+        "tokens": {
+          "input": 26000000,
+          "cacheRead": 7700000,
+          "cacheWrite": 400000,
+          "output": 3100000
+        },
+        "requests": 5900
+      },
+      {
+        "day": "2026-10-02",
+        "amount": 140.9,
+        "listAmount": 146,
+        "tokens": {
+          "input": 27000000,
+          "cacheRead": 8000000,
+          "cacheWrite": 380000,
+          "output": 3200000
+        },
+        "requests": 6100
+      }
+    ],
+    "previousMonth": {
+      "month": "2026-09",
+      "amount": 3480.6,
+      "listAmount": 3550.2,
+      "activePeople": 37,
+      "tokens": {
+        "input": 700000000,
+        "cacheRead": 180000000,
+        "cacheWrite": 9000000,
+        "output": 80000000
+      },
+      "costPerMillionTokens": 3.6,
+      "cacheHitRatio": 0.204
+    },
+    "projectedAmount": 4350.0,
+    "insights": [
+      {
+        "kind": "unmapped_spend",
+        "severity": "action",
+        "rank": 1,
+        "amount": 200,
+        "ratio": 0.0475,
+        "subject": null,
+        "facts": {
+          "principals": 3
+        }
+      },
+      {
+        "kind": "low_cache_hit",
+        "severity": "review",
+        "rank": 2,
+        "amount": 1800,
+        "ratio": 0.12,
+        "subject": {
+          "type": "model",
+          "key": "openai:gpt-model-b",
+          "label": "gpt-model-b"
+        },
+        "facts": {
+          "uncachedInputTokens": 210000000
+        }
+      },
+      {
+        "kind": "spend_change",
+        "severity": "info",
+        "rank": 3,
+        "amount": 4210.55,
+        "ratio": 0.21,
+        "subject": null,
+        "facts": {
+          "previousAmount": 3480.6,
+          "projectedAmount": 4350
+        }
+      },
+      {
+        "kind": "spend_concentration",
+        "severity": "info",
+        "rank": 4,
+        "amount": 1520,
+        "ratio": 0.49,
+        "subject": null,
+        "facts": {
+          "topCount": 5,
+          "people": 42
+        }
+      },
+      {
+        "kind": "idle_seats",
+        "severity": "review",
+        "rank": 5,
+        "amount": 360.0,
+        "ratio": 0.24,
+        "subject": {
+          "type": "provider",
+          "key": "microsoft-365",
+          "label": "Microsoft 365 Copilot"
+        },
+        "facts": {
+          "seats": 12,
+          "paid": 50,
+          "pricedSeats": 12,
+          "activityWindowDays": 28
+        }
+      }
+    ],
+    "coverage": [
+      {
+        "source": "openai_api",
+        "provider": "openai",
+        "state": "included",
+        "amount": 1710.15
+      },
+      {
+        "source": "chatgpt_enterprise",
+        "provider": "openai",
+        "state": "not_connected",
+        "amount": null
+      },
+      {
+        "source": "anthropic",
+        "provider": "anthropic",
+        "state": "included",
+        "amount": 2500.4
+      },
+      {
+        "source": "github_copilot",
+        "provider": "github",
+        "state": "not_connected",
+        "amount": null
+      },
+      {
+        "source": "azure_ai",
+        "provider": "azure",
+        "state": "included",
+        "amount": 312.4
+      },
+      {
+        "source": "microsoft_365_copilot",
+        "provider": "microsoft-365",
+        "state": "included",
+        "amount": 1500.0
+      }
+    ],
+    "seats": [
+      {
+        "source": "microsoft_365_copilot",
+        "provider": "microsoft-365",
+        "product": "microsoft-365-copilot",
+        "paid": 50,
+        "active": 38,
+        "idle": 12,
+        "activityWindowDays": 28,
+        "monthlyCost": 1500.0,
+        "idleMonthlyCost": 360.0
+      }
+    ],
+    "activity": [
+      {
+        "month": "2026-09",
+        "activePeople": 24
+      },
+      {
+        "month": "2026-10",
+        "activePeople": 42
+      }
+    ],
+    "byTag": [
+      {
+        "tagKey": "cost-centre",
+        "tagValue": "R&D",
+        "amount": 900.0,
+        "listAmount": 950.0,
+        "previousAmount": 800.0,
+        "people": 6
+      }
+    ]
+  },
+  "people": {
+    "schema": "ai-usage-people/v1",
+    "companyId": "contoso-demo",
+    "month": "2026-10",
+    "generatedAt": "2026-11-02T14:25:11.000Z",
+    "runId": "ai-usage-run-contoso-1",
+    "currency": "USD",
+    "people": [
+      {
+        "personId": "p-1",
+        "email": "megan.bowen@contoso.example",
+        "displayName": "Megan Bowen",
+        "department": "Engineering",
+        "country": "NZ",
+        "accountEnabled": true,
+        "providers": [
+          "anthropic",
+          "openai",
+          "microsoft-365"
+        ],
+        "amount": 412.8,
+        "listAmount": 430,
+        "tokens": {
+          "input": 90000000,
+          "cacheRead": 30000000,
+          "cacheWrite": 1000000,
+          "output": 9000000
+        },
+        "requests": 8100,
+        "activeDays": 19,
+        "cacheHitRatio": 0.25,
+        "topModel": "claude-model-a",
+        "identities": [
+          {
+            "provider": "anthropic",
+            "kind": "user",
+            "label": "megan.bowen@contoso.example",
+            "mapping": "exact"
+          }
+        ],
+        "daily": [
+          {
+            "day": "2026-10-01",
+            "provider": "anthropic",
+            "amount": 20.1,
+            "listAmount": 21,
+            "tokens": {
+              "input": 4000000,
+              "cacheRead": 1000000,
+              "cacheWrite": 0,
+              "output": 400000
+            },
+            "requests": 400
+          }
+        ],
+        "models": [
+          {
+            "provider": "anthropic",
+            "model": "claude-model-a",
+            "amount": 300,
+            "listAmount": 312,
+            "tokens": {
+              "input": 60000000,
+              "cacheRead": 25000000,
+              "cacheWrite": 1000000,
+              "output": 6000000
+            },
+            "requests": 5000
+          }
+        ],
+        "seats": [
+          {
+            "provider": "microsoft-365",
+            "product": "microsoft-365-copilot",
+            "plan": "Microsoft 365 Copilot",
+            "lastActivityAt": "2026-10-28T09:00:00.000Z",
+            "monthlyListPrice": 30.0,
+            "idle": false
+          }
+        ],
+        "departmentSource": "microsoft-365",
+        "tags": {}
+      },
+      {
+        "personId": "p-2",
+        "email": null,
+        "displayName": "octo-dev",
+        "department": null,
+        "country": null,
+        "accountEnabled": null,
+        "providers": [
+          "github",
+          "microsoft-365"
+        ],
+        "amount": 12.4,
+        "listAmount": 12.4,
+        "tokens": {
+          "input": null,
+          "cacheRead": null,
+          "cacheWrite": null,
+          "output": null
+        },
+        "requests": null,
+        "activeDays": 0,
+        "cacheHitRatio": null,
+        "topModel": null,
+        "identities": [
+          {
+            "provider": "github",
+            "kind": "github_login",
+            "label": "octo-dev",
+            "mapping": "none"
+          }
+        ],
+        "daily": [],
+        "models": [],
+        "seats": [
+          {
+            "provider": "microsoft-365",
+            "product": "microsoft-365-copilot",
+            "plan": "Microsoft 365 Copilot",
+            "lastActivityAt": null,
+            "monthlyListPrice": 30.0,
+            "idle": true
+          }
+        ],
+        "departmentSource": null,
+        "tags": {}
+      }
+    ],
+    "applications": [
+      {
+        "principalId": "openai:svc_invoice_bot",
+        "provider": "openai",
+        "kind": "service_account",
+        "label": "invoice-bot",
+        "owner": "Finance Automation",
+        "amount": 890.15,
+        "listAmount": 890.15,
+        "tokens": {
+          "input": 200000000,
+          "cacheRead": 10000000,
+          "cacheWrite": null,
+          "output": 20000000
+        },
+        "requests": 60000,
+        "connectionId": "conn-openai-1",
+        "department": "Engineering",
+        "tags": {
+          "cost-centre": "R&D"
+        }
+      }
+    ],
+    "unmapped": [],
+    "omitted": null
+  },
+  "latest": {
+    "schema": "ai-usage-latest/v1",
+    "companyId": "contoso-demo",
+    "month": "2026-10",
+    "runId": "ai-usage-run-contoso-1",
+    "generatedAt": "2026-11-02T14:25:11.000Z",
+    "months": [
+      "2026-10",
+      "2026-09"
+    ]
+  },
+  "request": {
+    "entity": "ai-usage",
+    "action": "collect",
+    "companyId": "contoso-demo",
+    "connectionId": "8f6c2b1e-1111-4a2b-9c3d-000000000001",
+    "mode": "backfill",
+    "requestedAt": "2026-11-02T14:20:00.000Z",
+    "requestId": "req-1"
+  },
+  "allocation": {
+    "allocationId": "alloc-1",
+    "companyId": "contoso-demo",
+    "target": {
+      "type": "principal",
+      "id": "openai:svc_invoice_bot"
+    },
+    "department": "Engineering",
+    "tags": {
+      "cost-centre": "R&D"
+    },
+    "targetLabel": "Support bot key",
+    "updatedAt": "2026-11-02T10:00:00.000Z",
+    "updatedBy": "admin@contoso.example"
+  }
+}

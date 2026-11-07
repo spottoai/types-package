@@ -5,6 +5,8 @@ export * from './aws/billingEstimation';
 export * from './accounts/microsoft365PricingOverrides';
 export * from './accounts/microsoft365PricingFacts';
 /** Main entry point - export all interfaces from this package */
+export * from './ai-usage';
+export * from './ci-build';
 export * from './accounts/microsoft365Licenses';
 export * from './accounts/microsoft365LicenseHistory';
 export * from './accounts/microsoft365ActivityHistory';
