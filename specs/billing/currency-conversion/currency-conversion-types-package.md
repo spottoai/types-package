@@ -3,7 +3,7 @@
 Type: repo
 Status: living
 Owner: Platform
-Last updated: 2026-11-05
+Last updated: 2026-11-10
 Core feature: [Currency conversion](../../../../core/specs/billing/pricing/currency-conversion/currency-conversion.md)
 
 ## Implementation state
@@ -55,6 +55,16 @@ personal browser cookie, active-mode state and verified aggregation.
   or company configuration is stored in this response.
 - Constants: `CURRENCY_CONVERSION_CONTRACT_VERSION`, `CURRENCY_CONVERSION_HEADER`
   and `CURRENCY_CONVERSION_RATE_SOURCE` define the public wire identifiers.
+- `CurrencyDisplayProjectionFieldsV1`: optional public read companions on company
+  subscription, subscription-scope and provider-scope selector responses. Existing
+  amounts/currency fields describe returned display money. `billingCurrency`
+  retains the authoritative original ISO code; persisted and write models are
+  unchanged. Successful and unavailable companions are mutually exclusive on the
+  wire and are enforced by the API/UI boundary.
+- `CurrencyConversionUnavailableV1`: exact targetCurrency/code companion, with the
+  closed source-unknown, conversion-unavailable and access-denied classifications.
+  Such rows retain identity/readiness but omit display currency/symbol, money and
+  successful proof. The guard rejects unknown fields and private diagnostics.
 
 Canonical decimal strings have no sign, exponent, whitespace, leading integer
 zeros or trailing fractional zeros. Exact quotes must be positive. The disclosure

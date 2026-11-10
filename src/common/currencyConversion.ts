@@ -31,6 +31,27 @@ export interface CurrencyConversionV1 extends CurrencyConversionContextV1 {
   rates: CurrencyConversionRateV1[];
 }
 
+/** Public per-row failure classifications; private diagnostics never cross the read contract. */
+export type CurrencyConversionUnavailableCodeV1 = 'currency-source-unknown' | 'currency-conversion-unavailable' | 'currency-access-denied';
+
+export interface CurrencyConversionUnavailableV1 {
+  targetCurrency: string;
+  code: CurrencyConversionUnavailableCodeV1;
+}
+
+/**
+ * Optional companions on public read DTOs only. Persisted billing records and write
+ * requests retain their original contracts. Successful currency/amount fields use
+ * the display unit; billingCurrency retains the authoritative original ISO code.
+ * An unavailable row omits display currency/symbol and amounts. Successful and
+ * unavailable companions are mutually exclusive on the wire.
+ */
+export interface CurrencyDisplayProjectionFieldsV1 {
+  billingCurrency?: string;
+  currencyConversion?: CurrencyConversionV1;
+  currencyConversionUnavailable?: CurrencyConversionUnavailableV1;
+}
+
 /** Representable discovery scales; the API/platform owns authoritative ISO code/scale membership. */
 export type CurrencyConversionMinorUnitScaleV1 = 0 | 1 | 2 | 3 | 4;
 
@@ -60,6 +81,14 @@ const hasExactKeys = (value: unknown, keys: readonly string[]): value is WireRec
   keys.every(key => Object.prototype.hasOwnProperty.call(value, key));
 
 const isCurrencyCode = (value: unknown): value is string => typeof value === 'string' && value.length === 3 && /^[A-Z]{3}$/u.test(value);
+
+export function isCurrencyConversionUnavailableV1(value: unknown): value is CurrencyConversionUnavailableV1 {
+  return (
+    hasExactKeys(value, ['targetCurrency', 'code']) &&
+    isCurrencyCode(value.targetCurrency) &&
+    (value.code === 'currency-source-unknown' || value.code === 'currency-conversion-unavailable' || value.code === 'currency-access-denied')
+  );
+}
 
 const isDate = (value: unknown): value is string => {
   if (typeof value !== 'string' || value.length !== 10 || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false;

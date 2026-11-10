@@ -33,6 +33,29 @@ for (const [name, path] of modules) {
     assert.deepEqual(input, fixture);
   });
 
+  test(`${name}: validates unavailable catalog projections without exposing private failure detail`, () => {
+    for (const code of ['currency-source-unknown', 'currency-conversion-unavailable', 'currency-access-denied']) {
+      const row = { targetCurrency: 'USD', code };
+      const before = structuredClone(row);
+      assert.equal(contracts.isCurrencyConversionUnavailableV1(row), true);
+      assert.deepEqual(row, before);
+    }
+    for (const value of [
+      null,
+      [],
+      {},
+      { targetCurrency: 'USD' },
+      { code: 'currency-source-unknown' },
+      { targetCurrency: 'usd', code: 'currency-source-unknown' },
+      { targetCurrency: 'USD', code: 'internal-secret' },
+      { targetCurrency: 'USD', code: 'currency-source-unknown', message: 'private diagnostics' },
+      { targetCurrency: 'USD', code: 'currency-source-unknown', status: 'converted' },
+      { targetCurrency: 'USD', code: 'currency-source-unknown', companyId: 'private' },
+    ])
+      assert.equal(contracts.isCurrencyConversionUnavailableV1(value), false);
+    assert.equal(contracts.isCurrencyConversionV1({ targetCurrency: 'USD', code: 'currency-source-unknown' }), false);
+  });
+
   test(`${name}: rejects invalid context fields and private data`, () => {
     for (const patch of [
       { contractVersion: 2 },

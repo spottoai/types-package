@@ -645,6 +645,8 @@ try {
             !contracts.isCurrencyConversionV1(fixture.converted) ||
             !contracts.isCurrencyConversionV1(fixture.mixed) ||
             !contracts.isCurrencyConversionDiscoveryV1(fixture.discovery) ||
+            !contracts.isCurrencyConversionUnavailableV1({targetCurrency: 'USD', code: 'currency-source-unknown'}) ||
+            contracts.isCurrencyConversionUnavailableV1({targetCurrency: 'USD', code: 'currency-source-unknown', companyId: 'private'}) ||
             contracts.isCurrencyConversionV1({...fixture.converted, status: 'unchanged'}) ||
             contracts.isCurrencyConversionV1({...fixture.converted, companyId: 'private'}))
           throw new Error('Packed currency conversion contracts failed.');

@@ -1,4 +1,4 @@
-import type { CurrencyConversionContextV1, CurrencyConversionRateV1, CurrencyConversionV1 } from '@spottoai/types-package';
+import type { CurrencyConversionContextV1, CurrencyConversionRateV1, CurrencyConversionV1, CompanySubscriptionResponse, SubscriptionScopeResponse, ProviderScopeSelectionItem, CurrencyDisplayProjectionFieldsV1 } from '@spottoai/types-package';
 import {
   CURRENCY_CONVERSION_CONTRACT_VERSION,
   CURRENCY_CONVERSION_HEADER,
@@ -7,6 +7,8 @@ import {
   isCurrencyConversionDiscoveryV1,
   isCurrencyConversionRateV1,
   isCurrencyConversionV1,
+  isCurrencyConversionUnavailableV1,
+  type CurrencyConversionUnavailableV1,
   type CurrencyConversionCurrencyV1,
   type CurrencyConversionDiscoveryV1,
   type CurrencyConversionMinorUnitScaleV1,
@@ -35,6 +37,13 @@ export const discovery: CurrencyConversionDiscoveryV1 = {
 export const header: 'X-Spotto-Currency-Conversion' = CURRENCY_CONVERSION_HEADER;
 export const checkUnknown = (input: unknown): CurrencyConversionV1 | undefined => (isCurrencyConversionV1(input) ? input : undefined);
 export const guards: boolean[] = [isCurrencyConversionContextV1(context), isCurrencyConversionRateV1(quote), isCurrencyConversionDiscoveryV1(discovery)];
+
+export const unavailable: CurrencyConversionUnavailableV1 = { targetCurrency: 'USD', code: 'currency-source-unknown' };
+export const unavailableIsValid: boolean = isCurrencyConversionUnavailableV1(unavailable);
+export const displayProjection: CurrencyDisplayProjectionFieldsV1 = { billingCurrency: 'NZD', currencyConversion: document };
+export const subscriptionProjection: Pick<CompanySubscriptionResponse, keyof CurrencyDisplayProjectionFieldsV1> = displayProjection;
+export const scopeProjection: Pick<SubscriptionScopeResponse, keyof CurrencyDisplayProjectionFieldsV1> = displayProjection;
+export const providerProjection: Pick<ProviderScopeSelectionItem, keyof CurrencyDisplayProjectionFieldsV1> = { currencyConversionUnavailable: unavailable };
 
 // @ts-expect-error Disclosure and exact quotes stay decimal strings.
 export const invalidQuote: CurrencyConversionRateV1 = { ...quote, sourceRate: 1.8 };

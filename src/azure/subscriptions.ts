@@ -1,5 +1,6 @@
 import type { SubscriptionInfoBase, SubscriptionType } from '../accounts/accounts.js';
 import type { ProviderScopeContext } from '../common/provider.js';
+import type { CurrencyDisplayProjectionFieldsV1 } from '../common/currencyConversion.js';
 import { Budget } from './budgets.js';
 import { CostDetails, MiscCost } from './prices.js';
 import { Recommendation, RecommendationStats, RecommendationSummary } from './recommendations.js';
@@ -55,7 +56,14 @@ export interface CompanySubscription extends SubscriptionInfoBase {
 /** Public company-subscription response with authoritative readiness. */
 export type CompanySubscriptionResponse = Omit<CompanySubscription, 'ready'> & {
   ready: boolean;
-};
+  /**
+   * Optional billed-basis rolling 30-day total after the configured native discount,
+   * in major units of the returned currency. Preserves billing-backed/estimated
+   * source provenance; never substitutes amortized or calendar-month spend.
+   * Aliases totalCost when present; the two fields are not additive.
+   */
+  spend30Days?: number;
+} & CurrencyDisplayProjectionFieldsV1;
 
 export interface SubscriptionScope extends ProviderScopeContext {
   companyId: string;
@@ -87,7 +95,14 @@ export interface SubscriptionScope extends ProviderScopeContext {
 /** Public subscription-scope response with authoritative readiness. */
 export type SubscriptionScopeResponse = Omit<SubscriptionScope, 'ready'> & {
   ready: boolean;
-};
+  /**
+   * Optional billed-basis rolling 30-day total after the configured native discount,
+   * in major units of the returned currency. Preserves billing-backed/estimated
+   * source provenance; never substitutes amortized or calendar-month spend.
+   * Aliases totalCost when present; the two fields are not additive.
+   */
+  spend30Days?: number;
+} & CurrencyDisplayProjectionFieldsV1;
 
 export interface SubscriptionSummary {
   companyId: string;

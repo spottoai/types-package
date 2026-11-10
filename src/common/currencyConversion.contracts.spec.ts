@@ -5,6 +5,12 @@ import {
   type CurrencyConversionDiscoveryV1,
   type CurrencyConversionV1,
   isCurrencyConversionV1,
+  type CurrencyDisplayProjectionFieldsV1,
+  type CurrencyConversionUnavailableV1,
+  type CompanySubscriptionResponse,
+  type SubscriptionScopeResponse,
+  type ProviderScopeSelectionItem,
+  type CompanySubscription,
 } from '../index';
 
 const context: CurrencyConversionContextV1 = {
@@ -38,3 +44,17 @@ const numericRate: CurrencyConversionV1['rates'][number] = { ...document.rates[0
 // @ts-expect-error Discovery exposes supported currencies, not a chosen user preference.
 const userSetting: CurrencyConversionDiscoveryV1 = { ...discovery, targetCurrency: 'USD' };
 void [partial, numericRate, userSetting];
+
+const unavailable: CurrencyConversionUnavailableV1 = { targetCurrency: 'USD', code: 'currency-source-unknown' };
+const displayFields: CurrencyDisplayProjectionFieldsV1 = { billingCurrency: 'NZD', currencyConversion: document };
+const subscriptionProjection: Pick<CompanySubscriptionResponse, keyof CurrencyDisplayProjectionFieldsV1> = displayFields;
+const scopeProjection: Pick<SubscriptionScopeResponse, keyof CurrencyDisplayProjectionFieldsV1> = displayFields;
+const providerProjection: Pick<ProviderScopeSelectionItem, keyof CurrencyDisplayProjectionFieldsV1> = {
+  billingCurrency: 'NZD',
+  currencyConversionUnavailable: unavailable,
+};
+// @ts-expect-error Read projections must not become persisted subscription fields.
+const persistedProjection: Pick<CompanySubscription, 'currencyConversion'> = displayFields;
+// @ts-expect-error Unavailable results use a closed public error vocabulary.
+const privateFailure: CurrencyConversionUnavailableV1 = { targetCurrency: 'USD', code: 'internal-secret' };
+void [subscriptionProjection, scopeProjection, providerProjection, persistedProjection, privateFailure];
