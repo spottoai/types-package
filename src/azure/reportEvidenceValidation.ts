@@ -353,10 +353,12 @@ const isCommitmentUtilization = (value: unknown): boolean =>
   (value.trend === undefined || typeof value.trend === 'string') &&
   (value.source === undefined || ['aggregate', 'usage', 'reservation-summary'].includes(value.source as string));
 
-const isBenefitMaturity = (value: unknown): boolean => isRecord(value) && typeof value.assessedAt === 'string' &&
-  ['observedAt','effectiveStart'].every(key => value[key] === undefined || typeof value[key] === 'string') &&
+const isBenefitMaturity = (value: unknown): boolean =>
+  isRecord(value) &&
+  isDateTime(value.assessedAt) &&
+  ['observedAt', 'effectiveStart'].every(key => value[key] === undefined || isDateTime(value[key])) &&
   (value.ageDays === undefined || (isFiniteNumber(value.ageDays) && Number.isInteger(value.ageDays))) &&
-  ['oneDay','sevenDay','thirtyDay'].every(key => ['mature','immature','unknown'].includes(value[key] as string));
+  ['oneDay', 'sevenDay', 'thirtyDay'].every(key => ['mature', 'immature', 'unknown'].includes(value[key] as string));
 
 function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
   return (

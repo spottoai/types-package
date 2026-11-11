@@ -313,7 +313,9 @@ commitmentUtilizationPack.reporting.commitmentsPlanning.inventory = rows([
 assert.equal(isSubscriptionReportEvidencePack(commitmentUtilizationPack), true);
 const immatureBenefitPack = structuredClone(commitmentUtilizationPack);
 immatureBenefitPack.reporting.commitmentsPlanning.inventory.rows[0] = {
-  id: 'benefit-new', purchaseDate: '2026-10-29T00:00:00Z', oneDayUtilizationPercent: 93,
+  id: 'benefit-new',
+  purchaseDate: '2026-10-29T00:00:00Z',
+  oneDayUtilizationPercent: 93,
   utilizationMaturity: { assessedAt: '2026-10-30T00:00:00Z', ageDays: 1, oneDay: 'mature', sevenDay: 'immature', thirtyDay: 'immature' },
 };
 assert.equal(isSubscriptionReportEvidencePack(immatureBenefitPack), true, 'Partial first-day evidence remains contract valid');

@@ -3,12 +3,16 @@
 Type: repo
 Status: living
 Owner: Platform
-Last updated: 2026-11-04
+Last updated: 2026-11-12
 Core feature: [License inventory](../../../../core/specs/licensing/license-inventory/license-inventory.md)
 Core solution: [Microsoft 365 inventory](../../../../core/specs/licensing/license-inventory/license-inventory-microsoft-365.md)
 
 The additive activity history contracts below
 define four independent daily streams without changing existing monthly history.
+
+## Commercial evidence summary privacy
+
+Optional aggregate `commercialReview` and renewal `sourceSubscriptionId`, `createdDateTime` and `observedAt` cross the strict summary boundary. Each commercial object has an exact key allowlist, including nested reference valuations, reassignment, immediate removal, future avoidance and renewal reduction. Existing semantic validators also constrain dates, primitive enums, counts, currencies and null-only unverified financial fields. Presence never verifies commercial rights or permits person/assignment metadata. Older artifacts may omit the new fields; publish and adopt the compatible summary guard before producer rollout.
 
 ## Main account review contracts
 
@@ -254,3 +258,7 @@ privacy, identity collisions, sparse arrays, bounds and retained monthly history
 and TypeScript consumers using NodeNext (ESM and CJS) and legacy Node resolution.
 Both commands run in `npm test`. Source changes remain unpublished until the
 normal GitHub Actions release; consumer adoption is separate.
+
+## Optional stock and commercial evidence
+
+A license row may carry `Microsoft365SeatCommercialReview`: candidate stock, recent-stock owner review, reference list-price values by currency, and independent reassignment/avoidance/renewal facts. Current unverified removable quantities, cash reductions and effective dates are null. The guard accepts omission for existing artifacts and rejects unsupported commercial claims. Renewal rows may retain `sourceSubscriptionId`, `createdDateTime` and `sourceObservedAt` independently of `nextLifecycleDateTime`. These optional fields confer no commercial rights or provider execution permission.

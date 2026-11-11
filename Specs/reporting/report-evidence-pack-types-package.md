@@ -3,7 +3,7 @@
 Status: implemented and verified
 Approved: Yes (user instruction on 2026-09-11: "can we move onto the types-package first?")
 Iterations: 3
-Last updated: 2026-09-11
+Last updated: 2026-11-11
 Repo: types-package
 Domain: reporting
 Parent spec: `../../../core/specs/reporting/reporting-summary-pack.md`
@@ -149,3 +149,7 @@ Tasks and verification:
 3. Verify current cloud-engine collection and compact-pack projection tests, plus UI successful-login mapping, without adding storage or Graph requests. Run package build, focused contract test, lint and formatting checks; record blockers and downstream publish state.
 
 Verification on 2026-09-16: `npm test` passed with the report-evidence contract check included in the standard suite; `npm run lint`, contract typechecking, and changed-file formatting passed. The cloud-engine Global Administrator collector suite passed (14 tests), and the UI report projection/demo-artifact suites passed (21 tests). A transient generated-output race and a concurrent scheduler assertion failed earlier attempts but did not reproduce in the final suite. Publishing and consumer installation remain separate; historical identity deltas still depend on configured history storage and complete per-period governance evidence.
+
+## Optional benefit maturity evidence
+
+Commitment inventory rows optionally retain `purchaseDate`, `utilizationMaturity` and nonnegative `oneDayUtilizationPercent`. Maturity names one/seven/thirty-day states and the original observation, assessment, effective start and signed whole-day age. Existing `utilization` still requires a seven- or thirty-day observation; first-day-only evidence is a separate optional row field so established v1 readers remain valid. Missing fields preserve legacy artifacts. Runtime guards reject malformed maturity states, noninteger ages and invalid first-day percentages. Release and consumer adoption are separate from source implementation.

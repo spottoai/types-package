@@ -435,14 +435,35 @@ const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 
 const OPTIONAL_PRODUCT_COUNTS = ['overlapAccountUnits', 'downgradeAccountUnits'] as const;
 const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 'noOfficeActivityMonthlyCost'] as const;
 const optional = (value: unknown, predicate: (value: unknown) => boolean): boolean => value === undefined || predicate(value);
-const isSeatCommercialReview = (value: unknown): boolean => isRecord(value) && date(value.observedAt) &&
-  nullableCount(value.candidateUnassignedUnits) && ['review-owner-reseller','not-indicated','unassessed'].includes(value.recentStockReview as string) &&
-  ['retainedEntitlements','accountPurposeAndAssignmentPaths','commercialTerms','unassignedAllocationToSubscriptions'].every(key => value[key] === 'unassessed') &&
-  ['immediateRemoval','renewalReduction'].every(key => isRecord(value[key]) && value[key].verifiedUnits === null && value[key].monthlyCashReduction === null && value[key].effectiveAt === null) &&
-  isRecord(value.reassignment) && nullableCount(value.reassignment.candidateUnits) && value.reassignment.status === 'owner-validation-required' &&
-  isRecord(value.futureAvoidance) && value.futureAvoidance.verifiedMonthlyAmount === null && value.futureAvoidance.effectiveAt === null &&
-  Array.isArray(value.referenceUnassignedMonthlyValues) && value.referenceUnassignedMonthlyValues.length <= 32 && value.referenceUnassignedMonthlyValues.every(row =>
-    isRecord(row) && typeof row.amount === 'number' && Number.isFinite(row.amount) && row.amount >= 0 && typeof row.currency === 'string' && /^[A-Z]{3}$/.test(row.currency) && row.basis === 'list_price_estimate');
+const isSeatCommercialReview = (value: unknown): boolean =>
+  isRecord(value) &&
+  date(value.observedAt) &&
+  nullableCount(value.candidateUnassignedUnits) &&
+  ['review-owner-reseller', 'not-indicated', 'unassessed'].includes(value.recentStockReview as string) &&
+  ['retainedEntitlements', 'accountPurposeAndAssignmentPaths', 'commercialTerms', 'unassignedAllocationToSubscriptions'].every(
+    key => value[key] === 'unassessed'
+  ) &&
+  ['immediateRemoval', 'renewalReduction'].every(
+    key => isRecord(value[key]) && value[key].verifiedUnits === null && value[key].monthlyCashReduction === null && value[key].effectiveAt === null
+  ) &&
+  isRecord(value.reassignment) &&
+  nullableCount(value.reassignment.candidateUnits) &&
+  value.reassignment.status === 'owner-validation-required' &&
+  isRecord(value.futureAvoidance) &&
+  value.futureAvoidance.verifiedMonthlyAmount === null &&
+  value.futureAvoidance.effectiveAt === null &&
+  Array.isArray(value.referenceUnassignedMonthlyValues) &&
+  value.referenceUnassignedMonthlyValues.length <= 32 &&
+  value.referenceUnassignedMonthlyValues.every(
+    row =>
+      isRecord(row) &&
+      typeof row.amount === 'number' &&
+      Number.isFinite(row.amount) &&
+      row.amount >= 0 &&
+      typeof row.currency === 'string' &&
+      /^[A-Z]{3}$/.test(row.currency) &&
+      row.basis === 'list_price_estimate'
+  );
 const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'] as const;
 const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
 const PRODUCT_FAMILIES: readonly Microsoft365LicenseProductFamily[] = [

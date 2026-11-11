@@ -310,6 +310,60 @@ const stepUpSummary = (mutate = () => {}) => {
 };
 
 for (const [format, api] of Object.entries(formats)) {
+  test(`${format}: commercial stock and subscription dates cross the summary boundary without private fields`, () => {
+    const document = splitSummary();
+    document.licenses[0].commercialReview = {
+      observedAt: '2026-11-01T00:00:00Z',
+      candidateUnassignedUnits: 34,
+      recentStockReview: 'review-owner-reseller',
+      retainedEntitlements: 'unassessed',
+      accountPurposeAndAssignmentPaths: 'unassessed',
+      commercialTerms: 'unassessed',
+      unassignedAllocationToSubscriptions: 'unassessed',
+      immediateRemoval: { verifiedUnits: null, monthlyCashReduction: null, effectiveAt: null },
+      reassignment: { candidateUnits: 34, status: 'owner-validation-required' },
+      futureAvoidance: { verifiedMonthlyAmount: null, effectiveAt: null },
+      renewalReduction: { verifiedUnits: null, monthlyCashReduction: null, effectiveAt: null },
+      referenceUnassignedMonthlyValues: [{ amount: 340, currency: 'AUD', basis: 'list_price_estimate' }],
+    };
+    document.licenses[0].renewals = [
+      {
+        sourceSubscriptionId: 'subscription-alpha',
+        createdDateTime: '2026-10-29T00:00:00Z',
+        observedAt: '2026-11-01T00:00:00Z',
+        status: 'Enabled',
+        isTrial: false,
+        totalLicenses: 35,
+        nextLifecycleDateTime: '2029-02-01T00:00:00Z',
+      },
+    ];
+    assert.equal(api.isMicrosoft365LicenseSummaryView(document), true);
+    for (const path of ['root', 'reassignment', 'immediateRemoval', 'reference']) {
+      const invalid = clone(document),
+        review = invalid.licenses[0].commercialReview;
+      const target = path === 'root' ? review : path === 'reference' ? review.referenceUnassignedMonthlyValues[0] : review[path];
+      target.accountId = 'private-account';
+      assert.equal(api.isMicrosoft365LicenseSummaryView(invalid), false, `${path} privacy stays strict`);
+    }
+    for (const mutate of [
+      value => {
+        value.licenses[0].commercialReview.recentStockReview = 'person@example.test';
+      },
+      value => {
+        value.licenses[0].commercialReview.candidateUnassignedUnits = 'person@example.test';
+      },
+      value => {
+        value.licenses[0].commercialReview.referenceUnassignedMonthlyValues[0].currency = 'person@example.test';
+      },
+      value => {
+        value.licenses[0].renewals[0].createdDateTime = 'person@example.test';
+      },
+    ]) {
+      const invalid = clone(document);
+      mutate(invalid);
+      assert.equal(api.isMicrosoft365LicenseSummaryView(invalid), false, 'semantic validation remains strict');
+    }
+  });
   test(`${format}: main account review reasons and returned-population counts are optional and strict`, () => {
     const summary = splitSummary();
     const counts = Object.fromEntries(api.MICROSOFT_365_ACCOUNT_REVIEW_REASONS.map(reason => [reason, reason === 'disabled' ? 1 : 0]));
@@ -326,14 +380,18 @@ for (const [format, api] of Object.entries(formats)) {
     assert.equal(api.isMicrosoft365AccountReview(partial), true);
     assert.equal(api.isMicrosoft365AccountReview({ ...partial, state: 'unavailable', counts: null, reason: 'accounts_unavailable' }), true);
     for (const invalid of [
-      { ...review, scope: 'all_accounts' }, { ...review, accountIds: ['private'] },
-      { ...review, counts: { ...counts, disabled: 2 } }, { ...review, counts: { ...counts, disabled: -1 } },
-      { ...review, counts: { ...counts, disabled: 0, unknown: 1 } }, { ...review, counts: { ...counts, accountId: 0 } },
+      { ...review, scope: 'all_accounts' },
+      { ...review, accountIds: ['private'] },
+      { ...review, counts: { ...counts, disabled: 2 } },
+      { ...review, counts: { ...counts, disabled: -1 } },
+      { ...review, counts: { ...counts, disabled: 0, unknown: 1 } },
+      { ...review, counts: { ...counts, accountId: 0 } },
       { ...partial, coverage: { ...partial.coverage, state: 'complete' } },
       { ...review, coverage: { ...review.coverage, state: ['complete'] } },
       { ...review, state: 'unavailable', counts: null, reason: 'accounts_unavailable' },
       { ...partial, state: 'unavailable', counts: {}, reason: 'scan_mismatch' },
-    ]) assert.equal(api.isMicrosoft365AccountReview(invalid), false);
+    ])
+      assert.equal(api.isMicrosoft365AccountReview(invalid), false);
     assert.equal(api.isMicrosoft365LicenseSummaryView({ ...summary, accountReview: partial }), false, 'Summary and review coverage must agree');
   });
 
@@ -470,7 +528,10 @@ for (const [format, api] of Object.entries(formats)) {
       'Saved agreement terms reach every viewer through the summary pricing'
     );
     assert(
-      !api.isMicrosoft365LicenseSummaryView({ ...document, pricing: { ...document.pricing, agreementTerms: { ...agreementTerms, channel: 'volume' } } }),
+      !api.isMicrosoft365LicenseSummaryView({
+        ...document,
+        pricing: { ...document.pricing, agreementTerms: { ...agreementTerms, channel: 'volume' } },
+      }),
       'Summary agreement terms use the shared guard'
     );
     for (const patch of [
