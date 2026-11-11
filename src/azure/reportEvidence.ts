@@ -8,7 +8,7 @@ import type { RegulatoryComplianceScoreboardSubscription, RegulatoryScoreSource 
 import type { ReportDailySpend } from './reportDailySpend';
 import type { ReportSavingsBasis, ReportSpendProjection } from './reportSpend';
 import type { ChangeType } from './reports';
-import type { IBenefitUtilization } from './benefits';
+import type { IBenefitUtilization, BenefitUtilizationMaturity } from './benefits';
 import type { CommitmentsFreshnessSummary } from './commitmentsPlanning';
 
 export const REPORT_EVIDENCE_LIMITS = {
@@ -338,10 +338,14 @@ export interface ReportCommitmentInventorySummary {
 }
 
 /** Per-item percentage evidence. Omit when neither period has a reading. */
-export type ReportCommitmentUtilization = Pick<IBenefitUtilization, 'source'> &
+export type ReportCommitmentUtilization = Pick<IBenefitUtilization, 'source' | 'trend'> &
   ({ sevenDay: number; thirtyDay?: number } | { sevenDay?: number; thirtyDay: number });
 
 export interface ReportCommitmentInventoryRow {
+  /** Separate first-day evidence preserves compatibility with existing long-window utilisation validators. */
+  oneDayUtilizationPercent?: number;
+  purchaseDate?: string;
+  utilizationMaturity?: BenefitUtilizationMaturity;
   id?: string;
   benefitType?: string;
   type?: string;

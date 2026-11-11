@@ -91,6 +91,8 @@ export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSou
   notes?: 'workload_dates_omitted_for_size'[];
 }
 export interface Microsoft365LicenseRow {
+  /** Conditional stock/term review. Reference valuation never establishes cancellable contracted cash. */
+  commercialReview?: Microsoft365SeatCommercialReview;
   /** Full-population counts for enabled accounts holding this SKU; null when usage evidence is unavailable. */
   usage?: Microsoft365LicenseProductUsage | null;
   /** Live tenant service-plan evidence; absent on older snapshots. */
@@ -113,11 +115,29 @@ export interface Microsoft365LicenseRow {
   renewals?: Microsoft365LicenseRenewal[];
 }
 export interface Microsoft365LicenseRenewal {
+  sourceSubscriptionId?: string | null;
+  createdDateTime?: string | null;
+  observedAt?: string | null;
   /** Enabled, Warning (expired, in grace), Suspended, LockedOut or Deleted. */
   status: string | null;
   isTrial: boolean | null;
   totalLicenses: number | null;
   nextLifecycleDateTime: string | null;
+}
+
+export interface Microsoft365SeatCommercialReview {
+  observedAt: string;
+  candidateUnassignedUnits: number | null;
+  recentStockReview: 'review-owner-reseller' | 'not-indicated' | 'unassessed';
+  retainedEntitlements: 'unassessed';
+  accountPurposeAndAssignmentPaths: 'unassessed';
+  immediateRemoval: { verifiedUnits: null; monthlyCashReduction: null; effectiveAt: null };
+  reassignment: { candidateUnits: number | null; status: 'owner-validation-required' };
+  futureAvoidance: { verifiedMonthlyAmount: null; effectiveAt: null };
+  renewalReduction: { verifiedUnits: null; monthlyCashReduction: null; effectiveAt: null };
+  referenceUnassignedMonthlyValues: Array<{ amount: number; currency: string; basis: 'list_price_estimate' }>;
+  commercialTerms: 'unassessed';
+  unassignedAllocationToSubscriptions: 'unassessed';
 }
 export interface Microsoft365LicensedAccountRow {
   /** API's single primary review reason, after current license decisions; absent on stored/older rows. */
@@ -415,6 +435,14 @@ const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 
 const OPTIONAL_PRODUCT_COUNTS = ['overlapAccountUnits', 'downgradeAccountUnits'] as const;
 const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 'noOfficeActivityMonthlyCost'] as const;
 const optional = (value: unknown, predicate: (value: unknown) => boolean): boolean => value === undefined || predicate(value);
+const isSeatCommercialReview = (value: unknown): boolean => isRecord(value) && date(value.observedAt) &&
+  nullableCount(value.candidateUnassignedUnits) && ['review-owner-reseller','not-indicated','unassessed'].includes(value.recentStockReview as string) &&
+  ['retainedEntitlements','accountPurposeAndAssignmentPaths','commercialTerms','unassignedAllocationToSubscriptions'].every(key => value[key] === 'unassessed') &&
+  ['immediateRemoval','renewalReduction'].every(key => isRecord(value[key]) && value[key].verifiedUnits === null && value[key].monthlyCashReduction === null && value[key].effectiveAt === null) &&
+  isRecord(value.reassignment) && nullableCount(value.reassignment.candidateUnits) && value.reassignment.status === 'owner-validation-required' &&
+  isRecord(value.futureAvoidance) && value.futureAvoidance.verifiedMonthlyAmount === null && value.futureAvoidance.effectiveAt === null &&
+  Array.isArray(value.referenceUnassignedMonthlyValues) && value.referenceUnassignedMonthlyValues.length <= 32 && value.referenceUnassignedMonthlyValues.every(row =>
+    isRecord(row) && typeof row.amount === 'number' && Number.isFinite(row.amount) && row.amount >= 0 && typeof row.currency === 'string' && /^[A-Z]{3}$/.test(row.currency) && row.basis === 'list_price_estimate');
 const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'] as const;
 const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'] as const;
 const PRODUCT_FAMILIES: readonly Microsoft365LicenseProductFamily[] = [
@@ -705,6 +733,7 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
         optional(row.productName, text) &&
         optional(row.capabilities, isMicrosoft365ProductCapabilities) &&
         optional(row.usage, usage => usage === null || isMicrosoft365LicenseProductUsage(usage)) &&
+        optional(row.commercialReview, isSeatCommercialReview) &&
         nullableText(row.capabilityStatus) &&
         ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
         optional(
@@ -718,6 +747,9 @@ export function isMicrosoft365LicenseView(value: unknown): value is Microsoft365
                 nullableText(renewal.status) &&
                 nullableBoolean(renewal.isTrial) &&
                 nullableCount(renewal.totalLicenses) &&
+                optional(renewal.sourceSubscriptionId, nullableText) &&
+                optional(renewal.createdDateTime, value => value === null || date(value)) &&
+                optional(renewal.observedAt, value => value === null || date(value)) &&
                 (renewal.nextLifecycleDateTime === null || date(renewal.nextLifecycleDateTime))
             )
         )

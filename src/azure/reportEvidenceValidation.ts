@@ -350,7 +350,13 @@ const isCommitmentUtilization = (value: unknown): boolean =>
   isRecord(value) &&
   (value.sevenDay !== undefined || value.thirtyDay !== undefined) &&
   ['sevenDay', 'thirtyDay'].every(key => value[key] === undefined || (isFiniteNumber(value[key]) && value[key] >= 0)) &&
+  (value.trend === undefined || typeof value.trend === 'string') &&
   (value.source === undefined || ['aggregate', 'usage', 'reservation-summary'].includes(value.source as string));
+
+const isBenefitMaturity = (value: unknown): boolean => isRecord(value) && typeof value.assessedAt === 'string' &&
+  ['observedAt','effectiveStart'].every(key => value[key] === undefined || typeof value[key] === 'string') &&
+  (value.ageDays === undefined || (isFiniteNumber(value.ageDays) && Number.isInteger(value.ageDays))) &&
+  ['oneDay','sevenDay','thirtyDay'].every(key => ['mature','immature','unknown'].includes(value[key] as string));
 
 function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
   return (
@@ -362,6 +368,7 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
       'type',
       'displayName',
       'status',
+      'purchaseDate',
       'expiryDate',
       'skuName',
       'skuDescription',
@@ -371,6 +378,8 @@ function isCommitmentInventoryRow(value: unknown): value is JsonRecord {
     hasOptionalNumbers(value, ['daysToExpiry', 'reservedQuantity']) &&
     isOptionalBoolean(value.renew) &&
     (value.utilization === undefined || isCommitmentUtilization(value.utilization)) &&
+    (value.utilizationMaturity === undefined || isBenefitMaturity(value.utilizationMaturity)) &&
+    (value.oneDayUtilizationPercent === undefined || (isFiniteNumber(value.oneDayUtilizationPercent) && value.oneDayUtilizationPercent >= 0)) &&
     (value.annualCommittedCost === undefined || isRecord(value.annualCommittedCost)) &&
     (value.doNotRenewAnnualImpact === undefined || isRecord(value.doNotRenewAnnualImpact))
   );
