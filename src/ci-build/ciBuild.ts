@@ -15,6 +15,30 @@ export const CI_BUILD_LATEST_SCHEMA = 'ci-build-latest/v1' as const;
 export const CI_BUILD_MAX_ROWS = 50;
 export const CI_BUILD_MAX_PULL_REQUESTS = 20;
 export const CI_BUILD_MAX_INSIGHTS = 12;
+export const CI_BUILD_RANGES = ['last-7-days', 'last-30-days', 'last-6-months', 'last-year'] as const;
+export type CiBuildRange = (typeof CI_BUILD_RANGES)[number];
+export interface CiBuildDateRange {
+  preset: CiBuildRange;
+  start: string;
+  end: string;
+  /** First date with billing or workflow evidence in the requested period. */
+  firstObservedDay: string;
+}
+
+/** Inclusive start of a rolling preset ending on a UTC date. */
+export function getCiBuildRangeStart(preset: CiBuildRange, end: string): string {
+  const date = new Date(`${end}T00:00:00Z`);
+  if (preset === 'last-7-days' || preset === 'last-30-days') {
+    date.setUTCDate(date.getUTCDate() - (preset === 'last-7-days' ? 6 : 29));
+  } else {
+    const day = date.getUTCDate();
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth() - (preset === 'last-6-months' ? 6 : 12));
+    const lastDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+    date.setUTCDate(Math.min(day, lastDay) + 1);
+  }
+  return date.toISOString().slice(0, 10);
+}
 export const CI_BUILD_FEATURE_KEY = 'ci_build_cost' as const;
 
 export const CI_BUILD_REQUEST_ENTITY = 'ci-build' as const;
@@ -80,6 +104,8 @@ export interface CiBuildTotals extends CiBuildMoney {
    * allowance exhausted). Storage and runners never covered by the allowance are excluded. Null if not exhausted or unknown.
    */
   allowanceExhaustedOn: string | null;
+  /** Net charge for allowance-eligible runner SKUs, when available. */
+  allowanceNetAmount?: number | null;
   /** Month-end projection of net amount for a provisional month; null when final or not projectable. */
   projectedNetAmount: number | null;
 }
@@ -155,6 +181,12 @@ export const CI_BUILD_INSIGHT_KINDS = [
   'full_suite_on_updates',
   'late_cheap_failures',
   'superseded_runs',
+  'overlapping_pr_runs',
+  'duplicate_pr_triggers',
+  'cancelled_after_new_commit',
+  'repeated_schedule_revision',
+  'retry_recovery',
+  'variable_pr_runtime',
   'reruns',
   'allowance_exhausted_no_budget',
   'idle_scheduled_workflows',
@@ -168,9 +200,21 @@ export type CiBuildInsightKind = (typeof CI_BUILD_INSIGHT_KINDS)[number];
  * Pinned subject and facts per insight kind (UI wording depends on these exact names):
  * - full_suite_on_updates: subject repository; ratio = full-suite share of PR runs; amount = estimated cost of full-suite PR runs;
  *   facts { fullSuiteRuns, pullRequestRuns, minutes }.
- * - late_cheap_failures: subject repository; amount = estimated cost of the other jobs' minutes in those runs;
- *   facts { runs, wastedMinutes }.
+ * - late_cheap_failures: subject repository; amount = estimated cost of job time after the first failure of each attempt;
+ *   facts { runs, afterFailureMinutes }. Older summaries report { runs, wastedMinutes } for the other jobs' total time.
  * - superseded_runs: subject repository; ratio = superseded share of attributed minutes; amount; facts { runs, minutes }.
+ * - overlapping_pr_runs: subject workflow; estimated cost of older job time after a newer PR revision starts;
+ *   facts { runs, minutes, exampleRunId, comparisonRunId }.
+ * - duplicate_pr_triggers: subject workflow; estimated cost of matching push runs, before verifying whether they are required;
+ *   facts { runs, minutes, exampleRunId, comparisonRunId }.
+ * - cancelled_after_new_commit: subject workflow; observed time spent in cancelled attempts with a newer distinct revision;
+ *   facts { runs, minutes, exampleRunId, comparisonRunId }. Sequence is evidence of possible supersession.
+ * - repeated_schedule_revision: subject workflow; observed time on scheduled runs sharing a head commit;
+ *   facts { runs, minutes, cadenceHours, exampleRunId, comparisonRunId }. External inputs may differ.
+ * - retry_recovery: subject workflow; time in retry attempts on successful runs with a first-attempt job failure;
+ *   facts { runs, minutes, exampleRunId }.
+ * - variable_pr_runtime: subject workflow; facts { runs, medianMinutes, p95Minutes, exampleRunId, comparisonRunId };
+ *   first-attempt elapsed job span for comparable successful PR runs, excluding the initial queue.
  * - reruns: subject repository; ratio = rerun share of attributed minutes; amount; facts { runs, minutes }.
  * - allowance_exhausted_no_budget: subject company; amount = projected net (or net when final); facts { exhaustedDay } (day of month).
  * - idle_scheduled_workflows: subject workflow (key `owner/repo#workflowId`, label workflow name); amount = estimated monthly cost;
@@ -210,6 +254,7 @@ export interface CiBuildSummaryArtifact {
   runId: string;
   /** ISO 4217; engine writes the billing currency (USD), the API sets the converted code. */
   currency: string;
+  range?: CiBuildDateRange;
   totals: CiBuildTotals;
   /** Up to 13 months ending at `month`, oldest first. */
   monthly: CiBuildMonthlyTotal[];
@@ -222,6 +267,10 @@ export interface CiBuildSummaryArtifact {
   /** Company net spend per UTC day of `month`, oldest first. */
   daily: Array<CiBuildMoney & { day: string; billedMinutes: number | null }>;
   insights: CiBuildInsight[];
+  /** Supplemental run checks are separate so older readers can still render the summary. */
+  runRecommendations?: CiBuildInsight[];
+  /** Additional sync findings. Kept separate so readers that validate the earlier list can still load new summaries. */
+  syncRecommendations?: CiBuildInsight[];
   freshness: CiBuildFreshness[];
 }
 
@@ -232,6 +281,26 @@ export interface CiBuildLatestPointer {
   runId: string;
   generatedAt: string;
   months: string[];
+  accounts?: CiBuildAccountScope[];
+  rangeSlot?: 0 | 1;
+  ranges?: CiBuildRange[];
+  pickerMetrics?: Record<string, CiBuildPickerMetrics>;
+}
+
+export interface CiBuildPickerMetrics {
+  netAmount: number | null;
+  recommendationCount: number;
+}
+
+export const getCiBuildPickerMetrics = (summary: CiBuildSummaryArtifact): CiBuildPickerMetrics => ({
+  netAmount: summary.totals.netAmount,
+  recommendationCount: [...summary.insights, ...(summary.runRecommendations ?? []), ...(summary.syncRecommendations ?? [])]
+    .filter(({ kind, severity }) => kind !== 'collection_issue' && (severity === 'action' || severity === 'review')).length,
+});
+
+export interface CiBuildAccountScope {
+  connectionId: string;
+  displayName: string;
 }
 
 /** Response of `GET /companies/{companyId}/build-cost/summary?month=&currency=`. */
@@ -241,6 +310,8 @@ export interface CiBuildSummaryResponse {
   months: string[];
   currency: string;
   summary: CiBuildSummaryArtifact | null;
+  accounts?: CiBuildAccountScope[];
+  pickerMetrics?: CiBuildPickerMetrics;
 }
 
 const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
@@ -267,3 +338,14 @@ export const buildCiBuildFactsPath = (companyId: string, month: string): string 
 export const buildCiBuildSummaryPath = (companyId: string, month: string): string =>
   `${requireSafe(companyId, 'companyId')}/ci-build/portal/${requireMonth(month)}/summary.json.gz`;
 export const buildCiBuildLatestPath = (companyId: string): string => `${requireSafe(companyId, 'companyId')}/ci-build/portal/latest.json`;
+export const buildCiBuildAccountLatestPath = (companyId: string, connectionId: string): string =>
+  `${requireSafe(companyId, 'companyId')}/ci-build/portal/accounts/${requireSafe(connectionId, 'connectionId')}/latest.json`;
+export const buildCiBuildAccountSummaryPath = (companyId: string, connectionId: string, month: string): string =>
+  `${requireSafe(companyId, 'companyId')}/ci-build/portal/accounts/${requireSafe(connectionId, 'connectionId')}/${requireMonth(month)}/summary.json.gz`;
+
+export function buildCiBuildRangeSummaryPath(companyId: string, range: CiBuildRange, connectionId?: string, slot?: 0 | 1): string {
+  if (!CI_BUILD_RANGES.includes(range)) throw new Error('Invalid CI build date range.');
+  const account = connectionId ? `/accounts/${requireSafe(connectionId, 'connectionId')}` : '';
+  const directory = slot === undefined ? '' : `/slot-${slot}`;
+  return `${requireSafe(companyId, 'companyId')}/ci-build/portal${account}/ranges/${range}${directory}/summary.json.gz`;
+}

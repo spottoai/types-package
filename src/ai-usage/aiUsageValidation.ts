@@ -13,6 +13,7 @@ import {
   AI_USAGE_REQUEST_ACTION,
   AI_USAGE_REQUEST_ENTITY,
   AI_USAGE_SUMMARY_SCHEMA,
+  AI_USAGE_AZURE_OPERATION_METRICS,
   AI_USAGE_SPEND_SOURCES,
   AI_USAGE_SPEND_SOURCE_PROVIDER,
   AI_USAGE_ALLOCATION_TARGET_TYPES,
@@ -173,6 +174,12 @@ function freshness(value: unknown): boolean {
 }
 
 /** Structural guard for the company summary artifact. It must carry no person identifiers. */
+function azureOperationPoint(value: unknown): value is Record<string, unknown> {
+  return record(value) && oneOf(AI_USAGE_AZURE_OPERATION_METRICS, value.metric) &&
+    typeof value.average === 'number' && Number.isFinite(value.average) && value.average >= 0 &&
+    typeof value.samples === 'number' && Number.isSafeInteger(value.samples) && value.samples > 0;
+}
+
 export function isAiUsageSummaryArtifact(value: unknown): value is AiUsageSummaryArtifact {
   if (!record(value) || value.schema !== AI_USAGE_SUMMARY_SCHEMA) return false;
   if (!isAiUsageSafeId(value.companyId) || !isAiUsageMonth(value.month) || !timestamp(value.generatedAt) || !text(value.runId, 128)) return false;
@@ -223,7 +230,8 @@ export function isAiUsageSummaryArtifact(value: unknown): value is AiUsageSummar
         row.source === AI_USAGE_SPEND_SOURCES[index] &&
         row.provider === AI_USAGE_SPEND_SOURCE_PROVIDER[row.source as (typeof AI_USAGE_SPEND_SOURCES)[number]] &&
         oneOf(['included', 'not_connected', 'unavailable'] as const, row.state) &&
-        nullableNumber(row.amount)
+        nullableNumber(row.amount) &&
+        (row.aiCredits === undefined || nullableNumber(row.aiCredits))
     ) &&
     value.coverage.length === AI_USAGE_SPEND_SOURCES.length;
   const seatsOk =
@@ -259,6 +267,19 @@ export function isAiUsageSummaryArtifact(value: unknown): value is AiUsageSummar
   return (
     monthlyOk &&
     coverageOk &&
+    (value.azureOperations === undefined ||
+      (record(value.azureOperations) &&
+        Array.isArray(value.azureOperations.daily) &&
+        value.azureOperations.daily.length <= 31 * AI_USAGE_AZURE_OPERATION_METRICS.length &&
+        value.azureOperations.daily.every(row => azureOperationPoint(row) && isAiUsageDay(row.day) && row.day.startsWith(value.month as string)) &&
+        Array.isArray(value.azureOperations.deployments) &&
+        value.azureOperations.deployments.every(row => azureOperationPoint(row) && text(row.subscription) &&
+          text(row.resource) && (row.deployment === null || text(row.deployment)) && (row.model === null || text(row.model))))) &&
+    (value.scopes === undefined ||
+      (Array.isArray(value.scopes) && value.scopes.every(scope =>
+        record(scope) && isAiUsageSafeId(scope.id) && typeof scope.label === 'string' &&
+        oneOf(AI_USAGE_SPEND_SOURCES, scope.source) && scope.provider === AI_USAGE_SPEND_SOURCE_PROVIDER[scope.source]
+      ))) &&
     seatsOk &&
     activityOk &&
     tagsOk &&

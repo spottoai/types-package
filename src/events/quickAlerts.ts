@@ -8,8 +8,9 @@ import {
 } from './baseAlert.js';
 import type { CostAlertDefinition, CostAlertInstance } from './cost.js';
 import type { EarlySpendAlertCriteria, EarlySpendAlertSummary } from './earlySpend.js';
+import type { GitHubVulnerabilitySeverity } from '../ci-build/githubVulnerabilities.js';
 
-export const QUICK_ALERT_TYPES = ['credentialExpiry', 'benefitExpiry', 'serviceRetirement', 'backupFailure', 'earlySpend'] as const;
+export const QUICK_ALERT_TYPES = ['credentialExpiry', 'benefitExpiry', 'serviceRetirement', 'backupFailure', 'earlySpend', 'buildVulnerability'] as const;
 
 export type QuickAlertType = (typeof QUICK_ALERT_TYPES)[number];
 /** Early spend alerts run on the quick-alert lifecycle but are cost alerts. */
@@ -23,9 +24,10 @@ export type QuickAlertTemplateId =
   | 'benefit-expiry-7d'
   | 'service-retirement-30d'
   | 'backup-failure'
-  | 'early-spend-default';
+  | 'early-spend-default'
+  | 'github-build-vulnerability';
 
-export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals';
+export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals' | 'buildCost';
 
 export type QuickAlertBenefitType = 'reservation' | 'savingsPlan';
 
@@ -60,12 +62,19 @@ export interface BackupFailureAlertCriteria extends QuickAlertCriteriaBase<'back
   workloadTypes?: string[];
 }
 
+export interface BuildVulnerabilityAlertCriteria
+  extends QuickAlertCriteriaBase<'buildVulnerability', 'buildCost', 'github-build-vulnerability'> {
+  severities: GitHubVulnerabilitySeverity[];
+  connectionId?: string;
+}
+
 export type QuickAlertCriteria =
   | CredentialExpiryAlertCriteria
   | CloudAccountCredentialExpiryAlertCriteria
   | BenefitExpiryAlertCriteria
   | ServiceRetirementAlertCriteria
   | BackupFailureAlertCriteria
+  | BuildVulnerabilityAlertCriteria
   | EarlySpendAlertCriteria;
 
 export type QuickAlertCriteriaFor<TType extends QuickAlertType> = Extract<QuickAlertCriteria, { kind: TType }>;

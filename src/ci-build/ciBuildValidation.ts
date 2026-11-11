@@ -5,6 +5,7 @@ import {
   CI_BUILD_MAX_INSIGHTS,
   CI_BUILD_MAX_PULL_REQUESTS,
   CI_BUILD_MAX_ROWS,
+  CI_BUILD_RANGES,
   CI_BUILD_REQUEST_ACTION,
   CI_BUILD_REQUEST_ENTITY,
   CI_BUILD_SUMMARY_SCHEMA,
@@ -69,6 +70,13 @@ function insight(value: unknown): boolean {
 export function isCiBuildSummaryArtifact(value: unknown): value is CiBuildSummaryArtifact {
   if (!record(value) || value.schema !== CI_BUILD_SUMMARY_SCHEMA) return false;
   if (!safeId(value.companyId) || !month(value.month) || !timestamp(value.generatedAt) || !text(value.runId, 128) || !currency(value.currency)) return false;
+  const range = value.range;
+  if (range !== undefined && (
+    !record(range) || !oneOf(CI_BUILD_RANGES, range.preset) || !day(range.start) || !day(range.end) ||
+    !day(range.firstObservedDay) || range.start > range.firstObservedDay || range.firstObservedDay > range.end ||
+    !range.end.startsWith(value.month + '-') || !(Date.parse(range.end) - Date.parse(range.start) <= 366 * 86_400_000)
+  )) return false;
+  const dailyRange = record(range) ? range : null;
   const totals = value.totals;
   if (
     !record(totals) ||
@@ -82,6 +90,7 @@ export function isCiBuildSummaryArtifact(value: unknown): value is CiBuildSummar
     !cancelled(totals.cancelledMinutes) ||
     !nullableCount(totals.rerunMinutes) ||
     !(totals.allowanceExhaustedOn === null || day(totals.allowanceExhaustedOn)) ||
+    (totals.allowanceNetAmount !== undefined && !nullableNumber(totals.allowanceNetAmount)) ||
     !nullableNumber(totals.projectedNetAmount)
   ) {
     return false;
@@ -136,8 +145,14 @@ export function isCiBuildSummaryArtifact(value: unknown): value is CiBuildSummar
         cancelled(row.cancelledMinutes)
     ) &&
     rows(value.storage, CI_BUILD_MAX_ROWS, row => record(row) && text(row.sku, 128) && money(row) && nullableNumber(row.quantity) && nullableText(row.unitType, 64)) &&
-    rows(value.daily, 31, row => record(row) && day(row.day) && (row.day as string).startsWith(value.month as string) && money(row) && nullableCount(row.billedMinutes)) &&
+    rows(value.daily, 31, row => record(row) && day(row.day) &&
+      (dailyRange
+        ? day(dailyRange.start) && day(dailyRange.end) && row.day >= dailyRange.start && row.day <= dailyRange.end
+        : row.day.startsWith(value.month as string)) &&
+      money(row) && nullableCount(row.billedMinutes)) &&
     rows(value.insights, CI_BUILD_MAX_INSIGHTS, insight) &&
+    (value.runRecommendations === undefined || rows(value.runRecommendations, CI_BUILD_MAX_INSIGHTS, insight)) &&
+    (value.syncRecommendations === undefined || rows(value.syncRecommendations, CI_BUILD_MAX_INSIGHTS, insight)) &&
     Array.isArray(value.freshness) &&
     value.freshness.every(
       row =>
@@ -164,6 +179,18 @@ export function isCiBuildLatestPointer(value: unknown): value is CiBuildLatestPo
     Array.isArray(value.months) &&
     value.months.length <= 13 &&
     value.months.every(month) &&
+    (value.accounts === undefined || rows(value.accounts, 400, row => record(row) && safeId(row.connectionId) && text(row.displayName))) &&
+    (value.rangeSlot === undefined ||
+      ((value.rangeSlot === 0 || value.rangeSlot === 1) &&
+        Array.isArray(value.ranges) && value.ranges.length <= CI_BUILD_RANGES.length &&
+        value.ranges.every(range => CI_BUILD_RANGES.some(preset => preset === range)))) &&
+    (value.pickerMetrics === undefined ||
+      (record(value.pickerMetrics) && Object.entries(value.pickerMetrics).length <= 13 + CI_BUILD_RANGES.length &&
+        Object.entries(value.pickerMetrics).every(([key, metrics]) =>
+          (month(key) || oneOf(CI_BUILD_RANGES, key)) && record(metrics) &&
+          (metrics.netAmount === null || (typeof metrics.netAmount === 'number' && Number.isFinite(metrics.netAmount))) &&
+          typeof metrics.recommendationCount === 'number' && Number.isSafeInteger(metrics.recommendationCount) &&
+          metrics.recommendationCount >= 0))) &&
     value.months.includes(value.month)
   );
 }
