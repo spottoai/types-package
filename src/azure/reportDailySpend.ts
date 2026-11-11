@@ -11,6 +11,13 @@ export interface ReportDailySpendEntry {
   /** Amortized actual total; never substitute cost when amortized evidence is absent. */
   costAmortized?: number;
   /**
+   * Billed charges tied to the day's use. Present only with nonUsageCost and cost, and the two add up
+   * to cost to the cent. Absent means the split is unknown, not zero.
+   */
+  usageCost?: number;
+  /** Billed charges not tied to the day's use, such as monthly fees and support. */
+  nonUsageCost?: number;
+  /**
    * Optional explicit composition and retail benchmark. Complete actual components must also populate
    * the matching legacy numeric field with the same amount; partial/unknown actuals must omit it.
    */

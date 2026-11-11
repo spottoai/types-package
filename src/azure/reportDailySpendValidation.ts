@@ -10,6 +10,11 @@ const isCoverage = (value: unknown, covered: number, expected: number): boolean 
   return isRecord(value) && isCount(value.coveredDayCount) && value.coveredDayCount === covered && value.status === status;
 };
 
+/** The split is all or nothing, and must rebuild the billed total to the cent. */
+const hasValidChargeSplit = ({ cost, usageCost, nonUsageCost }: Record<string, unknown>): boolean =>
+  (usageCost === undefined && nonUsageCost === undefined) ||
+  (isFiniteNumber(cost) && isFiniteNumber(usageCost) && isFiniteNumber(nonUsageCost) && Math.abs(usageCost + nonUsageCost - cost) < 0.005);
+
 export const isReportDailySpend = (value: unknown): value is ReportDailySpend => {
   if (
     !isRecord(value) ||
@@ -47,7 +52,8 @@ export const isReportDailySpend = (value: unknown): value is ReportDailySpend =>
       entry.date > value.endDate ||
       (entry.cost === undefined && entry.costAmortized === undefined && entry.financials === undefined) ||
       (entry.cost !== undefined && !isFiniteNumber(entry.cost)) ||
-      (entry.costAmortized !== undefined && !isFiniteNumber(entry.costAmortized))
+      (entry.costAmortized !== undefined && !isFiniteNumber(entry.costAmortized)) ||
+      !hasValidChargeSplit(entry)
     )
       return false;
     if (entry.financials !== undefined) {
