@@ -392,6 +392,8 @@ export interface AiUsageMonthlyProviderTotal extends AiUsageMoney {
   month: string;
   provider: AiUsageProvider;
   status: AiUsageFactStatus;
+  /** Components of amount, classified by the original cost basis. Older artifacts may omit this. */
+  costByBasis?: Partial<Record<AiUsageCostBasis, number>>;
 }
 
 export interface AiUsageBreakdownRow extends AiUsageMoney {
@@ -519,6 +521,8 @@ export interface AiUsageSourceCoverage {
    */
   state: 'included' | 'not_connected' | 'unavailable';
   amount: number | null;
+  /** Credits in this product's own units, when its usage report supplies them. */
+  aiCredits?: number | null;
 }
 
 /** Paid seats against active seats for one seat-based product, company-wide. */
@@ -547,6 +551,29 @@ export interface AiUsageMonthlyActivity {
 }
 
 /** Company-level aggregates for one UTC month. Contains no person identifiers. */
+export interface AiUsageReportScope {
+  id: string;
+  label: string;
+  provider: AiUsageProvider;
+  source: AiUsageSpendSource;
+}
+
+export const AI_USAGE_AZURE_OPERATION_METRICS = [
+  'availability', 'firstToken', 'responseTime', 'cacheMatch', 'tokenRate', 'capacity'
+] as const;
+export type AiUsageAzureOperationMetric = (typeof AI_USAGE_AZURE_OPERATION_METRICS)[number];
+
+export interface AiUsageAzureOperationPoint {
+  metric: AiUsageAzureOperationMetric;
+  average: number;
+  samples: number;
+}
+
+export interface AiUsageAzureOperations {
+  daily: (AiUsageAzureOperationPoint & { day: string })[];
+  deployments: (AiUsageAzureOperationPoint & { subscription: string; resource: string; deployment: string | null; model: string | null })[];
+}
+
 export interface AiUsageSummaryArtifact {
   schema: typeof AI_USAGE_SUMMARY_SCHEMA;
   companyId: string;
@@ -579,6 +606,9 @@ export interface AiUsageSummaryArtifact {
   activity: AiUsageMonthlyActivity[];
   /** Spend by allocation tag, at most AI_USAGE_MAX_BREAKDOWN_ROWS rows, largest first. */
   byTag: AiUsageTagRow[];
+  /** Account and subscription reports published alongside this company report. */
+  scopes?: AiUsageReportScope[];
+  azureOperations?: AiUsageAzureOperations;
 }
 
 export interface AiUsagePersonDay extends AiUsageMoney {
@@ -704,6 +734,7 @@ export interface AiUsageSummaryResponse {
   canViewPeople: boolean;
   summary: AiUsageSummaryArtifact | null;
   connections: AiProviderConnection[];
+  scopes?: AiUsageReportScope[];
 }
 
 export interface AiUsagePeopleResponse {
@@ -819,11 +850,14 @@ export const buildAiUsageRawPath = (companyId: string, provider: AiUsageProvider
 export const buildAiUsageFactsPath = (companyId: string, month: string): string =>
   `${requireSafeId(companyId, 'companyId')}/ai-usage/facts/${requireMonth(month)}.json.gz`;
 
-export const buildAiUsageSummaryPath = (companyId: string, month: string): string =>
-  `${requireSafeId(companyId, 'companyId')}/ai-usage/portal/${requireMonth(month)}/summary.json.gz`;
+const reportFolder = (companyId: string, month: string, scope?: string): string =>
+  `${requireSafeId(companyId, 'companyId')}/ai-usage/portal/${requireMonth(month)}${scope ? `/scopes/${requireSafeId(scope, 'scope')}` : ''}`;
 
-export const buildAiUsagePeoplePath = (companyId: string, month: string): string =>
-  `${requireSafeId(companyId, 'companyId')}/ai-usage/portal/${requireMonth(month)}/people.json.gz`;
+export const buildAiUsageSummaryPath = (companyId: string, month: string, scope?: string): string =>
+  `${reportFolder(companyId, month, scope)}/summary.json.gz`;
+
+export const buildAiUsagePeoplePath = (companyId: string, month: string, scope?: string): string =>
+  `${reportFolder(companyId, month, scope)}/people.json.gz`;
 
 export const buildAiUsageLatestPath = (companyId: string): string => `${requireSafeId(companyId, 'companyId')}/ai-usage/portal/latest.json`;
 
