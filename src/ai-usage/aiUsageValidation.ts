@@ -204,7 +204,10 @@ export function isAiUsageSummaryArtifact(value: unknown): value is AiUsageSummar
     Array.isArray(value.monthly) &&
     value.monthly.length <= 13 * AI_USAGE_PROVIDERS.length &&
     value.monthly.every(
-      row => record(row) && isAiUsageMonth(row.month) && isAiUsageProvider(row.provider) && money(row) && oneOf(['provisional', 'final'] as const, row.status)
+      row => record(row) && isAiUsageMonth(row.month) && isAiUsageProvider(row.provider) && money(row) && oneOf(['provisional', 'final'] as const, row.status) &&
+        (row.costByBasis === undefined || (record(row.costByBasis) &&
+          Object.entries(row.costByBasis).every(([basis, amount]) =>
+            oneOf(['billed', 'allocated', 'estimated', 'list'] as const, basis) && typeof amount === 'number' && Number.isFinite(amount))))
     );
   if (!(Array.isArray(value.daily) && value.daily.length <= 31 && value.daily.every(day => record(day) && isAiUsageDay(day.day) && day.day.startsWith(value.month as string) && money(day) && tokens(day.tokens) && nullableCount(day.requests)))) return false;
   if (value.previousMonth !== null) {

@@ -392,6 +392,8 @@ export interface AiUsageMonthlyProviderTotal extends AiUsageMoney {
   month: string;
   provider: AiUsageProvider;
   status: AiUsageFactStatus;
+  /** Components of amount, classified by the original cost basis. Older artifacts may omit this. */
+  costByBasis?: Partial<Record<AiUsageCostBasis, number>>;
 }
 
 export interface AiUsageBreakdownRow extends AiUsageMoney {
