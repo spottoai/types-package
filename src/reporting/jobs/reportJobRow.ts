@@ -19,6 +19,7 @@ import {
   utf8ByteLength,
 } from '../shared/reportingIds';
 import { normalizeReportTableEntity } from '../shared/reportTableEntities';
+import { CURRENCY_CONVERSION_RATE_SOURCE } from '../../common/currencyConversion';
 import { buildReportJobScopeHash, deriveReportJobIdentity, parseReportJobId } from './reportJobIdentity';
 import { parseReportJobNotificationDestinationCountsV1 } from './reportJobNotifications';
 import {
@@ -70,7 +71,45 @@ export interface ReportJobProducerFieldsV1 {
   requestSha256: string;
   fileName: string;
   notificationPolicyId?: string;
+  /**
+   * ECB rate snapshot the producer captured when it accepted a job with `displayCurrency` (JSON of
+   * `ReportJobCurrencyRateSnapshotV1`). Absent on schedule occurrences: reportworker then reads that run's rates.
+   */
+  currencyRateSnapshotJson?: string;
 }
+
+/** Exact EUR reference quotes captured for one report job; the worker converts with these, never newer rates. */
+export interface ReportJobCurrencyRateSnapshotV1 {
+  rateDate: string;
+  rateSnapshotId: string;
+  rateSource: typeof CURRENCY_CONVERSION_RATE_SOURCE;
+  rates: Record<string, string>;
+}
+
+export const REPORT_JOB_CURRENCY_SNAPSHOT_MAX_BYTES = 4 * 1024;
+
+/** Strict shape check of a stored snapshot. Freshness belongs to the producer at acceptance time. */
+export const parseReportJobCurrencyRateSnapshotV1 = (value: unknown): ReportJobCurrencyRateSnapshotV1 | null => {
+  try {
+    if (typeof value !== 'string' || utf8ByteLength(value) > REPORT_JOB_CURRENCY_SNAPSHOT_MAX_BYTES) return null;
+    const parsed: unknown = JSON.parse(value);
+    if (!isPlainRecord(parsed) || !hasExactlyKeys(parsed, ['rateDate', 'rateSnapshotId', 'rateSource', 'rates'])) return null;
+    const { rateDate, rateSnapshotId, rateSource, rates } = parsed;
+    if (typeof rateDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rateDate) || Number.isNaN(Date.parse(`${rateDate}T00:00:00Z`))) return null;
+    if (typeof rateSnapshotId !== 'string' || !SHA256_HEX_PATTERN.test(rateSnapshotId)) return null;
+    if (rateSource !== CURRENCY_CONVERSION_RATE_SOURCE || !isPlainRecord(rates)) return null;
+    const entries = Object.entries(rates);
+    if (
+      entries.length === 0 ||
+      entries.length > 64 ||
+      !entries.every(([code, rate]) => /^[A-Z]{3}$/.test(code) && typeof rate === 'string' && /^\d+(?:\.\d+)?$/.test(rate) && Number(rate) > 0)
+    )
+      return null;
+    return { rateDate, rateSnapshotId, rateSource, rates: Object.fromEntries(entries) as Record<string, string> };
+  } catch {
+    return null;
+  }
+};
 
 /** Merged by reportworker. The producer inserts `status: 'accepted'` and `attemptCount: 0`. */
 export interface ReportJobWorkerFieldsV1 {
@@ -122,6 +161,7 @@ export const REPORT_JOB_PRODUCER_FIELDS = [
   'requestSha256',
   'fileName',
   'notificationPolicyId',
+  'currencyRateSnapshotJson',
 ] as const satisfies readonly (keyof ReportJobProducerFieldsV1)[];
 
 export const REPORT_JOB_WORKER_FIELDS = [
@@ -221,6 +261,7 @@ const validateShape = (row: Record<string, unknown>, errors: string[]): void => 
     isOptional(row.requestedByUserId, value => isText(128)(value) && !(value as string).includes('@'))
   );
   check('notificationPolicyId', isOptional(row.notificationPolicyId, isReportEntityId));
+  check('currencyRateSnapshotJson', isOptional(row.currencyRateSnapshotJson, value => parseReportJobCurrencyRateSnapshotV1(value) !== null));
   check(
     'coalescedOccurrenceCount',
     isOptional(row.coalescedOccurrenceCount, value => isCount(value) && (value as number) >= 1)
@@ -327,6 +368,11 @@ export const parseReportJobRowV1 = async (entity: unknown): Promise<ReportJobRow
     if (row.trigger === 'schedule' && spec.value.reportType === 'sdm' && spec.value.period.kind === 'explicit')
       return { ok: false, code: 'request-invalid', errors: ['period: schedule jobs require a period rule'] };
     if (spec.value.reportType !== row.reportType) return { ok: false, code: 'request-invalid', errors: ['reportType: does not match the request'] };
+    if (row.currencyRateSnapshotJson !== undefined) {
+      const snapshot = parseReportJobCurrencyRateSnapshotV1(row.currencyRateSnapshotJson);
+      if (!spec.value.displayCurrency || !snapshot || snapshot.rates[spec.value.displayCurrency] === undefined)
+        return { ok: false, code: 'request-invalid', errors: ['currencyRateSnapshotJson: must quote the requested displayCurrency'] };
+    }
     const scopeHash = await buildReportJobScopeHash({
       subscriptionIds: spec.value.scope.subscriptionIds,
       scheduleId: row.trigger === 'schedule' ? row.scheduleId : undefined,
@@ -347,6 +393,8 @@ export type BuildReportJobRowInput = {
   requestedAtUtc: string;
   requestedByUserId?: string;
   notificationPolicyId?: string;
+  /** Required by producers that can read rates when `spec.displayCurrency` is set. */
+  currencyRateSnapshot?: ReportJobCurrencyRateSnapshotV1;
 } & (
   | { trigger: 'api' }
   | { trigger: 'schedule'; scheduleId: string; definitionRevision: number; scheduledForUtc: string; coalescedOccurrenceCount?: number }
@@ -389,6 +437,16 @@ export const buildReportJobRowV1 = async (input: BuildReportJobRowInput): Promis
     requestSha256: await sha256Hex(requestJson),
     fileName: input.fileName,
     ...(input.notificationPolicyId === undefined ? {} : { notificationPolicyId: input.notificationPolicyId }),
+    ...(input.currencyRateSnapshot === undefined
+      ? {}
+      : {
+          currencyRateSnapshotJson: JSON.stringify({
+            rateDate: input.currencyRateSnapshot.rateDate,
+            rateSnapshotId: input.currencyRateSnapshot.rateSnapshotId,
+            rateSource: input.currencyRateSnapshot.rateSource,
+            rates: input.currencyRateSnapshot.rates,
+          }),
+        }),
     status: 'accepted',
     attemptCount: 0,
     notificationStatus: 'none',
