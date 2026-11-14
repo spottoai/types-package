@@ -113,6 +113,7 @@ export type AzureSpPermissionKey =
   | 'graphLicenseAssignmentReadAll'
   | 'graphReportsReadAll'
   | 'graphOrganizationReadAll'
+  | 'graphMailboxSettingsRead'
   | 'billingScopeReader'
   | 'billingExportOperatorContributor'
   | 'costManagementProviderRegistration'

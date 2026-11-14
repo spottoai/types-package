@@ -32,6 +32,8 @@ const assistedSetupSubscriptionLimit: 100 = AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIP
 const keyVaultReaderPermissionKey: AzureSpPermissionKey = 'keyVaultReader';
 const reportsReadPermissionKey: AzureSpPermissionKey = 'graphReportsReadAll';
 void reportsReadPermissionKey;
+const mailboxSettingsReadPermissionKey: AzureSpPermissionKey = 'graphMailboxSettingsRead';
+void mailboxSettingsReadPermissionKey;
 
 type AzureSpSetupForbiddenPublicKey =
   | 'accessToken'
