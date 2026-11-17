@@ -70,6 +70,35 @@
         "scopeHash": "648580f9930df8f4",
         "jobId": "9999746597699200000-architecture-assessment-648580f9930df8f4"
       }
+    },
+    {
+      "name": "aws-pack-leading-zero",
+      "instant": "2026-09-28T03:15:42.123Z",
+      "reportType": "report-pack",
+      "subscriptionIds": [
+        "012345678901"
+      ],
+      "expected": {
+        "reverseTime19": "9999998209434657876",
+        "scopeHash": "5ce9ab10ea74270d",
+        "jobId": "9999998209434657876-report-pack-5ce9ab10ea74270d"
+      }
+    },
+    {
+      "name": "aws-pack-sorted-duplicates",
+      "instant": "2026-09-28T03:15:42.123Z",
+      "reportType": "report-pack",
+      "subscriptionIds": [
+        "212136148154",
+        "012345678901",
+        "212136148154"
+      ],
+      "scheduleId": "schedule-0123456789abcdef0123456789abcdef",
+      "expected": {
+        "reverseTime19": "9999998209434657876",
+        "scopeHash": "c1429121a2c42ec8",
+        "jobId": "9999998209434657876-report-pack-c1429121a2c42ec8"
+      }
     }
   ]
 }

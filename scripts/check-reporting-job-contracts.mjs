@@ -71,6 +71,23 @@ const checkJobs = async (jobs, label) => {
   assert.equal(jobs.isReportJobProgressV1(deliveryProgress), true, `${label} bounded delivery reason rejected`);
   assert.equal(jobs.isReportJobProgressV1({ ...deliveryProgress, deliveryFailureCode: 'raw-provider-error' }), false);
   assert.equal(jobs.isReportJobProgressV1({ ...deliveryProgress, recipient: 'private@example.test' }), false);
+  // Native AWS IDs remain strings, including leading zeroes; tenant GUID rules remain unchanged.
+  for (const id of ['012345678901', '212136148154']) {
+    assert.equal(jobs.isReportProviderScopeId(id), true);
+    assert.equal(jobs.isReportGuid(id), false);
+    const aws = sdmSpec();
+    aws.scope.subscriptionIds = [id, id];
+    const parsed = jobs.parseReportJobSpecV1(aws);
+    assert.equal(parsed.ok, true);
+    assert.deepEqual(parsed.value.scope.subscriptionIds, [id]);
+  }
+  for (const id of ['12345678901', '1234567890123', '12345678901a', '１２３４５６７８９０１２', '123456789012/path', 'aws:123456789012', 123456789012, '../123456789012']) {
+    assert.equal(jobs.isReportProviderScopeId(id), false);
+    const invalid = sdmSpec();
+    invalid.scope.subscriptionIds = [id];
+    assert.equal(jobs.parseReportJobSpecV1(invalid).ok, false);
+    await assert.rejects(jobs.buildReportJobScopeHash({subscriptionIds: [id]}));
+  }
   // Identity vectors (computed independently with node:crypto).
   for (const vector of vectors) {
     const { expected } = vector;

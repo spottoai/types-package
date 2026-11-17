@@ -100,7 +100,7 @@ export type ReportJobReportType = (typeof REPORT_JOB_REPORT_TYPES)[number];
 
 export interface ReportJobScopeV1 {
   cloudAccountIds: string[]; // 1..20, each ^[A-Za-z0-9_-]{1,80}$
-  subscriptionIds: string[]; // 1..200 GUIDs, stored lower-cased and sorted
+  subscriptionIds: string[]; // 1..200 Azure subscription GUIDs or native 12-digit AWS account IDs; strings, sorted
 }
 
 export type ReportPeriodRuleV1 = { kind: 'previous-calendar-month' } | { kind: 'previous-calendar-quarter' };
@@ -342,3 +342,7 @@ Historical review fixes covered SDK casing, UTC instants, MessageId length, row 
 - `api/services/CloudResource/AzureResourceService.ts` (evidence, history, tenant evidence), `api/services/ReportingSettings/ReportingSettingsMerge.ts`
 - `cloud-engine/apps/azure/src/Libraries/Repositories/RecommendationAuditRepository.ts` (reverse time)
 - `types-package/src/scheduler/index.ts`, `package.json` (subpath pattern)
+
+Native provider scope compatibility: V1 retains the stored `subscriptionIds` field and the existing sorted, de-duplicated, lower-case comma-joined hash preimage (including the unchanged optional schedule suffix). Azure GUIDs and native AWS 12-digit account IDs have disjoint syntax; no provider prefix or hash migration is introduced. Leading zeroes remain part of the account string. `isReportGuid` remains Azure-only; `isReportProviderScopeId` validates only syntax and never grants access. API and worker consumers must independently prove company ownership, provider and cloud-account/native-account linkage using trusted indexed records, enforce provider feature permissions, route native artifacts by provider, and reject report types without a supported provider builder. Accepting the V1 syntax alone does not enable AWS reporting.
+
+AWS identifier reference: [AWS Account Management account identifiers](https://docs.aws.amazon.com/accounts/latest/reference/manage-acct-identifiers.html) defines the 12-digit native account ID and explicitly illustrates a leading-zero account. Numeric coercion would destroy that identity.

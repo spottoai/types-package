@@ -11,7 +11,7 @@ import {
   isCalendarDate,
   isPlainRecord,
   isReportEntityId,
-  isReportGuid,
+  isReportProviderScopeId,
   utf8ByteLength,
 } from '../shared/reportingIds';
 import { REPORT_PACK_REPORT_IDS, isReportPackReportId, type ReportPackConfigurationV1 } from './reportPack';
@@ -30,7 +30,7 @@ export const REPORT_JOB_SPEC_MAX_BYTES = 32 * 1024;
 export interface ReportJobScopeV1 {
   /** 1..20 company-owned cloud account IDs, sorted. */
   cloudAccountIds: string[];
-  /** 1..200 subscription GUIDs, lower-cased and sorted. */
+  /** 1..200 Azure subscription GUIDs or native AWS account IDs, lower-cased and sorted. */
   subscriptionIds: string[];
 }
 
@@ -145,7 +145,7 @@ const parseScope = (value: unknown, errors: string[]): ReportJobScopeV1 | undefi
     valid = false;
   } else {
     subscriptionIds.forEach((id, index) => {
-      if (typeof id !== 'string' || !isReportGuid(id.trim())) {
+      if (typeof id !== 'string' || !isReportProviderScopeId(id.trim())) {
         errors.push(`scope.subscriptionIds[${index}]: invalid subscription ID`);
         valid = false;
       }

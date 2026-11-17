@@ -20,6 +20,7 @@ export {
   isIsoUtcTimestamp,
   isReportEntityId,
   isReportGuid,
+  isReportProviderScopeId,
   isReportJobCompanyId,
   REPORT_ENTITY_ID_PATTERN,
   REPORT_JOB_COMPANY_ID_MAX_LENGTH,

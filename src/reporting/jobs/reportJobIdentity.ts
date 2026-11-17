@@ -5,7 +5,7 @@
  * The API and cloud-engine must derive it identically, so both use these functions.
  */
 import { sha256Hex } from '../shared/reportingDigest';
-import { isIsoUtcTimestamp, isReportEntityId, isReportGuid, isReportJobCompanyId } from '../shared/reportingIds';
+import { isIsoUtcTimestamp, isReportEntityId, isReportProviderScopeId, isReportJobCompanyId } from '../shared/reportingIds';
 import { isReportJobReportType, normalizeReportSubscriptionIds, type ReportJobReportType } from './reportJobSpec';
 
 /** The `recommendationsevents` reverse-time convention: 19 nines minus Unix milliseconds, zero-padded to 19 digits. */
@@ -45,7 +45,7 @@ export interface ReportJobScopeHashInput {
 
 /** First 16 hex characters of SHA-256 over the sorted, lower-cased subscription IDs joined with `,` (then `|{scheduleId}`). */
 export const buildReportJobScopeHash = async ({ subscriptionIds, scheduleId }: ReportJobScopeHashInput): Promise<string> => {
-  if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && isReportGuid(id.trim()))) {
+  if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && isReportProviderScopeId(id.trim()))) {
     throw new Error('Report job scope hash needs at least one valid subscription ID.');
   }
   if (scheduleId !== undefined && !isReportEntityId(scheduleId)) throw new Error('Report job scope hash: invalid schedule ID.');
