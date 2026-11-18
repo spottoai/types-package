@@ -5,7 +5,7 @@
  * Parsing is strict (unknown fields fail) and normalising: subscription IDs are lower-cased, de-duplicated and
  * sorted, so equal requests serialise to the same canonical JSON.
  */
-import { hasExactlyKeys, isBoundedPlainText, isCalendarDate, isPlainRecord, isReportEntityId, isReportGuid, utf8ByteLength, } from '../shared/reportingIds.js';
+import { hasExactlyKeys, isBoundedPlainText, isCalendarDate, isPlainRecord, isReportEntityId, isReportProviderScopeId, utf8ByteLength, } from '../shared/reportingIds.js';
 import { REPORT_PACK_REPORT_IDS, isReportPackReportId } from './reportPack.js';
 export const REPORT_JOB_SPEC_SCHEMA_VERSION = 1;
 export const REPORT_JOB_REPORT_TYPES = ['sdm', 'architecture-assessment', 'report-pack'];
@@ -53,7 +53,7 @@ const parseScope = (value, errors) => {
     }
     else {
         subscriptionIds.forEach((id, index) => {
-            if (typeof id !== 'string' || !isReportGuid(id.trim())) {
+            if (typeof id !== 'string' || !isReportProviderScopeId(id.trim())) {
                 errors.push(`scope.subscriptionIds[${index}]: invalid subscription ID`);
                 valid = false;
             }
@@ -206,13 +206,22 @@ const parseCurrentStateConfiguration = (value, errors) => {
     };
 };
 const parseSpecUnsafe = (input) => {
+    const result = parseSpecWithoutCurrency(input);
+    if (!result.ok || !isPlainRecord(input) || input.displayCurrency === undefined)
+        return result;
+    if (typeof input.displayCurrency !== 'string' || !CURRENCY_PATTERN.test(input.displayCurrency))
+        return { ok: false, errors: ['displayCurrency: must be a three-letter upper-case ISO 4217 code'] };
+    return { ok: true, value: { ...result.value, displayCurrency: input.displayCurrency } };
+};
+const OPTIONAL_SPEC_KEYS = ['displayCurrency'];
+const parseSpecWithoutCurrency = (input) => {
     const errors = [];
     if (!isPlainRecord(input))
         return { ok: false, errors: ['spec: must be an object'] };
     if (input.schemaVersion !== REPORT_JOB_SPEC_SCHEMA_VERSION)
         return { ok: false, errors: ['schemaVersion: must be 1'] };
     if (input.reportType === 'sdm') {
-        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'period', 'configuration'])) {
+        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'period', 'configuration'], OPTIONAL_SPEC_KEYS)) {
             return { ok: false, errors: ['spec: SDM needs exactly schemaVersion, reportType, scope, period and configuration'] };
         }
         const scope = parseScope(input.scope, errors);
@@ -223,7 +232,7 @@ const parseSpecUnsafe = (input) => {
         return { ok: true, value: { schemaVersion: 1, reportType: 'sdm', scope, period, configuration } };
     }
     if (input.reportType === 'architecture-assessment') {
-        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration'])) {
+        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration'], OPTIONAL_SPEC_KEYS)) {
             return { ok: false, errors: ['spec: Current State needs exactly schemaVersion, reportType, scope and configuration (no period)'] };
         }
         const scope = parseScope(input.scope, errors);
@@ -233,7 +242,7 @@ const parseSpecUnsafe = (input) => {
         return { ok: true, value: { schemaVersion: 1, reportType: 'architecture-assessment', scope, configuration } };
     }
     if (input.reportType === 'report-pack') {
-        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration']))
+        if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration'], OPTIONAL_SPEC_KEYS))
             return { ok: false, errors: ['spec: Report Pack needs exactly schemaVersion, reportType, scope and configuration'] };
         const scope = parseScope(input.scope, errors);
         const config = input.configuration;
@@ -268,6 +277,10 @@ export const parseReportJobSpecV1 = (input) => {
     }
 };
 const canonicalSpecObject = (spec) => {
+    const base = canonicalSpecWithoutCurrency(spec);
+    return spec.displayCurrency === undefined ? base : { ...base, displayCurrency: spec.displayCurrency };
+};
+const canonicalSpecWithoutCurrency = (spec) => {
     const scope = { cloudAccountIds: spec.scope.cloudAccountIds, subscriptionIds: spec.scope.subscriptionIds };
     if (spec.reportType === 'report-pack')
         return {

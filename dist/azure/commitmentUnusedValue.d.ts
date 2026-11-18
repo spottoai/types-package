@@ -29,6 +29,8 @@ export type CommitmentUnusedValueEvidence = CommitmentUnusedValueContext & (({
     currency: string;
     sourceCharge: {
         amount: number;
+        /** Original charge currency. Display conversion must retain this when the exposure currency changes. */
+        currency?: string;
         dates: string[];
         cadence?: 'monthly';
         periodStart?: string;

@@ -15,6 +15,6 @@ export * from './reportJobLifecycle.js';
 export * from './reportJobRecovery.js';
 export * from './reportJobSaga.js';
 export { sha256Hex, SHA256_HEX_PATTERN } from '../shared/reportingDigest.js';
-export { isIanaTimeZone, isIsoUtcTimestamp, isReportEntityId, isReportGuid, isReportJobCompanyId, REPORT_ENTITY_ID_PATTERN, REPORT_JOB_COMPANY_ID_MAX_LENGTH, } from '../shared/reportingIds.js';
+export { isIanaTimeZone, isIsoUtcTimestamp, isReportEntityId, isReportGuid, isReportProviderScopeId, isReportJobCompanyId, REPORT_ENTITY_ID_PATTERN, REPORT_JOB_COMPANY_ID_MAX_LENGTH, } from '../shared/reportingIds.js';
 export { normalizeReportTableEntity, REPORT_TABLE_SYSTEM_FIELDS, toReportTableSdkEntity } from '../shared/reportTableEntities.js';
 export { isReportFileName, sanitizeReportingPathSegment } from '../shared/reportingPaths.js';

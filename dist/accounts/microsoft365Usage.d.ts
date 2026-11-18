@@ -27,6 +27,22 @@ export interface Microsoft365WorkloadLicense {
     /** Date the workload license was assigned, yyyy-mm-dd; null when unlicensed or not reported. */
     assignedOn: string | null;
 }
+/** Copilot v2 D28 observations; missing columns are partial evidence, never zero use. */
+export interface Microsoft365CopilotAdoption {
+    windowDays: 28;
+    reportRefreshDate: string | null;
+    evidence: 'complete' | 'partial';
+    prompts: {
+        all: number | null;
+        chatWork: number | null;
+        chatWeb: number | null;
+        other: number | null;
+    };
+    activeDays: number | null;
+    appLastActivityDates: Record<'chatWork' | 'chatWeb' | 'teams' | 'word' | 'excel' | 'powerPoint' | 'outlook' | 'oneNote' | 'loop' | 'microsoft365' | 'edge' | 'agent', string | null>;
+    /** True only for complete, consistent, positive web-only use and no paid app/agent activity. */
+    webOnly: boolean | null;
+}
 export interface Microsoft365AccountUsage {
     status: Microsoft365UsageStatus;
     /** Latest workload date, yyyy-mm-dd; null when none or unknown. */
@@ -61,6 +77,8 @@ export interface Microsoft365AccountUsage {
         allocatedBytes: number | null;
     } | null;
     copilotLastActivityDate: string | null;
+    officeDesktopAppsUsed?: boolean | null;
+    copilotAdoption?: Microsoft365CopilotAdoption | null;
 }
 /** Counts of assigned, enabled accounts holding one SKU, over the full population before detail trimming. */
 export interface Microsoft365LicenseProductUsage {
@@ -156,6 +174,7 @@ export declare function isMicrosoft365UsageDate(value: unknown): value is string
 export declare function isMicrosoft365AccountProfile(value: unknown): value is Microsoft365AccountProfile;
 export declare function isMicrosoft365WorkloadLicense(value: unknown): value is Microsoft365WorkloadLicense;
 export declare function isMicrosoft365AccountUsage(value: unknown): value is Microsoft365AccountUsage;
+export declare function isMicrosoft365CopilotAdoption(value: unknown): value is Microsoft365CopilotAdoption;
 export declare function isMicrosoft365LicenseProductUsage(value: unknown): value is Microsoft365LicenseProductUsage;
 export declare function isMicrosoft365LicenseHistoryUsage(value: unknown): value is Microsoft365LicenseHistoryUsage;
 export declare function isMicrosoft365UsageSummary(value: unknown): value is Microsoft365UsageSummary;

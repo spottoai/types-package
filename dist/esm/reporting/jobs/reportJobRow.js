@@ -11,6 +11,7 @@ import { isReportFileName } from '../shared/reportingPaths.js';
 import { isReportJobFileNameForType } from './reportPack.js';
 import { hasExactlyKeys, isBoundedPlainText, isIsoUtcTimestamp, isPlainRecord, isReportEntityId, isReportJobCompanyId, utf8ByteLength, } from '../shared/reportingIds.js';
 import { normalizeReportTableEntity } from '../shared/reportTableEntities.js';
+import { CURRENCY_CONVERSION_RATE_SOURCE } from '../../common/currencyConversion.js';
 import { buildReportJobScopeHash, deriveReportJobIdentity, parseReportJobId } from './reportJobIdentity.js';
 import { parseReportJobNotificationDestinationCountsV1 } from './reportJobNotifications.js';
 import { parseReportJobRequestJson, REPORT_JOB_SPEC_MAX_BYTES, serializeReportJobSpecV1, } from './reportJobSpec.js';
@@ -19,6 +20,33 @@ export const REPORT_JOB_ROW_SCHEMA_VERSION = 1;
 export const REPORT_JOB_TRIGGERS = ['api', 'schedule'];
 /** UTF-8 byte limit of `sourceCoverageSummary` (a JSON object). */
 export const REPORT_JOB_COVERAGE_SUMMARY_MAX_BYTES = 8 * 1024;
+export const REPORT_JOB_CURRENCY_SNAPSHOT_MAX_BYTES = 4 * 1024;
+/** Strict shape check of a stored snapshot. Freshness belongs to the producer at acceptance time. */
+export const parseReportJobCurrencyRateSnapshotV1 = (value) => {
+    try {
+        if (typeof value !== 'string' || utf8ByteLength(value) > REPORT_JOB_CURRENCY_SNAPSHOT_MAX_BYTES)
+            return null;
+        const parsed = JSON.parse(value);
+        if (!isPlainRecord(parsed) || !hasExactlyKeys(parsed, ['rateDate', 'rateSnapshotId', 'rateSource', 'rates']))
+            return null;
+        const { rateDate, rateSnapshotId, rateSource, rates } = parsed;
+        if (typeof rateDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(rateDate) || Number.isNaN(Date.parse(`${rateDate}T00:00:00Z`)))
+            return null;
+        if (typeof rateSnapshotId !== 'string' || !SHA256_HEX_PATTERN.test(rateSnapshotId))
+            return null;
+        if (rateSource !== CURRENCY_CONVERSION_RATE_SOURCE || !isPlainRecord(rates))
+            return null;
+        const entries = Object.entries(rates);
+        if (entries.length === 0 ||
+            entries.length > 64 ||
+            !entries.every(([code, rate]) => /^[A-Z]{3}$/.test(code) && typeof rate === 'string' && /^\d+(?:\.\d+)?$/.test(rate) && Number(rate) > 0))
+            return null;
+        return { rateDate, rateSnapshotId, rateSource, rates: Object.fromEntries(entries) };
+    }
+    catch {
+        return null;
+    }
+};
 export const REPORT_JOB_PRODUCER_FIELDS = [
     'PartitionKey',
     'RowKey',
@@ -37,6 +65,7 @@ export const REPORT_JOB_PRODUCER_FIELDS = [
     'requestSha256',
     'fileName',
     'notificationPolicyId',
+    'currencyRateSnapshotJson',
 ];
 export const REPORT_JOB_WORKER_FIELDS = [
     'status',
@@ -124,6 +153,7 @@ const validateShape = (row, errors) => {
     // Requesters are identified by user ID, never by e-mail address.
     check('requestedByUserId', isOptional(row.requestedByUserId, value => isText(128)(value) && !value.includes('@')));
     check('notificationPolicyId', isOptional(row.notificationPolicyId, isReportEntityId));
+    check('currencyRateSnapshotJson', isOptional(row.currencyRateSnapshotJson, value => parseReportJobCurrencyRateSnapshotV1(value) !== null));
     check('coalescedOccurrenceCount', isOptional(row.coalescedOccurrenceCount, value => isCount(value) && value >= 1));
     if (row.trigger === 'schedule') {
         check('scheduleId', isReportEntityId(row.scheduleId));
@@ -230,6 +260,11 @@ export const parseReportJobRowV1 = async (entity) => {
             return { ok: false, code: 'request-invalid', errors: ['period: schedule jobs require a period rule'] };
         if (spec.value.reportType !== row.reportType)
             return { ok: false, code: 'request-invalid', errors: ['reportType: does not match the request'] };
+        if (row.currencyRateSnapshotJson !== undefined) {
+            const snapshot = parseReportJobCurrencyRateSnapshotV1(row.currencyRateSnapshotJson);
+            if (!spec.value.displayCurrency || !snapshot || snapshot.rates[spec.value.displayCurrency] === undefined)
+                return { ok: false, code: 'request-invalid', errors: ['currencyRateSnapshotJson: must quote the requested displayCurrency'] };
+        }
         const scopeHash = await buildReportJobScopeHash({
             subscriptionIds: spec.value.scope.subscriptionIds,
             scheduleId: row.trigger === 'schedule' ? row.scheduleId : undefined,
@@ -281,6 +316,16 @@ export const buildReportJobRowV1 = async (input) => {
         requestSha256: await sha256Hex(requestJson),
         fileName: input.fileName,
         ...(input.notificationPolicyId === undefined ? {} : { notificationPolicyId: input.notificationPolicyId }),
+        ...(input.currencyRateSnapshot === undefined
+            ? {}
+            : {
+                currencyRateSnapshotJson: JSON.stringify({
+                    rateDate: input.currencyRateSnapshot.rateDate,
+                    rateSnapshotId: input.currencyRateSnapshot.rateSnapshotId,
+                    rateSource: input.currencyRateSnapshot.rateSource,
+                    rates: input.currencyRateSnapshot.rates,
+                }),
+            }),
         status: 'accepted',
         attemptCount: 0,
         notificationStatus: 'none',

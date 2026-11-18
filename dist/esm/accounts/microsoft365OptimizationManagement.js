@@ -1,0 +1,20 @@
+/** Application byte limits apply before parsing. Guards also bound every collection and reject actor/scope injection. */
+export const MICROSOFT365_OPTIMIZATION_MANAGEMENT_LIMITS = {
+    configurationBytes: 1024 * 1024,
+    catalogueBytes: 4 * 1024 * 1024,
+    summaryResponseBytes: 6 * 1024 * 1024,
+    managementResponseBytes: 8 * 1024 * 1024,
+    previewBytes: 3 * 1024 * 1024,
+    historyBytes: 2 * 1024 * 1024,
+    accountListBytes: 4 * 1024 * 1024,
+    accountResponseBytes: 512 * 1024,
+    subscriptionTerms: 1000,
+    termPrices: 1000,
+    protectionCoverage: 200,
+    scopeIdentities: 1000,
+    catalogueProducts: 1000,
+    catalogueOffers: 4000,
+    catalogueServicePlans: 4000,
+    accountPageSize: 5000,
+    accountPages: 2000,
+};

@@ -1,0 +1,434 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isAzureBillingDriversV1 = exports.isAzureBillingOverviewV1 = void 0;
+const billingFacts_js_1 = require("./billingFacts.js");
+const financialChargePolicy_js_1 = require("./financialChargePolicy.js");
+const bases = ['billed', 'amortized'];
+const amounts = ['totalMinorUnits', 'billingBackedMinorUnits', 'estimatedMinorUnits'];
+const partitions = ['allCharge', 'azureNative', 'azureNativeDiscountEligible', 'marketplace', 'unknown'];
+const materialKeys = ['nonZeroRowCount', 'billedAbsoluteMinorUnits', 'amortizedAbsoluteMinorUnits'];
+const rowCountKeys = ['billingBackedRowCount', 'estimatedRowCount'];
+const moneyReasons = new Set(['billing-unavailable', 'not-produced', 'currency-unresolved', 'coverage-unproven']);
+const driverReasons = new Set(['byte-budget-exceeded', 'group-limit-exceeded', 'source-unavailable', 'currency-unresolved', 'reconciliation-failed']);
+const dayMilliseconds = 86400000;
+const isRecord = (v) => typeof v === 'object' && v !== null && !Array.isArray(v) && (Object.getPrototypeOf(v) === Object.prototype || Object.getPrototypeOf(v) === null);
+const fields = (v, names) => Object.keys(v).length === names.length && names.every(name => Object.prototype.hasOwnProperty.call(v, name));
+const text = (v, max = 256) => typeof v === 'string' && v.length > 0 && v.length <= max && v === v.trim() && !/[\p{Cc}\p{Cf}\u2028\u2029]/u.test(v);
+const identity = (v) => text(v, 128) && /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/u.test(v) && !v.includes('..');
+const safeInteger = (v) => typeof v === 'number' && Number.isSafeInteger(v);
+const count = (v) => safeInteger(v) && v >= 0;
+const sum = (values) => {
+    let result = 0;
+    for (const value of values) {
+        result += value;
+        if (!Number.isSafeInteger(result))
+            return undefined;
+    }
+    return result;
+};
+const isDate = (v) => {
+    if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(v))
+        return false;
+    const date = new Date(`${v}T00:00:00.000Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === v;
+};
+const isPeriod = (v) => isRecord(v) &&
+    fields(v, ['startDate', 'endDateExclusive']) &&
+    isDate(v.startDate) &&
+    isDate(v.endDateExclusive) &&
+    Date.parse(v.endDateExclusive) - Date.parse(v.startDate) === billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow * dayMilliseconds;
+const samePeriod = (a, b) => a.startDate === b.startDate && a.endDateExclusive === b.endDateExclusive;
+const inPeriod = (date, period) => date >= period.startDate && date < period.endDateExclusive;
+const unavailable = (v, reasons = moneyReasons) => isRecord(v) && fields(v, ['status', 'reasonCode']) && v.status === 'unavailable' && typeof v.reasonCode === 'string' && reasons.has(v.reasonCode);
+const isBasis = (v) => unavailable(v) ||
+    (isRecord(v) &&
+        fields(v, ['status', ...amounts]) &&
+        v.status === 'available' &&
+        amounts.every(key => safeInteger(v[key])) &&
+        sum([v.billingBackedMinorUnits, v.estimatedMinorUnits]) === v.totalMinorUnits);
+const isSourceTotals = (v) => isRecord(v) && fields(v, bases) && bases.every(basis => isBasis(v[basis]));
+const isMaterial = (v) => isRecord(v) &&
+    fields(v, materialKeys) &&
+    materialKeys.every(key => count(v[key])) &&
+    (v.nonZeroRowCount === 0
+        ? v.billedAbsoluteMinorUnits === 0 && v.amortizedAbsoluteMinorUnits === 0
+        : v.billedAbsoluteMinorUnits > 0 || v.amortizedAbsoluteMinorUnits > 0);
+const isSource = (v) => {
+    if (!isRecord(v) ||
+        !fields(v, ['companyId', 'subscriptionId', 'portalGenerationId', 'billingInputGenerationId', 'current', 'previous']) ||
+        !identity(v.companyId) ||
+        !identity(v.portalGenerationId) ||
+        !identity(v.billingInputGenerationId) ||
+        typeof v.subscriptionId !== 'string' ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(v.subscriptionId))
+        return false;
+    for (const key of ['current', 'previous']) {
+        const receipt = v[key];
+        const available = isRecord(receipt) && receipt.status === 'available';
+        if (!isRecord(receipt) ||
+            !fields(receipt, ['kind', 'period', 'fingerprint', 'status', ...(available ? ['sourcePath', 'etag'] : ['reasonCode'])]) ||
+            receipt.kind !== `${key}30Days` ||
+            !isPeriod(receipt.period) ||
+            !text(receipt.fingerprint))
+            return false;
+        if (available) {
+            if (receipt.sourcePath !== (key === 'current' ? 'history/billing/cost-last-30-days.json' : 'history/billing/cost-last-30-days-previous.json') ||
+                !text(receipt.etag))
+                return false;
+        }
+        else if (receipt.status !== 'unavailable' || typeof receipt.reasonCode !== 'string' || !moneyReasons.has(receipt.reasonCode))
+            return false;
+    }
+    const source = v;
+    return source.previous.period.endDateExclusive === source.current.period.startDate;
+};
+const isCurrency = (v) => unavailable(v, new Set(['currency-unresolved'])) ||
+    (isRecord(v) &&
+        fields(v, ['status', 'currencyCode', 'minorUnitScale', 'resolutionRef']) &&
+        v.status === 'verified' &&
+        typeof v.currencyCode === 'string' &&
+        /^[A-Z]{3}$/u.test(v.currencyCode) &&
+        count(v.minorUnitScale) &&
+        v.minorUnitScale <= 6 &&
+        text(v.resolutionRef));
+const isSpend = (v, source, period, currency, sourceAvailable) => {
+    if (unavailable(v, new Set([...moneyReasons, 'reconciliation-failed'])))
+        return true;
+    if (!sourceAvailable ||
+        currency.status !== 'verified' ||
+        !isRecord(v) ||
+        !fields(v, ['status', ...partitions, ...rowCountKeys, 'discountEligibility', 'unknownMaterial']) ||
+        !isRecord(v.discountEligibility) ||
+        !rowCountKeys.every(key => count(v[key])))
+        return false;
+    const rowCount = sum(rowCountKeys.map(key => v[key]));
+    if (rowCount === undefined)
+        return false;
+    const eligibility = v.discountEligibility;
+    if (eligibility.status === 'available') {
+        if (!fields(eligibility, ['status', 'value']) || !(0, financialChargePolicy_js_1.isAzureNativeDiscountEligibilityV1)(eligibility.value))
+            return false;
+    }
+    else if (!unavailable(eligibility))
+        return false;
+    if (!isSourceTotals(v.azureNativeDiscountEligible))
+        return false;
+    const eligibleTotals = v.azureNativeDiscountEligible;
+    if (eligibility.status === 'unavailable' && bases.some(basis => eligibleTotals[basis].status !== 'unavailable'))
+        return false;
+    if (!(0, financialChargePolicy_js_1.isAzureFinancialChargeSpendBreakdownV1)({
+        contractVersion: 'financial-charge-spend/v1',
+        policyRef: financialChargePolicy_js_1.AZURE_CLOUD_SERVICES_EXCLUDING_MARKETPLACE_POLICY_REF_V1,
+        generationId: source.portalGenerationId,
+        subject: { kind: 'provider-scope', providerScopeId: source.subscriptionId },
+        period,
+        currencyCode: currency.currencyCode,
+        minorUnitScale: currency.minorUnitScale,
+        status: v.status,
+        allCharge: v.allCharge,
+        azureNative: v.azureNative,
+        marketplace: v.marketplace,
+        unknown: v.unknown,
+        unknownMaterial: v.unknownMaterial,
+        azureNativeDiscountEligible: v.azureNativeDiscountEligible,
+        ...(eligibility.status === 'available' ? { azureNativeDiscountEligibility: eligibility.value } : {}),
+    }))
+        return false;
+    const spend = v;
+    if (spend.unknownMaterial.nonZeroRowCount > rowCount)
+        return false;
+    return partitions.every(partition => bases.every(basis => {
+        const amount = spend[partition][basis];
+        return (amount.status === 'unavailable' ||
+            ((spend.billingBackedRowCount !== 0 || amount.billingBackedMinorUnits === 0) &&
+                (spend.estimatedRowCount !== 0 || amount.estimatedMinorUnits === 0)));
+    }));
+};
+const isCoverage = (v, period, sourceAvailable) => {
+    if (!isRecord(v) ||
+        !fields(v, ['status', 'rowCount', 'rowsWithoutDate', 'provenDates', 'observedDateRange']) ||
+        !['complete', 'partial', 'unavailable'].includes(v.status) ||
+        !count(v.rowCount) ||
+        !count(v.rowsWithoutDate) ||
+        v.rowsWithoutDate > v.rowCount ||
+        !Array.isArray(v.provenDates) ||
+        v.provenDates.length > billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow)
+        return false;
+    if (![...v.provenDates].every((date, i, dates) => isDate(date) && inPeriod(date, period) && (i === 0 || date > dates[i - 1])))
+        return false;
+    if (v.observedDateRange !== null) {
+        const range = v.observedDateRange;
+        if (!isRecord(range) ||
+            !fields(range, ['startDate', 'endDateInclusive']) ||
+            !isDate(range.startDate) ||
+            !isDate(range.endDateInclusive) ||
+            !inPeriod(range.startDate, period) ||
+            !inPeriod(range.endDateInclusive, period) ||
+            range.startDate > range.endDateInclusive ||
+            v.rowCount === v.rowsWithoutDate)
+            return false;
+    }
+    else if (v.rowCount > v.rowsWithoutDate)
+        return false;
+    if (!sourceAvailable || v.status === 'unavailable')
+        return !sourceAvailable && v.status === 'unavailable' && v.rowCount === 0 && v.provenDates.length === 0 && v.observedDateRange === null;
+    return v.status !== 'complete' || (v.provenDates.length === billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow && v.rowsWithoutDate === 0);
+};
+const isDaily = (v, window, currency, sourceAvailable) => {
+    if (!isRecord(v) || !isDate(v.date) || !inPeriod(v.date, window.period))
+        return false;
+    if (v.status === 'unknown')
+        return fields(v, ['date', 'status', 'reasonCode']) && typeof v.reasonCode === 'string' && moneyReasons.has(v.reasonCode);
+    if (!sourceAvailable ||
+        currency.status !== 'verified' ||
+        window.spend.status === 'unavailable' ||
+        !fields(v, ['date', 'status', ...rowCountKeys, 'allCharge', 'azureNativeDiscountEligible', 'unknownMaterial']) ||
+        !rowCountKeys.every(key => count(v[key])) ||
+        (v.status !== 'observed' && v.status !== 'verified-zero') ||
+        !isSourceTotals(v.allCharge) ||
+        !isSourceTotals(v.azureNativeDiscountEligible) ||
+        !isMaterial(v.unknownMaterial))
+        return false;
+    const rowCount = sum(rowCountKeys.map(key => v[key]));
+    if (rowCount === undefined || v.unknownMaterial.nonZeroRowCount > rowCount || (v.status === 'observed' && rowCount === 0))
+        return false;
+    for (const partition of [v.allCharge, v.azureNativeDiscountEligible]) {
+        if (bases.some(basis => {
+            const amount = partition[basis];
+            return (amount.status === 'available' &&
+                ((v.billingBackedRowCount === 0 && amount.billingBackedMinorUnits !== 0) || (v.estimatedRowCount === 0 && amount.estimatedMinorUnits !== 0)));
+        }))
+            return false;
+    }
+    if (v.status === 'observed' &&
+        (window.coverage.observedDateRange === null ||
+            v.date < window.coverage.observedDateRange.startDate ||
+            v.date > window.coverage.observedDateRange.endDateInclusive))
+        return false;
+    for (const basis of bases) {
+        if (v.azureNativeDiscountEligible[basis].status === 'available' && v.allCharge[basis].status !== 'available')
+            return false;
+        if (window.spend.discountEligibility.status === 'unavailable' && v.azureNativeDiscountEligible[basis].status !== 'unavailable')
+            return false;
+    }
+    if (v.status !== 'verified-zero')
+        return true;
+    const material = v.unknownMaterial;
+    const allCharge = v.allCharge;
+    return (window.coverage.provenDates.includes(v.date) &&
+        materialKeys.every(key => material[key] === 0) &&
+        bases.some(basis => allCharge[basis].status === 'available') &&
+        [v.allCharge, v.azureNativeDiscountEligible].every(partition => bases.every(basis => {
+            const value = partition[basis];
+            return value.status === 'unavailable' || amounts.every(key => value[key] === 0);
+        })));
+};
+/**
+ * Validation only. Each of width independently rounded coordinates contributes
+ * at most half a minor unit at the parent and each child. BigInt subtraction
+ * preserves an exact comparison even for opposite signed safe-integer totals.
+ */
+const reconcilesInteger = (total, children, width = 0) => {
+    const childTotal = sum(children);
+    if (childTotal === undefined)
+        return false;
+    const difference = BigInt(total) - BigInt(childTotal);
+    const bound = BigInt(children.length === 0 ? 0 : Math.floor(((children.length + 1) * width) / 2));
+    return difference >= -bound && difference <= bound;
+};
+/** Sum already-produced canonical integers; never round, redistribute or project money. */
+const reconcilesBasis = (total, rows, independentRounding = false, allCharge = false) => {
+    if (total.status === 'unavailable')
+        return rows.length === 0 || rows.some(row => row.status === 'unavailable');
+    if (rows.some(row => row.status !== 'available'))
+        return false;
+    return amounts.every(key => reconcilesInteger(total[key], rows.map(row => (row.status === 'available' ? row[key] : 0)), independentRounding ? (key === 'totalMinorUnits' ? (allCharge ? 6 : 2) : allCharge ? 3 : 1) : 0));
+};
+const reconcilesMaterial = (total, rows, independentRounding = false) => materialKeys.every(key => {
+    const values = rows.map(row => row[key]);
+    if (independentRounding && key === 'nonZeroRowCount') {
+        // Materiality is thresholded at each scope. A child gross amount can round
+        // to zero while contributing rows remain material at the parent scope.
+        const childCount = sum(values);
+        return childCount !== undefined && childCount <= total[key];
+    }
+    return reconcilesInteger(total[key], values, independentRounding ? 1 : 0);
+});
+const isWindow = (v, key, source, currency, daily) => {
+    const receipt = source[key];
+    const hasRoundingMode = isRecord(v) && Object.prototype.hasOwnProperty.call(v, 'roundingMode');
+    if (!isRecord(v) ||
+        !fields(v, ['period', 'spend', ...(daily ? ['coverage', 'daily'] : []), ...(hasRoundingMode ? ['roundingMode'] : [])]) ||
+        (hasRoundingMode && (!daily || v.roundingMode !== 'independent-minor-units')) ||
+        !isPeriod(v.period) ||
+        !samePeriod(v.period, receipt.period) ||
+        !isSpend(v.spend, source, receipt.period, currency, receipt.status === 'available'))
+        return false;
+    if (!daily)
+        return true;
+    if (!isCoverage(v.coverage, receipt.period, receipt.status === 'available') || !Array.isArray(v.daily) || v.daily.length > billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow)
+        return false;
+    const window = v;
+    if (window.spend.status !== 'unavailable') {
+        if (sum(rowCountKeys.map(key => (window.spend.status !== 'unavailable' ? window.spend[key] : 0))) !== window.coverage.rowCount)
+            return false;
+        if (window.spend.unknownMaterial.nonZeroRowCount > window.coverage.rowCount)
+            return false;
+        if (window.coverage.rowCount === 0 &&
+            partitions.some(partition => bases.some(basis => {
+                const amount = window.spend.status !== 'unavailable' ? window.spend[partition][basis] : undefined;
+                return amount?.status === 'available' && amounts.some(key => amount[key] !== 0);
+            })))
+            return false;
+    }
+    if (![...window.daily].every((point, i, points) => isDaily(point, window, currency, receipt.status === 'available') && (i === 0 || point.date > points[i - 1].date)))
+        return false;
+    if (window.coverage.status === 'complete' && window.daily.length !== billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow)
+        return false;
+    const known = window.daily.filter((point) => point.status !== 'unknown');
+    const independentRounding = window.roundingMode === 'independent-minor-units' && window.coverage.rowsWithoutDate === 0 && known.length === billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow;
+    const knownRowCount = sum(known.map(point => sum(rowCountKeys.map(key => point[key]))));
+    if (knownRowCount === undefined || knownRowCount > window.coverage.rowCount - window.coverage.rowsWithoutDate)
+        return false;
+    if (window.spend.status !== 'unavailable' &&
+        rowCountKeys.some(key => {
+            const observedCount = sum(known.map(point => point[key]));
+            return observedCount === undefined || observedCount > (window.spend.status !== 'unavailable' ? window.spend[key] : 0);
+        }))
+        return false;
+    if (window.spend.status !== 'unavailable' &&
+        materialKeys.some(key => {
+            const observedMaterial = sum(known.map(point => point.unknownMaterial[key]));
+            if (observedMaterial === undefined)
+                return true;
+            const parentMaterial = window.spend.status !== 'unavailable' ? window.spend.unknownMaterial[key] : 0;
+            if (window.roundingMode === 'independent-minor-units' && key !== 'nonZeroRowCount') {
+                // Gross raw subset <= gross raw parent. Nearest rounding can make k
+                // separately rounded known days exceed that parent by floor((k+1)/2).
+                const bound = BigInt(Math.floor((known.length + 1) / 2));
+                return BigInt(observedMaterial) - BigInt(parentMaterial) > bound;
+            }
+            return observedMaterial > parentMaterial;
+        }))
+        return false;
+    if (window.spend.status !== 'unavailable' && window.coverage.rowsWithoutDate === 0 && known.length === billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDaysPerWindow) {
+        for (const partition of ['allCharge', 'azureNativeDiscountEligible']) {
+            if (!bases.every(basis => reconcilesBasis(window.spend.status !== 'unavailable' ? window.spend[partition][basis] : { status: 'unavailable', reasonCode: 'not-produced' }, known.map(point => point[partition][basis]), independentRounding, partition === 'allCharge')))
+                return false;
+        }
+        if (!reconcilesMaterial(window.spend.unknownMaterial, known.map(point => point.unknownMaterial), independentRounding))
+            return false;
+        if (!rowCountKeys.every(key => sum(known.map(point => point[key])) === (window.spend.status !== 'unavailable' ? window.spend[key] : undefined)))
+            return false;
+    }
+    return true;
+};
+const reconcilesSpends = (total, rows, independentRounding = false) => {
+    if (total.status === 'unavailable')
+        return rows.every(row => row.status === 'unavailable');
+    if (rows.some(row => row.status === 'unavailable'))
+        return false;
+    const present = rows;
+    if (!rowCountKeys.every(key => sum(present.map(row => row[key])) === total[key]))
+        return false;
+    if (!partitions.every(partition => bases.every(basis => reconcilesBasis(total[partition][basis], present.map(row => row[partition][basis]), independentRounding, partition === 'allCharge'))) ||
+        !reconcilesMaterial(total.unknownMaterial, present.map(row => row.unknownMaterial), independentRounding))
+        return false;
+    // Membership is gross row evidence. An empty native group can be all-eligible;
+    // neither zero amounts nor group membership labels prove aggregate membership.
+    return true;
+};
+const isGrouping = (v, source, currency, current, previous) => {
+    if (unavailable(v, driverReasons))
+        return true;
+    const hasRoundingMode = isRecord(v) && Object.prototype.hasOwnProperty.call(v, 'roundingMode');
+    if (!isRecord(v) ||
+        !fields(v, ['status', 'rows', ...(hasRoundingMode ? ['roundingMode'] : [])]) ||
+        (hasRoundingMode && v.roundingMode !== 'independent-minor-units') ||
+        v.status !== 'complete' ||
+        !Array.isArray(v.rows) ||
+        v.rows.length > billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxDriverRowsPerGrouping)
+        return false;
+    const seen = new Set();
+    for (const row of v.rows) {
+        if (!isRecord(row) ||
+            !fields(row, ['id', 'label', 'current', 'previous']) ||
+            !text(row.id) ||
+            !text(row.label, billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.maxLabelLength) ||
+            /(?:^|\/)\.\.?(?:\/|$)|[\\?#%]/u.test(row.id) ||
+            seen.has(row.id))
+            return false;
+        seen.add(row.id);
+        if (!isSpend(row.current, source, source.current.period, currency, source.current.status === 'available') ||
+            !isSpend(row.previous, source, source.previous.period, currency, source.previous.status === 'available'))
+            return false;
+    }
+    const grouping = v;
+    return (reconcilesSpends(current.spend, grouping.rows.map(row => row.current), grouping.roundingMode === 'independent-minor-units') &&
+        reconcilesSpends(previous.spend, grouping.rows.map(row => row.previous), grouping.roundingMode === 'independent-minor-units'));
+};
+const isHeader = (v, kind) => {
+    if (v.schemaVersion !== 1 ||
+        v.artifactKind !== kind ||
+        typeof v.generatedAt !== 'string' ||
+        !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(v.generatedAt))
+        return false;
+    const date = new Date(v.generatedAt);
+    return Number.isFinite(date.getTime()) && date.toISOString() === v.generatedAt && isSource(v.source) && isCurrency(v.currency);
+};
+/** UTF-8 size without a platform/DOM dependency. Structural validation bounds nesting and strings first. */
+const withinBudget = (v, maximum) => {
+    const json = JSON.stringify(v);
+    let bytes = 0;
+    for (const character of json) {
+        const code = character.codePointAt(0);
+        bytes += code <= 0x7f ? 1 : code <= 0x7ff ? 2 : code <= 0xffff ? 3 : 4;
+        if (bytes > maximum)
+            return false;
+    }
+    return true;
+};
+/** Structural/internal reconciliation guard; readers must additionally match the authorized owning manifest. */
+const isAzureBillingOverviewV1 = (v) => {
+    try {
+        if (!isRecord(v) ||
+            !fields(v, ['schemaVersion', 'artifactKind', 'generatedAt', 'source', 'currency', 'current', 'previous', 'drivers']) ||
+            !isHeader(v, 'billing-overview'))
+            return false;
+        const overview = v;
+        if (!isWindow(overview.current, 'current', overview.source, overview.currency, true) ||
+            !isWindow(overview.previous, 'previous', overview.source, overview.currency, true))
+            return false;
+        if (!unavailable(v.drivers, driverReasons) &&
+            !(isRecord(v.drivers) &&
+                fields(v.drivers, ['status', 'relativePath']) &&
+                v.drivers.status === 'available' &&
+                v.drivers.relativePath === 'billing-drivers.json'))
+            return false;
+        return withinBudget(v, billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.overviewMaxDecodedBytes);
+    }
+    catch {
+        return false;
+    }
+};
+exports.isAzureBillingOverviewV1 = isAzureBillingOverviewV1;
+/** Complete group populations only; global ranking happens after the current company projection. */
+const isAzureBillingDriversV1 = (v) => {
+    try {
+        if (!isRecord(v) ||
+            !fields(v, ['schemaVersion', 'artifactKind', 'generatedAt', 'source', 'currency', 'current', 'previous', 'service', 'resourceType']) ||
+            !isHeader(v, 'billing-drivers'))
+            return false;
+        const drivers = v;
+        return (isWindow(drivers.current, 'current', drivers.source, drivers.currency, false) &&
+            isWindow(drivers.previous, 'previous', drivers.source, drivers.currency, false) &&
+            isGrouping(drivers.service, drivers.source, drivers.currency, drivers.current, drivers.previous) &&
+            isGrouping(drivers.resourceType, drivers.source, drivers.currency, drivers.current, drivers.previous) &&
+            withinBudget(v, billingFacts_js_1.AZURE_BILLING_FACTS_LIMITS_V1.driversMaxDecodedBytes));
+    }
+    catch {
+        return false;
+    }
+};
+exports.isAzureBillingDriversV1 = isAzureBillingDriversV1;
+//# sourceMappingURL=billingFactsValidation.js.map

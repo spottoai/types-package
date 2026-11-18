@@ -1,4 +1,4 @@
-import { type Microsoft365PricingProjection } from './microsoft365PricingOverrides';
+import { type Microsoft365AgreementTerms, type Microsoft365PricingProjection } from './microsoft365PricingOverrides';
 import { type Microsoft365AccountReviewReason } from './microsoft365AccountReview';
 import { type Microsoft365PricingFacts } from './microsoft365PricingFacts';
 import { type Microsoft365AccountCapabilities, type Microsoft365CapabilityProjection, type Microsoft365ProductCapabilities } from './microsoft365Capabilities';
@@ -49,6 +49,8 @@ export interface Microsoft365LicenseCoverage extends Omit<Microsoft365LicenseSou
     notes?: 'workload_dates_omitted_for_size'[];
 }
 export interface Microsoft365LicenseRow {
+    /** Conditional stock/term review. Reference valuation never establishes cancellable contracted cash. */
+    commercialReview?: Microsoft365SeatCommercialReview;
     /** Full-population counts for enabled accounts holding this SKU; null when usage evidence is unavailable. */
     usage?: Microsoft365LicenseProductUsage | null;
     /** Live tenant service-plan evidence; absent on older snapshots. */
@@ -71,11 +73,46 @@ export interface Microsoft365LicenseRow {
     renewals?: Microsoft365LicenseRenewal[];
 }
 export interface Microsoft365LicenseRenewal {
+    sourceSubscriptionId?: string | null;
+    createdDateTime?: string | null;
+    observedAt?: string | null;
     /** Enabled, Warning (expired, in grace), Suspended, LockedOut or Deleted. */
     status: string | null;
     isTrial: boolean | null;
     totalLicenses: number | null;
     nextLifecycleDateTime: string | null;
+}
+export interface Microsoft365SeatCommercialReview {
+    observedAt: string;
+    candidateUnassignedUnits: number | null;
+    recentStockReview: 'review-owner-reseller' | 'not-indicated' | 'unassessed';
+    retainedEntitlements: 'unassessed';
+    accountPurposeAndAssignmentPaths: 'unassessed';
+    immediateRemoval: {
+        verifiedUnits: null;
+        monthlyCashReduction: null;
+        effectiveAt: null;
+    };
+    reassignment: {
+        candidateUnits: number | null;
+        status: 'owner-validation-required';
+    };
+    futureAvoidance: {
+        verifiedMonthlyAmount: null;
+        effectiveAt: null;
+    };
+    renewalReduction: {
+        verifiedUnits: null;
+        monthlyCashReduction: null;
+        effectiveAt: null;
+    };
+    referenceUnassignedMonthlyValues: Array<{
+        amount: number;
+        currency: string;
+        basis: 'list_price_estimate';
+    }>;
+    commercialTerms: 'unassessed';
+    unassignedAllocationToSubscriptions: 'unassessed';
 }
 export interface Microsoft365LicensedAccountRow {
     /** API's single primary review reason, after current license decisions; absent on stored/older rows. */
@@ -151,7 +188,7 @@ export interface Microsoft365Organization {
 }
 /**
  * overlap: the product's capabilities are already included in another product on the same enabled, recently active account.
- * downgrade: the account used no Windows or Mac desktop app in the 30-day Microsoft 365 Apps report.
+ * downgrade: a usage or premium-feature scenario; qualification distinguishes selected eligible edges from conditional reviews.
  */
 export type Microsoft365LicenseInsightKind = 'overlap' | 'downgrade';
 /** available: report rows matched by exact user principal name. Otherwise downgrade counts are unknown. */
@@ -169,6 +206,8 @@ export interface Microsoft365LicenseInsight {
     targetProductName?: string | null;
     /** True when the assignment comes only from group-based licensing, so the change belongs on the group. */
     assignedByGroup?: boolean;
+    /** Only the selected eligible scenario contributes financial estimates; absent means legacy eligibility. */
+    qualification?: 'eligible' | 'conditional' | 'alternative';
     /** Facts supporting the downgrade review, independent of whether a target storage limit blocked it. */
     evidence?: {
         windows: boolean | null;
@@ -180,9 +219,12 @@ export interface Microsoft365LicenseInsight {
         oneDriveUsedBytes: number | null;
         /** True only when every applicable target storage limit was checked. */
         storageChecked: boolean;
+        noOfficeDesktopApps?: boolean | null;
+        /** Entitlements alone do not prove premium features unused. */
+        premiumRequirementsVerified?: boolean;
     };
     /** Informational downgrade finding, excluded from candidate counts and savings. */
-    blockedBy?: ('mailbox_over_target_limit' | 'onedrive_over_target_limit')[];
+    blockedBy?: ('mailbox_over_target_limit' | 'onedrive_over_target_limit' | 'storage_unknown' | 'archive_requires_review' | 'premium_requirements_unverified')[];
 }
 export interface Microsoft365LicenseInsights {
     rulesVersion: string;
@@ -191,7 +233,7 @@ export interface Microsoft365LicenseInsights {
     overlapAccountCount: number | null;
     /** Accounts with at least one downgrade suggestion. */
     downgradeCandidateCount: number | null;
-    /** Accounts blocked by a target storage limit; excluded from downgradeCandidateCount. */
+    /** Accounts with blocked scenarios and no eligible target; excluded from downgradeCandidateCount. */
     downgradeBlockedCount?: number | null;
     downgradeEvidence: Microsoft365DowngradeEvidence;
     /** Findings for the listed account and product rows only. */
@@ -257,6 +299,8 @@ export interface Microsoft365LicensePricing {
     };
     basis: 'list_price_estimate' | 'customer_price_estimate' | 'mixed_price_estimate';
     projection?: Microsoft365PricingProjection;
+    /** The tenant's saved agreement terms, passed through by the API so every viewer sees the same action timing. */
+    agreementTerms?: Microsoft365AgreementTerms;
     breakdownsUnavailableReason?: 'pricing_facts_unavailable' | 'group_limit_exceeded' | 'contribution_limit_exceeded';
     /** Price list identifier, for example `microsoft-2026-07`. */
     priceListVersion: string;

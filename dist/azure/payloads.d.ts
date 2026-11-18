@@ -2,9 +2,8 @@ import { Subscription, SubscriptionPolicies } from './subscriptions.js';
 import type { CreatePolicyExemptionRequest, PolicyExemptionCommandSchemaVersion } from './regulatoryCompliance.js';
 import type { AzureDelegatedAuthErrorCode, AzureDelegatedOAuthStatePhase, AzureDelegatedOnboardingStatus, AzureGuestAccessScanSchedulingMode, AzureGuestAccessStatus, AzureGuestAccessStatusReason, AzureCloudAccountAuthContext, CloudAccountAuthMode, CloudAccountTenantSyncSource, PublicCloudAccountDto, SubscriptionType } from '../accounts/accounts.js';
 import type { CompanyLifecycle } from '../company/company.js';
-export interface WorkflowTracingOptions {
-    enabled: boolean;
-}
+import type { WorkflowTracingOptions } from '../common/workflowTracing.js';
+export type { WorkflowTracingOptions } from '../common/workflowTracing.js';
 export interface SubscriptionSyncRequest {
     tracing?: WorkflowTracingOptions;
 }
@@ -485,5 +484,4 @@ export interface AzureDelegatedTrialExtensionResponse {
     companyLifecycle?: CompanyLifecycle;
     azureDelegatedTrialExpiresAt: Date | string;
 }
-export {};
 //# sourceMappingURL=payloads.d.ts.map

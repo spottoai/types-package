@@ -259,7 +259,13 @@ const isResourceHealthEvent = (value) => (0, reportEvidenceValidationHelpers_1.i
 const isCommitmentUtilization = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
     (value.sevenDay !== undefined || value.thirtyDay !== undefined) &&
     ['sevenDay', 'thirtyDay'].every(key => value[key] === undefined || ((0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value[key]) && value[key] >= 0)) &&
+    (value.trend === undefined || typeof value.trend === 'string') &&
     (value.source === undefined || ['aggregate', 'usage', 'reservation-summary'].includes(value.source));
+const isBenefitMaturity = (value) => (0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
+    (0, reportEvidenceValidationHelpers_1.isDateTime)(value.assessedAt) &&
+    ['observedAt', 'effectiveStart'].every(key => value[key] === undefined || (0, reportEvidenceValidationHelpers_1.isDateTime)(value[key])) &&
+    (value.ageDays === undefined || ((0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value.ageDays) && Number.isInteger(value.ageDays))) &&
+    ['oneDay', 'sevenDay', 'thirtyDay'].every(key => ['mature', 'immature', 'unknown'].includes(value[key]));
 function isCommitmentInventoryRow(value) {
     return ((0, reportEvidenceValidationHelpers_1.isRecord)(value) &&
         hasValidUnusedCommitmentValue(value) &&
@@ -269,6 +275,7 @@ function isCommitmentInventoryRow(value) {
             'type',
             'displayName',
             'status',
+            'purchaseDate',
             'expiryDate',
             'skuName',
             'skuDescription',
@@ -278,6 +285,8 @@ function isCommitmentInventoryRow(value) {
         (0, reportEvidenceValidationHelpers_1.hasOptionalNumbers)(value, ['daysToExpiry', 'reservedQuantity']) &&
         (0, reportEvidenceValidationHelpers_1.isOptionalBoolean)(value.renew) &&
         (value.utilization === undefined || isCommitmentUtilization(value.utilization)) &&
+        (value.utilizationMaturity === undefined || isBenefitMaturity(value.utilizationMaturity)) &&
+        (value.oneDayUtilizationPercent === undefined || ((0, reportEvidenceValidationHelpers_1.isFiniteNumber)(value.oneDayUtilizationPercent) && value.oneDayUtilizationPercent >= 0)) &&
         (value.annualCommittedCost === undefined || (0, reportEvidenceValidationHelpers_1.isRecord)(value.annualCommittedCost)) &&
         (value.doNotRenewAnnualImpact === undefined || (0, reportEvidenceValidationHelpers_1.isRecord)(value.doNotRenewAnnualImpact)));
 }

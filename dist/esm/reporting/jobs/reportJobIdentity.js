@@ -5,7 +5,7 @@
  * The API and cloud-engine must derive it identically, so both use these functions.
  */
 import { sha256Hex } from '../shared/reportingDigest.js';
-import { isIsoUtcTimestamp, isReportEntityId, isReportGuid, isReportJobCompanyId } from '../shared/reportingIds.js';
+import { isIsoUtcTimestamp, isReportEntityId, isReportProviderScopeId, isReportJobCompanyId } from '../shared/reportingIds.js';
 import { isReportJobReportType, normalizeReportSubscriptionIds } from './reportJobSpec.js';
 /** The `recommendationsevents` reverse-time convention: 19 nines minus Unix milliseconds, zero-padded to 19 digits. */
 export const REPORT_JOB_MAX_REVERSE_TIME = BigInt('9999999999999999999');
@@ -34,7 +34,7 @@ export const parseReverseTime19 = (value) => {
 };
 /** First 16 hex characters of SHA-256 over the sorted, lower-cased subscription IDs joined with `,` (then `|{scheduleId}`). */
 export const buildReportJobScopeHash = async ({ subscriptionIds, scheduleId }) => {
-    if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && isReportGuid(id.trim()))) {
+    if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && isReportProviderScopeId(id.trim()))) {
         throw new Error('Report job scope hash needs at least one valid subscription ID.');
     }
     if (scheduleId !== undefined && !isReportEntityId(scheduleId))

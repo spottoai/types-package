@@ -1,3 +1,12 @@
+export const MICROSOFT365_AGREEMENT_CHANNELS = [
+    'enterprise_agreement',
+    'enterprise_agreement_subscription',
+    'csp',
+    'mca',
+    'other',
+];
+/** Products a customer may mark as bought outside the agreement. */
+export const MICROSOFT365_AGREEMENT_EXCLUDED_SKU_LIMIT = 200;
 const record = (value) => !!value && typeof value === 'object' && !Array.isArray(value);
 const only = (value, keys) => Object.keys(value).every(key => keys.includes(key));
 const text = (value, max = 256) => typeof value === 'string' && value.trim().length > 0 && value.length <= max;
@@ -25,10 +34,28 @@ export function isMicrosoft365PricingOverride(value) {
         typeof value.source === 'string' &&
         value.source.length <= 256);
 }
+/** Shape and date-order validation only. Whether excluded products belong to the tenant remains API policy. */
+export function isMicrosoft365AgreementTerms(value) {
+    if (!record(value) ||
+        !only(value, ['channel', 'reductionDate', 'reductionRepeatsAnnually', 'agreementEndDate', 'additionsAreTrueUps', 'excludedSkuIds']) ||
+        !(value.channel === null ||
+            (typeof value.channel === 'string' && MICROSOFT365_AGREEMENT_CHANNELS.includes(value.channel))) ||
+        !(value.reductionDate === null || isMicrosoft365PricingDate(value.reductionDate)) ||
+        typeof value.reductionRepeatsAnnually !== 'boolean' ||
+        !(value.agreementEndDate === null || isMicrosoft365PricingDate(value.agreementEndDate)) ||
+        (typeof value.reductionDate === 'string' && typeof value.agreementEndDate === 'string' && value.agreementEndDate < value.reductionDate) ||
+        !(value.additionsAreTrueUps === null || typeof value.additionsAreTrueUps === 'boolean') ||
+        !Array.isArray(value.excludedSkuIds) ||
+        value.excludedSkuIds.length > MICROSOFT365_AGREEMENT_EXCLUDED_SKU_LIMIT ||
+        !value.excludedSkuIds.every(skuId => text(skuId, 128)))
+        return false;
+    return new Set(value.excludedSkuIds.map(skuId => skuId.toLowerCase())).size === value.excludedSkuIds.length;
+}
 /** Shape and interval validation only. Company authorization and inventory matching remain API policy. */
 export function isMicrosoft365PricingOverridesConfiguration(value) {
     if (!record(value) ||
-        !only(value, ['schemaVersion', 'tenantId', 'revision', 'overrides', 'updatedAt', 'updatedBy']) ||
+        !only(value, ['schemaVersion', 'tenantId', 'revision', 'overrides', 'updatedAt', 'updatedBy', 'agreementTerms']) ||
+        !(value.agreementTerms === undefined || isMicrosoft365AgreementTerms(value.agreementTerms)) ||
         value.schemaVersion !== 'microsoft-365-pricing-overrides/v1' ||
         !text(value.tenantId, 128) ||
         !isMicrosoft365PricingRevision(value.revision) ||
@@ -38,8 +65,14 @@ export function isMicrosoft365PricingOverridesConfiguration(value) {
         !(value.updatedAt === null || (text(value.updatedAt) && Number.isFinite(Date.parse(value.updatedAt)))) ||
         !(value.updatedBy === undefined || value.updatedBy === null || text(value.updatedBy, 512)))
         return false;
+    return isMicrosoft365PricingOverrides(value.overrides);
+}
+export function isMicrosoft365PricingOverrides(value) {
+    if (!Array.isArray(value) || value.length > 1000 || !Array.from(value).every(isMicrosoft365PricingOverride))
+        return false;
+    const overrides = value;
     const intervals = new Map();
-    for (const entry of value.overrides) {
+    for (const entry of overrides) {
         const key = `${entry.skuId.toLowerCase()}|${entry.currency}`;
         const group = intervals.get(key) ?? [];
         group.push(entry);

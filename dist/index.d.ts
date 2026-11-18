@@ -1,13 +1,22 @@
+export * from './common/currencyConversion';
 export * from './common/knownResourceGroupSpend';
 export * from './common/recordedSpendAnalysis';
 export * from './aws/billingEstimation';
 export * from './accounts/microsoft365PricingOverrides';
 export * from './accounts/microsoft365PricingFacts';
 /** Main entry point - export all interfaces from this package */
+export * from './ai-usage';
+export * from './ci-build';
 export * from './accounts/microsoft365Licenses';
 export * from './accounts/microsoft365LicenseHistory';
+export * from './accounts/microsoft365ActivityHistory';
+export * from './accounts/microsoft365Applications';
 export * from './accounts/microsoft365Usage';
 export * from './accounts/microsoft365Capabilities';
+export * from './accounts/microsoft365Optimization';
+export * from './accounts/microsoft365OptimizationValidation';
+export * from './accounts/microsoft365OptimizationManagement';
+export * from './accounts/microsoft365OptimizationManagementValidation';
 export * from './accounts/microsoft365LicensePortal';
 export * from './accounts/microsoft365AccountReview';
 export * from './accounts/microsoft365LicenseContext';
@@ -115,4 +124,5 @@ export * from './identity';
 export * from './features-and-permissions';
 export * from './tags';
 export * from './portfolio';
+export * from './azure/billingFacts';
 //# sourceMappingURL=index.d.ts.map

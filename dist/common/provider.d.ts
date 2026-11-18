@@ -1,4 +1,5 @@
 import type { SecureScoreEvidence } from '../azure/secureScore';
+import type { CurrencyDisplayProjectionFieldsV1 } from './currencyConversion';
 export declare enum ProviderName {
     Azure = "azure",
     Aws = "aws"
@@ -38,7 +39,7 @@ export interface ProviderScopeDisplayMetadata extends ProviderScopeContext {
     environmentType?: EnvironmentType;
 }
 /** Provider-aware scope data returned to shared selectors and account displays. */
-export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata, ProviderScope {
+export interface ProviderScopeSelectionItem extends ProviderScopeDisplayMetadata, ProviderScope, CurrencyDisplayProjectionFieldsV1 {
     companyId: string;
     scopeType: ProviderScopeType;
     /** Legacy provider-scope name retained for mixed-version consumers. */

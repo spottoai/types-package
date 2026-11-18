@@ -14,7 +14,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
     for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.sanitizeReportingPathSegment = exports.isReportFileName = exports.toReportTableSdkEntity = exports.REPORT_TABLE_SYSTEM_FIELDS = exports.normalizeReportTableEntity = exports.REPORT_JOB_COMPANY_ID_MAX_LENGTH = exports.REPORT_ENTITY_ID_PATTERN = exports.isReportJobCompanyId = exports.isReportGuid = exports.isReportEntityId = exports.isIsoUtcTimestamp = exports.isIanaTimeZone = exports.SHA256_HEX_PATTERN = exports.sha256Hex = void 0;
+exports.sanitizeReportingPathSegment = exports.isReportFileName = exports.toReportTableSdkEntity = exports.REPORT_TABLE_SYSTEM_FIELDS = exports.normalizeReportTableEntity = exports.REPORT_JOB_COMPANY_ID_MAX_LENGTH = exports.REPORT_ENTITY_ID_PATTERN = exports.isReportJobCompanyId = exports.isReportProviderScopeId = exports.isReportGuid = exports.isReportEntityId = exports.isIsoUtcTimestamp = exports.isIanaTimeZone = exports.SHA256_HEX_PATTERN = exports.sha256Hex = void 0;
 /**
  * `@spottoai/types-package/reporting-jobs`: background report job contracts shared by the API, cloud-engine and
  * reportworker (types-package/specs/reporting/reporting-scheduler-types.md, Part A).
@@ -39,6 +39,7 @@ Object.defineProperty(exports, "isIanaTimeZone", { enumerable: true, get: functi
 Object.defineProperty(exports, "isIsoUtcTimestamp", { enumerable: true, get: function () { return reportingIds_1.isIsoUtcTimestamp; } });
 Object.defineProperty(exports, "isReportEntityId", { enumerable: true, get: function () { return reportingIds_1.isReportEntityId; } });
 Object.defineProperty(exports, "isReportGuid", { enumerable: true, get: function () { return reportingIds_1.isReportGuid; } });
+Object.defineProperty(exports, "isReportProviderScopeId", { enumerable: true, get: function () { return reportingIds_1.isReportProviderScopeId; } });
 Object.defineProperty(exports, "isReportJobCompanyId", { enumerable: true, get: function () { return reportingIds_1.isReportJobCompanyId; } });
 Object.defineProperty(exports, "REPORT_ENTITY_ID_PATTERN", { enumerable: true, get: function () { return reportingIds_1.REPORT_ENTITY_ID_PATTERN; } });
 Object.defineProperty(exports, "REPORT_JOB_COMPANY_ID_MAX_LENGTH", { enumerable: true, get: function () { return reportingIds_1.REPORT_JOB_COMPANY_ID_MAX_LENGTH; } });

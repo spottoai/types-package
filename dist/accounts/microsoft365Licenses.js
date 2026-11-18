@@ -59,6 +59,27 @@ const OPTIONAL_SUMMARY_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 
 const OPTIONAL_PRODUCT_COUNTS = ['overlapAccountUnits', 'downgradeAccountUnits'];
 const OPTIONAL_PRODUCT_MONEY = ['overlapMonthlyCost', 'downgradeMonthlySaving', 'noOfficeActivityMonthlyCost'];
 const optional = (value, predicate) => value === undefined || predicate(value);
+const isSeatCommercialReview = (value) => isRecord(value) &&
+    date(value.observedAt) &&
+    nullableCount(value.candidateUnassignedUnits) &&
+    ['review-owner-reseller', 'not-indicated', 'unassessed'].includes(value.recentStockReview) &&
+    ['retainedEntitlements', 'accountPurposeAndAssignmentPaths', 'commercialTerms', 'unassignedAllocationToSubscriptions'].every(key => value[key] === 'unassessed') &&
+    ['immediateRemoval', 'renewalReduction'].every(key => isRecord(value[key]) && value[key].verifiedUnits === null && value[key].monthlyCashReduction === null && value[key].effectiveAt === null) &&
+    isRecord(value.reassignment) &&
+    nullableCount(value.reassignment.candidateUnits) &&
+    value.reassignment.status === 'owner-validation-required' &&
+    isRecord(value.futureAvoidance) &&
+    value.futureAvoidance.verifiedMonthlyAmount === null &&
+    value.futureAvoidance.effectiveAt === null &&
+    Array.isArray(value.referenceUnassignedMonthlyValues) &&
+    value.referenceUnassignedMonthlyValues.length <= 32 &&
+    value.referenceUnassignedMonthlyValues.every(row => isRecord(row) &&
+        typeof row.amount === 'number' &&
+        Number.isFinite(row.amount) &&
+        row.amount >= 0 &&
+        typeof row.currency === 'string' &&
+        /^[A-Z]{3}$/.test(row.currency) &&
+        row.basis === 'list_price_estimate');
 const PRODUCT_COUNTS = ['purchasedUnits', 'assignedUnits', 'unassignedUnits'];
 const PRODUCT_MONEY = ['unitPriceMonthly', 'monthlyCost', 'unassignedMonthlyCost', 'disabledMonthlyCost', 'inactiveMonthlyCost'];
 const PRODUCT_FAMILIES = [
@@ -121,7 +142,9 @@ function isMicrosoft365LicensePricing(value) {
                 return Array.isArray(groups) && groups.length <= 27 && groups.every(microsoft365Usage_1.isMicrosoft365LicenseBreakdownRow);
             })))
         return false;
-    if (!optional(value.projection, microsoft365PricingOverrides_1.isMicrosoft365PricingProjection) || !optional(value.breakdownsUnavailableReason, text))
+    if (!optional(value.projection, microsoft365PricingOverrides_1.isMicrosoft365PricingProjection) ||
+        !optional(value.agreementTerms, microsoft365PricingOverrides_1.isMicrosoft365AgreementTerms) ||
+        !optional(value.breakdownsUnavailableReason, text))
         return false;
     if (value.nonSavingDowngradeEdges !== undefined &&
         (!Array.isArray(value.nonSavingDowngradeEdges) ||
@@ -171,17 +194,26 @@ function isMicrosoft365LicenseInsight(row) {
         optional(row.targetSkuPartNumber, nullableText) &&
         optional(row.targetProductName, nullableText) &&
         optional(row.assignedByGroup, flag => typeof flag === 'boolean') &&
+        optional(row.qualification, value => value === 'eligible' || value === 'conditional' || value === 'alternative') &&
         optional(row.evidence, evidence => isRecord(evidence) &&
             ['windows', 'mac', 'web', 'mobile', 'mailboxHasArchive'].every(key => nullableBoolean(evidence[key])) &&
             nullableCount(evidence.mailboxUsedBytes) &&
             nullableCount(evidence.oneDriveUsedBytes) &&
-            typeof evidence.storageChecked === 'boolean') &&
+            typeof evidence.storageChecked === 'boolean' &&
+            optional(evidence.noOfficeDesktopApps, nullableBoolean) &&
+            optional(evidence.premiumRequirementsVerified, flag => typeof flag === 'boolean')) &&
         optional(row.blockedBy, reasons => row.kind === 'downgrade' &&
             Array.isArray(reasons) &&
             reasons.length > 0 &&
-            reasons.length <= 2 &&
+            reasons.length <= 5 &&
             new Set(reasons).size === reasons.length &&
-            reasons.every(reason => reason === 'mailbox_over_target_limit' || reason === 'onedrive_over_target_limit')));
+            reasons.every(reason => [
+                'mailbox_over_target_limit',
+                'onedrive_over_target_limit',
+                'storage_unknown',
+                'archive_requires_review',
+                'premium_requirements_unverified',
+            ].includes(reason))));
 }
 /** Validates bounded duplicate and downgrade findings. */
 function isMicrosoft365LicenseInsights(value) {
@@ -281,6 +313,7 @@ function isMicrosoft365LicenseView(value) {
         optional(row.productName, text) &&
         optional(row.capabilities, microsoft365Capabilities_1.isMicrosoft365ProductCapabilities) &&
         optional(row.usage, usage => usage === null || (0, microsoft365Usage_1.isMicrosoft365LicenseProductUsage)(usage)) &&
+        optional(row.commercialReview, isSeatCommercialReview) &&
         nullableText(row.capabilityStatus) &&
         ['enabledUnits', 'consumedUnits', 'unallocatedUnits', 'warningUnits', 'suspendedUnits'].every(key => nullableCount(row[key])) &&
         optional(row.renewals, renewals => Array.isArray(renewals) &&
@@ -289,6 +322,9 @@ function isMicrosoft365LicenseView(value) {
                 nullableText(renewal.status) &&
                 nullableBoolean(renewal.isTrial) &&
                 nullableCount(renewal.totalLicenses) &&
+                optional(renewal.sourceSubscriptionId, nullableText) &&
+                optional(renewal.createdDateTime, value => value === null || date(value)) &&
+                optional(renewal.observedAt, value => value === null || date(value)) &&
                 (renewal.nextLifecycleDateTime === null || date(renewal.nextLifecycleDateTime))))))
         return false;
     if (!rows(value.accounts, isMicrosoft365LicensedAccountRow))

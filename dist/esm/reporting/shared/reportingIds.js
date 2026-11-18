@@ -1,3 +1,4 @@
+import { AWS_ACCOUNT_ID_PATTERN } from '../../aws/validationHelpers.js';
 /**
  * Identifier rules shared by the background report job contracts and the report storage contracts.
  *
@@ -27,6 +28,8 @@ export const isReportEntityId = (value) => typeof value === 'string' && REPORT_E
 export const REPORT_JOB_COMPANY_ID_MAX_LENGTH = 56;
 export const isReportJobCompanyId = (value) => isReportEntityId(value) && value.length <= REPORT_JOB_COMPANY_ID_MAX_LENGTH;
 export const isReportGuid = (value) => typeof value === 'string' && REPORT_GUID_PATTERN.test(value);
+/** A native provider scope ID: Azure subscription GUID or AWS account ID. Syntax never proves ownership. */
+export const isReportProviderScopeId = (value) => typeof value === 'string' && (isReportGuid(value) || AWS_ACCOUNT_ID_PATTERN.test(value));
 /** A plain-text value with no control characters, trimmed, within the length bounds. */
 export const isBoundedPlainText = (value, maxLength) => typeof value === 'string' && value.length > 0 && value.length <= maxLength && value === value.trim() && !hasControlCharacter(value);
 /** An exact ISO-8601 UTC timestamp as produced by `Date.prototype.toISOString`. */

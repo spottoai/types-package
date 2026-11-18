@@ -1,13 +1,22 @@
+export * from './common/currencyConversion.js';
 export * from './common/knownResourceGroupSpend.js';
 export * from './common/recordedSpendAnalysis.js';
 export * from './aws/billingEstimation.js';
 export * from './accounts/microsoft365PricingOverrides.js';
 export * from './accounts/microsoft365PricingFacts.js';
 /** Main entry point - export all interfaces from this package */
+export * from './ai-usage/index.js';
+export * from './ci-build/index.js';
 export * from './accounts/microsoft365Licenses.js';
 export * from './accounts/microsoft365LicenseHistory.js';
+export * from './accounts/microsoft365ActivityHistory.js';
+export * from './accounts/microsoft365Applications.js';
 export * from './accounts/microsoft365Usage.js';
 export * from './accounts/microsoft365Capabilities.js';
+export * from './accounts/microsoft365Optimization.js';
+export * from './accounts/microsoft365OptimizationValidation.js';
+export * from './accounts/microsoft365OptimizationManagement.js';
+export * from './accounts/microsoft365OptimizationManagementValidation.js';
 export * from './accounts/microsoft365LicensePortal.js';
 export * from './accounts/microsoft365AccountReview.js';
 export * from './accounts/microsoft365LicenseContext.js';
@@ -113,3 +122,4 @@ export * from './identity/index.js';
 export * from './features-and-permissions/index.js';
 export * from './tags/index.js';
 export * from './portfolio/index.js';
+export * from './azure/billingFacts.js';

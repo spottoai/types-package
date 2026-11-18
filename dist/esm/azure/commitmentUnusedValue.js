@@ -56,6 +56,8 @@ export function isCommitmentUnusedValueEvidence(value) {
         !/^[A-Z]{3}$/.test(value.currency) ||
         !isRecord(value.sourceCharge) ||
         !isNonNegativeNumber(value.sourceCharge.amount) ||
+        (value.sourceCharge.currency !== undefined &&
+            (typeof value.sourceCharge.currency !== 'string' || !/^[A-Z]{3}$/.test(value.sourceCharge.currency))) ||
         !Array.isArray(value.sourceCharge.dates) ||
         value.sourceCharge.dates.length === 0 ||
         !value.sourceCharge.dates.every(isCalendarDate) ||

@@ -1,3 +1,4 @@
+import type { WorkflowTracingOptions } from '../common/workflowTracing.js';
 /** Schema version for AWS estate orchestration commands. */
 export declare const AWS_COMMAND_SCHEMA_VERSION: 1;
 /** Canonical provider wire value for AWS commands. */
@@ -71,6 +72,8 @@ export interface AwsAccountRefreshCommand extends AwsCommandBase {
     estateId: string;
     accountId: string;
     cloudAccountId: string;
+    /** Opt-in diagnostics; never part of request identity or execution scope. */
+    tracing?: WorkflowTracingOptions;
 }
 /** Removes one connected account and its engine-owned runtime state. */
 export interface AwsAccountDeleteCommand extends AwsCommandBase {

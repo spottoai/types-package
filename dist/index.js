@@ -15,16 +15,25 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isReportScenarioSavings = exports.isReportPortfolioSavingsContribution = exports.buildAwsReviewChecklistManualDocument = exports.buildAwsReviewChecklistStatePath = exports.buildAwsReviewChecklistResultPath = exports.normalizeAwsReviewChecklistScanCommand = exports.normalizeAwsReviewChecklistScope = exports.planAwsAccountLifecycleWorkLeaseRelease = exports.planAwsAccountLifecycleWorkLeaseAcquire = exports.hasUnexpiredAwsAccountLifecycleWorkLeases = exports.normalizeAwsAccountLifecycleWorkLeaseDuration = exports.normalizeAwsAccountLifecycleWorkLeaseIdentity = exports.isAwsAccountLifecycleWorkLeases = exports.isAwsAccountLifecycleIncarnationId = exports.AwsAccountLifecycleWorkLeaseError = exports.AWS_ACCOUNT_LIFECYCLE_MAX_WORK_LEASES = exports.isReportSavingsBasis = exports.isReportSpendProjection = exports.isReportSpendAmounts = exports.isSafeAwsBillingDriverResourceId = exports.isActivityLogCollectionCoverage = void 0;
+__exportStar(require("./common/currencyConversion"), exports);
 __exportStar(require("./common/knownResourceGroupSpend"), exports);
 __exportStar(require("./common/recordedSpendAnalysis"), exports);
 __exportStar(require("./aws/billingEstimation"), exports);
 __exportStar(require("./accounts/microsoft365PricingOverrides"), exports);
 __exportStar(require("./accounts/microsoft365PricingFacts"), exports);
 /** Main entry point - export all interfaces from this package */
+__exportStar(require("./ai-usage"), exports);
+__exportStar(require("./ci-build"), exports);
 __exportStar(require("./accounts/microsoft365Licenses"), exports);
 __exportStar(require("./accounts/microsoft365LicenseHistory"), exports);
+__exportStar(require("./accounts/microsoft365ActivityHistory"), exports);
+__exportStar(require("./accounts/microsoft365Applications"), exports);
 __exportStar(require("./accounts/microsoft365Usage"), exports);
 __exportStar(require("./accounts/microsoft365Capabilities"), exports);
+__exportStar(require("./accounts/microsoft365Optimization"), exports);
+__exportStar(require("./accounts/microsoft365OptimizationValidation"), exports);
+__exportStar(require("./accounts/microsoft365OptimizationManagement"), exports);
+__exportStar(require("./accounts/microsoft365OptimizationManagementValidation"), exports);
 __exportStar(require("./accounts/microsoft365LicensePortal"), exports);
 __exportStar(require("./accounts/microsoft365AccountReview"), exports);
 __exportStar(require("./accounts/microsoft365LicenseContext"), exports);
@@ -151,4 +160,5 @@ __exportStar(require("./identity"), exports);
 __exportStar(require("./features-and-permissions"), exports);
 __exportStar(require("./tags"), exports);
 __exportStar(require("./portfolio"), exports);
+__exportStar(require("./azure/billingFacts"), exports);
 //# sourceMappingURL=index.js.map

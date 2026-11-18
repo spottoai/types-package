@@ -11,7 +11,7 @@ export declare const REPORT_JOB_SPEC_MAX_BYTES: number;
 export interface ReportJobScopeV1 {
     /** 1..20 company-owned cloud account IDs, sorted. */
     cloudAccountIds: string[];
-    /** 1..200 subscription GUIDs, lower-cased and sorted. */
+    /** 1..200 Azure subscription GUIDs or native AWS account IDs, lower-cased and sorted. */
     subscriptionIds: string[];
 }
 export type ReportPeriodRuleV1 = {
@@ -57,18 +57,24 @@ export interface SdmReportJobSpecV1 {
     scope: ReportJobScopeV1;
     period: ReportJobPeriodV1;
     configuration: SdmBackgroundConfigV1;
+    /** Optional ISO 4217 display currency. Absent means billing currencies; money converts at the job's captured rates. */
+    displayCurrency?: string;
 }
 export interface CurrentStateReportJobSpecV1 {
     schemaVersion: 1;
     reportType: 'architecture-assessment';
     scope: ReportJobScopeV1;
     configuration: CurrentStateBackgroundConfigV1;
+    /** Optional ISO 4217 display currency. Absent means billing currencies; money converts at the job's captured rates. */
+    displayCurrency?: string;
 }
 export interface ReportPackJobSpecV1 {
     schemaVersion: 1;
     reportType: 'report-pack';
     scope: ReportJobScopeV1;
     configuration: ReportPackConfigurationV1;
+    /** Optional ISO 4217 display currency. Absent means billing currencies; money converts at the job's captured rates. */
+    displayCurrency?: string;
 }
 export type ReportJobSpecV1 = SdmReportJobSpecV1 | CurrentStateReportJobSpecV1 | ReportPackJobSpecV1;
 export type ReportJobSpecParseResult = {

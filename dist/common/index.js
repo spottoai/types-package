@@ -26,6 +26,7 @@ __exportStar(require("./resourceGraphValidation"), exports);
 __exportStar(require("./resourceIdentity"), exports);
 __exportStar(require("./resourceHealth"), exports);
 __exportStar(require("./syncProgress"), exports);
+__exportStar(require("./workflowTracing"), exports);
 __exportStar(require("./securityPosture"), exports);
 __exportStar(require("./cloudGovernance"), exports);
 __exportStar(require("./serviceRetirement"), exports);

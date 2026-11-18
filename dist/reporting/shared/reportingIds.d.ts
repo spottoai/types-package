@@ -19,6 +19,8 @@ export declare const isReportEntityId: (value: unknown) => value is string;
 export declare const REPORT_JOB_COMPANY_ID_MAX_LENGTH = 56;
 export declare const isReportJobCompanyId: (value: unknown) => value is string;
 export declare const isReportGuid: (value: unknown) => value is string;
+/** A native provider scope ID: Azure subscription GUID or AWS account ID. Syntax never proves ownership. */
+export declare const isReportProviderScopeId: (value: unknown) => value is string;
 /** A plain-text value with no control characters, trimmed, within the length bounds. */
 export declare const isBoundedPlainText: (value: unknown, maxLength: number) => value is string;
 /** An exact ISO-8601 UTC timestamp as produced by `Date.prototype.toISOString`. */

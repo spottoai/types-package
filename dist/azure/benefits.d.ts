@@ -12,6 +12,16 @@ export interface IBenefitUtilization {
     thirtyDay?: number;
     source?: 'aggregate' | 'usage' | 'reservation-summary';
 }
+/** Maturity is evaluated against source observations, not the time an old snapshot is replayed. */
+export interface BenefitUtilizationMaturity {
+    assessedAt: string;
+    observedAt?: string;
+    effectiveStart?: string;
+    ageDays?: number;
+    oneDay: 'mature' | 'immature' | 'unknown';
+    sevenDay: 'mature' | 'immature' | 'unknown';
+    thirtyDay: 'mature' | 'immature' | 'unknown';
+}
 export type BenefitUtilizationAggregateUnit = 'hours' | 'quantity' | 'currency';
 /**
  * Lossless utilization numerator and denominator for weighted aggregation.
@@ -33,6 +43,7 @@ export type IBenefitWeightedUtilizationAggregate = IBenefitWeightedUtilizationAg
     currency: string;
 });
 export interface IBenefit {
+    utilizationMaturity?: BenefitUtilizationMaturity;
     id: string;
     benefitType: BenefitType;
     scope: BenefitScope;

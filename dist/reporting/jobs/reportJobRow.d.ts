@@ -1,3 +1,4 @@
+import { CURRENCY_CONVERSION_RATE_SOURCE } from '../../common/currencyConversion';
 import { type ReportJobReportType, type ReportJobSpecV1 } from './reportJobSpec';
 import { type ReportJobFailureCode, type ReportJobFailureStage, type ReportJobNotificationStatus, type ReportJobStatus } from './reportJobStatus';
 export declare const REPORT_JOB_ROW_SCHEMA_VERSION = 1;
@@ -29,7 +30,22 @@ export interface ReportJobProducerFieldsV1 {
     requestSha256: string;
     fileName: string;
     notificationPolicyId?: string;
+    /**
+     * ECB rate snapshot the producer captured when it accepted a job with `displayCurrency` (JSON of
+     * `ReportJobCurrencyRateSnapshotV1`). Absent on schedule occurrences: reportworker then reads that run's rates.
+     */
+    currencyRateSnapshotJson?: string;
 }
+/** Exact EUR reference quotes captured for one report job; the worker converts with these, never newer rates. */
+export interface ReportJobCurrencyRateSnapshotV1 {
+    rateDate: string;
+    rateSnapshotId: string;
+    rateSource: typeof CURRENCY_CONVERSION_RATE_SOURCE;
+    rates: Record<string, string>;
+}
+export declare const REPORT_JOB_CURRENCY_SNAPSHOT_MAX_BYTES: number;
+/** Strict shape check of a stored snapshot. Freshness belongs to the producer at acceptance time. */
+export declare const parseReportJobCurrencyRateSnapshotV1: (value: unknown) => ReportJobCurrencyRateSnapshotV1 | null;
 /** Merged by reportworker. The producer inserts `status: 'accepted'` and `attemptCount: 0`. */
 export interface ReportJobWorkerFieldsV1 {
     status: ReportJobStatus;
@@ -59,7 +75,7 @@ export interface ReportJobNotificationFieldsV1 {
     notificationCompletedAtUtc?: string;
 }
 export type ReportJobRowV1 = ReportJobProducerFieldsV1 & ReportJobWorkerFieldsV1 & ReportJobNotificationFieldsV1;
-export declare const REPORT_JOB_PRODUCER_FIELDS: readonly ["PartitionKey", "RowKey", "schemaVersion", "jobId", "companyId", "reportType", "trigger", "scheduleId", "definitionRevision", "scheduledForUtc", "requestedAtUtc", "requestedByUserId", "coalescedOccurrenceCount", "requestJson", "requestSha256", "fileName", "notificationPolicyId"];
+export declare const REPORT_JOB_PRODUCER_FIELDS: readonly ["PartitionKey", "RowKey", "schemaVersion", "jobId", "companyId", "reportType", "trigger", "scheduleId", "definitionRevision", "scheduledForUtc", "requestedAtUtc", "requestedByUserId", "coalescedOccurrenceCount", "requestJson", "requestSha256", "fileName", "notificationPolicyId", "currencyRateSnapshotJson"];
 export declare const REPORT_JOB_WORKER_FIELDS: readonly ["status", "attemptCount", "leaseOwner", "leaseExpiresAtUtc", "startedAtUtc", "lastAttemptAtUtc", "sourceObservedAtUtc", "sourceSnapshotSha256", "sourceCoverageSummary", "generatedAtUtc", "artifactContentSha256", "artifactBytes", "completedAtUtc", "failureStage", "failureCode", "lastTransientErrorCode"];
 export declare const REPORT_JOB_NOTIFICATION_FIELDS: readonly ["notificationStatus", "notificationAttemptCount", "notificationDestinationCounts", "notificationCompletedAtUtc"];
 export type ReportJobRowParseResult = {
@@ -85,6 +101,8 @@ export type BuildReportJobRowInput = {
     requestedAtUtc: string;
     requestedByUserId?: string;
     notificationPolicyId?: string;
+    /** Required by producers that can read rates when `spec.displayCurrency` is set. */
+    currencyRateSnapshot?: ReportJobCurrencyRateSnapshotV1;
 } & ({
     trigger: 'api';
 } | {

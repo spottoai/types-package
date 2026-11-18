@@ -39,6 +39,9 @@ export interface BenefitExpiryRetirementRenderData {
 }
 export interface ApplicationCredentialRetirementRenderData {
     kind: 'application-credential';
+    tenantId?: string;
+    credentialSource?: 'service-principal';
+    servicePrincipalObjectId?: string;
     applicationId?: string;
     applicationObjectId?: string;
     credentialId?: string;

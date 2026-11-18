@@ -23,20 +23,27 @@ export function isMicrosoft365AccountProfile(value) {
         (value.usageLocation === null || (typeof value.usageLocation === 'string' && /^[A-Za-z]{2}$/.test(value.usageLocation))));
 }
 export function isMicrosoft365WorkloadLicense(value) {
-    return (isRecord(value) &&
-        onlyKeys(value, ['licensed', 'assignedOn']) &&
-        nullableBoolean(value.licensed) &&
-        nullableDate(value.assignedOn));
+    return isRecord(value) && onlyKeys(value, ['licensed', 'assignedOn']) && nullableBoolean(value.licensed) && nullableDate(value.assignedOn);
 }
 export function isMicrosoft365AccountUsage(value) {
     return (isRecord(value) &&
-        onlyKeys(value, ['status', 'lastActivityDate', 'workloads', 'workloadLicenses', 'platforms', 'mailbox', 'oneDrive', 'copilotLastActivityDate']) &&
+        onlyKeys(value, [
+            'status',
+            'lastActivityDate',
+            'workloads',
+            'workloadLicenses',
+            'platforms',
+            'mailbox',
+            'oneDrive',
+            'copilotLastActivityDate',
+            'officeDesktopAppsUsed',
+            'copilotAdoption',
+        ]) &&
         typeof value.status === 'string' &&
         ['active', 'inactive', 'no_recorded_activity', 'unknown'].includes(value.status) &&
         nullableDate(value.lastActivityDate) &&
         (value.workloads === undefined || nullableBlock(value.workloads, ['exchange', 'oneDrive', 'sharePoint', 'teams', 'vivaEngage'], nullableDate)) &&
-        (value.workloadLicenses === undefined ||
-            nullableBlock(value.workloadLicenses, MICROSOFT365_USAGE_WORKLOADS, isMicrosoft365WorkloadLicense)) &&
+        (value.workloadLicenses === undefined || nullableBlock(value.workloadLicenses, MICROSOFT365_USAGE_WORKLOADS, isMicrosoft365WorkloadLicense)) &&
         nullableBlock(value.platforms, ['windows', 'mac', 'web', 'mobile'], nullableBoolean) &&
         (value.mailbox === null ||
             (isRecord(value.mailbox) &&
@@ -45,7 +52,43 @@ export function isMicrosoft365AccountUsage(value) {
                 nullableCount(value.mailbox.quotaBytes) &&
                 nullableBoolean(value.mailbox.hasArchive))) &&
         nullableBlock(value.oneDrive, ['usedBytes', 'allocatedBytes'], nullableCount) &&
-        nullableDate(value.copilotLastActivityDate));
+        nullableDate(value.copilotLastActivityDate) &&
+        (value.officeDesktopAppsUsed === undefined || nullableBoolean(value.officeDesktopAppsUsed)) &&
+        (value.copilotAdoption === undefined || value.copilotAdoption === null || isMicrosoft365CopilotAdoption(value.copilotAdoption)));
+}
+export function isMicrosoft365CopilotAdoption(value) {
+    return (isRecord(value) &&
+        onlyKeys(value, ['windowDays', 'reportRefreshDate', 'evidence', 'prompts', 'activeDays', 'appLastActivityDates', 'webOnly']) &&
+        value.windowDays === 28 &&
+        nullableDate(value.reportRefreshDate) &&
+        (value.evidence === 'complete' || value.evidence === 'partial') &&
+        block(value.prompts, ['all', 'chatWork', 'chatWeb', 'other'], nullableCount) &&
+        nullableCount(value.activeDays) &&
+        (value.activeDays === null || value.activeDays <= 28) &&
+        block(value.appLastActivityDates, ['chatWork', 'chatWeb', 'teams', 'word', 'excel', 'powerPoint', 'outlook', 'oneNote', 'loop', 'microsoft365', 'edge', 'agent'], nullableDate) &&
+        nullableBoolean(value.webOnly) &&
+        consistentCopilotAdoption(value));
+}
+function consistentCopilotAdoption(value) {
+    if (value.evidence === 'partial')
+        return value.webOnly === null;
+    const { all, chatWork, chatWeb, other } = value.prompts;
+    if (!value.reportRefreshDate || value.activeDays === null || [all, chatWork, chatWeb, other].some(count => count === null))
+        return false;
+    if (all !== chatWork + chatWeb + other)
+        return false;
+    if (Object.values(value.appLastActivityDates).some(date => date !== null && date > value.reportRefreshDate))
+        return false;
+    if (value.webOnly !== true)
+        return value.webOnly === false;
+    const within = (date) => date !== null && Date.parse(value.reportRefreshDate) - Date.parse(date) <= 27 * 86400000;
+    return (all > 0 &&
+        chatWeb === all &&
+        chatWork === 0 &&
+        other === 0 &&
+        value.activeDays > 0 &&
+        within(value.appLastActivityDates.chatWeb) &&
+        ['chatWork', 'teams', 'word', 'excel', 'powerPoint', 'outlook', 'oneNote', 'loop', 'agent'].every(app => !within(value.appLastActivityDates[app])));
 }
 export function isMicrosoft365LicenseProductUsage(value) {
     return block(value, ['active', 'inactive', 'noRecordedActivity', 'unknown', 'signedInButNoOfficeActivity'], count);

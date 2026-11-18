@@ -1,4 +1,7 @@
 "use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isPlainRecord = exports.hasExactlyKeys = exports.utf8ByteLength = exports.isIanaTimeZone = exports.isCalendarDate = exports.isIsoUtcTimestamp = exports.isBoundedPlainText = exports.isReportProviderScopeId = exports.isReportGuid = exports.isReportJobCompanyId = exports.REPORT_JOB_COMPANY_ID_MAX_LENGTH = exports.isReportEntityId = exports.REPORT_DATE_PATTERN = exports.REPORT_GUID_PATTERN = exports.REPORT_ENTITY_ID_PATTERN = void 0;
+const validationHelpers_1 = require("../../aws/validationHelpers");
 /**
  * Identifier rules shared by the background report job contracts and the report storage contracts.
  *
@@ -6,8 +9,6 @@
  * file name is validated here first. The rules are deliberately narrower than what storage accepts, so an
  * accepted value is always safe in every one of those places.
  */
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.isPlainRecord = exports.hasExactlyKeys = exports.utf8ByteLength = exports.isIanaTimeZone = exports.isCalendarDate = exports.isIsoUtcTimestamp = exports.isBoundedPlainText = exports.isReportGuid = exports.isReportJobCompanyId = exports.REPORT_JOB_COMPANY_ID_MAX_LENGTH = exports.isReportEntityId = exports.REPORT_DATE_PATTERN = exports.REPORT_GUID_PATTERN = exports.REPORT_ENTITY_ID_PATTERN = void 0;
 /** Company, cloud-account, schedule and action-group IDs: alphanumeric ends, `._-` inside, at most 80 characters. */
 exports.REPORT_ENTITY_ID_PATTERN = /^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,78}[A-Za-z0-9])?$/;
 /** Azure subscription and tenant IDs (GUIDs, any case). */
@@ -33,6 +34,9 @@ const isReportJobCompanyId = (value) => (0, exports.isReportEntityId)(value) && 
 exports.isReportJobCompanyId = isReportJobCompanyId;
 const isReportGuid = (value) => typeof value === 'string' && exports.REPORT_GUID_PATTERN.test(value);
 exports.isReportGuid = isReportGuid;
+/** A native provider scope ID: Azure subscription GUID or AWS account ID. Syntax never proves ownership. */
+const isReportProviderScopeId = (value) => typeof value === 'string' && ((0, exports.isReportGuid)(value) || validationHelpers_1.AWS_ACCOUNT_ID_PATTERN.test(value));
+exports.isReportProviderScopeId = isReportProviderScopeId;
 /** A plain-text value with no control characters, trimmed, within the length bounds. */
 const isBoundedPlainText = (value, maxLength) => typeof value === 'string' && value.length > 0 && value.length <= maxLength && value === value.trim() && !hasControlCharacter(value);
 exports.isBoundedPlainText = isBoundedPlainText;

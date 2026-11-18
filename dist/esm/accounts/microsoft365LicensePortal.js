@@ -59,10 +59,31 @@ const LICENSE_KEYS = [
     'warningUnits',
     'suspendedUnits',
     'renewals',
+    'commercialReview',
 ];
+/** Aggregate license evidence must not become a container for person/assignment data. */
+const commercialReviewPrivacy = (value) => exact(value, [
+    'observedAt',
+    'candidateUnassignedUnits',
+    'recentStockReview',
+    'retainedEntitlements',
+    'accountPurposeAndAssignmentPaths',
+    'immediateRemoval',
+    'reassignment',
+    'futureAvoidance',
+    'renewalReduction',
+    'referenceUnassignedMonthlyValues',
+    'commercialTerms',
+    'unassignedAllocationToSubscriptions',
+]) &&
+    ['immediateRemoval', 'renewalReduction'].every(key => exact(value[key], ['verifiedUnits', 'monthlyCashReduction', 'effectiveAt'])) &&
+    exact(value.reassignment, ['candidateUnits', 'status']) &&
+    exact(value.futureAvoidance, ['verifiedMonthlyAmount', 'effectiveAt']) &&
+    list(value.referenceUnassignedMonthlyValues, 32, row => exact(row, ['amount', 'currency', 'basis']));
 const PRICING_KEYS = [
     'nonSavingDowngradeEdges',
     'projection',
+    'agreementTerms',
     'breakdownsUnavailableReason',
     'breakdowns',
     'basis',
@@ -286,8 +307,9 @@ export function isMicrosoft365LicenseSummaryView(value) {
         !exact(value.coverage, MICROSOFT_365_LICENSE_SOURCES) ||
         !Object.values(value.coverage).every(source => exact(source, COVERAGE_KEYS) && exact(source.recovery, ['action', 'optional'])) ||
         !list(value.licenses, 2000, row => exact(row, LICENSE_KEYS) &&
+            optional(row.commercialReview, commercialReviewPrivacy) &&
             optional(row.capabilities, productCapabilitiesPrivacy) &&
-            optional(row.renewals, renewals => list(renewals, 32, renewal => exact(renewal, ['status', 'isTrial', 'totalLicenses', 'nextLifecycleDateTime'])))) ||
+            optional(row.renewals, renewals => list(renewals, 32, renewal => exact(renewal, ['status', 'isTrial', 'totalLicenses', 'nextLifecycleDateTime', 'sourceSubscriptionId', 'createdDateTime', 'observedAt'])))) ||
         !optional(value.organization, organization => exact(organization, ['displayName', 'defaultDomain'])) ||
         !optional(value.pricingFacts, isMicrosoft365PricingFacts) ||
         !optional(value.pricingRevision, isMicrosoft365PricingRevision) ||

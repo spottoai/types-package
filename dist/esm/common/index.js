@@ -10,6 +10,7 @@ export * from './resourceGraphValidation.js';
 export * from './resourceIdentity.js';
 export * from './resourceHealth.js';
 export * from './syncProgress.js';
+export * from './workflowTracing.js';
 export * from './securityPosture.js';
 export * from './cloudGovernance.js';
 export * from './serviceRetirement.js';

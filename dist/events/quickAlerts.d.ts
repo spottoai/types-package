@@ -1,13 +1,14 @@
 import { BaseAlertDefinition, BaseAlertDestinations, BaseAlertInstance, BaseAlertScope, CreateAlertDefinitionInput, UpdateAlertDefinitionInput } from './baseAlert.js';
 import type { CostAlertDefinition, CostAlertInstance } from './cost.js';
 import type { EarlySpendAlertCriteria, EarlySpendAlertSummary } from './earlySpend.js';
-export declare const QUICK_ALERT_TYPES: readonly ["credentialExpiry", "benefitExpiry", "serviceRetirement", "backupFailure", "earlySpend"];
+import type { GitHubVulnerabilitySeverity } from '../ci-build/githubVulnerabilities.js';
+export declare const QUICK_ALERT_TYPES: readonly ["credentialExpiry", "benefitExpiry", "serviceRetirement", "backupFailure", "earlySpend", "buildVulnerability"];
 export type QuickAlertType = (typeof QUICK_ALERT_TYPES)[number];
 /** Early spend alerts run on the quick-alert lifecycle but are cost alerts. */
 export type QuickAlertCategoryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? 'cost' : 'other';
 export type QuickAlertCategory = QuickAlertCategoryFor<QuickAlertType>;
-export type QuickAlertTemplateId = 'credential-expiry-30d' | 'cloud-account-credential-expiry-30d' | 'benefit-expiry-30d' | 'benefit-expiry-7d' | 'service-retirement-30d' | 'backup-failure' | 'early-spend-default';
-export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals';
+export type QuickAlertTemplateId = 'credential-expiry-30d' | 'cloud-account-credential-expiry-30d' | 'benefit-expiry-30d' | 'benefit-expiry-7d' | 'service-retirement-30d' | 'backup-failure' | 'early-spend-default' | 'github-build-vulnerability';
+export type QuickAlertSource = 'serviceRetirement' | 'cloudAccounts' | 'commitmentsPlanning' | 'dataProtection' | 'costSignals' | 'buildCost';
 export type QuickAlertBenefitType = 'reservation' | 'savingsPlan';
 interface QuickAlertCriteriaBase<TKind extends QuickAlertType, TSource extends QuickAlertSource, TTemplateId extends QuickAlertTemplateId> {
     kind: TKind;
@@ -32,10 +33,44 @@ export interface BackupFailureAlertCriteria extends QuickAlertCriteriaBase<'back
     minimumConsecutiveFailures: number;
     workloadTypes?: string[];
 }
-export type QuickAlertCriteria = CredentialExpiryAlertCriteria | CloudAccountCredentialExpiryAlertCriteria | BenefitExpiryAlertCriteria | ServiceRetirementAlertCriteria | BackupFailureAlertCriteria | EarlySpendAlertCriteria;
+export interface BuildVulnerabilityAlertCriteria extends QuickAlertCriteriaBase<'buildVulnerability', 'buildCost', 'github-build-vulnerability'> {
+    severities: GitHubVulnerabilitySeverity[];
+    connectionId?: string;
+}
+export type QuickAlertCriteria = CredentialExpiryAlertCriteria | CloudAccountCredentialExpiryAlertCriteria | BenefitExpiryAlertCriteria | ServiceRetirementAlertCriteria | BackupFailureAlertCriteria | BuildVulnerabilityAlertCriteria | EarlySpendAlertCriteria;
 export type QuickAlertCriteriaFor<TType extends QuickAlertType> = Extract<QuickAlertCriteria, {
     kind: TType;
 }>;
+/** Safe source identity for remediation; never contains credential values or private keys. */
+export interface AlertResolutionContext {
+    version: 1;
+    provider: 'azure';
+    kind: 'application-credential' | 'service-principal-credential' | 'key-vault-object' | 'cloud-account-credential' | 'benefit-expiry' | 'backup-failure' | 'service-retirement';
+    /** Directory containing this object. For app registrations this is the home tenant. */
+    tenantId?: string;
+    sourceEntryId?: string;
+    observedAt?: string;
+    applicationId?: string;
+    applicationObjectId?: string;
+    servicePrincipalObjectId?: string;
+    credentialType?: 'secret' | 'certificate';
+    credentialId?: string;
+    credentialName?: string;
+    vaultResourceId?: string;
+    objectType?: 'secret' | 'key' | 'certificate';
+    objectName?: string;
+    benefitType?: 'reservation' | 'savings-plan';
+    /** Full ARM identity, never an opaque inventory/retirement ID. */
+    benefitResourceId?: string;
+    resources?: Array<{
+        id: string;
+        name?: string;
+    }>;
+    /** Full source count when the summary contains only a bounded resource sample. */
+    resourceCount?: number;
+    /** Official notice only; consumers must validate HTTPS and Microsoft host. */
+    documentationUrl?: string;
+}
 export interface QuickAlertSummary {
     summaryText?: string;
     matchedItemCount?: number;
@@ -51,6 +86,7 @@ export interface QuickAlertSummary {
     expiryBasis?: 'cloudAccountMetadata';
     expiresAt?: string;
     workloadType?: string;
+    resolution?: AlertResolutionContext;
 }
 export type QuickAlertSummaryFor<TType extends QuickAlertType> = TType extends 'earlySpend' ? EarlySpendAlertSummary : QuickAlertSummary;
 export type QuickAlertDefinitionFor<TType extends QuickAlertType> = BaseAlertDefinition<QuickAlertCriteriaFor<TType>, BaseAlertDestinations, BaseAlertScope, TType> & {

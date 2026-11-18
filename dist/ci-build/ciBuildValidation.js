@@ -1,0 +1,154 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isCiBuildCollectRequestMessage = isCiBuildCollectRequestMessage;
+exports.isCiBuildSummaryArtifact = isCiBuildSummaryArtifact;
+exports.isCiBuildLatestPointer = isCiBuildLatestPointer;
+const ciBuild_1 = require("./ciBuild");
+const record = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+const text = (value, max = 512) => typeof value === 'string' && value.trim().length > 0 && value.length <= max;
+const nullableText = (value, max = 512) => value === null || text(value, max);
+const nullableNumber = (value) => value === null || (typeof value === 'number' && Number.isFinite(value));
+const nullableCount = (value) => value === null || (typeof value === 'number' && Number.isFinite(value) && value >= 0);
+const count = (value) => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0;
+const nullableRatio = (value) => value === null || (typeof value === 'number' && value >= 0 && value <= 1);
+const timestamp = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value) && Number.isFinite(Date.parse(value));
+const month = (value) => typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+const day = (value) => typeof value === 'string' && /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value);
+const safeId = (value) => typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
+const currency = (value) => typeof value === 'string' && /^[A-Z]{3}$/.test(value);
+const oneOf = (values, value) => typeof value === 'string' && values.includes(value);
+const money = (value) => nullableNumber(value.netAmount) && nullableNumber(value.grossAmount);
+const cancelled = (value) => record(value) && nullableCount(value.afterFailure) && nullableCount(value.superseded) && nullableCount(value.other);
+const rows = (value, max, row) => Array.isArray(value) && value.length <= max && value.every(row);
+function isCiBuildCollectRequestMessage(value) {
+    return (record(value) &&
+        value.entity === ciBuild_1.CI_BUILD_REQUEST_ENTITY &&
+        value.action === ciBuild_1.CI_BUILD_REQUEST_ACTION &&
+        safeId(value.companyId) &&
+        safeId(value.connectionId) &&
+        oneOf(ciBuild_1.CI_BUILD_COLLECTION_MODES, value.mode) &&
+        timestamp(value.requestedAt) &&
+        text(value.requestId, 128));
+}
+function insight(value) {
+    if (!record(value))
+        return false;
+    const subject = value.subject;
+    return (oneOf(ciBuild_1.CI_BUILD_INSIGHT_KINDS, value.kind) &&
+        oneOf(['action', 'review', 'info'], value.severity) &&
+        count(value.rank) &&
+        nullableNumber(value.amount) &&
+        nullableNumber(value.ratio) &&
+        (subject === null ||
+            (record(subject) &&
+                oneOf(['company', 'repository', 'workflow', 'pull_request', 'connection'], subject.type) &&
+                text(subject.key, 512) &&
+                text(subject.label))) &&
+        record(value.facts) &&
+        Object.values(value.facts).every(nullableNumber) &&
+        !Object.keys(value.facts).some(key => /email|login|actor|person|name/i.test(key)));
+}
+/** Structural guard for the CI build summary artifact. Actors and personal identifiers are never published. */
+function isCiBuildSummaryArtifact(value) {
+    if (!record(value) || value.schema !== ciBuild_1.CI_BUILD_SUMMARY_SCHEMA)
+        return false;
+    if (!safeId(value.companyId) || !month(value.month) || !timestamp(value.generatedAt) || !text(value.runId, 128) || !currency(value.currency))
+        return false;
+    const range = value.range;
+    if (range !== undefined && (!record(range) || !oneOf(ciBuild_1.CI_BUILD_RANGES, range.preset) || !day(range.start) || !day(range.end) ||
+        !day(range.firstObservedDay) || range.start > range.firstObservedDay || range.firstObservedDay > range.end ||
+        !range.end.startsWith(value.month + '-') || !(Date.parse(range.end) - Date.parse(range.start) <= 366 * 86400000)))
+        return false;
+    const dailyRange = record(range) ? range : null;
+    const totals = value.totals;
+    if (!record(totals) ||
+        !money(totals) ||
+        !nullableNumber(totals.discountAmount) ||
+        !nullableCount(totals.billedMinutes) ||
+        !nullableCount(totals.attributedMinutes) ||
+        !nullableCount(totals.runs) ||
+        !nullableCount(totals.failedRuns) ||
+        !nullableCount(totals.failedMinutes) ||
+        !cancelled(totals.cancelledMinutes) ||
+        !nullableCount(totals.rerunMinutes) ||
+        !(totals.allowanceExhaustedOn === null || day(totals.allowanceExhaustedOn)) ||
+        (totals.allowanceNetAmount !== undefined && !nullableNumber(totals.allowanceNetAmount)) ||
+        !nullableNumber(totals.projectedNetAmount)) {
+        return false;
+    }
+    return (rows(value.monthly, 13, row => record(row) && month(row.month) && money(row) && nullableCount(row.billedMinutes) && oneOf(['provisional', 'final'], row.status)) &&
+        rows(value.byRepository, ciBuild_1.CI_BUILD_MAX_ROWS, row => record(row) &&
+            text(row.repository, 256) &&
+            nullableText(row.organization, 256) &&
+            money(row) &&
+            nullableCount(row.billedMinutes) &&
+            nullableCount(row.attributedMinutes) &&
+            nullableCount(row.runs) &&
+            nullableCount(row.failedMinutes) &&
+            cancelled(row.cancelledMinutes) &&
+            nullableCount(row.rerunMinutes) &&
+            nullableRatio(row.fullSuiteShare)) &&
+        rows(value.byWorkflow, ciBuild_1.CI_BUILD_MAX_ROWS, row => record(row) &&
+            text(row.repository, 256) &&
+            text(row.workflowId, 64) &&
+            text(row.workflowName) &&
+            nullableText(row.path) &&
+            nullableCount(row.attributedMinutes) &&
+            nullableNumber(row.estimatedAmount) &&
+            nullableCount(row.runs) &&
+            nullableCount(row.failedRuns) &&
+            record(row.minutesByEvent) &&
+            Object.values(row.minutesByEvent).every(minutes => typeof minutes === 'number' && minutes >= 0)) &&
+        rows(value.byTrigger, ciBuild_1.CI_BUILD_MAX_ROWS, row => record(row) && text(row.event, 64) && nullableCount(row.attributedMinutes) && nullableNumber(row.estimatedAmount) && nullableCount(row.runs)) &&
+        rows(value.byRunner, ciBuild_1.CI_BUILD_MAX_ROWS, row => record(row) && text(row.sku, 128) && money(row) && nullableCount(row.billedMinutes) && nullableNumber(row.pricePerMinute)) &&
+        rows(value.topPullRequests, ciBuild_1.CI_BUILD_MAX_PULL_REQUESTS, row => record(row) &&
+            text(row.repository, 256) &&
+            count(row.number) &&
+            nullableCount(row.attributedMinutes) &&
+            nullableNumber(row.estimatedAmount) &&
+            count(row.runs) &&
+            count(row.updates) &&
+            cancelled(row.cancelledMinutes)) &&
+        rows(value.storage, ciBuild_1.CI_BUILD_MAX_ROWS, row => record(row) && text(row.sku, 128) && money(row) && nullableNumber(row.quantity) && nullableText(row.unitType, 64)) &&
+        rows(value.daily, 31, row => record(row) && day(row.day) &&
+            (dailyRange
+                ? day(dailyRange.start) && day(dailyRange.end) && row.day >= dailyRange.start && row.day <= dailyRange.end
+                : row.day.startsWith(value.month)) &&
+            money(row) && nullableCount(row.billedMinutes)) &&
+        rows(value.insights, ciBuild_1.CI_BUILD_MAX_INSIGHTS, insight) &&
+        (value.runRecommendations === undefined || rows(value.runRecommendations, ciBuild_1.CI_BUILD_MAX_INSIGHTS, insight)) &&
+        (value.syncRecommendations === undefined || rows(value.syncRecommendations, ciBuild_1.CI_BUILD_MAX_INSIGHTS, insight)) &&
+        Array.isArray(value.freshness) &&
+        value.freshness.every(row => record(row) &&
+            safeId(row.connectionId) &&
+            text(row.displayName) &&
+            (row.dataThrough === null || day(row.dataThrough)) &&
+            (row.pulledAt === null || timestamp(row.pulledAt)) &&
+            oneOf(['provisional', 'final', 'unavailable'], row.status) &&
+            Array.isArray(row.reasonCodes) &&
+            row.reasonCodes.every(code => text(code, 128))));
+}
+function isCiBuildLatestPointer(value) {
+    return (record(value) &&
+        value.schema === ciBuild_1.CI_BUILD_LATEST_SCHEMA &&
+        safeId(value.companyId) &&
+        month(value.month) &&
+        text(value.runId, 128) &&
+        timestamp(value.generatedAt) &&
+        Array.isArray(value.months) &&
+        value.months.length <= 13 &&
+        value.months.every(month) &&
+        (value.accounts === undefined || rows(value.accounts, 400, row => record(row) && safeId(row.connectionId) && text(row.displayName))) &&
+        (value.rangeSlot === undefined ||
+            ((value.rangeSlot === 0 || value.rangeSlot === 1) &&
+                Array.isArray(value.ranges) && value.ranges.length <= ciBuild_1.CI_BUILD_RANGES.length &&
+                value.ranges.every(range => ciBuild_1.CI_BUILD_RANGES.some(preset => preset === range)))) &&
+        (value.pickerMetrics === undefined ||
+            (record(value.pickerMetrics) && Object.entries(value.pickerMetrics).length <= 13 + ciBuild_1.CI_BUILD_RANGES.length &&
+                Object.entries(value.pickerMetrics).every(([key, metrics]) => (month(key) || oneOf(ciBuild_1.CI_BUILD_RANGES, key)) && record(metrics) &&
+                    (metrics.netAmount === null || (typeof metrics.netAmount === 'number' && Number.isFinite(metrics.netAmount))) &&
+                    typeof metrics.recommendationCount === 'number' && Number.isSafeInteger(metrics.recommendationCount) &&
+                    metrics.recommendationCount >= 0))) &&
+        value.months.includes(value.month));
+}
+//# sourceMappingURL=ciBuildValidation.js.map

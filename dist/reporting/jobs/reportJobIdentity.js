@@ -39,7 +39,7 @@ const parseReverseTime19 = (value) => {
 exports.parseReverseTime19 = parseReverseTime19;
 /** First 16 hex characters of SHA-256 over the sorted, lower-cased subscription IDs joined with `,` (then `|{scheduleId}`). */
 const buildReportJobScopeHash = async ({ subscriptionIds, scheduleId }) => {
-    if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && (0, reportingIds_1.isReportGuid)(id.trim()))) {
+    if (subscriptionIds.length === 0 || !subscriptionIds.every(id => typeof id === 'string' && (0, reportingIds_1.isReportProviderScopeId)(id.trim()))) {
         throw new Error('Report job scope hash needs at least one valid subscription ID.');
     }
     if (scheduleId !== undefined && !(0, reportingIds_1.isReportEntityId)(scheduleId))
