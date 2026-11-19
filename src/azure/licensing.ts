@@ -177,6 +177,91 @@ export interface LicensingResourceEvidence {
   notes?: string[];
 }
 
+/** Charge-bearing usage in VM-hours, not a wall-clock uptime measurement or an inferred power schedule. */
+export type LicensingBilledVmHours =
+  | { availability: 'available'; hours: number }
+  | {
+      availability: 'unavailable';
+      reason: 'missing-usage-units' | 'unusable-usage-quantities' | 'incomplete-hour-evidence';
+      hours?: never;
+    };
+
+interface LicensingWindowsLicenseChargeComponentEvidence {
+  /** Billing, retail and any FX evidence used for this component, referencing the pricing context's sources. */
+  sourceIds: [string, ...string[]];
+  /** Matched billing meter identities when present; meter names alone need not provide an ID. */
+  meterIds?: string[];
+}
+
+/**
+ * Components share the enclosing observation window and the parent charge's display currency.
+ * Direct charges use billed (not amortized) money. Retail components estimate a licence portion;
+ * they do not establish what Azure billed for that portion. Different rates require distinct components.
+ */
+export type LicensingWindowsLicenseChargeComponent = LicensingWindowsLicenseChargeComponentEvidence &
+  (
+    | {
+        kind: 'separate-license-charges';
+        billedVmHours: LicensingBilledVmHours;
+        billedCharge: LicensingMoneyAmount;
+        hourlyLicenseRate?: never;
+        estimatedCharge?: never;
+      }
+    | {
+        /** Combined compute uses Windows-minus-base retail; fallback uses an exactly qualified licence-meter rate. */
+        kind: 'license-included-compute' | 'compute-hours-retail-fallback';
+        billedVmHours: Extract<LicensingBilledVmHours, { availability: 'available' }>;
+        /** Money per VM-hour in the parent charge's currency, after any evidenced FX conversion. */
+        hourlyLicenseRate: LicensingMoneyAmount;
+        /** Window estimate: measured VM-hours multiplied by the hourly licence rate. */
+        estimatedCharge: LicensingMoneyAmount;
+        billedCharge?: never;
+      }
+  );
+
+/**
+ * Engine-produced explanation of a current Windows licence charge, not acquisition cost or portfolio savings.
+ * Optional on the parent for backwards compatibility; omission supplies no hours or calculation evidence.
+ * Consumers display these results instead of reconstructing amounts from rounded monthly money or prose.
+ *
+ * Producers validate finite nonnegative hours/rates, real inclusive UTC dates and positive calendar days.
+ * All money uses the parent charge's currency with source/FX evidence; no currency default or basis substitution.
+ * Retain rate, component and window calculation precision; round the parent monthly amount after normalization.
+ * Formatting can round for display but must not replace this evidence. Omit the calculation if any contributing
+ * licence exposure cannot be priced; it must fully explain the parent charge. This declaration does not validate wire arithmetic.
+ */
+export interface LicensingWindowsLicenseChargeCalculation {
+  version: '1.0';
+  /** Explanatory amounts overlap the parent charge and must not be added to savings totals. */
+  nonAdditive: true;
+  /**
+   * Inclusive UTC calendar-day labels, not an elapsed timestamp interval: start/end may use YYYY-MM-DD or
+   * ISO UTC midnight. stableDays = UTC calendar date(end) - UTC calendar date(start) + 1, including off-days.
+   * This window is authoritative for the explanation; any parent window must agree on dates and declared days.
+   * It is not necessarily the latest 30 days.
+   */
+  observationWindow: LicensingObservationWindow & { stableDays: number };
+  /**
+   * Distinct licence-bearing VM-hours across components; no overlap or fabricated 730-hour fallback.
+   * Unavailable if any contributing component's hours are unknown, even when its billed charge is known.
+   * VM scale sets report aggregate instance-hours, not per-instance uptime.
+   */
+  billedVmHours: LicensingBilledVmHours;
+  /**
+   * Provenance of the complete window total. 'billed' requires only separate billed components and parent
+   * basis 'observed-billing'; 'retail-estimate' and 'mixed' require parent basis 'azure-retail', indicative true.
+   * Readers label mixed components separately instead of presenting the entire amount as directly billed.
+   */
+  provenance: 'billed' | 'retail-estimate' | 'mixed';
+  components: [LicensingWindowsLicenseChargeComponent, ...LicensingWindowsLicenseChargeComponent[]];
+  /** Complete window sum at calculation precision, before monthly normalization or display rounding. */
+  windowLicenseCharge: LicensingMoneyAmount;
+  /** Parent monthly amount = windowLicenseCharge / stableDays * 30, rounded once; annualized remains monthly * 12. */
+  normalizationDays: 30;
+  /** Future usage is assumed to repeat this window, including off-days; committed purchase cost stays fixed. */
+  projectionAssumption: 'observed-usage-repeats';
+}
+
 export interface LicensingAzureLicenseCharge {
   monthly: LicensingMoneyAmount;
   annualized: LicensingMoneyAmount;
@@ -186,6 +271,8 @@ export interface LicensingAzureLicenseCharge {
   observationWindow?: LicensingObservationWindow;
   sourceIds: string[];
   assumptionCodes?: string[];
+  /** Optional Windows usage/cost explanation; SQL and older artifacts may omit it. */
+  calculation?: LicensingWindowsLicenseChargeCalculation;
 }
 
 interface LicensingTargetAzureLicenseChargeBase {

@@ -527,6 +527,11 @@ try {
   await copyFile(serviceRetirementFixturePath, join(consumerRoot, 'service-retirement.consumer.ts'));
   await copyFile(publicIpAddressesFixturePath, join(consumerRoot, 'public-ip-addresses.consumer.ts'));
   await copyFile(resourceHealthFixturePath, join(consumerRoot, 'resource-health.consumer.ts'));
+  const licensingCalculationContracts = await readFile(join(packageRoot, 'src/azure/licensingChargeCalculation.contracts.spec.ts'), 'utf8');
+  await writeFile(
+    join(consumerRoot, 'licensing-charge-calculation.consumer.ts'),
+    licensingCalculationContracts.replace("from '../index'", "from '@spottoai/types-package'")
+  );
   await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-context.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-context.consumer.ts')
@@ -582,6 +587,7 @@ try {
       '--moduleResolution',
       'NodeNext',
       'aws-public-root.consumer.ts',
+      'licensing-charge-calculation.consumer.ts',
       'microsoft365-license-context.consumer.ts',
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
@@ -608,6 +614,7 @@ try {
       'microsoft365-license-usage.consumer.ts',
       'microsoft365-licensing-content.consumer.ts',
       'microsoft365-applications.consumer.ts',
+      'licensing-charge-calculation.consumer.ts',
       'microsoft365-applications.consumer.cts',
       'microsoft365-optimization.consumer.ts',
       'microsoft365-optimization.consumer.cts',

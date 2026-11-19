@@ -17,6 +17,7 @@ not establish workflow implementation or deployment.
 | Background report generation | [Jobs, scheduled Report Packs and filename contracts](reporting/background-report-generation/background-report-generation-types-package.md) |
 | License inventory | [Microsoft 365 evidence, storage, lifecycle and related Azure spend](licensing/license-inventory/license-inventory-types-package.md) |
 | License optimization | [Private candidates, subscription terms and anonymous priced recommendations](licensing/license-optimization/license-optimization-types-package.md) |
+| Hybrid benefit | [Windows usage and licence-charge calculation evidence](licensing/hybrid-benefit/hybrid-benefit-types-package.md), [decisions](licensing/hybrid-benefit/DECISIONS.md) |
 | Microsoft 365 activity history | [Daily sign-in, report, person and quantity observations](licensing/license-inventory/license-inventory-types-package.md#activity-history) |
 | Microsoft 365 application directory | [Anonymous application names, observed coverage and distinct account windows](licensing/license-inventory/license-inventory-types-package.md#application-directory) |
 

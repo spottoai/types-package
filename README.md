@@ -1,5 +1,18 @@
 # Types Package
 
+## Windows licence calculation evidence
+
+`LicensingAzureLicenseCharge.calculation` optionally explains billed VM-hours,
+the stable calendar window, directly billed licence charges and retail-estimated
+licence components. Unknown hours carry a reason; zero is a measured value.
+The existing monthly charge is a 30-day projection of the window, not the amount
+billed during that window. Purchase costs remain in the existing purchase scenario.
+These additive source contracts do not enable engine emission or UI presentation;
+registry publication and consumer adoption are separate. See the
+[contract and handoff](specs/licensing/hybrid-benefit/hybrid-benefit-types-package.md).
+Build checks compile both older artifacts and the new evidence; packed consumer
+checks verify the root type exports in NodeNext and CommonJS modes.
+
 ## Currency conversion contracts
 
 The package root and `@spottoai/types-package/currency-conversion` export versioned
