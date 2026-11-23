@@ -4,6 +4,8 @@ import type {
   GovernanceAccessGlobalAdminSection,
   GovernanceGraphArtifact,
   GovernanceReport,
+  TenantConditionalAccessPolicyDetail,
+  TenantConditionalAccessPolicyList,
   TenantGovernanceAccessArtifact,
   TenantGovernanceGraphArtifact,
   TenantGovernanceReport,
@@ -928,6 +930,53 @@ const tenantGovernanceAccessArtifactWithMfa: TenantGovernanceAccessArtifact = {
 };
 
 void tenantGovernanceAccessArtifactWithMfa;
+
+const conditionalAccess: TenantConditionalAccessPolicyList = {
+  generatedAt: '2026-11-24T00:00:00.000Z',
+  coverage: { state: 'complete', source: 'microsoft-graph', requiredPermissions: ['Policy.Read.All'] },
+  policies: [
+    {
+      id: 'policy-1',
+      displayName: 'Require MFA for administrators',
+      state: 'enabledForReportingButNotEnforced',
+      scope: { users: 'selected', resources: 'all', hasExclusions: true },
+      modifiedDateTime: '2026-11-23T00:00:00.000Z',
+    },
+  ],
+};
+
+const tenantGovernanceAccessArtifactWithPolicies: TenantGovernanceAccessArtifact = {
+  ...tenantGovernanceAccessArtifactWithMfa,
+  conditionalAccess,
+};
+
+const conditionalAccessDetail: TenantConditionalAccessPolicyDetail = {
+  scope: tenantGovernanceAccessArtifact.scope,
+  generatedAt: conditionalAccess.generatedAt,
+  policy: {
+    ...conditionalAccess.policies[0],
+    conditions: {
+      users: { includeRoles: ['role-1'], excludeGroups: ['group-1'] },
+      applications: { includeApplications: ['All'] },
+    },
+    grantControls: { operator: 'AND', builtInControls: ['mfa'] },
+    sessionControls: null,
+  },
+};
+
+const emptyConditionalAccess: TenantConditionalAccessPolicyList = { ...conditionalAccess, policies: [] };
+const unavailableConditionalAccess: TenantConditionalAccessPolicyList = {
+  generatedAt: conditionalAccess.generatedAt,
+  coverage: { state: 'unavailable', source: 'microsoft-graph', reason: 'graph_permission_unavailable' },
+};
+
+// @ts-expect-error Inaccessible evidence cannot certify an empty policy inventory.
+const emptyUnavailableConditionalAccess: TenantConditionalAccessPolicyList = { ...unavailableConditionalAccess, policies: [] };
+
+void tenantGovernanceAccessArtifactWithPolicies;
+void conditionalAccessDetail;
+void emptyConditionalAccess;
+void emptyUnavailableConditionalAccess;
 
 const tenantGovernanceReport: TenantGovernanceReport = {
   schemaVersion: TENANT_GOVERNANCE_REPORT_SCHEMA_VERSION,

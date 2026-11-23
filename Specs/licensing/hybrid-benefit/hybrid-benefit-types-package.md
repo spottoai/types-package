@@ -10,8 +10,8 @@ Core feature: [Hybrid benefit](../../../../core/specs/licensing/hybrid-benefit/h
 
 This package defines optional Windows licence-charge explanations and running
 context for Azure engine, API, portal and reporting consumers. Package `1.1.106`
-publishes the charge-calculation contract; the running-profile addition is
-source-only and requires a subsequent release. Consumer source adoption is described in the owning engine,
+publishes the charge-calculation contract; package `1.1.107` publishes the
+optional attachment of the existing utilization profile. Consumer source adoption is described in the owning engine,
 API and UI specifications; package declarations do not establish their runtime
 validation, deployment or regenerated production artifacts.
 The [Azure design](../../../../core/specs/licensing/hybrid-benefit/hybrid-benefit-azure.md)
@@ -95,9 +95,9 @@ checks and authorized projections, including financial redaction for any shared
 coverage-cost fields. Profile values do not reprice licence exposure, replace
 billed VM-hours, reduce a committed purchase cost or establish entitlement.
 
-The optional licensing attachment is source-only and requires a subsequent
-package release and engine/API/UI adoption. The profile DTO itself already
-exists; this addition does not implement new data retrieval or inference.
+The optional licensing attachment is published in `1.1.107`; engine/API/UI
+source adoption and production regeneration are separate. The profile DTO itself
+already exists; this addition does not implement new data retrieval or inference.
 
 ## Validation, compatibility and adoption
 

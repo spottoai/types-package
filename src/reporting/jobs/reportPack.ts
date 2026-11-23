@@ -12,6 +12,7 @@ export const REPORT_PACK_REPORT_IDS = [
   'cost-tree',
   'commitments',
   'at-a-glance',
+  'cost-optimization',
 ] as const;
 export type ReportPackReportId = (typeof REPORT_PACK_REPORT_IDS)[number];
 
@@ -28,6 +29,9 @@ export const REPORT_PACK_FEATURES: Record<ReportPackReportId, readonly string[]>
   'cost-tree': ['cost_tree'],
   commitments: ['commitments_planning'],
   'at-a-glance': ['resources'],
+  // Licensing, commitments and Microsoft 365 are optional sections: the report
+  // discloses an unentitled lever as not assessed rather than requiring it.
+  'cost-optimization': ['recommendations', 'recommendations_cost'],
 };
 
 export const isReportPackReportId = (value: unknown): value is ReportPackReportId =>

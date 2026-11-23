@@ -17,8 +17,8 @@ checks verify the root type exports in NodeNext and CommonJS modes.
 `UtilizationProfile` DTO and validators already used by resource details and
 At a Glance. Hybrid Benefit can display its running evidence without CPU
 colouring; this introduces no separate profile model or financial calculation.
-The optional licensing attachment requires a subsequent package release and
-engine/API/UI adoption; it is not part of released 1.1.106.
+The optional licensing attachment is published in 1.1.107. Engine/API/UI source
+adoption and production regeneration remain independent of package publication.
 
 ## Currency conversion contracts
 
@@ -327,6 +327,13 @@ readers must validate untrusted JSON and authorize every scope independently;
 these TypeScript contracts are not runtime validators. Existing Azure
 Governance/Global Administrator exports remain unchanged. See
 `specs/governance/cloud-governance-types.md` for the staged consumer handoff.
+
+The root export supports an optional `conditionalAccess` policy list on
+`TenantGovernanceAccessArtifact`. List rows carry the policy name, configured
+state and target summary. `TenantConditionalAccessPolicyDetail` binds separately
+loaded conditions and controls to the same tenant and observation. Complete empty
+lists, partial inventories and unavailable coverage retain distinct meanings.
+The producer and API own validation, authorization and bounds on policy data.
 
 AWS Review Checklists use root-exported scope, scan-command, slim-definition,
 result and manual-state contracts. Strict helpers reject unknown command fields,

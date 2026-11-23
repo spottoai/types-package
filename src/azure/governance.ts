@@ -973,6 +973,65 @@ export interface TenantMfaPostureArtifact extends TenantMfaPosture {
   tenantId: string;
 }
 
+export type TenantConditionalAccessPolicyState = 'enabled' | 'enabledForReportingButNotEnforced' | 'disabled' | 'unknown';
+
+/** Describes configured target selectors, independent of sign-in context or effective coverage. */
+export type TenantConditionalAccessTargetMode = 'all' | 'selected' | 'none' | 'unknown';
+
+export interface TenantConditionalAccessPolicyScopeSummary {
+  users: TenantConditionalAccessTargetMode;
+  resources: TenantConditionalAccessTargetMode;
+  workloadIdentities?: TenantConditionalAccessTargetMode;
+  /** Excluded users, groups, roles, resources or workload identities are configured. Omitted when unknown. */
+  hasExclusions?: boolean;
+}
+
+export interface TenantConditionalAccessPolicySummary {
+  id: string;
+  displayName: string;
+  state: TenantConditionalAccessPolicyState;
+  scope: TenantConditionalAccessPolicyScopeSummary;
+  modifiedDateTime?: string;
+}
+
+export interface TenantConditionalAccessCoverage {
+  state: GovernanceCoverageState;
+  source: 'microsoft-graph';
+  reason?: string;
+  message?: string;
+  requiredPermissions?: string[];
+  lastAttemptedAt?: string;
+  lastSuccessfulAt?: string;
+}
+
+export type TenantConditionalAccessPolicyList = {
+  /** Observation timestamp of the policy inventory for this tenant. */
+  generatedAt: string;
+} & (
+  | {
+      coverage: TenantConditionalAccessCoverage & { state: 'complete' | 'partial' };
+      /** An empty array establishes that no policies were observed only with complete coverage. */
+      policies: TenantConditionalAccessPolicySummary[];
+    }
+  | {
+      coverage: TenantConditionalAccessCoverage & { state: 'unavailable' | 'skipped' };
+      policies?: never;
+    }
+);
+
+/** One policy from the same tenant and observation as its list row, loaded separately. */
+export interface TenantConditionalAccessPolicyDetail {
+  scope: { tenantId: string };
+  generatedAt: string;
+  policy: TenantConditionalAccessPolicySummary & {
+    createdDateTime?: string;
+    templateId?: string | null;
+    conditions: GovernanceJsonObject;
+    grantControls?: GovernanceJsonObject | null;
+    sessionControls?: GovernanceJsonObject | null;
+  };
+}
+
 export interface TenantGovernanceAccessSourceMetadata {
   tenantFiles: string[];
   graphEndpoints: string[];
@@ -986,6 +1045,7 @@ export interface TenantGovernanceAccessArtifact {
   };
   globalAdmins: GovernanceAccessGlobalAdminSection;
   mfaPosture?: TenantMfaPosture;
+  conditionalAccess?: TenantConditionalAccessPolicyList;
   sourceMetadata: TenantGovernanceAccessSourceMetadata;
 }
 
