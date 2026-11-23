@@ -1,6 +1,6 @@
 # Types Package
 
-## Windows licence calculation evidence
+## Hybrid Benefit evidence
 
 `LicensingAzureLicenseCharge.calculation` optionally explains billed VM-hours,
 the stable calendar window, directly billed licence charges and retail-estimated
@@ -12,6 +12,13 @@ registry publication and consumer adoption are separate. See the
 [contract and handoff](specs/licensing/hybrid-benefit/hybrid-benefit-types-package.md).
 Build checks compile both older artifacts and the new evidence; packed consumer
 checks verify the root type exports in NodeNext and CommonJS modes.
+
+`LicensingResourceItem.utilizationProfile` optionally reuses the existing
+`UtilizationProfile` DTO and validators already used by resource details and
+At a Glance. Hybrid Benefit can display its running evidence without CPU
+colouring; this introduces no separate profile model or financial calculation.
+The optional licensing attachment requires a subsequent package release and
+engine/API/UI adoption; it is not part of released 1.1.106.
 
 ## Currency conversion contracts
 

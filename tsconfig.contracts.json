@@ -34,6 +34,7 @@
     "src/azure/activityLogAnalysis.contracts.spec.ts",
     "src/azure/licensing.contracts.spec.ts",
     "src/azure/licensingChargeCalculation.contracts.spec.ts",
+    "src/azure/licensingRunningProfile.contracts.spec.ts",
     "src/azure/payloads.contracts.spec.ts",
     "src/azure/publicIpAddresses.contracts.spec.ts",
     "src/azure/regulatoryCompliance.contracts.spec.ts",

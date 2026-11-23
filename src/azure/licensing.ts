@@ -1,5 +1,6 @@
 import type { SubscriptionSummaryLite } from './subscriptions';
 import type { SavingsPotential } from './views';
+import type { UtilizationProfile } from '../common/utilizationStories';
 
 export type LicensingPlanningVersion = '1.0';
 
@@ -578,6 +579,8 @@ export interface LicensingResourceItem {
   explanations?: string[];
   decision: LicensingDecision;
   evidence: LicensingResourceEvidence;
+  /** Existing resource/story profile; use its running evidence without CPU colouring or changing licence economics. */
+  utilizationProfile?: UtilizationProfile;
   licenseRequirement?: LicensingLicenseRequirement;
   economics: LicensingResourceEconomics;
   historicalEvidence?: LicensingHistoricalEvidence;

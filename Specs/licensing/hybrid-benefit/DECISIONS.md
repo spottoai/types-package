@@ -7,3 +7,5 @@
 - Unknown hours carry a reason and no numeric value; known billed money remains usable because missing usage units do not make identifiable charges disappear.
 - Reuse the existing purchase scenario because licence acquisition commitments stay fixed when runtime drops, and duplicated prices would create conflicting financial authorities.
 - Keep these declarations free of runtime calculation or validation logic; producer and reader boundary checks remain necessary because TypeScript types cannot establish numeric, source or currency validity at runtime.
+- Attach the existing UtilizationProfile optionally to licensing resources because At a Glance and resource details already share that DTO, its validation and evidence semantics. Do not introduce a licensing-specific profile or wrapper.
+- Keep running-only colouring in the shared presentation because hiding CPU intensity does not require a second data model. Reuse the profile's existing window, provenance, owner, capacity and unknown/intermittent states; they remain separate from licence-bearing billing hours and committed acquisition cost.

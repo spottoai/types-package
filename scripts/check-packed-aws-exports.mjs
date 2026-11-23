@@ -532,6 +532,12 @@ try {
     join(consumerRoot, 'licensing-charge-calculation.consumer.ts'),
     licensingCalculationContracts.replace("from '../index'", "from '@spottoai/types-package'")
   );
+  const licensingRunningContracts = await readFile(join(packageRoot, 'src/azure/licensingRunningProfile.contracts.spec.ts'), 'utf8');
+  for (const extension of ['ts', 'cts'])
+    await writeFile(
+      join(consumerRoot, `licensing-running-profile.consumer.${extension}`),
+      licensingRunningContracts.replace("from '../index'", "from '@spottoai/types-package'")
+    );
   await copyFile(
     join(packageRoot, 'tests/fixtures/microsoft365-license-context.consumer.ts.fixture'),
     join(consumerRoot, 'microsoft365-license-context.consumer.ts')
@@ -588,6 +594,8 @@ try {
       'NodeNext',
       'aws-public-root.consumer.ts',
       'licensing-charge-calculation.consumer.ts',
+      'licensing-running-profile.consumer.ts',
+      'licensing-running-profile.consumer.cts',
       'microsoft365-license-context.consumer.ts',
       'savings-unavailable-claims.consumer.ts',
       'resource-state.consumer.ts',
