@@ -169,3 +169,14 @@ void invalidCoverageStatus;
 void invalidManagementStatus;
 void invalidAssignmentType;
 void invalidPeriodicAssessment;
+
+// Unavailable observations are not measured zero. Consumers must accept null.
+const unavailableCounts: VmPatchManagementArtifact = {
+  ...artifact,
+  summary: { ...artifact.summary, pendingUpdateCount: null, criticalUpdateCount: null, securityUpdateCount: null, machinesWithPendingUpdates: null },
+  machines: artifact.machines.map(machine => ({
+    ...machine,
+    assessment: machine.assessment ? { ...machine.assessment, pendingPatchCount: null, securityUpdateCount: null } : undefined,
+  })),
+};
+void unavailableCounts;

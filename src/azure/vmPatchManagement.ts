@@ -22,19 +22,23 @@ export interface VmPatchSchedule {
 }
 
 export interface VmPatchAssessmentSummary {
+  /** Count validity is independent of schedule or configured orchestration. */
+  countCoverage?: VmPatchManagementEvidenceCoverageStatus;
+  /** Classification populations can overlap; never sum them to invent a total. */
+  availablePatchCountsByClassification?: Record<string, number | null>;
   status?: string;
   activityId?: string;
   startedAt?: string;
   lastModifiedAt?: string;
   rebootPending?: boolean;
-  installedPatchCount: number;
-  failedPatchCount: number;
-  pendingPatchCount: number;
-  excludedPatchCount: number;
-  notSelectedPatchCount: number;
-  criticalUpdateCount: number;
-  securityUpdateCount: number;
-  otherUpdateCount: number;
+  installedPatchCount: number | null;
+  failedPatchCount: number | null;
+  pendingPatchCount: number | null;
+  excludedPatchCount: number | null;
+  notSelectedPatchCount: number | null;
+  criticalUpdateCount: number | null;
+  securityUpdateCount: number | null;
+  otherUpdateCount: number | null;
 }
 
 export interface VmPatchInstallationSummary {
@@ -45,11 +49,11 @@ export interface VmPatchInstallationSummary {
   rebootStatus?: string;
   startedBy?: string;
   maintenanceWindowExceeded?: boolean;
-  installedPatchCount: number;
-  failedPatchCount: number;
-  pendingPatchCount: number;
-  excludedPatchCount: number;
-  notSelectedPatchCount: number;
+  installedPatchCount: number | null;
+  failedPatchCount: number | null;
+  pendingPatchCount: number | null;
+  excludedPatchCount: number | null;
+  notSelectedPatchCount: number | null;
 }
 
 export interface VmPatchManagementMachine {
@@ -93,10 +97,14 @@ export interface VmPatchManagementSummary {
   periodicAssessmentDisabledMachines: number;
   periodicAssessmentUnknownMachines: number;
   assessedMachines: number;
-  machinesWithPendingUpdates: number;
-  pendingUpdateCount: number;
-  criticalUpdateCount: number;
-  securityUpdateCount: number;
+  /** null means the selected machine population lacks complete current count evidence. */
+  machinesWithPendingUpdates: number | null;
+  /** null means the selected machine population lacks complete current count evidence. */
+  pendingUpdateCount: number | null;
+  /** null means the selected machine population lacks complete current count evidence. */
+  criticalUpdateCount: number | null;
+  /** null means the selected machine population lacks complete current count evidence. */
+  securityUpdateCount: number | null;
   machinesWithDeploymentEvidence: number;
   latestDeploymentSucceededMachines: number;
   latestDeploymentFailedMachines: number;

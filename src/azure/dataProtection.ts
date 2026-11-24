@@ -20,7 +20,11 @@ export type DataProtectionCollectionProvider = 'recoveryServicesVault' | 'backup
 export type DataProtectionCostConfidence = 'exact' | 'allocated' | 'estimated' | 'unavailable';
 
 export type DataProtectionCostAllocationMethod =
-  'direct' | 'protectedDataSizeWeighted' | 'backupStorageWeighted' | 'resourceSizeWeighted' | 'evenSplit';
+  | 'direct'
+  | 'protectedDataSizeWeighted'
+  | 'backupStorageWeighted'
+  | 'resourceSizeWeighted'
+  | 'evenSplit';
 
 export type DataProtectionBackupCostScope = 'protectedResource' | 'parentResource' | 'vault' | 'allocatedFromVault' | 'platformNativeMeter';
 
@@ -207,6 +211,35 @@ export interface DataProtectionSourceProvenance {
   observedAt: string;
 }
 
+/** Distinct provider job observations; never a count of scans or a complete lifetime history. */
+export interface DataProtectionJobHistory {
+  jobs: DataProtectionJobSummary[];
+  observedJobCount: number;
+  observedFailedBackupJobCount: number | null;
+  consecutiveFailedBackupJobCount: number | null;
+  /** Independent failure runs: a successful log backup cannot clear a failed full backup. */
+  failedBackupGroups: Array<{
+    kind: 'unspecified' | 'full' | 'log' | 'differential' | 'incremental';
+    observedFailureCount: number;
+    firstFailedAt: string;
+    latestFailedAt: string;
+    latestFailedJobId?: string;
+  }>;
+  latestBackupJob?: DataProtectionJobSummary;
+  latestSuccessfulBackupJob?: DataProtectionJobSummary;
+  latestSuccessfulBackupJobsByKind: Array<{
+    kind: 'unspecified' | 'full' | 'log' | 'differential' | 'incremental';
+    job: DataProtectionJobSummary;
+  }>;
+  firstObservedFailureAt?: string;
+  latestObservedFailureAt?: string;
+  observationWindowStart?: string;
+  observationWindowEnd?: string;
+  coverage: 'collected-window-only';
+  truncated: boolean;
+  conflictingJobIds: boolean;
+}
+
 export interface DataProtectionPostureItem {
   protectedResourceId: string;
   protectedResourceName: string;
@@ -231,6 +264,7 @@ export interface DataProtectionPostureItem {
   recoveryPointCount?: number;
   latestJob?: DataProtectionJobSummary;
   latestFailedJob?: DataProtectionJobSummary;
+  jobHistory?: DataProtectionJobHistory;
   failedSince?: string;
   consecutiveFailureCount?: number;
   daysSinceLastSuccess?: number;
