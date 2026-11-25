@@ -1724,3 +1724,4 @@ export type AIChatCanonicalStreamEvent =
  * migration. Use AIChatCanonicalStreamEvent for producers and contract gates.
  */
 export type AIChatStreamEvent = AIChatCanonicalStreamEvent | AIChatDoneEvent;
+export * from './environmentReview.js';
