@@ -9,3 +9,4 @@ export * from './companyMemory';
 export * from './companyMeetings';
 export * from './companyNoteRevisions';
 export * from './companyContextHarvesting';
+export * from './spaces';

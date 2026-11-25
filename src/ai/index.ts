@@ -126,6 +126,12 @@ type AIWorkspaceScopeExplicitRequest = {
 
 export type AIWorkspaceScopeRequest = AIWorkspaceScopeAllAuthorizedRequest | AIWorkspaceScopeExplicitRequest;
 
+/** A single company Space. The server resolves eligible references and any admitted resource scope. */
+export interface AIWorkspaceSpaceScopeRequest {
+  mode: 'space';
+  companyId: string;
+}
+
 export interface AIResolvedWorkspaceScope {
   companyIds: string[];
   subscriptionIds: string[];
@@ -1066,11 +1072,12 @@ interface AIChatRunStartRequestPage extends AIChatRequestBase {
   drillDown?: AIChatDrillDownInvocationV1;
   pageContext: PageContext;
   outputContract?: AIChatOutputContract;
+  spaceId?: never;
   workspaceScope?: never;
   runId?: never;
 }
 
-interface AIChatRunStartRequestWorkspace extends AIChatRequestBase {
+interface AIChatRunStartRequestWorkspaceBase extends AIChatRequestBase {
   action: 'start';
   chatMode: 'workspace';
   input: string;
@@ -1082,8 +1089,19 @@ interface AIChatRunStartRequestWorkspace extends AIChatRequestBase {
    */
   pageContext?: PageContext;
   outputContract?: never;
-  workspaceScope: AIWorkspaceScopeRequest;
 }
+
+type AIChatRunStartRequestWorkspace = AIChatRunStartRequestWorkspaceBase &
+  (
+    | { spaceId?: never; workspaceScope: AIWorkspaceScopeRequest }
+    | {
+        /** Binds a workspace conversation to the server-authorized Space in its company. */
+        spaceId: string;
+        workspaceScope: AIWorkspaceSpaceScopeRequest;
+        pageContext?: never;
+        drillDown?: never;
+      }
+  );
 
 export type AIChatRunStartRequest = AIChatRunStartRequestPage | AIChatRunStartRequestWorkspace;
 
@@ -1095,6 +1113,7 @@ export interface AIChatRunResumeRequest extends AIChatRequestBase {
   pageContext?: PageContext;
   workspaceScope?: AIWorkspaceScopeRequest;
   outputContract?: never;
+  spaceId?: never;
   input?: string;
   approvalDecision?: AIChatApprovalDecision;
   resume: AIChatRunResumeDirective;
@@ -1104,8 +1123,15 @@ export type AIChatRunRequest = AIChatRunStartRequest | AIChatRunResumeRequest;
 
 export type AIChatRequest = AIChatRunRequest;
 
+export interface AIChatSpaceSummary {
+  id: string;
+  name: string;
+}
+
 export interface AIConversationScopeMetadata {
   chatMode?: AIChatMode;
+  /** Omitted if the conversation has no Space or the viewer cannot access its identity. */
+  space?: AIChatSpaceSummary;
   resolvedWorkspaceScope?: AIResolvedWorkspaceScope;
   selectedSkillPackIds?: AIChatSkillId[];
 }
@@ -1193,6 +1219,8 @@ export interface AIChatTerminalSnapshot {
   resolvedResponseMode?: AIChatResolvedResponseMode;
   chatMode?: AIChatMode;
   resolvedScope?: AIResolvedWorkspaceScope;
+  /** Space context differs from the previous completed turn. */
+  spaceContextChanged?: boolean;
   classification?: AIChatClassificationMetadata;
   routing?: AIChatRoutingMetadata;
   structuredResponse?: StructuredAIResponse;

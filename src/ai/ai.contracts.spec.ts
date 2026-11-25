@@ -22,7 +22,10 @@ import type {
   AIEnvironmentEvidenceMatch,
   AIChatRunCompletedEvent,
   AIChatRunStartRequest,
+  AIConversationListItem,
   AIChatTerminalSnapshot,
+  SpaceReferenceSummary,
+  SpaceReferenceWriteRequest,
 } from '../index';
 
 const environmentSource: AIChatRetrievalSourceType = 'environment';
@@ -141,6 +144,36 @@ const pageStartRequest: AIChatRunStartRequest = {
     pageUrl: '/dashboard',
   },
 };
+
+const spaceStartRequest: AIChatRunStartRequest = {
+  action: 'start',
+  chatMode: 'workspace',
+  input: 'Which runbook applies?',
+  stream: true,
+  spaceId: 'checkout-production',
+  workspaceScope: { mode: 'space', companyId: 'comp-1' },
+};
+
+// @ts-expect-error A page request cannot bind a Space.
+const invalidPageSpaceBinding: AIChatRunStartRequest = { ...pageStartRequest, spaceId: 'checkout-production' };
+
+// @ts-expect-error A Space request cannot provide the ordinary company or provider scope.
+const invalidWideSpaceBinding: AIChatRunStartRequest = { ...spaceStartRequest, workspaceScope: { mode: 'allAuthorized' } };
+
+const spaceConversation: AIConversationListItem = {
+  id: 'conversation-1',
+  messageCount: 2,
+  space: { id: 'checkout-production', name: 'Checkout Production' },
+};
+
+const writeReference: SpaceReferenceWriteRequest = {
+  revision: 3,
+  reference: { kind: 'markdown', title: 'Runbook', markdown: '# Release', confirmCompanyShare: true },
+};
+
+const savedReference: SpaceReferenceSummary = { id: 'runbook', kind: 'markdown', title: 'Runbook', revision: 'reference-2' };
+
+void [spaceStartRequest, invalidPageSpaceBinding, invalidWideSpaceBinding, spaceConversation, writeReference, savedReference];
 
 // Compatibility remains explicit for parsers while being excluded from the
 // canonical producer union above.
