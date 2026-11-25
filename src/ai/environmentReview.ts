@@ -41,6 +41,11 @@ export interface EnvironmentReviewCostGroup {
 export interface EnvironmentReviewCost {
   currency: string;
   last30Days: number;
+  /** Date coverage of the last-30-days window. Absent on older reviews, which carry no coverage evidence. */
+  coverage?: 'complete' | 'partial';
+  /** Estimated (not yet billing-backed) portion of `last30Days`; absent when none is estimated. */
+  estimated30Days?: number;
+  /** Present only when both windows have complete date coverage. */
   previous30Days?: number;
   topResourceGroups: EnvironmentReviewCostGroup[];
   narrative?: string;
