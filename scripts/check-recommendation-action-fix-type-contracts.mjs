@@ -8,7 +8,7 @@ const require = createRequire(import.meta.url);
 const cjsRoot = require('../dist/index.js');
 const cjsRecommendations = require('../dist/azure/recommendations.js');
 
-const EXPECTED_FIX_TYPES = ['securitySettings', 'rightsize', 'power', 'licensing', 'cleanup'];
+const EXPECTED_FIX_TYPES = ['configuration', 'rightsize', 'power', 'licensing', 'cleanup'];
 
 for (const [label, api] of [
   ['esm root', esmRoot],
@@ -23,7 +23,7 @@ for (const [label, api] of [
   assert.equal(new Set(RECOMMENDATION_ACTION_FIX_TYPES).size, RECOMMENDATION_ACTION_FIX_TYPES.length, label);
 
   for (const fixType of RECOMMENDATION_ACTION_FIX_TYPES) assert.equal(isRecommendationActionFixType(fixType), true, `${label}: ${fixType}`);
-  for (const invalid of ['delete', 'Rightsize', 'security-settings', '', undefined, null, 7, {}]) {
+  for (const invalid of ['delete', 'Rightsize', 'securitySettings', '', undefined, null, 7, {}]) {
     assert.equal(isRecommendationActionFixType(invalid), false, `${label}: ${String(invalid)}`);
   }
 }

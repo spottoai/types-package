@@ -175,7 +175,7 @@ const recommendationAction: RecommendationActionMetadata = {
   description: 'Updates the storage account minimum TLS version to TLS 1.2.',
   estimatedDuration: '2-5 minutes',
   riskLevel: 'medium',
-  fixType: 'securitySettings',
+  fixType: 'configuration',
   requiredPermissions: {
     provider: 'azure-rbac',
     scope: 'targetResource',
