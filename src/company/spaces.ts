@@ -1,11 +1,21 @@
+import type { ProviderName, ProviderScope } from '../common/provider';
+
 export const SPACE_FEATURE_KEY = 'spaces' as const;
 export const SPACE_VIEW_PERMISSION_KEY = 'spaces.view' as const;
 export const SPACE_MANAGE_PERMISSION_KEY = 'spaces.manage' as const;
 
 export type SpaceStatus = 'active' | 'archived';
 
-/** Pilot coverage for cloud reads. Neither state enables cloud tools for the conversation. */
-export type SpaceCloudEvidence = 'referencesOnly' | 'unavailable';
+/** Server-resolved availability. Only a finite, authorized selection can resolve. */
+export type SpaceCloudEvidence = 'referencesOnly' | 'resolvedEmpty' | 'unavailable' | 'resolved';
+
+export interface SpaceAzureSubscription extends ProviderScope {
+  providerName: ProviderName.Azure;
+}
+
+export interface SpaceSubscriptionSelection extends SpaceAzureSubscription {
+  displayName?: string;
+}
 
 export interface SpaceSummary {
   id: string;
@@ -24,6 +34,8 @@ export interface SpaceDetail extends SpaceSummary {
   /** Contains only references the current viewer may access at their owning source. */
   references: SpaceReferenceSummary[];
   cloudEvidence: SpaceCloudEvidence;
+  /** Saved subscriptions visible to the current viewer. Other selections remain server-managed. */
+  subscriptions?: SpaceSubscriptionSelection[];
 }
 
 export interface SpaceListResponse {
@@ -52,6 +64,12 @@ export interface SpaceUpdateRequest extends SpaceRevisionRequest {
   teamId?: string | null;
   areaId?: string | null;
   answerPreferences?: string | null;
+}
+
+/** Changes explicit selections atomically while preserving every other stored selection. */
+export interface SpaceSubscriptionUpdateRequest extends SpaceRevisionRequest {
+  add?: SpaceAzureSubscription[];
+  remove?: SpaceAzureSubscription[];
 }
 
 export type SpaceReferenceInput =

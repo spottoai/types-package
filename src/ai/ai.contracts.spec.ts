@@ -1,3 +1,4 @@
+import { ProviderName } from '../index';
 import type {
   AIChatAnswerDraftEvent,
   AIChatAnswerDraftResetEvent,
@@ -26,6 +27,7 @@ import type {
   AIChatTerminalSnapshot,
   SpaceReferenceSummary,
   SpaceReferenceWriteRequest,
+  SpaceSubscriptionUpdateRequest,
 } from '../index';
 
 const environmentSource: AIChatRetrievalSourceType = 'environment';
@@ -173,7 +175,28 @@ const writeReference: SpaceReferenceWriteRequest = {
 
 const savedReference: SpaceReferenceSummary = { id: 'runbook', kind: 'markdown', title: 'Runbook', revision: 'reference-2' };
 
-void [spaceStartRequest, invalidPageSpaceBinding, invalidWideSpaceBinding, spaceConversation, writeReference, savedReference];
+const selectSpaceSubscriptions: SpaceSubscriptionUpdateRequest = {
+  revision: 3,
+  add: [{ providerName: ProviderName.Azure, providerScopeId: 'selected-subscription' }],
+  remove: [{ providerName: ProviderName.Azure, providerScopeId: 'previous-subscription' }],
+};
+
+const invalidSpaceSubscription: SpaceSubscriptionUpdateRequest = {
+  revision: 3,
+  // @ts-expect-error The subscription picker and API contract are Azure-only.
+  add: [{ providerName: ProviderName.Aws, providerScopeId: '000000000123' }],
+};
+
+void [
+  spaceStartRequest,
+  invalidPageSpaceBinding,
+  invalidWideSpaceBinding,
+  spaceConversation,
+  writeReference,
+  savedReference,
+  selectSpaceSubscriptions,
+  invalidSpaceSubscription,
+];
 
 // Compatibility remains explicit for parsers while being excluded from the
 // canonical producer union above.
