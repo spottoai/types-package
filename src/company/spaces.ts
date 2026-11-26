@@ -147,6 +147,42 @@ export interface SpaceNamedScopeOptionsResponse {
   items: SpaceNamedScopeOption[];
 }
 
+/** 30-day resource spend for the resources a Space selection covers, when the viewer may read cost. */
+export type SpaceCoverageCost =
+  | {
+      status: 'available';
+      currency: string;
+      currencySymbol?: string;
+      spend30Days: number;
+      /** Partial when some covered resources, or some subscriptions, have no spend evidence the viewer may read. */
+      coverage: 'complete' | 'partial';
+      resourcesWithSpend: number;
+      resourcesWithoutSpend: number;
+    }
+  | { status: 'unavailable'; reason: 'no_spend_evidence' | 'currency_unknown' | 'mixed_currency' };
+
+export interface SpaceCoverageSubscription {
+  providerScopeId: string;
+  displayName?: string;
+  resourceCount: number;
+}
+
+/** What a Space's current Azure selection covers, for the viewer. Hidden selections contribute nothing. */
+export interface SpaceCoverageResponse {
+  cloudEvidence: SpaceCloudEvidence;
+  /** Resources inside the selection across the readable subscriptions. */
+  resourceCount: number;
+  /** Subscriptions whose selected resources were read. */
+  subscriptionCount: number;
+  /** Subscriptions the selection involves but whose inventory could not be read. */
+  unavailableSubscriptionCount: number;
+  subscriptions: SpaceCoverageSubscription[];
+  /** Absent when the viewer cannot read resource cost for any covered subscription. */
+  cost?: SpaceCoverageCost;
+  /** Oldest inventory snapshot used. */
+  observedAt?: string;
+}
+
 export type SpaceReferenceInput =
   | {
       kind: 'markdown';
