@@ -187,7 +187,22 @@ const invalidSpaceSubscription: SpaceSubscriptionUpdateRequest = {
   add: [{ providerName: ProviderName.Aws, providerScopeId: '000000000123' }],
 };
 
+const selectSpaceWorkloads: SpaceSubscriptionUpdateRequest = {
+  revision: 4,
+  addResourceGroups: [{ providerName: ProviderName.Azure, providerScopeId: 'selected-subscription', resourceGroup: 'rg-checkout' }],
+  addNamedScopes: [{ scopeId: 'checkout-scope' }],
+  tags: [{ key: 'app', value: 'checkout' }],
+};
+
+const invalidSpaceResourceGroup: SpaceSubscriptionUpdateRequest = {
+  revision: 4,
+  // @ts-expect-error A resource group always names its subscription.
+  addResourceGroups: [{ providerName: ProviderName.Azure, resourceGroup: 'rg-checkout' }],
+};
+
 void [
+  selectSpaceWorkloads,
+  invalidSpaceResourceGroup,
   spaceStartRequest,
   invalidPageSpaceBinding,
   invalidWideSpaceBinding,
