@@ -115,6 +115,16 @@ export interface AwsConnectCheckConnectedResponse {
 
 export type AwsConnectCheckResponse = AwsConnectCheckWaitingResponse | AwsConnectCheckConnectedResponse;
 
+/** Live status of the deployment's billing export stack, read through the account's registered role. */
+export interface AwsConnectBillingStackResponse {
+  /** Missing requires AWS confirmation. Unavailable includes missing registration, access denial and timeout. */
+  state: 'missing' | 'in-progress' | 'complete' | 'failed' | 'unavailable';
+  /** CloudFormation stack status, when available. */
+  status?: string;
+  /** Display-only diagnostic from the relevant stack event or stack status. */
+  failureReason?: string;
+}
+
 export interface AwsConnectMembersRequest {
   /** 1..200 unique 12-digit account IDs. */
   accountIds: string[];
