@@ -109,6 +109,23 @@ export interface RecommendationActionImpactAssessment {
 
 export type RecommendationActionRiskLevel = 'low' | 'medium' | 'high';
 
+/**
+ * Groups recommendation actions the way customers grant Spotto access to them.
+ * Values are only ever added; an existing value's meaning never changes.
+ * - `securitySettings`: reversible configuration changes such as minimum TLS, HTTPS only, public access or FTP.
+ * - `rightsize`: size or tier changes such as VM size, disk tier, App Service plan SKU or database tier.
+ * - `power`: deallocate, start, pause or resume a resource.
+ * - `licensing`: licence settings such as Azure Hybrid Benefit.
+ * - `cleanup`: deletes an unused resource that holds no customer data. Never used for data resources.
+ */
+export const RECOMMENDATION_ACTION_FIX_TYPES = ['securitySettings', 'rightsize', 'power', 'licensing', 'cleanup'] as const;
+
+export type RecommendationActionFixType = (typeof RECOMMENDATION_ACTION_FIX_TYPES)[number];
+
+export function isRecommendationActionFixType(value: unknown): value is RecommendationActionFixType {
+  return typeof value === 'string' && (RECOMMENDATION_ACTION_FIX_TYPES as readonly string[]).includes(value);
+}
+
 export interface RecommendationActionRollback {
   supported: boolean;
   description: string;
@@ -167,6 +184,11 @@ export interface RecommendationActionRequiredPermissions {
 export interface RecommendationActionDefinition {
   verified: boolean;
   actionDefinitionId?: string;
+  /**
+   * Fix type of the executable action, copied from its action definition by the engine.
+   * Absent on recommendations published before fix types existed; consumers treat absence as unknown.
+   */
+  fixType?: RecommendationActionFixType;
   title: string;
   description: string;
   estimatedDuration: string;

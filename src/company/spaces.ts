@@ -183,6 +183,19 @@ export interface SpaceCoverageResponse {
   observedAt?: string;
 }
 
+/**
+ * Which of a live report's subscriptions a Space still covers whole, for the viewer, now. A report in a Space answer
+ * shows only these; narrowed subscriptions (resource groups, tags or scopes) cannot be filtered inside a report.
+ */
+export interface SpaceLiveReportScopeResponse {
+  spaceId: string;
+  revision: number;
+  /** The requested subscriptions the Space still selects whole and the viewer can read, in request order. */
+  subscriptionIds: string[];
+  /** Space subscriptions narrowed by resource group, tag or scope, and so left out of whole-subscription reports. */
+  narrowedSubscriptionCount: number;
+}
+
 export type SpaceReferenceInput =
   | {
       kind: 'markdown';

@@ -28,6 +28,7 @@
     "src/azure/financialChargePolicy.contracts.spec.ts",
     "src/azure/nativeDiscount.contracts.spec.ts",
     "src/azure/commitmentsPlanning.contracts.spec.ts",
+    "src/azure/recommendations.contracts.spec.ts",
     "src/azure/governance.contracts.spec.ts",
     "src/azure/azureViewSet.contracts.spec.ts",
     "src/azure/artifactEvidenceViews.contracts.spec.ts",

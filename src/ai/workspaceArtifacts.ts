@@ -286,11 +286,27 @@ export interface AIChatWorkspaceResourceMetricsBinding {
   timeRange: Extract<AIChatWorkspaceTimeRangePreset, 'P7D' | 'P30D' | 'P90D'>;
 }
 
+/**
+ * Server-issued scope of a live report shown in a Space answer. It names the Space and the selection the report was
+ * bound against; it never authorizes anything. Every load re-resolves the Space for the viewer and keeps only the
+ * subscriptions the Space still selects whole, so a stale or edited copy cannot widen what the report shows.
+ */
+export interface AIChatWorkspaceSpaceScope {
+  spaceId: string;
+  revision: number;
+  /** Digest of the Space selection (whole and narrowed subscriptions with their filters) at answer time. */
+  selectionFingerprint: string;
+  /** Space subscriptions narrowed by resource group, tag or scope, and so left out of a whole-subscription report. */
+  narrowedSubscriptionCount: number;
+}
+
 type AIChatWorkspaceReportStrategyBindingBase<StrategyId extends AIChatReportStrategyId> = {
   bindingKind: 'reportStrategy';
   strategyId: StrategyId;
   companyId: string;
   subscriptionIds: string[];
+  /** Present only on reports in a Space answer; the report then shows only the Space's whole subscriptions. */
+  spaceScope?: AIChatWorkspaceSpaceScope;
 };
 
 export type AIChatWorkspaceReportStrategyBinding<StrategyId extends AIChatReportStrategyId = AIChatReportStrategyId> =
