@@ -150,6 +150,7 @@ export interface CommitmentsPlanningViewBase<
   purchaseRecommendations?: TPurchaseRecommendation[];
   diagnostics?: CommitmentsPlanningDiagnostics;
   coverage?: CommitmentsCoverageSummary[];
+  savingsPlanDashboard?: CommitmentsSavingsPlanDashboard;
   renewals?: CommitmentsRenewalDecision[];
   storageCapacity?: CommitmentsStorageCapacitySection;
   risk?: CommitmentsRiskSummary;
@@ -252,6 +253,8 @@ export interface CommitmentsInventoryItem {
   utilization?: IBenefitUtilization;
   coveragePercent?: number;
   annualCommittedCost?: CommitmentsMoneyAmount;
+  /** Provider-reported one-time payment for the full commitment term. */
+  upfrontCost?: CommitmentsMoneyAmount;
   optimizationImpact?: CommitmentsMoneyAmount;
   doNotRenewAnnualImpact?: CommitmentsMoneyAmount;
   breakCostEstimate?: CommitmentsBreakCostEstimate;
@@ -605,8 +608,63 @@ export interface CommitmentsCoverageSummary {
   coveredCost?: CommitmentsMoneyAmount;
   uncoveredCost?: CommitmentsMoneyAmount;
   coveragePercent?: number;
+  quality?: Partial<Record<'coveragePercent' | 'eligibleCost' | 'coveredCost' | 'uncoveredCost', CommitmentsFieldQuality>>;
   impactedResources?: CommitmentsResourceReference[];
   source?: CommitmentsSourceMetadata;
+}
+
+export type CommitmentsFieldQualityState = 'present' | 'missing' | 'partial' | 'unknown';
+
+export interface CommitmentsFieldQuality {
+  state: CommitmentsFieldQualityState;
+  reason?: string;
+}
+
+export interface CommitmentsSavingsPlanDashboard {
+  summary?: {
+    activeCount: number;
+    hourlyRunRate?: CommitmentsMoneyAmount;
+    annualizedCommitment?: CommitmentsMoneyAmount;
+    latestUtilizationPercent?: number;
+    latestCoveragePercent?: number;
+    eligibleUncoveredUsage?: CommitmentsMoneyAmount;
+    dataHealthStatus: CommitmentsFieldQualityState;
+    quality: Record<string, CommitmentsFieldQuality>;
+  };
+  runRate?: Array<{ timestamp: string; hourlyRunRate?: CommitmentsMoneyAmount }>;
+  coverageSplit?: Array<{
+    scenario?: 'current' | 'proposed' | 'excluded';
+    bucket: 'existing-covered' | 'eligible-on-demand' | 'ineligible' | 'proposed-covered' | 'unknown-attribution';
+    cost?: CommitmentsMoneyAmount;
+    percentage?: number;
+    quality?: CommitmentsFieldQuality;
+  }>;
+  utilizationSplit?: { utilized?: CommitmentsMoneyAmount; unused?: CommitmentsMoneyAmount; quality: CommitmentsFieldQuality };
+  optionComparison?: Array<{
+    optionClass?: 'starter' | 'recommended' | 'aggressive' | 'custom';
+    commitmentAmount?: CommitmentsMoneyAmount;
+    averageUtilizationPercentage?: number;
+    benefitCost?: number;
+    coveragePercentage?: number;
+    overageCost?: number;
+    savingsAmount?: number;
+    savingsPercentage?: number;
+    totalCost?: number;
+    wastageCost?: number;
+    breakevenState?: 'known' | 'insufficient-evidence' | 'not-applicable';
+    estimatedAnnualSavings?: CommitmentsMoneyAmount;
+    estimatedTermSavings?: CommitmentsMoneyAmount;
+  }>;
+  blockers?: Array<{ code: string; message: string }>;
+  freshnessStates?: Array<{
+    code: string;
+    severity: 'info' | 'warning';
+    observedAt: string;
+    message: string;
+    ageHours?: number;
+    windowHours?: number;
+    lagDays?: number;
+  }>;
 }
 
 export interface CommitmentsRiskSummary {

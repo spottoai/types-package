@@ -158,6 +158,23 @@ const awsView = {
   },
 } satisfies AwsCommitmentsPlanningView;
 
+const awsInsightsView = {
+  ...awsView,
+  inventory: [{ ...awsInventoryItem, upfrontCost: { amount: 0, currency: 'USD', source: 'negotiated' } }],
+  coverage: [{
+    commitmentFamily: 'compute-savings-plan',
+    quality: { coveragePercent: { state: 'missing', reason: 'coverage-periods-incomplete' } },
+  }],
+  savingsPlanDashboard: {
+    summary: {
+      activeCount: 1,
+      hourlyRunRate: { amount: 1.25, currency: 'USD', source: 'negotiated' },
+      dataHealthStatus: 'partial',
+      quality: { latestCoveragePercent: { state: 'missing', reason: 'coverage-periods-incomplete' } },
+    },
+  },
+} satisfies AwsCommitmentsPlanningView;
+
 const invalidAwsSubscriptionIdentity = {
   ...awsView,
   // @ts-expect-error AWS artifacts cannot also carry legacy Azure subscription identity.

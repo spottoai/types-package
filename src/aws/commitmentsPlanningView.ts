@@ -42,6 +42,18 @@ export interface AwsCommitmentsAppliedScopeProperties {
   availabilityZone?: string;
 }
 
+/** Full-view AWS Cost Explorer scenario detail over a continuous UTC hour window. */
+export interface AwsSavingsPlanRecommendationHourlyEvidence {
+  source: 'aws-ce-recommendation-details';
+  rateBasis: 'estimated-residual-on-demand';
+  currencyCode: string;
+  windowStart: string;
+  windowEndExclusive: string;
+  totalHours: number;
+  /** Projected remaining On-Demand charges after the proposed plan, ordered by UTC hour. */
+  estimatedOnDemandCosts: number[];
+}
+
 export type AwsCommitmentsInventoryItem = Omit<
   CommitmentsInventoryItem,
   'sourceKind' | 'provider' | 'shape' | 'appliedScopeType' | 'appliedScopeProperties' | 'subscriptionId' | 'breakCostEstimate' | 'storageDimensions'
@@ -77,4 +89,5 @@ export type AwsCommitmentsPurchaseRecommendation = Omit<
   purchaseScope: 'linked-account';
   appliedScopeProperties: AwsCommitmentsAppliedScopeProperties;
   pricingQuote?: never;
+  recommendationHourlyEvidence?: AwsSavingsPlanRecommendationHourlyEvidence;
 };
