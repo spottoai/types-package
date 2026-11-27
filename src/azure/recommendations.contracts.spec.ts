@@ -3,13 +3,15 @@ import type {
   Recommendation,
   RecommendationActionRequest,
   RecommendationActionMetadata,
+  RecommendationActionFixType,
   RecommendationActionRequiredPermissions,
   RecommendationEvidenceHint,
   RecommendationEffortEstimates,
   RecommendationMetricEvidenceHint,
   ResourceScopedRecommendation,
 } from './recommendations';
-import { RecommendationCategory } from './recommendations';
+import { ProviderName } from '../common/provider';
+import { RecommendationCategory, RECOMMENDATION_ACTION_FIX_TYPES } from './recommendations';
 
 const effortEstimates: RecommendationEffortEstimates = {
   profiles: {
@@ -112,7 +114,7 @@ const recommendationWithSampledResourceIds: Recommendation = {
 
 const allAffectedRecommendationActionRequest: RecommendationActionRequest = {
   companyId: 'company-1',
-  providerName: 'Azure',
+  providerName: ProviderName.Azure,
   providerScopeId: 'sub-dev',
   recommendationId: 'rec-sampled-resource-ids',
   resourceIds: [],
@@ -173,6 +175,7 @@ const recommendationAction: RecommendationActionMetadata = {
   description: 'Updates the storage account minimum TLS version to TLS 1.2.',
   estimatedDuration: '2-5 minutes',
   riskLevel: 'medium',
+  fixType: 'configuration',
   requiredPermissions: {
     provider: 'azure-rbac',
     scope: 'targetResource',
@@ -368,6 +371,16 @@ const invalidActionRiskLevel: RecommendationActionMetadata = {
   riskLevel: 'critical',
 };
 
+const actionWithoutFixType: RecommendationActionMetadata = { ...recommendationAction, fixType: undefined };
+
+const invalidActionFixType: RecommendationActionMetadata = {
+  ...recommendationAction,
+  // @ts-expect-error action fix type must use a published fix type.
+  fixType: 'delete',
+};
+
+const everyFixType: readonly RecommendationActionFixType[] = RECOMMENDATION_ACTION_FIX_TYPES;
+
 const invalidActionPermissionProvider: RecommendationActionRequiredPermissions = {
   ...recommendationAction.requiredPermissions!,
   // @ts-expect-error action permission provider must use the supported provider values.
@@ -417,6 +430,9 @@ void invalidHddCurrentStorageTier;
 void invalidActionRiskLevel;
 void invalidActionPermissionProvider;
 void invalidActionPermissionScope;
+void actionWithoutFixType;
+void invalidActionFixType;
+void everyFixType;
 void invalidEvidenceHintVersion;
 void invalidEvidenceHintPurpose;
 void invalidEvidenceThresholdRole;
