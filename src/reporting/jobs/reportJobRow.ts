@@ -130,7 +130,14 @@ export interface ReportJobWorkerFieldsV1 {
   failureStage?: ReportJobFailureStage;
   failureCode?: ReportJobFailureCode;
   lastTransientErrorCode?: string;
+  /** AI Assistant outcome, written by reportworker when the request carries the AI block. */
+  aiOutcome?: ReportJobAiOutcome;
 }
+
+export const REPORT_JOB_AI_OUTCOMES = ['enhanced', 'enhancement-failed'] as const;
+export type ReportJobAiOutcome = (typeof REPORT_JOB_AI_OUTCOMES)[number];
+export const isReportJobAiOutcome = (value: unknown): value is ReportJobAiOutcome =>
+  typeof value === 'string' && (REPORT_JOB_AI_OUTCOMES as readonly string[]).includes(value);
 
 /** Merged by cloud-engine's notifier (phase 6). The producer inserts `notificationStatus: 'none'`. */
 export interface ReportJobNotificationFieldsV1 {
@@ -181,6 +188,7 @@ export const REPORT_JOB_WORKER_FIELDS = [
   'failureStage',
   'failureCode',
   'lastTransientErrorCode',
+  'aiOutcome',
 ] as const satisfies readonly (keyof ReportJobWorkerFieldsV1)[];
 
 export const REPORT_JOB_NOTIFICATION_FIELDS = [
@@ -315,6 +323,7 @@ const validateShape = (row: Record<string, unknown>, errors: string[]): void => 
   check('failureStage', isOptional(row.failureStage, isReportJobFailureStage));
   check('failureCode', isOptional(row.failureCode, isReportJobFailureCode));
   check('lastTransientErrorCode', isOptional(row.lastTransientErrorCode, isText(128)));
+  check('aiOutcome', isOptional(row.aiOutcome, isReportJobAiOutcome));
 
   // Cross-field rules: the status milestone and the fields that prove it agree.
   if (!isReportJobStatus(row.status)) return;
@@ -367,6 +376,11 @@ export const parseReportJobRowV1 = async (entity: unknown): Promise<ReportJobRow
     if (!spec.ok) return { ok: false, code: 'request-invalid', errors: spec.errors };
     if (row.trigger === 'schedule' && spec.value.reportType === 'sdm' && spec.value.period.kind === 'explicit')
       return { ok: false, code: 'request-invalid', errors: ['period: schedule jobs require a period rule'] };
+    const hasAi = 'ai' in spec.value && spec.value.ai !== undefined;
+    if (row.trigger === 'schedule' && (spec.value.reportType === 'health-check' || hasAi))
+      return { ok: false, code: 'request-invalid', errors: ['trigger: health checks and AI jobs require on-demand generation'] };
+    if (row.aiOutcome !== undefined && (!hasAi || !isSha(row.artifactContentSha256) || row.artifactBytes === undefined))
+      return { ok: false, code: 'request-invalid', errors: ['aiOutcome: requires an AI request and a durable artifact'] };
     if (spec.value.reportType !== row.reportType) return { ok: false, code: 'request-invalid', errors: ['reportType: does not match the request'] };
     if (row.currencyRateSnapshotJson !== undefined) {
       const snapshot = parseReportJobCurrencyRateSnapshotV1(row.currencyRateSnapshotJson);

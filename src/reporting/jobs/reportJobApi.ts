@@ -12,12 +12,14 @@ import {
 import { isReportFileName } from '../shared/reportingPaths';
 import { isReportJobFileNameForType } from './reportPack';
 import { isReportJobId, parseReportJobId } from './reportJobIdentity';
+import { isReportAiReportType, isReportJobAiRequestV1, type ReportJobAiRequestV1 } from './reportAiAssistant';
+import { REPORT_JOB_AI_BRIEFING_SOURCES, REPORT_JOB_AI_REPORT_TYPES, type ReportJobAiBriefingSource } from './reportJobSpec';
 import {
   isReportJobNotificationDestinationCountsV1,
   parseReportJobNotificationDestinationCountsV1,
   type ReportJobNotificationDestinationCountsV1,
 } from './reportJobNotifications';
-import { parseReportJobRowV1, type ReportJobRowV1, type ReportJobTrigger } from './reportJobRow';
+import { isReportJobAiOutcome, parseReportJobRowV1, type ReportJobAiOutcome, type ReportJobRowV1, type ReportJobTrigger } from './reportJobRow';
 import {
   isReportJobReportType,
   isReportJobScopeV1,
@@ -47,27 +49,44 @@ export const REPORT_JOB_LIST_MAX_RESULTS = 100;
 
 export interface ReportJobCreateRequestV1 {
   schemaVersion: 1;
+  /** Clients never send `report.ai`; the API resolves `ai` into it. */
   report: ReportJobSpecV1;
   notificationPolicyId?: string;
+  /** AI Assistant choice for this run; only for report types in REPORT_JOB_AI_REPORT_TYPES. */
+  ai?: ReportJobAiRequestV1;
 }
 
 export const parseReportJobCreateRequestV1 = (value: unknown): { ok: true; value: ReportJobCreateRequestV1 } | { ok: false; errors: string[] } => {
   try {
     if (
       !isPlainRecord(value) ||
-      !hasExactlyKeys(value, ['schemaVersion', 'report'], ['notificationPolicyId']) ||
+      !hasExactlyKeys(value, ['schemaVersion', 'report'], ['notificationPolicyId', 'ai']) ||
       value.schemaVersion !== 1 ||
       (value.notificationPolicyId !== undefined && !isReportEntityId(value.notificationPolicyId))
     )
       return { ok: false, errors: ['request: invalid fields'] };
+    if (isPlainRecord(value.report) && value.report.ai !== undefined) return { ok: false, errors: ['report.ai: set by the API; send ai instead'] };
+    if (value.ai !== undefined && !isReportJobAiRequestV1(value.ai)) return { ok: false, errors: ['ai: invalid AI Assistant choice'] };
     const report = parseReportJobSpecV1(value.report);
     if (!report.ok) return report;
+    if (value.ai !== undefined && !isReportAiReportType(report.value.reportType))
+      return { ok: false, errors: [`ai: only ${REPORT_JOB_AI_REPORT_TYPES.join(' and ')} reports accept the AI Assistant`] };
+    const ai = value.ai as ReportJobAiRequestV1 | undefined;
     return {
       ok: true,
       value: {
         schemaVersion: 1,
         report: report.value,
         ...(value.notificationPolicyId === undefined ? {} : { notificationPolicyId: value.notificationPolicyId }),
+        ...(ai === undefined
+          ? {}
+          : {
+              ai: {
+                ...(ai.briefing === undefined ? {} : { briefing: ai.briefing }),
+                ...(ai.savedBriefingId === undefined ? {} : { savedBriefingId: ai.savedBriefingId }),
+                ...(ai.research === undefined ? {} : { research: ai.research }),
+              },
+            }),
       },
     };
   } catch {
@@ -81,7 +100,10 @@ export const isReportJobCreateRequestV1 = (value: unknown): value is ReportJobCr
 export const buildReportJobAdmissionFingerprintV1 = async (request: ReportJobCreateRequestV1): Promise<string> => {
   const parsed = parseReportJobCreateRequestV1(request);
   if (!parsed.ok) throw new Error('Invalid report job create request.');
-  return sha256Hex(JSON.stringify([serializeReportJobSpecV1(parsed.value.report), parsed.value.notificationPolicyId ?? null]));
+  const identity: unknown[] = [serializeReportJobSpecV1(parsed.value.report), parsed.value.notificationPolicyId ?? null];
+  // Requests without AI keep their historical fingerprint.
+  if (parsed.value.ai !== undefined) identity.push(parsed.value.ai);
+  return sha256Hex(JSON.stringify(identity));
 };
 
 export const isReportJobIdempotencyKey = (value: unknown): value is string =>
@@ -177,7 +199,23 @@ export interface ReportJobProjectionV1 {
   notificationDestinationCounts?: ReportJobNotificationDestinationCountsV1;
   notificationCompletedAtUtc?: string;
   downloadUrl?: string;
+  /** Safe AI Assistant summary: never the briefing text. */
+  ai?: ReportJobAiProjectionV1;
 }
+
+export interface ReportJobAiProjectionV1 {
+  briefingSource: ReportJobAiBriefingSource;
+  research: boolean;
+  outcome?: ReportJobAiOutcome;
+}
+
+const isReportJobAiProjectionV1 = (value: unknown): value is ReportJobAiProjectionV1 =>
+  isPlainRecord(value) &&
+  hasExactlyKeys(value, ['briefingSource', 'research'], ['outcome']) &&
+  typeof value.briefingSource === 'string' &&
+  (REPORT_JOB_AI_BRIEFING_SOURCES as readonly string[]).includes(value.briefingSource) &&
+  typeof value.research === 'boolean' &&
+  (value.outcome === undefined || isReportJobAiOutcome(value.outcome));
 
 const projectionRequired = [
   'schemaVersion',
@@ -211,6 +249,7 @@ const projectionOptional = [
   'notificationDestinationCounts',
   'notificationCompletedAtUtc',
   'downloadUrl',
+  'ai',
 ] as const;
 const isCount = (value: unknown): value is number => typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 2_147_483_647;
 
@@ -270,6 +309,7 @@ export const isReportJobProjectionV1 = (value: unknown): value is ReportJobProje
     for (const key of ['startedAtUtc', 'sourceObservedAtUtc', 'generatedAtUtc', 'completedAtUtc', 'notificationCompletedAtUtc'])
       if (value[key] !== undefined && !isIsoUtcTimestamp(value[key])) return false;
     if (value.progress !== undefined && !isReportJobProgressV1(value.progress)) return false;
+    if (value.ai !== undefined && (!isReportAiReportType(value.reportType) || !isReportJobAiProjectionV1(value.ai))) return false;
     if (value.status === 'failed') {
       if (!isReportJobFailureCode(value.failureCode) || !isReportJobFailureStage(value.failureStage)) return false;
       const stage = REPORT_JOB_FAILURE_STAGE_BY_CODE[value.failureCode];
@@ -317,10 +357,17 @@ export const buildReportJobProjectionV1 = async (entity: unknown): Promise<Repor
     notificationStatus: row.notificationStatus,
   };
   for (const key of projectionOptional) {
-    if (key === 'period' || key === 'downloadUrl' || key === 'notificationDestinationCounts' || key === 'progress') continue;
+    if (key === 'period' || key === 'downloadUrl' || key === 'notificationDestinationCounts' || key === 'progress' || key === 'ai') continue;
     const value = row[key];
     if (value !== undefined) Object.assign(projection, { [key]: value });
   }
+  const ai = parsed.spec.reportType === 'sdm' || parsed.spec.reportType === 'health-check' ? parsed.spec.ai : undefined;
+  if (ai)
+    projection.ai = {
+      briefingSource: ai.briefingSource,
+      research: ai.research,
+      ...(row.aiOutcome === undefined ? {} : { outcome: row.aiOutcome }),
+    };
   if (row.notificationDestinationCounts !== undefined)
     projection.notificationDestinationCounts = parseReportJobNotificationDestinationCountsV1(row.notificationDestinationCounts) ?? undefined;
   if (row.status === 'generated' || row.status === 'completed' || row.status === 'completed-with-notification-errors')

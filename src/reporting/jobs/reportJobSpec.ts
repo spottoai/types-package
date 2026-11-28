@@ -17,7 +17,7 @@ import {
 import { REPORT_PACK_REPORT_IDS, isReportPackReportId, type ReportPackConfigurationV1 } from './reportPack';
 
 export const REPORT_JOB_SPEC_SCHEMA_VERSION = 1;
-export const REPORT_JOB_REPORT_TYPES = ['sdm', 'architecture-assessment', 'report-pack'] as const;
+export const REPORT_JOB_REPORT_TYPES = ['sdm', 'architecture-assessment', 'report-pack', 'health-check'] as const;
 export type ReportJobReportType = (typeof REPORT_JOB_REPORT_TYPES)[number];
 
 export const REPORT_JOB_MAX_SUBSCRIPTIONS = 200;
@@ -76,6 +76,37 @@ export interface CurrentStateBackgroundConfigV1 {
   preparedBy?: string;
 }
 
+/** Health-check presentation (.pptx), built from the Current State evidence for the customer audience. */
+export interface HealthCheckBackgroundConfigV1 {
+  /** ISO 4217, upper case. */
+  scopeCurrencyCode: string;
+  /** 1..120 characters of plain text. Default: the MSP name. */
+  preparedBy?: string;
+}
+
+/** Maximum characters of the frozen AI briefing (focus) text. */
+export const REPORT_JOB_AI_BRIEFING_MAX_CHARS = 4000;
+export const REPORT_JOB_AI_BRIEFING_SOURCES = ['run', 'saved', 'msp-default', 'spotto-default'] as const;
+export type ReportJobAiBriefingSource = (typeof REPORT_JOB_AI_BRIEFING_SOURCES)[number];
+/** Report types that accept the AI Assistant block. */
+export const REPORT_JOB_AI_REPORT_TYPES = ['sdm', 'health-check'] as const;
+
+/**
+ * AI Assistant enhancement for one run (core/specs/reporting/generation/background-report-generation/
+ * background-report-generation-ai-assistant.md). Its presence requests enhancement. The API resolves the effective
+ * briefing (run text, a saved briefing, the MSP default or none) and freezes its text here, so a later edit to a saved
+ * briefing never changes an earlier job, and the request identity covers the exact text used.
+ */
+export interface ReportJobAiAssistantV1 {
+  /** Frozen briefing text: plain text, line breaks allowed, at most REPORT_JOB_AI_BRIEFING_MAX_CHARS. Absent = Spotto defaults only. */
+  briefing?: string;
+  briefingSource: ReportJobAiBriefingSource;
+  /** Saved briefing the text came from, for display only. */
+  savedBriefingId?: string;
+  /** Run the web research stage (public names and websites only). */
+  research: boolean;
+}
+
 export interface SdmReportJobSpecV1 {
   schemaVersion: 1;
   reportType: 'sdm';
@@ -84,6 +115,7 @@ export interface SdmReportJobSpecV1 {
   configuration: SdmBackgroundConfigV1;
   /** Optional ISO 4217 display currency. Absent means billing currencies; money converts at the job's captured rates. */
   displayCurrency?: string;
+  ai?: ReportJobAiAssistantV1;
 }
 
 export interface CurrentStateReportJobSpecV1 {
@@ -104,7 +136,17 @@ export interface ReportPackJobSpecV1 {
   displayCurrency?: string;
 }
 
-export type ReportJobSpecV1 = SdmReportJobSpecV1 | CurrentStateReportJobSpecV1 | ReportPackJobSpecV1;
+export interface HealthCheckReportJobSpecV1 {
+  schemaVersion: 1;
+  reportType: 'health-check';
+  scope: ReportJobScopeV1;
+  configuration: HealthCheckBackgroundConfigV1;
+  /** Optional ISO 4217 display currency. Absent means billing currencies; money converts at the job's captured rates. */
+  displayCurrency?: string;
+  ai?: ReportJobAiAssistantV1;
+}
+
+export type ReportJobSpecV1 = SdmReportJobSpecV1 | CurrentStateReportJobSpecV1 | ReportPackJobSpecV1 | HealthCheckReportJobSpecV1;
 
 export type ReportJobSpecParseResult = { ok: true; value: ReportJobSpecV1 } | { ok: false; errors: string[] };
 
@@ -304,17 +346,84 @@ const parseCurrentStateConfiguration = (value: unknown, errors: string[]): Curre
   };
 };
 
-const parseSpecUnsafe = (input: unknown): ReportJobSpecParseResult => {
-  const result = parseSpecWithoutCurrency(input);
-  if (!result.ok || !isPlainRecord(input) || input.displayCurrency === undefined) return result;
-  if (typeof input.displayCurrency !== 'string' || !CURRENCY_PATTERN.test(input.displayCurrency))
-    return { ok: false, errors: ['displayCurrency: must be a three-letter upper-case ISO 4217 code'] };
-  return { ok: true, value: { ...result.value, displayCurrency: input.displayCurrency } };
+const SAVED_BRIEFING_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
+
+/** Briefing text: trimmed, non-empty, bounded, no control characters other than line breaks and tabs. */
+const isBriefingText = (value: unknown): value is string =>
+  typeof value === 'string' &&
+  value.length > 0 &&
+  value.length <= REPORT_JOB_AI_BRIEFING_MAX_CHARS &&
+  value === value.trim() &&
+  // eslint-disable-next-line no-control-regex
+  !/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value);
+
+const parseAiAssistant = (value: unknown, errors: string[]): ReportJobAiAssistantV1 | undefined => {
+  if (!isPlainRecord(value) || !hasExactlyKeys(value, ['briefingSource', 'research'], ['briefing', 'savedBriefingId'])) {
+    errors.push('ai: needs briefingSource and research, and optionally briefing and savedBriefingId');
+    return undefined;
+  }
+  const { briefing, briefingSource, savedBriefingId, research } = value;
+  const errorCount = errors.length;
+  if (typeof briefingSource !== 'string' || !(REPORT_JOB_AI_BRIEFING_SOURCES as readonly string[]).includes(briefingSource))
+    errors.push(`ai.briefingSource: must be ${REPORT_JOB_AI_BRIEFING_SOURCES.join(', ')}`);
+  if (typeof research !== 'boolean') errors.push('ai.research: must be a boolean');
+  if (briefing !== undefined && !isBriefingText(briefing))
+    errors.push(`ai.briefing: 1..${REPORT_JOB_AI_BRIEFING_MAX_CHARS} characters of trimmed plain text`);
+  if (briefingSource === 'spotto-default' && briefing !== undefined) errors.push('ai.briefing: spotto-default has no briefing text');
+  if (briefingSource !== 'spotto-default' && briefing === undefined) errors.push('ai.briefing: required unless briefingSource is spotto-default');
+  if (
+    savedBriefingId !== undefined &&
+    (briefingSource !== 'saved' || typeof savedBriefingId !== 'string' || !SAVED_BRIEFING_ID_PATTERN.test(savedBriefingId))
+  )
+    errors.push('ai.savedBriefingId: only for a saved briefing, 1..64 letters, digits, - or _');
+  if (briefingSource === 'saved' && savedBriefingId === undefined) errors.push('ai.savedBriefingId: required for a saved briefing');
+  if (errors.length > errorCount) return undefined;
+  return {
+    ...(briefing === undefined ? {} : { briefing: briefing as string }),
+    briefingSource: briefingSource as ReportJobAiBriefingSource,
+    ...(savedBriefingId === undefined ? {} : { savedBriefingId: savedBriefingId as string }),
+    research: research as boolean,
+  };
 };
 
-const OPTIONAL_SPEC_KEYS = ['displayCurrency'];
+const parseHealthCheckConfiguration = (value: unknown, errors: string[]): HealthCheckBackgroundConfigV1 | undefined => {
+  if (!isPlainRecord(value) || !hasExactlyKeys(value, ['scopeCurrencyCode'], ['preparedBy'])) {
+    errors.push('configuration: Health check needs scopeCurrencyCode and optionally preparedBy');
+    return undefined;
+  }
+  const currency = typeof value.scopeCurrencyCode === 'string' ? value.scopeCurrencyCode.trim().toUpperCase() : '';
+  const errorCount = errors.length;
+  if (!CURRENCY_PATTERN.test(currency)) errors.push('configuration.scopeCurrencyCode: must be a three-letter ISO 4217 code');
+  const preparedBy = typeof value.preparedBy === 'string' ? value.preparedBy.trim() : value.preparedBy;
+  if (preparedBy !== undefined && (!isBoundedPlainText(preparedBy, 120) || (preparedBy as string).includes('://')))
+    errors.push('configuration.preparedBy: 1..120 characters of plain text, no URLs');
+  if (errors.length > errorCount) return undefined;
+  return { scopeCurrencyCode: currency, ...(preparedBy === undefined ? {} : { preparedBy: preparedBy as string }) };
+};
 
-const parseSpecWithoutCurrency = (input: unknown): ReportJobSpecParseResult => {
+const parseSpecUnsafe = (input: unknown): ReportJobSpecParseResult => {
+  const result = parseSpecWithoutOptions(input);
+  if (!result.ok || !isPlainRecord(input)) return result;
+  let value = result.value;
+  if (input.displayCurrency !== undefined) {
+    if (typeof input.displayCurrency !== 'string' || !CURRENCY_PATTERN.test(input.displayCurrency))
+      return { ok: false, errors: ['displayCurrency: must be a three-letter upper-case ISO 4217 code'] };
+    value = { ...value, displayCurrency: input.displayCurrency };
+  }
+  if (input.ai !== undefined) {
+    if (value.reportType !== 'sdm' && value.reportType !== 'health-check')
+      return { ok: false, errors: [`ai: only ${REPORT_JOB_AI_REPORT_TYPES.join(' and ')} reports accept the AI Assistant`] };
+    const errors: string[] = [];
+    const ai = parseAiAssistant(input.ai, errors);
+    if (!ai) return { ok: false, errors };
+    value = { ...value, ai };
+  }
+  return { ok: true, value };
+};
+
+const OPTIONAL_SPEC_KEYS = ['displayCurrency', 'ai'];
+
+const parseSpecWithoutOptions = (input: unknown): ReportJobSpecParseResult => {
   const errors: string[] = [];
   if (!isPlainRecord(input)) return { ok: false, errors: ['spec: must be an object'] };
   if (input.schemaVersion !== REPORT_JOB_SPEC_SCHEMA_VERSION) return { ok: false, errors: ['schemaVersion: must be 1'] };
@@ -362,7 +471,15 @@ const parseSpecWithoutCurrency = (input: unknown): ReportJobSpecParseResult => {
       value: { schemaVersion: 1, reportType: 'report-pack', scope, configuration: { reportIds, scopeCurrencyCode: config.scopeCurrencyCode } },
     };
   }
-  return { ok: false, errors: ['reportType: must be sdm, architecture-assessment or report-pack'] };
+  if (input.reportType === 'health-check') {
+    if (!hasExactlyKeys(input, ['schemaVersion', 'reportType', 'scope', 'configuration'], OPTIONAL_SPEC_KEYS))
+      return { ok: false, errors: ['spec: Health check needs exactly schemaVersion, reportType, scope and configuration'] };
+    const scope = parseScope(input.scope, errors);
+    const configuration = parseHealthCheckConfiguration(input.configuration, errors);
+    if (!scope || !configuration || errors.length > 0) return { ok: false, errors };
+    return { ok: true, value: { schemaVersion: 1, reportType: 'health-check', scope, configuration } };
+  }
+  return { ok: false, errors: ['reportType: must be sdm, architecture-assessment, report-pack or health-check'] };
 };
 
 /** Strict, normalising parser. Never throws (hostile getters are reported as an invalid spec). */
@@ -376,7 +493,18 @@ export const parseReportJobSpecV1 = (input: unknown): ReportJobSpecParseResult =
 
 const canonicalSpecObject = (spec: ReportJobSpecV1): unknown => {
   const base = canonicalSpecWithoutCurrency(spec) as Record<string, unknown>;
-  return spec.displayCurrency === undefined ? base : { ...base, displayCurrency: spec.displayCurrency };
+  const withCurrency = spec.displayCurrency === undefined ? base : { ...base, displayCurrency: spec.displayCurrency };
+  const ai = spec.reportType === 'sdm' || spec.reportType === 'health-check' ? spec.ai : undefined;
+  if (!ai) return withCurrency;
+  return {
+    ...withCurrency,
+    ai: {
+      ...(ai.briefing === undefined ? {} : { briefing: ai.briefing }),
+      briefingSource: ai.briefingSource,
+      ...(ai.savedBriefingId === undefined ? {} : { savedBriefingId: ai.savedBriefingId }),
+      research: ai.research,
+    },
+  };
 };
 
 const canonicalSpecWithoutCurrency = (spec: ReportJobSpecV1): unknown => {
@@ -387,6 +515,16 @@ const canonicalSpecWithoutCurrency = (spec: ReportJobSpecV1): unknown => {
       reportType: 'report-pack',
       scope,
       configuration: { reportIds: spec.configuration.reportIds, scopeCurrencyCode: spec.configuration.scopeCurrencyCode },
+    };
+  if (spec.reportType === 'health-check')
+    return {
+      schemaVersion: 1,
+      reportType: 'health-check',
+      scope,
+      configuration: {
+        scopeCurrencyCode: spec.configuration.scopeCurrencyCode,
+        ...(spec.configuration.preparedBy === undefined ? {} : { preparedBy: spec.configuration.preparedBy }),
+      },
     };
   if (spec.reportType === 'sdm') {
     const period =

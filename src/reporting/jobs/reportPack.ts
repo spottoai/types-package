@@ -43,8 +43,13 @@ export interface ReportPackConfigurationV1 {
   scopeCurrencyCode: string;
 }
 
-export const reportJobFileExtension = (reportType: string): '.zip' | '.docx' => (reportType === 'report-pack' ? '.zip' : '.docx');
+export const reportJobFileExtension = (reportType: string): '.zip' | '.docx' | '.pptx' =>
+  reportType === 'report-pack' ? '.zip' : reportType === 'health-check' ? '.pptx' : '.docx';
 export const reportJobContentType = (reportType: string): string =>
-  reportType === 'report-pack' ? 'application/zip' : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  reportType === 'report-pack'
+    ? 'application/zip'
+    : reportType === 'health-check'
+      ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
 
 export const isReportJobFileNameForType = (fileName: string, reportType: string): boolean => fileName.endsWith(reportJobFileExtension(reportType));

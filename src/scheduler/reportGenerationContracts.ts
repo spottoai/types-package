@@ -4,7 +4,7 @@ import type { CurrentStateReportJobSpecV1, ReportPackJobSpecV1, ReportPeriodRule
 export type ScheduledReportJobSpecV1 =
   | CurrentStateReportJobSpecV1
   | ReportPackJobSpecV1
-  | (Omit<SdmReportJobSpecV1, 'period'> & { period: ReportPeriodRuleV1 });
+  | (Omit<SdmReportJobSpecV1, 'period' | 'ai'> & { period: ReportPeriodRuleV1 });
 export type ReportGenerationScheduleTiming =
   | { triggerType: 'once'; localDateTime: string }
   | { triggerType: 'recurring'; cadence: 'daily'; localTime: string }

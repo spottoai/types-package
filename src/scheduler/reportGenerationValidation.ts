@@ -28,7 +28,9 @@ const localTime = (value: unknown): value is string => typeof value === 'string'
 
 export const isScheduledReportJobSpecV1 = (value: unknown): value is ScheduledReportJobSpecV1 => {
   const parsed = parseReportJobSpecV1(value);
-  return parsed.ok && (parsed.value.reportType !== 'sdm' || parsed.value.period.kind !== 'explicit');
+  // Health checks and AI enhancement are currently on demand only.
+  if (!parsed.ok || parsed.value.reportType === 'health-check' || ('ai' in parsed.value && parsed.value.ai !== undefined)) return false;
+  return parsed.value.reportType !== 'sdm' || parsed.value.period.kind !== 'explicit';
 };
 
 export const isReportGenerationScheduleTiming = (value: unknown): value is ReportGenerationScheduleTiming => {

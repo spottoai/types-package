@@ -27,3 +27,4 @@ export {
 } from '../shared/reportingIds';
 export { normalizeReportTableEntity, REPORT_TABLE_SYSTEM_FIELDS, toReportTableSdkEntity } from '../shared/reportTableEntities';
 export { isReportFileName, sanitizeReportingPathSegment } from '../shared/reportingPaths';
+export * from './reportAiAssistant';
