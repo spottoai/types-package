@@ -1,4 +1,7 @@
 import type { ResourceSchedulePermissionManifestConsent, ResourceSchedulePermissionManifestProjection } from '../scheduler/resourceStrategy';
+import { RECOMMENDATION_ACTION_FIX_TYPES, type RecommendationActionFixType } from '../azure/recommendations';
+import type { EnvironmentType } from '../common/provider';
+import type { AzureCloudAccountActionsResponse, AzureRecommendationFixCatalog, AzureRecommendationFixConsent } from './subscriptionWriteAccess';
 
 export type AzureSpSetupPhase =
   | 'created'
@@ -20,6 +23,10 @@ export type AzureSpSetupPhase =
 export type AzureSpSetupResult = 'none' | 'complete' | 'partial' | 'needsAdminAction' | 'failed' | 'cancelled' | 'expired';
 
 export type AzureSpSetupMode = 'createCloudAccount' | 'grantAdditionalPermissions';
+
+export type AzureSpSetupRecommendationFixSelection =
+  | { mode: 'insightsOnly'; consent?: never }
+  | { mode: 'oneClickFixes' | 'custom'; consent: AzureRecommendationFixConsent };
 
 export type AzureSpSetupErrorCode =
   | 'access_denied'
@@ -127,7 +134,35 @@ export type AzureSpPermissionKey =
   | 'customWriteRoleDefinition'
   | 'customWriteRoleAssignment'
   | 'policyExemptionRoleDefinition'
-  | 'policyExemptionRoleAssignment';
+  | 'policyExemptionRoleAssignment'
+  | AzureSpFixRolePermissionKey;
+
+/**
+ * One Spotto-managed custom role per recommendation fix type and subscription. The engine builds each role's
+ * operations from the verified actions of that fix type, so the role grows only when a release adds fixes.
+ */
+export const AZURE_SP_FIX_ROLE_PERMISSION_KEYS = {
+  configuration: { definition: 'configurationFixRoleDefinition', assignment: 'configurationFixRoleAssignment' },
+  rightsize: { definition: 'rightsizeFixRoleDefinition', assignment: 'rightsizeFixRoleAssignment' },
+  power: { definition: 'powerFixRoleDefinition', assignment: 'powerFixRoleAssignment' },
+  licensing: { definition: 'licensingFixRoleDefinition', assignment: 'licensingFixRoleAssignment' },
+  cleanup: { definition: 'cleanupFixRoleDefinition', assignment: 'cleanupFixRoleAssignment' },
+} as const satisfies Record<RecommendationActionFixType, { definition: string; assignment: string }>;
+
+type AzureSpFixRolePermissionKeyPair = (typeof AZURE_SP_FIX_ROLE_PERMISSION_KEYS)[RecommendationActionFixType];
+export type AzureSpFixRoleDefinitionPermissionKey = AzureSpFixRolePermissionKeyPair['definition'];
+export type AzureSpFixRoleAssignmentPermissionKey = AzureSpFixRolePermissionKeyPair['assignment'];
+export type AzureSpFixRolePermissionKey = AzureSpFixRoleDefinitionPermissionKey | AzureSpFixRoleAssignmentPermissionKey;
+
+/** The fix type and part (role definition or assignment) a fix-role permission key stands for. */
+export function getAzureSpFixRolePermission(key: string): { fixType: RecommendationActionFixType; part: 'definition' | 'assignment' } | undefined {
+  for (const fixType of RECOMMENDATION_ACTION_FIX_TYPES) {
+    const pair = AZURE_SP_FIX_ROLE_PERMISSION_KEYS[fixType];
+    if (pair.definition === key) return { fixType, part: 'definition' };
+    if (pair.assignment === key) return { fixType, part: 'assignment' };
+  }
+  return undefined;
+}
 
 export type AzureSpOperationKind =
   | 'discoverApplication'
@@ -274,6 +309,17 @@ export interface AzureSpSetupStartResponse {
   expiresAt: string;
 }
 
+/** A grant or update requested for an existing cloud account, bound to the reviewed catalog and exact subscriptions. */
+export interface AzureRecommendationFixGrantRequest {
+  consent: AzureRecommendationFixConsent;
+  delivery: 'signIn' | 'administratorLink' | 'script';
+}
+
+export type AzureRecommendationFixGrantResponse =
+  | ({ delivery: 'signIn' } & AzureSpSetupStartResponse)
+  | { delivery: 'administratorLink'; administratorUrl: string; expiresAt: string }
+  | { delivery: 'script'; script: string };
+
 export interface AzureSpSetupTenant {
   tenantId: string;
   displayName?: string;
@@ -287,6 +333,8 @@ export interface AzureSpSetupSubscriptionOption {
   subscriptionId: string;
   displayName: string;
   tenantId: string;
+  /** Unclassified, mixed and production subscriptions are excluded from the non-production suggestion. */
+  environmentType?: EnvironmentType;
   state?: string;
   isVisible: boolean;
   isReadableCandidate: boolean;
@@ -395,6 +443,7 @@ export interface AzureSpSetupCloudAccountSummaryV1 {
   completedAt?: string;
   selectedSubscriptionIds: string[];
   selectedPermissionInstanceKeys: string[];
+  recommendationFixConsent?: AzureRecommendationFixConsent;
   operationResults: AzureSpSetupOperationResult[];
   capabilityReadiness: Partial<Record<AzureSpSetupPermissionCapabilityGroupKey, AzureSpSetupCapabilityReadinessStatus>>;
   subscriptionReadiness: AzureSpSetupSubscriptionReadiness[];
@@ -428,6 +477,8 @@ export interface AzureSpSetupExecutionRequestV1 {
   resourceSchedulingPermissionConsent?: ResourceSchedulePermissionManifestConsent;
   /** Server-resolved immutable manifest. Clients can provide consent only, never this authority payload. */
   resourceSchedulingPermissionManifest?: ResourceSchedulePermissionManifestProjection;
+  /** Immutable server-resolved scope selection; the executor must match its catalog version before granting. */
+  recommendationFixConsent?: AzureRecommendationFixConsent;
   targetCloudAccountId?: string;
   targetAzureApplicationAppId?: string;
   targetAzureApplicationObjectId?: string;
@@ -682,6 +733,10 @@ export interface AzureSpSetupStatusResponse {
   targetPermissionManifestVersion?: string;
   tenants?: AzureSpSetupTenant[];
   subscriptions?: AzureSpSetupSubscriptionOption[];
+  recommendationFixCatalog?: AzureRecommendationFixCatalog;
+  recommendationFixSelection?: AzureSpSetupRecommendationFixSelection;
+  /** Authorized access re-check after setup; missing while observation has not completed. */
+  recommendationFixAccess?: AzureCloudAccountActionsResponse;
   permissionPlan?: AzureSpSetupPermissionPlanItem[];
   permissionSummary?: AzureSpSetupPermissionSummary;
   billingExportPlan?: AzureSpBillingExportPlan;
@@ -733,6 +788,7 @@ export interface AzureSpSetupPlanRequest {
   selectedPermissionInstanceKeys?: string[];
   useTenantRootReader?: boolean;
   billingExports?: AzureSpBillingExportSelection;
+  recommendationFixSelection?: AzureSpSetupRecommendationFixSelection;
 }
 
 export interface AzureSpSetupPlanResponse extends AzureSpSetupStatusResponse {
@@ -750,6 +806,8 @@ export interface AzureSpSetupExecuteRequest {
   readBitmask?: number;
   writeBitmask?: number;
   resourceSchedulingPermissionConsent?: ResourceSchedulePermissionManifestConsent;
+  /** Confirm the catalog and subscriptions from the plan. Permission instance keys alone do not convey consent. */
+  recommendationFixSelection?: AzureSpSetupRecommendationFixSelection;
 }
 
 export type AzureSpSetupExecuteResponse = AzureSpSetupStatusResponse;

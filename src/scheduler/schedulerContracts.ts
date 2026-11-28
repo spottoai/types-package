@@ -1,3 +1,4 @@
+import type { RecommendationActionSelection } from '../azure/recommendations';
 import type {
   ReportGenerationScheduleCommand,
   ReportGenerationScheduleProjection,
@@ -35,6 +36,8 @@ export interface RecommendationActionScheduleWriteRequest {
   cloudAccountId?: string;
   recommendationId: string;
   operation: 'implement';
+  /** Pinned action reviewed by the caller. Omitted by legacy schedule writers. */
+  actionSelection?: RecommendationActionSelection;
   target: RecommendationActionScheduleTarget;
   initialMode: 'active' | 'paused';
   notes?: string;
@@ -99,6 +102,8 @@ export interface ScheduledRecommendationActionV1 {
   dueAtUtc: string;
   recommendationId: string;
   operation: 'implement';
+  /** The scheduler copies the reviewed action unchanged into each occurrence. */
+  actionSelection?: RecommendationActionSelection;
   target: RecommendationActionScheduleTarget;
   configuration: Record<string, unknown>;
   correlationId: string;

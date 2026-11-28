@@ -1,3 +1,5 @@
+import type { AzureRecommendationFixConsent } from './subscriptionWriteAccess';
+
 /** Cost Management dataset represented by one Azure billing export source. */
 export type AzureBillingExportDatasetType = 'actual' | 'amortized';
 
@@ -132,6 +134,8 @@ export interface AzureManualOnboardingImportV1 {
   kind: typeof AZURE_MANUAL_ONBOARDING_IMPORT_KIND;
   credentials: AzureManualOnboardingCredentialsInput;
   billingExports?: AzureBillingExportConfigurationInput;
+  /** Imported selection for administrator review. Validation must observe the Azure roles independently. */
+  recommendationFixConsent?: AzureRecommendationFixConsent;
 }
 
 export type AzureBillingExportConfigurationVerificationStatus = 'notConfigured' | 'unverified' | 'verified' | 'failed';

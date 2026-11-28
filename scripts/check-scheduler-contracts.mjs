@@ -67,6 +67,20 @@ assert.equal(scheduler.isSchedulerOperationProjection(pendingOperation), true);
 assert.equal(scheduler.isSchedulerOperationProjection({ ...pendingOperation, providerToken: 'forbidden' }), false);
 
 assert.equal(scheduler.isRecommendationActionScheduleWriteRequest(writeRequest), true);
+const actionSelection = {
+  actionId: 'compute-vm-resize',
+  actionVersion: 'action-1',
+  parameters: { targetSku: 'Standard_D4as_v5' },
+  acknowledgeNoRollback: true,
+};
+assert.equal(scheduler.isRecommendationActionScheduleWriteRequest({ ...writeRequest, actionSelection }), true);
+for (const invalid of [
+  { ...actionSelection, actionVersion: '' },
+  { ...actionSelection, acknowledgeNoRollback: false },
+  { ...actionSelection, parameters: { targetSku: 'Standard_D4as_v5', requiredPermissions: [] } },
+]) {
+  assert.equal(scheduler.isRecommendationActionScheduleWriteRequest({ ...writeRequest, actionSelection: invalid }), false);
+}
 assert.equal(scheduler.isScheduleWriteRequest(writeRequest), true);
 assert.equal(
   scheduler.isRecommendationActionScheduleWriteRequest({
@@ -159,6 +173,7 @@ const occurrence = {
 };
 
 assert.equal(scheduler.isScheduledRecommendationActionV1(occurrence), true);
+assert.equal(scheduler.isScheduledRecommendationActionV1({ ...occurrence, actionSelection }), true);
 assert.equal(scheduler.isScheduledOccurrenceV1(occurrence), true);
 assert.equal(scheduler.isScheduledRecommendationActionV1({ ...occurrence, providerName: 'azure' }), false);
 

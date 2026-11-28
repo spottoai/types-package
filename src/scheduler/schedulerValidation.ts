@@ -43,6 +43,7 @@ import {
   isWithinJsonByteLimit,
 } from './resourceStrategyValidationShared';
 import { isScheduledResourceTransitionV1 } from './resourceStrategyScheduleValidation';
+import type { RecommendationActionSelection } from '../azure/recommendations';
 
 const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d$/u;
 
@@ -54,6 +55,18 @@ function isLocalDateTime(value: unknown): value is string {
 
 function isFiveFieldCronExpression(value: unknown): value is string {
   return isBoundedString(value, 500) && value.trim() === value && value.split(/\s+/u).length === 5;
+}
+
+function isRecommendationActionSelection(value: unknown): value is RecommendationActionSelection {
+  return (
+    isRecord(value) &&
+    hasOnlyKeys(value, ['actionId', 'actionVersion', 'parameters', 'acknowledgeNoRollback']) &&
+    isBoundedString(value.actionId, 500) &&
+    isBoundedString(value.actionVersion, 500) &&
+    (value.acknowledgeNoRollback === undefined || value.acknowledgeNoRollback === true) &&
+    (value.parameters === undefined ||
+      (isRecord(value.parameters) && hasOnlyKeys(value.parameters, ['targetSku']) && isBoundedString(value.parameters.targetSku, 500)))
+  );
 }
 
 function isRecommendationActionScheduleTarget(value: unknown): value is RecommendationActionScheduleTarget {
@@ -87,6 +100,7 @@ export function isRecommendationActionScheduleWriteRequest(value: unknown): valu
         'cloudAccountId',
         'recommendationId',
         'operation',
+        'actionSelection',
         'target',
         'initialMode',
         'notes',
@@ -99,6 +113,7 @@ export function isRecommendationActionScheduleWriteRequest(value: unknown): valu
       !isOptionalBoundedString(value.cloudAccountId, 500) ||
       !isBoundedString(value.recommendationId, 500) ||
       value.operation !== 'implement' ||
+      (value.actionSelection !== undefined && !isRecommendationActionSelection(value.actionSelection)) ||
       !isRecommendationActionScheduleTarget(value.target) ||
       (value.initialMode !== 'active' && value.initialMode !== 'paused') ||
       !isOptionalBoundedString(value.notes, 4000) ||
@@ -231,6 +246,7 @@ export function isScheduledRecommendationActionV1(value: unknown): value is Sche
         'dueAtUtc',
         'recommendationId',
         'operation',
+        'actionSelection',
         'target',
         'configuration',
         'correlationId',
@@ -248,6 +264,7 @@ export function isScheduledRecommendationActionV1(value: unknown): value is Sche
       isIsoTimestamp(value.dueAtUtc) &&
       isBoundedString(value.recommendationId, 500) &&
       value.operation === 'implement' &&
+      (value.actionSelection === undefined || isRecommendationActionSelection(value.actionSelection)) &&
       isRecommendationActionScheduleTarget(value.target) &&
       isBoundedParameters(value.configuration) &&
       isBoundedString(value.correlationId, 500)

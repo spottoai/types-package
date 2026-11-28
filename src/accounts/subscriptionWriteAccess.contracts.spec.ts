@@ -7,9 +7,11 @@ import type {
   SubscriptionWriteAccessFailedDocumentV1,
   SubscriptionWriteCapabilityKey,
   SubscriptionWriteCapabilityResultV1,
+  SubscriptionWriteCapabilityResultsV1,
 } from '../index';
 import {
   KNOWN_WRITE_PERMISSION_MASK,
+  RECOMMENDATION_ACTION_FIX_TYPE_WRITE_CAPABILITIES,
   SUBSCRIPTION_WRITE_CAPABILITY_KEYS,
   SUBSCRIPTION_WRITE_CAPABILITY_PERMISSIONS,
   WritePermission,
@@ -42,7 +44,15 @@ const invalidBitmaskType: SubscriptionInfoBase = {
   effectiveWriteBitmask: '1',
 };
 
-const newBits: WritePermission[] = [WritePermission.RemediationCleanup, WritePermission.RemediationRightsize, WritePermission.CommitmentsManage];
+const newBits: WritePermission[] = [
+  WritePermission.RemediationCleanup,
+  WritePermission.RemediationRightsize,
+  WritePermission.CommitmentsManage,
+  WritePermission.RemediationConfiguration,
+  WritePermission.RemediationPower,
+  WritePermission.RemediationLicensing,
+];
+const powerFixCapability: SubscriptionWriteCapabilityKey = RECOMMENDATION_ACTION_FIX_TYPE_WRITE_CAPABILITIES.power;
 
 const allKeys: readonly SubscriptionWriteCapabilityKey[] = SUBSCRIPTION_WRITE_CAPABILITY_KEYS;
 const schedulingBit: WritePermission = SUBSCRIPTION_WRITE_CAPABILITY_PERMISSIONS.resourceScheduling;
@@ -63,6 +73,20 @@ const capabilities: Record<SubscriptionWriteCapabilityKey, SubscriptionWriteCapa
   storageInventory: unavailable,
   policyExemptions: { status: 'unknown', reasonCode: 'throttled' },
   resourceScheduling: { status: 'partial', grantedScopeCount: 1, grantedScopes: ['/subscriptions/sub-1/resourceGroups/rg-dev'] },
+  remediationCleanup: unavailable,
+  remediationRightsize: unavailable,
+  commitmentsManage: unavailable,
+  remediationConfiguration: { status: 'available' },
+  remediationPower: unavailable,
+  remediationLicensing: { status: 'unknown', reasonCode: 'source-unsupported' },
+};
+
+// A document from a producer that predates the added capabilities omits them.
+const olderProducerCapabilities: SubscriptionWriteCapabilityResultsV1 = {
+  advisorDismissSync: { status: 'available' },
+  storageInventory: unavailable,
+  policyExemptions: unavailable,
+  resourceScheduling: unavailable,
   remediationCleanup: unavailable,
   remediationRightsize: unavailable,
   commitmentsManage: unavailable,
@@ -111,6 +135,8 @@ export const subscriptionWriteAccessContractExamples = {
   checkedCompanySubscription,
   invalidBitmaskType,
   newBits,
+  powerFixCapability,
+  olderProducerCapabilities,
   allKeys,
   schedulingBit,
   invalidKey,

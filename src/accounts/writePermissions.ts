@@ -11,12 +11,22 @@ export enum WritePermission {
   PolicyExemptions = 1 << 2, // 4
   /** Permission to run approved resource scheduling capabilities */
   ResourceScheduling = 1 << 3, // 8
-  /** Permission to delete idle or orphaned resources when a clean-up recommendation is implemented */
+  /** Permission to delete eligible unused, data-free resources when a clean-up recommendation is implemented */
   RemediationCleanup = 1 << 4, // 16
-  /** Permission to resize, reconfigure, deallocate, or start resources when a recommendation is implemented */
+  /**
+   * Permission to run rightsize fixes (size, tier or capacity changes) when a recommendation is implemented.
+   * Older evidence used the same bit for a broader catalog that included settings and power.
+   * Match the observation's fix catalog version before using this bit for current coverage.
+   */
   RemediationRightsize = 1 << 5, // 32
   /** Permission to manage reservations and savings plans */
   CommitmentsManage = 1 << 6, // 64
+  /** Permission to run configuration fixes (reversible setting changes) when a recommendation is implemented */
+  RemediationConfiguration = 1 << 7, // 128
+  /** Permission to run power fixes (deallocate, start, pause or resume) when a recommendation is implemented */
+  RemediationPower = 1 << 8, // 256
+  /** Permission to run licensing fixes such as Azure Hybrid Benefit when a recommendation is implemented */
+  RemediationLicensing = 1 << 9, // 512
 }
 
 /**
@@ -31,7 +41,10 @@ export const KNOWN_WRITE_PERMISSION_MASK: number =
   WritePermission.ResourceScheduling |
   WritePermission.RemediationCleanup |
   WritePermission.RemediationRightsize |
-  WritePermission.CommitmentsManage;
+  WritePermission.CommitmentsManage |
+  WritePermission.RemediationConfiguration |
+  WritePermission.RemediationPower |
+  WritePermission.RemediationLicensing;
 
 /**
  * Metadata for a write permission
@@ -94,14 +107,32 @@ export const WRITE_PERMISSIONS_METADATA: WritePermissionMetadata[] = [
     id: WritePermission.RemediationCleanup,
     displayName: 'Clean Up Unused Resources',
     description:
-      'Allows Spotto to delete idle or orphaned resources (for example unattached disks, public IPs and network interfaces) when you implement a clean-up recommendation.',
-    requiredRoles: ['Custom role with the delete actions of the Spotto clean-up remediation catalog'],
+      'Allows Spotto to delete eligible unused resources that hold no data, such as unused network interfaces, when you implement a clean-up recommendation.',
+    requiredRoles: ['Spotto clean-up fixes custom role'],
   },
   {
     id: WritePermission.RemediationRightsize,
-    displayName: 'Rightsize and Reconfigure Resources',
-    description: 'Allows Spotto to resize, reconfigure, deallocate, or start resources when you implement a rightsizing recommendation.',
-    requiredRoles: ['Custom role with the write, deallocate and start actions of the Spotto rightsizing remediation catalog'],
+    displayName: 'Rightsize Resources',
+    description: 'Allows Spotto to change the size, tier or capacity of resources when you implement a rightsizing recommendation.',
+    requiredRoles: ['Spotto rightsize fixes custom role'],
+  },
+  {
+    id: WritePermission.RemediationConfiguration,
+    displayName: 'Change Settings',
+    description: 'Allows Spotto to change resource settings, such as minimum TLS or HTTPS only, when you implement a recommendation.',
+    requiredRoles: ['Spotto configuration fixes custom role'],
+  },
+  {
+    id: WritePermission.RemediationPower,
+    displayName: 'Stop and Start Resources',
+    description: 'Allows Spotto to deallocate, start, pause or resume resources when you implement a recommendation.',
+    requiredRoles: ['Spotto power fixes custom role'],
+  },
+  {
+    id: WritePermission.RemediationLicensing,
+    displayName: 'Apply Licensing Benefits',
+    description: 'Allows Spotto to apply licence settings such as Azure Hybrid Benefit when you implement a recommendation.',
+    requiredRoles: ['Spotto licensing fixes custom role'],
   },
   {
     id: WritePermission.CommitmentsManage,

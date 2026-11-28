@@ -7,6 +7,9 @@ import {
   AzureRecommendationLite,
   Recommendation,
   RecommendationDecisionContext,
+  type RecommendationActionParameters,
+  type RecommendationActionSelection,
+  type RecommendationFixSubscriptionReadiness,
   type RecommendationResource,
   type ResourceScopedRecommendation,
 } from './recommendations.js';
@@ -574,6 +577,12 @@ export interface VmPricePerformanceAlternative extends VmPricePerformanceSku {
   burstableFit?: VmBurstableFitEvidence;
   capabilityImpacts?: VmPricePerformanceCapabilityImpact[];
   reservationCoverageImpact?: VmReservationCoverageImpact;
+  /** API projection for a verified action that can apply this exact alternative. */
+  recommendationAction?: Omit<RecommendationActionSelection, 'acknowledgeNoRollback'> & {
+    recommendationId: string;
+    parameters: RecommendationActionParameters;
+    readiness: RecommendationFixSubscriptionReadiness;
+  };
 }
 
 export type VmBurstableFit = 'strong' | 'possible';

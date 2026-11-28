@@ -4,6 +4,7 @@ import type { SecureScoreEvidence } from '../azure/secureScore';
 import type { AwsEstateAccountPurpose } from '../aws/estates';
 import type { AwsForbiddenCredentialFields } from '../aws/requests';
 import type { EnvironmentType, ProviderScopeContext, ProviderScopeDisplayMetadata } from '../common/provider';
+import type { AzureRecommendationFixPolicy } from './subscriptionWriteAccess';
 import type { SyncProgressIssue, SyncProgressStatus, SyncProgressStepStatus, SyncProgressSubStepStatus } from '../common/syncProgress';
 import type {
   AzureSpSetupErrorCode,
@@ -643,6 +644,8 @@ export interface CloudAccount
   writeSecretExpiresAt?: Date;
   writeClientId?: string;
   writeBitmask?: number;
+  /** Server-managed recommendation-action consent. Legacy cloud accounts may omit this policy. */
+  recommendationFixPolicy?: AzureRecommendationFixPolicy;
   readBitmask?: number;
   tenantSyncStatus?: CloudAccountTenantSyncStatus;
   tenantSyncRequestedAt?: Date;
@@ -710,7 +713,13 @@ export interface CloudAccount
 
 export type PublicCloudAccountDto = Omit<
   CloudAccount,
-  'delegatedTokenCache' | 'secret' | 'writeSecret' | 'billingExportLocator' | 'gdapCredentialReference' | 'cspPartnerBillingScope'
+  | 'delegatedTokenCache'
+  | 'secret'
+  | 'writeSecret'
+  | 'billingExportLocator'
+  | 'gdapCredentialReference'
+  | 'cspPartnerBillingScope'
+  | 'recommendationFixPolicy'
 > &
   AwsForbiddenCredentialFields & {
     /** Public-safe billing export configuration status. */

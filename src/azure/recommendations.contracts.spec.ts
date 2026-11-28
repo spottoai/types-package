@@ -2,6 +2,8 @@ import type {
   HddOsRetirementRenderStrategyPayload,
   Recommendation,
   RecommendationActionRequest,
+  RecommendationActionExecuteRequest,
+  RecommendationFixReadiness,
   RecommendationActionMetadata,
   RecommendationActionFixType,
   RecommendationActionRequiredPermissions,
@@ -12,6 +14,24 @@ import type {
 } from './recommendations';
 import { ProviderName } from '../common/provider';
 import { RecommendationCategory, RECOMMENDATION_ACTION_FIX_TYPES } from './recommendations';
+
+const executeFix: RecommendationActionExecuteRequest = {
+  recommendationId: 'recommendation-1',
+  actionVersion: 'action-1',
+  target: { scope: 'providerScope', providerScopeId: 'subscription-1', targetSelection: 'allAffectedResources' },
+  idempotencyKey: 'request-1',
+};
+void executeFix;
+
+const executeWithSample: RecommendationActionExecuteRequest = {
+  ...executeFix,
+  // @ts-expect-error All affected resources are resolved by the server.
+  target: { scope: 'providerScope', providerScopeId: 'subscription-1', targetSelection: 'allAffectedResources', resourceIds: ['sample-1'] },
+};
+void executeWithSample;
+
+const needsCheck: RecommendationFixReadiness = { state: 'needsCheck', reason: 'missingFixType' };
+void needsCheck;
 
 const effortEstimates: RecommendationEffortEstimates = {
   profiles: {

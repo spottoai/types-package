@@ -11,6 +11,7 @@ import type {
   AzureSpSetupPermissionPlanItem,
   AzureSpSetupPhase,
   AzureSpSetupProgressStep,
+  AzureSpSetupRecommendationFixSelection,
   AzureSpSetupResult,
   AzureSpSetupSubscriptionOption,
   AzureSpSetupSubscriptionReadiness,
@@ -77,6 +78,7 @@ export interface AzureSpSetupDurableStateV1 {
   targetPermissionManifestVersion?: string;
   discoveredTenants?: AzureSpSetupTenant[];
   selectedSubscriptionIds?: string[];
+  recommendationFixSelection?: AzureSpSetupRecommendationFixSelection;
   subscriptions?: AzureSpSetupSubscriptionOption[];
   managementGroups?: AzureSpSetupManagementGroupOption[];
   permissionPlan?: AzureSpSetupPermissionPlanItem[];
@@ -149,6 +151,7 @@ export const AZURE_SP_SETUP_DURABLE_STATE_BLOB_ONLY_FIELDS_V1 = [
   'generatedClientSecretEncrypted',
   'discoveredTenants',
   'selectedSubscriptionIds',
+  'recommendationFixSelection',
   'subscriptions',
   'managementGroups',
   'permissionPlan',

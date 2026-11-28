@@ -11,12 +11,18 @@ for (const [label, api] of [
   ['cjs', cjs],
 ]) {
   const {
+    AZURE_SP_FIX_ROLE_PERMISSION_KEYS,
     KNOWN_WRITE_PERMISSION_MASK,
+    RECOMMENDATION_ACTION_FIX_TYPE_WRITE_CAPABILITIES,
+    RECOMMENDATION_ACTION_FIX_TYPES,
+    SUBSCRIPTION_WRITE_CAPABILITY_ADDED_KEYS,
     SUBSCRIPTION_WRITE_CAPABILITY_KEYS,
     SUBSCRIPTION_WRITE_CAPABILITY_PERMISSIONS,
     WritePermission,
     deriveSubscriptionWriteBitmasks,
+    getAzureSpFixRolePermission,
     hasEffectiveWritePermission,
+    isAzureRecommendationFixConsent,
     isSubscriptionWriteAccessDocumentV1,
   } = api;
 
@@ -28,7 +34,24 @@ for (const [label, api] of [
   assert.equal(WritePermission.RemediationCleanup, 16, label);
   assert.equal(WritePermission.RemediationRightsize, 32, label);
   assert.equal(WritePermission.CommitmentsManage, 64, label);
-  assert.equal(KNOWN_WRITE_PERMISSION_MASK, 127, label);
+  assert.equal(WritePermission.RemediationConfiguration, 128, label);
+  assert.equal(WritePermission.RemediationPower, 256, label);
+  assert.equal(WritePermission.RemediationLicensing, 512, label);
+  assert.equal(KNOWN_WRITE_PERMISSION_MASK, 1023, label);
+
+  // Every fix type maps to its own capability.
+  const fixCapabilities = RECOMMENDATION_ACTION_FIX_TYPES.map(fixType => RECOMMENDATION_ACTION_FIX_TYPE_WRITE_CAPABILITIES[fixType]);
+  assert.equal(new Set(fixCapabilities).size, RECOMMENDATION_ACTION_FIX_TYPES.length, label);
+  assert.ok(
+    fixCapabilities.every(key => SUBSCRIPTION_WRITE_CAPABILITY_KEYS.includes(key)),
+    label
+  );
+
+  for (const fixType of RECOMMENDATION_ACTION_FIX_TYPES) {
+    const keys = AZURE_SP_FIX_ROLE_PERMISSION_KEYS[fixType];
+    assert.deepEqual(getAzureSpFixRolePermission(keys.definition), { fixType, part: 'definition' }, label);
+    assert.deepEqual(getAzureSpFixRolePermission(keys.assignment), { fixType, part: 'assignment' }, label);
+  }
 
   // Every capability maps to a distinct known bit.
   const bits = SUBSCRIPTION_WRITE_CAPABILITY_KEYS.map(key => SUBSCRIPTION_WRITE_CAPABILITY_PERMISSIONS[key]);
@@ -78,6 +101,44 @@ for (const [label, api] of [
 
   assert.equal(isSubscriptionWriteAccessDocumentV1(complete), true, label);
   assert.equal(isSubscriptionWriteAccessDocumentV1(failed), true, label);
+
+  const selection = { subscriptionId: 'sub-1', fixTypes: ['configuration'] };
+  const consent = { catalogVersion: 'catalog-1', subscriptions: [selection] };
+  assert.equal(isAzureRecommendationFixConsent(consent), true, label);
+  for (const invalid of [
+    { ...consent, catalogVersion: '' },
+    { ...consent, subscriptions: [] },
+    { ...consent, subscriptions: [selection, { ...selection, subscriptionId: 'SUB-1' }] },
+    { ...consent, subscriptions: [{ ...selection, fixTypes: ['configuration', 'configuration'] }] },
+    { ...consent, subscriptions: [{ ...selection, fixTypes: ['contributor'] }] },
+    { ...consent, subscriptions: [{ ...selection, operations: ['*'] }] },
+  ]) {
+    assert.equal(isAzureRecommendationFixConsent(invalid), false, label);
+  }
+
+  const recommendationActions = { 'web-sites_http2': { actionVersion: 'action-1', status: 'available' } };
+  const actionEvidence = { ...complete, fixCatalogVersion: consent.catalogVersion, recommendationActions };
+  assert.equal(isSubscriptionWriteAccessDocumentV1(actionEvidence), true, label);
+  assert.equal(isSubscriptionWriteAccessDocumentV1({ ...complete, recommendationActions }), false, label);
+  assert.equal(
+    isSubscriptionWriteAccessDocumentV1({
+      ...actionEvidence,
+      recommendationActions: { 'web-sites_http2': { status: 'available' } },
+    }),
+    false,
+    label
+  );
+
+  // A document from an older producer omits the added capabilities and stays valid.
+  const olderCapabilities = { ...capabilities };
+  for (const key of SUBSCRIPTION_WRITE_CAPABILITY_ADDED_KEYS) delete olderCapabilities[key];
+  assert.equal(isSubscriptionWriteAccessDocumentV1({ ...complete, capabilities: olderCapabilities }), true, label);
+  // An added capability that is present must still be well formed.
+  assert.equal(
+    isSubscriptionWriteAccessDocumentV1({ ...complete, capabilities: { ...capabilities, remediationPower: { status: 'granted' } } }),
+    false,
+    label
+  );
   assert.equal(isSubscriptionWriteAccessDocumentV1(JSON.parse(JSON.stringify(complete))), true, label);
 
   // Forward compatibility: a newer producer's extra capability and bit are ignored.

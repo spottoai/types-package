@@ -189,6 +189,8 @@ export interface RecommendationActionDefinition {
    * Absent on recommendations published before fix types existed; consumers treat absence as unknown.
    */
   fixType?: RecommendationActionFixType;
+  /** Version of the verified action, including its reviewed permissions and parameters. */
+  actionVersion?: string;
   title: string;
   description: string;
   estimatedDuration: string;
@@ -205,6 +207,42 @@ export type RecommendationActionMetadata = RecommendationActionDefinition;
 export type RecommendationImplementActionImpactAssessment = RecommendationActionImpactAssessment;
 
 export type RecommendationImplementAction = RecommendationActionMetadata;
+
+export type RecommendationFixState = 'ready' | 'needsAccess' | 'needsCheck' | 'mixed' | 'manual';
+
+/** Read-time status for one subscription, including narrower permissions when target evidence is available. */
+export type RecommendationFixSubscriptionReadiness = {
+  providerScopeId: string;
+  cloudAccountId: string;
+  checkedAt?: string;
+} & (
+  | { state: 'ready' }
+  | { state: 'needsAccess'; reason: 'disabled' | 'missingPermissions'; missingActions?: string[] }
+  | { state: 'needsCheck'; reason: 'unknownAccess' | 'staleAccess' | 'incompleteTargetCoverage' }
+  | { state: 'mixed'; readyResourceCount: number; needsAccessResourceCount: number; needsCheckResourceCount: number }
+);
+
+export type RecommendationFixReadiness =
+  | { state: 'manual' }
+  | { state: 'needsCheck'; reason: 'missingFixType' | 'missingPermissions' }
+  | {
+      state: Exclude<RecommendationFixState, 'manual'>;
+      fixType: RecommendationActionFixType;
+      subscriptions: RecommendationFixSubscriptionReadiness[];
+    };
+
+export interface RecommendationFixSummary {
+  /** Counts recommendation rows in the API's authorized result before pagination. */
+  counts: Record<RecommendationFixState, number>;
+  /** Optional deduplicated portfolio savings unlocked by granting access, grouped by currency and basis. */
+  needsAccessSavings?: SavingsAggregateV2[];
+}
+
+export interface RecommendationFixFilter {
+  /** Includes recommendations with a published verified action even when access is missing or unknown. */
+  hasOneClickFix?: boolean;
+  fixStates?: RecommendationFixState[];
+}
 
 export interface RecommendationResources {
   recommendation: CustomAzureRecommendation;
@@ -467,6 +505,8 @@ export interface RecommendationWithResources {
     updatedAt?: string;
   };
   recommendation: Recommendation;
+  /** API projection computed on read. Omit from published recommendation artifacts. */
+  fixReadiness?: RecommendationFixReadiness;
   /** Total affected resources when the resources array is trimmed or sampled. */
   resourcesCount?: number;
   resources: RecommendationResource[];
@@ -595,6 +635,8 @@ export type RecommendationEvidenceHint = RecommendationMetricEvidenceHint;
 
 /** A recommendation carrying a financial scenario scoped to one detailed resource artifact. */
 export interface ResourceScopedRecommendation extends Recommendation {
+  /** API projection for this resource, computed on read. */
+  fixReadiness?: RecommendationFixReadiness;
   savingsDetails?: ResourceRecommendationSavingsDetails;
   /** Optional logical references to evidence already present in this resource's detail artifacts. */
   evidenceHints?: RecommendationEvidenceHint[];
@@ -649,6 +691,8 @@ export interface RecommendationResource {
 }
 
 export interface RecommendationsView extends AzurePortalVersionedArtifact {
+  /** API-only counts for the recommendation results. */
+  fixSummary?: RecommendationFixSummary;
   /** Missing means legacy/unverified. Pending covers withheld assessment findings/counts, including nonfinancial expiry. */
   benefitAssessmentCoverage?: import('./benefitAssessmentAdmission').AzureBenefitAssessmentCoverageV1;
   /** Complete native assessment subjects collected before projection or row limits. */
@@ -770,7 +814,7 @@ export interface RecommendationActionRequest extends ProviderScope {
   cloudAccountId?: string;
   /** Optional user-provided reason for queue-backed actions such as implement. */
   reason?: string;
-  /** Optional action permission metadata passed into API preflight before queue publish. */
+  /** Legacy field. The public API ignores client-supplied values and resolves permissions from the verified action. */
   requiredPermissions?: RecommendationActionRequiredPermissions;
   recommendationId: string;
   recommendationTitle?: string;
@@ -808,6 +852,77 @@ export interface RecommendationActionPermissionErrorResponse {
   providerName: string;
   providerScopeId: string;
   failures: RecommendationActionPermissionFailure[];
+  /** Present for Azure RBAC failures that can be resolved through the account's fix-role grant. */
+  accessGrant?: { cloudAccountId: string; fixType: RecommendationActionFixType };
+}
+
+/** A discrete, server-validated size or tier selected from an offered alternative. */
+export interface RecommendationActionParameters {
+  targetSku: string;
+}
+
+/** Binds a confirmed change to a specific verified action and review. */
+export interface RecommendationActionSelection {
+  actionId: string;
+  actionVersion: string;
+  parameters?: RecommendationActionParameters;
+  acknowledgeNoRollback?: true;
+}
+
+export type RecommendationActionExecutionTarget =
+  | { scope: 'resource'; providerScopeId: string; resourceId: string }
+  | { scope: 'providerScope'; providerScopeId: string; targetSelection: 'selectedResources'; resourceIds: [string, ...string[]] }
+  | { scope: 'providerScope'; providerScopeId: string; targetSelection: 'allAffectedResources' };
+
+/** The route supplies actionId. The API resolves user, owned targets and required permissions. */
+export interface RecommendationActionExecuteRequest extends Omit<RecommendationActionSelection, 'actionId'> {
+  recommendationId: string;
+  cloudAccountId?: string;
+  target: RecommendationActionExecutionTarget;
+  reason?: string;
+  idempotencyKey: string;
+}
+
+export interface RecommendationActionExecuteResponse {
+  accepted: true;
+  auditId: string;
+  eventId: string;
+  status: 'queued';
+}
+
+export type RecommendationActionAuditStatus = 'blocked' | 'queued' | 'running' | 'succeeded' | 'failed';
+
+export interface RecommendationActionAuditEntry {
+  auditId: string;
+  eventId?: string;
+  recommendationId: string;
+  actionId: string;
+  providerScopeId: string;
+  cloudAccountId: string;
+  resourceId?: string;
+  status: RecommendationActionAuditStatus;
+  actorUserId: string;
+  actorDisplayName?: string;
+  requestedAt: string;
+  startedAt?: string;
+  completedAt?: string;
+  description?: string;
+  errorMessage?: string;
+  blockers?: Array<{ category: 'prerequisite' | 'unsupported' | 'system'; message: string }>;
+}
+
+export type RecommendationActionAuditSnapshot =
+  | { status: 'available'; downloadUrl: string; expiresAt: string }
+  | { status: 'pending' | 'unavailable' };
+
+export interface RecommendationActionAuditDetail extends RecommendationActionAuditEntry {
+  before: RecommendationActionAuditSnapshot;
+  after: RecommendationActionAuditSnapshot;
+}
+
+export interface RecommendationActionAuditListResponse {
+  results: RecommendationActionAuditEntry[];
+  continuation?: { cursor: string };
 }
 
 export interface ServiceRetirementRecommendation {

@@ -1,5 +1,7 @@
 import {
+  AZURE_SP_FIX_ROLE_PERMISSION_KEYS,
   AZURE_SP_SETUP_MAX_SELECTED_SUBSCRIPTIONS,
+  getAzureSpFixRolePermission,
   type AzureSpBillingExportCreateTarget,
   type AzureSpBillingExportPlan,
   type AzureSpBillingExportResult,
@@ -16,6 +18,7 @@ import {
   type AzureSpSetupPhase,
   type AzureSpSetupPlanResponse,
   type AzureSpSetupResult,
+  type AzureSpSetupRecommendationFixSelection,
   type AzureSpSetupStartRequest,
   type AzureSpSetupStatusResponse,
 } from './azureSpSetup';
@@ -34,6 +37,25 @@ const reportsReadPermissionKey: AzureSpPermissionKey = 'graphReportsReadAll';
 void reportsReadPermissionKey;
 const mailboxSettingsReadPermissionKey: AzureSpPermissionKey = 'graphMailboxSettingsRead';
 void mailboxSettingsReadPermissionKey;
+// Each fix type grants through its own role definition and assignment keys.
+const rightsizeFixRoleKey: AzureSpPermissionKey = AZURE_SP_FIX_ROLE_PERMISSION_KEYS.rightsize.definition;
+void rightsizeFixRoleKey;
+const cleanupFixRoleAssignmentKey: AzureSpPermissionKey = 'cleanupFixRoleAssignment';
+void cleanupFixRoleAssignmentKey;
+const powerFixRole = getAzureSpFixRolePermission('powerFixRoleAssignment');
+void powerFixRole;
+// @ts-expect-error Fix role keys exist only for published fix types.
+const unknownFixRoleKey: AzureSpPermissionKey = 'deleteFixRoleDefinition';
+void unknownFixRoleKey;
+
+const selectedFixes: AzureSpSetupRecommendationFixSelection = {
+  mode: 'oneClickFixes',
+  consent: { catalogVersion: 'catalog-1', subscriptions: [{ subscriptionId: 'sub-1', fixTypes: ['configuration'] }] },
+};
+void selectedFixes;
+// @ts-expect-error The read-only choice cannot carry a fix grant.
+const insightsOnlyWithGrant: AzureSpSetupRecommendationFixSelection = { mode: 'insightsOnly', consent: selectedFixes.consent };
+void insightsOnlyWithGrant;
 
 type AzureSpSetupForbiddenPublicKey =
   | 'accessToken'
